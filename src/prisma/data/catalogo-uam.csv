@@ -1,0 +1,742 @@
+﻿grupo_id,grupo,especie_id,especie,especie_activa,variedad_id,variedad,variedad_activa,presentacion_id,presentacion,kg_por_unidad,presentacion_activa,presentacion_default
+1,"Hortalizas de Hoja, Brote e Inflorescencias",1,Acelga,1,1,-,1,2,Atado,1.25,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",1,Acelga,1,1,-,1,1,Docena,15,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",2,Albahaca,1,2,-,1,378,Docena,1,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",2,Albahaca,1,2,-,1,5,Planta,2,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",2,Albahaca,1,2,-,1,4,Sobre,0.083,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",2,Albahaca,1,336,Planta,0,627,Docena,2,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",2,Albahaca,1,337,Sobre,0,628,Docena,1,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",3,Alcaucil,1,3,-,1,3,Docena,3,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",3,Alcaucil,1,320,Espina,1,646,Docena,3,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",3,Alcaucil,1,321,Porteño,1,645,Docena,3,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",4,Apio,1,4,Hoja,1,6,Atado,1,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",4,Apio,1,4,Hoja,1,7,Docena,12,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",4,Apio,1,5,Planta,1,9,Atado,1,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",4,Apio,1,5,Planta,1,8,Docena,12,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",5,Berro,1,6,-,1,12,Atado,0.167,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",5,Berro,1,6,-,1,379,Docena,2,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",5,Berro,1,6,-,1,11,Sobre,0.167,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",6,Brócoli,1,7,-,1,13,Docena,12,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",73,Cebolla Verdeo,1,170,-,1,14,Docena,11,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,8,-,1,659,Caja,17,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,8,-,1,23,Docena,5,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,8,-,1,660,Kilo,1,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,9,Común,0,20,Docena,5,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,9,Común,0,19,Envasado,1,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,10,Dulce,0,657,Caja,17,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,10,Dulce,0,22,Docena,5,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,10,Dulce,0,21,Envasado,1,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,10,Dulce,0,658,Kilo,1,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,10,Dulce,0,668,Tabla/Pallat,600,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,193,Importado,0,521,-,5,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,181,Súper Dulce,0,18,Docena,5,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",7,Choclo,1,181,Súper Dulce,0,17,Envasado,1,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",75,Ciboulette,1,179,-,1,16,Atado,0.167,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",75,Ciboulette,1,179,-,1,508,Docena,1,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",75,Ciboulette,1,179,-,1,15,Sobre,0.083,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",8,Col Chino,1,11,-,1,324,Docena,11,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",9,Coliflor,1,12,-,1,24,Docena,11,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",10,Endivia,1,13,-,1,28,Docena,5,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",11,Escarola,1,14,-,1,327,Docena,5,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",12,Espárrago,1,15,-,1,27,Docena,3,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",13,Espinaca,1,16,-,1,25,Docena,6,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",13,Espinaca,1,16,-,1,26,Lavada,6,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",14,Hinojo,1,17,-,1,330,Docena,14,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",91,Kale,1,300,-,1,337,Atado,0.167,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",91,Kale,1,300,-,1,610,Docena,2,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",91,Kale,1,300,-,1,336,Sobre,0.167,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",15,Lechuga,1,18,-,0,380,-,5,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",15,Lechuga,1,21,Crespa,1,30,Docena,5,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",15,Lechuga,1,19,Mantecosa,1,29,Docena,5,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",15,Lechuga,1,249,Otras,1,31,Docena,5,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",15,Lechuga,1,20,Sin cabeza,0,381,-,5,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",95,Mizuna,1,304,-,1,346,Atado,0.167,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",95,Mizuna,1,304,-,1,613,Docena,1,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",95,Mizuna,1,304,-,1,345,Sobre,0.083,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",96,Mostaza,1,305,-,1,347,Atado,0.167,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",96,Mostaza,1,305,-,1,614,Docena,1,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",96,Mostaza,1,305,-,1,348,Sobre,0.083,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",26,Nabiza,1,43,-,1,349,Atado,1.167,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",26,Nabiza,1,43,-,1,396,Docena,14,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",27,Nabo,1,44,-,1,32,Atado,1.167,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",27,Nabo,1,44,-,1,33,Docena,14,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",27,Nabo,1,327,Daikon,0,,,,,
+1,"Hortalizas de Hoja, Brote e Inflorescencias",27,Nabo,1,306,Japonés,1,350,Docena,14,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",93,Nabo japonés,1,,,,,,,,
+1,"Hortalizas de Hoja, Brote e Inflorescencias",16,Perejil,1,22,-,1,718,Atado,0.583,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",16,Perejil,1,22,-,1,382,Docena,7,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",16,Perejil,1,250,Común,0,34,Atado,0.583,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",16,Perejil,1,250,Común,0,563,Docena,7,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",16,Perejil,1,251,Crespo,0,356,Atado,0.583,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",16,Perejil,1,251,Crespo,0,564,Docena,7,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",16,Perejil,1,366,Crespo,1,716,Docena,7,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",16,Perejil,1,251,Crespo,0,35,Sobre,0.583,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",17,Puerro,1,23,-,1,36,Docena,8,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",29,Rabanito,1,52,-,1,37,Docena,8,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",18,Radicchio,1,24,-,1,383,Docena,5,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",18,Radicchio,1,312,Rosso,0,366,Atado,1,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",18,Radicchio,1,312,Rosso,0,619,Docena,5,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",18,Radicchio,1,312,Rosso,0,359,Sobre,1,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",74,Radicha,1,174,-,1,365,Atado,0.417,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",74,Radicha,1,174,-,1,504,Docena,5,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",74,Radicha,1,174,-,1,358,Sobre,0.417,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",30,Remolacha,1,53,-,1,404,-,15,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",30,Remolacha,1,53,-,1,39,Descolada,20,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",30,Remolacha,1,53,-,1,38,Docena,15,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",30,Remolacha,1,322,Descolada,0,,,,,
+1,"Hortalizas de Hoja, Brote e Inflorescencias",19,Repollito de Bruselas,1,25,-,1,43,Bandeja,0.417,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",19,Repollito de Bruselas,1,25,-,1,384,Docena,5,1,1
+1,"Hortalizas de Hoja, Brote e Inflorescencias",20,Repollo,1,26,Blanco,1,40,Docena,18,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",20,Repollo,1,27,Colorado,1,385,Docena,12,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",20,Repollo,1,28,Crespo,1,42,Docena,12,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",20,Repollo,1,229,Rojo,0,41,Docena,12,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",21,Rucula,1,29,-,1,45,Atado,0.167,0,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",21,Rucula,1,29,-,1,386,Docena,1,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",21,Rucula,1,29,-,1,44,Sobre,0.083,1,0
+1,"Hortalizas de Hoja, Brote e Inflorescencias",69,Sin especie,0,168,Sin variedad,0,,,,,
+2,Exóticos/Importados,59,Ananá,1,157,Hawai,0,492,caja,1,0,0
+2,Exóticos/Importados,59,Ananá,1,158,Pérola(Piña),1,493,caja,12,0,0
+2,Exóticos/Importados,59,Ananá,1,158,Pérola(Piña),1,124,Caja,12,1,0
+2,Exóticos/Importados,109,Arazá,1,272,Amarillo,0,584,-,1.125,1,0
+2,Exóticos/Importados,109,Arazá,1,272,Amarillo,0,196,Petaca,0.125,1,0
+2,Exóticos/Importados,109,Arazá,1,271,Rojo,1,583,-,1,1,0
+2,Exóticos/Importados,109,Arazá,1,271,Rojo,1,197,Petaca,0.125,1,0
+2,Exóticos/Importados,60,Banana,1,159,Brasilera,0,494,-,1,0,0
+2,Exóticos/Importados,60,Banana,1,238,Cavendish(Nanica),1,554,caja,20,0,0
+2,Exóticos/Importados,60,Banana,1,238,Cavendish(Nanica),1,126,Caja Carton,20,1,0
+2,Exóticos/Importados,60,Banana,1,238,Cavendish(Nanica),1,125,Caja Madera,22,1,0
+2,Exóticos/Importados,60,Banana,1,205,Ecuatoriana,0,533,caja,1,0,0
+2,Exóticos/Importados,60,Banana,1,204,Importada,0,532,caja,1,0,0
+2,Exóticos/Importados,62,Coco,1,161,-,0,496,-,1,0,0
+2,Exóticos/Importados,62,Coco,1,239,Seco,1,555,-,1,0,0
+2,Exóticos/Importados,62,Coco,1,239,Seco,1,127,Bolsa,,1,0
+2,Exóticos/Importados,62,Coco,1,239,Seco,1,128,Malla,,1,0
+2,Exóticos/Importados,62,Coco,1,262,Verde,1,129,-,,1,0
+2,Exóticos/Importados,125,Cúrcuma,1,347,-,1,642,-,1,1,0
+2,Exóticos/Importados,129,Echalote,1,353,-,1,,,,,
+2,Exóticos/Importados,63,Jengibre,1,162,-,1,132,Caja Carton,,1,0
+2,Exóticos/Importados,63,Jengibre,1,162,-,1,497,Caja carton,14,1,1
+2,Exóticos/Importados,63,Jengibre,1,162,-,1,133,Malla Red,,1,0
+2,Exóticos/Importados,70,Lima,1,169,-,1,500,-,1,0,0
+2,Exóticos/Importados,70,Lima,1,169,-,1,137,Caja Carton,,1,0
+2,Exóticos/Importados,70,Lima,1,169,-,1,138,Plancha Carton,,1,0
+2,Exóticos/Importados,70,Lima,1,263,Dulce,0,575,-,1,0,0
+2,Exóticos/Importados,70,Lima,1,263,Dulce,0,139,Plancha,,1,0
+2,Exóticos/Importados,64,Mamon,1,163,-,1,142,-,,0,0
+2,Exóticos/Importados,64,Mamon,1,241,Calimosa,0,557,-,1,0,0
+2,Exóticos/Importados,66,Mandioca,1,165,-,1,499,-,1,0,0
+2,Exóticos/Importados,66,Mandioca,1,165,-,1,143,Caja Carton,,1,0
+2,Exóticos/Importados,65,Mango,1,164,-,1,498,-,1,0,0
+2,Exóticos/Importados,65,Mango,1,164,-,1,144,Caja Carton,18,1,0
+2,Exóticos/Importados,65,Mango,1,164,-,1,145,Plancha Carton,4,1,0
+2,Exóticos/Importados,128,Maracuyá,1,352,-,1,,,,,
+2,Exóticos/Importados,72,Palta,1,173,-,0,503,-,1,0,0
+2,Exóticos/Importados,72,Palta,1,172,Hass,1,502,-,10,0,0
+2,Exóticos/Importados,72,Palta,1,172,Hass,1,162,Caja,10,1,0
+2,Exóticos/Importados,72,Palta,1,172,Hass,1,163,Caja Carton,10,1,0
+2,Exóticos/Importados,72,Palta,1,172,Hass,1,164,Cajon,20,0,0
+2,Exóticos/Importados,72,Palta,1,172,Hass,1,161,Plancha,,0,0
+2,Exóticos/Importados,72,Palta,1,172,Hass,1,165,Unitario,,1,0
+2,Exóticos/Importados,72,Palta,1,266,Lisa,1,578,-,1,0,0
+2,Exóticos/Importados,72,Palta,1,266,Lisa,1,167,Cajon,20,1,0
+2,Exóticos/Importados,72,Palta,1,266,Lisa,1,168,Granel Unitario,,1,0
+2,Exóticos/Importados,72,Palta,1,266,Lisa,1,166,Plancha,10,1,0
+2,Exóticos/Importados,108,Papaya,1,264,-,1,576,-,1,1,0
+2,Exóticos/Importados,108,Papaya,1,264,-,1,140,Caja Carton,11,1,1
+2,Exóticos/Importados,108,Papaya,1,265,Calimosa,1,577,-,1,1,0
+2,Exóticos/Importados,108,Papaya,1,265,Calimosa,1,141,Caja Carton,,1,0
+2,Exóticos/Importados,130,Pitahaya,1,354,-,1,,,,,
+2,Exóticos/Importados,106,Pitahaya,1,243,-,1,558,-,1,1,0
+2,Exóticos/Importados,106,Pitahaya,1,243,-,1,177,Caja Carton,4,1,0
+2,Exóticos/Importados,123,Plátano,1,335,-,1,638,Caja,20,1,0
+3,Frutas de Hoja Caduca/Nativos,54,Arándano,1,137,-,1,476,-,2.5,0,0
+3,Frutas de Hoja Caduca/Nativos,54,Arándano,1,137,-,1,708,Caja,1.5,1,0
+3,Frutas de Hoja Caduca/Nativos,54,Arándano,1,137,-,1,122,Petaca,0.125,1,0
+3,Frutas de Hoja Caduca/Nativos,54,Arándano,1,137,-,1,123,Plancha,2.5,1,0
+3,Frutas de Hoja Caduca/Nativos,61,Caqui,1,160,-,1,495,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,61,Caqui,1,160,-,1,130,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,61,Caqui,1,160,-,1,131,Plancha Carton,6,1,0
+3,Frutas de Hoja Caduca/Nativos,76,Cereza,1,180,-,1,509,-,1,0,0
+3,Frutas de Hoja Caduca/Nativos,76,Cereza,1,180,-,1,201,Plancha Carton,,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,89,-,0,437,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,90,Blanca,1,438,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,90,Blanca,1,206,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,90,Blanca,1,205,Plancha,10,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,90,Blanca,1,224,Plancha,10,1,1
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,95,Golden Japan,0,443,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,198,Importada,0,526,-,1,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,275,Leticia,0,587,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,275,Leticia,0,208,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,275,Leticia,0,207,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,276,Metley,0,588,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,276,Metley,0,210,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,276,Metley,0,209,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,277,O bilnaja,0,589,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,277,O bilnaja,0,212,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,277,O bilnaja,0,211,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,94,Red Beauty,0,442,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,278,Reina Claudia,0,590,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,278,Reina Claudia,0,214,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,278,Reina Claudia,0,213,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,91,Roja,1,439,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,91,Roja,1,632,Cajón,20,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,91,Roja,1,216,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,91,Roja,1,223,Plancha,10,1,1
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,91,Roja,1,215,Plancha,10,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,279,Rosa Nativa,0,591,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,280,Rosa Nativa,0,592,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,279,Rosa Nativa,0,218,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,279,Rosa Nativa,0,217,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,92,Santa Rosa,0,440,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,92,Santa Rosa,0,220,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,92,Santa Rosa,0,219,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,93,Stanley,0,441,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,93,Stanley,0,222,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,44,Ciruela,1,93,Stanley,0,221,Plancha,10,0,0
+3,Frutas de Hoja Caduca/Nativos,45,Damasco,1,96,-,1,444,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,45,Damasco,1,96,-,1,179,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,45,Damasco,1,96,-,1,178,Plancha,10,0,0
+3,Frutas de Hoja Caduca/Nativos,45,Damasco,1,96,-,1,180,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,97,-,1,445,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,97,-,1,236,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,176,Blanco,0,505,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,285,Blanco,0,597,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,176,Blanco,0,226,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,176,Blanco,0,225,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,176,Blanco,0,235,Plancha,10,0,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,364,Chato,0,,,,,
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,281,Estación,0,593,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,281,Estación,0,228,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,281,Estación,0,227,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,282,Muy Temprano,0,594,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,282,Muy Temprano,0,230,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,282,Muy Temprano,0,229,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,99,Pavía,0,447,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,98,Rey del Monte,0,446,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,283,Tardío,0,595,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,283,Tardío,0,232,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,283,Tardío,0,231,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,284,Temprano,0,596,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,284,Temprano,0,234,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,46,Durazno,1,284,Temprano,0,233,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,78,Granada,1,206,-,1,204,-,14,0,0
+3,Frutas de Hoja Caduca/Nativos,78,Granada,1,206,-,1,203,Cajon,14,1,0
+3,Frutas de Hoja Caduca/Nativos,78,Granada,1,206,-,1,202,Plancha,7,1,0
+3,Frutas de Hoja Caduca/Nativos,47,Higo,1,100,-,1,193,-,7,0,0
+3,Frutas de Hoja Caduca/Nativos,47,Higo,1,100,-,1,192,Plancha,7,1,0
+3,Frutas de Hoja Caduca/Nativos,47,Higo,1,344,Negro,0,,,,,
+3,Frutas de Hoja Caduca/Nativos,48,Kiwi,1,101,-,1,448,-,10,1,0
+3,Frutas de Hoja Caduca/Nativos,48,Kiwi,1,333,Amarillo,0,,,,,
+3,Frutas de Hoja Caduca/Nativos,48,Kiwi,1,240,Hayward,0,556,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,48,Kiwi,1,240,Hayward,0,135,Caja,10,1,0
+3,Frutas de Hoja Caduca/Nativos,48,Kiwi,1,240,Hayward,0,134,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,48,Kiwi,1,240,Hayward,0,136,Plancha Carton,10,1,0
+3,Frutas de Hoja Caduca/Nativos,48,Kiwi,1,197,Importado,0,525,-,1,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,339,Condessa,0,650,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,339,Condessa,0,647,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,105,Cripps Pink,1,257,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,105,Cripps Pink,1,256,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,105,Cripps Pink,1,255,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,114,Fuji,1,254,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,114,Fuji,1,253,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,114,Fuji,1,252,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,115,Fuji (Atm. controlada),0,458,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,116,Gala,1,251,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,116,Gala,1,250,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,116,Gala,1,249,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,117,Gala (Atm. controlada),0,459,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,112,Granny Smith,1,245,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,112,Granny Smith,1,244,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,112,Granny Smith,1,243,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,113,Granny Smith (Atm. controlada),0,457,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,199,Importada,0,527,-,1,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,342,Jonagold,0,,,,,
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,118,Mollies,0,652,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,118,Mollies,0,460,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,102,Otras,1,653,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,102,Otras,1,449,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,362,Pink Lady,0,690,Cajon,20,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,362,Pink Lady,0,691,Plancha,10,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,362,Pink Lady,0,696,Tabla/Palet,800,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,108,Red Chieff,0,453,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,109,Red Chieff(Atm. controlada),0,454,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,106,Red Delicious,1,248,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,106,Red Delicious,1,247,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,106,Red Delicious,1,246,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,106,Red Delicious,1,698,Tabla/Palet,800,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,107,Red Delicious(Atm. controlada),0,452,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,110,Red Top,0,455,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,111,Red Top (Atm. controlada),0,456,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,103,Roja,1,661,Cajón,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,103,Roja,1,450,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,104,Verde,1,662,Cajón,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,104,Verde,1,451,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,178,Vista Bella,0,651,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,178,Vista Bella,0,507,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,340,Yvyrá,1,649,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,49,Manzana,1,340,Yvyrá,1,648,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,50,Membrillo,1,119,-,1,260,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,50,Membrillo,1,119,-,1,259,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,50,Membrillo,1,119,-,1,258,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,124,Mora,1,338,-,1,656,Petaca,0.125,1,0
+3,Frutas de Hoja Caduca/Nativos,121,Níspero,1,330,-,1,643,-,1,1,0
+3,Frutas de Hoja Caduca/Nativos,51,Pelón,1,120,-,1,461,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,51,Pelón,1,120,-,1,239,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,51,Pelón,1,120,-,1,237,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,51,Pelón,1,177,Blanco,0,506,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,51,Pelón,1,177,Blanco,0,240,Cajón,20,1,0
+3,Frutas de Hoja Caduca/Nativos,51,Pelón,1,177,Blanco,0,238,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,51,Pelón,1,201,Importado,0,529,-,1,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,121,-,0,462,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,246,Abate Fetel,0,269,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,246,Abate Fetel,0,268,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,246,Abate Fetel,0,267,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,343,Alejandrina,0,,,,,
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,323,Beurré d'Anjou,1,,,,,
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,202,Importada,0,530,-,1,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,125,Otras,1,630,Cajón,20,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,125,Otras,1,464,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,126,Otras(Atm. controlada),0,465,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,123,Packhams,1,266,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,123,Packhams,1,265,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,123,Packhams,1,264,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,124,Packhams(Atm. controlada),0,463,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,287,Rocha,0,275,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,287,Rocha,0,274,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,287,Rocha,0,273,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,286,Roja,0,272,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,286,Roja,0,271,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,286,Roja,0,270,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,341,Temprana,0,,,,,
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,122,Williams,1,263,-,20,0,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,122,Williams,1,262,Cajon,20,1,0
+3,Frutas de Hoja Caduca/Nativos,52,Pera,1,122,Williams,1,261,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,127,-,0,466,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,135,Alfonso Lavalle,0,474,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,135,Alfonso Lavalle,0,189,Plancha,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,128,Blanca,1,467,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,128,Blanca,1,184,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,128,Blanca,1,182,Plancha Carton,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,324,Blanca - sin semilla,1,,,,,
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,133,Cardinal,0,472,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,133,Cardinal,0,190,Plancha,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,345,Frutilla,0,,,,,
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,200,Importada,0,528,-,1,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,131,Italia,0,470,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,131,Italia,0,191,Plancha,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,132,Moscatel,1,471,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,132,Moscatel,1,185,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,129,Negra,1,468,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,129,Negra,1,663,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,269,Negra - sin semilla,0,581,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,269,Negra - sin semilla,0,181,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,136,Otras,0,475,-,10,1,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,351,Prima,0,,,,,
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,270,Red Globe,0,582,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,270,Red Globe,0,187,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,134,Ribier,0,473,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,244,Ribol,0,559,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,244,Ribol,0,188,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,130,Rosada,1,469,-,10,0,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,130,Rosada,1,186,Plancha,10,1,0
+3,Frutas de Hoja Caduca/Nativos,53,Uva,1,130,Rosada,1,183,Plancha Carton,10,0,0
+3,Frutas de Hoja Caduca/Nativos,127,Zarzamora,1,349,-,1,654,Petaca,0.125,1,0
+4,Frutos de Huerta,107,Frambuesa,1,245,-,1,560,-,0.125,0,0
+4,Frutos de Huerta,107,Frambuesa,1,245,-,1,655,Petaca,0.125,1,0
+4,Frutos de Huerta,107,Frambuesa,1,245,-,1,200,Petaca,0.125,1,0
+4,Frutos de Huerta,36,Frutilla,1,66,-,1,415,-,8,0,0
+4,Frutos de Huerta,36,Frutilla,1,66,-,1,706,Petaca,0.5,1,0
+4,Frutos de Huerta,36,Frutilla,1,66,-,1,242,Plancha,8,1,0
+4,Frutos de Huerta,36,Frutilla,1,66,-,1,241,Plancha Chica,4,1,0
+4,Frutos de Huerta,37,Melón,1,67,-,0,634,Cajon,18,0,0
+4,Frutos de Huerta,37,Melón,1,67,-,0,416,Plancha,10,0,0
+4,Frutos de Huerta,37,Melón,1,67,-,0,678,Tabla/Palet,800,0,0
+4,Frutos de Huerta,37,Melón,1,71,Amarillo,1,420,-,18,0,0
+4,Frutos de Huerta,37,Melón,1,71,Amarillo,1,148,Caja Carton,,1,0
+4,Frutos de Huerta,37,Melón,1,71,Amarillo,1,147,Cajon,18,1,0
+4,Frutos de Huerta,37,Melón,1,71,Amarillo,1,146,Plancha,10,1,0
+4,Frutos de Huerta,37,Melón,1,72,Charentais,0,421,-,,0,0
+4,Frutos de Huerta,37,Melón,1,69,Galia,1,418,-,18,1,0
+4,Frutos de Huerta,37,Melón,1,69,Galia,1,149,Caja Carton,,1,0
+4,Frutos de Huerta,37,Melón,1,69,Galia,1,151,Cajon,18,1,0
+4,Frutos de Huerta,37,Melón,1,69,Galia,1,150,Plancha,10,1,0
+4,Frutos de Huerta,37,Melón,1,188,Importada,0,516,-,1,0,0
+4,Frutos de Huerta,37,Melón,1,196,Importado,0,524,-,1,0,0
+4,Frutos de Huerta,37,Melón,1,74,Orange,0,423,-,,0,0
+4,Frutos de Huerta,37,Melón,1,73,Piel de Sapo,1,422,-,18,0,0
+4,Frutos de Huerta,37,Melón,1,73,Piel de Sapo,1,160,Caja Carton,,1,0
+4,Frutos de Huerta,37,Melón,1,73,Piel de Sapo,1,159,Cajon,18,1,0
+4,Frutos de Huerta,37,Melón,1,73,Piel de Sapo,1,158,Plancha,10,1,0
+4,Frutos de Huerta,37,Melón,1,68,Reticulado,1,417,-,18,1,0
+4,Frutos de Huerta,37,Melón,1,68,Reticulado,1,157,Caja Carton,,1,0
+4,Frutos de Huerta,37,Melón,1,68,Reticulado,1,156,Cajon,18,1,0
+4,Frutos de Huerta,37,Melón,1,68,Reticulado,1,155,Plancha,10,1,0
+4,Frutos de Huerta,37,Melón,1,70,Rocío de miel,1,419,-,18,0,0
+4,Frutos de Huerta,37,Melón,1,70,Rocío de miel,1,152,Caja Carton,,1,0
+4,Frutos de Huerta,37,Melón,1,70,Rocío de miel,1,154,Cajon,18,1,0
+4,Frutos de Huerta,37,Melón,1,70,Rocío de miel,1,153,Plancha,10,1,0
+4,Frutos de Huerta,40,Sandía,1,80,-,1,169,Bin,400,1,0
+4,Frutos de Huerta,40,Sandía,1,80,-,1,170,Granel,,1,0
+4,Frutos de Huerta,40,Sandía,1,242,Baby,1,176,-,10,0,0
+4,Frutos de Huerta,40,Sandía,1,242,Baby,1,174,Cajon,16,1,1
+4,Frutos de Huerta,40,Sandía,1,242,Baby,1,173,Granel,,1,0
+4,Frutos de Huerta,40,Sandía,1,242,Baby,1,175,Plancha,10,1,0
+4,Frutos de Huerta,40,Sandía,1,268,Negra,0,580,-,1,0,0
+4,Frutos de Huerta,40,Sandía,1,268,Negra,0,172,Granel,,1,0
+4,Frutos de Huerta,40,Sandía,1,267,Negra - sin semilla,0,579,-,1,0,0
+4,Frutos de Huerta,40,Sandía,1,267,Negra - sin semilla,0,171,Granel,,1,0
+5,Frutas Cítricas,55,Limón,1,138,-,1,477,-,18,0,0
+5,Frutas Cítricas,55,Limón,1,138,-,1,278,Bolsa,20,1,0
+5,Frutas Cítricas,55,Limón,1,138,-,1,279,Caja Carton,18,0,0
+5,Frutas Cítricas,55,Limón,1,138,-,1,276,Cajon,20,1,1
+5,Frutas Cítricas,55,Limón,1,138,-,1,277,Plancha,10,1,0
+5,Frutas Cítricas,55,Limón,1,138,-,1,701,Tabla/Palet,800,0,0
+5,Frutas Cítricas,55,Limón,1,207,Importado,0,534,-,1,0,0
+5,Frutas Cítricas,56,Mandarina,1,139,-,0,291,-,22,0,0
+5,Frutas Cítricas,56,Mandarina,1,227,Afourer,1,544,-,10,0,0
+5,Frutas Cítricas,56,Mandarina,1,227,Afourer,1,287,Cajon,22,1,1
+5,Frutas Cítricas,56,Mandarina,1,227,Afourer,1,299,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,183,Avana,1,511,-,10,0,0
+5,Frutas Cítricas,56,Mandarina,1,183,Avana,1,285,Cajon,22,1,1
+5,Frutas Cítricas,56,Mandarina,1,183,Avana,1,297,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,148,Avana / Montenegrina,0,486,-,22,0,0
+5,Frutas Cítricas,56,Mandarina,1,148,Avana / Montenegrina,0,702,Tabla/Palet,800,0,0
+5,Frutas Cítricas,56,Mandarina,1,228,Avana/Monteneg.,0,545,-,22,0,0
+5,Frutas Cítricas,56,Mandarina,1,359,Bergamota,0,687,Cajon,20,0,0
+5,Frutas Cítricas,56,Mandarina,1,359,Bergamota,0,693,Tabla/Palet,800,0,0
+5,Frutas Cítricas,56,Mandarina,1,247,Clementina,0,561,-,10,0,0
+5,Frutas Cítricas,56,Mandarina,1,247,Clementina,0,281,Cajon,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,247,Clementina,0,293,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,142,Común,1,480,-,22,0,0
+5,Frutas Cítricas,56,Mandarina,1,142,Común,1,288,Cajon,22,1,1
+5,Frutas Cítricas,56,Mandarina,1,142,Común,1,300,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,142,Común,1,699,Tabla/Palet,800,0,0
+5,Frutas Cítricas,56,Mandarina,1,358,Criolla,0,685,Cajon,20,0,0
+5,Frutas Cítricas,56,Mandarina,1,358,Criolla,0,692,Tabla/Palet,800,0,0
+5,Frutas Cítricas,56,Mandarina,1,358,Criolla,0,700,Tabla/Palet,800,0,0
+5,Frutas Cítricas,56,Mandarina,1,143,Ellendale,1,481,-,22,0,0
+5,Frutas Cítricas,56,Mandarina,1,143,Ellendale,1,284,Cajon,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,143,Ellendale,1,296,Plancha,10,0,0
+5,Frutas Cítricas,56,Mandarina,1,143,Ellendale,1,703,Tabla/Palet,800,0,0
+5,Frutas Cítricas,56,Mandarina,1,144,Híbrida,1,482,Cajón,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,288,Improved,0,598,-,10,0,0
+5,Frutas Cítricas,56,Mandarina,1,288,Improved,0,289,Cajon,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,288,Improved,0,301,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,146,Malvasio,0,484,-,22,0,0
+5,Frutas Cítricas,56,Mandarina,1,184,Montenegrina,0,512,-,10,0,0
+5,Frutas Cítricas,56,Mandarina,1,184,Montenegrina,0,286,Cajon,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,184,Montenegrina,0,298,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,356,Moria,0,,,,,
+5,Frutas Cítricas,56,Mandarina,1,145,Murcott,1,483,Cajón,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,248,Nankou,0,562,-,10,0,0
+5,Frutas Cítricas,56,Mandarina,1,248,Nankou,0,282,Cajon,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,248,Nankou,0,294,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,289,Nova,0,599,-,10,0,0
+5,Frutas Cítricas,56,Mandarina,1,289,Nova,0,290,Cajon,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,289,Nova,0,302,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,141,Okitzu,0,479,-,22,0,0
+5,Frutas Cítricas,56,Mandarina,1,141,Okitzu,0,283,Cajon,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,141,Okitzu,0,295,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,326,Orri,0,,,,,
+5,Frutas Cítricas,56,Mandarina,1,325,Ortanique,0,,,,,
+5,Frutas Cítricas,56,Mandarina,1,147,Otras,1,485,-,22,1,0
+5,Frutas Cítricas,56,Mandarina,1,140,Satsuma,1,478,-,22,0,0
+5,Frutas Cítricas,56,Mandarina,1,140,Satsuma,1,280,Cajon,22,1,1
+5,Frutas Cítricas,56,Mandarina,1,140,Satsuma,1,292,Plancha,10,1,0
+5,Frutas Cítricas,56,Mandarina,1,140,Satsuma,1,697,Tabla/Palet,800,0,0
+5,Frutas Cítricas,56,Mandarina,1,363,Tango,1,,,,,
+5,Frutas Cítricas,57,Naranja,1,149,-,0,307,-,22,0,0
+5,Frutas Cítricas,57,Naranja,1,208,Importada,0,535,-,1,0,0
+5,Frutas Cítricas,57,Naranja,1,150,Navel,1,487,-,22,0,0
+5,Frutas Cítricas,57,Naranja,1,150,Navel,1,304,Cajon,22,1,0
+5,Frutas Cítricas,57,Naranja,1,360,Ombligo,0,686,Cajon,20,0,0
+5,Frutas Cítricas,57,Naranja,1,360,Ombligo,0,694,Tabla/Palet,800,0,0
+5,Frutas Cítricas,57,Naranja,1,152,Otras,1,489,Cajon,22,1,0
+5,Frutas Cítricas,57,Naranja,1,291,Salustiana,0,601,-,22,0,0
+5,Frutas Cítricas,57,Naranja,1,291,Salustiana,0,306,Cajon,22,1,0
+5,Frutas Cítricas,57,Naranja,1,290,Sanguinea,0,600,-,22,0,0
+5,Frutas Cítricas,57,Naranja,1,290,Sanguinea,0,305,Cajon,22,1,0
+5,Frutas Cítricas,57,Naranja,1,151,Valencia,1,488,-,22,0,0
+5,Frutas Cítricas,57,Naranja,1,151,Valencia,1,303,Cajon,22,1,0
+5,Frutas Cítricas,57,Naranja,1,151,Valencia,1,704,Tabla/Palet,800,0,0
+5,Frutas Cítricas,58,Pomelo,1,153,-,0,490,-,18,0,0
+5,Frutas Cítricas,58,Pomelo,1,155,Blanco,1,311,-,20,0,0
+5,Frutas Cítricas,58,Pomelo,1,155,Blanco,1,310,Cajon,20,1,0
+5,Frutas Cítricas,58,Pomelo,1,154,Rojo,0,491,-,18,0,0
+5,Frutas Cítricas,58,Pomelo,1,156,Rosado,1,309,-,20,0,0
+5,Frutas Cítricas,58,Pomelo,1,156,Rosado,1,308,Cajon,20,1,0
+5,Frutas Cítricas,104,Quinoto,1,225,-,1,313,Petaca,0.5,1,0
+5,Frutas Cítricas,104,Quinoto,1,225,-,1,312,Plancha,7,1,0
+5,Frutas Cítricas,104,Quinoto,1,225,-,1,542,Plancha,7,0,0
+6,Hortalizas Secas o Pesadas,22,Ajo,1,30,-,1,47,Bolsa,15,0,0
+6,Hortalizas Secas o Pesadas,22,Ajo,1,30,-,1,49,Cabeza,0.05,1,0
+6,Hortalizas Secas o Pesadas,22,Ajo,1,30,-,1,46,Caja,10,1,0
+6,Hortalizas Secas o Pesadas,22,Ajo,1,30,-,1,717,Malla,1,1,0
+6,Hortalizas Secas o Pesadas,22,Ajo,1,30,-,1,48,Ristra,,0,0
+6,Hortalizas Secas o Pesadas,22,Ajo,1,194,Importado,0,522,-,1,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,31,-,0,54,-,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,316,-,0,623,-,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,37,Arapey/Cuarí,1,392,-,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,37,Arapey/Cuarí,1,53,Bolsa,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,37,Arapey/Cuarí,1,52,Cajon,20,1,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,35,Arapey/Morada,0,390,-,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,38,Beauregard/Cuabé,1,393,-,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,38,Beauregard/Cuabé,1,51,Bolsa,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,38,Beauregard/Cuabé,1,50,Cajon,20,1,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,33,Criollo,0,388,-,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,187,Importada,0,515,-,1,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,34,Morada Inta,0,389,-,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,36,Otros,0,639,Bolsa,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,36,Otros,0,391,Cajon,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,32,Zanahoria,0,387,-,20,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,32,Zanahoria,0,671,Tabla/Palet,800,0,0
+6,Hortalizas Secas o Pesadas,23,Boniato,1,32,Zanahoria,0,672,Tabla/Palet,800,0,0
+6,Hortalizas Secas o Pesadas,24,Calabacín,1,39,-,1,56,-,20,0,0
+6,Hortalizas Secas o Pesadas,24,Calabacín,1,39,-,1,55,Bolsa,20,1,0
+6,Hortalizas Secas o Pesadas,24,Calabacín,1,39,-,1,673,Tabla/Palet,800,0,0
+6,Hortalizas Secas o Pesadas,24,Calabacín,1,192,Importado,0,520,-,20,0,0
+6,Hortalizas Secas o Pesadas,71,Calabaza,1,171,-,1,501,-,1,0,0
+6,Hortalizas Secas o Pesadas,71,Calabaza,1,171,-,1,57,Unidad,10,1,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,40,-,1,60,Bolsa,20,1,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,40,-,1,674,Tabla/Palet,800,0,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,42,Dulce,0,395,-,20,0,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,190,Importada,0,518,-,20,0,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,175,Roja,1,65,-,20,0,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,175,Roja,1,64,Bolsa,20,1,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,175,Roja,1,63,Cajon,20,0,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,252,Seca,0,565,-,20,0,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,252,Seca,0,62,Bolsa,20,1,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,252,Seca,0,61,Cajon,20,0,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,41,Temprana,0,394,-,20,0,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,41,Temprana,0,59,Bolsa,20,1,0
+6,Hortalizas Secas o Pesadas,25,Cebolla,1,41,Temprana,0,58,Cajon,20,1,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,45,-,0,397,-,25,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,317,-,0,624,Bolsa,25,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,46,Blanca,1,398,-,25,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,46,Blanca,1,67,Bolsa,25,1,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,46,Blanca,1,66,Cajon,25,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,46,Blanca,1,670,Tabla/Palet,800,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,47,Blanca(lavada),0,399,-,25,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,48,Blanca(sucia),0,400,-,25,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,310,Del Aire,1,355,-,1,1,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,203,Importada,0,531,-,1,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,49,Rosada,1,401,-,25,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,49,Rosada,1,69,Bolsa,25,1,1
+6,Hortalizas Secas o Pesadas,28,Papa,1,49,Rosada,1,68,Cajon,25,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,49,Rosada,1,669,Tabla/Palet,800,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,51,Rosada (sucia),0,403,-,25,0,0
+6,Hortalizas Secas o Pesadas,28,Papa,1,50,Rosada(lavada),0,402,-,25,0,0
+6,Hortalizas Secas o Pesadas,31,Zanahoria,1,54,-,1,72,-,20,0,0
+6,Hortalizas Secas o Pesadas,31,Zanahoria,1,54,-,1,71,Bolsa,20,1,0
+6,Hortalizas Secas o Pesadas,31,Zanahoria,1,54,-,1,70,Cajon,20,0,0
+6,Hortalizas Secas o Pesadas,31,Zanahoria,1,54,-,1,676,Tabla/Palet,800,0,0
+6,Hortalizas Secas o Pesadas,31,Zanahoria,1,185,Importada,0,513,-,20,0,0
+6,Hortalizas Secas o Pesadas,31,Zanahoria,1,186,Importada 2,0,514,-,20,0,0
+6,Hortalizas Secas o Pesadas,32,Zapallo,1,55,-,0,405,-,20,0,0
+6,Hortalizas Secas o Pesadas,32,Zapallo,1,56,Criollo,1,406,-,20,0,0
+6,Hortalizas Secas o Pesadas,32,Zapallo,1,56,Criollo,1,73,Unidad,10,1,0
+6,Hortalizas Secas o Pesadas,32,Zapallo,1,191,Importado,0,519,-,1,0,0
+6,Hortalizas Secas o Pesadas,32,Zapallo,1,57,Kabutiá,1,75,-,20,1,0
+6,Hortalizas Secas o Pesadas,32,Zapallo,1,57,Kabutiá,1,74,Bolsa,20,1,1
+6,Hortalizas Secas o Pesadas,32,Zapallo,1,57,Kabutiá,1,675,Tabla/Palet,800,0,0
+7,Hortalizas de Fruto,33,Ají,1,58,-,1,635,Cajón,10,1,0
+7,Hortalizas de Fruto,33,Ají,1,58,-,1,407,Plancha,5.5,1,0
+7,Hortalizas de Fruto,33,Ají,1,59,Catalán Dulce,0,408,-,5.5,0,0
+7,Hortalizas de Fruto,33,Ají,1,59,Catalán Dulce,0,78,Plancha,5.5,0,0
+7,Hortalizas de Fruto,33,Ají,1,60,Catalán Picante,0,409,-,5.5,0,0
+7,Hortalizas de Fruto,33,Ají,1,60,Catalán Picante,0,77,Plancha,5.5,0,0
+7,Hortalizas de Fruto,33,Ají,1,331,Jalapeño,0,,,,,
+7,Hortalizas de Fruto,33,Ají,1,230,Jalapeño,0,546,-,5.5,0,0
+7,Hortalizas de Fruto,33,Ají,1,230,Jalapeño,0,76,Plancha,5.5,0,0
+7,Hortalizas de Fruto,34,Berenjena,1,61,-,1,410,Cajón,12,1,0
+7,Hortalizas de Fruto,34,Berenjena,1,61,-,1,707,Plancha,6,1,0
+7,Hortalizas de Fruto,34,Berenjena,1,61,-,1,677,Tabla/Palet,600,0,0
+7,Hortalizas de Fruto,34,Berenjena,1,254,Otras,0,82,Cajon,12,1,0
+7,Hortalizas de Fruto,34,Berenjena,1,254,Otras,0,567,Cajón,12,0,0
+7,Hortalizas de Fruto,34,Berenjena,1,254,Otras,0,83,Plancha,6,1,0
+7,Hortalizas de Fruto,34,Berenjena,1,254,Otras,0,84,Unitario,,0,0
+7,Hortalizas de Fruto,34,Berenjena,1,253,Violeta,0,566,-,12,0,0
+7,Hortalizas de Fruto,34,Berenjena,1,253,Violeta,0,79,Cajon,12,1,0
+7,Hortalizas de Fruto,34,Berenjena,1,253,Violeta,0,80,Plancha,6,1,0
+7,Hortalizas de Fruto,34,Berenjena,1,253,Violeta,0,81,Unitario,,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,62,-,1,411,-,5.5,1,0
+7,Hortalizas de Fruto,35,Chaucha,1,64,Bomboneta Chata,0,413,-,5.5,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,232,Chata,0,548,-,10,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,232,Chata,0,86,Cajon,10,1,0
+7,Hortalizas de Fruto,35,Chaucha,1,232,Chata,0,85,Plancha,5.5,1,0
+7,Hortalizas de Fruto,35,Chaucha,1,233,Cilíndrica Amarilla,0,549,-,10,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,233,Cilíndrica Amarilla,0,88,Cajon,10,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,233,Cilíndrica Amarilla,0,87,Plancha,5.5,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,234,Cilíndrica Verde,0,550,-,10,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,234,Cilíndrica Verde,0,90,Cajon,10,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,234,Cilíndrica Verde,0,89,Plancha,5.5,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,65,Híbrida Chata,0,414,-,5.5,0,0
+7,Hortalizas de Fruto,35,Chaucha,1,63,Redonda,1,412,Plancha,5.5,1,0
+7,Hortalizas de Fruto,38,Morrón,1,75,-,0,100,-,11,0,0
+7,Hortalizas de Fruto,38,Morrón,1,75,-,0,710,Plancha,6,1,0
+7,Hortalizas de Fruto,38,Morrón,1,78,Amarillo,1,426,-,6,0,0
+7,Hortalizas de Fruto,38,Morrón,1,78,Amarillo,1,95,Cajon,11,1,0
+7,Hortalizas de Fruto,38,Morrón,1,78,Amarillo,1,713,Plancha,6,1,0
+7,Hortalizas de Fruto,38,Morrón,1,78,Amarillo,1,96,Plancha,6,0,0
+7,Hortalizas de Fruto,38,Morrón,1,78,Amarillo,1,681,Tabla/Palet,600,0,0
+7,Hortalizas de Fruto,38,Morrón,1,195,Importado,0,523,-,1,0,0
+7,Hortalizas de Fruto,38,Morrón,1,255,Naranja,0,568,-,12,0,0
+7,Hortalizas de Fruto,38,Morrón,1,255,Naranja,0,97,Plancha,6,1,0
+7,Hortalizas de Fruto,38,Morrón,1,256,Otros,0,569,-,11,0,0
+7,Hortalizas de Fruto,38,Morrón,1,256,Otros,0,98,Cajon,11,1,0
+7,Hortalizas de Fruto,38,Morrón,1,256,Otros,0,99,Plancha,6,1,0
+7,Hortalizas de Fruto,38,Morrón,1,76,Rojo,1,424,-,6,0,0
+7,Hortalizas de Fruto,38,Morrón,1,76,Rojo,1,91,Cajon,11,1,0
+7,Hortalizas de Fruto,38,Morrón,1,76,Rojo,1,711,Plancha,6,1,0
+7,Hortalizas de Fruto,38,Morrón,1,76,Rojo,1,92,Plancha,6,0,0
+7,Hortalizas de Fruto,38,Morrón,1,76,Rojo,1,679,Tabla/Palet,600,0,0
+7,Hortalizas de Fruto,38,Morrón,1,77,Verde,1,425,-,6,0,0
+7,Hortalizas de Fruto,38,Morrón,1,77,Verde,1,93,Cajon,11,1,0
+7,Hortalizas de Fruto,38,Morrón,1,77,Verde,1,94,Plancha,6,0,0
+7,Hortalizas de Fruto,38,Morrón,1,77,Verde,1,712,Plancha,6,1,0
+7,Hortalizas de Fruto,38,Morrón,1,77,Verde,1,680,Tabla/Palet,600,0,0
+7,Hortalizas de Fruto,105,Pepinillo,0,231,-,0,547,-,0.25,0,0
+7,Hortalizas de Fruto,105,Pepinillo,0,231,-,0,106,Bandeja,0.25,1,0
+7,Hortalizas de Fruto,105,Pepinillo,0,231,-,0,105,Plancha,8,1,0
+7,Hortalizas de Fruto,39,Pepino,1,79,-,1,637,Cajon,20,1,0
+7,Hortalizas de Fruto,39,Pepino,1,79,-,1,427,Plancha,10,1,0
+7,Hortalizas de Fruto,39,Pepino,1,79,-,1,683,Tabla/Palet,800,0,0
+7,Hortalizas de Fruto,39,Pepino,1,257,Común,0,570,-,20,0,0
+7,Hortalizas de Fruto,39,Pepino,1,257,Común,0,102,Cajon,20,1,0
+7,Hortalizas de Fruto,39,Pepino,1,257,Común,0,101,Plancha,10,1,0
+7,Hortalizas de Fruto,39,Pepino,1,258,Japonés,0,571,-,20,0,0
+7,Hortalizas de Fruto,39,Pepino,1,258,Japonés,0,104,Cajon,20,1,0
+7,Hortalizas de Fruto,39,Pepino,1,258,Japonés,0,103,Plancha,10,1,0
+7,Hortalizas de Fruto,41,Tomate,1,81,-,0,429,Plancha,10,0,0
+7,Hortalizas de Fruto,41,Tomate,1,84,Americano,0,432,-,10,0,0
+7,Hortalizas de Fruto,41,Tomate,1,86,Cherry,1,434,-,9,0,0
+7,Hortalizas de Fruto,41,Tomate,1,86,Cherry,1,114,Plancha,9,1,1
+7,Hortalizas de Fruto,41,Tomate,1,86,Cherry,1,113,Plancha Chica,4,1,0
+7,Hortalizas de Fruto,41,Tomate,1,235,Cherry Perita,0,551,-,9,0,0
+7,Hortalizas de Fruto,41,Tomate,1,235,Cherry Perita,0,112,Plancha,9,0,0
+7,Hortalizas de Fruto,41,Tomate,1,235,Cherry Perita,0,111,Plancha Chica,4,0,0
+7,Hortalizas de Fruto,41,Tomate,1,189,Importado,0,517,-,1,0,0
+7,Hortalizas de Fruto,41,Tomate,1,83,Larga vida,0,431,-,10,0,0
+7,Hortalizas de Fruto,41,Tomate,1,85,Oblongo(Perita),1,433,-,20,0,0
+7,Hortalizas de Fruto,41,Tomate,1,85,Oblongo(Perita),1,110,Cajon,20,1,0
+7,Hortalizas de Fruto,41,Tomate,1,85,Oblongo(Perita),1,109,Plancha,10,1,0
+7,Hortalizas de Fruto,41,Tomate,1,361,Perita,0,688,Cajon,20,0,0
+7,Hortalizas de Fruto,41,Tomate,1,361,Perita,0,689,Plancha,10,0,0
+7,Hortalizas de Fruto,41,Tomate,1,361,Perita,0,695,Tabla/Palet,800,0,0
+7,Hortalizas de Fruto,41,Tomate,1,82,Redondo,1,430,-,20,0,0
+7,Hortalizas de Fruto,41,Tomate,1,82,Redondo,1,108,Cajon,20,1,0
+7,Hortalizas de Fruto,41,Tomate,1,82,Redondo,1,107,Plancha,10,1,0
+7,Hortalizas de Fruto,41,Tomate,1,82,Redondo,1,682,Tabla/Palet,800,0,0
+7,Hortalizas de Fruto,42,Zapallito,1,87,-,1,435,-,20,0,0
+7,Hortalizas de Fruto,42,Zapallito,1,87,-,1,633,Cajón,20,1,1
+7,Hortalizas de Fruto,42,Zapallito,1,87,-,1,705,Plancha,10,1,0
+7,Hortalizas de Fruto,42,Zapallito,1,87,-,1,684,Tabla/Palet,800,0,0
+7,Hortalizas de Fruto,42,Zapallito,1,259,Baby,0,572,-,0.3,0,0
+7,Hortalizas de Fruto,42,Zapallito,1,259,Baby,0,117,Bandeja,0.3,1,0
+7,Hortalizas de Fruto,42,Zapallito,1,236,Redondo,0,552,-,20,0,0
+7,Hortalizas de Fruto,42,Zapallito,1,236,Redondo,0,116,Cajon,20,1,0
+7,Hortalizas de Fruto,42,Zapallito,1,236,Redondo,0,115,Plancha,10,1,0
+7,Hortalizas de Fruto,43,Zucchini,1,88,-,1,436,-,18,0,0
+7,Hortalizas de Fruto,43,Zucchini,1,88,-,1,119,Cajon,18,1,0
+7,Hortalizas de Fruto,43,Zucchini,1,88,-,1,709,Cajón,18,0,0
+7,Hortalizas de Fruto,43,Zucchini,1,88,-,1,118,Plancha,8,1,0
+7,Hortalizas de Fruto,43,Zucchini,1,332,Amarillo,0,,,,,
+7,Hortalizas de Fruto,43,Zucchini,1,237,Amarillo,0,553,-,7,0,0
+7,Hortalizas de Fruto,43,Zucchini,1,261,Baby,0,574,-,0.3,0,0
+7,Hortalizas de Fruto,43,Zucchini,1,261,Baby,0,121,Bandeja,0.3,1,0
+7,Hortalizas de Fruto,43,Zucchini,1,260,Otros,0,573,-,8,0,0
+7,Hortalizas de Fruto,43,Zucchini,1,260,Otros,0,120,Plancha,8,1,0
+8,Legumbres,67,Arveja,1,166,-,1,640,Cajon,12,1,0
+8,Legumbres,67,Arveja,1,166,-,1,10,Plancha,6,1,0
+8,Legumbres,68,Habas,1,167,-,1,636,Cajon,12,1,0
+8,Legumbres,68,Habas,1,167,-,1,372,Plancha,5,1,0
+9,Frutos Nativos,111,Guaviyu,0,274,-,0,586,-,1,1,0
+9,Frutos Nativos,111,Guaviyu,0,274,-,0,199,Petaca,0.25,1,0
+9,Frutos Nativos,77,Guayabo,1,182,-,1,510,-,1,0,0
+9,Frutos Nativos,77,Guayabo,1,182,-,1,195,Petaca,1,1,0
+9,Frutos Nativos,77,Guayabo,1,182,-,1,194,Plancha,7,1,0
+9,Frutos Nativos,110,Pitanga,0,273,-,1,585,-,1,1,0
+9,Frutos Nativos,110,Pitanga,0,273,-,1,198,Petaca,0.125,1,0
+10,Legumbres secas,80,Garbanzo,0,211,-,0,374,-,,0,0
+10,Legumbres secas,81,Lenteja,0,210,-,0,373,-,,0,0
+10,Legumbres secas,79,Poroto,0,212,Manteca,0,375,Plancha,5.5,1,0
+10,Legumbres secas,82,Poroto Frutilla,0,213,-,0,376,Plancha,5.5,1,0
+11,Huevos,87,Huevos,1,217,Blancos,1,665,Caja,30,1,1
+11,Huevos,87,Huevos,1,217,Blancos,1,377,Docena,1,1,0
+11,Huevos,87,Huevos,1,328,Codorniz,1,667,Caja,30,1,0
+11,Huevos,87,Huevos,1,328,Codorniz,1,666,Docena,1,1,1
+11,Huevos,87,Huevos,1,218,Colorados,1,664,Caja,30,1,1
+11,Huevos,87,Huevos,1,218,Colorados,1,540,Docena,1,1,0
+12,Hierbas Aromáticas,113,Ajo Chino,0,293,-,0,315,Atado,0.167,0,0
+12,Hierbas Aromáticas,113,Ajo Chino,0,293,-,0,603,Docena,1,1,0
+12,Hierbas Aromáticas,113,Ajo Chino,0,293,-,0,316,Sobre,0.083,1,0
+12,Hierbas Aromáticas,86,Cilantro,1,209,-,1,323,Atado,0.167,0,0
+12,Hierbas Aromáticas,86,Cilantro,1,209,-,1,536,Docena,1,1,0
+12,Hierbas Aromáticas,86,Cilantro,1,209,-,1,322,Sobre,0.083,1,0
+12,Hierbas Aromáticas,99,Eneldo,1,297,-,1,326,Atado,0.167,0,0
+12,Hierbas Aromáticas,99,Eneldo,1,297,-,1,607,Docena,1,1,0
+12,Hierbas Aromáticas,99,Eneldo,1,297,-,1,325,Sobre,0.083,1,0
+12,Hierbas Aromáticas,89,Estragón,1,298,-,1,608,Docena,1,1,0
+12,Hierbas Aromáticas,89,Estragón,1,298,-,1,328,Sobre,0.083,1,0
+12,Hierbas Aromáticas,92,Laurel,1,301,-,1,611,Docena,1,1,0
+12,Hierbas Aromáticas,92,Laurel,1,301,-,1,338,Sobre,0.083,1,0
+12,Hierbas Aromáticas,117,Lemon Grass,1,302,-,0,339,Bandeja,1,1,0
+12,Hierbas Aromáticas,85,Menta,1,214,-,1,342,Atado,0.167,0,0
+12,Hierbas Aromáticas,85,Menta,1,214,-,1,537,Docena,1,1,0
+12,Hierbas Aromáticas,85,Menta,1,214,-,1,343,Sobre,0.083,1,0
+12,Hierbas Aromáticas,85,Menta,1,214,-,1,344,Sobre Unitario,,0,0
+12,Hierbas Aromáticas,126,Ñame,1,355,-,1,,,,,
+12,Hierbas Aromáticas,126,Ñame,1,350,-,0,641,-,1,1,0
+12,Hierbas Aromáticas,94,Orégano,1,309,-,1,353,Atado,1,0,0
+12,Hierbas Aromáticas,94,Orégano,1,309,-,1,617,Docena,1,1,0
+12,Hierbas Aromáticas,94,Orégano,1,309,-,1,354,Sobre,0.083,1,0
+12,Hierbas Aromáticas,97,Radicheta,1,311,-,1,364,Atado,0.417,0,0
+12,Hierbas Aromáticas,97,Radicheta,1,311,-,1,618,Docena,5,1,0
+12,Hierbas Aromáticas,97,Radicheta,1,311,-,1,357,Sobre,0.417,1,0
+12,Hierbas Aromáticas,83,Romero,1,215,-,1,538,Docena,1,1,1
+12,Hierbas Aromáticas,83,Romero,1,215,-,1,367,Sobre,0.083,1,0
+12,Hierbas Aromáticas,83,Romero,1,215,-,1,360,Sobre Docena,1,0,0
+12,Hierbas Aromáticas,83,Romero,1,215,-,1,361,Sobre Unitario,0.083,0,0
+12,Hierbas Aromáticas,98,Salvia,1,313,-,1,368,Atado,0.03,0,0
+12,Hierbas Aromáticas,98,Salvia,1,313,-,1,620,Docena,1,1,0
+12,Hierbas Aromáticas,98,Salvia,1,313,-,1,362,Sobre,0.083,1,0
+12,Hierbas Aromáticas,84,Tomillo,1,216,-,1,369,Atado,0.167,0,0
+12,Hierbas Aromáticas,84,Tomillo,1,216,-,1,539,Docena,1,1,0
+12,Hierbas Aromáticas,84,Tomillo,1,216,-,1,363,Sobre,0.083,1,0
+13,Hongos,88,Hongos,1,221,Champiñón,1,333,bolsa/bandeja,1,1,0
+13,Hongos,88,Hongos,1,223,Pleurotus,1,332,bolsa/bandeja,1,1,0
+13,Hongos,88,Hongos,1,222,Portobello,0,331,bolsa/bandeja,1,1,0
+13,Hongos,88,Hongos,1,224,Shiitake,1,541,bolsa/bandeja,1,1,0
+13,Hongos,88,Hongos,1,346,Silvestre (Eucalyptus),0,,,,,
+13,Hongos,88,Hongos,1,220,Silvestre Eucalipto,1,334,Plancha,5,1,0
+13,Hongos,88,Hongos,1,219,Silvestre Pino,1,335,Plancha,5,1,0
+14,Secundarios,112,Acedera,0,292,Roja,0,602,Docena,2,1,0
+14,Secundarios,112,Acedera,0,292,Roja,0,314,Sobre,0.167,1,0
+14,Secundarios,114,Amaranto,0,294,-,0,604,-,0.1,0,0
+14,Secundarios,114,Amaranto,0,294,-,0,317,Sobre,0.1,1,0
+14,Secundarios,103,Brote Soja,1,,,,,,,,
+14,Secundarios,115,Brotes,0,296,Alfalfa,1,606,-,1.2,1,0
+14,Secundarios,115,Brotes,0,296,Alfalfa,1,320,Bandeja,1.2,1,1
+14,Secundarios,115,Brotes,0,296,Alfalfa,1,318,Bolsa,1,1,0
+14,Secundarios,115,Brotes,0,295,Soja,1,605,-,3,1,0
+14,Secundarios,115,Brotes,0,295,Soja,1,321,Bandeja,2.4,1,1
+14,Secundarios,115,Brotes,0,295,Soja,1,319,Bolsa,1,1,0
+14,Secundarios,102,Brotes Alfalfa,1,,,,,,,,
+14,Secundarios,119,Flores,1,315,Comestibles,1,622,-,0.02,0,0
+14,Secundarios,119,Flores,1,315,Comestibles,1,371,Petaca,0.02,1,0
+14,Secundarios,116,Grelo,1,299,-,1,329,Atado,0.583,1,0
+14,Secundarios,116,Grelo,1,299,-,1,609,Docena,7,1,1
+14,Secundarios,100,Maní,1,226,-,1,543,-,1,0,0
+14,Secundarios,100,Maní,1,226,-,1,340,Bolsa,10,1,0
+14,Secundarios,100,Maní,1,303,Tostado,1,612,-,1,0,0
+14,Secundarios,100,Maní,1,303,Tostado,1,341,Bolsa,10,1,0
+14,Secundarios,132,Mix de hojas verdes,1,365,-,1,715,Docena,3.6,1,1
+14,Secundarios,132,Mix de hojas verdes,1,365,-,1,714,Sobre,0.3,1,0
+14,Secundarios,101,Nuez,1,308,Europea,1,616,-,1,1,0
+14,Secundarios,101,Nuez,1,308,Europea,1,351,Bolsa,1,1,0
+14,Secundarios,101,Nuez,1,307,Pecán,1,615,-,1,1,0
+14,Secundarios,101,Nuez,1,307,Pecán,1,352,Bolsa,1,1,0
+14,Secundarios,122,Papa del aire,1,334,-,1,,,,,
+14,Secundarios,131,Tamarindo,1,357,-,1,,,,,
+14,Secundarios,118,Uchuva,1,314,-,1,621,Docena,1.5,1,0
+14,Secundarios,118,Uchuva,1,314,-,1,370,Petaca,0.125,1,0

@@ -1,0 +1,625 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.especie",
+    "label": "Create table \"especie\"",
+    "summary": "Creates table \"especie\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "especie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"especie\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"especie\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"especie\"",
+        "sql": "CREATE TABLE \"public\".\"especie\" (\n  \"activa\" bool,\n  \"grupoId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"nombre\" text NOT NULL,\n  \"uamId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"especie\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"especie\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.grupo",
+    "label": "Create table \"grupo\"",
+    "summary": "Creates table \"grupo\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "grupo"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"grupo\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"grupo\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"grupo\"",
+        "sql": "CREATE TABLE \"public\".\"grupo\" (\n  \"id\" SERIAL NOT NULL,\n  \"nombre\" text NOT NULL,\n  \"uamId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"grupo\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"grupo\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.mensaje",
+    "label": "Create table \"mensaje\"",
+    "summary": "Creates table \"mensaje\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "mensaje"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"mensaje\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"mensaje\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"mensaje\"",
+        "sql": "CREATE TABLE \"public\".\"mensaje\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"texto\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"mensaje\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"mensaje\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.presentacion",
+    "label": "Create table \"presentacion\"",
+    "summary": "Creates table \"presentacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "presentacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"presentacion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"presentacion\"",
+        "sql": "CREATE TABLE \"public\".\"presentacion\" (\n  \"activa\" bool,\n  \"esDefault\" bool,\n  \"id\" SERIAL NOT NULL,\n  \"kgPorUnidad\" numeric,\n  \"nombre\" text,\n  \"uamId\" int4,\n  \"variedadId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"presentacion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.variedad",
+    "label": "Create table \"variedad\"",
+    "summary": "Creates table \"variedad\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "variedad"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"variedad\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"variedad\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"variedad\"",
+        "sql": "CREATE TABLE \"public\".\"variedad\" (\n  \"activa\" bool,\n  \"especieId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"nombre\" text,\n  \"uamId\" int4,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"variedad\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"variedad\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.especie.especie_uamId_key",
+    "label": "Add unique constraint on \"especie\" (uamId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "especie_uamId_key",
+        "table": "especie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"especie_uamId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "especie_uamId_key",
+          "public",
+          "\"public\".\"especie\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"especie_uamId_key\"",
+        "sql": "ALTER TABLE \"public\".\"especie\" ADD CONSTRAINT \"especie_uamId_key\" UNIQUE (\"uamId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"especie_uamId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "especie_uamId_key",
+          "public",
+          "\"public\".\"especie\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.grupo.grupo_uamId_key",
+    "label": "Add unique constraint on \"grupo\" (uamId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "grupo_uamId_key",
+        "table": "grupo"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"grupo_uamId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "grupo_uamId_key",
+          "public",
+          "\"public\".\"grupo\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"grupo_uamId_key\"",
+        "sql": "ALTER TABLE \"public\".\"grupo\" ADD CONSTRAINT \"grupo_uamId_key\" UNIQUE (\"uamId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"grupo_uamId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "grupo_uamId_key",
+          "public",
+          "\"public\".\"grupo\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.presentacion.presentacion_uamId_key",
+    "label": "Add unique constraint on \"presentacion\" (uamId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "presentacion_uamId_key",
+        "table": "presentacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"presentacion_uamId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "presentacion_uamId_key",
+          "public",
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"presentacion_uamId_key\"",
+        "sql": "ALTER TABLE \"public\".\"presentacion\" ADD CONSTRAINT \"presentacion_uamId_key\" UNIQUE (\"uamId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"presentacion_uamId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "presentacion_uamId_key",
+          "public",
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.variedad.variedad_uamId_key",
+    "label": "Add unique constraint on \"variedad\" (uamId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "variedad_uamId_key",
+        "table": "variedad"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"variedad_uamId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "variedad_uamId_key",
+          "public",
+          "\"public\".\"variedad\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"variedad_uamId_key\"",
+        "sql": "ALTER TABLE \"public\".\"variedad\" ADD CONSTRAINT \"variedad_uamId_key\" UNIQUE (\"uamId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"variedad_uamId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "variedad_uamId_key",
+          "public",
+          "\"public\".\"variedad\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.especie.especie_grupoId_idx_49e0b9e4",
+    "label": "Create index \"especie_grupoId_idx_49e0b9e4\" on \"especie\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "especie_grupoId_idx_49e0b9e4",
+        "table": "especie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"especie_grupoId_idx_49e0b9e4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"especie_grupoId_idx_49e0b9e4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"especie_grupoId_idx_49e0b9e4\"",
+        "sql": "CREATE INDEX \"especie_grupoId_idx_49e0b9e4\" ON \"public\".\"especie\" (\"grupoId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"especie_grupoId_idx_49e0b9e4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"especie_grupoId_idx_49e0b9e4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.presentacion.presentacion_variedadId_idx_33d5d76b",
+    "label": "Create index \"presentacion_variedadId_idx_33d5d76b\" on \"presentacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "presentacion_variedadId_idx_33d5d76b",
+        "table": "presentacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"presentacion_variedadId_idx_33d5d76b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion_variedadId_idx_33d5d76b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"presentacion_variedadId_idx_33d5d76b\"",
+        "sql": "CREATE INDEX \"presentacion_variedadId_idx_33d5d76b\" ON \"public\".\"presentacion\" (\"variedadId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"presentacion_variedadId_idx_33d5d76b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion_variedadId_idx_33d5d76b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.variedad.variedad_especieId_idx_23a2c94e",
+    "label": "Create index \"variedad_especieId_idx_23a2c94e\" on \"variedad\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "variedad_especieId_idx_23a2c94e",
+        "table": "variedad"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"variedad_especieId_idx_23a2c94e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"variedad_especieId_idx_23a2c94e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"variedad_especieId_idx_23a2c94e\"",
+        "sql": "CREATE INDEX \"variedad_especieId_idx_23a2c94e\" ON \"public\".\"variedad\" (\"especieId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"variedad_especieId_idx_23a2c94e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"variedad_especieId_idx_23a2c94e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.especie.especie_grupoId_fkey",
+    "label": "Add foreign key \"especie_grupoId_fkey\" on \"especie\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "especie_grupoId_fkey",
+        "table": "especie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"especie_grupoId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "especie_grupoId_fkey",
+          "public",
+          "\"public\".\"especie\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"especie_grupoId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"especie\"\nADD CONSTRAINT \"especie_grupoId_fkey\"\nFOREIGN KEY (\"grupoId\")\nREFERENCES \"public\".\"grupo\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"especie_grupoId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "especie_grupoId_fkey",
+          "public",
+          "\"public\".\"especie\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.presentacion.presentacion_variedadId_fkey",
+    "label": "Add foreign key \"presentacion_variedadId_fkey\" on \"presentacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "presentacion_variedadId_fkey",
+        "table": "presentacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"presentacion_variedadId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "presentacion_variedadId_fkey",
+          "public",
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"presentacion_variedadId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"presentacion\"\nADD CONSTRAINT \"presentacion_variedadId_fkey\"\nFOREIGN KEY (\"variedadId\")\nREFERENCES \"public\".\"variedad\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"presentacion_variedadId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "presentacion_variedadId_fkey",
+          "public",
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.variedad.variedad_especieId_fkey",
+    "label": "Add foreign key \"variedad_especieId_fkey\" on \"variedad\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "variedad_especieId_fkey",
+        "table": "variedad"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"variedad_especieId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "variedad_especieId_fkey",
+          "public",
+          "\"public\".\"variedad\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"variedad_especieId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"variedad\"\nADD CONSTRAINT \"variedad_especieId_fkey\"\nFOREIGN KEY (\"especieId\")\nREFERENCES \"public\".\"especie\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"variedad_especieId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "variedad_especieId_fkey",
+          "public",
+          "\"public\".\"variedad\""
+        ]
+      }
+    ]
+  }
+]

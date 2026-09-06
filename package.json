@@ -10,7 +10,7 @@
     "lint": "eslint",
     "test:unit": "vitest",
     "db:migrate": "prisma db migrate",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "tsx src/prisma/seed.ts",
     "db:setup": "npm run db:migrate && npm run db:seed"
   },
   "dependencies": {

@@ -1,21 +1,45 @@
 // use prisma-next
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username  String?
-  name      String?
-  posts     Post[]
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+model Grupo {
+  id          Int         @id @default(autoincrement())   // Identificador del grupo proveniente del UAM  
+  uamId       Int         @unique 
+  nombre      String                                      // Nombre del grupo
+  especies    Especie[]                                   // Relación entre grupo y especie 
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+model Especie {
+  id            Int           @id @default(autoincrement())
+  uamId         Int           @unique                                           // Identificador de la especie proveniente del UAM
+  nombre        String                                                          // Nombre de la especie
+  activa        Boolean?                                                        // Indica si la especie se encuentra activa
+  grupoId       Int                                                             // Grupo a la que la especie pertenece
+  grupo         Grupo         @relation(fields: [grupoId], references: [id])    
+  variedades    Variedad[]                                                      // Relación entre especie y variedad
+}
+
+model Variedad {
+  id                Int               @id @default(autoincrement())
+  uamId             Int?              @unique                                           // Identificador de la variedad proveniente del UAM
+  nombre            String?                                                             // Nombre de la variedad 
+  activa            Boolean?                                                            // Indica si la variedad se encuentra activa
+  especieId         Int                                                                 // Especie a la que pertenece la variedad
+  especie           Especie           @relation(fields: [especieId], references: [id])  
+  presentaciones    Presentacion[]
+}
+
+model Presentacion {
+  id            Int       @id @default(autoincrement())
+  uamId         Int?      @unique                                              // Identificador de la especie proveniente del UAM
+  nombre        String?                                                        // Nombre de la presentación
+  kgPorUnidad   Decimal?                                                       // Cantidad de kilogramos por unidad
+  activa        Boolean?                                                       // Indica si la presentación se encuentra activa
+  esDefault     Boolean?                                                       // Indica si es la presentación determinada de la variedad
+  variedadId    Int                                                            // Variedad a la que pertenece la presentación
+  variedad      Variedad  @relation(fields: [variedadId], references: [id])    
+}
+
+model Mensaje {
+  id          Int       @id @default(autoincrement())
+  texto       String
+  createdAt   DateTime  @default(now())
 }
