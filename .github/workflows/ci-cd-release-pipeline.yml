@@ -1,0 +1,99 @@
+name: CI/CD - Release Pipeline
+
+on:
+  push:
+    branches:
+      - 'release/**'
+  workflow_dispatch:
+
+jobs:
+  # CI - Tests de Regresion
+  regression-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: uam
+          POSTGRES_PASSWORD: uam_local
+          POSTGRES_DB: uam
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U uam -d uam"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Aplicar migraciones de base de datos
+        run: npm run db:migrate
+
+      - name: Ejecutar Suite de Regresión (Vitest)
+        run: npm run test:unit -- --run
+
+  # CD - Despliegue a Staging
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    needs: regression-test
+    
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Desplegar en Staging
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          dockerfilePath: Dockerfile
+          registryUrl: uamgrupo10acr.azurecr.io
+          registryUsername: ${{ secrets.REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
+          containerAppName: uam-staging
+          resourceGroup: Proyecto-PIS-2026
+          buildArguments: DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
+
+      - name: Instalar Navegadores de Playwright
+        run: npx playwright install --with-deps
+
+      - name: Ejecutar tests E2E en Staging
+        run: npx playwright test --config=playwright.config.ts
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.STAGING_URL }}

@@ -1,0 +1,47 @@
+name: CI - PR to Develop
+
+on:
+  pull_request:
+    branches: [develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          # MIGRACIÓN REAL: Ajustar credenciales si cambia tu docker-compose definitivo
+          POSTGRES_USER: uam
+          POSTGRES_PASSWORD: uam_local
+          POSTGRES_DB: uam
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U uam -d uam"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        with:
+          node-version: '24'
+          cache: 'npm'
+        uses: actions/setup-node@v4
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Sincronizar Esquema con Prisma 8
+        run: npx prisma db update
+
+      - name: Ejecutar Tests Unitarios (Vitest)
+        run: npm run test:unit -- --run

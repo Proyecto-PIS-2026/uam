@@ -1,0 +1,83 @@
+name: CI - Release to Main & Automerge to Develop
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened, closed ]
+
+jobs:
+  verify-release:
+    if: github.event.action != 'closed' && startsWith(github.head_ref, 'release/')
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: uam
+          POSTGRES_PASSWORD: uam_local
+          POSTGRES_DB: uam
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U uam -d uam"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        with:
+          node-version: '24'
+          cache: 'npm'
+        uses: actions/setup-node@v4
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Aplicar migraciones de base de datos
+        run: npm run db:migrate
+
+      - name: Ejecutar Suite de Regresión (Vitest)
+        run: npm run test:unit -- --run
+
+      - name: Instalar Navegadores de Playwright
+        run: npx playwright install --with-deps
+
+      - name: Ejecutar Tests E2E de Regresión en Azure Staging
+        run: |
+          npx playwright test --config=playwright.config.ts
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.STAGING_URL }}
+
+  automerge-to-develop:
+    needs: verify-release
+    if: always() && !contains(needs.verify-release.result, 'failure') && !contains(needs.verify-release.result, 'cancelled') && github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'release/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@://github.com"
+
+      - name: Intentar Merge Automático a Develop
+        run: |
+          git checkout develop
+          git pull origin develop
+          # Si el merge falla por conflicto, el script se detiene inmediatamente con código de salida 1 sin crear PRs basura
+          git merge origin/${{ github.head_ref }} --no-ff -m "chore: sincronizar release ${{ github.head_ref }} de regreso en develop [skip ci]"
+          git push origin develop
+          git push origin --delete ${{ github.head_ref }}

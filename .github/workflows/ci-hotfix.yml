@@ -1,0 +1,93 @@
+name: CI - Hotfix to Main & Sync to Develop (and Release)
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened, closed ]
+
+jobs:
+  verify-hotfix:
+    if: github.event.action != 'closed' && startsWith(github.head_ref, 'hotfix/')
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: uam
+          POSTGRES_PASSWORD: uam_local
+          POSTGRES_DB: uam
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U uam -d uam"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        with:
+          node-version: '24'
+          cache: 'npm'
+        uses: actions/setup-node@v4
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Aplicar migraciones de base de datos
+        run: npm run db:migrate
+
+      - name: Ejecutar Suite de Regresión (Vitest)
+        run: npm run test:unit -- --run
+
+      - name: Instalar Navegadores de Playwright
+        run: npx playwright install --with-deps
+
+      - name: Ejecutar Tests E2E (Playwright) en Entorno Virtual de Rescate
+        run: |
+          npm run build
+          npm run start &
+          npx playwright test
+
+  sync-hotfix:
+    needs: verify-hotfix
+    if: always() && !contains(needs.verify-hotfix.result, 'failure') && !contains(needs.verify-hotfix.result, 'cancelled') && github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'hotfix/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@://github.com"
+
+      - name: Sincronizar con Develop
+        run: |
+          git checkout develop
+          git pull origin develop
+          git merge origin/${{ github.head_ref }} --no-ff -m "chore: inyectar hotfix en develop [skip ci]"
+          git push origin develop
+
+      - name: Detectar Rama Release Activa y Sincronizar
+        run: |
+          RELEASE_BRANCH=$(git branch -r | grep 'origin/release/' | head -n 1 | sed 's/^[[:space:]]*origin\///')
+          if [ ! -z "$RELEASE_BRANCH" ]; then
+            echo "Se detectó la rama de release activa: $RELEASE_BRANCH. Sincronizando..."
+            git checkout $RELEASE_BRANCH
+            git merge origin/${{ github.head_ref }} --no-ff -m "chore: inyectar hotfix de emergencia en release [skip ci]"
+            git push origin $RELEASE_BRANCH
+          else
+            echo "No hay ramas de release activas en este momento."
+          fi

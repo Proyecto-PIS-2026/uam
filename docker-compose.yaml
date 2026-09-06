@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres_uam:
+    image: postgres:16-alpine
+    container_name: bd_uam_local
+    environment:
+      POSTGRES_USER: uam
+      POSTGRES_PASSWORD: uam_local
+      POSTGRES_DB: uam
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata_uam:/var/lib/postgresql/data
+
+volumes:
+  pgdata_uam:
+    name: uam_postgres_data
