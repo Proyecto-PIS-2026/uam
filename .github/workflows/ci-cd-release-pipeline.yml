@@ -51,10 +51,21 @@ jobs:
       - name: Instalar Navegadores de Playwright
         run: npx playwright install --with-deps
 
-      - name: Ejecutar tests E2E en Testing
+      - name: Sembrar Base de Datos de Testing (Pre-Tests)
+        run: npm run db:seed
+        env:
+          DATABASE_URL: ${{ secrets.TESTING_DATABASE_URL }}
+
+      - name: Ejecutar tests E2E de Regresión en Testing
         run: npx playwright test --config=playwright.config.ts
         env:
           PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.TESTING_URL }}
+
+      - name: Restaurar Base de Datos
+        if: always()
+        run: npm run db:seed
+        env:
+          DATABASE_URL: ${{ secrets.TESTING_DATABASE_URL }}
 
   # CD - Despliegue a Staging
   deploy-staging:

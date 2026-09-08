@@ -12,7 +12,6 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          # MIGRACIÓN REAL: Ajustar credenciales si cambia tu docker-compose definitivo
           POSTGRES_USER: uam
           POSTGRES_PASSWORD: uam_local
           POSTGRES_DB: uam
