@@ -48,6 +48,14 @@ jobs:
       - name: Ejecutar Suite de Regresión (Vitest)
         run: npm run test:unit -- --run
 
+      - name: Instalar Navegadores de Playwright
+        run: npx playwright install --with-deps
+
+      - name: Ejecutar tests E2E en Testing
+        run: npx playwright test --config=playwright.config.ts
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.TESTING_URL }}
+
   # CD - Despliegue a Staging
   deploy-staging:
     runs-on: ubuntu-latest
@@ -90,10 +98,3 @@ jobs:
           resourceGroup: Proyecto-PIS-2026
           buildArguments: DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
 
-      - name: Instalar Navegadores de Playwright
-        run: npx playwright install --with-deps
-
-      - name: Ejecutar tests E2E en Staging
-        run: npx playwright test --config=playwright.config.ts
-        env:
-          PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.STAGING_URL }}
