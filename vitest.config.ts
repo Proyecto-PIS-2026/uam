@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react' // Asegúrate de tenerlo o instálalo si falta
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
@@ -7,7 +7,13 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
-    // Fuerza a Vitest a ignorar la carpeta de Playwright
+    // Ignora la carpeta de Playwright
     exclude: ['**/tests/**', '**/node_modules/**'],
+    coverage: {
+      provider: 'v8',
+      thresholds: {
+        lines: 80,
+      },
+    },
   },
 })

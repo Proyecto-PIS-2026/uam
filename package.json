@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:unit": "vitest",
+    "typecheck": "tsc --noEmit",
+    "test:coverage": "vitest run --coverage",
     "db:migrate": "prisma db migrate",
     "db:seed": "tsx src/prisma/seed.ts",
     "db:setup": "npm run db:migrate && npm run db:seed"
@@ -32,6 +34,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "jsdom": "^30.0.1",
