@@ -9,9 +9,23 @@ permissions:
   pull-requests: write
 
 jobs:
-  validar-pr:
+  validar-origen:
     runs-on: ubuntu-latest
+    steps:
+      - name: Validar rama de origen
+        shell: bash
+        run: |
+          RAMA="${{ github.head_ref }}"
 
+          if [[ ! "$RAMA" =~ ^(feature|bugfix|release|hotfix)/.+ ]]; then
+            echo "La rama de origen no es válida para un Pull Request hacia develop."
+            echo "Solo se permiten ramas feature/*, bugfix/*, release/* o hotfix/*."
+            exit 1
+          fi
+
+  validar-pr:
+    needs: validar-origen
+    runs-on: ubuntu-latest
     steps:
       - name: Validar título del Pull Request
         shell: bash
@@ -38,9 +52,9 @@ jobs:
               labels: [tipo]
             });
 
-  test:
+  verificar-calidad:
+    needs: validar-pr
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:16-alpine
@@ -58,7 +72,6 @@ jobs:
 
     env:
       DATABASE_URL: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
-
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
@@ -75,8 +88,14 @@ jobs:
       - name: Ejecutar lint
         run: npm run lint
 
-      - name: Sincronizar Esquema con Prisma 8
-        run: npx prisma db update
+      - name: Verificar tipos de TypeScript
+        run: npm run typecheck
+
+      - name: Aplicar migraciones de base de datos
+        run: npm run db:migrate
 
       - name: Ejecutar Tests Unitarios (Vitest)
         run: npm run test:unit -- --run
+
+      - name: Verificar build de producción
+        run: npm run build

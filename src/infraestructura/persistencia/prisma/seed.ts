@@ -4,7 +4,7 @@ import path from "node:path";
 import { parse } from "csv-parse/sync";
 
 import postgres from "@prisma/orm-postgres/runtime";
-import type { Contract } from "./contract.d";
+import type { Contract } from "./contract";
 import contractJson from "./contract.json" with { type: "json" };
 
 const db = postgres<Contract>({
@@ -55,6 +55,8 @@ function parseDecimal(value: string): string | null {
 const csvPath = path.join(
     process.cwd(),
     "src",
+    "infraestructura",
+    "persistencia",
     "prisma",
     "data",
     "catalogo-uam.csv"

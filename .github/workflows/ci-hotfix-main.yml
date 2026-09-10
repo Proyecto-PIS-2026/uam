@@ -1,0 +1,36 @@
+name: CI - Hotfix E2E
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  e2e-hotfix:
+    if: startsWith(github.head_ref, 'hotfix/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Navegadores de Playwright
+        run: npx playwright install --with-deps
+
+      - name: Ejecutar build
+        run: npm run build
+
+      - name: Ejecutar aplicación
+        run: npm run start &
+
+      - name: Ejecutar E2E
+        run: npx playwright test

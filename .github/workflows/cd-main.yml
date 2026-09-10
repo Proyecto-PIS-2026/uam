@@ -18,6 +18,20 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Aplicar migraciones en Producción
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -35,4 +49,3 @@ jobs:
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
           containerAppName: uam-production
           resourceGroup: Proyecto-PIS-2026
-          buildArguments: DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}
