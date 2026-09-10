@@ -69,6 +69,16 @@ const records = parse(csv, {
 }) as CsvRow[];
 
 async function main() {
+    //Limpieza de la db
+    try {
+        const runtime = await db.connect();
+        await runtime.execute(db.sql.public.presentacion.delete().build());
+        await runtime.execute(db.sql.public.variedad.delete().build());
+        await runtime.execute(db.sql.public.especie.delete().build());
+        await runtime.execute(db.sql.public.grupo.delete().build());
+    } catch (error) {
+        console.warn("No se pudo limpiar la tablas:", error);
+    }
     //Grupos
     const grupos = new Map<number, CsvRow>();
     for (const row of records) {

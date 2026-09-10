@@ -1,13 +1,13 @@
-name: CI - Hotfix to Main & Sync to Develop (and Release)
+name: CI - Hotfix to Main
 
 on:
   pull_request:
     branches: [ main ]
-    types: [ opened, synchronize, reopened, closed ]
+    types: [ opened, synchronize, reopened ]
 
 jobs:
   verify-hotfix:
-    if: github.event.action != 'closed' && startsWith(github.head_ref, 'hotfix/')
+    if: startsWith(github.head_ref, 'hotfix/')
     runs-on: ubuntu-latest
 
     services:
@@ -55,39 +55,3 @@ jobs:
           npm run build
           npm run start &
           npx playwright test
-
-  sync-hotfix:
-    needs: verify-hotfix
-    if: always() && !contains(needs.verify-hotfix.result, 'failure') && !contains(needs.verify-hotfix.result, 'cancelled') && github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'hotfix/')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout del código
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Configurar Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@://github.com"
-
-      - name: Sincronizar con Develop
-        run: |
-          git checkout develop
-          git pull origin develop
-          git merge origin/${{ github.head_ref }} --no-ff -m "chore: inyectar hotfix en develop [skip ci]"
-          git push origin develop
-
-      - name: Detectar Rama Release Activa y Sincronizar
-        run: |
-          RELEASE_BRANCH=$(git branch -r | grep 'origin/release/' | head -n 1 | sed 's/^[[:space:]]*origin\///')
-          if [ ! -z "$RELEASE_BRANCH" ]; then
-            echo "Se detectó la rama de release activa: $RELEASE_BRANCH. Sincronizando..."
-            git checkout $RELEASE_BRANCH
-            git merge origin/${{ github.head_ref }} --no-ff -m "chore: inyectar hotfix de emergencia en release [skip ci]"
-            git push origin $RELEASE_BRANCH
-          else
-            echo "No hay ramas de release activas en este momento."
-          fi
