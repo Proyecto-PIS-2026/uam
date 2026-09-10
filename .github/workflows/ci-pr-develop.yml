@@ -4,15 +4,61 @@ on:
   pull_request:
     branches: [develop]
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+permissions:
+  contents: read
+  pull-requests: write
 
+jobs:
+  validar-origen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar rama de origen
+        shell: bash
+        run: |
+          RAMA="${{ github.head_ref }}"
+
+          if [[ ! "$RAMA" =~ ^(feature|bugfix|release|hotfix)/.+ ]]; then
+            echo "La rama de origen no es válida para un Pull Request hacia develop."
+            echo "Solo se permiten ramas feature/*, bugfix/*, release/* o hotfix/*."
+            exit 1
+          fi
+
+  validar-pr:
+    needs: validar-origen
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar título del Pull Request
+        shell: bash
+        run: |
+          TITULO="${{ github.event.pull_request.title }}"
+
+          if [[ ! "$TITULO" =~ ^(feat|fix|test|refactor|chore):\ .+ ]]; then
+            echo "El título del Pull Request no cumple la convención definida."
+            echo "Debe comenzar con feat:, fix:, test:, refactor: o chore:"
+            exit 1
+          fi
+
+      - name: Agregar label según el tipo de cambio
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const titulo = context.payload.pull_request.title;
+            const tipo = titulo.split(':')[0];
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [tipo]
+            });
+
+  verificar-calidad:
+    needs: validar-pr
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:16-alpine
         env:
-          # MIGRACIÓN REAL: Ajustar credenciales si cambia tu docker-compose definitivo
           POSTGRES_USER: uam
           POSTGRES_PASSWORD: uam_local
           POSTGRES_DB: uam
@@ -26,22 +72,30 @@ jobs:
 
     env:
       DATABASE_URL: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
-
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
 
       - name: Configurar Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
-        uses: actions/setup-node@v4
 
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Sincronizar Esquema con Prisma 8
-        run: npx prisma db update
+      - name: Ejecutar lint
+        run: npm run lint
+
+      - name: Verificar tipos de TypeScript
+        run: npm run typecheck
+
+      - name: Aplicar migraciones de base de datos
+        run: npm run db:migrate
 
       - name: Ejecutar Tests Unitarios (Vitest)
         run: npm run test:unit -- --run
+
+      - name: Verificar build de producción
+        run: npm run build

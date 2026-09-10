@@ -4,7 +4,7 @@ import path from "node:path";
 import { parse } from "csv-parse/sync";
 
 import postgres from "@prisma/orm-postgres/runtime";
-import type { Contract } from "./contract.d";
+import type { Contract } from "./contract";
 import contractJson from "./contract.json" with { type: "json" };
 
 const db = postgres<Contract>({
@@ -55,6 +55,8 @@ function parseDecimal(value: string): string | null {
 const csvPath = path.join(
     process.cwd(),
     "src",
+    "infraestructura",
+    "persistencia",
     "prisma",
     "data",
     "catalogo-uam.csv"
@@ -69,6 +71,16 @@ const records = parse(csv, {
 }) as CsvRow[];
 
 async function main() {
+    //Limpieza de la db
+    try {
+        const runtime = await db.connect();
+        await runtime.execute(db.sql.public.presentacion.delete().build());
+        await runtime.execute(db.sql.public.variedad.delete().build());
+        await runtime.execute(db.sql.public.especie.delete().build());
+        await runtime.execute(db.sql.public.grupo.delete().build());
+    } catch (error) {
+        console.warn("No se pudo limpiar la tablas:", error);
+    }
     //Grupos
     const grupos = new Map<number, CsvRow>();
     for (const row of records) {

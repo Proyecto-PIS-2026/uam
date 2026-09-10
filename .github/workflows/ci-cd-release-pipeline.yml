@@ -7,8 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # CI - Tests de Regresion
-  regression-test:
+  ci-release:
     runs-on: ubuntu-latest
 
     services:
@@ -42,17 +41,26 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Ejecutar lint
+        run: npm run lint
+
+      - name: Verificar tipos de TypeScript
+        run: npm run typecheck
+
       - name: Aplicar migraciones de base de datos
         run: npm run db:migrate
 
       - name: Ejecutar Suite de Regresión (Vitest)
         run: npm run test:unit -- --run
 
+      - name: Verificar build de producción
+        run: npm run build
+
   # CD - Despliegue a Staging
   deploy-staging:
     runs-on: ubuntu-latest
     environment: staging
-    needs: regression-test
+    needs: ci-release
     
     permissions:
       id-token: write
@@ -71,6 +79,11 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Aplicar migraciones en Staging
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -88,9 +101,27 @@ jobs:
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
           containerAppName: uam-staging
           resourceGroup: Proyecto-PIS-2026
-          buildArguments: DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
 
-      - name: Instalar Navegadores de Playwright
+jobs:
+    e2e-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    needs: deploy-staging
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar navegadores de Playwright
         run: npx playwright install --with-deps
 
       - name: Ejecutar tests E2E en Staging

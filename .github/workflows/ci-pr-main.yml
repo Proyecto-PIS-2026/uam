@@ -1,0 +1,70 @@
+name: CI - PR to Main
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validar-origen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar rama de origen
+        shell: bash
+        run: |
+          RAMA="${{ github.head_ref }}"
+
+          if [[ ! "$RAMA" =~ ^(release|hotfix)/.+ ]]; then
+            echo "La rama de origen no es válida para un Pull Request hacia main."
+            echo "Solo se permiten ramas release/* o hotfix/*."
+            exit 1
+          fi
+
+  verificar-main:
+    needs: validar-origen
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: uam
+          POSTGRES_PASSWORD: uam_local
+          POSTGRES_DB: uam
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U uam -d uam"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+        
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar lint
+        run: npm run lint
+
+      - name: Verificar tipos de TypeScript
+        run: npm run typecheck
+
+      - name: Aplicar migraciones de base de datos
+        run: npm run db:migrate
+
+      - name: Ejecutar Suite de Regresión (Vitest)
+        run: npm run test:unit -- --run
+
+      - name: Verificar build de producción
+        run: npm run build
