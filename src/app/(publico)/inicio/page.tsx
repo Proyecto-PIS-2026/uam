@@ -1,5 +1,4 @@
 import Inicio from "./inicio";
-
-export default function Page() {
-  return <Inicio />;
+export default function page() {
+    return <Inicio />;
 }
