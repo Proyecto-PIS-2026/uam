@@ -1,11 +1,17 @@
 @import "tailwindcss";
 
 :root {
+  /*estos son de la paleta de colores dada:*/
+  --ink: #1a1a1a;
+  --gray: #DEDED7;
+  --lightgray: #F6F5F0;
+  --green: #005D29;
+  --lightgreen: #008332;
+  --olive: #A8D05D;
+
+  /*Aca extras:*/
   --cream: #f4f0e6;
-  --ink: #1c1a16;
-  --muted: #7a756a;
-  --green: #2f6b44;
-  --line: #e6e0d1;
+  --darkgray: #6B7280;
 }
 
 @theme inline {
@@ -17,8 +23,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1A1A1A;
+    --foreground: #F6F5F0;
   }
 }
 
@@ -29,5 +35,10 @@ body {
 }
 
 .boton-inicio {
-  @apply bg-white border border-gray-100 rounded-2xl h-24 flex items-center justify-center text-center font-semibold text-gray-800 shadow-sm hover:shadow-md hover:border-emerald-600 hover:text-emerald-700 transition-all;
+  @apply bg-white border border-gray-100 rounded-2xl h-16 sm:h-24 flex items-center justify-center text-center text-sm md:text-base font-semibold text-gray-800 shadow-sm hover:shadow-md transition-all;
+}
+.boton-inicio:hover {
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
