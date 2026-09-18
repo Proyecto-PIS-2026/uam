@@ -4,6 +4,7 @@ import path from "node:path";
 import { parse } from "csv-parse/sync";
 
 import "temporal-polyfill/full/global";
+import "temporal-polyfill/types/global";
 
 import postgres from "@prisma/orm-postgres/runtime";
 import { all } from "@prisma/orm-postgres/orm-client";
