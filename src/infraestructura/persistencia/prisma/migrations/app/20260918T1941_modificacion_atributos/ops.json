@@ -1,0 +1,129 @@
+[
+  {
+    "id": "column.public.especie.fotoEspecie",
+    "label": "Add column \"fotoEspecie\" to \"especie\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "fotoEspecie",
+        "table": "especie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"fotoEspecie\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "especie",
+          "fotoEspecie"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"fotoEspecie\"",
+        "sql": "ALTER TABLE \"public\".\"especie\" ADD COLUMN \"fotoEspecie\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"fotoEspecie\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "especie",
+          "fotoEspecie"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.operador.fotoPerfil",
+    "label": "Add column \"fotoPerfil\" to \"operador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "fotoPerfil",
+        "table": "operador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"fotoPerfil\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "operador",
+          "fotoPerfil"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"fotoPerfil\"",
+        "sql": "ALTER TABLE \"public\".\"operador\" ADD COLUMN \"fotoPerfil\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"fotoPerfil\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "operador",
+          "fotoPerfil"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.local.finContrato",
+    "label": "Drop NOT NULL on \"local\".\"finContrato\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "finContrato",
+        "table": "local"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"finContrato\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "local",
+          "finContrato"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"finContrato\"",
+        "sql": "ALTER TABLE \"public\".\"local\" ALTER COLUMN \"finContrato\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"finContrato\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "local",
+          "finContrato",
+          "YES"
+        ]
+      }
+    ]
+  }
+]
