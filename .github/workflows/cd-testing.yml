@@ -31,6 +31,7 @@ jobs:
       - name: Emitir contrato y aplicar migraciones en Testing
         run: |
           npm run db:contract
+          npx prisma migration ref set db 52517bb0a16d58db079daa0aef1b9c3237b7c28579ac4d236f9129304d447ff4
           npm run db:migrate
         env:
           DATABASE_URL: ${{ secrets.TESTING_DATABASE_URL }}
