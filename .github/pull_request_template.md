@@ -1,31 +1,27 @@
 ## Descripción
 
-<!-- Breve descripción del propósito del cambio -->
+<!-- Describa brevemente el objetivo del Pull Request. -->
 
 
 ## Issue asociado
 
-Closes #
-
-<!-- Indicar el Issue asociado -->
+<!-- Indique el Issue asociado. Ejemplo: #25 -->
 
 
 ## Cambios realizados
 
-<!-- Indicar los principales cambios realizados -->
+<!-- Enumere los principales cambios realizados. -->
 
-- 
 - 
 
 
 ## Pruebas realizadas
 
-<!-- Indicar las pruebas realizadas para verificar el correcto funcionamiento de los cambios -->
+<!-- Indique las pruebas realizadas para verificar los cambios. -->
 
 - 
-- 
 
 
-## Consideraciones adicionales
+## Consideraciones
 
-<!-- Indicar cualquier consideración adicional relevante para la revisión. Si no aplica, indicar "Ninguna". -->
+<!-- Indique cualquier consideración relevante. Si no aplica, puede indicar "Sin consideraciones adicionales". -->

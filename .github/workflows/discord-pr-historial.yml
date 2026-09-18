@@ -1,0 +1,175 @@
+name: Discord - Historial de Revision de Codigo
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+    types:
+      - closed
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  notificar-cierre:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Obtener revisores
+        id: revisores
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          REVISORES=$(gh api \
+            "/repos/${REPOSITORY}/pulls/${PR_NUMBER}/reviews" \
+            --paginate \
+            --jq '
+              [.[] | select(.state == "APPROVED")]
+              | sort_by(.submitted_at)
+              | .[]
+              | "\(.user.login)|\(.submitted_at)"
+            ')
+
+          if [ -z "$REVISORES" ]; then
+            REVISORES="Sin aprobaciones"
+          else
+            FORMATEADO=""
+
+            while IFS='|' read -r USUARIO FECHA; do
+              FECHA_UY=$(TZ="America/Montevideo" \
+                date -d "$FECHA" '+%d/%m/%Y %H:%M')
+
+              if [ -z "$FORMATEADO" ]; then
+                FORMATEADO="${USUARIO} - ${FECHA_UY}"
+              else
+                FORMATEADO="${FORMATEADO}"$'\n'"${USUARIO} - ${FECHA_UY}"
+              fi
+            done <<< "$REVISORES"
+
+            REVISORES="$FORMATEADO"
+          fi
+
+          {
+            echo "revisores<<EOF"
+            echo "$REVISORES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Notificar cierre del Pull Request
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_REVIEW_HISTORY_WEBHOOK }}
+
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_CREATED_AT: ${{ github.event.pull_request.created_at }}
+          PR_CLOSED_AT: ${{ github.event.pull_request.closed_at }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          REPOSITORY: ${{ github.repository }}
+
+          REVISORES: ${{ steps.revisores.outputs.revisores }}
+
+        run: |
+          ISSUE_NUMBER=$(printf '%s' "$PR_BODY" \
+            | grep -oE '#[0-9]+' \
+            | head -1 \
+            | tr -d '#' || true)
+
+          if [ -n "$ISSUE_NUMBER" ]; then
+            ISSUE_TITLE=$(gh api \
+              "/repos/${REPOSITORY}/issues/${ISSUE_NUMBER}" \
+              --jq '.title' 2>/dev/null || true)
+
+            if [ -n "$ISSUE_TITLE" ]; then
+              ISSUE="[#${ISSUE_NUMBER} - ${ISSUE_TITLE}](https://github.com/${REPOSITORY}/issues/${ISSUE_NUMBER})"
+            else
+              ISSUE="[#${ISSUE_NUMBER}](https://github.com/${REPOSITORY}/issues/${ISSUE_NUMBER})"
+            fi
+          else
+            ISSUE="No especificado"
+          fi
+
+          if [ "$PR_MERGED" = "true" ]; then
+            ESTADO="Mergeado"
+          else
+            ESTADO="Cerrado sin mergear"
+          fi
+
+          FECHA_APERTURA=$(TZ="America/Montevideo" \
+            date -d "$PR_CREATED_AT" '+%d/%m/%Y %H:%M')
+
+          FECHA_CIERRE=$(TZ="America/Montevideo" \
+            date -d "$PR_CLOSED_AT" '+%d/%m/%Y %H:%M')
+
+          jq -n \
+            --arg title "PR #$PR_NUMBER - $PR_TITLE" \
+            --arg url "$PR_URL" \
+            --arg estado "$ESTADO" \
+            --arg author "$PR_AUTHOR" \
+            --arg issue "$ISSUE" \
+            --arg reviewers "$REVISORES" \
+            --arg branches "$HEAD_REF → $BASE_REF" \
+            --arg created_date "$FECHA_APERTURA" \
+            --arg closed_date "$FECHA_CIERRE" \
+            '{
+              embeds: [{
+                title: $title,
+                url: $url,
+                fields: [
+                  {
+                    name: "Estado",
+                    value: $estado,
+                    inline: false
+                  },
+                  {
+                    name: "Autor",
+                    value: $author,
+                    inline: false
+                  },
+                  {
+                    name: "Issue asociado",
+                    value: $issue,
+                    inline: false
+                  },
+                  {
+                    name: "Revisado por",
+                    value: $reviewers,
+                    inline: false
+                  },
+                  {
+                    name: "Ramas",
+                    value: $branches,
+                    inline: false
+                  },
+                  {
+                    name: "Fecha de apertura",
+                    value: $created_date,
+                    inline: false
+                  },
+                  {
+                    name: "Fecha de cierre",
+                    value: $closed_date,
+                    inline: false
+                  }
+                ]
+              }]
+            }' > payload.json
+
+          curl \
+            --fail-with-body \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "$DISCORD_WEBHOOK"
