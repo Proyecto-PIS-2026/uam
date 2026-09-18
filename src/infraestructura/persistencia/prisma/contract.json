@@ -4,20 +4,72 @@
   "target": "postgres",
   "profileHash": "3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2",
   "roots": {
+    "administrador": {
+      "model": "Administrador",
+      "namespace": "public"
+    },
+    "calibre": {
+      "model": "Calibre",
+      "namespace": "public"
+    },
+    "categoria": {
+      "model": "Categoria",
+      "namespace": "public"
+    },
+    "configuracion": {
+      "model": "Configuracion",
+      "namespace": "public"
+    },
+    "departamento": {
+      "model": "Departamento",
+      "namespace": "public"
+    },
     "especie": {
       "model": "Especie",
       "namespace": "public"
     },
-    "grupo": {
-      "model": "Grupo",
+    "local": {
+      "model": "Local",
       "namespace": "public"
     },
-    "mensaje": {
-      "model": "Mensaje",
+    "nave": {
+      "model": "Nave",
+      "namespace": "public"
+    },
+    "notificacion": {
+      "model": "Notificacion",
+      "namespace": "public"
+    },
+    "operador": {
+      "model": "Operador",
+      "namespace": "public"
+    },
+    "pais": {
+      "model": "Pais",
       "namespace": "public"
     },
     "presentacion": {
       "model": "Presentacion",
+      "namespace": "public"
+    },
+    "productor": {
+      "model": "Productor",
+      "namespace": "public"
+    },
+    "publicacion": {
+      "model": "Publicacion",
+      "namespace": "public"
+    },
+    "publicacionOperador": {
+      "model": "PublicacionOperador",
+      "namespace": "public"
+    },
+    "publicacionProductor": {
+      "model": "PublicacionProductor",
+      "namespace": "public"
+    },
+    "usuario": {
+      "model": "Usuario",
       "namespace": "public"
     },
     "variedad": {
@@ -28,18 +80,157 @@
   "domain": {
     "namespaces": {
       "public": {
+        "enum": {
+          "RolUsuario": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "ADMINISTRADOR",
+                "value": "ADMINISTRADOR"
+              },
+              {
+                "name": "OPERADOR",
+                "value": "OPERADOR"
+              },
+              {
+                "name": "PRODUCTOR",
+                "value": "PRODUCTOR"
+              }
+            ]
+          },
+          "TipoPublicacion": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "OPERADOR",
+                "value": "OPERADOR"
+              },
+              {
+                "name": "PRODUCTOR",
+                "value": "PRODUCTOR"
+              }
+            ]
+          }
+        },
         "models": {
-          "Especie": {
+          "Administrador": {
             "fields": {
-              "activa": {
-                "nullable": true,
+              "email": {
+                "nullable": false,
                 "type": {
-                  "codecId": "pg/bool@1",
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
-              "grupoId": {
+              "id": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "usuarioId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "usuario": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "usuarioId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Usuario",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "email": {
+                  "column": "email"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "usuarioId": {
+                  "column": "usuarioId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "administrador"
+            }
+          },
+          "Calibre": {
+            "fields": {
+              "codigoCalibre": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "nombreCalibre": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "publicaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "calibreId"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "codigoCalibre": {
+                  "column": "codigoCalibre"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nombreCalibre": {
+                  "column": "nombreCalibre"
+                }
+              },
+              "namespaceId": "public",
+              "table": "calibre"
+            }
+          },
+          "Categoria": {
+            "fields": {
+              "especieId": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -52,7 +243,177 @@
                   "kind": "scalar"
                 }
               },
-              "nombre": {
+              "nombreCategoria": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "especie": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "especieId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Especie",
+                  "namespace": "public"
+                }
+              },
+              "publicaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "categoriaId"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "especieId": {
+                  "column": "especieId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nombreCategoria": {
+                  "column": "nombreCategoria"
+                }
+              },
+              "namespaceId": "public",
+              "table": "categoria"
+            }
+          },
+          "Configuracion": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "nombreConfiguracion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "valorConfiguracion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "nombreConfiguracion": {
+                  "column": "nombreConfiguracion"
+                },
+                "valorConfiguracion": {
+                  "column": "valorConfiguracion"
+                }
+              },
+              "namespaceId": "public",
+              "table": "configuracion"
+            }
+          },
+          "Departamento": {
+            "fields": {
+              "codigoDepartamento": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "nombreDepartamento": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "publicacionesVendido": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "departamentoId"
+                  ]
+                },
+                "to": {
+                  "model": "PublicacionProductor",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "codigoDepartamento": {
+                  "column": "codigoDepartamento"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nombreDepartamento": {
+                  "column": "nombreDepartamento"
+                }
+              },
+              "namespaceId": "public",
+              "table": "departamento"
+            }
+          },
+          "Especie": {
+            "fields": {
+              "especieActiva": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "nombreEspecie": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
@@ -60,7 +421,7 @@
                 }
               },
               "uamId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -68,18 +429,18 @@
               }
             },
             "relations": {
-              "grupo": {
-                "cardinality": "N:1",
+              "categorias": {
+                "cardinality": "1:N",
                 "on": {
                   "localFields": [
-                    "grupoId"
+                    "id"
                   ],
                   "targetFields": [
-                    "id"
+                    "especieId"
                   ]
                 },
                 "to": {
-                  "model": "Grupo",
+                  "model": "Categoria",
                   "namespace": "public"
                 }
               },
@@ -101,17 +462,14 @@
             },
             "storage": {
               "fields": {
-                "activa": {
-                  "column": "activa"
-                },
-                "grupoId": {
-                  "column": "grupoId"
+                "especieActiva": {
+                  "column": "especieActiva"
                 },
                 "id": {
                   "column": "id"
                 },
-                "nombre": {
-                  "column": "nombre"
+                "nombreEspecie": {
+                  "column": "nombreEspecie"
                 },
                 "uamId": {
                   "column": "uamId"
@@ -121,66 +479,9 @@
               "table": "especie"
             }
           },
-          "Grupo": {
+          "Local": {
             "fields": {
-              "id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "nombre": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "uamId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              }
-            },
-            "relations": {
-              "especies": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "grupoId"
-                  ]
-                },
-                "to": {
-                  "model": "Especie",
-                  "namespace": "public"
-                }
-              }
-            },
-            "storage": {
-              "fields": {
-                "id": {
-                  "column": "id"
-                },
-                "nombre": {
-                  "column": "nombre"
-                },
-                "uamId": {
-                  "column": "uamId"
-                }
-              },
-              "namespaceId": "public",
-              "table": "grupo"
-            }
-          },
-          "Mensaje": {
-            "fields": {
-              "createdAt": {
+              "finContrato": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
@@ -194,7 +495,92 @@
                   "kind": "scalar"
                 }
               },
-              "texto": {
+              "naveId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "numeroLocal": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "operadorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "nave": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "naveId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Nave",
+                  "namespace": "public"
+                }
+              },
+              "operador": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "operadorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Operador",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "finContrato": {
+                  "column": "finContrato"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "naveId": {
+                  "column": "naveId"
+                },
+                "numeroLocal": {
+                  "column": "numeroLocal"
+                },
+                "operadorId": {
+                  "column": "operadorId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "local"
+            }
+          },
+          "Nave": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "nombreNave": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
@@ -202,34 +588,124 @@
                 }
               }
             },
-            "relations": {},
+            "relations": {
+              "locales": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "naveId"
+                  ]
+                },
+                "to": {
+                  "model": "Local",
+                  "namespace": "public"
+                }
+              }
+            },
             "storage": {
               "fields": {
-                "createdAt": {
-                  "column": "createdAt"
-                },
                 "id": {
                   "column": "id"
                 },
-                "texto": {
-                  "column": "texto"
+                "nombreNave": {
+                  "column": "nombreNave"
                 }
               },
               "namespaceId": "public",
-              "table": "mensaje"
+              "table": "nave"
             }
           },
-          "Presentacion": {
+          "Notificacion": {
             "fields": {
-              "activa": {
-                "nullable": true,
+              "descripcion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "titulo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "usuarioId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "vista": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
+              }
+            },
+            "relations": {
+              "usuario": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "usuarioId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Usuario",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "descripcion": {
+                  "column": "descripcion"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "titulo": {
+                  "column": "titulo"
+                },
+                "usuarioId": {
+                  "column": "usuarioId"
+                },
+                "vista": {
+                  "column": "vista"
+                }
               },
-              "esDefault": {
+              "namespaceId": "public",
+              "table": "notificacion"
+            }
+          },
+          "Operador": {
+            "fields": {
+              "comentario": {
                 "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "enLicencia": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/bool@1",
                   "kind": "scalar"
@@ -242,17 +718,195 @@
                   "kind": "scalar"
                 }
               },
+              "nombreFantasia": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "usuarioId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "whatsApp": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "locales": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "operadorId"
+                  ]
+                },
+                "to": {
+                  "model": "Local",
+                  "namespace": "public"
+                }
+              },
+              "publicacionesOperador": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "operadorId"
+                  ]
+                },
+                "to": {
+                  "model": "PublicacionOperador",
+                  "namespace": "public"
+                }
+              },
+              "usuario": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "usuarioId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Usuario",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "comentario": {
+                  "column": "comentario"
+                },
+                "enLicencia": {
+                  "column": "enLicencia"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nombreFantasia": {
+                  "column": "nombreFantasia"
+                },
+                "usuarioId": {
+                  "column": "usuarioId"
+                },
+                "whatsApp": {
+                  "column": "whatsApp"
+                }
+              },
+              "namespaceId": "public",
+              "table": "operador"
+            }
+          },
+          "Pais": {
+            "fields": {
+              "codigoPais": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "nombrePais": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "publicacionesOrigen": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "paisId"
+                  ]
+                },
+                "to": {
+                  "model": "PublicacionOperador",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "codigoPais": {
+                  "column": "codigoPais"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nombrePais": {
+                  "column": "nombrePais"
+                }
+              },
+              "namespaceId": "public",
+              "table": "pais"
+            }
+          },
+          "Presentacion": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "kgPorUnidad": {
                 "nullable": true,
                 "type": {
                   "codecId": "pg/numeric@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 10,
+                    "scale": 2
+                  }
+                }
+              },
+              "nombrePresentacion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
-              "nombre": {
-                "nullable": true,
+              "presentacionActiva": {
+                "nullable": false,
                 "type": {
-                  "codecId": "pg/text@1",
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "presentacionDefault": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
@@ -272,6 +926,21 @@
               }
             },
             "relations": {
+              "publicaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "presentacionId"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              },
               "variedad": {
                 "cardinality": "N:1",
                 "on": {
@@ -290,20 +959,20 @@
             },
             "storage": {
               "fields": {
-                "activa": {
-                  "column": "activa"
-                },
-                "esDefault": {
-                  "column": "esDefault"
-                },
                 "id": {
                   "column": "id"
                 },
                 "kgPorUnidad": {
                   "column": "kgPorUnidad"
                 },
-                "nombre": {
-                  "column": "nombre"
+                "nombrePresentacion": {
+                  "column": "nombrePresentacion"
+                },
+                "presentacionActiva": {
+                  "column": "presentacionActiva"
+                },
+                "presentacionDefault": {
+                  "column": "presentacionDefault"
                 },
                 "uamId": {
                   "column": "uamId"
@@ -316,15 +985,544 @@
               "table": "presentacion"
             }
           },
-          "Variedad": {
+          "Productor": {
             "fields": {
-              "activa": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "usuarioId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "whatsApp": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "publicacionesProductor": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "productorId"
+                  ]
+                },
+                "to": {
+                  "model": "PublicacionProductor",
+                  "namespace": "public"
+                }
+              },
+              "usuario": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "usuarioId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Usuario",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "usuarioId": {
+                  "column": "usuarioId"
+                },
+                "whatsApp": {
+                  "column": "whatsApp"
+                }
+              },
+              "namespaceId": "public",
+              "table": "productor"
+            }
+          },
+          "Publicacion": {
+            "fields": {
+              "calibreId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "categoriaId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "foto": {
                 "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "precio": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 12,
+                    "scale": 2
+                  }
+                }
+              },
+              "presentacionId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "publicacionActiva": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
+              "publicacionDisponible": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "tipoPublicacion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "TipoPublicacion",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              }
+            },
+            "relations": {
+              "calibre": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "calibreId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Calibre",
+                  "namespace": "public"
+                }
+              },
+              "categoria": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "categoriaId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Categoria",
+                  "namespace": "public"
+                }
+              },
+              "presentacion": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "presentacionId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Presentacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "calibreId": {
+                  "column": "calibreId"
+                },
+                "categoriaId": {
+                  "column": "categoriaId"
+                },
+                "fecha": {
+                  "column": "fecha"
+                },
+                "foto": {
+                  "column": "foto"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "precio": {
+                  "column": "precio"
+                },
+                "presentacionId": {
+                  "column": "presentacionId"
+                },
+                "publicacionActiva": {
+                  "column": "publicacionActiva"
+                },
+                "publicacionDisponible": {
+                  "column": "publicacionDisponible"
+                },
+                "tipoPublicacion": {
+                  "column": "tipoPublicacion"
+                }
+              },
+              "namespaceId": "public",
+              "table": "publicacion"
+            }
+          },
+          "PublicacionOperador": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "operadorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "paisId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "publicacionId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "operador": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "operadorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Operador",
+                  "namespace": "public"
+                }
+              },
+              "pais": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "paisId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Pais",
+                  "namespace": "public"
+                }
+              },
+              "publicacion": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "publicacionId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "operadorId": {
+                  "column": "operadorId"
+                },
+                "paisId": {
+                  "column": "paisId"
+                },
+                "publicacionId": {
+                  "column": "publicacionId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "publicacionOperador"
+            }
+          },
+          "PublicacionProductor": {
+            "fields": {
+              "departamentoId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "direccion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "productorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "publicacionId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "departamento": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "departamentoId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Departamento",
+                  "namespace": "public"
+                }
+              },
+              "productor": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "productorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Productor",
+                  "namespace": "public"
+                }
+              },
+              "publicacion": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "publicacionId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "departamentoId": {
+                  "column": "departamentoId"
+                },
+                "direccion": {
+                  "column": "direccion"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "productorId": {
+                  "column": "productorId"
+                },
+                "publicacionId": {
+                  "column": "publicacionId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "publicacionProductor"
+            }
+          },
+          "Usuario": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "passwordHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "rol": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "RolUsuario",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "twoFactorEnabled": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "twoFactorSecret": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "username": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "notificaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "usuarioId"
+                  ]
+                },
+                "to": {
+                  "model": "Notificacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "passwordHash": {
+                  "column": "passwordHash"
+                },
+                "rol": {
+                  "column": "rol"
+                },
+                "twoFactorEnabled": {
+                  "column": "twoFactorEnabled"
+                },
+                "twoFactorSecret": {
+                  "column": "twoFactorSecret"
+                },
+                "username": {
+                  "column": "username"
+                }
+              },
+              "namespaceId": "public",
+              "table": "usuario"
+            }
+          },
+          "Variedad": {
+            "fields": {
               "especieId": {
                 "nullable": false,
                 "type": {
@@ -339,8 +1537,8 @@
                   "kind": "scalar"
                 }
               },
-              "nombre": {
-                "nullable": true,
+              "nombreVariedad": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -350,6 +1548,13 @@
                 "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "variedadActiva": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               }
@@ -388,20 +1593,20 @@
             },
             "storage": {
               "fields": {
-                "activa": {
-                  "column": "activa"
-                },
                 "especieId": {
                   "column": "especieId"
                 },
                 "id": {
                   "column": "id"
                 },
-                "nombre": {
-                  "column": "nombre"
+                "nombreVariedad": {
+                  "column": "nombreVariedad"
                 },
                 "uamId": {
                   "column": "uamId"
+                },
+                "variedadActiva": {
+                  "column": "variedadActiva"
                 }
               },
               "namespaceId": "public",
@@ -417,16 +1622,11 @@
       "public": {
         "entries": {
           "table": {
-            "especie": {
+            "administrador": {
               "columns": {
-                "activa": {
-                  "codecId": "pg/bool@1",
-                  "nativeType": "bool",
-                  "nullable": true
-                },
-                "grupoId": {
-                  "codecId": "pg/int4@1",
-                  "nativeType": "int4",
+                "email": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
                   "nullable": false
                 },
                 "id": {
@@ -438,12 +1638,7 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
-                "nombre": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
-                },
-                "uamId": {
+                "usuarioId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
                   "nullable": false
@@ -451,32 +1646,24 @@
               },
               "foreignKeys": [
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "grupoId"
+                      "usuarioId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "especie"
+                    "tableName": "administrador"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "grupo"
+                    "tableName": "usuario"
                   }
                 }
               ],
-              "indexes": [
-                {
-                  "columns": [
-                    "grupoId"
-                  ],
-                  "name": "especie_grupoId_idx_49e0b9e4",
-                  "prefix": "especie_grupoId_idx",
-                  "unique": false
-                }
-              ],
+              "indexes": [],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -485,12 +1672,111 @@
               "uniques": [
                 {
                   "columns": [
-                    "uamId"
+                    "usuarioId"
+                  ]
+                },
+                {
+                  "columns": [
+                    "email"
                   ]
                 }
               ]
             },
-            "grupo": {
+            "calibre": {
+              "columns": {
+                "codigoCalibre": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "nombreCalibre": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "codigoCalibre"
+                  ]
+                }
+              ]
+            },
+            "categoria": {
+              "columns": {
+                "especieId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "nombreCategoria": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "especieId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "categoria"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "especie"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "especieId"
+                  ],
+                  "name": "categoria_especieId_idx_23a2c94e",
+                  "prefix": "categoria_especieId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "configuracion": {
               "columns": {
                 "id": {
                   "codecId": "pg/int4@1",
@@ -501,7 +1787,95 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
-                "nombre": {
+                "nombreConfiguracion": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "valorConfiguracion": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "nombreConfiguracion"
+                  ]
+                }
+              ]
+            },
+            "departamento": {
+              "columns": {
+                "codigoDepartamento": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "nombreDepartamento": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "codigoDepartamento"
+                  ]
+                },
+                {
+                  "columns": [
+                    "nombreDepartamento"
+                  ]
+                }
+              ]
+            },
+            "especie": {
+              "columns": {
+                "especieActiva": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "nombreEspecie": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
@@ -509,7 +1883,7 @@
                 "uamId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
-                  "nullable": false
+                  "nullable": true
                 }
               },
               "foreignKeys": [],
@@ -527,14 +1901,10 @@
                 }
               ]
             },
-            "mensaje": {
+            "local": {
               "columns": {
-                "createdAt": {
+                "finContrato": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
@@ -547,7 +1917,100 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
-                "texto": {
+                "naveId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "numeroLocal": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "operadorId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "operadorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "local"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "operador"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "naveId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "local"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "nave"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "naveId"
+                  ],
+                  "name": "local_naveId_idx_d122209c",
+                  "prefix": "local_naveId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "operadorId"
+                  ],
+                  "name": "local_operadorId_idx_b7d31568",
+                  "prefix": "local_operadorId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "numeroLocal",
+                    "naveId"
+                  ]
+                }
+              ]
+            },
+            "nave": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "nombreNave": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
@@ -560,20 +2023,209 @@
                   "id"
                 ]
               },
+              "uniques": [
+                {
+                  "columns": [
+                    "nombreNave"
+                  ]
+                }
+              ]
+            },
+            "notificacion": {
+              "columns": {
+                "descripcion": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "titulo": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "usuarioId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "vista": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "usuarioId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "notificacion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "usuario"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "usuarioId"
+                  ],
+                  "name": "notificacion_usuarioId_idx_5f01c7d6",
+                  "prefix": "notificacion_usuarioId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
               "uniques": []
+            },
+            "operador": {
+              "columns": {
+                "comentario": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "enLicencia": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "nombreFantasia": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "usuarioId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "whatsApp": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "usuarioId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "operador"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "usuario"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "usuarioId"
+                  ]
+                },
+                {
+                  "columns": [
+                    "nombreFantasia"
+                  ]
+                }
+              ]
+            },
+            "pais": {
+              "columns": {
+                "codigoPais": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "nombrePais": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "codigoPais"
+                  ]
+                },
+                {
+                  "columns": [
+                    "nombrePais"
+                  ]
+                }
+              ]
             },
             "presentacion": {
               "columns": {
-                "activa": {
-                  "codecId": "pg/bool@1",
-                  "nativeType": "bool",
-                  "nullable": true
-                },
-                "esDefault": {
-                  "codecId": "pg/bool@1",
-                  "nativeType": "bool",
-                  "nullable": true
-                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -586,12 +2238,34 @@
                 "kgPorUnidad": {
                   "codecId": "pg/numeric@1",
                   "nativeType": "numeric",
-                  "nullable": true
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 10,
+                    "scale": 2
+                  }
                 },
-                "nombre": {
+                "nombrePresentacion": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
+                },
+                "presentacionActiva": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "presentacionDefault": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
                 },
                 "uamId": {
                   "codecId": "pg/int4@1",
@@ -645,13 +2319,524 @@
                 }
               ]
             },
-            "variedad": {
+            "productor": {
               "columns": {
-                "activa": {
-                  "codecId": "pg/bool@1",
-                  "nativeType": "bool",
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "usuarioId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "whatsApp": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "usuarioId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "productor"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "usuario"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "usuarioId"
+                  ]
+                }
+              ]
+            },
+            "publicacion": {
+              "checks": [
+                {
+                  "expression": "\"tipoPublicacion\" IN ('OPERADOR', 'PRODUCTOR')",
+                  "name": "publicacion_tipoPublicacion_check_16d8ebb9",
+                  "prefix": "publicacion_tipoPublicacion_check"
+                }
+              ],
+              "columns": {
+                "calibreId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "categoriaId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "foto": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
                   "nullable": true
                 },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "precio": {
+                  "codecId": "pg/numeric@1",
+                  "nativeType": "numeric",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 12,
+                    "scale": 2
+                  }
+                },
+                "presentacionId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "publicacionActiva": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "publicacionDisponible": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "tipoPublicacion": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "TipoPublicacion",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "presentacionId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "presentacion"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "categoriaId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "categoria"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "calibreId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "calibre"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "calibreId"
+                  ],
+                  "name": "publicacion_calibreId_idx_d38391a8",
+                  "prefix": "publicacion_calibreId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "categoriaId"
+                  ],
+                  "name": "publicacion_categoriaId_idx_63b46427",
+                  "prefix": "publicacion_categoriaId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "presentacionId"
+                  ],
+                  "name": "publicacion_presentacionId_idx_2981aeac",
+                  "prefix": "publicacion_presentacionId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "publicacionOperador": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "operadorId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "paisId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "publicacionId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "publicacionId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacionOperador"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacion"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "operadorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacionOperador"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "operador"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "paisId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacionOperador"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "pais"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "operadorId"
+                  ],
+                  "name": "publicacionOperador_operadorId_idx_b7d31568",
+                  "prefix": "publicacionOperador_operadorId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "paisId"
+                  ],
+                  "name": "publicacionOperador_paisId_idx_9a54dcb8",
+                  "prefix": "publicacionOperador_paisId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "publicacionId"
+                  ]
+                }
+              ]
+            },
+            "publicacionProductor": {
+              "columns": {
+                "departamentoId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "direccion": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "productorId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "publicacionId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "publicacionId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacionProductor"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacion"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "productorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacionProductor"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "productor"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "departamentoId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacionProductor"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "departamento"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "departamentoId"
+                  ],
+                  "name": "publicacionProductor_departamentoId_idx_d1d4bda1",
+                  "prefix": "publicacionProductor_departamentoId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "productorId"
+                  ],
+                  "name": "publicacionProductor_productorId_idx_9eeddee0",
+                  "prefix": "publicacionProductor_productorId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "publicacionId"
+                  ]
+                }
+              ]
+            },
+            "usuario": {
+              "checks": [
+                {
+                  "expression": "\"rol\" IN ('ADMINISTRADOR', 'OPERADOR', 'PRODUCTOR')",
+                  "name": "usuario_rol_check_7523852b",
+                  "prefix": "usuario_rol_check"
+                }
+              ],
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "passwordHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "rol": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "RolUsuario",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "twoFactorEnabled": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "twoFactorSecret": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "username": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "username"
+                  ]
+                }
+              ]
+            },
+            "variedad": {
+              "columns": {
                 "especieId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -666,15 +2851,24 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
-                "nombre": {
+                "nombreVariedad": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
                 },
                 "uamId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
                   "nullable": true
+                },
+                "variedadActiva": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -718,13 +2912,30 @@
                 }
               ]
             }
+          },
+          "valueSet": {
+            "RolUsuario": {
+              "kind": "valueSet",
+              "values": [
+                "ADMINISTRADOR",
+                "OPERADOR",
+                "PRODUCTOR"
+              ]
+            },
+            "TipoPublicacion": {
+              "kind": "valueSet",
+              "values": [
+                "OPERADOR",
+                "PRODUCTOR"
+              ]
+            }
           }
         },
         "id": "public",
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "8cd9f14383493582bbd0bec140601255dbda4a6475653fa6dd26847bd06a4616"
+    "storageHash": "52517bb0a16d58db079daa0aef1b9c3237b7c28579ac4d236f9129304d447ff4"
   },
   "capabilities": {
     "postgres": {

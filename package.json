@@ -5,15 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma contract emit && next build",
     "start": "next start",
+    "setup": "npm ci",
     "lint": "eslint",
     "test:unit": "vitest",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "test:coverage": "vitest run --coverage",
+    "db:contract": "prisma contract emit",
     "db:migrate": "prisma db migrate",
     "db:seed": "tsx src/infraestructura/persistencia/prisma/seed.ts",
-    "db:setup": "npm run db:migrate && npm run db:seed"
+    "db:setup": "npm run db:contract && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",

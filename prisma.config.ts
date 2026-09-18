@@ -9,5 +9,8 @@ export default definePrismaConfig({
     db: {
       connection: process.env["DATABASE_URL"]!,
     },
+    migrations: {
+      dir: "./src/infraestructura/persistencia/prisma/migrations",
+    },
   }),
 });

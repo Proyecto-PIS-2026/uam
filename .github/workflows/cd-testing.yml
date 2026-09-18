@@ -28,8 +28,10 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Aplicar migraciones en Testing
-        run: npm run db:migrate
+      - name: Emitir contrato y aplicar migraciones en Testing
+        run: |
+          npm run db:contract
+          npm run db:migrate
         env:
           DATABASE_URL: ${{ secrets.TESTING_DATABASE_URL }}
 

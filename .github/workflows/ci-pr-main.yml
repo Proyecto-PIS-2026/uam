@@ -50,7 +50,6 @@ jobs:
           node-version: '24'
           cache: 'npm'
         
-
       - name: Instalar dependencias
         run: npm ci
 
@@ -61,10 +60,19 @@ jobs:
         run: npm run typecheck
 
       - name: Aplicar migraciones de base de datos
-        run: npm run db:migrate
+        run: npm run db:setup
 
-      - name: Ejecutar Suite de Regresión (Vitest)
-        run: npm run test:unit -- --run
+      - name: Ejecutar Tests Unitarios y Cobertura (Vitest)
+        run: npm run test:coverage
+
+      - name: Instalar Navegadores de Playwright
+        run: npx playwright install --with-deps
 
       - name: Verificar build de producción
         run: npm run build
+
+      - name: Iniciar servidor y ejecutar Tests E2E (Playwright)
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000 --timeout 60000
+          npx playwright test

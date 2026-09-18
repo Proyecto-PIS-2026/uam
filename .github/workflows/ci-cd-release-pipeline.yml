@@ -48,13 +48,22 @@ jobs:
         run: npm run typecheck
 
       - name: Aplicar migraciones de base de datos
-        run: npm run db:migrate
+        run: npm run db:setup
 
-      - name: Ejecutar Suite de Regresión (Vitest)
-        run: npm run test:unit -- --run
+      - name: Ejecutar Suite de Regresión y Cobertura (Vitest)
+        run: npm run test:coverage
+
+      - name: Instalar Navegadores de Playwright
+        run: npx playwright install --with-deps
 
       - name: Verificar build de producción
         run: npm run build
+
+      - name: Iniciar servidor y ejecutar Tests E2E (Playwright)
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000 --timeout 60000
+          npx playwright test
 
   # CD - Despliegue a Staging
   deploy-staging:
@@ -79,8 +88,10 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Aplicar migraciones en Staging
-        run: npm run db:migrate
+      - name: Emitir contrato y aplicar migraciones en Staging
+        run: |
+          npm run db:contract
+          npm run db:migrate
         env:
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
 
@@ -101,30 +112,3 @@ jobs:
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
           containerAppName: uam-staging
           resourceGroup: Proyecto-PIS-2026
-
-jobs:
-    e2e-staging:
-    runs-on: ubuntu-latest
-    environment: staging
-    needs: deploy-staging
-
-    steps:
-      - name: Checkout del código
-        uses: actions/checkout@v4
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Instalar dependencias
-        run: npm ci
-
-      - name: Instalar navegadores de Playwright
-        run: npx playwright install --with-deps
-
-      - name: Ejecutar tests E2E en Staging
-        run: npx playwright test --config=playwright.config.ts
-        env:
-          PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.STAGING_URL }}

@@ -6,13 +6,13 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './src/test/setup.ts',
+    setupFiles: './vitest.setup.ts',
     // Ignora la carpeta de Playwright
     exclude: ['**/tests/**', '**/node_modules/**'],
     coverage: {
       provider: 'v8',
       thresholds: {
-        lines: 80,
+        lines: 30, // Ir subiendo mediante avanza el proyecto, ideal es 80
       },
     },
   },

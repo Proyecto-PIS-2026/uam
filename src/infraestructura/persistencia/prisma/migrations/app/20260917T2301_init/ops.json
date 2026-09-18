@@ -1,0 +1,2782 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.administrador",
+    "label": "Create table \"administrador\"",
+    "summary": "Creates table \"administrador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "administrador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"administrador\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"administrador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"administrador\"",
+        "sql": "CREATE TABLE \"public\".\"administrador\" (\n  \"email\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"usuarioId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"administrador\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"administrador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.calibre",
+    "label": "Create table \"calibre\"",
+    "summary": "Creates table \"calibre\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "calibre"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"calibre\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"calibre\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"calibre\"",
+        "sql": "CREATE TABLE \"public\".\"calibre\" (\n  \"codigoCalibre\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"nombreCalibre\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"calibre\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"calibre\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.categoria",
+    "label": "Create table \"categoria\"",
+    "summary": "Creates table \"categoria\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "categoria"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"categoria\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"categoria\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"categoria\"",
+        "sql": "CREATE TABLE \"public\".\"categoria\" (\n  \"especieId\" int4,\n  \"id\" SERIAL NOT NULL,\n  \"nombreCategoria\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"categoria\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"categoria\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.configuracion",
+    "label": "Create table \"configuracion\"",
+    "summary": "Creates table \"configuracion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "configuracion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"configuracion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"configuracion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"configuracion\"",
+        "sql": "CREATE TABLE \"public\".\"configuracion\" (\n  \"id\" SERIAL NOT NULL,\n  \"nombreConfiguracion\" text NOT NULL,\n  \"valorConfiguracion\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"configuracion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"configuracion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.departamento",
+    "label": "Create table \"departamento\"",
+    "summary": "Creates table \"departamento\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "departamento"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"departamento\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"departamento\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"departamento\"",
+        "sql": "CREATE TABLE \"public\".\"departamento\" (\n  \"codigoDepartamento\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"nombreDepartamento\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"departamento\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"departamento\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.especie",
+    "label": "Create table \"especie\"",
+    "summary": "Creates table \"especie\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "especie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"especie\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"especie\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"especie\"",
+        "sql": "CREATE TABLE \"public\".\"especie\" (\n  \"especieActiva\" bool DEFAULT true NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"nombreEspecie\" text NOT NULL,\n  \"uamId\" int4,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"especie\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"especie\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.local",
+    "label": "Create table \"local\"",
+    "summary": "Creates table \"local\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "local"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"local\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"local\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"local\"",
+        "sql": "CREATE TABLE \"public\".\"local\" (\n  \"finContrato\" timestamptz NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"naveId\" int4 NOT NULL,\n  \"numeroLocal\" text NOT NULL,\n  \"operadorId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"local\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"local\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.nave",
+    "label": "Create table \"nave\"",
+    "summary": "Creates table \"nave\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "nave"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"nave\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"nave\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"nave\"",
+        "sql": "CREATE TABLE \"public\".\"nave\" (\n  \"id\" SERIAL NOT NULL,\n  \"nombreNave\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"nave\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"nave\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.notificacion",
+    "label": "Create table \"notificacion\"",
+    "summary": "Creates table \"notificacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "notificacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"notificacion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notificacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"notificacion\"",
+        "sql": "CREATE TABLE \"public\".\"notificacion\" (\n  \"descripcion\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"titulo\" text NOT NULL,\n  \"usuarioId\" int4 NOT NULL,\n  \"vista\" bool DEFAULT false NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"notificacion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notificacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.operador",
+    "label": "Create table \"operador\"",
+    "summary": "Creates table \"operador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "operador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"operador\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"operador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"operador\"",
+        "sql": "CREATE TABLE \"public\".\"operador\" (\n  \"comentario\" text,\n  \"enLicencia\" bool DEFAULT false NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"nombreFantasia\" text NOT NULL,\n  \"usuarioId\" int4 NOT NULL,\n  \"whatsApp\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"operador\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"operador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.pais",
+    "label": "Create table \"pais\"",
+    "summary": "Creates table \"pais\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pais"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pais\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pais\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pais\"",
+        "sql": "CREATE TABLE \"public\".\"pais\" (\n  \"codigoPais\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"nombrePais\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pais\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pais\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.presentacion",
+    "label": "Create table \"presentacion\"",
+    "summary": "Creates table \"presentacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "presentacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"presentacion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"presentacion\"",
+        "sql": "CREATE TABLE \"public\".\"presentacion\" (\n  \"id\" SERIAL NOT NULL,\n  \"kgPorUnidad\" numeric(10,2),\n  \"nombrePresentacion\" text NOT NULL,\n  \"presentacionActiva\" bool DEFAULT true NOT NULL,\n  \"presentacionDefault\" bool DEFAULT false NOT NULL,\n  \"uamId\" int4,\n  \"variedadId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"presentacion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.productor",
+    "label": "Create table \"productor\"",
+    "summary": "Creates table \"productor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "productor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"productor\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"productor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"productor\"",
+        "sql": "CREATE TABLE \"public\".\"productor\" (\n  \"id\" SERIAL NOT NULL,\n  \"usuarioId\" int4 NOT NULL,\n  \"whatsApp\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"productor\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"productor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.publicacion",
+    "label": "Create table \"publicacion\"",
+    "summary": "Creates table \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"publicacion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"publicacion\"",
+        "sql": "CREATE TABLE \"public\".\"publicacion\" (\n  \"calibreId\" int4 NOT NULL,\n  \"categoriaId\" int4 NOT NULL,\n  \"fecha\" timestamptz DEFAULT (now()) NOT NULL,\n  \"foto\" text,\n  \"id\" SERIAL NOT NULL,\n  \"precio\" numeric(12,2),\n  \"presentacionId\" int4 NOT NULL,\n  \"publicacionActiva\" bool DEFAULT true NOT NULL,\n  \"publicacionDisponible\" bool DEFAULT true NOT NULL,\n  \"tipoPublicacion\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"publicacion_tipoPublicacion_check_16d8ebb9\" CHECK (\"tipoPublicacion\" IN ('OPERADOR', 'PRODUCTOR'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"publicacion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.publicacionOperador",
+    "label": "Create table \"publicacionOperador\"",
+    "summary": "Creates table \"publicacionOperador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "publicacionOperador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"publicacionOperador\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"publicacionOperador\"",
+        "sql": "CREATE TABLE \"public\".\"publicacionOperador\" (\n  \"id\" SERIAL NOT NULL,\n  \"operadorId\" int4 NOT NULL,\n  \"paisId\" int4 NOT NULL,\n  \"publicacionId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"publicacionOperador\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.publicacionProductor",
+    "label": "Create table \"publicacionProductor\"",
+    "summary": "Creates table \"publicacionProductor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"publicacionProductor\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"publicacionProductor\"",
+        "sql": "CREATE TABLE \"public\".\"publicacionProductor\" (\n  \"departamentoId\" int4 NOT NULL,\n  \"direccion\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"productorId\" int4 NOT NULL,\n  \"publicacionId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"publicacionProductor\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.usuario",
+    "label": "Create table \"usuario\"",
+    "summary": "Creates table \"usuario\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "usuario"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"usuario\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"usuario\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"usuario\"",
+        "sql": "CREATE TABLE \"public\".\"usuario\" (\n  \"id\" SERIAL NOT NULL,\n  \"passwordHash\" text NOT NULL,\n  \"rol\" text NOT NULL,\n  \"twoFactorEnabled\" bool DEFAULT false NOT NULL,\n  \"twoFactorSecret\" text,\n  \"username\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"usuario_rol_check_7523852b\" CHECK (\"rol\" IN ('ADMINISTRADOR', 'OPERADOR', 'PRODUCTOR'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"usuario\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"usuario\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.variedad",
+    "label": "Create table \"variedad\"",
+    "summary": "Creates table \"variedad\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "variedad"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"variedad\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"variedad\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"variedad\"",
+        "sql": "CREATE TABLE \"public\".\"variedad\" (\n  \"especieId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"nombreVariedad\" text NOT NULL,\n  \"uamId\" int4,\n  \"variedadActiva\" bool DEFAULT true NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"variedad\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"variedad\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.administrador.administrador_usuarioId_key",
+    "label": "Add unique constraint on \"administrador\" (usuarioId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "administrador_usuarioId_key",
+        "table": "administrador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"administrador_usuarioId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "administrador_usuarioId_key",
+          "public",
+          "\"public\".\"administrador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"administrador_usuarioId_key\"",
+        "sql": "ALTER TABLE \"public\".\"administrador\" ADD CONSTRAINT \"administrador_usuarioId_key\" UNIQUE (\"usuarioId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"administrador_usuarioId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "administrador_usuarioId_key",
+          "public",
+          "\"public\".\"administrador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.administrador.administrador_email_key",
+    "label": "Add unique constraint on \"administrador\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "administrador_email_key",
+        "table": "administrador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"administrador_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "administrador_email_key",
+          "public",
+          "\"public\".\"administrador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"administrador_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"administrador\" ADD CONSTRAINT \"administrador_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"administrador_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "administrador_email_key",
+          "public",
+          "\"public\".\"administrador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.calibre.calibre_codigoCalibre_key",
+    "label": "Add unique constraint on \"calibre\" (codigoCalibre)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "calibre_codigoCalibre_key",
+        "table": "calibre"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"calibre_codigoCalibre_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "calibre_codigoCalibre_key",
+          "public",
+          "\"public\".\"calibre\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"calibre_codigoCalibre_key\"",
+        "sql": "ALTER TABLE \"public\".\"calibre\" ADD CONSTRAINT \"calibre_codigoCalibre_key\" UNIQUE (\"codigoCalibre\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"calibre_codigoCalibre_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "calibre_codigoCalibre_key",
+          "public",
+          "\"public\".\"calibre\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.configuracion.configuracion_nombreConfiguracion_key",
+    "label": "Add unique constraint on \"configuracion\" (nombreConfiguracion)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "configuracion_nombreConfiguracion_key",
+        "table": "configuracion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"configuracion_nombreConfiguracion_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "configuracion_nombreConfiguracion_key",
+          "public",
+          "\"public\".\"configuracion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"configuracion_nombreConfiguracion_key\"",
+        "sql": "ALTER TABLE \"public\".\"configuracion\" ADD CONSTRAINT \"configuracion_nombreConfiguracion_key\" UNIQUE (\"nombreConfiguracion\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"configuracion_nombreConfiguracion_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "configuracion_nombreConfiguracion_key",
+          "public",
+          "\"public\".\"configuracion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.departamento.departamento_codigoDepartamento_key",
+    "label": "Add unique constraint on \"departamento\" (codigoDepartamento)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "departamento_codigoDepartamento_key",
+        "table": "departamento"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"departamento_codigoDepartamento_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "departamento_codigoDepartamento_key",
+          "public",
+          "\"public\".\"departamento\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"departamento_codigoDepartamento_key\"",
+        "sql": "ALTER TABLE \"public\".\"departamento\" ADD CONSTRAINT \"departamento_codigoDepartamento_key\" UNIQUE (\"codigoDepartamento\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"departamento_codigoDepartamento_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "departamento_codigoDepartamento_key",
+          "public",
+          "\"public\".\"departamento\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.departamento.departamento_nombreDepartamento_key",
+    "label": "Add unique constraint on \"departamento\" (nombreDepartamento)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "departamento_nombreDepartamento_key",
+        "table": "departamento"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"departamento_nombreDepartamento_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "departamento_nombreDepartamento_key",
+          "public",
+          "\"public\".\"departamento\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"departamento_nombreDepartamento_key\"",
+        "sql": "ALTER TABLE \"public\".\"departamento\" ADD CONSTRAINT \"departamento_nombreDepartamento_key\" UNIQUE (\"nombreDepartamento\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"departamento_nombreDepartamento_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "departamento_nombreDepartamento_key",
+          "public",
+          "\"public\".\"departamento\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.especie.especie_uamId_key",
+    "label": "Add unique constraint on \"especie\" (uamId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "especie_uamId_key",
+        "table": "especie"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"especie_uamId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "especie_uamId_key",
+          "public",
+          "\"public\".\"especie\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"especie_uamId_key\"",
+        "sql": "ALTER TABLE \"public\".\"especie\" ADD CONSTRAINT \"especie_uamId_key\" UNIQUE (\"uamId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"especie_uamId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "especie_uamId_key",
+          "public",
+          "\"public\".\"especie\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.local.local_numeroLocal_naveId_key",
+    "label": "Add unique constraint on \"local\" (numeroLocal, naveId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "local_numeroLocal_naveId_key",
+        "table": "local"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"local_numeroLocal_naveId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "local_numeroLocal_naveId_key",
+          "public",
+          "\"public\".\"local\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"local_numeroLocal_naveId_key\"",
+        "sql": "ALTER TABLE \"public\".\"local\" ADD CONSTRAINT \"local_numeroLocal_naveId_key\" UNIQUE (\"numeroLocal\", \"naveId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"local_numeroLocal_naveId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "local_numeroLocal_naveId_key",
+          "public",
+          "\"public\".\"local\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.nave.nave_nombreNave_key",
+    "label": "Add unique constraint on \"nave\" (nombreNave)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "nave_nombreNave_key",
+        "table": "nave"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"nave_nombreNave_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "nave_nombreNave_key",
+          "public",
+          "\"public\".\"nave\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"nave_nombreNave_key\"",
+        "sql": "ALTER TABLE \"public\".\"nave\" ADD CONSTRAINT \"nave_nombreNave_key\" UNIQUE (\"nombreNave\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"nave_nombreNave_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "nave_nombreNave_key",
+          "public",
+          "\"public\".\"nave\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.operador.operador_usuarioId_key",
+    "label": "Add unique constraint on \"operador\" (usuarioId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "operador_usuarioId_key",
+        "table": "operador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"operador_usuarioId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "operador_usuarioId_key",
+          "public",
+          "\"public\".\"operador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"operador_usuarioId_key\"",
+        "sql": "ALTER TABLE \"public\".\"operador\" ADD CONSTRAINT \"operador_usuarioId_key\" UNIQUE (\"usuarioId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"operador_usuarioId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "operador_usuarioId_key",
+          "public",
+          "\"public\".\"operador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.operador.operador_nombreFantasia_key",
+    "label": "Add unique constraint on \"operador\" (nombreFantasia)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "operador_nombreFantasia_key",
+        "table": "operador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"operador_nombreFantasia_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "operador_nombreFantasia_key",
+          "public",
+          "\"public\".\"operador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"operador_nombreFantasia_key\"",
+        "sql": "ALTER TABLE \"public\".\"operador\" ADD CONSTRAINT \"operador_nombreFantasia_key\" UNIQUE (\"nombreFantasia\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"operador_nombreFantasia_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "operador_nombreFantasia_key",
+          "public",
+          "\"public\".\"operador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.pais.pais_codigoPais_key",
+    "label": "Add unique constraint on \"pais\" (codigoPais)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "pais_codigoPais_key",
+        "table": "pais"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"pais_codigoPais_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pais_codigoPais_key",
+          "public",
+          "\"public\".\"pais\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"pais_codigoPais_key\"",
+        "sql": "ALTER TABLE \"public\".\"pais\" ADD CONSTRAINT \"pais_codigoPais_key\" UNIQUE (\"codigoPais\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"pais_codigoPais_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pais_codigoPais_key",
+          "public",
+          "\"public\".\"pais\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.pais.pais_nombrePais_key",
+    "label": "Add unique constraint on \"pais\" (nombrePais)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "pais_nombrePais_key",
+        "table": "pais"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"pais_nombrePais_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pais_nombrePais_key",
+          "public",
+          "\"public\".\"pais\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"pais_nombrePais_key\"",
+        "sql": "ALTER TABLE \"public\".\"pais\" ADD CONSTRAINT \"pais_nombrePais_key\" UNIQUE (\"nombrePais\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"pais_nombrePais_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pais_nombrePais_key",
+          "public",
+          "\"public\".\"pais\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.presentacion.presentacion_uamId_key",
+    "label": "Add unique constraint on \"presentacion\" (uamId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "presentacion_uamId_key",
+        "table": "presentacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"presentacion_uamId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "presentacion_uamId_key",
+          "public",
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"presentacion_uamId_key\"",
+        "sql": "ALTER TABLE \"public\".\"presentacion\" ADD CONSTRAINT \"presentacion_uamId_key\" UNIQUE (\"uamId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"presentacion_uamId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "presentacion_uamId_key",
+          "public",
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.productor.productor_usuarioId_key",
+    "label": "Add unique constraint on \"productor\" (usuarioId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "productor_usuarioId_key",
+        "table": "productor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"productor_usuarioId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "productor_usuarioId_key",
+          "public",
+          "\"public\".\"productor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"productor_usuarioId_key\"",
+        "sql": "ALTER TABLE \"public\".\"productor\" ADD CONSTRAINT \"productor_usuarioId_key\" UNIQUE (\"usuarioId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"productor_usuarioId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "productor_usuarioId_key",
+          "public",
+          "\"public\".\"productor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.publicacionOperador.publicacionOperador_publicacionId_key",
+    "label": "Add unique constraint on \"publicacionOperador\" (publicacionId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "publicacionOperador_publicacionId_key",
+        "table": "publicacionOperador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"publicacionOperador_publicacionId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionOperador_publicacionId_key",
+          "public",
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"publicacionOperador_publicacionId_key\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionOperador\" ADD CONSTRAINT \"publicacionOperador_publicacionId_key\" UNIQUE (\"publicacionId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"publicacionOperador_publicacionId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionOperador_publicacionId_key",
+          "public",
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.publicacionProductor.publicacionProductor_publicacionId_key",
+    "label": "Add unique constraint on \"publicacionProductor\" (publicacionId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "publicacionProductor_publicacionId_key",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"publicacionProductor_publicacionId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_publicacionId_key",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"publicacionProductor_publicacionId_key\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\" ADD CONSTRAINT \"publicacionProductor_publicacionId_key\" UNIQUE (\"publicacionId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"publicacionProductor_publicacionId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_publicacionId_key",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.usuario.usuario_username_key",
+    "label": "Add unique constraint on \"usuario\" (username)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "usuario_username_key",
+        "table": "usuario"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"usuario_username_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "usuario_username_key",
+          "public",
+          "\"public\".\"usuario\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"usuario_username_key\"",
+        "sql": "ALTER TABLE \"public\".\"usuario\" ADD CONSTRAINT \"usuario_username_key\" UNIQUE (\"username\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"usuario_username_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "usuario_username_key",
+          "public",
+          "\"public\".\"usuario\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.variedad.variedad_uamId_key",
+    "label": "Add unique constraint on \"variedad\" (uamId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "variedad_uamId_key",
+        "table": "variedad"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"variedad_uamId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "variedad_uamId_key",
+          "public",
+          "\"public\".\"variedad\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"variedad_uamId_key\"",
+        "sql": "ALTER TABLE \"public\".\"variedad\" ADD CONSTRAINT \"variedad_uamId_key\" UNIQUE (\"uamId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"variedad_uamId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "variedad_uamId_key",
+          "public",
+          "\"public\".\"variedad\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.categoria.categoria_especieId_idx_23a2c94e",
+    "label": "Create index \"categoria_especieId_idx_23a2c94e\" on \"categoria\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "categoria_especieId_idx_23a2c94e",
+        "table": "categoria"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"categoria_especieId_idx_23a2c94e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"categoria_especieId_idx_23a2c94e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"categoria_especieId_idx_23a2c94e\"",
+        "sql": "CREATE INDEX \"categoria_especieId_idx_23a2c94e\" ON \"public\".\"categoria\" (\"especieId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"categoria_especieId_idx_23a2c94e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"categoria_especieId_idx_23a2c94e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.local.local_naveId_idx_d122209c",
+    "label": "Create index \"local_naveId_idx_d122209c\" on \"local\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "local_naveId_idx_d122209c",
+        "table": "local"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"local_naveId_idx_d122209c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"local_naveId_idx_d122209c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"local_naveId_idx_d122209c\"",
+        "sql": "CREATE INDEX \"local_naveId_idx_d122209c\" ON \"public\".\"local\" (\"naveId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"local_naveId_idx_d122209c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"local_naveId_idx_d122209c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.local.local_operadorId_idx_b7d31568",
+    "label": "Create index \"local_operadorId_idx_b7d31568\" on \"local\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "local_operadorId_idx_b7d31568",
+        "table": "local"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"local_operadorId_idx_b7d31568\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"local_operadorId_idx_b7d31568\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"local_operadorId_idx_b7d31568\"",
+        "sql": "CREATE INDEX \"local_operadorId_idx_b7d31568\" ON \"public\".\"local\" (\"operadorId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"local_operadorId_idx_b7d31568\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"local_operadorId_idx_b7d31568\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.notificacion.notificacion_usuarioId_idx_5f01c7d6",
+    "label": "Create index \"notificacion_usuarioId_idx_5f01c7d6\" on \"notificacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "notificacion_usuarioId_idx_5f01c7d6",
+        "table": "notificacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"notificacion_usuarioId_idx_5f01c7d6\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notificacion_usuarioId_idx_5f01c7d6\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"notificacion_usuarioId_idx_5f01c7d6\"",
+        "sql": "CREATE INDEX \"notificacion_usuarioId_idx_5f01c7d6\" ON \"public\".\"notificacion\" (\"usuarioId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"notificacion_usuarioId_idx_5f01c7d6\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notificacion_usuarioId_idx_5f01c7d6\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.presentacion.presentacion_variedadId_idx_33d5d76b",
+    "label": "Create index \"presentacion_variedadId_idx_33d5d76b\" on \"presentacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "presentacion_variedadId_idx_33d5d76b",
+        "table": "presentacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"presentacion_variedadId_idx_33d5d76b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion_variedadId_idx_33d5d76b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"presentacion_variedadId_idx_33d5d76b\"",
+        "sql": "CREATE INDEX \"presentacion_variedadId_idx_33d5d76b\" ON \"public\".\"presentacion\" (\"variedadId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"presentacion_variedadId_idx_33d5d76b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion_variedadId_idx_33d5d76b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacion.publicacion_calibreId_idx_d38391a8",
+    "label": "Create index \"publicacion_calibreId_idx_d38391a8\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacion_calibreId_idx_d38391a8",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacion_calibreId_idx_d38391a8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_calibreId_idx_d38391a8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacion_calibreId_idx_d38391a8\"",
+        "sql": "CREATE INDEX \"publicacion_calibreId_idx_d38391a8\" ON \"public\".\"publicacion\" (\"calibreId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacion_calibreId_idx_d38391a8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_calibreId_idx_d38391a8\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacion.publicacion_categoriaId_idx_63b46427",
+    "label": "Create index \"publicacion_categoriaId_idx_63b46427\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacion_categoriaId_idx_63b46427",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacion_categoriaId_idx_63b46427\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_categoriaId_idx_63b46427\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacion_categoriaId_idx_63b46427\"",
+        "sql": "CREATE INDEX \"publicacion_categoriaId_idx_63b46427\" ON \"public\".\"publicacion\" (\"categoriaId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacion_categoriaId_idx_63b46427\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_categoriaId_idx_63b46427\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacion.publicacion_presentacionId_idx_2981aeac",
+    "label": "Create index \"publicacion_presentacionId_idx_2981aeac\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacion_presentacionId_idx_2981aeac",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacion_presentacionId_idx_2981aeac\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_presentacionId_idx_2981aeac\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacion_presentacionId_idx_2981aeac\"",
+        "sql": "CREATE INDEX \"publicacion_presentacionId_idx_2981aeac\" ON \"public\".\"publicacion\" (\"presentacionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacion_presentacionId_idx_2981aeac\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_presentacionId_idx_2981aeac\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacionOperador.publicacionOperador_operadorId_idx_b7d31568",
+    "label": "Create index \"publicacionOperador_operadorId_idx_b7d31568\" on \"publicacionOperador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacionOperador_operadorId_idx_b7d31568",
+        "table": "publicacionOperador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacionOperador_operadorId_idx_b7d31568\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionOperador_operadorId_idx_b7d31568\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacionOperador_operadorId_idx_b7d31568\"",
+        "sql": "CREATE INDEX \"publicacionOperador_operadorId_idx_b7d31568\" ON \"public\".\"publicacionOperador\" (\"operadorId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacionOperador_operadorId_idx_b7d31568\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionOperador_operadorId_idx_b7d31568\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacionOperador.publicacionOperador_paisId_idx_9a54dcb8",
+    "label": "Create index \"publicacionOperador_paisId_idx_9a54dcb8\" on \"publicacionOperador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacionOperador_paisId_idx_9a54dcb8",
+        "table": "publicacionOperador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacionOperador_paisId_idx_9a54dcb8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionOperador_paisId_idx_9a54dcb8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacionOperador_paisId_idx_9a54dcb8\"",
+        "sql": "CREATE INDEX \"publicacionOperador_paisId_idx_9a54dcb8\" ON \"public\".\"publicacionOperador\" (\"paisId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacionOperador_paisId_idx_9a54dcb8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionOperador_paisId_idx_9a54dcb8\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacionProductor.publicacionProductor_departamentoId_idx_d1d4bda1",
+    "label": "Create index \"publicacionProductor_departamentoId_idx_d1d4bda1\" on \"publicacionProductor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacionProductor_departamentoId_idx_d1d4bda1",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacionProductor_departamentoId_idx_d1d4bda1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor_departamentoId_idx_d1d4bda1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacionProductor_departamentoId_idx_d1d4bda1\"",
+        "sql": "CREATE INDEX \"publicacionProductor_departamentoId_idx_d1d4bda1\" ON \"public\".\"publicacionProductor\" (\"departamentoId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacionProductor_departamentoId_idx_d1d4bda1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor_departamentoId_idx_d1d4bda1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacionProductor.publicacionProductor_productorId_idx_9eeddee0",
+    "label": "Create index \"publicacionProductor_productorId_idx_9eeddee0\" on \"publicacionProductor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacionProductor_productorId_idx_9eeddee0",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacionProductor_productorId_idx_9eeddee0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor_productorId_idx_9eeddee0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacionProductor_productorId_idx_9eeddee0\"",
+        "sql": "CREATE INDEX \"publicacionProductor_productorId_idx_9eeddee0\" ON \"public\".\"publicacionProductor\" (\"productorId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacionProductor_productorId_idx_9eeddee0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor_productorId_idx_9eeddee0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.variedad.variedad_especieId_idx_23a2c94e",
+    "label": "Create index \"variedad_especieId_idx_23a2c94e\" on \"variedad\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "variedad_especieId_idx_23a2c94e",
+        "table": "variedad"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"variedad_especieId_idx_23a2c94e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"variedad_especieId_idx_23a2c94e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"variedad_especieId_idx_23a2c94e\"",
+        "sql": "CREATE INDEX \"variedad_especieId_idx_23a2c94e\" ON \"public\".\"variedad\" (\"especieId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"variedad_especieId_idx_23a2c94e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"variedad_especieId_idx_23a2c94e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.administrador.administrador_usuarioId_fkey",
+    "label": "Add foreign key \"administrador_usuarioId_fkey\" on \"administrador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "administrador_usuarioId_fkey",
+        "table": "administrador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"administrador_usuarioId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "administrador_usuarioId_fkey",
+          "public",
+          "\"public\".\"administrador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"administrador_usuarioId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"administrador\"\nADD CONSTRAINT \"administrador_usuarioId_fkey\"\nFOREIGN KEY (\"usuarioId\")\nREFERENCES \"public\".\"usuario\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"administrador_usuarioId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "administrador_usuarioId_fkey",
+          "public",
+          "\"public\".\"administrador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.categoria.categoria_especieId_fkey",
+    "label": "Add foreign key \"categoria_especieId_fkey\" on \"categoria\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "categoria_especieId_fkey",
+        "table": "categoria"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"categoria_especieId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "categoria_especieId_fkey",
+          "public",
+          "\"public\".\"categoria\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"categoria_especieId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"categoria\"\nADD CONSTRAINT \"categoria_especieId_fkey\"\nFOREIGN KEY (\"especieId\")\nREFERENCES \"public\".\"especie\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"categoria_especieId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "categoria_especieId_fkey",
+          "public",
+          "\"public\".\"categoria\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.local.local_operadorId_fkey",
+    "label": "Add foreign key \"local_operadorId_fkey\" on \"local\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "local_operadorId_fkey",
+        "table": "local"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"local_operadorId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "local_operadorId_fkey",
+          "public",
+          "\"public\".\"local\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"local_operadorId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"local\"\nADD CONSTRAINT \"local_operadorId_fkey\"\nFOREIGN KEY (\"operadorId\")\nREFERENCES \"public\".\"operador\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"local_operadorId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "local_operadorId_fkey",
+          "public",
+          "\"public\".\"local\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.local.local_naveId_fkey",
+    "label": "Add foreign key \"local_naveId_fkey\" on \"local\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "local_naveId_fkey",
+        "table": "local"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"local_naveId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "local_naveId_fkey",
+          "public",
+          "\"public\".\"local\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"local_naveId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"local\"\nADD CONSTRAINT \"local_naveId_fkey\"\nFOREIGN KEY (\"naveId\")\nREFERENCES \"public\".\"nave\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"local_naveId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "local_naveId_fkey",
+          "public",
+          "\"public\".\"local\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.notificacion.notificacion_usuarioId_fkey",
+    "label": "Add foreign key \"notificacion_usuarioId_fkey\" on \"notificacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "notificacion_usuarioId_fkey",
+        "table": "notificacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"notificacion_usuarioId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notificacion_usuarioId_fkey",
+          "public",
+          "\"public\".\"notificacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"notificacion_usuarioId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"notificacion\"\nADD CONSTRAINT \"notificacion_usuarioId_fkey\"\nFOREIGN KEY (\"usuarioId\")\nREFERENCES \"public\".\"usuario\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"notificacion_usuarioId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notificacion_usuarioId_fkey",
+          "public",
+          "\"public\".\"notificacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.operador.operador_usuarioId_fkey",
+    "label": "Add foreign key \"operador_usuarioId_fkey\" on \"operador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "operador_usuarioId_fkey",
+        "table": "operador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"operador_usuarioId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "operador_usuarioId_fkey",
+          "public",
+          "\"public\".\"operador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"operador_usuarioId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"operador\"\nADD CONSTRAINT \"operador_usuarioId_fkey\"\nFOREIGN KEY (\"usuarioId\")\nREFERENCES \"public\".\"usuario\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"operador_usuarioId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "operador_usuarioId_fkey",
+          "public",
+          "\"public\".\"operador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.presentacion.presentacion_variedadId_fkey",
+    "label": "Add foreign key \"presentacion_variedadId_fkey\" on \"presentacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "presentacion_variedadId_fkey",
+        "table": "presentacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"presentacion_variedadId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "presentacion_variedadId_fkey",
+          "public",
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"presentacion_variedadId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"presentacion\"\nADD CONSTRAINT \"presentacion_variedadId_fkey\"\nFOREIGN KEY (\"variedadId\")\nREFERENCES \"public\".\"variedad\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"presentacion_variedadId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "presentacion_variedadId_fkey",
+          "public",
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.productor.productor_usuarioId_fkey",
+    "label": "Add foreign key \"productor_usuarioId_fkey\" on \"productor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "productor_usuarioId_fkey",
+        "table": "productor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"productor_usuarioId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "productor_usuarioId_fkey",
+          "public",
+          "\"public\".\"productor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"productor_usuarioId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"productor\"\nADD CONSTRAINT \"productor_usuarioId_fkey\"\nFOREIGN KEY (\"usuarioId\")\nREFERENCES \"public\".\"usuario\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"productor_usuarioId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "productor_usuarioId_fkey",
+          "public",
+          "\"public\".\"productor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacion.publicacion_presentacionId_fkey",
+    "label": "Add foreign key \"publicacion_presentacionId_fkey\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacion_presentacionId_fkey",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacion_presentacionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_presentacionId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacion_presentacionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\"\nADD CONSTRAINT \"publicacion_presentacionId_fkey\"\nFOREIGN KEY (\"presentacionId\")\nREFERENCES \"public\".\"presentacion\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacion_presentacionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_presentacionId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacion.publicacion_categoriaId_fkey",
+    "label": "Add foreign key \"publicacion_categoriaId_fkey\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacion_categoriaId_fkey",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacion_categoriaId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_categoriaId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacion_categoriaId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\"\nADD CONSTRAINT \"publicacion_categoriaId_fkey\"\nFOREIGN KEY (\"categoriaId\")\nREFERENCES \"public\".\"categoria\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacion_categoriaId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_categoriaId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacion.publicacion_calibreId_fkey",
+    "label": "Add foreign key \"publicacion_calibreId_fkey\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacion_calibreId_fkey",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacion_calibreId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_calibreId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacion_calibreId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\"\nADD CONSTRAINT \"publicacion_calibreId_fkey\"\nFOREIGN KEY (\"calibreId\")\nREFERENCES \"public\".\"calibre\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacion_calibreId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_calibreId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacionOperador.publicacionOperador_publicacionId_fkey",
+    "label": "Add foreign key \"publicacionOperador_publicacionId_fkey\" on \"publicacionOperador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacionOperador_publicacionId_fkey",
+        "table": "publicacionOperador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacionOperador_publicacionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionOperador_publicacionId_fkey",
+          "public",
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacionOperador_publicacionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionOperador\"\nADD CONSTRAINT \"publicacionOperador_publicacionId_fkey\"\nFOREIGN KEY (\"publicacionId\")\nREFERENCES \"public\".\"publicacion\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacionOperador_publicacionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionOperador_publicacionId_fkey",
+          "public",
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacionOperador.publicacionOperador_operadorId_fkey",
+    "label": "Add foreign key \"publicacionOperador_operadorId_fkey\" on \"publicacionOperador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacionOperador_operadorId_fkey",
+        "table": "publicacionOperador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacionOperador_operadorId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionOperador_operadorId_fkey",
+          "public",
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacionOperador_operadorId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionOperador\"\nADD CONSTRAINT \"publicacionOperador_operadorId_fkey\"\nFOREIGN KEY (\"operadorId\")\nREFERENCES \"public\".\"operador\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacionOperador_operadorId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionOperador_operadorId_fkey",
+          "public",
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacionOperador.publicacionOperador_paisId_fkey",
+    "label": "Add foreign key \"publicacionOperador_paisId_fkey\" on \"publicacionOperador\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacionOperador_paisId_fkey",
+        "table": "publicacionOperador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacionOperador_paisId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionOperador_paisId_fkey",
+          "public",
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacionOperador_paisId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionOperador\"\nADD CONSTRAINT \"publicacionOperador_paisId_fkey\"\nFOREIGN KEY (\"paisId\")\nREFERENCES \"public\".\"pais\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacionOperador_paisId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionOperador_paisId_fkey",
+          "public",
+          "\"public\".\"publicacionOperador\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacionProductor.publicacionProductor_publicacionId_fkey",
+    "label": "Add foreign key \"publicacionProductor_publicacionId_fkey\" on \"publicacionProductor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacionProductor_publicacionId_fkey",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacionProductor_publicacionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_publicacionId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacionProductor_publicacionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\"\nADD CONSTRAINT \"publicacionProductor_publicacionId_fkey\"\nFOREIGN KEY (\"publicacionId\")\nREFERENCES \"public\".\"publicacion\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacionProductor_publicacionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_publicacionId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacionProductor.publicacionProductor_productorId_fkey",
+    "label": "Add foreign key \"publicacionProductor_productorId_fkey\" on \"publicacionProductor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacionProductor_productorId_fkey",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacionProductor_productorId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_productorId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacionProductor_productorId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\"\nADD CONSTRAINT \"publicacionProductor_productorId_fkey\"\nFOREIGN KEY (\"productorId\")\nREFERENCES \"public\".\"productor\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacionProductor_productorId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_productorId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacionProductor.publicacionProductor_departamentoId_fkey",
+    "label": "Add foreign key \"publicacionProductor_departamentoId_fkey\" on \"publicacionProductor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacionProductor_departamentoId_fkey",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacionProductor_departamentoId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_departamentoId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacionProductor_departamentoId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\"\nADD CONSTRAINT \"publicacionProductor_departamentoId_fkey\"\nFOREIGN KEY (\"departamentoId\")\nREFERENCES \"public\".\"departamento\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacionProductor_departamentoId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_departamentoId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.variedad.variedad_especieId_fkey",
+    "label": "Add foreign key \"variedad_especieId_fkey\" on \"variedad\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "variedad_especieId_fkey",
+        "table": "variedad"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"variedad_especieId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "variedad_especieId_fkey",
+          "public",
+          "\"public\".\"variedad\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"variedad_especieId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"variedad\"\nADD CONSTRAINT \"variedad_especieId_fkey\"\nFOREIGN KEY (\"especieId\")\nREFERENCES \"public\".\"especie\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"variedad_especieId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "variedad_especieId_fkey",
+          "public",
+          "\"public\".\"variedad\""
+        ]
+      }
+    ]
+  }
+]

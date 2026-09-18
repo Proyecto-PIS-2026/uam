@@ -1,45 +1,241 @@
-// use prisma-next
+// ROLES DE USUARIO
+enum RolUsuario {
+  @@type("pg/text@1")
 
-model Grupo {
-  id          Int         @id @default(autoincrement())   // Identificador del grupo proveniente del UAM  
-  uamId       Int         @unique 
-  nombre      String                                      // Nombre del grupo
-  especies    Especie[]                                   // Relación entre grupo y especie 
+  ADMINISTRADOR
+  OPERADOR
+  PRODUCTOR
 }
 
+// TIPOS DE PUBLICACIONES
+enum TipoPublicacion {
+  @@type("pg/text@1")
+
+  OPERADOR
+  PRODUCTOR
+}
+
+// USUARIOS
+model Usuario {
+  id               Int            @id @default(autoincrement())
+  username         String         @unique
+  passwordHash     String
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean        @default(false)
+  rol              RolUsuario
+
+  notificaciones   Notificacion[]
+
+  @@map("usuario")
+}
+
+// ADMINISTRADORES
+model Administrador {
+  id        Int     @id @default(autoincrement())
+  usuarioId Int     @unique
+  usuario   Usuario @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
+  email     String  @unique
+
+  @@map("administrador")
+}
+
+// OPERADORES
+model Operador {
+  id                    Int                   @id @default(autoincrement())
+  usuarioId             Int                   @unique
+  usuario               Usuario               @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
+  nombreFantasia        String                @unique
+  enLicencia            Boolean               @default(false)
+  comentario            String?
+  whatsApp              String
+
+  locales               Local[]
+  publicacionesOperador PublicacionOperador[]
+
+  @@map("operador")
+}
+
+// PRODUCTORES
+model Productor {
+  id                     Int                    @id @default(autoincrement())
+  usuarioId              Int                    @unique
+  usuario                Usuario                @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
+  whatsApp               String
+
+  publicacionesProductor PublicacionProductor[]
+
+  @@map("productor")
+}
+
+// NAVES
+model Nave {
+  id         Int     @id @default(autoincrement())
+  nombreNave String  @unique
+  locales    Local[]
+
+  @@map("nave")
+}
+
+// LOCALES
+model Local {
+  id          Int      @id @default(autoincrement())
+  numeroLocal String
+  finContrato DateTime
+  operadorId  Int
+  operador    Operador @relation(fields:[operadorId], references:[id])
+  naveId      Int
+  nave        Nave     @relation(fields:[naveId], references:[id])
+
+  @@unique([numeroLocal, naveId])
+  @@map("local")
+}
+
+// ESPECIES
 model Especie {
-  id            Int           @id @default(autoincrement())
-  uamId         Int           @unique                                           // Identificador de la especie proveniente del UAM
-  nombre        String                                                          // Nombre de la especie
-  activa        Boolean?                                                        // Indica si la especie se encuentra activa
-  grupoId       Int                                                             // Grupo a la que la especie pertenece
-  grupo         Grupo         @relation(fields: [grupoId], references: [id])    
-  variedades    Variedad[]                                                      // Relación entre especie y variedad
+  id            Int         @id @default(autoincrement())
+  uamId         Int?        @unique
+  nombreEspecie String
+  especieActiva Boolean     @default(true)
+  variedades    Variedad[]
+  categorias    Categoria[]
+
+  @@map("especie")
 }
 
+// VARIEDADES
 model Variedad {
-  id                Int               @id @default(autoincrement())
-  uamId             Int?              @unique                                           // Identificador de la variedad proveniente del UAM
-  nombre            String?                                                             // Nombre de la variedad 
-  activa            Boolean?                                                            // Indica si la variedad se encuentra activa
-  especieId         Int                                                                 // Especie a la que pertenece la variedad
-  especie           Especie           @relation(fields: [especieId], references: [id])  
-  presentaciones    Presentacion[]
+  id             Int            @id @default(autoincrement())
+  uamId          Int?           @unique
+  nombreVariedad String
+  variedadActiva Boolean        @default(true)
+  especieId      Int
+  especie        Especie        @relation(fields:[especieId], references:[id])
+  presentaciones Presentacion[]
+
+  @@map("variedad")
 }
 
+// PRESENTACIONES
 model Presentacion {
-  id            Int       @id @default(autoincrement())
-  uamId         Int?      @unique                                              // Identificador de la especie proveniente del UAM
-  nombre        String?                                                        // Nombre de la presentación
-  kgPorUnidad   Decimal?                                                       // Cantidad de kilogramos por unidad
-  activa        Boolean?                                                       // Indica si la presentación se encuentra activa
-  esDefault     Boolean?                                                       // Indica si es la presentación determinada de la variedad
-  variedadId    Int                                                            // Variedad a la que pertenece la presentación
-  variedad      Variedad  @relation(fields: [variedadId], references: [id])    
+  id                  Int             @id @default(autoincrement())
+  uamId               Int?            @unique
+  nombrePresentacion  String
+  kgPorUnidad         Numeric(10, 2)?
+  presentacionActiva  Boolean         @default(true)
+  presentacionDefault Boolean         @default(false)
+  variedadId          Int
+  variedad            Variedad        @relation(fields:[variedadId], references:[id])
+  publicaciones       Publicacion[]
+
+  @@map("presentacion")
 }
 
-model Mensaje {
-  id          Int       @id @default(autoincrement())
-  texto       String
-  createdAt   DateTime  @default(now())
+// CATEGORIAS
+model Categoria {
+  id              Int           @id @default(autoincrement())
+  nombreCategoria String
+  especieId       Int?
+  especie         Especie?      @relation(fields:[especieId], references:[id])
+  publicaciones   Publicacion[]
+
+  @@map("categoria")
+}
+
+// CALIBRES
+model Calibre {
+  id            Int           @id @default(autoincrement())
+  codigoCalibre String        @unique
+  nombreCalibre String
+  publicaciones Publicacion[]
+
+  @@map("calibre")
+}
+
+// PAISES
+model Pais {
+  id                  Int                   @id @default(autoincrement())
+  codigoPais          String                @unique
+  nombrePais          String                @unique
+  publicacionesOrigen PublicacionOperador[]
+
+  @@map("pais")
+}
+
+// DEPARTAMENTOS
+model Departamento {
+  id                   Int                    @id @default(autoincrement())
+  codigoDepartamento   String                 @unique
+  nombreDepartamento   String                 @unique
+  publicacionesVendido PublicacionProductor[]
+
+  @@map("departamento")
+}
+
+// PUBLICACIONES ABSTRACTAS
+model Publicacion {
+  id                    Int                   @id @default(autoincrement())
+  fecha                 DateTime              @default(now())
+  publicacionDisponible Boolean               @default(true)
+  publicacionActiva     Boolean               @default(true)
+  precio                Numeric(12, 2)?
+  foto                  String?
+  tipoPublicacion       TipoPublicacion
+
+  presentacionId        Int
+  presentacion          Presentacion          @relation(fields:[presentacionId], references:[id])
+  categoriaId           Int
+  categoria             Categoria             @relation(fields:[categoriaId], references:[id])
+  calibreId             Int
+  calibre               Calibre               @relation(fields:[calibreId], references:[id])
+
+  @@map("publicacion")
+}
+
+// PUBLICACIONES DE OPERADORES
+model PublicacionOperador {
+  id            Int         @id @default(autoincrement())
+  publicacionId Int         @unique
+  publicacion   Publicacion @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
+  operadorId    Int
+  operador      Operador    @relation(fields:[operadorId], references:[id])
+  paisId        Int
+  pais          Pais        @relation(fields:[paisId], references:[id])
+
+  @@map("publicacionOperador")
+}
+
+// PUBLICACIONES DE PRODUCTORES
+model PublicacionProductor {
+  id             Int          @id @default(autoincrement())
+  publicacionId  Int          @unique
+  publicacion    Publicacion  @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
+  productorId    Int
+  productor      Productor    @relation(fields:[productorId], references:[id])
+  departamentoId Int
+  departamento   Departamento @relation(fields:[departamentoId], references:[id])
+  direccion      String
+
+  @@map("publicacionProductor")
+}
+
+// NOTIFICACIONES
+model Notificacion {
+  id          Int      @id @default(autoincrement())
+  titulo      String
+  descripcion String
+  vista       Boolean  @default(false)
+
+  usuarioId   Int
+  usuario     Usuario  @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
+
+  @@map("notificacion")
+}
+
+// CONFIGURACION
+model Configuracion {
+  id                  Int    @id @default(autoincrement())
+  nombreConfiguracion String @unique
+  valorConfiguracion  String
+
+  @@map("configuracion")
 }

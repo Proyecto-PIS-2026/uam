@@ -27,8 +27,10 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Aplicar migraciones en Producción
-        run: npm run db:migrate
+      - name: Emitir contrato y aplicar migraciones en Producción
+        run: |
+          npm run db:contract
+          npm run db:migrate
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
