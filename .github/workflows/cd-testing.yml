@@ -31,7 +31,7 @@ jobs:
       - name: Emitir contrato y aplicar migraciones en Testing
         run: |
           npm run db:contract
-          npx prisma db update --db "$DATABASE_URL" --no-interactive --confirm uam
+          npx prisma db update --db "$DATABASE_URL" --no-interactive --confirm uam-testing
           npx prisma db verify --db "$DATABASE_URL"  
         env:
           DATABASE_URL: ${{ secrets.TESTING_DATABASE_URL }}
