@@ -105,7 +105,7 @@ export default function Inicio({ especies }: Props) {
       </div>
 
       <section className="px-4 sm:px-8 pb-16">
-        <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 tracking-tight">Productos</h2>
+        <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 tracking-tight">Especies</h2>
 
         <div className="flex flex-row items-center justify-between mb-2">
           <div className="flex items-center gap-2 mb-2">
