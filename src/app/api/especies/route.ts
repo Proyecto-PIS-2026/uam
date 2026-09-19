@@ -1,4 +1,4 @@
-import { obtenerEspecies } from "@/infraestructura/persistencia/prisma/productos";
+import { obtenerEspecies } from "@/infraestructura/persistencia/prisma/especies";
 import { NextResponse } from "next/server";
 
 export async function GET() {
