@@ -1,5 +1,5 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import { or } from "@prisma/orm-postgres/orm-client";
+import { and, or } from "@prisma/orm-postgres/orm-client";
 
 export type ordenPublicaciones =
     | "ninguno"
@@ -21,8 +21,7 @@ export type filtrosPublicaciones = {
     precioMax?: number;
 
     orden?: ordenPublicaciones;
-    cursor?: string;
-    limite?: number;
+    lote?: string;
 };
 
 export type publicacionListado = {
@@ -45,8 +44,8 @@ export type publicacionListado = {
 
 export type resultadoPublicaciones = {
     publicaciones: publicacionListado[];
-    nextCursor: string | null;
-    hasMore: boolean;
+    siguienteLote: string | null;
+    hayMas: boolean;
 };
 
 export type publicacionAgrupada = Omit<publicacionListado, "operador">;
@@ -60,8 +59,8 @@ export type operadorListado = {
 
 export type resultadoPublicacionesAgrupadas = {
     operadores: operadorListado[];
-    nextCursor: string | null;
-    hasMore: boolean;
+    siguienteLote: string | null;
+    hayMas: boolean;
 };
 
 export type publicacionCompleta = {
@@ -107,10 +106,10 @@ export async function consultarPublicaciones(filtros: filtrosPublicaciones = {})
     // Publicacion activa
     let consulta = db.orm.public.PublicacionOperador.where((po) =>
         po.publicacion.some((publicacion) =>
-            publicacion.publicacionActiva.eq(true)))
-        .where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.publicacionDisponible.eq(true)));
+            and(
+                publicacion.publicacionActiva.eq(true),
+                publicacion.publicacionDisponible.eq(true)
+            )))
     // Filtro especie
     if (filtros.especieId !== undefined) {
         consulta = consulta.where((po) =>
@@ -231,16 +230,16 @@ export async function consultarPublicaciones(filtros: filtrosPublicaciones = {})
     }
     // Paginación
     const limite = 20; // 20 publicaciones a la vez.
-    const inicio = filtros.cursor ? Number(filtros.cursor) : 0;
+    const inicio = filtros.lote ? Number(filtros.lote) : 0;
     const publicacionesPagina = resultado.slice(inicio, inicio + limite);
     const nuevoInicio = inicio + publicacionesPagina.length;
-    const hasMore = nuevoInicio < resultado.length;
-    const nextCursor = hasMore ? String(nuevoInicio) : null;
+    const hayMas = nuevoInicio < resultado.length;
+    const siguienteLote = hayMas ? String(nuevoInicio) : null;
     // Retornar
     return {
         publicaciones: publicacionesPagina,
-        nextCursor,
-        hasMore,
+        siguienteLote,
+        hayMas,
     }; 
 }
 
@@ -249,10 +248,10 @@ export async function consultarPublicacionesAgrupadas(filtros: filtrosPublicacio
     // Publicacion activa
     let consulta = db.orm.public.PublicacionOperador.where((po) =>
         po.publicacion.some((publicacion) =>
-            publicacion.publicacionActiva.eq(true)))
-    .where((po) =>
-        po.publicacion.some((publicacion) =>
-            publicacion.publicacionDisponible.eq(true)));
+            and(
+                publicacion.publicacionActiva.eq(true),
+                publicacion.publicacionDisponible.eq(true)
+            )))
     // Filtro especie
     if (filtros.especieId !== undefined) {
         consulta = consulta.where((po) =>
@@ -352,15 +351,17 @@ export async function consultarPublicacionesAgrupadas(filtros: filtrosPublicacio
             categoria: publicacionOperador.publicacion.categoria.nombreCategoria,
             calibre: publicacionOperador.publicacion.calibre.nombreCalibre,
         };
-        if (!operadores.has(operadorId)) {
-            operadores.set(operadorId, {
+        let operador = operadores.get(operadorId);
+        if (!operador) {
+            operador = {
                 id: operadorId,
                 nombreFantasia: publicacionOperador.operador.nombreFantasia,
                 fotoPerfil: publicacionOperador.operador.fotoPerfil,
                 publicaciones: [],
-            });
+            };
+            operadores.set(operadorId, operador);
         }
-        operadores.get(operadorId)!.publicaciones.push(publicacion);
+        operador.publicaciones.push(publicacion);
     }
     // Ordenar publicaciones
     for (const operador of operadores.values()) {
@@ -401,32 +402,30 @@ export async function consultarPublicacionesAgrupadas(filtros: filtrosPublicacio
     }
     // Paginación
     const limite = 5;
-    const inicio = filtros.cursor ? Number(filtros.cursor) : 0;
+    const inicio = filtros.lote ? Number(filtros.lote) : 0;
     const operadoresPagina = listaOperadores.slice(inicio, inicio + limite);
     const nuevoInicio = inicio + operadoresPagina.length;
-    const hasMore = nuevoInicio < listaOperadores.length;
-    const nextCursor = hasMore ? String(nuevoInicio) : null;
+    const hayMas = nuevoInicio < listaOperadores.length;
+    const siguienteLote = hayMas ? String(nuevoInicio) : null;
     // Retornar
     return {
         operadores: operadoresPagina,
-        nextCursor,
-        hasMore,
+        siguienteLote,
+        hayMas,
     };
 }
 
 // Obtener Publicacion Completa
 export async function consultarPublicacion(id: number): Promise<publicacionCompleta | null> {
     // Publicacion Activa
-    const publicaciones = await db.orm.public.PublicacionOperador
+    const publicacionOperador = await db.orm.public.PublicacionOperador
         .where((po) =>
             po.publicacion.some((publicacion) =>
-                publicacion.id.eq(id)))
-        .where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.publicacionActiva.eq(true)))
-        .where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.publicacionDisponible.eq(true)))
+                and(
+                    publicacion.id.eq(id),
+                    publicacion.publicacionActiva.eq(true),
+                    publicacion.publicacionDisponible.eq(true)
+                )))
         .include("publicacion", (publicacion) =>
             publicacion.select("id", "precio", "foto").include("presentacion", (presentacion) =>
                 presentacion.include("variedad", (variedad) =>
@@ -434,10 +433,9 @@ export async function consultarPublicacion(id: number): Promise<publicacionCompl
         .include("operador", (operador) =>
             operador.select("id", "nombreFantasia", "fotoPerfil", "whatsApp"))
         .include("pais", (pais) =>
-            pais.select("id", "codigoPais", "nombrePais")).all();
+            pais.select("id", "codigoPais", "nombrePais")).first();
 
-    if (publicaciones.length === 0) return null;
-    const publicacionOperador = publicaciones[0];
+    if (!publicacionOperador) return null;
     // Retornar
     return {
         id: publicacionOperador.publicacion.id,
