@@ -34,11 +34,15 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.boton-inicio {
-  @apply bg-white border border-gray-100 rounded-2xl h-16 sm:h-24 flex items-center justify-center text-center text-sm md:text-base font-semibold text-gray-800 shadow-sm hover:shadow-md transition-all;
-}
-.boton-inicio:hover {
-  border-color: var(--green);
-  color: var(--green);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-}
+
+/* ====================================================== */
+/* ========= BOTONES DE ACCESO EN PAGINA INICIO ========= */
+/* ====================================================== */
+    .boton-inicio {
+      @apply bg-white border border-gray-100 rounded-2xl h-16 sm:h-24 flex items-center justify-center text-center text-base md:text-base font-semibold text-gray-800 shadow-sm hover:shadow-md transition-all;
+    }
+    .boton-inicio:hover {
+      border-color: var(--green);
+      color: var(--green);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }

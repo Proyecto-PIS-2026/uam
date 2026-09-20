@@ -1,3 +1,6 @@
+/* ================================================= */
+/* ==================== IMPORTS ==================== */
+/* ================================================= */
 "use client";
 import { useEffect, useState } from "react";
 
@@ -6,7 +9,9 @@ import Header from "../../../compartido/header";
 
 import Link from "next/link";
 
-/*db*/
+/* ================================================= */
+/* ================= BASE DE DATOS ================= */
+/* ================================================= */
 type Props = {
   especies: {
     id: number;
@@ -18,6 +23,9 @@ type Props = {
 
 export default function Inicio({ especies }: Props) {
 
+/* ================================================= */
+/* =================== VARIABLES =================== */
+/* ================================================= */
   const especiesActivas = [...especies].sort((a, b) =>
   a.nombreEspecie.localeCompare(b.nombreEspecie, "es"));
 
@@ -33,6 +41,9 @@ export default function Inicio({ especies }: Props) {
 
       <Header />
 
+     {/* ================================================= */
+      /* ================ MERCADO DE HOY ================= */
+      /* ================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
         <div className="flex justify-center px-6 py-4 md:py-10">
           <h1 className="text-7xl md:text-8xl font-extrabold leading-none text-left pt-7 md:pt-10 text-[var(--ink)]">
@@ -43,16 +54,17 @@ export default function Inicio({ especies }: Props) {
         </div>
 
         <div className="relative flex flex-col items-center justify-center">
-          {/* foto verduras */}
+          
+        {/* FOTO VERDURAS: */}
           <img
             src="https://elpueblodigital.uy/wp-content/uploads/2026/08/frutas-y-verduras-1024x768-png.webp"
             alt="Verduras frescas de feria"
             className="hidden lg:block w-full h-56 md:h-100 object-cover"
           />
-          {/* Difuminado hacia el fondo */}
+        {/* DIFUMINADO HACIA EL FONDO */}
           <div className="absolute inset-0 hidden lg:block bg-gradient-to-l from-transparent via-transparent to-[var(--lightgray)]" />
            
-          {/* logo sobre foto */}
+        {/* LOGO UAM SOBRE LA FOTO */}
           <div className="absolute top-15 left-1/2 -translate-x-1/2 z-10 h-70 w-50 overflow-hidden">
             <img
               src="https://uamservicios.uy/images/logo_white.png"
@@ -64,6 +76,9 @@ export default function Inicio({ especies }: Props) {
 
       </div>
 
+     {/* ================================================= */
+      /* ======== ACCESOS PRINCIPALES (4 BOTONES) ======== */
+      /* ================================================= */}
       <div className="p-6 mt-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Link href="/productos" className="boton-inicio">Ver productos</Link>
@@ -73,8 +88,13 @@ export default function Inicio({ especies }: Props) {
         </div>
       </div>
 
+     {/* ================================================= */
+      /* ======== SUBTITULO / FILTROS / BUSQUEDA ========= */
+      /* ================================================= */}
       <section className="px-4 sm:px-8 pb-16">
-        <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 tracking-tight">Especies</h2>
+        <h2 className="text-5xl pt-3 sm: pt-0 sm:text-7xl font-bold text-gray-900 mb-4 tracking-tight">
+          Especies
+        </h2>
 
         <div className="flex flex-row items-center justify-between mb-2">
           <div className="flex items-center gap-2 mb-2">
@@ -121,6 +141,9 @@ export default function Inicio({ especies }: Props) {
           </select>
         </div>
       
+    {/* ================================================= */
+     /* ========= MOSTRAR TARJETAS DE ESPECIES ========== */
+     /* ================================================= */}      
         {especiesPagina.length === 0 ? (
           <p className="text-center text-gray-500 py-16">
             No hay especies que coincidan con la búsqueda.
@@ -136,6 +159,10 @@ export default function Inicio({ especies }: Props) {
               />
             ))}
           </div>
+
+     {/* ================================================= */
+      /* == ANTERIOR / SELECTOR DE PAGINA / SIGUIENTE  === */
+      /* ================================================= */}
         <div className="flex justify-center items-center gap-2 mt-8">
           <button
             onClick={() => setPaginaActual(paginaActual - 1)}
@@ -145,7 +172,11 @@ export default function Inicio({ especies }: Props) {
             ← Anterior
           </button>
 
-          {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((pagina) => (
+          {/* Pagina anterior - Pagina actual - Paguina siguiente */}
+          {Array.from(
+            { length: Math.min(3, totalPaginas - 1) },
+            (_, i) => Math.max(1, Math.min(paginaActual - 1, totalPaginas - 3)) + i
+          ).map((pagina) => (
             <button
               key={pagina}
               onClick={() => setPaginaActual(pagina)}
@@ -158,6 +189,25 @@ export default function Inicio({ especies }: Props) {
               {pagina}
             </button>
           ))}
+
+          {/* ... */}
+          {totalPaginas > 4 && paginaActual < totalPaginas - 2 && (
+            <span className="px-1 text-gray-500">...</span>
+          )}
+
+          {/* Última página */}
+          {totalPaginas > 3 && (
+            <button
+              onClick={() => setPaginaActual(totalPaginas)}
+              className={`w-10 h-10 rounded-lg font-semibold ${
+                paginaActual === totalPaginas
+                  ? "bg-[var(--green)] text-white"
+                  : "bg-white border border-gray-300 text-[var(--ink)]"
+              }`}
+            >
+              {totalPaginas}
+            </button>
+          )}
 
           <button
             onClick={() => setPaginaActual(paginaActual + 1)}
