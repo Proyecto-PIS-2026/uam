@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import varsTemp from "../vars-temporales";
 
 import { obtenerPublicacionesDeOperador } from "@/infraestructura/persistencia/prisma/publicaciones";
 
@@ -21,7 +22,7 @@ export default async function DetallePublicacion({ params }: Props) {
     }
 
     // TODO: reemplazar por el operadorId del usuario logueado
-    const operadorId = 21;
+    const operadorId = varsTemp.operadorId;
 
     const publicaciones = await obtenerPublicacionesDeOperador(operadorId);
 

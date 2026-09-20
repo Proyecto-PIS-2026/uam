@@ -1,14 +1,15 @@
 import MiMercado, { type Publicacion } from "./mi-mercado";
+import varsTemp from "./vars-temporales";
 import { obtenerPublicacionesDeOperador } from "@/infraestructura/persistencia/prisma/publicaciones";
 
 // TODO: reemplazar por el valor real de Configuración ("incremento_precio")
 // cuando se implemente el ítem BP-18.2
-const incrementoPrecioTemporal = 10;
+const incrementoPrecio = varsTemp.incrementoPrecio;
 
 
 export default async function Page() {
     //TODO: reemplazar por el operadorId del usuario loggeado (por ahora hardcodeado)
-    const operadorId = 21;
+    const operadorId = 9;
     const publicacionesBD = await obtenerPublicacionesDeOperador(operadorId);
     const publicaciones: Publicacion[] = publicacionesBD.map((rel) => {
         const pub = rel.publicacion;
@@ -40,7 +41,7 @@ export default async function Page() {
         return (
             <MiMercado
                 publicaciones={publicaciones}
-                incrementoPrecio={incrementoPrecioTemporal}
+                incrementoPrecio={incrementoPrecio}
             />
         );
 }
