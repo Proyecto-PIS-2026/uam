@@ -1,4 +1,4 @@
-import { obtenerEspecies } from "@/infraestructura/persistencia/prisma/productos";
+import { obtenerEspecies } from "@/infraestructura/persistencia/prisma/especies";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -6,7 +6,6 @@ export async function GET() {
     const especies = await obtenerEspecies();
 
     const especiesActivas = especies
-      .filter((e) => e.especieActiva === true)
       .map((e) => e.nombreEspecie);
 
     return NextResponse.json(especiesActivas);

@@ -7,8 +7,8 @@ export default async function Page() {
   const especies = especiesBD.map((especie) => ({
     id: especie.id,
     nombreEspecie: especie.nombreEspecie,
-    especieActiva: especie.especieActiva,
     uamId: especie.uamId,
+    fotoEspecie: especie.fotoEspecie,
   }));
 
   return <Inicio especies={especies} />;

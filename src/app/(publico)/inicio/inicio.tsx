@@ -6,50 +6,27 @@ import Header from "../../../compartido/header";
 
 import Link from "next/link";
 
-const productos = [
-  { nombre: "Ananá", variedad: "Unidad", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Banana Cavendish", variedad: "Grande", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Berenjena", variedad: "Grande", categoria: "Categoría I", operadores: 1, precio: 4, imagen: "https://images.unsplash.com/photo-1576045212914-51a8d7e7eef3?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Brócoli", variedad: "Unidad", categoria: "Categoría I", operadores: 2, precio: 58, imagen: "https://images.unsplash.com/photo-1685504445355-0e7bdf90d415?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Cebolla", variedad: "Mediana", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=400&auto=format&fit=crop" },
-{ nombre: "Ananá2", variedad: "Unidad", categoria: "Categoría I", operadores: 3, precio: 58, imagen: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Banana2 Cavendish", variedad: "Grande", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Berenjena2", variedad: "Grande", categoria: "Categoría I", operadores: 1, precio: 4, imagen: "https://images.unsplash.com/photo-1576045212914-51a8d7e7eef3?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Brócoli2", variedad: "Unidad", categoria: "Categoría I", operadores: 2, precio: 58, imagen: "https://images.unsplash.com/photo-1685504445355-0e7bdf90d415?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Cebolla2", variedad: "Mediana", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=400&auto=format&fit=crop" },
-{ nombre: "Ananá3", variedad: "Unidad", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Banana3 Cavendish", variedad: "Grande", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Berenjena3", variedad: "Grande", categoria: "Categoría I", operadores: 5, precio: 4, imagen: "https://images.unsplash.com/photo-1576045212914-51a8d7e7eef3?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Brócoli3", variedad: "Unidad", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1685504445355-0e7bdf90d415?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Cebolla3", variedad: "Mediana", categoria: "Categoría I", operadores: 3, precio: 58, imagen: "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=400&auto=format&fit=crop" },
-{ nombre: "Ananá4", variedad: "Unidad", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Banana 4Cavendish", variedad: "Grande", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Berenjena4", variedad: "Grande", categoria: "Categoría I", operadores: 1, precio: 4, imagen: "https://images.unsplash.com/photo-1576045212914-51a8d7e7eef3?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Brócoli4", variedad: "Unidad", categoria: "Categoría I", operadores: 6, precio: 58, imagen: "https://images.unsplash.com/photo-1685504445355-0e7bdf90d415?q=80&w=400&auto=format&fit=crop" },
-  { nombre: "Cebolla4", variedad: "Mediana", categoria: "Categoría I", operadores: 1, precio: 58, imagen: "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=400&auto=format&fit=crop" },
-];
 /*db*/
 type Props = {
   especies: {
     id: number;
     nombreEspecie: string;
-    especieActiva: boolean;
     uamId: number | null;
+    fotoEspecie: string | null;
   }[];
 };
 
 export default function Inicio({ especies }: Props) {
 
-  const especiesActivas = especies
-  .filter((e) => e.especieActiva)
-  .sort((a, b) => a.nombreEspecie.localeCompare(b.nombreEspecie, "es"));
+  const especiesActivas = [...especies].sort((a, b) =>
+  a.nombreEspecie.localeCompare(b.nombreEspecie, "es"));
 
-  const productosPorPagina = 20;
+  const especiesPorPagina = 20;
   const [paginaActual, setPaginaActual] = useState(1);
-  const totalPaginas = Math.ceil(productos.length / productosPorPagina);
-  const indiceInicial = (paginaActual - 1) * productosPorPagina;
-  const indiceFinal = indiceInicial + productosPorPagina;
-  const productosPagina = productos.slice(indiceInicial, indiceFinal);
+  const totalPaginas = Math.ceil(especiesActivas.length / especiesPorPagina);
+  const indiceInicial = (paginaActual - 1) * especiesPorPagina;
+  const indiceFinal = indiceInicial + especiesPorPagina;
+  const especiesPagina = especiesActivas.slice(indiceInicial, indiceFinal);
 
   return (
     <main className="bg-[var(--lightgray)] min-h-screen">
@@ -83,14 +60,6 @@ export default function Inicio({ especies }: Props) {
               className="h-70 w-auto max-w-none hidden lg:block"
             />
           </div>
-          {/* VER CUAL PREFIERO:
-          <div className="absolute top-10 left-1/2 -translate-x-1/2 z-10 w-150 h-70 overflow-hidden">
-              <img
-                src="https://uam.com.uy/wp-content/uploads/2022/09/logo-uam.png"
-                alt="UAM"
-                className="w-150 h-auto hidden lg:block"
-              />
-            </div>*/}
         </div>
 
       </div>
@@ -117,7 +86,7 @@ export default function Inicio({ especies }: Props) {
             </button>
           </div>
           <span className="text-[10px] md:text-base font-bold text-gray-500 tracking-wide mb-1">
-            {productos.length} PRODUCTOS PUBLICADOS
+            {especiesActivas.length} ESPECIES PUBLICADAS
           </span>
         </div>
 
@@ -143,28 +112,6 @@ export default function Inicio({ especies }: Props) {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-3 ">
-          <div className="col-span-2">
-            <label className="block text-xs font-bold text-gray-500 mb-1 tracking-wide pl-1">ESPECIE</label>
-            <select className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-gray-800">
-              <option value="">Todas las especies</option>
-              {especiesActivas.map((e) => (
-                <option key={e.id} value={e.nombreEspecie}>
-                  {e.nombreEspecie}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-500 mb-1 tracking-wide pl-2">...</label>
-            <input type="number" min="0" placeholder="Mín" className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-gray-800 placeholder-gray-400" />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-500 mb-1 tracking-wide pl-2">...</label>
-            <input type="number" min="0" placeholder="Máx" className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-gray-800 placeholder-gray-400" />
-          </div>
-        </div>
-
         <div className="flex justify-end items-center gap-2 mb-5">
           <span className="text-xs font-bold text-gray-500 tracking-wide">ORDENAR POR:</span>
           <select className="text-sm font-bold text-[var(--green)] bg-transparent focus:outline-none">
@@ -173,19 +120,22 @@ export default function Inicio({ especies }: Props) {
             <option>...</option>
           </select>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5">
-          {productosPagina.map((p) => (
-            <ProductoCard
-              key={p.nombre}
-              nombre={p.nombre}
-              variedad={p.variedad}
-              categoria={p.categoria}
-              operadores={p.operadores}
-              imagen={p.imagen}
-            />
-          ))}
-        </div>
+      
+        {especiesPagina.length === 0 ? (
+          <p className="text-center text-gray-500 py-16">
+            No hay especies que coincidan con la búsqueda.
+          </p>
+        ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5">
+            {especiesPagina.map((e) => (
+              <ProductoCard
+                key={e.id}
+                nombre={e.nombreEspecie}
+                imagen={e.fotoEspecie || undefined}
+              />
+            ))}
+          </div>
         <div className="flex justify-center items-center gap-2 mt-8">
           <button
             onClick={() => setPaginaActual(paginaActual - 1)}
@@ -217,6 +167,8 @@ export default function Inicio({ especies }: Props) {
             Siguiente →
           </button>
         </div>
+        </>
+        )}
       </section>
     </main>
   );
