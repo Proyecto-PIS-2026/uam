@@ -37,7 +37,7 @@ export default function Inicio({ especies }: Props) {
   const especiesPagina = especiesActivas.slice(indiceInicial, indiceFinal);
 
   return (
-    <main className="bg-[var(--lightgray)] min-h-screen">
+    <main className="bg-[var(--color-background)] min-h-screen">
 
       <Header />
 
@@ -46,8 +46,8 @@ export default function Inicio({ especies }: Props) {
       /* ================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
         <div className="flex justify-center px-6 py-4 md:py-10">
-          <h1 className="text-7xl md:text-8xl font-extrabold leading-none text-left pt-7 md:pt-10 text-[var(--ink)]">
-            <span className="text-[var(--green)]">Mercado</span>
+          <h1 className="text-7xl md:text-8xl font-extrabold leading-none text-left pt-7 md:pt-10 text-[var(--color-foreground)]">
+            <span className="text-[var(--color-secondary)]">Mercado</span>
           <br />
             de hoy
           </h1>
@@ -62,7 +62,7 @@ export default function Inicio({ especies }: Props) {
             className="hidden lg:block w-full h-56 md:h-100 object-cover"
           />
         {/* DIFUMINADO HACIA EL FONDO */}
-          <div className="absolute inset-0 hidden lg:block bg-gradient-to-l from-transparent via-transparent to-[var(--lightgray)]" />
+          <div className="absolute inset-0 hidden lg:block bg-gradient-to-l from-transparent via-transparent to-[var(--color-background)]" />
            
         {/* LOGO UAM SOBRE LA FOTO */}
           <div className="absolute top-15 left-1/2 -translate-x-1/2 z-10 h-70 w-50 overflow-hidden">
@@ -98,10 +98,10 @@ export default function Inicio({ especies }: Props) {
 
         <div className="flex flex-row items-center justify-between mb-2">
           <div className="flex items-center gap-2 mb-2">
-            <button className="px-5 py-2 rounded-full bg-[var(--green)] text-white font-semibold text-sm">
+            <button className="px-5 py-2 rounded-full bg-[var(--color-secondary)] text-white font-semibold text-sm">
               Todos
             </button>
-            <button className="px-2 font-medium text-sm text-[var(--ink)]">
+            <button className="px-2 font-medium text-sm text-[var(--color-foreground)]">
               Favoritos
             </button>
           </div>
@@ -119,10 +119,10 @@ export default function Inicio({ especies }: Props) {
             <input
               type="text"
               placeholder="Buscar producto"
-              className="w-full h-12 pl-11 pr-4 rounded-xl border border-gray-200/70 bg-white/70 text-[var(--ink)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--green)]"
+              className="w-full h-12 pl-11 pr-4 rounded-xl border border-gray-200/70 bg-white/70 text-[var(--color-foreground)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)]"
             />
           </div>
-          <button className="h-12 w-12 flex-shrink-0 flex items-center justify-center rounded-xl border border-[var(--green)] text-[var(--green)]">
+          <button className="h-12 w-12 flex-shrink-0 flex items-center justify-center rounded-xl border border-[var(--color-secondary)] text-[var(--color-secondary)]">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path d="M4 6h16M8 12h8M11 18h2" strokeLinecap="round" />
               <circle cx="14" cy="6" r="1.5" fill="currentColor" stroke="none" />
@@ -134,7 +134,7 @@ export default function Inicio({ especies }: Props) {
 
         <div className="flex justify-end items-center gap-2 mb-5">
           <span className="text-xs font-bold text-gray-500 tracking-wide">ORDENAR POR:</span>
-          <select className="text-sm font-bold text-[var(--green)] bg-transparent focus:outline-none">
+          <select className="text-sm font-bold text-[var(--color-secondary)] bg-transparent focus:outline-none">
             <option>...</option>
             <option>...</option>
             <option>...</option>
@@ -167,7 +167,7 @@ export default function Inicio({ especies }: Props) {
           <button
             onClick={() => setPaginaActual(paginaActual - 1)}
             disabled={paginaActual === 1}
-            className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-[var(--color-foreground)] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ← Anterior
           </button>
@@ -182,8 +182,8 @@ export default function Inicio({ especies }: Props) {
               onClick={() => setPaginaActual(pagina)}
               className={`w-10 h-10 rounded-lg font-semibold ${
                 paginaActual === pagina
-                  ? "bg-[var(--green)] text-white"
-                  : "bg-white border border-gray-300 text-[var(--ink)]"
+                  ? "bg-[var(--color-secondary)] text-white"
+                  : "bg-white border border-gray-300 text-[var(--color-foreground)]"
               }`}
             >
               {pagina}
@@ -201,8 +201,8 @@ export default function Inicio({ especies }: Props) {
               onClick={() => setPaginaActual(totalPaginas)}
               className={`w-10 h-10 rounded-lg font-semibold ${
                 paginaActual === totalPaginas
-                  ? "bg-[var(--green)] text-white"
-                  : "bg-white border border-gray-300 text-[var(--ink)]"
+                  ? "bg-[var(--color-secondary)] text-white"
+                  : "bg-white border border-gray-300 text-[var(--color-foreground)]"
               }`}
             >
               {totalPaginas}
@@ -212,7 +212,7 @@ export default function Inicio({ especies }: Props) {
           <button
             onClick={() => setPaginaActual(paginaActual + 1)}
             disabled={paginaActual === totalPaginas}
-            className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-[var(--color-foreground)] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Siguiente →
           </button>
