@@ -9,7 +9,7 @@ const incrementoPrecio = varsTemp.incrementoPrecio;
 
 export default async function Page() {
     //TODO: reemplazar por el operadorId del usuario loggeado (por ahora hardcodeado)
-    const operadorId = 9;
+    const operadorId = varsTemp.operadorId;
     const publicacionesBD = await obtenerPublicacionesDeOperador(operadorId);
     const publicaciones: Publicacion[] = publicacionesBD.map((rel) => {
         const pub = rel.publicacion;

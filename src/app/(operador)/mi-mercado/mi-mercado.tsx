@@ -1,5 +1,6 @@
 "use client";
-import Link from "next/link";
+
+import TarjetaPublicacion from "./tarjeta-publicacion";
 
 export type Publicacion = {
     id: number;
@@ -32,7 +33,7 @@ type Props = {
     incrementoPrecio: number;
 };
 
-export default function MiMercado({ publicaciones }: Props) {
+export default function MiMercado({ publicaciones , incrementoPrecio }: Props) {
     const gruposPorEspecie = new Map<
         number,
         {
@@ -121,121 +122,9 @@ export default function MiMercado({ publicaciones }: Props) {
 
                             {/* Tarjetas */}
                             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                                {items.map((pub) => {
-                                    const variedad =
-                                        pub.presentacion.variedad.nombreVariedad;
-
-                                    const tieneVariedad =
-                                        variedad &&
-                                        variedad.trim() !== "" &&
-                                        variedad.trim() !== "-";
-
-                                    const tienePrecio =
-                                        pub.precio &&
-                                        pub.precio !== "null" &&
-                                        pub.precio !== "undefined";
-
-                                    return (
-                                        <Link
-                                            key={pub.id}
-                                            href={`/mi-mercado/${pub.id}`}
-                                            className="flex min-h-28 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
-                                        >
-                                            {/* Foto */}
-                                            <div className="w-28 shrink-0 bg-gray-100 sm:w-32">
-                                                {pub.foto ? (
-                                                    <img
-                                                        src={pub.foto}
-                                                        alt={`${especie.nombreEspecie}${
-                                                            tieneVariedad
-                                                                ? ` ${variedad}`
-                                                                : ""
-                                                        }`}
-                                                        className="h-full w-full object-cover"
-                                                    />
-                                                ) : especie.fotoEspecie ? (
-                                                    <img
-                                                        src={especie.fotoEspecie}
-                                                        alt={especie.nombreEspecie}
-                                                        className="h-full w-full object-cover opacity-70"
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-full min-h-28 items-center justify-center px-2 text-center text-xs font-medium text-gray-400">
-                                                        Sin fotografía
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Información */}
-                                            <div className="flex min-w-0 flex-1 flex-col">
-
-                                                {/* Datos principales */}
-                                                <div className="flex-1 p-3 sm:p-4">
-                                                    <div className="flex items-start justify-between gap-2">
-
-                                                        <div className="min-w-0">
-                                                            <h3 className="truncate text-base font-bold text-[var(--ink)] sm:text-lg">
-                                                                {
-                                                                    especie.nombreEspecie
-                                                                }
-                                                                {tieneVariedad &&
-                                                                    ` · ${variedad}`}
-                                                            </h3>
-
-                                                            <p className="mt-1 text-xs leading-5 text-gray-500 sm:text-sm">
-                                                                {pub.categoria
-                                                                    .nombreCategoria ||
-                                                                    "-"}{" "}
-                                                                ·{" "}
-                                                                {pub.calibre
-                                                                    .nombreCalibre ||
-                                                                    "-"}{" "}
-                                                                ·{" "}
-                                                                {pub.presentacion
-                                                                    .nombrePresentacion ||
-                                                                    "-"}
-                                                            </p>
-                                                        </div>
-
-                                                        <span
-                                                            className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold sm:text-xs ${
-                                                                pub.publicacionDisponible
-                                                                    ? "bg-green-50 text-[var(--green)]"
-                                                                    : "bg-gray-100 text-gray-500"
-                                                            }`}
-                                                        >
-                                                            {pub.publicacionDisponible
-                                                                ? "Disponible"
-                                                                : "No disponible"}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Precio */}
-                                                <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2 sm:px-4">
-                                                    <div>
-                                                        <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
-                                                            Precio
-                                                        </p>
-
-                                                        <p className="text-xl font-extrabold text-[var(--ink)]">
-                                                            {tienePrecio
-                                                                ? `$${pub.precio}`
-                                                                : "Sin precio"}
-                                                        </p>
-                                                    </div>
-
-                                                    {/* Más adelante:
-                                                        acceso al detalle de BP-07.2
-                                                    */}
-                                                    <span className="text-xl text-[var(--green)]">
-                                                        ›
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    );
-                                })}
+                                {items.map((pub) => (
+                                    <TarjetaPublicacion key={pub.id} pub={pub} incrementoPrecio={incrementoPrecio}/>
+                                ))}
                             </div>
                         </section>
                     ))}
