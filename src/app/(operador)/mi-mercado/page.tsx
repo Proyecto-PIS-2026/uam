@@ -8,7 +8,7 @@ const incrementoPrecioTemporal = 10;
 
 export default async function Page() {
     //TODO: reemplazar por el operadorId del usuario loggeado (por ahora hardcodeado)
-    const operadorId = 1;
+    const operadorId = 21;
     const publicacionesBD = await obtenerPublicacionesDeOperador(operadorId);
     const publicaciones: Publicacion[] = publicacionesBD.map((rel) => {
         const pub = rel.publicacion;
