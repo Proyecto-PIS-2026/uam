@@ -5,8 +5,8 @@ import type {
   operadorListado,
 } from "./acciones/publicaciones";
 
-import { PublicacionesOperador } from "@/modulos/publicaciones/componentes/ListadoProductosConOperador";
-import { ProductoSinOperador } from "@/modulos/publicaciones/componentes/TarjetaProductoSinOperador";
+import { PublicacionesOperador } from "@/modulos/publicaciones/componentes/ListadoPublicacionConOperador";
+import { ProductoSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
 import { useState } from "react";
 
 type propiedadesListadoPublicaciones =
@@ -35,7 +35,7 @@ export default function ListadoPublicaciones(
           <PublicacionesOperador
             key={operador.id}
             nombreFantasia={operador.nombreFantasia}
-            productos={operador.publicaciones}
+            publicaciones={operador.publicaciones}
             onProductoClick={(id) => console.log(id)}
           />
         ))}

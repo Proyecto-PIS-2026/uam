@@ -1,6 +1,6 @@
-import styles from "./TarjetaProductoSinOperador.module.css"
+import styles from "./TarjetaPublicacionSinOperador.module.css"
 
-export type Producto = {
+export type Publicacion = {
     id: number; 
     precio: number | null; 
     foto: string | null; 
@@ -11,12 +11,12 @@ export type Producto = {
     calibre: string; 
 }
 
-interface ProductoSinOperadorProps{
-    producto: Producto; 
+interface PublicacionSinOperadorProps{
+    producto: Publicacion; 
     onClick: (id: number) => void; 
 }
 
-export function ProductoSinOperador ({ producto, onClick }: ProductoSinOperadorProps) {
+export function ProductoSinOperador ({ producto, onClick }: PublicacionSinOperadorProps) {
     const contenido =   (
         <div className={styles.tarjeta} onClick ={() => onClick(producto.id)}>
             <div className={styles.imagen}>
