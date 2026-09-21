@@ -19,7 +19,13 @@
     "db:setup": "npm run db:contract && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@js-temporal/polyfill": "^0.5.1",
+    "@mui/icons-material": "^9.4.0",
+    "@mui/material": "^9.4.0",
+    "@mui/material-nextjs": "^9.4.0",
     "@prisma/client": "^7.10.0",
     "csv-parse": "^7.0.2",
     "dotenv": "^17.4.2",
