@@ -20,9 +20,12 @@ export function PublicacionSinOperador ({ producto, onPublicacionClick }: Public
     const contenido =   (
         <div className={styles.tarjeta} onClick ={() => onPublicacionClick(producto.id)}>
             <div className={styles.imagen}>
-                <img 
-                    src={producto.foto !== null ? producto.foto : "/imagenes/producto-sin-foto.png"}
-                />
+                {producto.foto !== null ? (
+                    <img src={producto.foto}/>
+                ) : (
+                    <span className="pd-4">IMG</span>
+                )
+                }
             </div>
             <div className={styles.contenido}> 
                 <div className={styles.nombre}>
