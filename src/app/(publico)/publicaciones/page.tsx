@@ -3,7 +3,6 @@ import {
   consultarPublicaciones,
   consultarPublicacionesAgrupadas,
 } from "@/modulos/consulta-mercado/acciones/publicaciones";
-
 type propiedadesPagina = {
   searchParams: Promise<{ agrupar?: string | string[] }>;
 };
@@ -48,7 +47,6 @@ export default async function PaginaPublicaciones({
           </button>
         </form>
       </div>
-
       {listado}
     </main>
   );
