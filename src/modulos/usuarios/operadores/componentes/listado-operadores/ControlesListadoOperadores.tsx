@@ -1,4 +1,5 @@
 import styles from "./ControlesListadoOperadores.module.css";
+import SearchIcon from "@mui/icons-material/Search";
 
 type ControlesListadoOperadoresProps = {
     busqueda: string;
@@ -15,8 +16,7 @@ export default function ControlesListadoOperadores({busqueda, alCambiarBusqueda,
     const contenido = (
         <div className={styles.contenedor}>
             <div className={styles.buscador}>
-                <span aria-hidden="true" className={styles.iconoBusqueda}>{/* icono de busqueda */}</span>
-
+                <SearchIcon aria-hidden="true" className={styles.iconoBusqueda}/>
                 <input className={styles.inputBusqueda} type="search" value={busqueda} onChange={(evento) => alCambiarBusqueda(evento.target.value)} placeholder="Buscar operadores"/>
             </div>
 
