@@ -4,12 +4,10 @@
     gap: 1rem; 
     width: 100%; 
     padding: 0.625rem; 
-
     border: 1px solid var(--color-border); 
     border-radius: 1rem; 
     background-color: var(--color-surface); 
     color: var(--color-forefround); 
-
     box-shadow: 0 4px 6px rgb(0 0 0 / 10%); 
     transition: 200ms; 
 }
@@ -27,18 +25,23 @@
 
 .imagen {
     width: 5rem;
-    height: 5rem; 
+    height: auto; 
+    aspect-ratio: 1 / 1;      
+    align-self: flex-start;   
     flex-shrink: 0; 
     overflow: hidden; 
-
     border-radius: 0.75rem; 
     background-color: var(--color-primary-soft); 
 }
 
-.imagen img {
-    width: 100%;
-    height: 100%; 
-    object-fit: cover; 
+.imagen {
+    width: 5rem;              
+    height: 5rem;             
+    flex-shrink: 0;           
+    align-self: center;       
+    overflow: hidden; 
+    border-radius: 0.75rem; 
+    background-color: var(--color-primary-soft); 
 }
 
 .contenido {
@@ -46,7 +49,7 @@
     flex: 1; 
     min-width: 0; 
     flex-direction: column; 
-    justify-content: center; 
+    justify-content: flex-start; 
 }
 
 .nombre {
@@ -55,7 +58,23 @@
     white-space: nowrap; 
 
     font-size: 1rem; 
-    font-weight: 600; 
+    font-weight: 600;  
+}
+
+.bloque_detalle {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between; 
+    align-items: center;            
+    width: 100%;         
+}
+
+.presentacion {
+    font-size: 0.875rem;       
+    color: var(--color-muted);      
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .etiquetas {
@@ -70,13 +89,29 @@
     padding: 0.125rem 0.375rem; 
     border-radius: 0.375rem; 
     background-color: var(--color-primary-soft); 
-    color: var(--color-sencondary); 
+    color: var(--color-secondary); 
     font-size: 0.875rem; 
 }
 
+.sin_foto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--color-secondary); 
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em; 
+}
+
 .precio {
-    margin-top: 0.25rem; 
-    font-size: 1rem; 
+    margin: auto; 
+    margin-bottom: 0rem;
+    margin-top: 1.5rem;
+    margin-right: 0.5rem;
+    font-size: 1.2rem; 
+    color: var(--color-primary); 
     font-weight: 700;
     white-space: nowrap; 
 }
