@@ -1,0 +1,7 @@
+.pagina {
+    flex: 1;
+    padding-bottom: 2rem;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+}

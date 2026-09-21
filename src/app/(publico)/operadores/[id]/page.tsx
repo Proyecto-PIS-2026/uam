@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation';
 
 import { obtenerPerfilPublicoOperador } from '@/modulos/usuarios/operadores/consultas-perfil-publico';
-import CatalogoOperador from '@/modulos/usuarios/operadores/componentes/CatalogoOperador';
-import PerfilOperador from '@/modulos/usuarios/operadores/componentes/PerfilOperador';
+import CatalogoOperador from '@/modulos/usuarios/operadores/componentes/perfil-publico-operador/CatalogoOperador';
+import PerfilOperador from '@/modulos/usuarios/operadores/componentes/perfil-publico-operador/PerfilOperador';
+
+import styles from "./page.module.css";
 
 type PageProps = {
     params: Promise<{ id: string; }>;
@@ -19,7 +21,7 @@ export default async function Page({ params }: PageProps) {
     }
 
     const contenido = (
-        <main className='bg-white'>
+        <main className={styles.pagina}>
             <PerfilOperador operador={ perfil } />
             <CatalogoOperador publicaciones={ perfil.publicaciones } />
         </main>
