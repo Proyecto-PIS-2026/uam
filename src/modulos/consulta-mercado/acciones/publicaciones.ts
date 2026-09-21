@@ -91,325 +91,504 @@ function convertirPrecio(valor: number): precioPublicacion {
     return valor.toFixed(2) as unknown as precioPublicacion;
 }
 
-type publicacionComparable = Pick<publicacionListado, "especie" | "variedad" | "presentacion" | "categoria" | "calibre">;
-function compararAlfabeticamente(a: publicacionComparable, b: publicacionComparable): number {
-    const campos = ["especie", "variedad", "presentacion", "categoria", "calibre"] as const;
-    for (const campo of campos) {
-        const resultado = a[campo].localeCompare(b[campo], "es", { sensitivity: "base" });
-        if (resultado !== 0) return resultado;
-    }
-    return 0;
-}
-
 // Obtener Lista De Publicaciones
 export async function consultarPublicaciones(filtros: filtrosPublicaciones = {}): Promise<resultadoPublicaciones> {
-    // Publicacion activa
-    let consulta = db.orm.public.PublicacionOperador.where((po) =>
-        po.publicacion.some((publicacion) =>
-            and(
-                publicacion.publicacionActiva.eq(true),
-                publicacion.publicacionDisponible.eq(true)
-            )))
-    // Filtro especie
-    if (filtros.especieId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.presentacion.some((presentacion) =>
-                    presentacion.variedad.some((variedad) =>
-                        variedad.especie.some((especie) =>
-                            especie.id.eq(filtros.especieId!))))));
+    // Se arma la consulta base
+    let consulta = db.sql.public.publicacionOperador
+        .innerJoin(db.sql.public.publicacion, (tablas, operaciones) =>
+            operaciones.eq(tablas.publicacionOperador.publicacionId, tablas.publicacion.id))
+        .innerJoin(db.sql.public.presentacion, (tablas, operaciones) =>
+            operaciones.eq(tablas.publicacion.presentacionId, tablas.presentacion.id))
+        .innerJoin(db.sql.public.variedad, (tablas, operaciones) =>
+                operaciones.eq(tablas.presentacion.variedadId, tablas.variedad.id))
+        .innerJoin(db.sql.public.especie, (tablas, operaciones) =>
+                operaciones.eq(tablas.variedad.especieId, tablas.especie.id))
+        .innerJoin(db.sql.public.categoria, (tablas, operaciones) =>
+                operaciones.eq(tablas.publicacion.categoriaId, tablas.categoria.id))
+        .innerJoin( db.sql.public.calibre, (tablas, operaciones) =>
+                operaciones.eq(tablas.publicacion.calibreId, tablas.calibre.id))
+        .innerJoin(db.sql.public.operador, (tablas, operaciones) =>
+                operaciones.eq(tablas.publicacionOperador.operadorId, tablas.operador.id))
+        .select((tablas) => ({
+            id: tablas.publicacion.id,
+            precio: tablas.publicacion.precio,
+            foto: tablas.publicacion.foto,
+            especie: tablas.especie.nombreEspecie,
+            variedad: tablas.variedad.nombreVariedad,
+            presentacion: tablas.presentacion.nombrePresentacion,
+            categoria: tablas.categoria.nombreCategoria,
+            calibre: tablas.calibre.codigoCalibre,
+            operadorId: tablas.operador.id,
+            operadorNombreFantasia: tablas.operador.nombreFantasia,
+            operadorFotoPerfil: tablas.operador.fotoPerfil
+        }));
+
+    // Publicacion Activa y Disponible
+    consulta = consulta.where((tablas, operaciones) =>
+        operaciones.and(
+            operaciones.eq(tablas.publicacion.publicacionActiva, true), 
+            operaciones.eq(tablas.publicacion.publicacionDisponible, true)
+        )
+    );
+
+    // Jerarquia Especie > Variedad > Presentación
+    const especieId = filtros.especieId;
+    const variedadId = especieId !== undefined ? filtros.variedadId : undefined;
+    const presentacionId = variedadId !== undefined ? filtros.presentacionId : undefined;
+    
+    // Filtro de Especie
+    if (especieId !== undefined) {
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.especie.id, especieId)
+        );
     }
-    // Filtro variedad
-    if (filtros.variedadId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.presentacion.some((presentacion) =>
-                    presentacion.variedad.some((variedad) =>
-                        variedad.id.eq(filtros.variedadId!)))));
+    
+    // Filtro de Variedad
+    if (variedadId !== undefined) {
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.variedad.id, variedadId)
+        );
     }
-    // Filtro presentacion
-    if (filtros.presentacionId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.presentacion.some((presentacion) =>
-                    presentacion.id.eq(filtros.presentacionId!))));
+    
+    // Filtro de Presentacion
+    if (presentacionId !== undefined) {
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.presentacion.id, presentacionId)
+        );
     }
-    // Filtro categoria
+
+    // Filtro de Categoria
     if (filtros.categoriaId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.categoria.some((categoria) =>
-                    categoria.id.eq(filtros.categoriaId!))));
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.categoria.id, filtros.categoriaId!)
+        );
     }
-    // Filtro calibre
+
+    // Filtro de Calibre
     if (filtros.calibreId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.calibre.some((calibre) =>
-                    calibre.id.eq(filtros.calibreId!))));
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.calibre.id, filtros.calibreId!)
+        );
     }
-    // Filtro precio mínimo
+
+    // Filtro de Precio Minimo
     if (filtros.precioMin !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.precio.gte(convertirPrecio(filtros.precioMin!))));
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.gte(tablas.publicacion.precio, convertirPrecio(filtros.precioMin!))
+        );
     }
-    // Filtro precio máximo
+
+    // Filtro de Precio Maximo
     if (filtros.precioMax !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.precio.lte(convertirPrecio(filtros.precioMax!))));
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.lte(tablas.publicacion.precio, convertirPrecio(filtros.precioMax!))
+        );
     }
-    // Filtro de búsqueda
+
+    // Filtro de Barra de Busqueda
     const busqueda = filtros.busqueda?.trim();
     if (busqueda) {
         const patronBusqueda = `%${busqueda}%`;
-        consulta = consulta.where((po) =>
-            or(po.publicacion.some((publicacion) =>
-                publicacion.presentacion.some((presentacion) =>
-                    presentacion.variedad.some((variedad) =>
-                        variedad.especie.some((especie) =>
-                            especie.nombreEspecie.ilike(patronBusqueda)))) ),
-                po.publicacion.some((publicacion) =>
-                    publicacion.presentacion.some((presentacion) =>
-                        presentacion.variedad.some((variedad) =>
-                            variedad.nombreVariedad.ilike(patronBusqueda)))),
-                po.publicacion.some((publicacion) =>
-                    publicacion.presentacion.some((presentacion) =>
-                        presentacion.nombrePresentacion.ilike(patronBusqueda))),
-                po.publicacion.some((publicacion) =>
-                    publicacion.categoria.some((categoria) =>
-                        categoria.nombreCategoria.ilike(patronBusqueda))),
-                po.publicacion.some((publicacion) =>
-                    publicacion.calibre.some((calibre) =>
-                        calibre.nombreCalibre.ilike(patronBusqueda))),
-                po.operador.some((operador) =>
-                    operador.nombreFantasia.ilike(patronBusqueda))
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.or(
+                // Busca por nombre de Especie
+                operaciones.ilike(tablas.especie.nombreEspecie, patronBusqueda),
+                // Busca por nombre de Variedad
+                operaciones.ilike(tablas.variedad.nombreVariedad, patronBusqueda),
+                // Busca por nombre de Presentacion
+                operaciones.ilike(tablas.presentacion.nombrePresentacion, patronBusqueda),
+                // Busca por nombre de Categoria
+                operaciones.ilike(tablas.categoria.nombreCategoria, patronBusqueda),
+                // Busca por nombre de Calibre
+                operaciones.ilike(tablas.calibre.codigoCalibre, patronBusqueda),
+                // Busca por nombre fantasia de Operador
+                operaciones.ilike(tablas.operador.nombreFantasia, patronBusqueda)
             )
         );
     }
-    // Obtener publicaciones
-    const publicaciones = await consulta.include("publicacion", (publicacion) =>
-        publicacion.select("id", "precio", "foto").include("presentacion", (presentacion) =>
-            presentacion.include("variedad", (variedad) =>
-                variedad.include("especie")))
-        .include("categoria").include("calibre")).include("operador", (operador) =>
-            operador.select("id", "nombreFantasia", "fotoPerfil")).all();   
-    // Construir Resultado
-    const resultado = publicaciones.map((publicacionOperador) => ({
-        id: publicacionOperador.publicacion.id,
-        precio: Number(publicacionOperador.publicacion.precio),
-        foto: publicacionOperador.publicacion.foto,
-        especie: publicacionOperador.publicacion.presentacion.variedad.especie.nombreEspecie,
-        variedad: publicacionOperador.publicacion.presentacion.variedad.nombreVariedad,
-        presentacion: publicacionOperador.publicacion.presentacion.nombrePresentacion,
-        categoria: publicacionOperador.publicacion.categoria.nombreCategoria,
-        calibre: publicacionOperador.publicacion.calibre.nombreCalibre,
-        operador: {
-            id: publicacionOperador.operador.id,
-            nombreFantasia: publicacionOperador.operador.nombreFantasia,
-            fotoPerfil: publicacionOperador.operador.fotoPerfil,
-        },
-    }));   
-    // Ordenar Resultado
+
+    // Filtros de Ordenamiento
     switch (filtros.orden) {
+        // Precio Ascendente
         case "precio_asc":
-            resultado.sort((a, b) => a.precio - b.precio);
+            consulta = consulta
+                .orderBy((tablas) => tablas.publicacion.precio, { direction: "asc" })
+                // Desempate por id
+                .orderBy((tablas) => tablas.publicacion.id, { direction: "asc" });
             break;
+        // Precio Descendiente
         case "precio_desc":
-            resultado.sort((a, b) => b.precio - a.precio);
+            consulta = consulta
+                .orderBy((tablas) => tablas.publicacion.precio, { direction: "desc" })
+                // Desempate por id
+                .orderBy((tablas) => tablas.publicacion.id, { direction: "asc" });
             break;
+        // Alfabetico Ascendente
         case "alfabetico_asc":
-            resultado.sort((a, b) => compararAlfabeticamente(a, b));
+            consulta = consulta
+                // Primero a nivel de Especie
+                .orderBy("especie", { direction: "asc" })
+                // Segundo a nivel de Variedad
+                .orderBy("variedad", { direction: "asc" })
+                // Desempate por id
+                .orderBy("id", { direction: "asc" });
             break;
+        // Alfabetico Descendiente
         case "alfabetico_desc":
-            resultado.sort((a, b) => compararAlfabeticamente(b, a));
+            consulta = consulta
+                // Primero a nivel de Especie
+                .orderBy("especie", { direction: "desc" })
+                // Segundo a nivel de Variedad
+                .orderBy("variedad", { direction: "desc" })
+                // Desempate por id
+                .orderBy("id", { direction: "asc" });
             break;
+        // No hay Ordenamiento
+        case "ninguno":
         default:
+            // Solo id
+            consulta = consulta.orderBy( (tablas) => tablas.publicacion.id, { direction: "asc" });
             break;
     }
-    // Paginación
-    const limite = 20; // 20 publicaciones a la vez.
+
+    // Paginacion por Lotes de 10 publicaciones (se puede modificar modificando limite)
+    const limite = 10;
     const inicio = filtros.lote ? Number(filtros.lote) : 0;
-    const publicacionesPagina = resultado.slice(inicio, inicio + limite);
-    const nuevoInicio = inicio + publicacionesPagina.length;
-    const hayMas = nuevoInicio < resultado.length;
-    const siguienteLote = hayMas ? String(nuevoInicio) : null;
-    // Retornar
+    if (!Number.isInteger(inicio) || inicio < 0) {
+        throw new Error(`El lote "${filtros.lote}" no es válido.`);
+    }
+
+    // Arma la consulta con el lote actual de publicaciones
+    const plan = consulta
+        .select((tablas) => ({
+            id: tablas.publicacion.id,
+            precio: tablas.publicacion.precio,
+            foto: tablas.publicacion.foto,
+            especie: tablas.especie.nombreEspecie,
+            variedad: tablas.variedad.nombreVariedad,
+            presentacion: tablas.presentacion.nombrePresentacion,
+            categoria: tablas.categoria.nombreCategoria,
+            calibre: tablas.calibre.codigoCalibre,
+            operadorId: tablas.operador.id,
+            operadorNombreFantasia: tablas.operador.nombreFantasia,
+            operadorFotoPerfil: tablas.operador.fotoPerfil,
+        }))
+        .limit(limite + 1)
+        .offset(inicio)
+        .build();
+
+    // Ejecuta la consulta
+    const filas = await db.runtime().query(plan);
+
+    // Determina si quedan más publicaciones por entregar
+    const hayMas = filas.length > limite;
+    const filasPagina = filas.slice(0, limite);
+
+    // Arma el resultado a entregar
+    const publicaciones: publicacionListado[] =
+        filasPagina.map((fila) => ({
+            id: Number(fila.id),
+            precio: Number(fila.precio),
+            foto: fila.foto,
+            especie: fila.especie,
+            variedad: fila.variedad,
+            presentacion: fila.presentacion,
+            categoria: fila.categoria,
+            calibre: fila.calibre,
+            operador: {
+                id: Number(fila.operadorId),
+                nombreFantasia: fila.operadorNombreFantasia,
+                fotoPerfil: fila.operadorFotoPerfil,
+            },
+        }));
+
+    // Determina el siguiente lote (si hay más)
+    const siguienteLote = hayMas ? String(inicio + limite) : null;
+
+    // Se retorna
     return {
-        publicaciones: publicacionesPagina,
+        publicaciones,
         siguienteLote,
-        hayMas,
-    }; 
+        hayMas
+    };
 }
 
-// Obtener Lista Publicaciones Agrupadas por Operador.
 export async function consultarPublicacionesAgrupadas(filtros: filtrosPublicaciones = {}): Promise<resultadoPublicacionesAgrupadas> {
-    // Publicacion activa
-    let consulta = db.orm.public.PublicacionOperador.where((po) =>
-        po.publicacion.some((publicacion) =>
-            and(
-                publicacion.publicacionActiva.eq(true),
-                publicacion.publicacionDisponible.eq(true)
-            )))
-    // Filtro especie
-    if (filtros.especieId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.presentacion.some((presentacion) =>
-                    presentacion.variedad.some((variedad) =>
-                        variedad.especie.some((especie) =>
-                            especie.id.eq(filtros.especieId!))))));
+    // Se arma la consulta base
+    let consulta = db.sql.public.publicacionOperador
+        .innerJoin(db.sql.public.publicacion, (tablas, operaciones) =>
+                operaciones.eq(tablas.publicacionOperador.publicacionId, tablas.publicacion.id))
+        .innerJoin(db.sql.public.presentacion, (tablas, operaciones) =>
+                operaciones.eq(tablas.publicacion.presentacionId, tablas.presentacion.id))
+        .innerJoin(db.sql.public.variedad, (tablas, operaciones) =>
+                operaciones.eq(tablas.presentacion.variedadId, tablas.variedad.id))
+        .innerJoin(db.sql.public.especie, (tablas, operaciones) =>
+                operaciones.eq(tablas.variedad.especieId, tablas.especie.id))
+        .innerJoin(db.sql.public.categoria, (tablas, operaciones) =>
+                operaciones.eq(tablas.publicacion.categoriaId, tablas.categoria.id))
+        .innerJoin(db.sql.public.calibre, (tablas, operaciones) =>
+                operaciones.eq(tablas.publicacion.calibreId, tablas.calibre.id))
+        .innerJoin(db.sql.public.operador, (tablas, operaciones) =>
+                operaciones.eq(tablas.publicacionOperador.operadorId, tablas.operador.usuarioId))
+        .select((tablas) => ({
+            publicacionId: tablas.publicacion.id,
+            precio: tablas.publicacion.precio,
+            foto: tablas.publicacion.foto,
+            especie: tablas.especie.nombreEspecie,
+            variedad: tablas.variedad.nombreVariedad,
+            presentacion: tablas.presentacion.nombrePresentacion,
+            categoria: tablas.categoria.nombreCategoria,
+            calibre: tablas.calibre.codigoCalibre,
+            operadorId: tablas.operador.id,
+            operadorNombreFantasia: tablas.operador.nombreFantasia,
+            operadorFotoPerfil: tablas.operador.fotoPerfil,
+        }));
+
+    // Publicacion Activa y Disponible
+    consulta = consulta.where((tablas, operaciones) =>
+        operaciones.and(
+            operaciones.eq(tablas.publicacion.publicacionActiva, true), 
+            operaciones.eq(tablas.publicacion.publicacionDisponible, true)
+        )
+    );
+
+    // Jerarquia Especie > Variedad > Presentación
+    const especieId = filtros.especieId;
+    const variedadId = especieId !== undefined ? filtros.variedadId : undefined;
+    const presentacionId = variedadId !== undefined ? filtros.presentacionId : undefined;
+    
+    // Filtro de Especie
+    if (especieId !== undefined) {
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.especie.id, especieId)
+        );
     }
-    // Filtro variedad
-    if (filtros.variedadId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.presentacion.some((presentacion) =>
-                    presentacion.variedad.some((variedad) =>
-                        variedad.id.eq(filtros.variedadId!)))));
+    
+    // Filtro de Variedad
+    if (variedadId !== undefined) {
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.variedad.id, variedadId)
+        );
     }
-    // Filtro presentacion
-    if (filtros.presentacionId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.presentacion.some((presentacion) =>
-                    presentacion.id.eq(filtros.presentacionId!))));
+    
+    // Filtro de Presentacion
+    if (presentacionId !== undefined) {
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.presentacion.id, presentacionId)
+        );
     }
-    // Filtro categoria
+
+    // Filtro de Categoria
     if (filtros.categoriaId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.categoria.some((categoria) =>
-                    categoria.id.eq(filtros.categoriaId!))));
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.categoria.id, filtros.categoriaId!)
+        );
     }
-    // Filtro calibre
+
+    // Filtro de Calibre
     if (filtros.calibreId !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.calibre.some((calibre) =>
-                    calibre.id.eq(filtros.calibreId!))));
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.eq(tablas.calibre.id, filtros.calibreId!)
+        );
     }
-    // Filtro precio mínimo
+
+    // Filtro de Precio Minimo
     if (filtros.precioMin !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.precio.gte(convertirPrecio(filtros.precioMin!))));
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.gte(tablas.publicacion.precio, convertirPrecio(filtros.precioMin!))
+        );
     }
-    // Filtro precio máximo
+
+    // Filtro de Precio Maximo
     if (filtros.precioMax !== undefined) {
-        consulta = consulta.where((po) =>
-            po.publicacion.some((publicacion) =>
-                publicacion.precio.lte(convertirPrecio(filtros.precioMax!))));
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.lte(tablas.publicacion.precio, convertirPrecio(filtros.precioMax!))
+        );
     }
-    // Filtro de búsqueda
+
+    // Filtro de Barra de Busqueda
     const busqueda = filtros.busqueda?.trim();
     if (busqueda) {
         const patronBusqueda = `%${busqueda}%`;
-        consulta = consulta.where((po) =>
-            or(po.publicacion.some((publicacion) =>
-                publicacion.presentacion.some((presentacion) =>
-                    presentacion.variedad.some((variedad) =>
-                        variedad.especie.some((especie) =>
-                            especie.nombreEspecie.ilike(patronBusqueda)))) ),
-                po.publicacion.some((publicacion) =>
-                    publicacion.presentacion.some((presentacion) =>
-                        presentacion.variedad.some((variedad) =>
-                            variedad.nombreVariedad.ilike(patronBusqueda)))),
-                po.publicacion.some((publicacion) =>
-                    publicacion.presentacion.some((presentacion) =>
-                        presentacion.nombrePresentacion.ilike(patronBusqueda))),
-                po.publicacion.some((publicacion) =>
-                    publicacion.categoria.some((categoria) =>
-                        categoria.nombreCategoria.ilike(patronBusqueda))),
-                po.publicacion.some((publicacion) =>
-                    publicacion.calibre.some((calibre) =>
-                        calibre.nombreCalibre.ilike(patronBusqueda))),
-                po.operador.some((operador) =>
-                    operador.nombreFantasia.ilike(patronBusqueda))
+        consulta = consulta.where((tablas, operaciones) =>
+            operaciones.or(
+                // Busca por nombre de Especie
+                operaciones.ilike(tablas.especie.nombreEspecie, patronBusqueda),
+                // Busca por nombre de Variedad
+                operaciones.ilike(tablas.variedad.nombreVariedad, patronBusqueda),
+                // Busca por nombre de Presentacion
+                operaciones.ilike(tablas.presentacion.nombrePresentacion, patronBusqueda),
+                // Busca por nombre de Categoria
+                operaciones.ilike(tablas.categoria.nombreCategoria, patronBusqueda),
+                // Busca por nombre de Calibre
+                operaciones.ilike(tablas.calibre.codigoCalibre, patronBusqueda),
+                // Busca por nombre fantasia de Operador
+                operaciones.ilike(tablas.operador.nombreFantasia, patronBusqueda)
             )
         );
     }
-    // Obtener publicaciones
-    const publicaciones = await consulta.include("publicacion", (publicacion) =>
-        publicacion.select("id", "precio", "foto").include("presentacion", (presentacion) =>
-            presentacion.include("variedad", (variedad) =>
-                variedad.include("especie")))
-        .include("categoria").include("calibre")).include("operador", (operador) =>
-            operador.select("id", "nombreFantasia", "fotoPerfil")).all();
-    // Agrupar publicaciones por operador
-    const operadores = new Map<number, operadorListado>();
-    for (const publicacionOperador of publicaciones) {
-        const operadorId = publicacionOperador.operador.id;
-        const publicacion: publicacionAgrupada = {
-            id: publicacionOperador.publicacion.id,
-            precio: Number(publicacionOperador.publicacion.precio),
-            foto: publicacionOperador.publicacion.foto,
-            especie: publicacionOperador.publicacion.presentacion.variedad.especie.nombreEspecie,
-            variedad: publicacionOperador.publicacion.presentacion.variedad.nombreVariedad,
-            presentacion: publicacionOperador.publicacion.presentacion.nombrePresentacion,
-            categoria: publicacionOperador.publicacion.categoria.nombreCategoria,
-            calibre: publicacionOperador.publicacion.calibre.nombreCalibre,
-        };
-        let operador = operadores.get(operadorId);
-        if (!operador) {
-            operador = {
-                id: operadorId,
-                nombreFantasia: publicacionOperador.operador.nombreFantasia,
-                fotoPerfil: publicacionOperador.operador.fotoPerfil,
-                publicaciones: [],
-            };
-            operadores.set(operadorId, operador);
-        }
-        operador.publicaciones.push(publicacion);
-    }
-    // Ordenar publicaciones
-    for (const operador of operadores.values()) {
-        switch (filtros.orden) {
-            case "precio_asc":
-                operador.publicaciones.sort((a, b) => a.precio - b.precio);
-                break;
-            case "precio_desc":
-                operador.publicaciones.sort((a, b) => b.precio - a.precio);
-                break;
-            case "alfabetico_asc":
-                operador.publicaciones.sort((a, b) => compararAlfabeticamente(a, b));
-                break;
-            case "alfabetico_desc":
-                operador.publicaciones.sort((a, b) => compararAlfabeticamente(b, a));
-                break;
-            default:
-                break;
-        }
-    }
-    // Ordenar operadores
-    const listaOperadores = Array.from(operadores.values());
+
+    const consultaFiltrada = consulta.as("filtradas");
+
+    // Obtener operadores
+    let consultaOperadores =
+        db.sql.public.operador
+            .innerJoin(consultaFiltrada,
+                (tablas, operaciones) =>
+                    operaciones.eq(tablas.operador.id, tablas.filtradas.operadorId))
+            .select((tablas, operaciones) => ({
+                operadorId: tablas.filtradas.operadorId,
+                operadorNombreFantasia: tablas.filtradas.operadorNombreFantasia,
+                operadorFotoPerfil: tablas.filtradas.operadorFotoPerfil,
+                precioMin: operaciones.min(tablas.filtradas.precio),
+                precioMax: operaciones.max(tablas.filtradas.precio),
+                especieOrden: operaciones.min(tablas.filtradas.especie),
+                variedadOrden: operaciones.min(tablas.filtradas.variedad),
+            }))
+            .groupBy("operadorId", "operadorNombreFantasia", "operadorFotoPerfil");
+
+    // Ordenar los operadores dependiendo del filtro de ordenamiento
     switch (filtros.orden) {
-        case "precio_asc": 
-            listaOperadores.sort((a, b) => a.publicaciones[0].precio - b.publicaciones[0].precio);
+        // Precio Ascendente
+        case "precio_asc":
+            consultaOperadores = consultaOperadores
+                .orderBy("precioMin", { direction: "asc" })
+                // Desempate por id
+                .orderBy("operadorId", { direction: "asc" });
+            break;
+        // Precio Descendiente
+        case "precio_desc":
+            consultaOperadores = consultaOperadores
+                .orderBy("precioMax", { direction: "desc" })
+                // Desempate por id
+                .orderBy("operadorId", { direction: "asc" });
+            break;
+        // Alfabetico Ascendente
+        case "alfabetico_asc":
+            consultaOperadores = consultaOperadores
+                // Primero por Especie
+                .orderBy("especieOrden", { direction: "asc" })
+                // Despues por Variedad
+                .orderBy("variedadOrden", { direction: "asc" })
+                // Desempate por id
+                .orderBy("operadorId", { direction: "asc" });
+            break;
+        // Alfabetico Descendiente
+        case "alfabetico_desc":
+            consultaOperadores = consultaOperadores
+                // Primero por Especie
+                .orderBy("especieOrden", { direction: "desc" })
+                // Despues por Variedad
+                .orderBy("variedadOrden", { direction: "desc" })
+                // Desempate por id
+                .orderBy("operadorId", { direction: "asc" });
+            break;
+        // Sin orden
+        default:
+            consultaOperadores = consultaOperadores
+                // Solo id
+                .orderBy("operadorId", { direction: "asc" });
+            break;
+    }
+
+    // Paginacion por lotes de a 3 operadores (se puede cambiar)
+    const limite = 3;
+    const inicio = filtros.lote ? Number(filtros.lote) : 0;
+    const planOperadores = consultaOperadores.limit(limite + 1).offset(inicio).build();
+    const filasOperadores = await db.runtime().query(planOperadores);
+    const hayMas = filasOperadores.length > limite;
+    const operadoresPagina = filasOperadores.slice(0, limite);
+    const siguienteLote = hayMas ? String(inicio + limite) : null;
+
+    // Si no hay operadores, no hace falta una segunda consulta
+    if (operadoresPagina.length === 0) {
+        return {
+            operadores: [],
+            siguienteLote: null,
+            hayMas: false,
+        };
+    }
+
+    const operadorIds = operadoresPagina.map((operador) => Number(operador.operadorId));
+    let consultaPublicaciones = consulta.where((tablas, operaciones) => operaciones.in(tablas.operadorId, operadorIds));
+
+    // Orden dentro de cada operador
+    switch (filtros.orden) {
+        case "precio_asc":
+            consultaPublicaciones = consultaPublicaciones
+                .orderBy("operadorId", { direction: "asc" })
+                .orderBy("precio", { direction: "asc" })
+                .orderBy("publicacionId", { direction: "asc" });
             break;
         case "precio_desc":
-            listaOperadores.sort((a, b) => b.publicaciones[0].precio - a.publicaciones[0].precio);
+            consultaPublicaciones = consultaPublicaciones
+                .orderBy("operadorId", { direction: "asc" })
+                .orderBy("precio", { direction: "desc" })
+                .orderBy("publicacionId", { direction: "asc" });
             break;
         case "alfabetico_asc":
-            listaOperadores.sort((a, b) => compararAlfabeticamente(a.publicaciones[0], b.publicaciones[0]));
+            consultaPublicaciones = consultaPublicaciones
+                .orderBy("operadorId", { direction: "asc" })
+                .orderBy("especie", { direction: "asc" })
+                .orderBy("variedad", { direction: "asc" })
+                .orderBy("publicacionId", { direction: "asc" });
             break;
         case "alfabetico_desc":
-            listaOperadores.sort((a, b) => compararAlfabeticamente(b.publicaciones[0], a.publicaciones[0]));
+            consultaPublicaciones = consultaPublicaciones
+                .orderBy("operadorId", { direction: "asc" })
+                .orderBy("especie", { direction: "desc" })
+                .orderBy("variedad", { direction: "desc" })
+                .orderBy("publicacionId", { direction: "asc" });
             break;
         default:
+            consultaPublicaciones = consultaPublicaciones
+                .orderBy("operadorId", { direction: "asc" })
+                .orderBy("publicacionId", { direction: "asc" });
             break;
     }
-    // Paginación
-    const limite = 5;
-    const inicio = filtros.lote ? Number(filtros.lote) : 0;
-    const operadoresPagina = listaOperadores.slice(inicio, inicio + limite);
-    const nuevoInicio = inicio + operadoresPagina.length;
-    const hayMas = nuevoInicio < listaOperadores.length;
-    const siguienteLote = hayMas ? String(nuevoInicio) : null;
+
+    // Ejecutar segunda consulta
+    const planPublicaciones = consultaPublicaciones.build();
+    const filasPublicaciones = await db.runtime().query(planPublicaciones);
+
+    // Agrupar publicaciones para construir la respuesta
+    const publicacionesPorOperador = new Map<number, publicacionAgrupada[]>();
+    for (const fila of filasPublicaciones) {
+        const operadorId = Number(fila.operadorId);
+        let publicaciones = publicacionesPorOperador.get(operadorId);
+
+        if (!publicaciones) {
+            publicaciones = [];
+            publicacionesPorOperador.set(operadorId, publicaciones);
+        }
+
+        publicaciones.push({
+            id: Number(fila.publicacionId),
+            precio: Number(fila.precio),
+            foto: fila.foto,
+            especie: fila.especie,
+            variedad: fila.variedad,
+            presentacion: fila.presentacion,
+            categoria: fila.categoria,
+            calibre: fila.calibre,
+        });
+    }
+
+    // Construir la lista de operadores a retornar
+    const operadores: operadorListado[] =
+        operadoresPagina.map((fila) => {
+            const operadorId = Number(fila.operadorId);
+            return {
+                id: operadorId,
+                nombreFantasia: fila.operadorNombreFantasia,
+                fotoPerfil: fila.operadorFotoPerfil,
+                publicaciones: publicacionesPorOperador.get(operadorId) ?? [],
+            };
+        });
+
     // Retornar
     return {
-        operadores: operadoresPagina,
+        operadores,
         siguienteLote,
         hayMas,
     };
@@ -421,11 +600,7 @@ export async function consultarPublicacion(id: number): Promise<publicacionCompl
     const publicacionOperador = await db.orm.public.PublicacionOperador
         .where((po) =>
             po.publicacion.some((publicacion) =>
-                and(
-                    publicacion.id.eq(id),
-                    publicacion.publicacionActiva.eq(true),
-                    publicacion.publicacionDisponible.eq(true)
-                )))
+                and(publicacion.id.eq(id), publicacion.publicacionActiva.eq(true), publicacion.publicacionDisponible.eq(true))))
         .include("publicacion", (publicacion) =>
             publicacion.select("id", "precio", "foto").include("presentacion", (presentacion) =>
                 presentacion.include("variedad", (variedad) =>
@@ -436,6 +611,7 @@ export async function consultarPublicacion(id: number): Promise<publicacionCompl
             pais.select("id", "codigoPais", "nombrePais")).first();
 
     if (!publicacionOperador) return null;
+    
     // Retornar
     return {
         id: publicacionOperador.publicacion.id,
@@ -455,4 +631,4 @@ export async function consultarPublicacion(id: number): Promise<publicacionCompl
             whatsApp: publicacionOperador.operador.whatsApp,
         },
     };
-}
+} 
