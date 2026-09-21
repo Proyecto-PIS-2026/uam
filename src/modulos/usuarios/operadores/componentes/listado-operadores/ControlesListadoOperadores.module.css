@@ -14,7 +14,7 @@
     left: 0.75rem;
     width: 1.25rem;
     height: 1.25rem;
-    transform: translateY(-50%) scaleX(-1);
+    transform: translateY(-50%);
     color: var(--color-foreground);
     pointer-events: none;
 }
@@ -50,30 +50,23 @@
     margin-top: 0.75rem;
 }
 
-.control {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+.controles .selectMui {
+    width: max-content;
+    min-width: 7.5rem;
 }
 
-.label {
-    font-size: 0.875rem;
-    color: var(--color-muted-foreground);
-}
+/* Los bordes eran azules, busque en internet como hacer para que se vean verdes */
 
-.select {
-    height: 2.5rem;
-    padding: 0 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    background-color: var(--color-surface);
-    color: var(--color-foreground);
-    font-size: 0.875rem;
-    cursor: pointer;
-    outline: none;
-}
-
-.select:focus {
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgb(0 143 61 / 20%);
 }
+
+.selectMui :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
+.opcionSelect:global(.Mui-selected) {
+    background-color: var(--color-primary-soft) !important;
+}
+
+/* Los bordes eran azules, busque en internet como hacer para que se vean verdes */

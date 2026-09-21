@@ -1,5 +1,7 @@
 import styles from "./ControlesListadoOperadores.module.css";
 import SearchIcon from "@mui/icons-material/Search";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
 
 type ControlesListadoOperadoresProps = {
     busqueda: string;
@@ -21,23 +23,19 @@ export default function ControlesListadoOperadores({busqueda, alCambiarBusqueda,
             </div>
 
             <div className={styles.controles}>
-                <div className={styles.control}>
-                    <label htmlFor="filtro-nave" className={styles.label}>Nave</label>
-                    <select id="filtro-nave" value={naveSeleccionada} onChange={(evento) => alCambiarNave(evento.target.value)} className={styles.select}>
-                        <option value="">Todas</option>
-                        {navesDisponibles.map((nave) => (
-                            <option key={nave} value={nave}>Nave {nave}</option>
-                        ))}
-                    </select>
-                </div>
+                <TextField select label="Nave" value={naveSeleccionada} onChange={(evento) => alCambiarNave(evento.target.value)} size="small" className={styles.selectMui}>
+                    <MenuItem value="" className={styles.opcionSelect}>Todas</MenuItem>
+                    {navesDisponibles.map((nave) => (
+                        <MenuItem key={nave} value={nave} className={styles.opcionSelect}>
+                            Nave {nave}
+                        </MenuItem>
+                    ))}
+                </TextField>
 
-                <div className={styles.control}>
-                    <label htmlFor="orden-operadores" className={styles.label}>Ordenar por</label>
-                    <select id="orden-operadores" value={orden} onChange={(evento) => alCambiarOrden(evento.target.value)} className={styles.select}>
-                        <option value="a-z">A-Z</option>
-                        <option value="z-a">Z-A</option>
-                    </select>
-                </div>
+                <TextField select label="Ordenar por" value={orden} onChange={(evento) => alCambiarOrden(evento.target.value)} size="small" className={styles.selectMui}>
+                    <MenuItem value="a-z" className={styles.opcionSelect}>A-Z</MenuItem>
+                    <MenuItem value="z-a" className={styles.opcionSelect}>Z-A</MenuItem>
+                </TextField>
             </div>
         </div>
     );
