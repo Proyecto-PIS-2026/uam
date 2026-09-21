@@ -13,12 +13,12 @@ export type Publicacion = {
 
 interface PublicacionSinOperadorProps{
     producto: Publicacion; 
-    onClick: (id: number) => void; 
+    onPublicacionClick: (id: number) => void; 
 }
 
-export function PublicacionSinOperador ({ producto, onClick }: PublicacionSinOperadorProps) {
+export function PublicacionSinOperador ({ producto, onPublicacionClick }: PublicacionSinOperadorProps) {
     const contenido =   (
-        <div className={styles.tarjeta} onClick ={() => onClick(producto.id)}>
+        <div className={styles.tarjeta} onClick ={() => onPublicacionClick(producto.id)}>
             <div className={styles.imagen}>
                 <img 
                     src={producto.foto !== null ? producto.foto : "/imagenes/producto-sin-foto.png"}

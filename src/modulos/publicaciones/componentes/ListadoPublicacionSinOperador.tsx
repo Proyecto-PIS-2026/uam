@@ -2,17 +2,17 @@ import { PublicacionSinOperador, type Publicacion } from "@/modulos/publicacione
 
 interface ListaPublicacionProp {
     publicaciones: Publicacion[]; 
-    onProductoClick: (id: number) => void; 
+    onPublicacionClick: (id: number) => void; 
 }
 
-export function ListaPublicacionSinOperador( { publicaciones, onProductoClick }: ListaPublicacionProp) {
+export function ListaPublicacionSinOperador( { publicaciones, onPublicacionClick }: ListaPublicacionProp) {
     const contenido = (
         <div className="flex flex-col gap-4 p-4 bg-white">
             {publicaciones.map((publicacion) => (
                 <PublicacionSinOperador
                     key={publicacion.id}
                     producto={publicacion}
-                    onClick={onProductoClick}
+                    onPublicacionClick={onPublicacionClick}
                 />     
             ))}  
         </div>

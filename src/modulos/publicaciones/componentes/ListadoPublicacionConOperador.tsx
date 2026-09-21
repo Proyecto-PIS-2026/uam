@@ -3,10 +3,10 @@ import { PublicacionSinOperador, type Publicacion } from "@/modulos/publicacione
 interface ListaPublicacionProp {
     nombreFantasia: string; 
     publicaciones: Publicacion[]; 
-    onProductoClick: (id: number) => void; 
+    onPublicacionClick: (id: number) => void; 
 }
 
-export function PublicacionesOperador( { nombreFantasia, publicaciones, onProductoClick } : ListaPublicacionProp) {
+export function PublicacionesOperador( { nombreFantasia, publicaciones, onPublicacionClick } : ListaPublicacionProp) {
     const contenido = (
         <section className="bg-white px-4 py-0.5">
             <div className="border-t border-zinc-300">
@@ -19,7 +19,7 @@ export function PublicacionesOperador( { nombreFantasia, publicaciones, onProduc
                             <PublicacionSinOperador
                                 key={publicacion.id}
                                 producto={publicacion}
-                                onClick={onProductoClick}
+                                onPublicacionClick={onPublicacionClick}
                             />     
                         ))}  
                     </div>
