@@ -3,13 +3,11 @@ const IMAGEN_POR_DEFECTO = "https://media.istockphoto.com/id/1396814518/es/vecto
 
 type Props = {
   nombre: string;
-  variedad: string;
-  categoria: string;
   operadores: number;
-  imagen: string;
+  imagen?: string;
 };
 
-export default function ProductoCard({ nombre, variedad, categoria, operadores, imagen }: Props) {
+export default function ProductoCard({ nombre, operadores, imagen }: Props) {
   return (
     <Link href="/productos/placeholder" className="block">
       <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-3 sm:p-0">
@@ -32,7 +30,6 @@ export default function ProductoCard({ nombre, variedad, categoria, operadores, 
           <div className="flex-1 min-w-0 flex sm:hidden items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="font-bold text-base text-gray-900 truncate">{nombre}</p>
-
             </div>
             <button className="flex-shrink-0 h-8 w-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm text-[var(--green)]">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -43,13 +40,13 @@ export default function ProductoCard({ nombre, variedad, categoria, operadores, 
 
           <div className="hidden sm:block sm:p-5">
             <p className="font-bold text-xl text-gray-900 truncate">{nombre}</p>
-            <p className="text-base font-semibold text-[var(--green)] mt-1">
-            </p>
           </div>
         </div>
 
-        <div className={`flex items-center mt-2 sm:mt-0 pt-2 sm:pt-4 sm:mx-5 sm:mb-5 border-t-2 border-gray-200`}>
-          <p className="text-xs font-bold text-[var(--lightgreen)] tracking-wide">{operadores} {operadores === 1 ? "OPERADOR" : "OPERADORES"}</p>
+        <div className="flex items-center mt-2 sm:mt-0 pt-2 sm:pt-4 sm:mx-5 sm:mb-5 border-t-2 border-gray-200">
+          <p className="text-xs font-bold text-[var(--color-primary)] tracking-wide">
+            {operadores} {operadores === 1 ? "OPERADOR" : "OPERADORES"}
+          </p>
         </div>
       </div>
     </Link>

@@ -14,10 +14,10 @@ import Link from "next/link";
 /* ================================================= */
 type Props = {
   especies: {
-    id: number;
+    idEspecie: number;
     nombreEspecie: string;
-    uamId: number | null;
     fotoEspecie: string | null;
+    cantidadOperadores: number;
   }[];
 };
 
@@ -153,8 +153,9 @@ export default function Inicio({ especies }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5">
             {especiesPagina.map((e) => (
               <ProductoCard
-                key={e.id}
+                key={e.idEspecie}
                 nombre={e.nombreEspecie}
+                operadores={e.cantidadOperadores}
                 imagen={e.fotoEspecie || undefined}
               />
             ))}
@@ -174,8 +175,8 @@ export default function Inicio({ especies }: Props) {
 
           {/* Pagina anterior - Pagina actual - Paguina siguiente */}
           {Array.from(
-            { length: Math.min(3, totalPaginas - 1) },
-            (_, i) => Math.max(1, Math.min(paginaActual - 1, totalPaginas - 3)) + i
+            { length: Math.min(3, totalPaginas) },
+            (_, i) => Math.max(1, Math.min(paginaActual - 1, totalPaginas - 2)) + i
           ).map((pagina) => (
             <button
               key={pagina}
@@ -196,7 +197,7 @@ export default function Inicio({ especies }: Props) {
           )}
 
           {/* Última página */}
-          {totalPaginas > 3 && (
+          {totalPaginas > 3 && paginaActual < totalPaginas - 1 && (
             <button
               onClick={() => setPaginaActual(totalPaginas)}
               className={`w-10 h-10 rounded-lg font-semibold ${

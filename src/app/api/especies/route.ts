@@ -1,14 +1,11 @@
-import { obtenerEspecies } from "@/infraestructura/persistencia/prisma/especies";
+import { obtenerEspeciesConPublicacionesActivas } from "@/infraestructura/persistencia/prisma/especies";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const especies = await obtenerEspecies();
+    const especies = await obtenerEspeciesConPublicacionesActivas();
+    return NextResponse.json(especies);
 
-    const especiesActivas = especies
-      .map((e) => e.nombreEspecie);
-
-    return NextResponse.json(especiesActivas);
   } catch (error) {
     console.error("ERROR REAL:", error);
     return NextResponse.json(
