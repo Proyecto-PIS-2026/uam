@@ -21,11 +21,15 @@ export function PublicacionSinOperador ({ producto, onPublicacionClick }: Public
         <div className={styles.tarjeta} onClick ={() => onPublicacionClick(producto.id)}>
             <div className={styles.imagen}>
                 {producto.foto !== null ? (
-                    <img src={producto.foto}/>
+                    <img 
+                        src={producto.foto} 
+                        alt={producto.especie} 
+                    />
                 ) : (
-                    <span className="pd-4">IMG</span>
-                )
-                }
+                    <span className={styles.sin_foto}>
+                        IMG
+                    </span>
+                )}
             </div>
             <div className={styles.contenido}> 
                 <div className={styles.nombre}>
@@ -33,20 +37,24 @@ export function PublicacionSinOperador ({ producto, onPublicacionClick }: Public
                         {" "}
                         {producto.variedad !== "-" && <>{producto.variedad}</>}
                 </div>
-                <div className={styles.etiquetas}>
-                    <span className={styles.etiqueta}>
-                        {producto.presentacion}
-                    </span>
-                    <span className={styles.etiqueta}>
-                        {producto.calibre}
-                    </span>
-                    <span className={styles.etiqueta}>
-                        {producto.categoria}
-                    </span>
-                </div>
-                <div className={styles.precio}>
-                    {producto.precio !== null ? <>$ {producto.precio}</> : "Sin precio"}
-                </div>
+                <div className={styles.bloque_detalle}>
+                    <div>
+                        <div className={styles.presentacion}>
+                            {producto.presentacion}
+                        </div>
+                        <div className={styles.etiquetas}>
+                            <span className={styles.etiqueta}>
+                                {producto.calibre}
+                            </span>
+                            <span className={styles.etiqueta}>
+                                {producto.categoria}
+                            </span>
+                        </div>   
+                    </div>
+                    <div className={styles.precio}>
+                        {producto.precio !== null ? <>$ {producto.precio}</> : "Sin precio"}
+                    </div>
+                </div>         
             </div>
         </div>
     );
