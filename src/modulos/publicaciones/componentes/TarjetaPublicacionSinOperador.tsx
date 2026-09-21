@@ -16,7 +16,7 @@ interface PublicacionSinOperadorProps{
     onClick: (id: number) => void; 
 }
 
-export function ProductoSinOperador ({ producto, onClick }: PublicacionSinOperadorProps) {
+export function PublicacionSinOperador ({ producto, onClick }: PublicacionSinOperadorProps) {
     const contenido =   (
         <div className={styles.tarjeta} onClick ={() => onClick(producto.id)}>
             <div className={styles.imagen}>

@@ -1,12 +1,12 @@
-import { ProductoSinOperador, type Publicacion } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
+import { PublicacionSinOperador, type Publicacion } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
 
-interface ListaProductosProp {
+interface ListaPublicacionProp {
     nombreFantasia: string; 
     publicaciones: Publicacion[]; 
     onProductoClick: (id: number) => void; 
 }
 
-export function PublicacionesOperador( { nombreFantasia, publicaciones, onProductoClick } : ListaProductosProp) {
+export function PublicacionesOperador( { nombreFantasia, publicaciones, onProductoClick } : ListaPublicacionProp) {
     const contenido = (
         <section className="bg-white px-4 py-0.5">
             <div className="border-t border-zinc-300">
@@ -16,7 +16,7 @@ export function PublicacionesOperador( { nombreFantasia, publicaciones, onProduc
                     </div>
                     <div className="flex flex-col gap-4">
                         {publicaciones.map((publicacion) => (
-                            <ProductoSinOperador
+                            <PublicacionSinOperador
                                 key={publicacion.id}
                                 producto={publicacion}
                                 onClick={onProductoClick}

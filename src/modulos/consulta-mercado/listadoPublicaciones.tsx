@@ -6,7 +6,7 @@ import type {
 } from "./acciones/publicaciones";
 
 import { PublicacionesOperador } from "@/modulos/publicaciones/componentes/ListadoPublicacionConOperador";
-import { ProductoSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
+import { PublicacionSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
 import { useState } from "react";
 
 type propiedadesListadoPublicaciones =
@@ -24,6 +24,9 @@ const clasesLista = "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3";
 export default function ListadoPublicaciones(
   propiedades: propiedadesListadoPublicaciones,
 ) {
+  
+  const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<string | null>(null);
+
   if (propiedades.agruparPorOperador) {
     if (propiedades.operadores.length === 0) {
       return <p role="status">No hay publicaciones que coincidan con la búsqueda.</p>;
@@ -36,7 +39,7 @@ export default function ListadoPublicaciones(
             key={operador.id}
             nombreFantasia={operador.nombreFantasia}
             publicaciones={operador.publicaciones}
-            onProductoClick={(id) => console.log(id)}
+            onClick={(id) => setPublicacionSeleccionada(id)}
           />
         ))}
       </div>
@@ -51,9 +54,9 @@ export default function ListadoPublicaciones(
     <ul className={clasesLista}>
       {propiedades.publicaciones.map((publicacion) => (
       <li key={publicacion.id}>
-        <ProductoSinOperador
+        <PublicacionSinOperador
           producto={publicacion}
-          onClick={(id) => console.log(id)}
+          onClick={(id) => setPublicacionSeleccionada(id)}
         />
       </li>
     ))}
