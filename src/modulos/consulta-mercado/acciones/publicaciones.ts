@@ -1,5 +1,5 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import { and } from "@prisma/orm-postgres/orm-client";
+import { and, or } from "@prisma/orm-postgres/orm-client";
 
 export type publicacionListado = {
     id: number;
@@ -12,13 +12,19 @@ export type publicacionListado = {
     categoria: string;
     calibre: string;
 
-    nombreFantasia?: string;
+    operador: {
+        id: number;
+        nombreFantasia: string;
+        fotoPerfil: string | null;
+    };
 };
 
 export type publicacionAgrupada = Omit<publicacionListado, "operador">;
 
 export type operadorListado = {
+    id: number;
     nombreFantasia: string;
+    fotoPerfil: string | null;
     publicaciones: publicacionAgrupada[];
 };
 
@@ -43,6 +49,8 @@ export type publicacionCompleta = {
     };
 };
 
+
+
 // Obtener Publicacion Completa
 export async function consultarPublicacion(id: number): Promise<publicacionCompleta | null> {
     // Publicacion Activa
@@ -61,6 +69,7 @@ export async function consultarPublicacion(id: number): Promise<publicacionCompl
 
     if (!publicacionOperador) return null;
     
+    // Retornar
     return {
         id: publicacionOperador.publicacion.id,
         precio: Number(publicacionOperador.publicacion.precio),
@@ -76,7 +85,7 @@ export async function consultarPublicacion(id: number): Promise<publicacionCompl
             id: publicacionOperador.operador.id,
             nombreFantasia: publicacionOperador.operador.nombreFantasia,
             fotoPerfil: publicacionOperador.operador.fotoPerfil,
-            whatsApp: publicacionOperador.operador.whatsApp
+            whatsApp: publicacionOperador.operador.whatsApp,
         }
     };
 }
@@ -110,10 +119,10 @@ export async function consultarPublicaciones(): Promise<resultadoPublicaciones> 
             presentacion: tablas.presentacion.nombrePresentacion,
             categoria: tablas.categoria.nombreCategoria,
             calibre: tablas.calibre.codigoCalibre,
+            operadorId: tablas.operador.id,
             operadorNombreFantasia: tablas.operador.nombreFantasia,
+            operadorFotoPerfil: tablas.operador.fotoPerfil,
         }))
-        
-        // Publicacion Activa y Disponible
         .where((tablas, operaciones) =>
             operaciones.and(
                 operaciones.eq(tablas.publicacion.publicacionActiva, true),
@@ -123,7 +132,7 @@ export async function consultarPublicaciones(): Promise<resultadoPublicaciones> 
 
     const plan = consulta.build();
     const filas = await db.runtime().query(plan);
-    
+
     const publicaciones: publicacionListado[] = filas.map((fila) => ({
         id: Number(fila.id),
         precio: Number(fila.precio),
@@ -133,7 +142,11 @@ export async function consultarPublicaciones(): Promise<resultadoPublicaciones> 
         presentacion: fila.presentacion,
         categoria: fila.categoria,
         calibre: fila.calibre,
-        nombreFantasia: fila.operadorNombreFantasia
+        operador: {
+            id: Number(fila.operadorId),
+            nombreFantasia: fila.operadorNombreFantasia,
+            fotoPerfil: fila.operadorFotoPerfil,
+        }
     }));
     return { publicaciones };
 }
@@ -171,8 +184,6 @@ export async function consultarPublicacionesAgrupadas(): Promise<resultadoPublic
             operadorNombreFantasia: tablas.operador.nombreFantasia,
             operadorFotoPerfil: tablas.operador.fotoPerfil,
         }))
-
-        // Publicacion Activa y Disponible
         .where((tablas, operaciones) =>
             operaciones.and(
                 operaciones.eq(tablas.publicacion.publicacionActiva, true),
@@ -192,7 +203,9 @@ export async function consultarPublicacionesAgrupadas(): Promise<resultadoPublic
 
         if (!operador) {
             operador = {
+                id: operadorId,
                 nombreFantasia: fila.operadorNombreFantasia,
+                fotoPerfil: fila.operadorFotoPerfil,
                 publicaciones: []
             };
             publicacionesPorOperador.set(operadorId, operador);
