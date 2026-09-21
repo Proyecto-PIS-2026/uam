@@ -8,10 +8,10 @@ interface ListaPublicacionProp {
 
 export function PublicacionesOperador( { nombreFantasia, publicaciones, onPublicacionClick } : ListaPublicacionProp) {
     const contenido = (
-        <section className="bg-white px-4 py-0.5">
+        <section className="px-4 py-0.5">
             <div className="border-t border-zinc-300">
                 <div className="py-4">
-                    <div className="font-semibold text-black mb-4">
+                    <div className="font-semibold text-black text-lg mb-3">
                         {nombreFantasia}
                     </div>
                     <div className="flex flex-col gap-4">
