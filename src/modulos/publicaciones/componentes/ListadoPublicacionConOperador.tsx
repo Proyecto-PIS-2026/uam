@@ -1,9 +1,12 @@
-import { PublicacionSinOperador, type Publicacion } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
+"use client";
+
+import { PublicacionConOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionConOperador";
+import type { publicacionAgrupada } from "@/modulos/consulta-mercado/acciones/publicaciones";
 
 interface ListaPublicacionProp {
-    nombreFantasia: string; 
-    publicaciones: Publicacion[]; 
-    onPublicacionClick: (id: number) => void; 
+    nombreFantasia: string;
+    publicaciones: publicacionAgrupada[];
+    onPublicacionClick: (id: number) => void;
 }
 
 export function PublicacionesOperador( { nombreFantasia, publicaciones, onPublicacionClick } : ListaPublicacionProp) {
@@ -16,16 +19,23 @@ export function PublicacionesOperador( { nombreFantasia, publicaciones, onPublic
                     </div>
                     <div className="flex flex-col gap-4">
                         {publicaciones.map((publicacion) => (
-                            <PublicacionSinOperador
+                            <PublicacionConOperador
                                 key={publicacion.id}
-                                producto={publicacion}
-                                onPublicacionClick={onPublicacionClick}
-                            />     
-                        ))}  
+                                foto={publicacion.foto}
+                                especie={publicacion.especie}
+                                variedad={publicacion.variedad}
+                                categoria={publicacion.categoria}
+                                calibre={publicacion.calibre}
+                                presentacion={publicacion.presentacion}
+                                precio={publicacion.precio}
+                                operador={nombreFantasia}
+                                alSeleccionar={() => onPublicacionClick(publicacion.id)}
+                            />
+                        ))}
                     </div>
                 </div>
             </div>
         </section>
     )
-    return contenido; 
+    return contenido;
 }
