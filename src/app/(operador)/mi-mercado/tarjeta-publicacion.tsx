@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Publicacion } from "./mi-mercado";
+import Precio from "./precio";
 
 type Props = {
     pub: Publicacion;
@@ -33,6 +34,18 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
         pub.presentacion.variedad.nombreVariedad &&
         pub.presentacion.variedad.nombreVariedad.trim() !== "" &&
         pub.presentacion.variedad.nombreVariedad.trim() !== "-";
+
+
+    const detalle = [
+    especie,
+    tieneVariedad ? variedad : null,
+    presentacion,
+    categoria ? `Cat. ${categoria}` : null,
+    calibre,
+    ]
+    .filter(Boolean)
+    .join(" · ");
+
 
     return (
         <div className="flex min-h-28 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -110,20 +123,11 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
 
                 {/* Precio */}
                 <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2 sm:px-4">
-                    <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
-                            Precio
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <button type="button" onClick={restar}>−</button>
-                            <p className="text-xl font-extrabold text-[var(--ink)]">
-                                {precio === 0 ?
-                                    "Sin precio" : 
-                                    `$${precio}`}
-                            </p>
-                            <button type="button" onClick={sumar}>+</button>
-                        </div>
-                    </div>
+                    <Precio
+                        precioInicial={precioInicial}
+                        incrementoPrecio={incrementoPrecio}
+                        detalle={detalle}
+                    />
 
                     {/* Más adelante:
                         acceso al detalle de BP-07.2
