@@ -1,4 +1,4 @@
-import { PublicacionSinOperador, type Publicacion } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
+import {PublicacionSinOperador, type Publicacion} from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
 
 interface ListaPublicacionProp {
     nombreFantasia: string; 
@@ -6,7 +6,7 @@ interface ListaPublicacionProp {
     onPublicacionClick: (id: number) => void; 
 }
 
-export function PublicacionesOperador( { nombreFantasia, publicaciones, onPublicacionClick } : ListaPublicacionProp) {
+export function PublicacionesOperador({nombreFantasia, publicaciones, onPublicacionClick}: ListaPublicacionProp) {
     const contenido = (
         <section className="px-4 py-0.5">
             <div className="border-t border-zinc-300">
