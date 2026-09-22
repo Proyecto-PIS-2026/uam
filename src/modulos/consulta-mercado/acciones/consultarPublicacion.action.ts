@@ -1,10 +1,10 @@
 "use server";
 
 import {
-  consultarPublicacion,
-  type publicacionCompleta,
+  consultarPublicaciones,
+  type ResultadoPublicaciones
 } from "./publicaciones";
 
-export async function obtenerDetallePublicacion(id: number): Promise<publicacionCompleta | null> {
-  return consultarPublicacion(id);
+export async function obtenerPublicaciones(): Promise<ResultadoPublicaciones | null> {
+  return consultarPublicaciones();
 }

@@ -44,6 +44,18 @@
     background-color: var(--color-primary-soft); 
 }
 
+.sin_foto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--color-secondary); 
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em; 
+}
+
 .contenido {
     display: flex; 
     flex: 1; 
@@ -56,7 +68,6 @@
     overflow: hidden; 
     text-overflow: ellipsis; 
     white-space: nowrap; 
-
     font-size: 1rem; 
     font-weight: 600;  
 }
@@ -93,23 +104,9 @@
     font-size: 0.875rem; 
 }
 
-.sin_foto {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    color: var(--color-secondary); 
-    font-size: 1rem;
-    font-weight: 600;
-    letter-spacing: 0.05em; 
-}
-
 .precio {
-    margin: auto; 
-    margin-bottom: 0rem;
-    margin-top: 1.5rem;
-    margin-right: 0.5rem;
+    margin-left: auto; 
+    margin-top: auto; 
     font-size: 1.2rem; 
     color: var(--color-primary); 
     font-weight: 700;
