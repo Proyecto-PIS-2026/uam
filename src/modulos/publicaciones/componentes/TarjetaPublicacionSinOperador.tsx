@@ -1,32 +1,20 @@
-import styles from "./TarjetaPublicacionSinOperador.module.css"
 import Image from "next/image";
-
-export type Publicacion = {
-    id: number; 
-    precio: number | null; 
-    foto: string | null; 
-    especie: string; 
-    variedad: string; 
-    presentacion: string; 
-    categoria: string; 
-    calibre: string; 
-}
+import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
+import styles from "./TarjetaPublicacionSinOperador.module.css";
 
 interface PublicacionSinOperadorProps {
-    producto: Publicacion; 
-    onPublicacionClick: (id: number) => void; 
+    producto: PublicacionListado;
 }
 
-export function PublicacionSinOperador ({producto, onPublicacionClick}: PublicacionSinOperadorProps) {
-    const contenido = (
-        <div className={styles.tarjeta} onClick ={() => onPublicacionClick(producto.id)}>
-            <div className={styles.imagen}> 
-                {producto.foto ? <Image src={producto.foto} alt={producto.especie}/>
-                : <span className={styles.sin_foto}>IMG</span>}
+export function PublicacionSinOperador({producto}: PublicacionSinOperadorProps) {
+    return (
+        <div className={styles.tarjeta}>
+            <div className={styles.imagen}>
+                {producto.foto ? (<Image src={producto.foto} alt={producto.especie} width={300} height={200}/>) : (<span className={styles.sin_foto}>IMG</span>)}
             </div>
-            <div className={styles.contenido}> 
+            <div className={styles.contenido}>
                 <div className={styles.nombre}>
-                    {producto.especie} {" "} {producto.variedad !== "-" && <>{producto.variedad}</>}
+                    {producto.especie}{" "}{producto.variedad !== "-" && producto.variedad}
                 </div>
                 <div className={styles.presentacion}>
                     {producto.presentacion}
@@ -39,13 +27,12 @@ export function PublicacionSinOperador ({producto, onPublicacionClick}: Publicac
                         <span className={styles.etiqueta}>
                             {producto.categoria}
                         </span>
-                    </div>   
-                    <div className={styles.precio}>
-                        {producto.precio ? <>${producto.precio}</> : "Sin precio"}
                     </div>
-                </div>         
+                    <div className={styles.precio}>
+                        {producto.precio !== null ? `$${producto.precio}` : "Sin precio"}
+                    </div>
+                </div>
             </div>
         </div>
     );
-    return contenido;
 }
