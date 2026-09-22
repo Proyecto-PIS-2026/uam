@@ -17,7 +17,7 @@ export default function PerfilOperador({ operador }: PerfilOperadorProps) {
                 </h1>
             </div>
             <div className="mt-5 rounded-xl border p-4">
-                <a href="" target="_blank" rel="noopener noreferrer" className="inline-block rounded-lg bg-green-600 px-4 py-2 text-white">
+                <a href={`https://wa.me/${operador.whatsApp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-block rounded-lg bg-green-600 px-4 py-2 text-white">
                     WhatsApp
                 </a>
 
