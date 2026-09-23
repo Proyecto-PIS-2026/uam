@@ -3,7 +3,7 @@
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 
 import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
-//import { PublicacionSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
+import TarjetaPublicacionOperadorAlt from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionOperadorAlt";
 import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionSinOperadorAlt";
 import { DrawerPublicacion } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerPublicacion";
 
@@ -25,6 +25,7 @@ const clasesListaDesagrupada = "grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-co
 
 export default function ListadoPublicaciones({publicaciones} : {publicaciones: PublicacionListado[]}) {
 	const [agruparPorOperador, setAgruparPorOperador] = useState(false);
+	const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionListado | null>(null);
 	const pantallaVertical = useMediaQuery("(orientation: portrait)");
 	const publicacionesAgrupadas = useMemo(() => {
 		const grupos = new Map<number, PublicacionesAgrupadas>();
@@ -86,9 +87,9 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 					{publicaciones.map((publicacion) => (
 						<li key={publicacion.id}>
 							{pantallaVertical ? (
-								<TarjetaPublicacionOperadorAlt publicacion={publicacion}/>
+								<TarjetaPublicacionOperadorAlt publicacion={publicacion} onClick={() => setPublicacionSeleccionada(publicacion)}/>
 							) : (
-								<TarjetaPublicacionConOperador publicacion={publicacion}/>
+								<TarjetaPublicacionConOperador publicacion={publicacion} onClick={() => setPublicacionSeleccionada(publicacion)}/>
 							)}
 						</li>
 					))}

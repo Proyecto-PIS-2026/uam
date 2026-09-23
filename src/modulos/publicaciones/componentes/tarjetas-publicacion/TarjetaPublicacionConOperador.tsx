@@ -10,12 +10,17 @@ const formatoPrecio = new Intl.NumberFormat("es-UY", {
   maximumFractionDigits: 2,
 });
 
-export default function TarjetaPublicacionConOperador({ publicacion }: { publicacion: PublicacionListado }) {
+type PropiedadesTarjetaPublicacionConOperador = {
+  publicacion: PublicacionListado;
+  onClick: () => void;
+};
+
+export default function TarjetaPublicacionConOperador({ publicacion, onClick }: PropiedadesTarjetaPublicacionConOperador) {
   const { foto, especie, variedad, categoria, calibre, presentacion, precio } = publicacion;
   const nombreProducto = variedad && variedad !== "-" ? `${especie} ${variedad}` : especie;
 
   return (
-    <article className={estilos.tarjeta} aria-label={nombreProducto}>
+    <button type="button" className={estilos.tarjeta} aria-label={`Ver detalle de ${nombreProducto}`} onClick={onClick}>
       <div className={estilos.contenedorImagen}>
         {foto ? (
           <Imagen src={foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 639px) 100vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={estilos.imagen}/>
@@ -39,6 +44,6 @@ export default function TarjetaPublicacionConOperador({ publicacion }: { publica
           </div>
         </div>
       </div>
-    </article>
+    </button>
   );
 }
