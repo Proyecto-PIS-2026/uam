@@ -5,9 +5,10 @@ import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
-import styles from "./filtros-publicaciones.module.css";
-
-export type PublicacionFiltro = {
+import styles from "./FiltrosPublicaciones.module.css";
+// import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
+// Borrar despues y descomentar el de arriba
+export type PublicacionListado = {
     id: number;
     precio: number;
     foto: string | null;
@@ -16,17 +17,17 @@ export type PublicacionFiltro = {
     presentacion: string;
     categoria: string;
     calibre: string;
-    calibreExtendido: string;
+    codigoCalibre: string;
     operador: {
         id: number;
         nombreFantasia: string;
-        whatsApp: string | null;
+        whatsApp: string;
     };
 };
 
 type FiltrosPublicacionesProps = {
-    publicaciones: PublicacionFiltro[];
-    alFiltrar?: (publicaciones: PublicacionFiltro[]) => void;
+    publicaciones: PublicacionListado[];
+    alFiltrar?: (publicaciones: PublicacionListado[]) => void;
 };
 
 export default function filtrosPublicaciones({publicaciones, alFiltrar}: FiltrosPublicacionesProps) {
@@ -144,7 +145,7 @@ export default function filtrosPublicaciones({publicaciones, alFiltrar}: Filtros
                     publicacion.presentacion,
                     publicacion.categoria,
                     publicacion.calibre,
-                    publicacion.calibreExtendido,
+                    publicacion.codigoCalibre,
                     publicacion.operador.nombreFantasia,
                 ].map((campo) => campo.toLowerCase());
                 const coincide = palabrasBusqueda.every((palabra) =>
