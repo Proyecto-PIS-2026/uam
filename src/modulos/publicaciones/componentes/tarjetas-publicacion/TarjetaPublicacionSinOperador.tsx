@@ -1,15 +1,16 @@
 import Image from "next/image";
-import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 import styles from "./TarjetaPublicacionSinOperador.module.css";
 
 interface PublicacionSinOperadorProps {
     producto: PublicacionListado;
+    onClick?: () => void;
 }
 
-export function PublicacionSinOperador({producto}: PublicacionSinOperadorProps) {
+export function PublicacionSinOperador({producto, onClick}: PublicacionSinOperadorProps) {
     return (
         <div className={styles.tarjeta}>
-            <div className={styles.imagen}>
+            <div className={styles.imagen} onClick={onClick}>
                 {producto.foto ? (<Image src={producto.foto} alt={producto.especie} width={300} height={200}/>) : (<span className={styles.sin_foto}>IMG</span>)}
             </div>
             <div className={styles.contenido}>

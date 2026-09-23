@@ -1,0 +1,20 @@
+"use client";
+// ELIMINAR COMENTARIOS PARA CUANDO SE PUEDA INTEGRAR CON LOS FILTROS
+import { useState } from "react";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
+//import FiltrosPublicaciones from "./../filtrosPublicaciones";
+import ListadoPublicaciones from "../listado-publicaciones/listadoPublicacionesUnificado";
+
+type PropiedadesContenedorPublicaciones = {
+    publicaciones: PublicacionListado[];
+};
+
+export default function ContenedorPublicaciones({ publicaciones }: PropiedadesContenedorPublicaciones) {
+    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(publicaciones);
+    return (
+        <div className="flex flex-col gap-8">
+            {/* <FiltrosPublicaciones publicaciones={publicaciones} alFiltrar={setPublicacionesFiltradas}/> */}
+            <ListadoPublicaciones publicaciones={publicacionesFiltradas} />
+        </div>
+    );
+}

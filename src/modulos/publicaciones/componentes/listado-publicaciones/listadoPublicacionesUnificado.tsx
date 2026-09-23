@@ -1,11 +1,12 @@
 "use client";
 
-import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 
-import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/TarjetaPublicacionConOperador";
-import TarjetaPublicacionOperadorAlt from "@/modulos/publicaciones/componentes/TarjetaPublicacionOperadorAlt";
+import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
 //import { PublicacionSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
-import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperadorAlt";
+import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionSinOperadorAlt";
+import { DrawerPublicacion } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerPublicacion";
+
 import { useMemo, useState } from "react";
 
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -70,7 +71,10 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 							<ul className={clasesListaAgrupada}>
 								{operador.publicaciones.map((publicacion) => (
 									<li key={publicacion.id}>
-										<TarjetaPublicacionSinOperador publicacion={publicacion}/>
+										<TarjetaPublicacionSinOperador 
+											publicacion={publicacion}
+											onClick={() => setPublicacionSeleccionada(publicacion)}
+										/>
 									</li>
 								))}
 							</ul>
@@ -89,6 +93,15 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 						</li>
 					))}
 				</ul>
+			)}
+			{publicacionSeleccionada && (
+				<DrawerPublicacion
+					publicacion={publicacionSeleccionada}
+					open={true}
+					onOpenChange={(open) => {
+						if(!open) setPublicacionSeleccionada(null); 
+					}}
+				/>
 			)}
 		</div>
   	);
