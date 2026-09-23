@@ -2,9 +2,8 @@
 
 import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
 
-//import { PublicacionesOperador } from "@/modulos/publicaciones/componentes/ListadoPublicacionConOperador";
+import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/TarjetaPublicacionConOperador";
 //import { PublicacionSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
-import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/TarjetaPublicacionOperadorAlt";
 import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperadorAlt";
 import { useMemo, useState } from "react";
 
