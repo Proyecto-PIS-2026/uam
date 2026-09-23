@@ -6,14 +6,15 @@ import styles from "./TarjetaPublicacionSinOperadorAlt.module.css";
 
 type TarjetaPublicacionProps = {
     publicacion: PublicacionListado;
+    onClick: () => void; 
 };
 
-export default function TarjetaPublicacionSinOperador({ publicacion }: TarjetaPublicacionProps) {
+export default function TarjetaPublicacionSinOperador({ publicacion, onClick }: TarjetaPublicacionProps) {
     const precioNumerico = Number(publicacion.precio);
     const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
 
     const contenido = (
-        <article className={styles.tarjeta}>
+        <button type="button"className={styles.tarjeta} onClick={onClick}>
             <div className={styles.contenedorImagen}>
                 {publicacion.foto ? (
                     <Image src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="(max-width: 380px) 72px, (max-width: 419px) 88px, 96px" className={styles.imagen}/>
@@ -49,7 +50,7 @@ export default function TarjetaPublicacionSinOperador({ publicacion }: TarjetaPu
                     </div>
                 </div>
             </div>
-        </article>
+        </button>
     );
 
     return contenido;

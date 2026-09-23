@@ -4,7 +4,9 @@ import type { PublicacionListado } from "../../../consulta-mercado/acciones/publ
 
 import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
 //import { PublicacionSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
-import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionSinOperadorAlt";
+import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperadorAlt";
+import { DrawerPublicacion } from "@/modulos/publicaciones/componentes/DrawerPublicacion";
+
 import { useMemo, useState } from "react";
 
 import ViewListIcon from "@mui/icons-material/ViewList";
@@ -20,6 +22,7 @@ const clasesLista = "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3";
 
 export default function ListadoPublicaciones({publicaciones} : {publicaciones: PublicacionListado[]}) {
 	const [agruparPorOperador, setAgruparPorOperador] = useState(false);
+	const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionListado | null>(null);
 	const publicacionesAgrupadas = useMemo(() => {
 		const grupos = new Map<number, PublicacionesAgrupadas>();
 		for (const publicacion of publicaciones) {
@@ -65,7 +68,10 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 							<ul className={clasesLista}>
 								{operador.publicaciones.map((publicacion) => (
 									<li key={publicacion.id}>
-										<TarjetaPublicacionSinOperador publicacion={publicacion}/>
+										<TarjetaPublicacionSinOperador 
+											publicacion={publicacion}
+											onClick={() => setPublicacionSeleccionada(publicacion)}
+										/>
 									</li>
 								))}
 							</ul>
@@ -76,10 +82,22 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 				<ul className={clasesLista}>
 					{publicaciones.map((publicacion) => (
 						<li key={publicacion.id}>
-							<TarjetaPublicacionConOperador publicacion={publicacion}/>
+							<TarjetaPublicacionConOperador 
+								publicacion={publicacion}
+								onClick={() => setPublicacionSeleccionada(publicacion)}
+							/>
 						</li>
 					))}
 				</ul>
+			)}
+			{publicacionSeleccionada && (
+				<DrawerPublicacion
+					publicacion={publicacionSeleccionada}
+					open={true}
+					onOpenChange={(open) => {
+						if(!open) setPublicacionSeleccionada(null); 
+					}}
+				/>
 			)}
 		</div>
   	);
