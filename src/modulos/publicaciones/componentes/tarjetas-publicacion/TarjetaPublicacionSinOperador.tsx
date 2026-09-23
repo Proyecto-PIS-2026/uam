@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 import styles from "./TarjetaPublicacionSinOperador.module.css";
 
 interface PublicacionSinOperadorProps {

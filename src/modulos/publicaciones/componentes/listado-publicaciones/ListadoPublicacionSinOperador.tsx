@@ -1,4 +1,4 @@
-import {PublicacionSinOperador, type Publicacion} from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
+import {PublicacionSinOperador, type Publicacion} from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionSinOperador";
 
 interface ListaPublicacionProp {
     publicaciones: Publicacion[]; 

@@ -1,10 +1,10 @@
 "use client";
 
-import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 
-import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/TarjetaPublicacionConOperador";
+import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
 //import { PublicacionSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
-import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperadorAlt";
+import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionSinOperadorAlt";
 import { useMemo, useState } from "react";
 
 import ViewListIcon from "@mui/icons-material/ViewList";

@@ -1,6 +1,6 @@
 "use client";
 
-import { PublicacionConOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionConOperador";
+import { PublicacionConOperador } from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
 import type { publicacionAgrupada } from "@/modulos/consulta-mercado/acciones/publicaciones";
 
 interface ListaPublicacionProp {

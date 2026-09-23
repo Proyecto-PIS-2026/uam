@@ -1,7 +1,6 @@
-import ListadoPublicaciones from "@/modulos/publicaciones/componentes/listadoPublicacionesUnificado";
 import HeaderPublico from '@/compartido/HeaderPublico';
 import { consultarPublicaciones } from "@/modulos/consulta-mercado/acciones/publicaciones";
-// import ContenedorPublicaciones from "@/modulos/consulta-mercado/ContenedorPublicaciones";
+import ContenedorPublicaciones from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones";
 
 export default async function PaginaPublicaciones() {
     const resultado = await consultarPublicaciones();
@@ -16,9 +15,7 @@ export default async function PaginaPublicaciones() {
 						publicaciones en la plataforma
 					</p>
 				</div>
-				{/* Reemplazar despues */}
-				{/* <ContenedorPublicaciones publicaciones={resultado.publicaciones}/> */}       
-				<ListadoPublicaciones publicaciones={resultado.publicaciones} />
+				<ContenedorPublicaciones publicaciones={resultado.publicaciones}/>     
 			</main>
 		</>
     )
