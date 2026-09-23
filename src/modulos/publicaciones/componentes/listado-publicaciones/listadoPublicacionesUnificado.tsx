@@ -4,8 +4,8 @@ import type { PublicacionListado } from "../../../consulta-mercado/acciones/publ
 
 import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
 //import { PublicacionSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
-import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperadorAlt";
-import { DrawerPublicacion } from "@/modulos/publicaciones/componentes/DrawerPublicacion";
+import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionSinOperadorAlt";
+import { DrawerPublicacion } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerPublicacion";
 
 import { useMemo, useState } from "react";
 
@@ -82,10 +82,7 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 				<ul className={clasesLista}>
 					{publicaciones.map((publicacion) => (
 						<li key={publicacion.id}>
-							<TarjetaPublicacionConOperador 
-								publicacion={publicacion}
-								onClick={() => setPublicacionSeleccionada(publicacion)}
-							/>
+							<TarjetaPublicacionConOperador publicacion={publicacion} onClick={() => setPublicacionSeleccionada(publicacion)}/>
 						</li>
 					))}
 				</ul>

@@ -1,11 +1,11 @@
 "use client";
 
-import { PublicacionConOperador } from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
-import type { publicacionAgrupada } from "@/modulos/consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
+import PublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
 
 interface ListaPublicacionProp {
     nombreFantasia: string;
-    publicaciones: publicacionAgrupada[];
+    publicaciones: PublicacionListado[];
     onPublicacionClick: (id: number) => void;
 }
 
@@ -19,18 +19,7 @@ export function PublicacionesOperador({nombreFantasia, publicaciones, onPublicac
                     </div>
                     <div className="flex flex-col gap-4">
                         {publicaciones.map((publicacion) => (
-                            <PublicacionConOperador
-                                key={publicacion.id}
-                                foto={publicacion.foto}
-                                especie={publicacion.especie}
-                                variedad={publicacion.variedad}
-                                categoria={publicacion.categoria}
-                                calibre={publicacion.calibre}
-                                presentacion={publicacion.presentacion}
-                                precio={publicacion.precio}
-                                operador={nombreFantasia}
-                                alSeleccionar={() => onPublicacionClick(publicacion.id)}
-                            />
+                            <PublicacionConOperador key={publicacion.id} publicacion={publicacion} onClick={() => onPublicacionClick(publicacion.id)}/>
                         ))}
                     </div>
                 </div>

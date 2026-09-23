@@ -1,6 +1,6 @@
 "use client";
 
-import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 import styles from "./DrawerPublicacion.module.css";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";

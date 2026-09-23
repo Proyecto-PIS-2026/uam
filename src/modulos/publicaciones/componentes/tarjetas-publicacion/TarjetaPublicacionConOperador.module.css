@@ -14,6 +14,18 @@
     background-color: var(--fondo-tarjeta);
     color: var(--borde);
     box-shadow: 0 2px 5px rgb(0 0 0 / 8%);
+    transition: 200ms; 
+}
+
+.tarjeta:hover {
+    transform: translateY(-2px); 
+    border-color: color-mix(in srgb, var(--color-primary) 50%, transparent); 
+    box-shadow: 0 4px 6px rgb(0 0 0 / 10%); 
+}
+
+.tarjeta:focus-visible {
+    outline: 2px solid color mix(in srgb, var(--color-primary) 20%, transparent); 
+    outline-offset: 2px; 
 }
 
 .contenedorImagen {

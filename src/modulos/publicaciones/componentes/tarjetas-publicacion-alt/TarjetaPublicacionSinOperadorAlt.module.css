@@ -8,6 +8,31 @@
     background-color: var(--color-surface);
     color: var(--color-foreground);
     box-shadow: 0 2px 5px rgb(0 0 0 / 8%);
+
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.tarjeta:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 10px rgb(0 0 0 / 12%);
+    transform: translateY(-1px);
+}
+
+.tarjeta:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgb(0 0 0 / 8%);
+}
+
+.tarjeta:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }
 
 .contenedorImagen {
@@ -163,10 +188,6 @@
 
     .especie {
         font-size: 0.9rem;
-    }
-
-    .operador {
-        font-size: 0.65rem;
     }
 
     .informacion {

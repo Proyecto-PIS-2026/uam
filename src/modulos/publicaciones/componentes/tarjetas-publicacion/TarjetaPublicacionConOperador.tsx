@@ -10,13 +10,13 @@ const formatoPrecio = new Intl.NumberFormat("es-UY", {
   maximumFractionDigits: 2,
 });
 
-export default function TarjetaPublicacionConOperador({ publicacion }: { publicacion: PublicacionListado }) {
+export default function TarjetaPublicacionConOperador({ publicacion, onClick }: { publicacion: PublicacionListado; onClick?: () => void; }) {
   const { foto, especie, variedad, categoria, calibre, codigoCalibre, presentacion, precio } = publicacion;
   const operador = publicacion.operador.nombreFantasia;
   const nombreProducto = variedad && variedad !== "-" ? `${especie} — ${variedad}` : especie;
 
   return (
-    <article className={estilos.tarjeta} aria-label={`${especie} — ${operador}`}>
+    <article className={estilos.tarjeta} aria-label={`${especie} — ${operador}`} onClick={onClick}>
       <div className={estilos.contenedorImagen}>
         {foto ? (
           <Imagen src={foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 419px) 88px, 96px" className={estilos.imagen}/>

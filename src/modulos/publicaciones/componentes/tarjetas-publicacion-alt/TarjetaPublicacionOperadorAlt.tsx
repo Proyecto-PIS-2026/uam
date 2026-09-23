@@ -1,20 +1,20 @@
 import Image from "next/image";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-
-import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 import styles from "./TarjetaPublicacionOperadorAlt.module.css";
 
 interface Publicacion {
     publicacion: PublicacionListado;
+    onClick: () => void;
 }
 
-export default function TarjetaPublicacionConOperador({ publicacion }: Publicacion) {
+export default function TarjetaPublicacionConOperador({ publicacion, onClick }: Publicacion) {
     const precioNumerico = Number(publicacion.precio);
     const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
     const nombreOperador = publicacion.operador.nombreFantasia;
 
     const contenido = (
-        <article className={styles.tarjeta}>
+        <button className={styles.tarjeta} onClick={onClick}>
             <div className={styles.contenedorImagen}>
                 {publicacion.foto ? (
                     <Image src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="(max-width: 380px) 72px, (max-width: 419px) 88px, 96px" className={styles.imagen}/>
@@ -56,7 +56,7 @@ export default function TarjetaPublicacionConOperador({ publicacion }: Publicaci
                     </div>
                 </div>
             </div>
-        </article>
+        </button>
     );
 
     return contenido;

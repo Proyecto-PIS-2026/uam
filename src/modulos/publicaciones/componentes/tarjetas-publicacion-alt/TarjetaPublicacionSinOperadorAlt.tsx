@@ -1,7 +1,6 @@
 import Image from "next/image";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-
-import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 import styles from "./TarjetaPublicacionSinOperadorAlt.module.css";
 
 type TarjetaPublicacionProps = {
