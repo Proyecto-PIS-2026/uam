@@ -107,7 +107,7 @@ export async function obtenerPerfilPublicoOperador(id: number): Promise<PerfilPu
                 variedad: publicacion.presentacion.variedad.nombreVariedad,
                 presentacion: publicacion.presentacion.nombrePresentacion,
                 categoria: publicacion.categoria.nombreCategoria,
-                calibre: publicacion.calibre.nombreCalibre,
+                calibre: publicacion.calibre.codigoCalibre,
             });
         }
     }

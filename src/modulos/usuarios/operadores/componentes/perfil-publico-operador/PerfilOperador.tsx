@@ -5,10 +5,9 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 
 type PerfilOperadorProps = {
     operador: PerfilPublicoOperador;
-}
+};
 
 export default function PerfilOperador({ operador }: PerfilOperadorProps) {
-
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const localesPorNave: Record<string, string[]> = {};
 
@@ -16,21 +15,23 @@ export default function PerfilOperador({ operador }: PerfilOperadorProps) {
         if (!localesPorNave[local.nombreNave]) {
             localesPorNave[local.nombreNave] = [];
         }
+
         localesPorNave[local.nombreNave].push(local.numeroLocal);
     }
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <header className={styles.encabezado}>
-                <div className={styles.fotoOperador} aria-hidden="true">{inicialOperador}</div>
-                <div className={styles.identidad}>
-                    <p className={styles.tipoPerfil}>Operador</p>
-                    <h1 id="nombre-operador" className={styles.nombre}>{operador.nombreFantasia}</h1>
-                </div>
-            </header>
-            <div className={styles.tarjetaInformacion}>
-                <div>
-                    <h2 className={styles.tituloSeccion}>Locales</h2>
+            <div className={styles.tarjetaPerfil}>
+                <header className={styles.encabezado}>
+                    <div className={styles.fotoOperador} aria-hidden="true">{inicialOperador}</div>
+
+                    <div className={styles.identidad}>
+                        <p className={styles.tipoPerfil}>Perfil Operador</p>
+                        <h1 id="nombre-operador" className={styles.nombre}>{operador.nombreFantasia}</h1>
+                    </div>
+                </header>
+
+                <div className={styles.tarjetaInformacion}>
                     <ul className={styles.listaLocales}>
                         {Object.entries(localesPorNave).map(([nombreNave, locales]) => (
                             <li key={nombreNave} className={styles.local}>
@@ -44,7 +45,8 @@ export default function PerfilOperador({ operador }: PerfilOperadorProps) {
                     </ul>
                 </div>
             </div>
-            <a href="" target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${operador.nombreFantasia} por WhatsApp`}>
+
+            <a href={`https://wa.me/${operador.whatsApp}`} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${operador.nombreFantasia} por WhatsApp`}>
                 <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                 <span className={styles.textoWhatsApp}>Contactar por WhatsApp</span>
             </a>
