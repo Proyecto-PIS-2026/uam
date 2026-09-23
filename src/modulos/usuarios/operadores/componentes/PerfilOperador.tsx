@@ -5,6 +5,7 @@ type PerfilOperadorProps = {
 }
 
 export default function PerfilOperador({ operador }: PerfilOperadorProps) {
+  const numeroWhatsApp = operador.whatsApp.replace(/\D/g, "");
 
   const contenido = (
         <section className="mx-auto w-full max-w-3xl p-4 text-black"> 
@@ -15,12 +16,25 @@ export default function PerfilOperador({ operador }: PerfilOperadorProps) {
                 <h1 className="text-2xl font-bold">
                     {operador.nombreFantasia}
                 </h1>
+
+                <a  aria-label="Contactar por WhatsApp"
+                    href={"https://wa.me/" + numeroWhatsApp}
+                    target="_blank" rel="noopener noreferrer" 
+                    className="group inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full  bg-white"
+                >
+                    <img
+                        src="/whatsapp.png"
+                        alt=""
+                        className="block h-7 w-7 object-contain group-hover:hidden"
+                    />
+                    <img
+                        src="/whatsapp-hover.png"
+                        alt=""
+                        className="hidden h-9 w-9 object-contain group-hover:block"
+                    />
+                </a>
             </div>
             <div className="mt-5 rounded-xl border p-4">
-                <a href={`https://wa.me/${operador.whatsApp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-block rounded-lg bg-green-600 px-4 py-2 text-white">
-                    WhatsApp
-                </a>
-
                 <h2 className="mt-5 text-lg font-semibold">Locales</h2>
 
                 <ul className="mt-2">
