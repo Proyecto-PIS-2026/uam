@@ -33,7 +33,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.15rem;
-    color: var(--color-muted-foreground);
+    color: var(--color-secondary);
     font-size: 0.75rem;
     font-weight: 500;
 }
