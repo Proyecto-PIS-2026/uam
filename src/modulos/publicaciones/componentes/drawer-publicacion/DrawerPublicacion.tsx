@@ -30,7 +30,7 @@ export function DrawerPublicacion({publicacion, open, onOpenChange}: DrawerPubli
                     <div className={styles.tarjeta}>
                         <div  className={styles.bloque_superior}>
                             <div className={styles.imagen}> 
-                                {publicacion.foto ? <Image src={publicacion.foto} alt={publicacion.especie}/>
+                                {publicacion.foto ? <Image src={publicacion.foto} alt={publicacion.especie} width={160} height={160}/>
                                 : <span className={styles.sin_foto}>IMG</span>}
                             </div>
                             <div className={styles.bloque_superior_derecho}>
@@ -41,7 +41,7 @@ export function DrawerPublicacion({publicacion, open, onOpenChange}: DrawerPubli
                                     }
                                 </div>
                                 <div className={styles.precio}>
-                                    {publicacion.precio ? <>${publicacion.precio}</> : "Sin precio"}
+                                    {publicacion.precio != null ? <>${publicacion.precio}</> : "Sin precio"}
                                 </div>
                             </div>
                         </div>
