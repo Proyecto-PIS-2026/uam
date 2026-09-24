@@ -9,14 +9,17 @@
     "start": "next start",
     "setup": "npm ci",
     "lint": "eslint",
-    "test:unit": "vitest",
-    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
+    "test:unit": "vitest --project unit",
+    "test:integration": "vitest --project integration",
+    "test:e2e": "playwright test",
     "test:coverage": "vitest run --coverage",
     "db:contract": "prisma contract emit",
     "db:migrate": "prisma db migrate",
     "db:seed": "tsx src/infraestructura/persistencia/prisma/seed.ts",
-    "db:setup": "npm run db:contract && npm run db:migrate && npm run db:seed"
+    "db:seed:test": "tsx scripts/db-seed-test.ts",
+    "db:setup": "npm run db:contract && npm run db:migrate && npm run db:seed",
+    "db:setup:test": "tsx scripts/db-setup-test.ts"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
