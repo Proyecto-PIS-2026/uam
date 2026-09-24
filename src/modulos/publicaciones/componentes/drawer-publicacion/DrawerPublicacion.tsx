@@ -12,7 +12,7 @@ interface DrawerPublicacionProps {
     onOpenChange: (open: boolean) => void; 
     publicacion: PublicacionListado | null;
 
-} s
+} 
 
 export function DrawerPublicacion({publicacion, open, onOpenChange}: DrawerPublicacionProps) {
     const contenido = (
