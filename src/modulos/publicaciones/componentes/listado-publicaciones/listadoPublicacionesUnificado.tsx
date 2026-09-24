@@ -23,6 +23,11 @@ const clasesLista = "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3";
 export default function ListadoPublicaciones({publicaciones} : {publicaciones: PublicacionListado[]}) {
 	const [agruparPorOperador, setAgruparPorOperador] = useState(false);
 	const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionListado | null>(null);
+	const [drawerAbierto, setDrawerAbierto] = useState(false);
+	function abrirPublicacion(publicacion: PublicacionListado) {
+		setPublicacionSeleccionada(publicacion);
+		setDrawerAbierto(true);
+	}
 	const publicacionesAgrupadas = useMemo(() => {
 		const grupos = new Map<number, PublicacionesAgrupadas>();
 		for (const publicacion of publicaciones) {
@@ -70,7 +75,7 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 									<li key={publicacion.id}>
 										<TarjetaPublicacionSinOperador 
 											publicacion={publicacion}
-											onClick={() => setPublicacionSeleccionada(publicacion)}
+											onClick={() => abrirPublicacion(publicacion)}
 										/>
 									</li>
 								))}
@@ -82,7 +87,7 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 				<ul className={clasesLista}>
 					{publicaciones.map((publicacion) => (
 						<li key={publicacion.id}>
-							<TarjetaPublicacionConOperador publicacion={publicacion} onClick={() => setPublicacionSeleccionada(publicacion)}/>
+							<TarjetaPublicacionConOperador publicacion={publicacion} onClick={() => abrirPublicacion(publicacion)}/>
 						</li>
 					))}
 				</ul>
@@ -90,10 +95,8 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 			{publicacionSeleccionada && (
 				<DrawerPublicacion
 					publicacion={publicacionSeleccionada}
-					open={true}
-					onOpenChange={(open) => {
-						if(!open) setPublicacionSeleccionada(null); 
-					}}
+					open={drawerAbierto}
+					onOpenChange={setDrawerAbierto}
 				/>
 			)}
 		</div>
