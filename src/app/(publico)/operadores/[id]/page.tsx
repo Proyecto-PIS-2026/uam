@@ -23,7 +23,7 @@ export default async function Page({ params }: PageProps) {
     const contenido = (
         <main className={styles.pagina}>
             <PerfilOperador operador={ perfil } />
-            <CatalogoOperador publicaciones={ perfil.publicaciones } />
+            <CatalogoOperador publicaciones={perfil.publicaciones} whatsAppOperador={perfil.whatsApp} />
         </main>
     );
 

@@ -1,13 +1,14 @@
 .contenedor {
     width: 100%;
-    max-width: 72rem;
+    max-width: 80rem;
     margin: 0 auto;
-    padding: 0.875rem 0.875rem 0 0.875rem;
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+    padding-bottom: 0.875rem;
 }
 
 .catalogo {
     width: 100%;
-    max-width: 48rem;
     margin: 0 auto;
 }
 
@@ -33,10 +34,10 @@
 }
 
 .lista {
-    display: flex;
+    display: grid;
     width: 100%;
     margin-top: 1rem;
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 0.75rem;
 }
 
@@ -45,4 +46,33 @@
     color: #5f5f5f;
     text-align: center;
     font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+    .contenedor {
+        padding-left: 0.875rem;
+        padding-right: 0.875rem;
+        padding-bottom: 0.875rem;
+    }
+
+    .titulo {
+        font-size: 1.5rem;
+    }
+
+    .lista {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .lista {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1280px) {
+    .lista {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
 }
