@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
-import ListadoPublicaciones from "./listadoPublicacionesUnificado";
+import ListadoPublicaciones from "./ListadoPublicacionesUnificado";
 
 function crearPublicacion(
   id: number,
