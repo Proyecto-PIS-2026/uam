@@ -30,7 +30,7 @@ type FiltrosPublicacionesProps = {
     alFiltrar?: (publicaciones: PublicacionListado[]) => void;
 };
 
-export default function filtrosPublicaciones({publicaciones, alFiltrar}: FiltrosPublicacionesProps) {
+export default function FiltrosPublicaciones({publicaciones, alFiltrar}: FiltrosPublicacionesProps) {
     // Hooks useState para los filtros
     const [busqueda, setBusqueda] = useState("");               // Barra de busqueda
     const [precioMinimo, setPrecioMinimo] = useState("");       // Precio Minimo
@@ -315,7 +315,7 @@ export default function filtrosPublicaciones({publicaciones, alFiltrar}: Filtros
             <div className={`${styles.filtrosExtendidos} ${mostrarFiltros ? styles.filtrosExtendidosAbiertos : ""}`}>
 
                 {/* Variedad */}
-                <TextField select label="Variedad" value={variedad} onChange={(evento) => setVariedad(evento.target.value)} size="small" className={styles.selectMui} disabled={especie === "Todas" || variedadUnica}>
+                <TextField select label="Variedad" value={variedadUnica ? "-" : variedad} onChange={(evento) => setVariedad(evento.target.value)} size="small" className={styles.selectMui} disabled={especie === "Todas" || variedadUnica}>
                     {!variedadUnica && (<MenuItem value="Todas" className={styles.opcionSelect}> Todas </MenuItem>)}
                     {variedades.map((opcion) => ( <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}> {opcion} </MenuItem>))}
                 </TextField>
