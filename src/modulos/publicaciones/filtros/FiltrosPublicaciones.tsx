@@ -6,8 +6,8 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
 import styles from "./FiltrosPublicaciones.module.css";
-// import type { PublicacionListado } from "../../consulta-mercado/acciones/publicaciones";
-// Borrar despues y descomentar el de arriba
+
+// Tipo de datos que recibe
 export type PublicacionListado = {
     id: number;
     precio: number;
