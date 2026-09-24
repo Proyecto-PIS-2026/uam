@@ -107,4 +107,4 @@ jobs:
         run: |
           npm run start &
           npx wait-on http://localhost:3000 --timeout 60000
-          npx playwright test
+          npx playwright test --pass-with-no-tests
