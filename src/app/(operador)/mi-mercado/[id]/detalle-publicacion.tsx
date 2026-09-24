@@ -25,15 +25,26 @@ export default function DetallePublicacion({ nombreProducto, precioInicial, incr
             </h1>
 
             <div className="mt-6">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
-                    Precio
-                </p>
                 <div className="flex items-center gap-2">
-                    <button type="button" onClick={restar}>−</button>
-                    <p className="text-xl font-extrabold text-[var(--ink)]">
-                        {precio === 0 ? "Sin precio" : `$${precio}`}
+                    <button
+                        type="button"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-white font-bold text-xl"
+                        onClick={restar}
+                    >
+                        −
+                    </button>
+                    <p className="min-w-18 text-center text-xl font-extrabold text-foreground">
+                        {precio === 0 ?
+                            "Sin precio" : 
+                            `$${precio}`}
                     </p>
-                    <button type="button" onClick={sumar}>+</button>
+                    <button 
+                        type="button"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-white font-bold text-xl"
+                        onClick={sumar}
+                    >
+                        +
+                    </button>
                 </div>
             </div>
         </div>

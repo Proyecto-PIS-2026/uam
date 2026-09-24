@@ -70,7 +70,7 @@ export default function MiMercado({ publicaciones , incrementoPrecio }: Props) {
                                 Mis publicaciones
                             </p>
 
-                            <h1 className="text-4xl font-extrabold tracking-tight text-[var(--ink)] sm:text-5xl">
+                            <h1 className="text-4xl font-extrabold tracking-tight text-secondary sm:text-5xl">
                                 Mi Mercado
                             </h1>
 
