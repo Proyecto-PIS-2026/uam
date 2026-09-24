@@ -6,9 +6,16 @@ export default defineConfig({
 
   test: {
     coverage: {
-      provider: 'v8',
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.d.ts",
+        "src/**/migrations/**",
+        "src/infraestructura/persistencia/prisma/**"
+      ],
       thresholds: {
-        lines: 30,
+        lines: 80,
+        perFile: false,
       },
     },
     projects: [
