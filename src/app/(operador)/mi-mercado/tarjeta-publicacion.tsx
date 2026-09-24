@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import type { Publicacion } from "./mi-mercado";
 import Detalle from "./[id]/detalle-publicacion";
 import Drawer from "@/compartido/drawer";
@@ -152,9 +152,12 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
                     </span>
                 </div>
             </div>
-            <Drawer isOpen={estaAbierto} onClose={() => setEstaAbierto(false)} >
+            <Drawer
+                isOpen={estaAbierto}
+                onClose={() => setEstaAbierto(false)}
+            >
                 <Detalle
-                    nombreProducto={especie}
+                    pub={pub}
                     precio={precio}
                     restar={restar}
                     sumar={sumar}

@@ -59,14 +59,14 @@ export default function MiMercado({ publicaciones , incrementoPrecio }: Props) {
     const grupos = Array.from(gruposPorEspecie.values());
 
     return (
-        <main className="min-h-screen bg-[var(--lightgray)] px-4 py-6 sm:px-8 sm:py-8">
+        <main className="min-h-screen bg-background px-4 py-6 sm:px-8 sm:py-8">
             <div className="mx-auto max-w-7xl">
 
                 {/* Encabezado */}
                 <header className="mb-7">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p className="mb-1 text-xs font-bold uppercase tracking-widest text-[var(--lightgreen)]">
+                            <p className="mb-1 text-xs font-bold uppercase tracking-widest text-primary">
                                 Mis publicaciones
                             </p>
 
@@ -91,7 +91,7 @@ export default function MiMercado({ publicaciones , incrementoPrecio }: Props) {
                 {/* Estado vacío */}
                 {grupos.length === 0 && (
                     <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-                        <h2 className="text-xl font-bold text-[var(--ink)]">
+                        <h2 className="text-xl font-bold text-foreground">
                             No tenés publicaciones
                         </h2>
 
@@ -108,7 +108,7 @@ export default function MiMercado({ publicaciones , incrementoPrecio }: Props) {
 
                             {/* Encabezado de especie */}
                             <div className="mb-3 flex items-center gap-2 border-b border-gray-200 pb-2">
-                                <h2 className="text-xl font-bold text-[var(--ink)]">
+                                <h2 className="text-xl font-bold text-foreground">
                                     {especie.nombreEspecie}
                                 </h2>
 
