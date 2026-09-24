@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Publicacion } from "./mi-mercado";
+import Detalle from "./[id]/detalle-publicacion";
+import Drawer from "@/compartido/drawer";
 
 type Props = {
     pub: Publicacion;
@@ -15,6 +17,8 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
         precioInicial = Number(pub.precio);
     }
     const [precio, setPrecio] = useState(precioInicial);
+    const [estaAbierto, setEstaAbierto] = useState(false)
+
     function restar() {
         setPrecio((valorActual) => Math.max(0, valorActual - incrementoPrecio));
     }
@@ -62,8 +66,9 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col">
-                <Link
-                    href={`/mi-mercado/${pub.id}`}
+                <button
+                    type="button"
+                    onClick={() => setEstaAbierto(true)}
                     className="flex min-w-0 flex-1 hover:bg-gray-50"
                 >
                     {/* Información */}
@@ -91,7 +96,11 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
                                             "-"}
                                     </p>
                                 </div>
-
+                                <span
+                                    className="text-xs text-gray-400 hover:text-gray-500"
+                                >
+                                    Editar
+                                </span>
                                 <span
                                     className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold sm:text-xs ${
                                         pub.publicacionDisponible
@@ -106,7 +115,7 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
                             </div>
                         </div>
                     </div>
-                </Link>
+                </button>
 
                 {/* Precio */}
                 <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2 sm:px-4">
@@ -143,6 +152,14 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
                     </span>
                 </div>
             </div>
+            <Drawer isOpen={estaAbierto} onClose={() => setEstaAbierto(false)} >
+                <Detalle
+                    nombreProducto={especie}
+                    precio={precio}
+                    restar={restar}
+                    sumar={sumar}
+                />
+            </Drawer>
         </div>
     );
 }
