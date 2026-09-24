@@ -137,10 +137,10 @@ describe("FiltrosPublicaciones", () => {
         render(<FiltrosPublicaciones publicaciones={publicaciones}/>);
 
         // Buscador y filtros principales
-        expect(screen.getByPlaceholderText("Buscar publicaciones")).toBeInTheDocument();
+        expect(screen.getByLabelText("Buscar publicaciones")).toBeInTheDocument();
         expect(screen.getByLabelText("Especie")).toBeInTheDocument();
-        expect(screen.getByLabelText("Precio Mínimo.")).toBeInTheDocument();
-        expect(screen.getByLabelText("Precio máx.")).toBeInTheDocument();
+        expect(screen.getByLabelText("Precio Mínimo")).toBeInTheDocument();
+        expect(screen.getByLabelText("Precio Máximo")).toBeInTheDocument();
 
         // Botones principales
         expect(screen.getByRole("button", { name: /más filtros/i })).toBeInTheDocument();
@@ -168,26 +168,19 @@ describe("FiltrosPublicaciones", () => {
         const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
         expect(filtrosExtendidos).toBeInTheDocument();
         expect(listaOrdenamiento).toBeInTheDocument();
-        expect(filtrosExtendidos).not.toHaveClass(styles.filtrosExtendidosAbiertos);
+        expect(document.querySelector(`.${styles.filtrosAbiertos}`)).not.toBeInTheDocument();
         expect(listaOrdenamiento).not.toHaveClass(styles.listaOrdenamientoAbierta);
     });
 
-    // Tests de interacción
     it("abre y cierra los filtros adicionales al hacer click en Más filtros", () => {
         render(<FiltrosPublicaciones publicaciones={publicaciones}/>);
-        const filtrosExtendidos = document.querySelector(`.${styles.filtrosExtendidos}`);
+        const layoutFiltros = document.querySelector(`.${styles.layoutFiltros}`);
         const botonMasFiltros = screen.getByRole("button", { name: /más filtros/i });
-        
-        // Filtros extendidos antes de abrir
-        expect(filtrosExtendidos).not.toHaveClass(styles.filtrosExtendidosAbiertos);
-
-        // Filtros extendidos abiertos
+        expect(layoutFiltros).not.toHaveClass(styles.filtrosAbiertos);
         fireEvent.click(botonMasFiltros);
-        expect(filtrosExtendidos).toHaveClass( styles.filtrosExtendidosAbiertos);
-
-        // Filtros extendidos cerrados
+        expect(layoutFiltros).toHaveClass(styles.filtrosAbiertos);
         fireEvent.click(botonMasFiltros);
-        expect(filtrosExtendidos).not.toHaveClass(styles.filtrosExtendidosAbiertos);
+        expect(layoutFiltros).not.toHaveClass(styles.filtrosAbiertos);
     });
 
     it("abre y cierra las opciones de ordenamiento al hacer click en Ordenar por", () => {
@@ -209,9 +202,9 @@ describe("FiltrosPublicaciones", () => {
 
     it("renderiza correctamente los campos de búsqueda y precio", () => {
         render(<FiltrosPublicaciones publicaciones={publicaciones}/>);
-        const buscador = screen.getByPlaceholderText("Buscar publicaciones");
-        const precioMinimo = screen.getByLabelText("Precio Mínimo.");
-        const precioMaximo = screen.getByLabelText("Precio máx.");
+        const buscador = screen.getByLabelText("Buscar publicaciones");
+        const precioMinimo = screen.getByLabelText("Precio Mínimo");
+        const precioMaximo = screen.getByLabelText("Precio Máximo");
         expect(buscador).toHaveAttribute("type", "search");
         expect(precioMinimo).toHaveAttribute("type", "number");
         expect(precioMinimo).toHaveAttribute("min", "0");
@@ -312,9 +305,9 @@ describe("FiltrosPublicaciones", () => {
 
     it("limpia los filtros al hacer click en Limpiar filtros", () => {
         render(<FiltrosPublicaciones publicaciones={publicaciones} />);
-        const buscador = screen.getByPlaceholderText("Buscar publicaciones");
-        const precioMinimo = screen.getByLabelText("Precio Mínimo.");
-        const precioMaximo = screen.getByLabelText("Precio máx.");
+        const buscador = screen.getByLabelText("Buscar publicaciones");
+        const precioMinimo = screen.getByLabelText("Precio Mínimo");
+        const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(buscador, { target: { value: "manzana" } });
         fireEvent.change(precioMinimo, { target: { value: "50" } });
         fireEvent.change(precioMaximo, { target: { value: "200" } });
@@ -404,7 +397,7 @@ describe("FiltrosPublicaciones", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
-        const buscador = screen.getByPlaceholderText("Buscar publicaciones");
+        const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "manzana" } });
         act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -416,7 +409,7 @@ describe("FiltrosPublicaciones", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
-        const buscador = screen.getByPlaceholderText("Buscar publicaciones");
+        const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "Mercado Verde" } });
         act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -428,7 +421,7 @@ describe("FiltrosPublicaciones", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
-        const precioMinimo = screen.getByLabelText("Precio Mínimo.");
+        const precioMinimo = screen.getByLabelText("Precio Mínimo");
         fireEvent.change(precioMinimo, { target: { value: "250" } });
         act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -444,7 +437,7 @@ describe("FiltrosPublicaciones", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
-        const precioMaximo = screen.getByLabelText("Precio máx.");
+        const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMaximo, { target: { value: "250" } });
         act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -460,8 +453,8 @@ describe("FiltrosPublicaciones", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
-        const precioMinimo = screen.getByLabelText("Precio Mínimo.");
-        const precioMaximo = screen.getByLabelText("Precio máx.");
+        const precioMinimo = screen.getByLabelText("Precio Mínimo");
+        const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMinimo, { target: { value: "150" } });
         fireEvent.change(precioMaximo, { target: { value: "350" } });
         act(() => { vi.advanceTimersByTime(750) });
@@ -474,8 +467,8 @@ describe("FiltrosPublicaciones", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones  publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
-        const precioMinimo = screen.getByLabelText("Precio Mínimo.");
-        const precioMaximo = screen.getByLabelText("Precio máx.");
+        const precioMinimo = screen.getByLabelText("Precio Mínimo");
+        const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMinimo, { target: { value: "350" } });
         fireEvent.change(precioMaximo, { target: { value: "150" } });
         act(() => { vi.advanceTimersByTime(750) });
@@ -528,7 +521,7 @@ describe("FiltrosPublicaciones", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
-        const buscador = screen.getByPlaceholderText("Buscar publicaciones");
+        const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "MANZANA mercado" } });
         act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -551,24 +544,11 @@ describe("FiltrosPublicaciones", () => {
 
     it("coloca las publicaciones sin precio al final al ordenar por precio", () => {
         const alFiltrar = vi.fn();
-
-        render(
-            <FiltrosPublicaciones
-                publicaciones={publicacionesConPrecioNulo}
-                alFiltrar={alFiltrar}
-            />
-        );
-
+        render(<FiltrosPublicaciones publicaciones={publicacionesConPrecioNulo} alFiltrar={alFiltrar}/>);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-
-        fireEvent.click(
-            screen.getByRole("button", { name: "Menor Precio" })
-        );
-
+        fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
-
         expect(resultado).toHaveLength(3);
-
         expect(resultado[0].precio).toBe(200);
         expect(resultado[1].precio).toBeNull();
         expect(resultado[2].precio).toBeNull();
@@ -576,24 +556,11 @@ describe("FiltrosPublicaciones", () => {
 
     it("mantiene las publicaciones sin precio al final al ordenar por precio descendente", () => {
         const alFiltrar = vi.fn();
-
-        render(
-            <FiltrosPublicaciones
-                publicaciones={publicacionesConPrecioNulo}
-                alFiltrar={alFiltrar}
-            />
-        );
-
+        render(<FiltrosPublicaciones publicaciones={publicacionesConPrecioNulo} alFiltrar={alFiltrar}/>);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-
-        fireEvent.click(
-            screen.getByRole("button", { name: "Mayor Precio" })
-        );
-
+        fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
-
         expect(resultado).toHaveLength(3);
-
         expect(resultado[0].precio).toBe(200);
         expect(resultado[1].precio).toBeNull();
         expect(resultado[2].precio).toBeNull();
