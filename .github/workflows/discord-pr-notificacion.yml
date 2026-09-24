@@ -113,7 +113,7 @@ jobs:
     name: Notificar Code Review
     needs: validar-descripcion-pr
     if: >-
-      github.event.pull_request.draft == false && (github.event.action == 'opened' || github.event.action == 'edited' || github.event.action == 'reopened' || github.event.action == 'ready_for_review')
+      github.event.pull_request.draft == false && (github.event.action == 'opened' || github.event.action == 'edited' || github.event.action == 'synchronize' || github.event.action == 'reopened' || github.event.action == 'ready_for_review')
     runs-on: ubuntu-latest
     concurrency:
       group: notificar-code-review-${{ github.repository }}-${{ github.event.pull_request.number }}
@@ -176,6 +176,9 @@ jobs:
               ;;
             edited)
               ESTADO="Listo para revisión"
+              ;;
+            synchronize)
+              ESTADO="Actualizado"
               ;;
             *)
               ESTADO="Abierto"
