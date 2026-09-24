@@ -115,23 +115,25 @@ describe("DrawerPublicacionPerfil", () => {
         );
     });
 
-    // Verifica que en web el drawer se abra desde la derecha
-    it("usa el drawer lateral derecho en web", () => {
+    // Verifica que en web se abra un diálogo en lugar del drawer inferior
+    it("usa un diálogo en web", () => {
         mocks.useMediaQuery.mockReturnValue(true);
+        const onOpenChange = vi.fn();
 
         render(
             <DrawerPublicacionPerfil
                 publicacion={publicacion}
                 open={true}
-                onOpenChange={vi.fn()}
+                onOpenChange={onOpenChange}
                 whatsAppOperador="+598 99 123 456"
             />
         );
 
-        expect(screen.getByTestId("drawer")).toHaveAttribute(
-            "data-anchor",
-            "right"
-        );
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+        expect(screen.queryByTestId("drawer")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar detalle de publicación" }));
+        expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
     // Verifica que no muestre información cuando no hay publicación seleccionada

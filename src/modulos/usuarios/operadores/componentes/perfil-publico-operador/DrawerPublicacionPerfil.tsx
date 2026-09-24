@@ -3,8 +3,10 @@
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
 import TextoAjustable from "./TextoAjustable";
 import styles from "./DrawerPublicacionPerfil.module.css";
+import Dialog from "@mui/material/Dialog";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import CloseIcon from "@mui/icons-material/Close";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import Image from "next/image";
@@ -23,23 +25,22 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
     const mensajeWhatsApp = publicacion ? `Hola, vi tu publicación de ${nombreProducto} en Mercado UAM y quisiera hacerte una consulta.` : "";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
-    return (
-        <SwipeableDrawer
-            anchor={esWeb ? "right" : "bottom"}
-            open={open}
-            onClose={() => onOpenChange(false)}
-            onOpen={() => onOpenChange(true)}
-            slotProps={{ paper: { className: styles.drawer } }}
-            transitionDuration={{ enter: 400, exit: 400 }}
-        >
+    const contenido = (
+        <>
             {publicacion && (
                 <div className={styles.tarjeta}>
+                    <header className={styles.cabeceraDialogo}>
+                        <h2 id="titulo-detalle-publicacion" className={styles.tituloDialogo}>Detalle de publicación</h2>
+                        <button type="button" className={styles.cerrarDialogo} onClick={() => onOpenChange(false)} aria-label="Cerrar detalle de publicación">
+                            <CloseIcon fontSize="small" aria-hidden="true" />
+                        </button>
+                    </header>
                     <div className={styles.indicador} />
 
                     <div className={styles.bloqueSuperior}>
                         <div className={styles.contenedorImagen}>
                             {publicacion.foto ? (
-                                <Image src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="(max-width: 767px) 160px, 448px" className={styles.imagen} />
+                                <Image src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="(max-width: 767px) 160px, 256px" className={styles.imagen} />
                             ) : (
                                 <div className={styles.sinFoto}>
                                     <ImageOutlinedIcon className={styles.iconoFoto} />
@@ -85,6 +86,20 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
                     </div>
                 </div>
             )}
+        </>
+    );
+
+    if (esWeb) {
+        return (
+            <Dialog open={open} onClose={() => onOpenChange(false)} maxWidth={false} aria-labelledby="titulo-detalle-publicacion" slotProps={{ paper: { className: styles.drawer } }}>
+                {contenido}
+            </Dialog>
+        );
+    }
+
+    return (
+        <SwipeableDrawer anchor="bottom" open={open} onClose={() => onOpenChange(false)} onOpen={() => onOpenChange(true)} slotProps={{ paper: { className: styles.drawer } }} transitionDuration={{ enter: 400, exit: 400 }}>
+            {contenido}
         </SwipeableDrawer>
     );
 }

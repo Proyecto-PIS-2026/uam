@@ -187,53 +187,94 @@
     font-size: 1.2rem !important;
 }
 
+.cabeceraDialogo {
+    display: none;
+}
+
 @media (min-width: 768px) {
-    .drawer {
-        width: 28rem;
-        height: 100dvh;
-        max-height: none;
-        border-radius: 0;
+    .drawer.drawer {
+        width: min(46rem, calc(100vw - 4rem));
+        height: auto;
+        max-height: calc(100dvh - 4rem);
+        border-radius: 2.5rem;
         overflow-y: auto;
     }
 
     .tarjeta {
+        display: grid;
+        min-height: 0;
+        grid-template-columns: 16rem minmax(0, 1fr);
+        grid-template-rows: auto auto auto auto;
+        column-gap: 1.5rem;
+        row-gap: 1.25rem;
+        padding: 1.75rem;
+    }
+
+    .cabeceraDialogo {
         display: flex;
-        min-height: 100%;
-        flex-direction: column;
-        padding: 0 2rem 2rem;
+        grid-column: 1 / -1;
+        grid-row: 1;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--color-border);
     }
 
-    .indicador {
-        display: none;
+    .tituloDialogo {
+        margin: 0;
+        color: var(--color-foreground);
+        font-size: 1rem;
+        font-weight: 700;
     }
 
+    .cerrarDialogo {
+        display: grid;
+        width: 2.25rem;
+        height: 2.25rem;
+        flex-shrink: 0;
+        place-items: center;
+        border: 1px solid var(--color-border);
+        border-radius: 50%;
+        background-color: var(--color-surface);
+        color: var(--color-muted);
+        cursor: pointer;
+    }
+
+    .cerrarDialogo:hover {
+        background-color: var(--color-primary-soft);
+        color: var(--color-secondary);
+    }
+
+    .cerrarDialogo:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    .indicador,
     .tarjeta::before,
     .tarjeta::after {
         display: none;
     }
 
     .bloqueSuperior {
-        display: flex;
-        height: auto;
-        margin: 0 -2rem 2rem;
-        flex-direction: column;
-        gap: 1.5rem;
+        display: contents;
     }
 
     .contenedorImagen {
-        width: 100%;
-        height: auto;
-        align-self: stretch;
-        aspect-ratio: 1 / 1;
-        border: 0;
-        border-radius: 0;
+        width: 16rem;
+        height: 16rem;
+        grid-column: 1;
+        grid-row: 2 / 4;
+        align-self: start;
+        border: 1px solid var(--color-border);
+        border-radius: 1.5rem;
         box-shadow: none;
         background-color: var(--color-primary-soft);
     }
 
     .sinFoto {
         gap: 0.35rem;
-        color: var(--color-secondary);
         font-size: 0.9rem;
     }
 
@@ -242,71 +283,96 @@
     }
 
     .bloqueSuperiorDerecho {
+        grid-column: 2;
+        grid-row: 2;
         width: 100%;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0 2rem;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 0.5rem;
+        padding: 0;
     }
 
     .nombrePublicacion {
         width: 100%;
         height: auto;
-        align-items: center;
+        align-items: flex-start;
+        gap: 0.25rem;
         padding-right: 0;
-        text-align: center;
-    }
-
-    .especie,
-    .variedad,
-    .precio {
-        color: var(--color-secondary);
-    }
-
-    .especie {
-        font-size: 1.75rem;
-    }
-
-    .variedad {
-        font-size: 1.25rem;
+        text-align: left;
     }
 
     .precio {
         height: auto;
-        align-self: center;
-        justify-content: center;
+        align-self: flex-start;
+        justify-content: flex-start;
         padding: 0;
-        font-size: 2rem;
+        color: var(--color-primary);
+        font-size: 1.75rem;
+        font-weight: 700;
     }
 
     .bloqueMedio {
+        grid-column: 2;
+        grid-row: 3;
         width: 100%;
         gap: 0;
-        padding-bottom: 2rem;
+        padding-bottom: 0;
+        border-top: 1px solid var(--color-border);
     }
 
     .informacionDetallada {
-        padding: 0.9rem 0;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .informacionDetallada:last-child {
+        border-bottom: 0;
     }
 
     .nombreInformacion,
     .valorInformacion {
-        font-size: 1rem;
+        overflow: visible;
+        font-size: 0.875rem;
+        text-overflow: clip;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .nombreInformacion {
+        color: var(--color-muted);
+        font-weight: 500;
     }
 
     .valorInformacion {
+        color: var(--color-foreground);
         text-align: right;
     }
 
     .bloqueBotones {
-        margin-top: auto;
+        grid-column: 1 / -1;
+        grid-row: 4;
+        margin-top: 0;
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border);
     }
 
     .botonWhatsApp {
         padding: 0.9rem;
+        border-radius: 1rem;
         font-size: 1rem;
+        text-decoration: none;
+    }
+
+    .botonWhatsApp:hover {
+        background-color: var(--color-primary-hover);
+    }
+
+    .botonWhatsApp:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
     }
 
     .iconoWhatsApp {
-        font-size: 1.35rem !important;
+        font-size: 1.3rem !important;
     }
 }
