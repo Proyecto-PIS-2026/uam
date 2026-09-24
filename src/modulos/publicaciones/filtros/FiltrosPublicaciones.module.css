@@ -1,8 +1,7 @@
 .contenedor {
-    max-width: 48rem;
-    margin: 0.5rem auto 0;
-    padding: 0.875rem;
+    width: 100%;
     margin: auto;
+    padding: 0.875rem;
     box-sizing: border-box;
     border: 1px solid var(--color-border);
     border-radius: 0.875rem;
@@ -10,99 +9,162 @@
     box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
 }
 
-.buscador {
-    position: relative;
-    min-width: 0;
-}
-
-.iconoBusqueda {
-    position: absolute;
-    top: 50%;
-    left: 0.8rem;
-    z-index: 1;
-    width: 1.2rem;
-    height: 1.2rem;
-    transform: translateY(-50%);
-    color: var(--color-muted);
-    pointer-events: none;
-}
-
-.inputBusqueda {
-    width: 100%;
-    height: 2.75rem;
-    box-sizing: border-box;
-    padding: 0 0.875rem 0 2.6rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.6rem;
-    background-color: var(--color-surface);
-    color: var(--color-foreground);
-    font-size: 0.9rem;
-    outline: none;
-}
-
-.inputBusqueda:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgb(0 131 50 / 15%);
-}
-
-.inputBusqueda::placeholder {
-    color: var(--color-muted);
-}
-
-.filtrosRapidos {
+.layoutFiltros {
     display: grid;
-    grid-template-columns:
-        minmax(0, 1.5fr)
-        minmax(0, 1fr)
-        minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.625rem;
     margin-top: 0.75rem;
-    align-items: end;
-}
-
-.campo {
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-    gap: 0.3rem;
-}
-
-.etiqueta {
-    color: var(--color-muted);
-    font-size: 0.7rem;
-    font-weight: 500;
-}
-
-.inputPrecio {
-    width: 100%;
-    min-width: 0;
-    height: 40px;
-    box-sizing: border-box;
-    padding: 0 0.65rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.55rem;
-    background-color: var(--color-surface);
-    color: var(--color-foreground);
-    font-size: 0.8rem;
-    outline: none;
-}
-
-.inputPrecio:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgb(0 131 50 / 15%);
-}
-
-.inputPrecio::placeholder {
-    color: var(--color-muted);
 }
 
 .mensajeError {
-    margin-top: 0.35rem;
-    text-align: center;
+    grid-column: 1 / -1;
+    grid-row: 4;
+    width: 100%;
+    margin-top: -0.35rem;
+    padding-left: 0.1rem;
+    box-sizing: border-box;
     color: #d32f2f;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 500;
     line-height: 1.2;
+    text-align: left;
+}
+
+.filtroBuscador,
+.filtroEspecie,
+.filtroVariedad,
+.filtroPresentacion,
+.filtroPrecioMinimo,
+.filtroPrecioMaximo,
+.filtroCategoria,
+.filtroCalibre,
+.barraOpciones {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.filtroBuscador {
+    grid-column: 1 / -1;
+    grid-row: 1;
+}
+
+.filtroEspecie {
+    grid-column: 1 / -1;
+    grid-row: 2;
+}
+
+.filtroPrecioMinimo {
+    grid-column: 1;
+    grid-row: 3;
+}
+
+.filtroPrecioMaximo {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.barraOpciones {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    grid-column: 1 / -1;
+    grid-row: 4;
+}
+
+.pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    grid-column: 1 / -1;
+    margin-top: 0.5rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.resultados {
+    color: var(--color-foreground);
+    font-size: 0.8rem;
+}
+
+.limpiar {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.limpiar:hover {
+    text-decoration: underline;
+}
+
+.filtrosExtendidos {
+    display: grid;
+    grid-template-rows: 40px 40px;
+    column-gap: 0.625rem;
+    row-gap: 1.25rem;
+    grid-column: 1 / -1;
+    grid-row: 5;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: 0;
+    margin-top: -0.625rem;
+    box-sizing: border-box;
+    overflow: hidden;
+    transition:
+        height 0.25s ease,
+        margin-top 0.25s ease;
+}
+
+.layoutFiltros.filtrosAbiertos .filtrosExtendidos {
+    height: 6.4375rem;
+    margin-top: 0;
+}
+
+.layoutFiltros.filtrosAbiertos .filtrosVariedadPresentacion {
+    border-top: 1px solid var(--color-border);
+    padding-top: 0.625rem;
+    box-sizing: border-box;
+}
+
+.filtrosVariedadPresentacion,
+.filtrosCategoriaCalibre {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.filtrosVariedadPresentacion {
+    grid-row: 1;
+}
+
+.filtrosCategoriaCalibre {
+    grid-row: 2;
+}
+
+.filtrosVariedadPresentacion .filtroVariedad,
+.filtrosCategoriaCalibre .filtroCategoria {
+    grid-column: 1;
+}
+
+.filtrosVariedadPresentacion .filtroPresentacion,
+.filtrosCategoriaCalibre .filtroCalibre {
+    grid-column: 2;
+}
+
+.rangoInvalido .barraOpciones {
+    grid-row: 5;
 }
 
 .inputPrecioError {
@@ -169,15 +231,6 @@
     height: 1.25rem;
 }
 
-.barraOpciones {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    margin-top: 0.75rem;
-}
-
 .listaOrdenamiento {
     position: absolute;
     top: calc(100% + 0.4rem);
@@ -194,7 +247,12 @@
     border-radius: 0.5rem;
     background-color: var(--color-surface);
     box-shadow: 0 0 0 rgb(0 0 0 / 0%);
-    transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease, border-width 0.25s ease, box-shadow 0.25s ease;
+    transition:
+        max-height 0.25s ease,
+        padding 0.25s ease,
+        opacity 0.2s ease,
+        border-width 0.25s ease,
+        box-shadow 0.25s ease;
 }
 
 .listaOrdenamientoAbierta {
@@ -228,25 +286,12 @@
     font-weight: 600;
 }
 
-.filtrosExtendidos {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.625rem;
-    max-height: 0;
-    margin-top: 0;
-    padding-top: 0;
-    overflow: hidden;
-    opacity: 0;
-    border-top: 0 solid var(--color-border);
-    transition: max-height 0.25s ease, margin-top 0.25s ease, padding-top 0.25s ease, opacity 0.2s ease, border-top-width 0.25s ease;
+.rangoInvalido .barraOpciones {
+    grid-row: 5;
 }
 
-.filtrosExtendidosAbiertos {
-    max-height: 300px;
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    opacity: 1;
-    border-top-width: 1px;
+.rangoInvalido .filtrosExtendidos {
+    grid-row: 6;
 }
 
 @media (max-width: 380px) {
@@ -254,21 +299,17 @@
         padding: 0.7rem;
     }
 
-    .filtrosRapidos {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-
-    .filtrosRapidos .selectMui {
-        grid-column: 1 / -1;
-    }
-
     .inputPrecio {
         padding: 0 0.5rem;
         font-size: 0.75rem;
     }
 
-    .filtrosExtendidos {
-        gap: 0.5rem;
+    .rangoInvalido .barraOpciones {
+        grid-row: 5;
+    }
+
+    .rangoInvalido .filtrosExtendidos {
+        grid-row: 6;
     }
 }
 
@@ -277,39 +318,222 @@
         padding: 1rem;
     }
 
-    .filtrosRapidos, .filtrosExtendidos {
-        gap: 0.75rem;
-    }
-
     .inputPrecio {
         font-size: 0.85rem;
     }
+
+    .barraOpciones {
+        grid-column: 1 / -1;
+        grid-row: 4;
+    }
+
+    .rangoInvalido .barraOpciones {
+        grid-row: 5;
+    }
+
+    .rangoInvalido .filtrosExtendidos {
+        grid-row: 6;
+    }
 }
 
-.pie {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 0.75rem;
-    padding-top: 0.65rem;
-    border-top: 1px solid var(--color-border);
+@media (min-width: 600px) {
+    .layoutFiltros {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .filtroBuscador {
+        grid-column: 1 / -1;
+        grid-row: 1;
+    }
+
+    .filtroEspecie {
+        grid-column: 1 / 3;
+        grid-row: 2;
+    }
+
+    .filtroVariedad {
+        grid-column: 3 / 5;
+        grid-row: 2;
+    }
+
+    .filtroPresentacion {
+        grid-column: 5 / 7;
+        grid-row: 2;
+    }
+
+    .filtroPrecioMinimo {
+        grid-column: 1 / 4;
+        grid-row: 3;
+    }
+
+    .filtroPrecioMaximo {
+        grid-column: 4 / 7;
+        grid-row: 3;
+    }
+
+    .barraOpciones {
+        grid-column: 1 / -1;
+        grid-row: 4;
+    }
+
+    .filtroCategoria {
+        grid-column: 1 / 4;
+        grid-row: 5;
+    }
+
+    .filtroCalibre {
+        grid-column: 4 / 7;
+        grid-row: 5;
+    }
+
+    .filtrosExtendidos {
+        display: contents;
+    }
+
+    .filtrosVariedadPresentacion {
+        display: contents;
+    }
+
+    .filtrosCategoriaCalibre {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.625rem;
+        grid-column: 1 / 7;
+        grid-row: 5;
+        width: 100%;
+        height: 0;
+        padding-top: 0;
+        overflow: hidden;
+        border-top: 0 solid var(--color-border);
+        box-sizing: border-box;
+        transition:
+            height 0.25s ease,
+            padding-top 0.25s ease,
+            border-top-width 0.25s ease;
+    }
+
+    .layoutFiltros.filtrosAbiertos .filtrosCategoriaCalibre {
+        height: 3.75rem;
+        padding-top: 0.625rem;
+        border-top-width: 1px;
+        margin-bottom: -0.375rem;
+    }
+
+    .filtrosCategoriaCalibre .filtroCategoria {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .filtrosCategoriaCalibre .filtroCalibre {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .rangoInvalido .filtrosCategoriaCalibre {
+        grid-row: 6;
+    }
+
+    .filtrosVariedadPresentacion .filtroVariedad {
+        grid-column: 3 / 5;
+        grid-row: 2;
+    }
+
+    .filtrosVariedadPresentacion .filtroPresentacion {
+        grid-column: 5 / 7;
+        grid-row: 2;
+    }
 }
 
-.resultados {
-    color: var(--color-foreground);
-    font-size: 0.8rem;
-}
+@media (min-width: 1000px) {
+    .layoutFiltros {
+        grid-template-columns: repeat(20, minmax(0, 1fr));
+    }
 
-.limpiar {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--color-primary);
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-}
+    .filtroBuscador {
+        grid-column: 1 / 11;
+        grid-row: 1;
+    }
 
-.limpiar:hover {
-    text-decoration: underline;
+    .filtroEspecie {
+        grid-column: 11 / 16;
+        grid-row: 1;
+    }
+
+    .filtroVariedad {
+        grid-column: 16 / 21;
+        grid-row: 1;
+    }
+
+    .filtroPresentacion {
+        grid-column: 1 / 5;
+        grid-row: 2;
+    }
+
+    .filtroCategoria {
+        grid-column: 5 / 9;
+        grid-row: 2;
+    }
+
+    .filtroCalibre {
+        grid-column: 9 / 13;
+        grid-row: 2;
+    }
+
+    .filtroPrecioMinimo {
+        grid-column: 13 / 17;
+        grid-row: 2;
+    }
+
+    .filtroPrecioMaximo {
+        grid-column: 17 / 21;
+        grid-row: 2;
+    }
+
+    .barraOpciones {
+        grid-column: 1 / 21;
+        grid-row: 3;
+        justify-content: flex-end;
+    }
+
+    .rangoInvalido .barraOpciones {
+        grid-row: 3;
+    }
+
+    .rangoInvalido .mensajeError {
+        grid-row: 3;
+        padding-top: 10px;
+    }
+
+    .barraOpciones .botonExtendidos:first-child {
+        display: none;
+    }
+
+    .filtrosExtendidos {
+        display: contents;
+    }
+
+    .filtrosVariedadPresentacion,
+    .filtrosCategoriaCalibre {
+        display: contents;
+    }
+
+    .filtrosExtendidos .filtroVariedad {
+        grid-column: 16 / 21;
+        grid-row: 1;
+    }
+
+    .filtrosExtendidos .filtroPresentacion {
+        grid-column: 1 / 5;
+        grid-row: 2;
+    }
+
+    .filtrosExtendidos .filtroCategoria {
+        grid-column: 5 / 9;
+        grid-row: 2;
+    }
+
+    .filtrosExtendidos .filtroCalibre {
+        grid-column: 9 / 13;
+        grid-row: 2;
+    }
 }
