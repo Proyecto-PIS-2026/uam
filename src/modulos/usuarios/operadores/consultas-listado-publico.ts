@@ -1,4 +1,4 @@
-import { db } from "@/infraestructura/persistencia/prisma/db";
+import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 import { Temporal } from "@js-temporal/polyfill";
 
