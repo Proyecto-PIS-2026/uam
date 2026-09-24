@@ -1,13 +1,12 @@
 .contenedor {
     width: 100%;
-    max-width: 72rem;
+    max-width: 80rem;
     margin: 0 auto;
-    padding: 1.25rem;
+    padding: 0.875rem;
 }
 
 .tituloContenedor {
     width: 100%;
-    max-width: 48rem;
     margin: 0 auto;
     padding: 2rem 1rem 2rem 1rem;
     border: 1px solid var(--color-primary-hover);
@@ -36,4 +35,25 @@
     margin: 1.25rem auto 0;
     flex-direction: column;
     gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    .lista {
+        display: grid;
+        max-width: none;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .lista {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1280px) {
+    .lista {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
 }

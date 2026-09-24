@@ -6,6 +6,7 @@ export type OperadorListado = {
     id: number;
     nombreFantasia: string;
     fotoPerfil: string | null;
+    cantidadProductos: number;
     locales: {
         numeroLocal: string;
         nombreNave: string;
@@ -22,6 +23,11 @@ export async function obtenerOperadoresPublicos(): Promise<OperadorListado[]> {
                 .include("nave", (nave) =>
                     nave.select("nombreNave")
                 )
+        )
+        .include("publicacionesOperador", (publicaciones) =>
+            publicaciones.include("publicacion", (publicacion) =>
+                publicacion.select("publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+            )
         );
 
     const operadores = await consulta.all();
@@ -46,10 +52,20 @@ export async function obtenerOperadoresPublicos(): Promise<OperadorListado[]> {
         if (localesVigentes.length === 0) {
             continue;
         }
+
+        let cantidadProductos = 0;
+        for (const relacion of operador.publicacionesOperador) {
+            const publicacion = relacion.publicacion;
+            if (publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "OPERADOR") {
+                cantidadProductos++;
+            }
+        }
+
         operadoresPublicos.push({
             id: operador.id,
             nombreFantasia: operador.nombreFantasia,
             fotoPerfil: operador.fotoPerfil,
+            cantidadProductos,
             locales: localesVigentes
         });
     }

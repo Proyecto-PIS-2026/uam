@@ -1,11 +1,16 @@
 .contenedor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
     width: 100%;
-    max-width: 48rem;
     margin: 1rem auto 0;
 }
 
 .buscador {
     position: relative;
+    flex: 1 1 16rem;
+    min-width: 0;
 }
 
 .iconoBusqueda {
@@ -47,12 +52,20 @@
     align-items: center;
     justify-content: flex-end;
     gap: 0.75rem;
-    margin-top: 0.75rem;
+    margin-left: auto;
 }
 
 .controles .selectMui {
     width: max-content;
     min-width: 7.5rem;
+}
+
+.selectMui :global(.MuiOutlinedInput-root) {
+    height: 3rem;
+}
+
+.selectMui :global(.MuiInputLabel-sizeSmall:not(.MuiInputLabel-shrink)) {
+    transform: translate(14px, 13px) scale(1);
 }
 
 /* Los bordes eran azules, busque en internet como hacer para que se vean verdes */

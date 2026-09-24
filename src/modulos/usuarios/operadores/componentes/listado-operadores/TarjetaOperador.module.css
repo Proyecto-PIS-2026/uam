@@ -8,6 +8,7 @@
     background-color: var(--color-surface);
     color: var(--color-foreground);
     box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+    text-decoration: none;
     transition: 200ms;
 }
 
@@ -24,6 +25,7 @@
 
 .imagen {
     display: flex;
+    position: relative;
     width: 4rem;
     height: 4rem;
     flex-shrink: 0;
@@ -81,25 +83,109 @@
     color: var(--color-primary);
 }
 
+.pie {
+    display: none;
+}
+
 @media (min-width: 768px) {
+    .tarjeta {
+        height: 100%;
+        min-width: 0;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+        overflow: hidden;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgb(26 26 26 / 5%);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .tarjeta:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 10px 28px rgb(26 26 26 / 10%);
+    }
+
+    .tarjeta:active {
+        transform: translateY(0);
+    }
+
+    .tarjeta:focus-visible {
+        outline-color: var(--color-primary);
+    }
+
+    .imagen {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 8 / 5;
+        flex-shrink: 0;
+        border-radius: 0;
+    }
+
+    .inicial {
+        font-size: 3rem;
+    }
+
+    .contenido {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+        flex-direction: column;
+        margin-left: 0;
+        padding: 14px 12px 12px;
+    }
+
     .encabezado {
-        flex-direction: row;
-        align-items: baseline;
-        gap: 0.5rem;
+        flex: 1;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
     }
 
     .nombre {
-        max-width: 45%;
-        flex-shrink: 0;
-    }
-
-    .separador {
-        display: inline;
+        max-width: none;
+        overflow: visible;
+        text-overflow: initial;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        font-size: 1.0625rem;
+        font-weight: 700;
+        line-height: 1.2;
     }
 
     .locales {
         min-width: 0;
-        flex: 1;
-        margin-top: 0;
+        margin-top: 6px;
+        overflow: visible;
+        text-overflow: initial;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        color: var(--color-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    .pie {
+        display: flex;
+        margin-top: auto;
+        padding-top: 12px;
+        flex-direction: column;
+        align-items: flex-end;
+        border-top: 1px solid var(--color-border);
+        text-align: right;
+    }
+
+    .cantidadProductos {
+        color: var(--color-primary);
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .textoProductos {
+        margin-top: 4px;
+        color: var(--color-muted);
+        font-size: 0.75rem;
     }
 }
