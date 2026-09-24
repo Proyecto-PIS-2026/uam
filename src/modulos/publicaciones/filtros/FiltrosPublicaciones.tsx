@@ -107,19 +107,6 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
         return () => { clearTimeout(temporizador) };
     }, [busqueda, precioMinimo, precioMaximo]);
 
-    // Cambio de Especie
-    useEffect(() => {
-        setCalibre("Todas");
-        if (especie !== "Todas" && variedades.length === 1 &&  variedades[0] === "-") {
-            setVariedad("-");
-        } else {
-            setVariedad("Todas");
-        }
-    }, [especie, variedades]);
-
-    // Cambio de Variedad
-    useEffect(() => { setPresentacion("Todas") }, [variedad]);
-
     const compararPrecios = (a: PublicacionListado, b: PublicacionListado, ascendente: boolean) => {
         if (a.precio == null && b.precio == null) return 0;
         if (a.precio == null) return 1;
