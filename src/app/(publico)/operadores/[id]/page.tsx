@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 
-import { obtenerPerfilPublicoOperador } from '@/modulos/usuarios/operadores/consultas-perfil-publico';
-import CatalogoOperador from '@/modulos/usuarios/operadores/componentes/perfil-publico-operador/CatalogoOperador';
-import PerfilOperador from '@/modulos/usuarios/operadores/componentes/perfil-publico-operador/PerfilOperador';
+import { obtenerPerfilPublicoOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-publico";
+import CatalogoOperador from "../../../../modulos/usuarios/operadores/componentes/perfil-publico-operador/CatalogoOperador";
+import PerfilOperador from "../../../../modulos/usuarios/operadores/componentes/perfil-publico-operador/PerfilOperador";
 
 import styles from "./page.module.css";
 

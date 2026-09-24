@@ -1,4 +1,4 @@
-import { db } from "@/infraestructura/persistencia/prisma/db";
+import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -16,6 +16,7 @@ export type PublicacionPerfil = {
 export type PerfilPublicoOperador = {
     id: number;
     nombreFantasia: string;
+    fotoPerfil: string | null;
     whatsApp: string;
     locales: {
         numeroLocal: string;
@@ -31,7 +32,7 @@ export async function obtenerPerfilPublicoOperador(id: number): Promise<PerfilPu
 
     // await porque la consulta a la base de datos es asincrona pero quiero esperar a la respuesta antes de seguir
     const operador = await db.orm.public.Operador
-                                .select("id", "nombreFantasia", "whatsApp") // Que columnas quiero recuperar de la tabla de operador
+                                .select("id", "nombreFantasia", "fotoPerfil", "whatsApp") // Que columnas quiero recuperar de la tabla de operador
                                 .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
                                                                     .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
                                                                     .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
@@ -115,6 +116,7 @@ export async function obtenerPerfilPublicoOperador(id: number): Promise<PerfilPu
     const operadorResultante: PerfilPublicoOperador = {
         id: operador.id,
         nombreFantasia: operador.nombreFantasia,
+        fotoPerfil: operador.fotoPerfil,
         whatsApp: operador.whatsApp,
         locales,
         publicaciones,

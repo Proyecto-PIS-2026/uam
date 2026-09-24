@@ -2,6 +2,7 @@ import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 
 import styles from "./PerfilOperador.module.css";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import Image from "next/image";
 
 type PerfilOperadorProps = {
     operador: PerfilPublicoOperador;
@@ -19,11 +20,21 @@ export default function PerfilOperador({ operador }: PerfilOperadorProps) {
         localesPorNave[local.nombreNave].push(local.numeroLocal);
     }
 
+    const numeroWhatsApp = operador.whatsApp.replace(/\D/g, "");
+    const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
+    const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
             <div className={styles.tarjetaPerfil}>
                 <header className={styles.encabezado}>
-                    <div className={styles.fotoOperador} aria-hidden="true">{inicialOperador}</div>
+                    <div className={styles.fotoOperador}>
+                        {operador.fotoPerfil ? (
+                            <Image src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} />
+                        ) : (
+                            <span aria-hidden="true">{inicialOperador}</span>
+                        )}
+                    </div>
 
                     <div className={styles.identidad}>
                         <p className={styles.tipoPerfil}>Perfil Operador</p>
@@ -46,7 +57,7 @@ export default function PerfilOperador({ operador }: PerfilOperadorProps) {
                 </div>
             </div>
 
-            <a href={`https://wa.me/${operador.whatsApp}`} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${operador.nombreFantasia} por WhatsApp`}>
+            <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${operador.nombreFantasia} por WhatsApp`}>
                 <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                 <span className={styles.textoWhatsApp}>Contactar por WhatsApp</span>
             </a>

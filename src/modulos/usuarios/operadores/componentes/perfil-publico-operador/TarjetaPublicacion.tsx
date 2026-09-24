@@ -44,7 +44,11 @@ export default function TarjetaPublicacion({ publicacion }: TarjetaPublicacionPr
                                 <span className={styles.presentacionPrecio}>por {publicacion.presentacion}</span>
                             </>
                         ) : (
-                            <span className={styles.presentacionPrecio}>Consultar precio</span>
+                            
+                            <>
+                                <span className={styles.presentacionPrecio}>Consultar precio</span>
+                                <span className={styles.presentacionPrecio}>por {publicacion.presentacion}</span>
+                            </>
                         )}
                     </div>
                 </div>
