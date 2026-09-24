@@ -26,6 +26,11 @@ const clasesListaDesagrupada = "grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-co
 export default function ListadoPublicaciones({publicaciones} : {publicaciones: PublicacionListado[]}) {
 	const [agruparPorOperador, setAgruparPorOperador] = useState(false);
 	const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionListado | null>(null);
+	const [drawerAbierto, setDrawerAbierto] = useState(false);
+	function abrirPublicacion(publicacion: PublicacionListado) {
+		setPublicacionSeleccionada(publicacion);
+		setDrawerAbierto(true);
+	}
 	const pantallaVertical = useMediaQuery("(orientation: portrait)");
 	const publicacionesAgrupadas = useMemo(() => {
 		const grupos = new Map<number, PublicacionesAgrupadas>();
@@ -74,7 +79,7 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 									<li key={publicacion.id}>
 										<TarjetaPublicacionSinOperador 
 											publicacion={publicacion}
-											onClick={() => setPublicacionSeleccionada(publicacion)}
+											onClick={() => abrirPublicacion(publicacion)}
 										/>
 									</li>
 								))}
@@ -87,9 +92,9 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 					{publicaciones.map((publicacion) => (
 						<li key={publicacion.id}>
 							{pantallaVertical ? (
-								<TarjetaPublicacionOperadorAlt publicacion={publicacion} onClick={() => setPublicacionSeleccionada(publicacion)}/>
+								<TarjetaPublicacionOperadorAlt publicacion={publicacion} onClick={() => abrirPublicacion(publicacion)}/>
 							) : (
-								<TarjetaPublicacionConOperador publicacion={publicacion} onClick={() => setPublicacionSeleccionada(publicacion)}/>
+								<TarjetaPublicacionConOperador publicacion={publicacion} onClick={() => abrirPublicacion(publicacion)}/>
 							)}
 						</li>
 					))}
@@ -98,10 +103,8 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 			{publicacionSeleccionada && (
 				<DrawerPublicacion
 					publicacion={publicacionSeleccionada}
-					open={true}
-					onOpenChange={(open) => {
-						if(!open) setPublicacionSeleccionada(null); 
-					}}
+					open={drawerAbierto}
+					onOpenChange={setDrawerAbierto}
 				/>
 			)}
 		</div>
