@@ -1,12 +1,11 @@
 .drawer {
     width: 100%; 
     height: auto; 
-    max-height: 50dvh;
+    max-height: 55dvh;
     border-radius: 1.5rem 1.5rem 0 0; 
     background-color: var(--color-surface); 
     color: var(--color-foreground);
     overflow-y: auto; 
-    transition-duration: 600ms !important;
 }
 
 .indicador {

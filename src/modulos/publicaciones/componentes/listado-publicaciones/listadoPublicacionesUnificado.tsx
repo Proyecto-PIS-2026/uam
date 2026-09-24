@@ -3,11 +3,13 @@
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 
 import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
-//import { PublicacionSinOperador } from "@/modulos/publicaciones/componentes/TarjetaPublicacionSinOperador";
+import TarjetaPublicacionOperadorAlt from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionOperadorAlt";
 import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionSinOperadorAlt";
 import { DrawerPublicacion } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerPublicacion";
 
 import { useMemo, useState } from "react";
+
+import useMediaQuery from "@mui/material/useMediaQuery";
 
 import ViewListIcon from "@mui/icons-material/ViewList";
 import ViewModuleIcon from "@mui/icons-material/ViewModule";
@@ -18,7 +20,8 @@ type PublicacionesAgrupadas = {
 	publicaciones: PublicacionListado[];
 };
 
-const clasesLista = "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3";
+const clasesListaAgrupada = "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3";
+const clasesListaDesagrupada = "grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
 
 export default function ListadoPublicaciones({publicaciones} : {publicaciones: PublicacionListado[]}) {
 	const [agruparPorOperador, setAgruparPorOperador] = useState(false);
@@ -28,6 +31,7 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 		setPublicacionSeleccionada(publicacion);
 		setDrawerAbierto(true);
 	}
+	const pantallaVertical = useMediaQuery("(orientation: portrait)");
 	const publicacionesAgrupadas = useMemo(() => {
 		const grupos = new Map<number, PublicacionesAgrupadas>();
 		for (const publicacion of publicaciones) {
@@ -70,7 +74,7 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 									<div className="h-px flex-1 bg-[var(--color-border)]"/>
 								</div>
 							</div>
-							<ul className={clasesLista}>
+							<ul className={clasesListaAgrupada}>
 								{operador.publicaciones.map((publicacion) => (
 									<li key={publicacion.id}>
 										<TarjetaPublicacionSinOperador 
@@ -84,10 +88,14 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 					))}
 				</div>
 			) : (
-				<ul className={clasesLista}>
+				<ul className={pantallaVertical ? clasesListaAgrupada : clasesListaDesagrupada}>
 					{publicaciones.map((publicacion) => (
 						<li key={publicacion.id}>
-							<TarjetaPublicacionConOperador publicacion={publicacion} onClick={() => abrirPublicacion(publicacion)}/>
+							{pantallaVertical ? (
+								<TarjetaPublicacionOperadorAlt publicacion={publicacion} onClick={() => abrirPublicacion(publicacion)}/>
+							) : (
+								<TarjetaPublicacionConOperador publicacion={publicacion} onClick={() => abrirPublicacion(publicacion)}/>
+							)}
 						</li>
 					))}
 				</ul>

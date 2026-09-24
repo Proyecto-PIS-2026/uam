@@ -6,60 +6,44 @@ import estilos from "./TarjetaPublicacionConOperador.module.css";
 const formatoPrecio = new Intl.NumberFormat("es-UY", {
   style: "currency",
   currency: "UYU",
-  minimumFractionDigits: 2,
+  minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
 
-export default function TarjetaPublicacionConOperador({ publicacion, onClick }: { publicacion: PublicacionListado; onClick?: () => void; }) {
-  const { foto, especie, variedad, categoria, calibre, codigoCalibre, presentacion, precio } = publicacion;
-  const operador = publicacion.operador.nombreFantasia;
-  const nombreProducto = variedad && variedad !== "-" ? `${especie} — ${variedad}` : especie;
+type PropiedadesTarjetaPublicacionConOperador = {
+  publicacion: PublicacionListado;
+  onClick: () => void;
+};
+
+export default function TarjetaPublicacionConOperador({ publicacion, onClick }: PropiedadesTarjetaPublicacionConOperador) {
+  const { foto, especie, variedad, categoria, calibre, presentacion, precio } = publicacion;
+  const nombreProducto = variedad && variedad !== "-" ? `${especie} ${variedad}` : especie;
 
   return (
-    <article className={estilos.tarjeta} aria-label={`${especie} — ${operador}`} onClick={onClick}>
+    <button type="button" className={estilos.tarjeta} aria-label={`Ver detalle de ${nombreProducto}`} onClick={onClick}>
       <div className={estilos.contenedorImagen}>
         {foto ? (
-          <Imagen src={foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 419px) 88px, 96px" className={estilos.imagen}/>
+          <Imagen src={foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 639px) 100vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={estilos.imagen}/>
         ) : (
           <div className={estilos.sinFoto}>
             <ImageOutlinedIcon className={estilos.iconoFoto}/>
-            <span>Foto</span>
+            <span>Sin foto disponible</span>
           </div>
         )}
       </div>
       <div className={estilos.contenido}>
         <div className={estilos.encabezado}>
-          <p className={estilos.especie} title={nombreProducto}>
-            {nombreProducto}
-          </p>
-
-          <p className={estilos.operador} title={operador}>
-            {operador}
-          </p>
+          <h3 className={estilos.especie}>{nombreProducto}</h3>
+          <p className={estilos.informacion}>{calibre} · Categoría {categoria}</p>
         </div>
-        <div className={estilos.cuerpo}>
-          <div className={estilos.informacion}>
-            <div className={estilos.dato}>
-              <span className={estilos.etiqueta}>Calibre</span>
-              <span className={estilos.chip} title={calibre}>{codigoCalibre ?? calibre}</span>
-            </div>
-
-            <div className={estilos.dato}>
-              <span className={estilos.etiqueta}>Cat.</span>
-              <span className={estilos.chip}>{categoria}</span>
-            </div>
-          </div>
-
+        <div className={estilos.filaInferior}>
+          <p className={estilos.operador} title={publicacion.operador.nombreFantasia}>{publicacion.operador.nombreFantasia}</p>
           <div className={estilos.contenedorPrecio}>
             <span className={estilos.precio}>{formatoPrecio.format(precio)}</span>
-            <span className={estilos.presentacionPrecio} title={`por ${presentacion}`}>
-              por {presentacion}
-            </span>
+            <span className={estilos.presentacionPrecio}>por {presentacion}</span>
           </div>
         </div>
-
       </div>
-    </article>
+    </button>
   );
 }
-
