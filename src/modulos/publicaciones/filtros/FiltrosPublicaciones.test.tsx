@@ -111,6 +111,24 @@ const publicacionesPresentacion: PublicacionListado[] = [
     },
 ];
 
+const publicacionesConPrecioNulo: PublicacionListado[] = [
+    {
+        ...publicacionesPrueba[0],
+        id: 5,
+        precio: null,
+    },
+    {
+        ...publicacionesPrueba[1],
+        id: 6,
+        precio: 200,
+    },
+    {
+        ...publicacionesPrueba[2],
+        id: 7,
+        precio: null,
+    },
+];
+
 describe("FiltrosPublicaciones", () => {
 
     afterEach(() => { vi.useRealTimers() });
@@ -449,7 +467,7 @@ describe("FiltrosPublicaciones", () => {
         act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(2);
-        expect(resultado.every((publicacion) => publicacion.precio >= 150 && publicacion.precio <= 350)).toBe(true)
+        expect(resultado.every((publicacion) => publicacion.precio !== null && publicacion.precio >= 150 && publicacion.precio <= 350)).toBe(true)
     });
 
     it("no devuelve publicaciones cuando el rango de precio es inválido", () => {
@@ -529,5 +547,55 @@ describe("FiltrosPublicaciones", () => {
         const sinOrdenar = screen.getByRole("button", {name: "Sin ordenar"});
         fireEvent.click(sinOrdenar);
         expect(sinOrdenar).toHaveClass(styles.opcionOrdenamientoActiva);
+    });
+
+    it("coloca las publicaciones sin precio al final al ordenar por precio", () => {
+        const alFiltrar = vi.fn();
+
+        render(
+            <FiltrosPublicaciones
+                publicaciones={publicacionesConPrecioNulo}
+                alFiltrar={alFiltrar}
+            />
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Menor Precio" })
+        );
+
+        const resultado = alFiltrar.mock.calls.at(-1)?.[0];
+
+        expect(resultado).toHaveLength(3);
+
+        expect(resultado[0].precio).toBe(200);
+        expect(resultado[1].precio).toBeNull();
+        expect(resultado[2].precio).toBeNull();
+    });
+
+    it("mantiene las publicaciones sin precio al final al ordenar por precio descendente", () => {
+        const alFiltrar = vi.fn();
+
+        render(
+            <FiltrosPublicaciones
+                publicaciones={publicacionesConPrecioNulo}
+                alFiltrar={alFiltrar}
+            />
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Mayor Precio" })
+        );
+
+        const resultado = alFiltrar.mock.calls.at(-1)?.[0];
+
+        expect(resultado).toHaveLength(3);
+
+        expect(resultado[0].precio).toBe(200);
+        expect(resultado[1].precio).toBeNull();
+        expect(resultado[2].precio).toBeNull();
     });
 });

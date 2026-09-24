@@ -10,7 +10,7 @@ import styles from "./FiltrosPublicaciones.module.css";
 // Tipo de datos que recibe
 export type PublicacionListado = {
     id: number;
-    precio: number;
+    precio: number | null;
     foto: string | null;
     especie: string;
     variedad: string;
@@ -120,6 +120,13 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
     // Cambio de Variedad
     useEffect(() => { setPresentacion("Todas") }, [variedad]);
 
+    const compararPrecios = (a: PublicacionListado, b: PublicacionListado, ascendente: boolean) => {
+        if (a.precio == null && b.precio == null) return 0;
+        if (a.precio == null) return 1;
+        if (b.precio == null) return -1;
+        return ascendente ? a.precio - b.precio : b.precio - a.precio;
+    }; 
+
     // Aplicacion de Filtros
     const publicacionesFiltradas = useMemo(() => {
         const textoBusqueda = busquedaAplicada.trim().toLowerCase();
@@ -154,14 +161,14 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                 if (!coincide) return false;
             }
 
-            if (minimo !== null && !Number.isNaN(minimo) && publicacion.precio < minimo) return false;
-            if (maximo !== null && !Number.isNaN(maximo) && publicacion.precio > maximo) return false;
+            if (minimo !== null && !Number.isNaN(minimo) && (publicacion.precio == null || publicacion.precio < minimo)) return false;
+            if (maximo !== null && !Number.isNaN(maximo) && (publicacion.precio == null || publicacion.precio > maximo)) return false;
             return true;
         });
 
         // Ordenamiento
-        if (orden === "precioAsc") return [...filtradas].sort((a, b) => a.precio - b.precio);
-        if (orden === "precioDesc") return [...filtradas].sort((a, b) => b.precio - a.precio);
+        if (orden === "precioAsc") return [...filtradas].sort((a, b) => compararPrecios(a, b, true));
+        if (orden === "precioDesc") return [...filtradas].sort((a, b) => compararPrecios(a, b, false));
         if (orden === "alfabeticoAsc") {
             return [...filtradas].sort((a, b) => {
                 const especie = a.especie.localeCompare(b.especie);
