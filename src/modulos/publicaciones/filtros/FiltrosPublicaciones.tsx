@@ -183,6 +183,8 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                 return b.variedad.localeCompare(a.variedad);
             });
         }
+
+
         return filtradas;
     }, [publicaciones, especie, variedad, presentacion, categoria, calibre, busquedaAplicada, precioMinimoAplicado, precioMaximoAplicado, orden]);
     
@@ -214,6 +216,40 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
     // Rango de precio invalido
     const rangoPrecioInvalido = precioMinimo !== "" && precioMaximo !== "" && Number(precioMaximo) < Number(precioMinimo);
 
+    // Manejador para el cambio de Especie
+    const manejarCambioEspecie = (nuevaEspecie: string) => {
+        setEspecie(nuevaEspecie);
+        setCalibre("Todas");
+
+        // Calcular las variedades filtradas con la nueva especie
+        let publicacionesBase = publicaciones;
+        if (nuevaEspecie !== "Todas") {
+            publicacionesBase = publicacionesBase.filter(
+                (p) => p.especie === nuevaEspecie
+            );
+        }
+        const variedadesNuevas = [
+            ...new Set(publicacionesBase.map((p) => p.variedad)),
+        ].sort();
+
+        if (
+            nuevaEspecie !== "Todas" &&
+            variedadesNuevas.length === 1 &&
+            variedadesNuevas[0] === "-"
+        ) {
+            setVariedad("-");
+        } else {
+            setVariedad("Todas");
+        }
+        setPresentacion("Todas");
+    };
+
+    // Manejador para el cambio de Variedad
+    const manejarCambioVariedad = (nuevaVariedad: string) => {
+        setVariedad(nuevaVariedad);
+        setPresentacion("Todas");
+    };
+
     return (
         <div className={styles.contenedor}>
             <div className={`${styles.layoutFiltros} ${mostrarFiltros ? styles.filtrosAbiertos : ""} ${rangoPrecioInvalido ? styles.rangoInvalido : ""}`}>
@@ -222,7 +258,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                     slotProps={{input: {startAdornment: (<SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }}/>)}}}
                 />
                 {/* Especie */}
-                <TextField select fullWidth label="Especie" value={especie} onChange={(evento) => setEspecie(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroEspecie}`}>
+                <TextField select fullWidth label="Especie" value={especie} onChange={(e) => manejarCambioEspecie(e.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroEspecie}`}>
                     <MenuItem value="Todas" className={styles.opcionSelect}>
                         Todas
                     </MenuItem>
@@ -270,7 +306,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                 <div className={styles.filtrosExtendidos}>
                     <div className={styles.filtrosVariedadPresentacion}>
                         {/* Variedad */}
-                        <TextField select fullWidth label="Variedad" value={variedadUnica ? "-" : variedad} onChange={(evento) => setVariedad(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroVariedad}`} disabled={especie === "Todas" || variedadUnica}>
+                        <TextField select fullWidth label="Variedad" value={variedadUnica ? "-" : variedad} onChange={(e) => manejarCambioVariedad(e.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroVariedad}`} disabled={especie === "Todas" || variedadUnica}>
                             {!variedadUnica && (
                                 <MenuItem value="Todas" className={styles.opcionSelect}>
                                     Todas

@@ -565,4 +565,19 @@ describe("FiltrosPublicaciones", () => {
         expect(resultado[1].precio).toBeNull();
         expect(resultado[2].precio).toBeNull();
     });
+
+    it("restaura todas las variedades al seleccionar Todas", () => {
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba}/>);
+        const especie = screen.getByLabelText("Especie");
+        const variedad = screen.getByLabelText("Variedad");
+        fireEvent.mouseDown(especie);
+        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
+        expect(variedad).toHaveTextContent("Todas");
+        expect(variedad).not.toHaveAttribute("aria-disabled");
+        fireEvent.mouseDown(especie);
+        fireEvent.click(screen.getByRole("option", { name: "Todas" }));
+        expect(especie).toHaveTextContent("Todas");
+        expect(variedad).toHaveTextContent("Todas");
+        expect(variedad).toHaveAttribute("aria-disabled", "true");
+    });
 });
