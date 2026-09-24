@@ -1,24 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { modificarPrecio } from "@/infraestructura/persistencia/prisma/precio";
 
 type Props = {
+    id: number;
     precioInicial: number;
     incrementoPrecio: number;
     detalle?: string;
 };
 
-export default function Precio({ precioInicial, incrementoPrecio, detalle }: Props) {
+export default function Precio({ id, precioInicial, incrementoPrecio, detalle }: Props) {
     const [precio, setPrecio] = useState(precioInicial);
     const [modalAbierto, setModalAbierto] = useState(false);
     const [precioInput, setPrecioInput] = useState("");
 
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const guardarConDebounce = useCallback((valor: number) => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            modificarPrecio(id, valor).catch((err) => {
+                console.error("Error guardando precio", err);
+            });
+        }, 400);
+    }, [id]);
+
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, []);
+
     function restar() {
-        setPrecio((valorActual) => Math.max(0, valorActual - incrementoPrecio));
+        setPrecio((valorActual) => {
+            let nuevo = Math.max(0, valorActual - incrementoPrecio)
+            guardarConDebounce(nuevo)
+            return nuevo;
+        });
     }
 
     function sumar() {
-        setPrecio((valorActual) => valorActual + incrementoPrecio);
+        setPrecio((valorActual) => {
+            let nuevo = valorActual + incrementoPrecio
+            guardarConDebounce(nuevo);
+            return nuevo;
+        });
     }
 
     function abrirModal() {
@@ -28,8 +54,14 @@ export default function Precio({ precioInicial, incrementoPrecio, detalle }: Pro
 
     function guardar() {
         const valor = parseFloat(precioInput);
-        setPrecio(!isNaN(valor) && valor >= 0 ? valor : 0);
+        const nuevoValor = !isNaN(valor) && valor >= 0 ? valor : 0;
+        setPrecio(nuevoValor);
         setModalAbierto(false);
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        modificarPrecio(id, nuevoValor).catch((err) => {
+            console.error("Error guardando precio", err);
+        });
     }
 
     return (

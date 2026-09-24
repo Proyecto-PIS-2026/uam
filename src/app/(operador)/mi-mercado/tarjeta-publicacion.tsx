@@ -124,6 +124,7 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
                 {/* Precio */}
                 <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2 sm:px-4">
                     <Precio
+                        id={pub.id}
                         precioInicial={precioInicial}
                         incrementoPrecio={incrementoPrecio}
                         detalle={detalle}
