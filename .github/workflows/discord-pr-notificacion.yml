@@ -39,6 +39,7 @@ jobs:
           github-token: ${{ secrets.SEGUIMIENTO_TOKEN || github.token }}
           script: |
             const body = context.payload.pull_request.body || "";
+
             const secciones = [
               "Descripción",
               "Issue asociado",
@@ -46,78 +47,114 @@ jobs:
               "Pruebas realizadas",
               "Consideraciones"
             ];
+
             function obtenerContenidoSeccion(nombre) {
-              const inicioRegex = new RegExp(`^##\\s*${nombre}\\s*$`,"im");
+              const inicioRegex = new RegExp(
+                `^##[\\t ]+${nombre}[\\t ]*\\r?$`,
+                "im"
+              );
+
               const match = inicioRegex.exec(body);
+
               if (!match) {
                 return null;
               }
+
               const inicioContenido = match.index + match[0].length;
-              let finContenido = body.length;
-              for (const otra of secciones) {
-                if (otra === nombre) {
-                  continue;
-                }
-                const siguienteRegex = new RegExp(`^##\\s*${otra}\\s*$`, "im");
-                const siguiente = siguienteRegex.exec(body.substring(inicioContenido));
-                if (siguiente) {
-                  const posicion = inicioContenido + siguiente.index;
-                  finContenido = Math.min(finContenido, posicion);
-                }
-              }
-              let contenido = body.substring(inicioContenido, finContenido);
+              const resto = body.substring(inicioContenido);
+              const siguienteEncabezado = /^##[\t ]+/m.exec(resto);
+
+              let contenido = siguienteEncabezado
+                ? resto.substring(0, siguienteEncabezado.index)
+                : resto;
+
               contenido = contenido.replace(/<!--[\s\S]*?-->/g, "");
               contenido = contenido.replace(/^\s*[-*•]\s*$/gm, "");
+
               return contenido.trim();
             }
+
             for (const seccion of secciones) {
               const contenido = obtenerContenidoSeccion(seccion);
+
               if (!contenido) {
-                core.setFailed(`El campo "${seccion}" es obligatorio.`);
+                core.setFailed(
+                  `El campo "${seccion}" es obligatorio y debe tener contenido.`
+                );
                 return;
               }
             }
-            const contenidoIssue =obtenerContenidoSeccion("Issue asociado");
+
+            const contenidoIssue = obtenerContenidoSeccion("Issue asociado");
             const issueMatch = contenidoIssue.match(/#(\d+)/);
+
             if (!issueMatch) {
-              core.setFailed('El campo "Issue asociado" debe contener un Issue con formato #número.');
+              core.setFailed(
+                'El campo "Issue asociado" debe contener un Issue con formato #número.'
+              );
               return;
             }
+
             const issueNumber = Number(issueMatch[1]);
             const owner = process.env.ISSUES_OWNER;
             const repo = process.env.ISSUES_REPO;
+
+            if (!Number.isSafeInteger(issueNumber) || issueNumber < 1) {
+              core.setFailed("El número de Issue no es válido.");
+              return;
+            }
+
             try {
-              const { data: issue } = await github.rest.issues.get({owner, repo, issue_number: issueNumber});
+              const { data: issue } = await github.rest.issues.get({
+                owner,
+                repo,
+                issue_number: issueNumber
+              });
+
               if (issue.pull_request) {
-                core.setFailed(`${owner}/${repo}#${issueNumber} corresponde a un Pull Request y no a un Issue.`);
+                core.setFailed(
+                  `${owner}/${repo}#${issueNumber} corresponde a un Pull Request y no a un Issue.`
+                );
                 return;
               }
+
               core.setOutput("issue_number", String(issue.number));
               core.setOutput("issue_title", issue.title);
               core.setOutput("issue_url", issue.html_url);
-              console.log(`Issue válido: ${owner}/${repo}#${issue.number} - ${issue.title}`);
+
+              console.log(
+                `Issue válido: ${owner}/${repo}#${issue.number} - ${issue.title}`
+              );
             } catch (error) {
               if (error.status === 404) {
-                core.setFailed(`El Issue #${issueNumber} no existe en ${owner}/${repo} o el token no tiene acceso. Si el repositorio es privado, revisá el secret SEGUIMIENTO_TOKEN.`);
+                core.setFailed(
+                  `El Issue #${issueNumber} no existe en ${owner}/${repo} o el token no tiene acceso. Si el repositorio es privado, revisá el secret SEGUIMIENTO_TOKEN.`
+                );
                 return;
               }
+
               if (error.status === 401 || error.status === 403) {
-                core.setFailed(`No se pudo acceder al Issue en ${owner}/${repo}. Revisá la vigencia y los permisos del token. Detalle: ${error.message}`);
+                core.setFailed(
+                  `No se pudo acceder al Issue en ${owner}/${repo}. Revisá la vigencia y los permisos del token. Detalle: ${error.message}`
+                );
                 return;
               }
+
               throw error;
             }
+
             console.log("Todas las secciones del Pull Request son válidas.");
 
   notificar:
     name: Notificar Code Review
     needs: validar-descripcion-pr
-    if: >-
-      github.event.pull_request.draft == false && (github.event.action == 'opened' || github.event.action == 'edited' || github.event.action == 'synchronize' || github.event.action == 'reopened' || github.event.action == 'ready_for_review')
+    if: ${{ github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
+
     concurrency:
       group: notificar-code-review-${{ github.repository }}-${{ github.event.pull_request.number }}
       cancel-in-progress: false
+
     steps:
       - name: Verificar si el PR ya fue notificado
         id: verificar-notificacion
@@ -133,8 +170,16 @@ jobs:
                 per_page: 100
               }
             );
-            const yaNotificado = labels.some(label => label.name === "code-review-notificado");
-            core.setOutput("ya_notificado", yaNotificado ? "true" : "false");
+
+            const yaNotificado = labels.some(
+              label => label.name === "code-review-notificado"
+            );
+
+            core.setOutput(
+              "ya_notificado",
+              yaNotificado ? "true" : "false"
+            );
+
       - name: Notificar Pull Request
         if: steps.verificar-notificacion.outputs.ya_notificado == 'false'
         shell: bash
@@ -154,16 +199,20 @@ jobs:
           ACTION: ${{ github.event.action }}
         run: |
           set -euo pipefail
+
           if [ "$BASE_REF" = "main" ]; then
             DISCORD_WEBHOOK="$DISCORD_WEBHOOK_MAIN"
           else
             DISCORD_WEBHOOK="$DISCORD_WEBHOOK_DEVELOP"
           fi
+
           if [ -z "$DISCORD_WEBHOOK" ]; then
             echo "::error::Falta configurar el webhook de Discord para $BASE_REF."
             exit 1
           fi
+
           ISSUE="[#${ISSUE_NUMBER} - ${ISSUE_TITLE}](${ISSUE_URL})"
+
           case "$ACTION" in
             opened)
               ESTADO="Abierto"
@@ -171,10 +220,7 @@ jobs:
             reopened)
               ESTADO="Reabierto"
               ;;
-            ready_for_review)
-              ESTADO="Listo para revisión"
-              ;;
-            edited)
+            ready_for_review|edited)
               ESTADO="Listo para revisión"
               ;;
             synchronize)
@@ -184,45 +230,64 @@ jobs:
               ESTADO="Abierto"
               ;;
           esac
-          FECHA=$(TZ="America/Montevideo" \date -d "$PR_CREATED_AT" '+%d/%m/%Y %H:%M')
-          jq -n \--arg title "PR #$PR_NUMBER - $PR_TITLE" \--arg url "$PR_URL" \--arg estado "$ESTADO" \--arg author "$PR_AUTHOR" \--arg issue "$ISSUE" \--arg branches "$HEAD_REF → $BASE_REF" \--arg date "$FECHA" \
+
+          FECHA=$(TZ="America/Montevideo" date -d "$PR_CREATED_AT" '+%d/%m/%Y %H:%M')
+
+          jq -n \
+            --arg title "PR #$PR_NUMBER - $PR_TITLE" \
+            --arg url "$PR_URL" \
+            --arg estado "$ESTADO" \
+            --arg author "$PR_AUTHOR" \
+            --arg issue "$ISSUE" \
+            --arg branches "$HEAD_REF → $BASE_REF" \
+            --arg date "$FECHA" \
             '{
               allowed_mentions: {
                 parse: []
               },
-              embeds: [{
-                title: $title,
-                url: $url,
-                fields: [
-                  {
-                    name: "Estado",
-                    value: $estado,
-                    inline: false
-                  },
-                  {
-                    name: "Autor",
-                    value: $author,
-                    inline: false
-                  },
-                  {
-                    name: "Issue asociado",
-                    value: $issue,
-                    inline: false
-                  },
-                  {
-                    name: "Ramas",
-                    value: $branches,
-                    inline: false
-                  },
-                  {
-                    name: "Fecha de creación",
-                    value: $date,
-                    inline: false
-                  }
-                ]
-              }]
+              embeds: [
+                {
+                  title: ($title | .[0:256]),
+                  url: $url,
+                  fields: [
+                    {
+                      name: "Estado",
+                      value: $estado,
+                      inline: false
+                    },
+                    {
+                      name: "Autor",
+                      value: $author,
+                      inline: false
+                    },
+                    {
+                      name: "Issue asociado",
+                      value: $issue,
+                      inline: false
+                    },
+                    {
+                      name: "Ramas",
+                      value: $branches,
+                      inline: false
+                    },
+                    {
+                      name: "Fecha de creación",
+                      value: $date,
+                      inline: false
+                    }
+                  ]
+                }
+              ]
             }' > payload.json
-          curl \--fail-with-body \--silent \--show-error \-H "Content-Type: application/json" \--data-binary @payload.json \"$DISCORD_WEBHOOK"
+
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            -H "Content-Type: application/json" \
+            --data-binary @payload.json \
+            "$DISCORD_WEBHOOK"
+
       - name: Marcar PR como notificado
         if: steps.verificar-notificacion.outputs.ya_notificado == 'false'
         uses: actions/github-script@v8
@@ -231,19 +296,42 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const labelName = "code-review-notificado";
+
             try {
-              await github.rest.issues.getLabel({ owner, repo, name: labelName});
+              await github.rest.issues.getLabel({
+                owner,
+                repo,
+                name: labelName
+              });
             } catch (error) {
               if (error.status !== 404) {
                 throw error;
               }
+
               try {
-                await github.rest.issues.createLabel({owner, repo,name: labelName, color: "0E8A16", description:"El PR ya fue notificado en el canal de Code Review"});
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: labelName,
+                  color: "0E8A16",
+                  description: "El PR ya fue notificado en el canal de Code Review"
+                });
               } catch (createError) {
                 if (createError.status !== 422) {
                   throw createError;
                 }
-                await github.rest.issues.getLabel({owner, repo,name: labelName});
+
+                await github.rest.issues.getLabel({
+                  owner,
+                  repo,
+                  name: labelName
+                });
               }
             }
-            await github.rest.issues.addLabels({owner, repo, issue_number: context.issue.number,labels: [labelName]});
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: context.issue.number,
+              labels: [labelName]
+            });
