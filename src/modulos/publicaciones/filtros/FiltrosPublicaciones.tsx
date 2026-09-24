@@ -216,134 +216,180 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
 
     return (
         <div className={styles.contenedor}>
-
-            {/* Barra de busqueda */}
-            <div className={styles.buscador}>
-                <SearchIcon aria-hidden="true" className={styles.iconoBusqueda}/>
-                <input className={styles.inputBusqueda} type="search" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} placeholder="Buscar publicaciones"/>
-            </div>
-
-            {/* Filtros visibles */}
-            <div className={styles.filtrosRapidos}>
-
+            <div className={`${styles.layoutFiltros} ${mostrarFiltros ? styles.filtrosAbiertos : ""} ${rangoPrecioInvalido ? styles.rangoInvalido : ""}`}>
+                {/* Barra de búsqueda */}
+                <TextField fullWidth size="small" label="Buscar publicaciones" type="search" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} className={`${styles.selectMui} ${styles.filtroBuscador}`}
+                    slotProps={{input: {startAdornment: (<SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }}/>)}}}
+                />
                 {/* Especie */}
-                <TextField select label="Especie" value={especie} onChange={(evento) => setEspecie(evento.target.value)} size="small" className={styles.selectMui}>
-                    <MenuItem value="Todas" className={styles.opcionSelect}> Todas </MenuItem>
-                    {especies.map((opcion) => (<MenuItem key={opcion} value={opcion} className={styles.opcionSelect}> {opcion} </MenuItem>))}
+                <TextField select fullWidth label="Especie" value={especie} onChange={(evento) => setEspecie(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroEspecie}`}>
+                    <MenuItem value="Todas" className={styles.opcionSelect}>
+                        Todas
+                    </MenuItem>
+                    {especies.map((opcion) => (
+                        <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}>
+                            {opcion}
+                        </MenuItem>
+                    ))}
                 </TextField>
-
-                {/* Precio Minimo */}
-                <div className={styles.campo}>
-                    <label className={styles.etiqueta} htmlFor="precio-minimo" > Precio Mínimo. </label>
-                    <input id="precio-minimo" className={styles.inputPrecio} type="number" min="0" inputMode="numeric" value={precioMinimo}
+                {/* Precio mínimo */}
+                <div className={styles.filtroPrecioMinimo}>
+                    <TextField fullWidth size="small" id="precio-minimo" label="Precio Mínimo" type="number" value={precioMinimo} placeholder="$ 0" className={styles.selectMui}
+                        slotProps={{
+                            htmlInput: {
+                                min: 0,
+                                inputMode: "numeric",
+                            },
+                        }}
                         onChange={(evento) => {
                             const valor = evento.target.value;
-                            if (valor === "" || Number(valor) >= 0) setPrecioMinimo(valor);
+                            if (valor === "" || Number(valor) >= 0) setPrecioMinimo(valor)
                         }}
-                        placeholder="$ 0"/>
+                    />
                 </div>
-
-                {/* Precio Maximo */}
-                <div className={styles.campo}>
-                    <label className={styles.etiqueta} htmlFor="precio-maximo"> Precio máx. </label>
-                    <input id="precio-maximo" className={`${styles.inputPrecio} ${rangoPrecioInvalido ? styles.inputPrecioError : ""}`} type="number" min="0" inputMode="numeric" value={precioMaximo}
+                {/* Precio máximo */}
+                <div className={styles.filtroPrecioMaximo}>
+                    <TextField fullWidth size="small" id="precio-maximo" label="Precio Máximo" type="number" value={precioMaximo} placeholder="Sin límite" className={styles.selectMui} error={rangoPrecioInvalido}
+                        slotProps={{
+                            htmlInput: {
+                                min: 0,
+                                inputMode: "numeric",
+                            },
+                        }}
                         onChange={(evento) => {
                             const valor = evento.target.value;
-                            if (valor === "" || Number(valor) >= 0) setPrecioMaximo(valor);
+                            if (valor === "" || Number(valor) >= 0)  setPrecioMaximo(valor)
                         }}
-                        placeholder="Sin límite"/>
+                    />
                 </div>
-            </div>
-            
-            {/* Advertencia si $Max < $Min */}
-            {rangoPrecioInvalido && (<div className={styles.mensajeError}> El máximo debe ser mayor o igual al mínimo </div>)}
-
-            {/* Botones Desplegables */}
-            <div className={styles.barraOpciones}>
-
-                {/* Boton para expandir filtros */}
-                <button className={styles.botonExtendidos} type="button" onClick={() => setMostrarFiltros((valorActual) => !valorActual)}>
-                    <span> Más filtros </span>
-                    {mostrarFiltros ? (<KeyboardArrowUpIcon className={styles.iconoExpandir} />) : (<KeyboardArrowDownIcon className={styles.iconoExpandir} />)}
-                </button>
-
-                {/* Boton para expandir ordenamiento */}
-                <button className={styles.botonExtendidos} type="button" onClick={() => setMostrarOrdenamiento((valorActual) => !valorActual)}>
-                    <span> Ordenar por </span>
-                    {mostrarOrdenamiento ? (<KeyboardArrowUpIcon className={styles.iconoExpandir} />) : (<KeyboardArrowDownIcon className={styles.iconoExpandir} />)}
-                </button>
-                
-                {/* Opciones de Ordenamiento */}
-                <div className={`${styles.listaOrdenamiento} ${mostrarOrdenamiento ? styles.listaOrdenamientoAbierta : ""}`}>
-                    
-                    {/* Sin Orden */}
-                    <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "ninguno" ? styles.opcionOrdenamientoActiva : ""}`}
-                        onClick={() => {
-                            setOrden("ninguno");
-                            setMostrarOrdenamiento(false);
-                        }}
-                    > Sin ordenar </button>
-                    
-                    {/* Precio Ascendente */}
-                    <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "precioAsc" ? styles.opcionOrdenamientoActiva : ""}`}
-                        onClick={() => {
-                            setOrden("precioAsc");
-                            setMostrarOrdenamiento(false);
-                        }}
-                    > Menor Precio </button>
-
-                    {/* Precio Descendente */}
-                    <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "precioDesc" ? styles.opcionOrdenamientoActiva : ""}`}
-                        onClick={() => {
-                            setOrden("precioDesc");
-                            setMostrarOrdenamiento(false);
-                        }}
-                    > Mayor Precio </button>
-
-                    {/* Alfabetico Ascendente */}
-                    <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "alfabeticoAsc" ? styles.opcionOrdenamientoActiva : ""}`}
-                        onClick={() => {
-                            setOrden("alfabeticoAsc");
-                            setMostrarOrdenamiento(false);
-                        }}
-                    > A-Z </button>
-
-                    {/* Alfabetico Descendente */}
-                    <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "alfabeticoDesc" ? styles.opcionOrdenamientoActiva : ""}`}
-                        onClick={() => {
-                            setOrden("alfabeticoDesc");
-                            setMostrarOrdenamiento(false);
-                        }}
-                    > Z-A </button>
+                {rangoPrecioInvalido && (
+                    <span className={styles.mensajeError}>
+                        El precio máximo no puede ser menor al mínimo.
+                    </span>
+                )}
+                <div className={styles.filtrosExtendidos}>
+                    <div className={styles.filtrosVariedadPresentacion}>
+                        {/* Variedad */}
+                        <TextField select fullWidth label="Variedad" value={variedadUnica ? "-" : variedad} onChange={(evento) => setVariedad(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroVariedad}`} disabled={especie === "Todas" || variedadUnica}>
+                            {!variedadUnica && (
+                                <MenuItem value="Todas" className={styles.opcionSelect}>
+                                    Todas
+                                </MenuItem>
+                            )}
+                            {variedades.map((opcion) => (
+                                <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}>
+                                    {opcion}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                        {/* Presentación */}
+                        <TextField select fullWidth label="Presentación" value={presentacion} onChange={(evento) => setPresentacion(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroPresentacion}`} disabled={variedad === "Todas"}>
+                            <MenuItem value="Todas" className={styles.opcionSelect}>
+                                Todas
+                            </MenuItem>
+                            {presentaciones.map((opcion) => (
+                                <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}>
+                                    {opcion}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </div>
+                    <div className={styles.filtrosCategoriaCalibre}>
+                        {/* Categoría */}
+                        <TextField select fullWidth label="Categoría" value={categoria} onChange={(evento) => setCategoria(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCategoria}`}>
+                            <MenuItem value="Todas" className={styles.opcionSelect}>
+                                Todas
+                            </MenuItem>
+                            {categorias.map((opcion) => (
+                                <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}>
+                                    {opcion}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                        {/* Calibre */}
+                        <TextField select fullWidth label="Calibre" value={calibre} onChange={(evento) => setCalibre(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCalibre}`}>
+                            <MenuItem value="Todas" className={styles.opcionSelect}>
+                                Todos
+                            </MenuItem>
+                            {calibres.map((opcion) => (
+                                <MenuItem
+                                    key={opcion}
+                                    value={opcion}
+                                    className={styles.opcionSelect}
+                                >
+                                    {opcion}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </div>
                 </div>
-            </div>
-
-            {/* Filtros extendidos */}
-            <div className={`${styles.filtrosExtendidos} ${mostrarFiltros ? styles.filtrosExtendidosAbiertos : ""}`}>
-
-                {/* Variedad */}
-                <TextField select label="Variedad" value={variedadUnica ? "-" : variedad} onChange={(evento) => setVariedad(evento.target.value)} size="small" className={styles.selectMui} disabled={especie === "Todas" || variedadUnica}>
-                    {!variedadUnica && (<MenuItem value="Todas" className={styles.opcionSelect}> Todas </MenuItem>)}
-                    {variedades.map((opcion) => ( <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}> {opcion} </MenuItem>))}
-                </TextField>
-
-                {/* Presentacion */}
-                <TextField select label="Presentación" value={presentacion} onChange={(evento) => setPresentacion(evento.target.value)} size="small" className={styles.selectMui} disabled={variedad === "Todas"}>
-                    <MenuItem value="Todas" className={styles.opcionSelect}> Todas </MenuItem>
-                    {presentaciones.map((opcion) => (<MenuItem key={opcion} value={opcion} className={styles.opcionSelect}> {opcion} </MenuItem>))}
-                </TextField>
-
-                {/* Categoria */}
-                <TextField select label="Categoría" value={categoria} onChange={(evento) => setCategoria(evento.target.value)} size="small" className={styles.selectMui}>
-                    <MenuItem value="Todas" className={styles.opcionSelect}> Todas </MenuItem>
-                    {categorias.map((opcion) => (<MenuItem key={opcion} value={opcion} className={styles.opcionSelect}> {opcion} </MenuItem>))}
-                </TextField>
-
-                {/* Calibre */}
-                <TextField select label="Calibre" value={calibre} onChange={(evento) => setCalibre(evento.target.value)} size="small" className={styles.selectMui}>
-                    <MenuItem value="Todas" className={styles.opcionSelect}> Todos </MenuItem>
-                    {calibres.map((opcion) => (<MenuItem key={opcion} value={opcion} className={styles.opcionSelect}> {opcion} </MenuItem>))}
-                </TextField>
+                {/* Botones */}
+                <div className={styles.barraOpciones}>
+                    {/* Más filtros */}
+                    <button className={styles.botonExtendidos} type="button" onClick={() => setMostrarFiltros((valorActual) => !valorActual)}>
+                        <span>Más filtros</span>
+                        {mostrarFiltros ? (
+                            <KeyboardArrowUpIcon
+                                className={styles.iconoExpandir}
+                            />
+                        ) : (
+                            <KeyboardArrowDownIcon
+                                className={styles.iconoExpandir}
+                            />
+                        )}
+                    </button>
+                    {/* Ordenar por */}
+                    <button className={styles.botonExtendidos} type="button" onClick={() => setMostrarOrdenamiento((valorActual) => !valorActual)}>
+                        <span>Ordenar por</span>
+                        {mostrarOrdenamiento ? (
+                            <KeyboardArrowUpIcon
+                                className={styles.iconoExpandir}
+                            />
+                        ) : (
+                            <KeyboardArrowDownIcon
+                                className={styles.iconoExpandir}
+                            />
+                        )}
+                    </button>
+                    {/* Opciones de ordenamiento */}
+                    <div className={`${styles.listaOrdenamiento} ${mostrarOrdenamiento ? styles.listaOrdenamientoAbierta : ""}`}>
+                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "ninguno" ? styles.opcionOrdenamientoActiva : ""}`}
+                            onClick={() => {
+                                setOrden("ninguno");
+                                setMostrarOrdenamiento(false);
+                            }}>
+                            Sin ordenar
+                        </button>
+                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "precioAsc" ? styles.opcionOrdenamientoActiva : ""}`}
+                            onClick={() => {
+                                setOrden("precioAsc");
+                                setMostrarOrdenamiento(false);
+                            }}>
+                            Menor Precio
+                        </button>
+                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "precioDesc" ? styles.opcionOrdenamientoActiva : ""}`}
+                            onClick={() => {
+                                setOrden("precioDesc");
+                                setMostrarOrdenamiento(false);
+                            }}>
+                            Mayor Precio
+                        </button>
+                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "alfabeticoAsc" ? styles.opcionOrdenamientoActiva : ""}`}
+                            onClick={() => {
+                                setOrden("alfabeticoAsc");
+                                setMostrarOrdenamiento(false);
+                            }}>
+                            A-Z
+                        </button>
+                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "alfabeticoDesc" ? styles.opcionOrdenamientoActiva : ""}`}
+                            onClick={() => {
+                                setOrden("alfabeticoDesc");
+                                setMostrarOrdenamiento(false);
+                            }}>
+                            Z-A
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Boton para limpiar filtros */}
