@@ -29,11 +29,9 @@ const operador: PerfilPublicoOperador = {
 describe("PerfilOperador", () => {
     it("muestra el nombre, la inicial y los locales agrupados por nave", () => {
         render(<PerfilOperador operador={operador} />);
-
         expect(screen.getByRole("heading", { name: "Frutas del Norte" })).toBeInTheDocument();
         expect(screen.getByText("F")).toBeInTheDocument();
         expect(screen.queryByRole("img", { name: "Foto de Frutas del Norte" })).not.toBeInTheDocument();
-
         expect(screen.getAllByRole("listitem")).toHaveLength(2);
         expect(screen.getByText("Nave B")).toBeInTheDocument();
         expect(screen.getByText("Locales 18, 19")).toBeInTheDocument();
@@ -43,19 +41,14 @@ describe("PerfilOperador", () => {
 
     it("muestra la foto cuando el operador tiene una", () => {
         render(<PerfilOperador operador={{ ...operador, fotoPerfil: "/operador.jpg" }} />);
-
         expect(screen.getByRole("img", { name: "Foto de Frutas del Norte" })).toHaveAttribute("src", "/operador.jpg");
         expect(screen.queryByText("F")).not.toBeInTheDocument();
     });
 
     it("prepara el enlace de WhatsApp con el número y el mensaje", () => {
         render(<PerfilOperador operador={operador} />);
-
-        const enlace = screen.getByRole("link", {
-            name: "Contactar a Frutas del Norte por WhatsApp",
-        });
+        const enlace = screen.getByRole("link", {name: "Contactar a Frutas del Norte por WhatsApp"});
         const destino = new URL(enlace.getAttribute("href")!);
-
         expect(destino.hostname).toBe("wa.me");
         expect(destino.pathname).toBe("/59899100001");
         expect(destino.searchParams.get("text")).toBe("Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.");

@@ -9,11 +9,11 @@
 }
 
 .indicador {
-    width: 3rem;
-    height: 0.3rem;
     position: absolute;
     top: 0.35rem;
     left: 50%;
+    width: 3rem;
+    height: 0.3rem;
     transform: translateX(-50%);
     border-radius: 0.1875rem;
     background-color: var(--color-border);
@@ -33,20 +33,20 @@
     left: 1rem;
     right: 1rem;
     height: 6rem;
-    background: var(--color-primary-soft);
     border-radius: 1.5rem 1.5rem 0.75rem 0.75rem;
+    background: var(--color-primary-soft);
 }
 
 .tarjeta::after {
     content: "";
     position: absolute;
     z-index: -1;
+    top: 8rem;
     left: 5rem;
     right: 1rem;
-    top: 8rem;
     height: 3.5rem;
-    background: var(--color-primary-soft);
     border-radius: 0.75rem;
+    background: var(--color-primary-soft);
 }
 
 .bloqueSuperior {
@@ -62,8 +62,8 @@
     flex-shrink: 0;
     align-self: center;
     overflow: hidden;
-    border-radius: 50%;
     border: 0.4rem solid white;
+    border-radius: 50%;
     box-shadow: 0 0.5rem 1rem #0002;
     background-color: var(--color-primary-soft);
 }
@@ -91,15 +91,15 @@
 
 .bloqueSuperiorDerecho {
     display: flex;
-    flex-direction: column;
-    flex: 1;
     min-width: 0;
+    flex: 1;
+    flex-direction: column;
     justify-content: space-between;
 }
 
 .nombrePublicacion {
-    height: 6rem;
     display: flex;
+    height: 6rem;
     flex-direction: column;
     justify-content: center;
     padding-right: 0.75rem;
@@ -109,9 +109,9 @@
 .variedad,
 .precio {
     overflow: hidden;
+    color: var(--color-secondary);
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--color-secondary);
 }
 
 .especie {
@@ -124,9 +124,9 @@
 
 .precio {
     display: flex;
-    align-self: flex-end;
-    height: 4rem;
     box-sizing: border-box;
+    height: 4rem;
+    align-self: flex-end;
     align-items: center;
     justify-content: flex-end;
     padding-right: 0.75rem;
@@ -137,16 +137,16 @@
 
 .bloqueMedio {
     display: flex;
-    flex-direction: column;
     min-width: 0;
+    flex-direction: column;
     gap: 0.5rem;
     padding-bottom: 1rem;
 }
 
 .informacionDetallada {
     display: flex;
-    border-bottom: 0.01rem solid #cccccccc;
     gap: 0.5rem;
+    border-bottom: 0.01rem solid #cccccccc;
 }
 
 .nombreInformacion,
@@ -173,14 +173,14 @@
     flex: 1;
     align-items: center;
     justify-content: center;
+    gap: 0.5rem;
     padding: 0.75rem 0.5rem;
     border-radius: 0.5rem;
+    background: var(--color-secondary);
+    color: white;
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    gap: 0.5rem;
-    background: var(--color-secondary);
-    color: white;
 }
 
 .iconoWhatsApp {
@@ -197,11 +197,10 @@
     }
 
     .tarjeta {
-        min-height: 100%;
-        padding: 2rem;
-
         display: flex;
+        min-height: 100%;
         flex-direction: column;
+        padding: 0 2rem 2rem;
     }
 
     .indicador {
@@ -214,29 +213,39 @@
     }
 
     .bloqueSuperior {
+        display: flex;
         height: auto;
+        margin: 0 -2rem 2rem;
         flex-direction: column;
-        align-items: center;
-        gap: 1.25rem;
-        margin: -2rem -2rem 2rem;
-        padding: 2rem 2rem 2.5rem;
-        background-color: var(--color-secondary);
+        gap: 1.5rem;
     }
 
     .contenedorImagen {
-        width: 13rem;
-        height: 13rem;
-        align-self: center;
-        border-radius: 1rem;
+        width: 100%;
+        height: auto;
+        align-self: stretch;
+        aspect-ratio: 1 / 1;
         border: 0;
-        box-shadow: 0 0.35rem 1rem #0004;
+        border-radius: 0;
+        box-shadow: none;
         background-color: var(--color-primary-soft);
+    }
+
+    .sinFoto {
+        gap: 0.35rem;
+        color: var(--color-secondary);
+        font-size: 0.9rem;
+    }
+
+    .iconoFoto {
+        font-size: 2rem !important;
     }
 
     .bloqueSuperiorDerecho {
         width: 100%;
         align-items: center;
         gap: 0.75rem;
+        padding: 0 2rem;
     }
 
     .nombrePublicacion {
@@ -250,7 +259,7 @@
     .especie,
     .variedad,
     .precio {
-        color: white;
+        color: var(--color-secondary);
     }
 
     .especie {
@@ -264,6 +273,7 @@
     .precio {
         height: auto;
         align-self: center;
+        justify-content: center;
         padding: 0;
         font-size: 2rem;
     }

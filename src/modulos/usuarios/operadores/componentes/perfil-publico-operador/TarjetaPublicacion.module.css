@@ -86,26 +86,27 @@
 }
 
 .cuerpo {
-    display: flex;
+    display: grid;
     min-width: 0;
     flex: 1;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .informacionMobile {
-    display: flex;
-    min-width: max-content;
-    flex: 1 0 auto;
-    padding-right: 0.45rem;
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    padding-right: 0.25rem;
     align-items: center;
-    justify-content: space-around;
-    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .dato {
     display: flex;
+    min-width: 0;
     height: fit-content;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.15rem;
 }
 
@@ -132,10 +133,10 @@
 
 .contenedorPrecio {
     display: flex;
-    min-width: 5rem;
+    width: 100%;
+    min-width: 0;
     height: 100%;
-    padding: 0 0.75rem;
-    flex: 0 1 auto;
+    padding: 0 0.5rem;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -194,7 +195,7 @@
     }
 
     .informacionMobile {
-        padding-right: 0.45rem;
+        padding-right: 0.1rem;
     }
 
     .etiqueta {
@@ -209,8 +210,7 @@
     }
 
     .contenedorPrecio {
-        min-width: 4.5rem;
-        padding: 0 0.6rem;
+        padding: 0 0.3rem;
     }
 
     .precio {
@@ -251,12 +251,11 @@
     }
 
     .informacionMobile {
-        padding-right: 1rem;
+        padding-right: 0.25rem;
     }
 
     .contenedorPrecio {
-        min-width: 6rem;
-        padding: 0 0.875rem;
+        padding: 0 0.75rem;
     }
 
     .precio {
@@ -346,8 +345,10 @@
     }
 
     .cuerpo {
+        display: flex;
         margin-top: auto;
         flex-direction: column;
+        justify-content: flex-end;
     }
 
     .informacionMobile {
@@ -359,6 +360,7 @@
         min-width: 0;
         height: auto;
         padding: 12px 0 0;
+        flex: 0 1 auto;
         align-items: flex-end;
         border-top: 1px solid var(--color-border);
         border-left: 0;

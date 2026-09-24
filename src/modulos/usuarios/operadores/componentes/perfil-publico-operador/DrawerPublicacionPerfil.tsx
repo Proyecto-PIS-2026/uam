@@ -23,21 +23,14 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
     const mensajeWhatsApp = publicacion ? `Hola, vi tu publicación de ${nombreProducto} en Mercado UAM y quisiera hacerte una consulta.` : "";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
-    const contenido = (
+    return (
         <SwipeableDrawer
             anchor={esWeb ? "right" : "bottom"}
             open={open}
             onClose={() => onOpenChange(false)}
             onOpen={() => onOpenChange(true)}
-            slotProps={{
-                paper: {
-                    className: styles.drawer,
-                },
-            }}
-            transitionDuration={{
-                enter: 400,
-                exit: 400,
-            }}
+            slotProps={{ paper: { className: styles.drawer } }}
+            transitionDuration={{ enter: 400, exit: 400 }}
         >
             {publicacion && (
                 <div className={styles.tarjeta}>
@@ -46,22 +39,21 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
                     <div className={styles.bloqueSuperior}>
                         <div className={styles.contenedorImagen}>
                             {publicacion.foto ? (
-                                <Image src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="(max-width: 767px) 160px, 208px" className={styles.imagen}/>
+                                <Image src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="(max-width: 767px) 160px, 448px" className={styles.imagen} />
                             ) : (
                                 <div className={styles.sinFoto}>
-                                    <ImageOutlinedIcon className={styles.iconoFoto}/>
+                                    <ImageOutlinedIcon className={styles.iconoFoto} />
                                     Foto
                                 </div>
                             )}
                         </div>
+
                         <div className={styles.bloqueSuperiorDerecho}>
                             <div className={styles.nombrePublicacion}>
-                                <TextoAjustable texto={publicacion.especie} className={styles.especie} minimo={10} maximo={30}/>
-
-                                {publicacion.variedad !== "-" && (
-                                    <TextoAjustable texto={publicacion.variedad} className={styles.variedad} minimo={10} maximo={23}/>
-                                )}
+                                <TextoAjustable texto={publicacion.especie} className={styles.especie} minimo={10} maximo={30} />
+                                {publicacion.variedad !== "-" && <TextoAjustable texto={publicacion.variedad} className={styles.variedad} minimo={10} maximo={23} />}
                             </div>
+
                             <div className={styles.precio}>
                                 {publicacion.precio != null ? `$${Number(publicacion.precio).toString()}` : "Sin precio"}
                             </div>
@@ -73,10 +65,12 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
                             <span className={styles.nombreInformacion}>Presentación</span>
                             <span className={styles.valorInformacion}>{publicacion.presentacion}</span>
                         </div>
+
                         <div className={styles.informacionDetallada}>
                             <span className={styles.nombreInformacion}>Calibre</span>
                             <span className={styles.valorInformacion}>{publicacion.calibre}</span>
                         </div>
+
                         <div className={styles.informacionDetallada}>
                             <span className={styles.nombreInformacion}>Categoría</span>
                             <span className={styles.valorInformacion}>{publicacion.categoria}</span>
@@ -85,7 +79,7 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
 
                     <div className={styles.bloqueBotones}>
                         <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Consultar por ${nombreProducto} por WhatsApp`}>
-                            <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true"/>
+                            <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                             WhatsApp
                         </a>
                     </div>
@@ -93,6 +87,4 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
             )}
         </SwipeableDrawer>
     );
-
-    return contenido;
 }

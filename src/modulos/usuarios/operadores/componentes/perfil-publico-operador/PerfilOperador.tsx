@@ -48,9 +48,7 @@ export default function PerfilOperador({ operador }: PerfilOperadorProps) {
                             <li key={nombreNave} className={styles.local}>
                                 <span className={styles.nombreNave}>Nave {nombreNave}</span>
                                 <span className={styles.separadorLocal} aria-hidden="true">-</span>
-                                <span className={styles.numeroLocal}>
-                                    {locales.length > 1 ? "Locales" : "Local"}{" "}{locales.join(", ")}
-                                </span>
+                                <span className={styles.numeroLocal}>{locales.length > 1 ? "Locales" : "Local"}{" "}{locales.join(", ")}</span>
                             </li>
                         ))}
                     </ul>

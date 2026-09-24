@@ -32,11 +32,11 @@ export async function obtenerPerfilPublicoOperador(id: number): Promise<PerfilPu
 
     // await porque la consulta a la base de datos es asincrona pero quiero esperar a la respuesta antes de seguir
     const operador = await db.orm.public.Operador
-                                .select("id", "nombreFantasia", "fotoPerfil", "whatsApp") // Que columnas quiero recuperar de la tabla de operador
-                                .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
-                                                                    .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
-                                                                    .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
-                                .first({ id }); // El primer operador que tenga este id
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp") // Que columnas quiero recuperar de la tabla de operador
+        .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
+            .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
+            .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
+        .first({ id }); // El primer operador que tenga este id
 
     if (!operador) {
         return null;
