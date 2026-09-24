@@ -688,90 +688,91 @@ async function main() {
    * Función de hash: bcrypt con costo 10
    */
 
+  // Numeros actuales son falsos, Cambiar numero de whatsapp para testear los mensajes
   const operadoresData = [
     {
       username: "mercado_verde",
       passwordHash:
         "$2b$10$cQoQ65pnEH0aqvETVNLt0evxHpSvfIZ4IUHfQ/aIAb1I17CcwcYSq",
       nombreFantasia: "Mercado Verde UAM",
-      whatsApp: "+59899100001",
+      whatsApp: "+598901",
     },
     {
       username: "frutas_del_plata",
       passwordHash:
         "$2b$10$sffK9RFZOeyGbAd1EKdmouBu0hSmSMInVEmOjXufYKGnexy0uRUQS",
       nombreFantasia: "Frutas del Plata",
-      whatsApp: "+59899100002",
+      whatsApp: "+598902",
     },
     {
       username: "granja_del_sur",
       passwordHash:
         "$2b$10$hcFh6d9lPWUZJo4.TZKSReBgsuzUPU8j598LrnEP8kFtG.6fB2UyO",
       nombreFantasia: "Granja del Sur",
-      whatsApp: "+59899100003",
+      whatsApp: "+598903",
     },
     {
       username: "huerta_central",
       passwordHash:
         "$2b$10$5Ap30NxcFM2NhwMGYao81O4Sh49yA3WgsPOBDlwifFq78Ory1aE3.",
       nombreFantasia: "Huerta Central",
-      whatsApp: "+59899100004",
+      whatsApp: "+598904",
     },
     {
       username: "agro_este",
       passwordHash:
         "$2b$10$08TXVIEBi.JgB.wuFmh8RONjENJhsIacxUFJyOEnFtZgPj.JqxFsW",
       nombreFantasia: "Agro del Este",
-      whatsApp: "+59899100005",
+      whatsApp: "+598905",
     },
     {
       username: "campos_litoral",
       passwordHash:
         "$2b$10$q/vpYvqL1IduoatRIQ0qyeybbvXlkWN8Ms5i3iFQQavdOGsT/2Pdm",
       nombreFantasia: "Campos del Litoral",
-      whatsApp: "+59899100006",
+      whatsApp: "+598906",
     },
     {
       username: "produccion_oriental",
       passwordHash:
         "$2b$10$6d8ZWAtEocxK7bTCMHZefOVU3TtWCjafo01UPYDWUKo5tY./MwV6i",
       nombreFantasia: "Producción Oriental",
-      whatsApp: "+59899100007",
+      whatsApp: "+598907",
     },
     {
       username: "cosechas_norte",
       passwordHash:
         "$2b$10$ZC4MeCqmvsrSAim4k2VhX.zeYbpJD9P7F2FSHLygtiUujXa4ncWg6",
       nombreFantasia: "Cosechas del Norte",
-      whatsApp: "+59899100008",
+      whatsApp: "+598908",
     },
     {
       username: "frescos_del_prado",
       passwordHash:
         "$2b$10$m6jaAE1ikpjRuCuvNsjaZOjJn42gy0sEJAd1l5nD8RzrViF0YePwu",
       nombreFantasia: "Frescos del Prado",
-      whatsApp: "+59899100009",
+      whatsApp: "+598909",
     },
     {
       username: "cooperativa_4_estaciones",
       passwordHash:
         "$2b$10$q4Ubqfv9LSrTDW4438zvneZU5ig10PxXryvebftDjlV2DsvXl6hBy",
       nombreFantasia: "Cooperativa 4 Estaciones",
-      whatsApp: "+59899100010",
+      whatsApp: "+598910",
     },
     {
       username: "agro_montevideo",
       passwordHash:
         "$2b$10$sb3gkjNqaUx4/vYuMXfQ0eei.PqEvNUIaYZA5o7tfGc9E6Rzb5OH.",
       nombreFantasia: "Agro Montevideo",
-      whatsApp: "+59899100011",
+      whatsApp: "+598911",
     },
     {
       username: "mercado_rural_olivos",
       passwordHash:
         "$2b$10$a9PJnKXLnlYb1MJYSR38Zuq1OSJmvDD7d7xrJSIZDbyLJW1aRvIEO",
       nombreFantasia: "Mercado Rural Los Olivos",
-      whatsApp: "+59899100012",
+      whatsApp: "+598912",
     },
   ];
 
