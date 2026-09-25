@@ -17,16 +17,21 @@
 
 .encabezado {
     display: flex;
+    position: relative;
+    isolation: isolate;
     width: 100%;
     padding: 1.5rem;
     align-items: center;
     gap: 1rem;
+    overflow: hidden;
     background-color: var(--color-secondary);
     color: white;
 }
 
 .fotoOperador {
     display: flex;
+    position: relative;
+    z-index: 1;
     width: 6rem;
     height: 6rem;
     flex-shrink: 0;
@@ -42,6 +47,8 @@
 }
 
 .identidad {
+    position: relative;
+    z-index: 1;
     min-width: 0;
 }
 

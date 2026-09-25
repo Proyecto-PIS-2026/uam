@@ -49,7 +49,7 @@ export default function TarjetaPublicacion({publicacion, onSeleccionar}: Tarjeta
                         </div>
                     </div>
                     <div className={styles.contenedorPrecio}>
-                        {publicacion.precio != null ? (
+                        {publicacion.precio == null ? (
                             <span className={styles.precio}>{formatoPrecio.format(Number(publicacion.precio))}</span>
                         ) : (
                             <span className={styles.consultarPrecio}>Consultar precio</span>

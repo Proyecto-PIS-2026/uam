@@ -5,6 +5,7 @@ import CatalogoOperador from "../../../../modulos/usuarios/operadores/componente
 import PerfilOperador from "../../../../modulos/usuarios/operadores/componentes/perfil-publico-operador/PerfilOperador";
 
 import styles from "./page.module.css";
+import HojasDecorativas from '@/compartido/HojasDecorativas';
 
 type PageProps = {
     params: Promise<{ id: string; }>;
@@ -22,8 +23,11 @@ export default async function Page({ params }: PageProps) {
 
     const contenido = (
         <main className={styles.pagina}>
-            <PerfilOperador operador={ perfil } />
-            <CatalogoOperador publicaciones={perfil.publicaciones} whatsAppOperador={perfil.whatsApp} />
+            <HojasDecorativas variante="fondo" />
+            <div className={styles.contenido}>
+                <PerfilOperador operador={ perfil } />
+                <CatalogoOperador publicaciones={perfil.publicaciones} whatsAppOperador={perfil.whatsApp} />
+            </div>
         </main>
     );
 
