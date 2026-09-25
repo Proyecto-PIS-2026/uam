@@ -153,9 +153,9 @@
 }
 
 .consultarPrecio {
-    color: var(--color-foreground);
-    font-size: 0.7rem;
-    font-weight: 500;
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
     line-height: 1.2;
     text-align: center;
     white-space: nowrap;
@@ -218,7 +218,7 @@
     }
 
     .consultarPrecio {
-        font-size: 0.6rem;
+        font-size: 0.7rem;
     }
 
     .presentacionPrecio {
@@ -228,6 +228,12 @@
 
     .sinFoto {
         font-size: 0.65rem;
+    }
+}
+
+@media (min-width: 381px) and (max-width: 419px) {
+    .tarjeta {
+        gap: 0.75rem;
     }
 }
 

@@ -1,4 +1,4 @@
-import HojasDecorativas from "@/compartido/HojasDecorativas";
+import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 
 import styles from "./PerfilOperador.module.css";

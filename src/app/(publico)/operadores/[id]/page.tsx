@@ -5,7 +5,7 @@ import CatalogoOperador from "../../../../modulos/usuarios/operadores/componente
 import PerfilOperador from "../../../../modulos/usuarios/operadores/componentes/perfil-publico-operador/PerfilOperador";
 
 import styles from "./page.module.css";
-import HojasDecorativas from '@/compartido/HojasDecorativas';
+import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 
 type PageProps = {
     params: Promise<{ id: string; }>;

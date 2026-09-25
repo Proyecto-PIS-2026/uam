@@ -11,19 +11,9 @@ vi.mock("@mui/material/useMediaQuery", () => ({
     default: mocks.useMediaQuery,
 }));
 
-vi.mock("@mui/material/Dialog", () => ({
-    default: ({open, onClose, children, "aria-labelledby": ariaLabelledby}: {open: boolean; onClose: () => void; children: React.ReactNode; "aria-labelledby"?: string}) =>
-        open ? (
-            <div role="dialog" aria-labelledby={ariaLabelledby}>
-                <button type="button" onClick={onClose}>Cerrar dialog MUI</button>
-                {children}
-            </div>
-        ) : null,
-}));
-
 vi.mock("@mui/material/SwipeableDrawer", () => ({
-    default: ({anchor, open, onClose, onOpen, children}: {anchor: "bottom" | "right"; open: boolean; onClose: () => void; onOpen: () => void; children: React.ReactNode}) => (
-        <div data-testid="drawer" data-anchor={anchor} data-open={String(open)}>
+    default: ({anchor, open, onClose, onOpen, disableSwipeToOpen, children}: {anchor: "bottom" | "right"; open: boolean; onClose: () => void; onOpen: () => void; disableSwipeToOpen: boolean; children: React.ReactNode}) => (
+        <div data-testid="drawer" data-anchor={anchor} data-open={String(open)} data-swipe-open-disabled={String(disableSwipeToOpen)}>
             <button type="button" onClick={onOpen}>Abrir drawer</button>
             <button type="button" onClick={onClose}>Cerrar drawer</button>
             {children}
@@ -50,10 +40,6 @@ vi.mock("@mui/icons-material/WhatsApp", () => ({
     default: () => <span data-testid="icono-whatsapp"/>,
 }));
 
-vi.mock("@mui/icons-material/Close", () => ({
-    default: () => <span data-testid="icono-cerrar"/>,
-}));
-
 const publicacion: PublicacionPerfil = {
     id: 101,
     foto: "/tomate.jpg",
@@ -74,34 +60,38 @@ describe("DrawerPublicacionPerfil", () => {
     it("usa el drawer inferior en mobile", () => {
         render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
         expect(screen.getByTestId("drawer")).toHaveAttribute("data-anchor", "bottom");
+        expect(screen.getByTestId("drawer")).toHaveAttribute("data-swipe-open-disabled", "false");
     });
 
-    it("usa un diálogo en web", () => {
+    it("usa un drawer lateral en web", () => {
         mocks.useMediaQuery.mockReturnValue(true);
         render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        expect(screen.getByRole("dialog", {name: "Detalle de publicación"})).toBeInTheDocument();
-        expect(screen.queryByTestId("drawer")).not.toBeInTheDocument();
+        expect(screen.getByTestId("drawer")).toHaveAttribute("data-anchor", "right");
+        expect(screen.getByTestId("drawer")).toHaveAttribute("data-open", "true");
     });
 
-    it("cierra el diálogo web desde el botón de cerrar", () => {
+    it("no muestra un botón de cierre en el contenido del drawer web", () => {
+        mocks.useMediaQuery.mockReturnValue(true);
+        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
+        expect(screen.queryByRole("button", {name: "Cerrar detalle de publicación"})).not.toBeInTheDocument();
+    });
+
+    it("cierra el drawer web mediante onClose", () => {
         mocks.useMediaQuery.mockReturnValue(true);
         const onOpenChange = vi.fn();
         render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={onOpenChange} whatsAppOperador="+598 99 123 456"/>);
-        fireEvent.click(screen.getByRole("button", {name: "Cerrar detalle de publicación"}));
-        expect(onOpenChange).toHaveBeenCalledWith(false);
-    });
-
-    it("cierra el diálogo web mediante onClose del Dialog", () => {
-        mocks.useMediaQuery.mockReturnValue(true);
-        const onOpenChange = vi.fn();
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={onOpenChange} whatsAppOperador="+598 99 123 456"/>);
-        fireEvent.click(screen.getByRole("button", {name: "Cerrar dialog MUI"}));
+        fireEvent.click(screen.getByRole("button", {name: "Cerrar drawer"}));
         expect(onOpenChange).toHaveBeenCalledTimes(1);
         expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
-    it("no muestra contenido cuando no hay publicación seleccionada", () => {
-        render(<DrawerPublicacionPerfil publicacion={null} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
+    it("no se abre cuando no hay publicación seleccionada", () => {
+        const onOpenChange = vi.fn();
+        render(<DrawerPublicacionPerfil publicacion={null} open={true} onOpenChange={onOpenChange} whatsAppOperador="+598 99 123 456"/>);
+        expect(screen.getByTestId("drawer")).toHaveAttribute("data-open", "false");
+        expect(screen.getByTestId("drawer")).toHaveAttribute("data-swipe-open-disabled", "true");
+        fireEvent.click(screen.getByRole("button", {name: "Abrir drawer"}));
+        expect(onOpenChange).not.toHaveBeenCalled();
         expect(screen.queryByText("Tomate")).not.toBeInTheDocument();
         expect(screen.queryByRole("link", {name: /WhatsApp/i})).not.toBeInTheDocument();
     });
