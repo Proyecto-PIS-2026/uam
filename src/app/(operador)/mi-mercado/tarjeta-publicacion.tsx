@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Publicacion } from "./mi-mercado";
 import Detalle from "./[id]/detalle-publicacion";
 import Drawer from "@/compartido/drawer";
+import { actualizarPrecio } from "./actions";
 
 type Props = {
     pub: Publicacion;
@@ -20,11 +21,15 @@ export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
     const [estaAbierto, setEstaAbierto] = useState(false)
 
     function restar() {
-        setPrecio((valorActual) => Math.max(0, valorActual - incrementoPrecio));
+        const nuevoPrecio = Math.max(0, precio - incrementoPrecio)
+        setPrecio(nuevoPrecio);
+        actualizarPrecio(pub.id, nuevoPrecio);
     }
 
     function sumar() {
-        setPrecio((valorActual) => valorActual + incrementoPrecio);
+        const nuevoPrecio = precio + incrementoPrecio;
+        setPrecio(nuevoPrecio);
+        actualizarPrecio(pub.id, nuevoPrecio);
     }
 
     const variedad = pub.presentacion.variedad.nombreVariedad;

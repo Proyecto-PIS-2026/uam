@@ -16,3 +16,10 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
     const resultado = await publicaciones.all();
     return resultado;
 }
+
+export async function actualizarPrecioPublicacion(publicacionId: number, nuevoPrecio: number) {
+    const publicacion = await db.orm.public.Publicacion
+        .where({ id: publicacionId })
+        .update({ precio: String(nuevoPrecio) as any});
+}
+
