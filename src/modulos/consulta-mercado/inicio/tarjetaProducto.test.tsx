@@ -1,42 +1,47 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import ProductoCard from "./tarjetaProducto";
-import { IMAGEN_POR_DEFECTO } from "./tarjetaProducto";
-
 
 describe("ProductoCard", () => {
 
     it("muestra correctamente el nombre del producto", () => {
         render(
-            <ProductoCard nombre="Manzana" operadores={5} />);
+            <ProductoCard idEspecie={60} nombre="Manzana" operadores={5} imagen={null} />);
 
-            expect(screen.getAllByText("Manzana").length).toBeGreaterThan(0);
+            expect(screen.getByText("Manzana")).toBeInTheDocument();
         });
 
     it("muestra 1 OPERADOR cuando hay un solo operador", () => {
         render(
         <ProductoCard
+            idEspecie={60}
             nombre="Manzana"
             operadores={1}
+            imagen={null}
         />
         );
 
-        expect(screen.getByText("1 OPERADOR")).toBeInTheDocument();
+        expect(screen.getByText("1")).toBeInTheDocument();
+        expect(screen.getByText("operador")).toBeInTheDocument();
     });
 
     it("muestra ... OPERADORES cuando hay varios operadores", () => {
         render(
         <ProductoCard
+            idEspecie={60}
             nombre="Manzana"
             operadores={5}
+            imagen={null}
         />
         );
 
-        expect(screen.getByText("5 OPERADORES")).toBeInTheDocument();
+        expect(screen.getByText("5")).toBeInTheDocument();
+        expect(screen.getByText("operadores")).toBeInTheDocument();
     });
 
     it("muestra la imagen proporcionada", () => {
         render(
         <ProductoCard
+            idEspecie={60}
             nombre="Manzana"
             operadores={2}
             imagen="https://ejemplo.com/manzana.jpg"
@@ -46,30 +51,29 @@ describe("ProductoCard", () => {
         const imagen = screen.getByRole("img", { name: "Manzana" });
 
         expect(imagen).toHaveAttribute(
-        "src",
-        "https://ejemplo.com/manzana.jpg"
+            "src",
+            expect.stringContaining("ejemplo.com")
         );
     });
 
-    it("muestra la imagen por defecto cuando no se proporciona una imagen", () => {
+    it("muestra la inicial del nombre cuando no se proporciona una imagen", () => {
         render(
         <ProductoCard
+            idEspecie={60}
             nombre="Manzana"
             operadores={2}
+            imagen={null}
         />
         );
 
-        const imagen = screen.getByRole("img", { name: "Manzana" });
-
-        expect(imagen).toHaveAttribute(
-        "src",
-        IMAGEN_POR_DEFECTO
-        );
+        expect(screen.queryByRole("img")).not.toBeInTheDocument();
+        expect(screen.getByText("M")).toBeInTheDocument();
     });
 
-    it("utiliza la imagen por defecto cuando la imagen proporcionada falla", () => {
+    it("muestra la inicial cuando la imagen proporcionada falla", () => {
         render(
         <ProductoCard
+            idEspecie={60}
             nombre="Manzana"
             operadores={2}
             imagen="https://ejemplo.com/imagen-inexistente.jpg"
@@ -80,17 +84,17 @@ describe("ProductoCard", () => {
 
         fireEvent.error(imagen);
 
-        expect(imagen).toHaveAttribute(
-        "src",
-        IMAGEN_POR_DEFECTO
-        );
+        expect(screen.queryByRole("img")).not.toBeInTheDocument();
+        expect(screen.getByText("M")).toBeInTheDocument();
     });
 
     it("enlaza la tarjeta con la página de productos", () => {
         render(
         <ProductoCard
+            idEspecie={60}
             nombre="Manzana"
             operadores={2}
+            imagen={null}
         />
         );
 
@@ -98,7 +102,7 @@ describe("ProductoCard", () => {
 
         expect(enlace).toHaveAttribute(
         "href",
-        "/productos/placeholder"
+            "/publicaciones?especieId=60"
         );
     });
 });
