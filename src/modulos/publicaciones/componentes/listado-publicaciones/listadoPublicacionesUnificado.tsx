@@ -42,9 +42,9 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 				grupo.publicaciones.push(publicacion);
 			} else {
 				grupos.set(publicacion.operador.id, {
-				id: publicacion.operador.id,
-				nombreFantasia: publicacion.operador.nombreFantasia,
-				publicaciones: [publicacion]
+					id: publicacion.operador.id,
+					nombreFantasia: publicacion.operador.nombreFantasia,
+					publicaciones: [publicacion]
 				});
 			}
 		}

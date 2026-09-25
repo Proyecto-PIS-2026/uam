@@ -1,16 +1,45 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { SwipeableDrawerProps } from "@mui/material/SwipeableDrawer";
+import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
 import { DrawerPublicacion } from "./DrawerPublicacion";
 
-function crearPublicacion(id: number, variedad: string, precio: number, foto: string | null): PublicacionListado {
+// Se aíslan los gestos de MUI y el ajuste de texto para probar el drawer.
+vi.mock("@mui/material/SwipeableDrawer", () => ({
+  default: ({
+    open,
+    onOpen,
+    onClose,
+    children,
+  }: {
+    open: boolean;
+    onOpen: () => void;
+    onClose: () => void;
+    children: ReactNode;
+  }) => (
+    <>
+      <button onClick={onOpen}>Abrir detalle</button>
+      {open && (
+        <div role="dialog" aria-label="Detalle de publicación">
+          <button onClick={onClose}>Cerrar detalle</button>
+          {children}
+        </div>
+      )}
+    </>
+  ),
+}));
+
+vi.mock("./TextoAjustable", () => ({
+  default: ({ texto }: { texto: string }) => <span>{texto}</span>,
+}));
+
+function crearPublicacion(): PublicacionListado {
   return {
-    id,
-    especie: "Manzana", 
-    variedad,
-    precio,
-    foto,
+    id: 7,
+    especie: "Tomate",
+    variedad: "Perita",
+    precio: 150,
+    foto: null,
     presentacion: "Cajón",
     categoria: "Primera",
     calibre: "Mediano",
@@ -19,110 +48,210 @@ function crearPublicacion(id: number, variedad: string, precio: number, foto: st
   };
 }
 
-vi.mock(
-    "./TextoAjustable", 
-    () => ({
-        default: ({ texto }: { texto: string }) => <span>{texto}</span>})
-    );
-    afterEach(
-        () => {
-            cleanup()}
-);
-
-vi.mock("@mui/material/SwipeableDrawer", async (importOriginal) => {
-    const modulo = await importOriginal<typeof import("@mui/material/SwipeableDrawer")>();
-    const DrawerReal = modulo.default;
-    return {
-        ...modulo,
-        default: (props: SwipeableDrawerProps) => (
-            <>
-                <button onClick={(evento) => props.onOpen(evento)}>Simular apertura</button>
-                <DrawerReal {...props} />
-            </>
-        ),
-    };
-});
-
 describe("DrawerPublicacion", () => {
-    it("muestra los datos de una publicación completa", () => {
-        render(<DrawerPublicacion publicacion={crearPublicacion(1, "Granny Smith", 150, "/manzana.jpg")} open={true} onOpenChange={vi.fn()} />);
-        expect(screen.getByText("Manzana")).toBeInTheDocument();
-        expect(screen.getByText("Granny Smith")).toBeInTheDocument();
-        expect(screen.getByText("$150")).toBeInTheDocument();
-        expect(screen.getByText("Cajón")).toBeInTheDocument();
-        expect(screen.getByText("Primera")).toBeInTheDocument();
-        expect(screen.getByText("Mediano")).toBeInTheDocument();
-        expect(screen.getByText("Huerta Sur")).toBeInTheDocument();
-    });
+  it("muestra los datos de la publicación y los botones de contacto", () => {
+    render(
+      <DrawerPublicacion
+        publicacion={crearPublicacion()}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
 
-    it("muestra los datos de una publicación sin variedad", () => {
-        render(<DrawerPublicacion publicacion={crearPublicacion(1, "-", 150, null)} open={true} onOpenChange={vi.fn()} />);
-        expect(screen.getByText("Manzana")).toBeInTheDocument();
-        expect(screen.queryByText("-")).not.toBeInTheDocument();
-        expect(screen.getByText("$150")).toBeInTheDocument();
-        expect(screen.getByText("Cajón")).toBeInTheDocument();
-        expect(screen.getByText("Primera")).toBeInTheDocument();
-        expect(screen.getByText("Mediano")).toBeInTheDocument();
-        expect(screen.getByText("Huerta Sur")).toBeInTheDocument();
-    });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    for (const texto of [
+      "Tomate",
+      "Perita",
+      "Cajón",
+      "Mediano",
+      "Primera",
+      "Huerta Sur",
+    ]) {
+      expect(screen.getByText(texto)).toBeInTheDocument();
+    }
+    expect(
+      screen.getByRole("button", { name: "Ver Perfil" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "WhatsApp" }),
+    ).toBeInTheDocument();
+  });
 
-    it("muestra los datos de una publicación sin foto", () => {
-        render(<DrawerPublicacion publicacion={crearPublicacion(1, "Granny Smith", 150, null)} open={true} onOpenChange={vi.fn()} />);
-        expect(screen.getByText("Manzana")).toBeInTheDocument();
-        expect(screen.getByText("Granny Smith")).toBeInTheDocument();
-        expect(screen.getByText("$150")).toBeInTheDocument();
-        expect(screen.getByText("Cajón")).toBeInTheDocument();
-        expect(screen.getByText("Primera")).toBeInTheDocument();
-        expect(screen.getByText("Mediano")).toBeInTheDocument();
-        expect(screen.getByText("Huerta Sur")).toBeInTheDocument();
-    });
+  it("no muestra el detalle cuando está cerrado", () => {
+    render(
+      <DrawerPublicacion
+        publicacion={crearPublicacion()}
+        open={false}
+        onOpenChange={vi.fn()}
+      />,
+    );
 
-    it("no muestra contenido de publicación cuando publicacion es null", () => {
-        render(<DrawerPublicacion publicacion={null} open={true} onOpenChange={vi.fn()}/>);
-        expect(screen.queryByText("Manzana")).not.toBeInTheDocument();
-        expect(screen.queryByText("Publicado por")).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", {name: "Ver Perfil"})).not.toBeInTheDocument();
-        expect(screen.queryByRole("link", {name: /WhatsAp/i })).not.toBeInTheDocument();
-    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tomate")).not.toBeInTheDocument();
+  });
 
-    it("actualiza los datos al recibir otra publicación", () => {
-        const onOpenChange = vi.fn();
-        const { rerender } = render(<DrawerPublicacion publicacion={crearPublicacion(1, "Granny Smith", 150, null)} open={true} onOpenChange={onOpenChange}/>);
-        expect(screen.getByText("Manzana")).toBeInTheDocument();
-        expect(screen.getByText("Granny Smith")).toBeInTheDocument();
-        expect(screen.getByText("$150")).toBeInTheDocument();
-        expect(screen.getByText("Cajón")).toBeInTheDocument();
-        expect(screen.getByText("Primera")).toBeInTheDocument();
-        expect(screen.getByText("Mediano")).toBeInTheDocument();
-        expect(screen.getByText("Huerta Sur")).toBeInTheDocument();
-        const nuevaPublicacion = crearPublicacion(2, "Gala", 200, null);
-        rerender(<DrawerPublicacion publicacion={nuevaPublicacion} open={true} onOpenChange={onOpenChange}/>);
-        expect(screen.getByText("Manzana")).toBeInTheDocument();
-        expect(screen.getByText("Gala")).toBeInTheDocument();
-        expect(screen.getByText("$200")).toBeInTheDocument();
-        expect(screen.getByText("Cajón")).toBeInTheDocument();
-        expect(screen.getByText("Primera")).toBeInTheDocument();
-        expect(screen.getByText("Mediano")).toBeInTheDocument();
-        expect(screen.getByText("Huerta Sur")).toBeInTheDocument();
-        expect(screen.queryByText("Granny Smith")).not.toBeInTheDocument();
-        expect(screen.queryByText("$150")).not.toBeInTheDocument();
-    });
-    
-    it("solicita cerrar el drawer al presionar Escape", () => {
-        const onOpenChange = vi.fn();
-        render(<DrawerPublicacion publicacion={crearPublicacion(1, "Granny Smith", 150, null)} open={true} onOpenChange={onOpenChange}/>);
-        expect(onOpenChange).not.toHaveBeenCalled();
-        fireEvent.keyDown(screen.getByRole("dialog"), {key: "Escape",code: "Escape"});
-        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
-    });
+  it("no muestra datos ni acciones de contacto sin una publicación", () => {
+    render(
+      <DrawerPublicacion publicacion={null} open onOpenChange={vi.fn()} />,
+    );
 
-    it("solicita abrir el drawer cuando se ejecuta onOpen", () => {
-        const onOpenChange = vi.fn();
-        render(<DrawerPublicacion publicacion={crearPublicacion(1, "Granny Smith", 150, null)} open={false} onOpenChange={onOpenChange}/>);
-        expect(onOpenChange).not.toHaveBeenCalled();
-        fireEvent.click(screen.getByRole("button", {name: "Simular apertura"}));
-        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(true);
-    });
-})
+    expect(screen.queryByText("Publicado por")).not.toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Ver Perfil" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "WhatsApp" }),
+    ).not.toBeInTheDocument();
+  });
 
+  it("oculta la variedad cuando es un guion", () => {
+    render(
+      <DrawerPublicacion
+        publicacion={{ ...crearPublicacion(), variedad: "-" }}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
 
+    expect(screen.getByText("Tomate")).toBeInTheDocument();
+    expect(screen.queryByText("-")).not.toBeInTheDocument();
+  });
+
+  it("muestra la foto con la especie como texto alternativo", () => {
+    render(
+      <DrawerPublicacion
+        publicacion={{ ...crearPublicacion(), foto: "/tomate.jpg" }}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "Tomate" })).toBeInTheDocument();
+    expect(screen.queryByText("IMG")).not.toBeInTheDocument();
+  });
+
+  it("muestra un reemplazo cuando no hay foto", () => {
+    render(
+      <DrawerPublicacion
+        publicacion={crearPublicacion()}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("IMG")).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [150, "$150"],
+    [1234.5, "$1234.5"],
+    [0, "$0"],
+  ])("muestra el precio %s", (precio, esperado) => {
+    render(
+      <DrawerPublicacion
+        publicacion={{ ...crearPublicacion(), precio }}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(esperado)).toBeInTheDocument();
+    expect(screen.queryByText("Sin precio")).not.toBeInTheDocument();
+  });
+
+  it("muestra 'Sin precio' cuando el precio es null", () => {
+    render(
+      <DrawerPublicacion
+        publicacion={{ ...crearPublicacion(), precio: null }}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Sin precio")).toBeInTheDocument();
+    expect(screen.queryByText("$150")).not.toBeInTheDocument();
+  });
+
+  it("notifica la apertura y el cierre y respeta el estado recibido", () => {
+    const onOpenChange = vi.fn();
+    const publicacion = crearPublicacion();
+    const { rerender } = render(
+      <DrawerPublicacion
+        publicacion={publicacion}
+        open={false}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    expect(onOpenChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Abrir detalle" }));
+    expect(onOpenChange).toHaveBeenNthCalledWith(1, true);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    rerender(
+      <DrawerPublicacion
+        publicacion={publicacion}
+        open
+        onOpenChange={onOpenChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar detalle" }));
+    expect(onOpenChange).toHaveBeenNthCalledWith(2, false);
+    expect(onOpenChange).toHaveBeenCalledTimes(2);
+
+    rerender(
+      <DrawerPublicacion
+        publicacion={publicacion}
+        open={false}
+        onOpenChange={onOpenChange}
+      />,
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("actualiza el detalle al seleccionar otra publicación y permite quitarla", () => {
+    const onOpenChange = vi.fn();
+    const { rerender } = render(
+      <DrawerPublicacion
+        publicacion={crearPublicacion()}
+        open
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    rerender(
+      <DrawerPublicacion
+        publicacion={{
+          ...crearPublicacion(),
+          id: 2,
+          especie: "Manzana",
+          variedad: "Gala",
+          precio: 80,
+          operador: {
+            id: 20,
+            nombreFantasia: "Frutas Norte",
+            whatsApp: "098654321",
+          },
+        }}
+        open
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    expect(screen.queryByText("Tomate")).not.toBeInTheDocument();
+    expect(screen.queryByText("Huerta Sur")).not.toBeInTheDocument();
+    expect(screen.getByText("Manzana")).toBeInTheDocument();
+    expect(screen.getByText("Gala")).toBeInTheDocument();
+    expect(screen.getByText("$80")).toBeInTheDocument();
+    expect(screen.getByText("Frutas Norte")).toBeInTheDocument();
+
+    rerender(
+      <DrawerPublicacion publicacion={null} open onOpenChange={onOpenChange} />,
+    );
+    expect(screen.queryByText("Manzana")).not.toBeInTheDocument();
+    expect(screen.queryByText("Publicado por")).not.toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalled();
+  });
+});

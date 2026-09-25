@@ -2,7 +2,7 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 export type PublicacionListado = {
     id: number;
-    precio: number;
+    precio: number | null;
     foto: string | null;
     especie: string;
     variedad: string;
