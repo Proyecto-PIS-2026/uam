@@ -70,6 +70,30 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
         return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad))].sort();
     }, [publicaciones, especie]);
 
+    const publicacionesSegunJerarquia = useMemo(() => {
+        let publicacionesBase = publicaciones;
+
+        if (especie !== "Todas") {
+            publicacionesBase = publicacionesBase.filter(
+                (publicacion) => publicacion.especie === especie
+            );
+        }
+
+        if (variedad !== "Todas") {
+            publicacionesBase = publicacionesBase.filter(
+                (publicacion) => publicacion.variedad === variedad
+            );
+        }
+
+        if (presentacion !== "Todas") {
+            publicacionesBase = publicacionesBase.filter(
+                (publicacion) => publicacion.presentacion === presentacion
+            );
+        }
+
+        return publicacionesBase;
+    }, [publicaciones, especie, variedad, presentacion]);
+
     const presentaciones = useMemo(() => {
         let publicacionesBase = publicaciones;
         if (especie !== "Todas") {
@@ -85,17 +109,73 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
         return [...new Set(publicacionesBase.map((publicacion) =>  publicacion.presentacion))].sort();
     }, [publicaciones, especie, variedad]);
 
-    const categorias = useMemo(() => { return [...new Set(publicaciones.map((publicacion) => publicacion.categoria))].sort() }, [publicaciones]);
+    const categorias = useMemo(() => {
+        let publicacionesBase = publicacionesSegunJerarquia;
 
-    const calibres = useMemo(() => {
-        let publicacionesBase = publicaciones;
-        if (especie !== "Todas") {
-            publicacionesBase = publicacionesBase.filter((publicacion) =>
-                publicacion.especie === especie
+        if (calibre !== "Todas") {
+            publicacionesBase = publicacionesBase.filter(
+                (publicacion) => publicacion.calibre === calibre
             );
         }
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.calibre))].sort();
-    }, [publicaciones, especie]);
+
+        return [
+            ...new Set(
+                publicacionesBase.map((publicacion) => publicacion.categoria)
+            ),
+        ].sort();
+    }, [publicacionesSegunJerarquia, calibre]);
+
+    const calibres = useMemo(() => {
+        let publicacionesBase = publicacionesSegunJerarquia;
+
+        if (categoria !== "Todas") {
+            publicacionesBase = publicacionesBase.filter(
+                (publicacion) => publicacion.categoria === categoria
+            );
+        }
+
+        return [
+            ...new Set(
+                publicacionesBase.map((publicacion) => publicacion.calibre)
+            ),
+        ].sort();
+    }, [publicacionesSegunJerarquia, categoria]);
+
+    useEffect(() => {
+        const categoriaValida =
+            categoria === "Todas" ||
+            publicacionesSegunJerarquia.some(
+                (publicacion) =>
+                    publicacion.categoria === categoria &&
+                    (
+                        calibre === "Todas" ||
+                        publicacion.calibre === calibre
+                    )
+            );
+
+        const calibreValido =
+            calibre === "Todas" ||
+            publicacionesSegunJerarquia.some(
+                (publicacion) =>
+                    publicacion.calibre === calibre &&
+                    (
+                        categoria === "Todas" ||
+                        publicacion.categoria === categoria
+                    )
+            );
+
+        if (!categoriaValida) {
+            setCategoria("Todas");
+        }
+
+        if (!calibreValido) {
+            setCalibre("Todas");
+        }
+    }, [
+        publicacionesSegunJerarquia,
+        categoria,
+        calibre,
+    ]);
 
     // Busqueda de precios y Debounce
     useEffect(() => {
@@ -206,15 +286,15 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
     // Manejador para el cambio de Especie
     const manejarCambioEspecie = (nuevaEspecie: string) => {
         setEspecie(nuevaEspecie);
-        setCalibre("Todas");
 
-        // Calcular las variedades filtradas con la nueva especie
         let publicacionesBase = publicaciones;
+
         if (nuevaEspecie !== "Todas") {
             publicacionesBase = publicacionesBase.filter(
                 (p) => p.especie === nuevaEspecie
             );
         }
+
         const variedadesNuevas = [
             ...new Set(publicacionesBase.map((p) => p.variedad)),
         ].sort();
@@ -228,6 +308,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
         } else {
             setVariedad("Todas");
         }
+
         setPresentacion("Todas");
     };
 
