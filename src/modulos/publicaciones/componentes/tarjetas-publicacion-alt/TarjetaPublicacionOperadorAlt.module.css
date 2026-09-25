@@ -165,8 +165,8 @@
 }
 
 .precio {
-    flex-shrink: 0;
     color: var(--color-primary);
+    flex-shrink: 0;
     font-size: 1.2rem;
     font-weight: 700;
     line-height: 1.1;
@@ -178,7 +178,7 @@
     min-width: 0;
     margin-top: 0.2rem;
     overflow: hidden;
-    color: var(--color-foreground);
+    color: var(--color-muted);
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 0.7rem;
@@ -187,94 +187,3 @@
     text-align: center;
 }
 
-@media (max-width: 380px) {
-    .tarjeta {
-        gap: 0.5rem;
-        padding: 0.6rem;
-    }
-
-    .contenedorImagen {
-        width: 4.5rem;
-        height: 4.5rem;
-    }
-
-    .especie {
-        font-size: 0.9rem;
-    }
-
-    .operador {
-        font-size: 0.65rem;
-    }
-
-    .informacion {
-        padding-right: 0.45rem;
-    }
-
-    .etiqueta {
-        font-size: 0.62rem;
-    }
-
-    .chip {
-        min-width: 2rem;
-        height: 1.25rem;
-        padding: 0 0.4rem;
-        font-size: 0.7rem;
-    }
-
-    .contenedorPrecio {
-        padding: 0 0.6rem;
-    }
-
-    .precio {
-        font-size: 0.95rem;
-    }
-
-    .presentacionPrecio {
-        margin-top: 0.15rem;
-        font-size: 0.6rem;
-    }
-
-    .sinFoto {
-        font-size: 0.65rem;
-    }
-
-    .iconoFoto {
-        font-size: 1.4rem !important;
-    }
-}
-
-@media (min-width: 420px) {
-    .tarjeta {
-        gap: 1rem;
-        padding: 0.875rem;
-    }
-
-    .contenedorImagen {
-        width: 6rem;
-        height: 6rem;
-    }
-
-    .especie {
-        font-size: 1.05rem;
-    }
-
-    .operador {
-        font-size: 0.8rem;
-    }
-
-    .informacion {
-        padding-right: 1rem;
-    }
-
-    .contenedorPrecio {
-        padding: 0 0.875rem;
-    }
-
-    .precio {
-        font-size: 1.25rem;
-    }
-
-    .presentacionPrecio {
-        font-size: 0.75rem;
-    }
-}
