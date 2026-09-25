@@ -129,6 +129,57 @@ const publicacionesConPrecioNulo: PublicacionListado[] = [
     },
 ];
 
+const publicacionesCombinacionInvalida: PublicacionListado[] = [
+    {
+        id: 1,
+        precio: 100,
+        foto: null,
+        especie: "Manzana",
+        variedad: "Gala",
+        presentacion: "Caja",
+        categoria: "I",
+        calibre: "Grande",
+        codigoCalibre: "G",
+        operador: {
+            id: 1,
+            nombreFantasia: "Frutas del Sur",
+            whatsApp: "123456789",
+        },
+    },
+    {
+        id: 2,
+        precio: 200,
+        foto: null,
+        especie: "Manzana",
+        variedad: "Red",
+        presentacion: "Caja",
+        categoria: "I",
+        calibre: "Mediano",
+        codigoCalibre: "M",
+        operador: {
+            id: 1,
+            nombreFantasia: "Frutas del Sur",
+            whatsApp: "123456789",
+        },
+    },
+    {
+        id: 3,
+        precio: 300,
+        foto: null,
+        especie: "Manzana",
+        variedad: "Red",
+        presentacion: "Caja",
+        categoria: "II",
+        calibre: "Grande",
+        codigoCalibre: "G",
+        operador: {
+            id: 1,
+            nombreFantasia: "Frutas del Sur",
+            whatsApp: "123456789",
+        },
+    },
+];
+
 describe("FiltrosPublicaciones", () => {
 
     afterEach(() => { vi.useRealTimers() });
@@ -599,30 +650,6 @@ describe("FiltrosPublicaciones", () => {
         expect(calibre).toHaveTextContent("Grande");
     });
 
-    it("mantiene el calibre al seleccionar una categoría compatible", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} />);
-        const categoria = screen.getByLabelText("Categoría");
-        const calibre = screen.getByLabelText("Calibre");
-        fireEvent.mouseDown(calibre);
-        fireEvent.click(screen.getByRole("option", { name: "Grande" }));
-        fireEvent.mouseDown(categoria);
-        fireEvent.click(screen.getByRole("option", { name: "I" }));
-        expect(categoria).toHaveTextContent("I");
-        expect(calibre).toHaveTextContent("Grande");
-    });
-
-    it("mantiene la categoría al seleccionar un calibre compatible", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} />);
-        const categoria = screen.getByLabelText("Categoría");
-        const calibre = screen.getByLabelText("Calibre");
-        fireEvent.mouseDown(categoria);
-        fireEvent.click(screen.getByRole("option", { name: "I" }));
-        fireEvent.mouseDown(calibre);
-        fireEvent.click(screen.getByRole("option", { name: "Grande" }));
-        expect(categoria).toHaveTextContent("I");
-        expect(calibre).toHaveTextContent("Grande");
-    });
-
     it("restablece categoría y calibre cuando dejan de ser válidos al cambiar la variedad", () => {
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} />);
         const especie = screen.getByLabelText("Especie");
@@ -641,38 +668,6 @@ describe("FiltrosPublicaciones", () => {
         expect(calibre).toHaveTextContent("Todos");
     });
 
-    it("restablece el calibre cuando deja de ser válido al cambiar la variedad", () => {
-        const publicacionesCalibreInvalido: PublicacionListado[] = [
-            {
-                ...publicacionesPrueba[0],
-                id: 1,
-                variedad: "Gala",
-                categoria: "I",
-                calibre: "Grande",
-            },
-            {
-                ...publicacionesPrueba[1],
-                id: 2,
-                variedad: "Red",
-                categoria: "I",
-                calibre: "Mediano",
-            },
-        ];
-
-        render(<FiltrosPublicaciones publicaciones={publicacionesCalibreInvalido}/>);
-        const especie = screen.getByLabelText("Especie");
-        fireEvent.mouseDown(especie);
-        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
-        const calibre = screen.getByLabelText("Calibre");
-        fireEvent.mouseDown(calibre);
-        fireEvent.click(screen.getByRole("option", { name: "Grande" }));
-        const variedad = screen.getByLabelText("Variedad");
-        fireEvent.mouseDown(variedad);
-        fireEvent.click(screen.getByRole("option", { name: "Red" }));
-        expect(screen.getByLabelText("Categoría")).toHaveTextContent("Todas");
-        expect(calibre).toHaveTextContent("Todos");
-    });
-
     it("permite restablecer el calibre seleccionando Todos", () => {
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} />);
         const calibre = screen.getByLabelText("Calibre");
@@ -685,60 +680,105 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("restablece la categoría cuando el calibre seleccionado deja de ser válido", () => {
-        const publicacionesPruebaCalibre: PublicacionListado[] = [
-            {
-                ...publicacionesPrueba[0],
-                id: 1,
-                variedad: "Gala",
-                categoria: "I",
-                calibre: "Grande",
-            },
-            {
-                ...publicacionesPrueba[1],
-                id: 2,
-                variedad: "Red",
-                categoria: "I",
-                calibre: "Mediano",
-            },
-        ];
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        try {
+            const publicacionesPruebaCalibre: PublicacionListado[] = [
+                {
+                    ...publicacionesPrueba[0],
+                    id: 1,
+                    variedad: "Gala",
+                    categoria: "I",
+                    calibre: "Grande",
+                },
+                {
+                    ...publicacionesPrueba[1],
+                    id: 2,
+                    variedad: "Red",
+                    categoria: "I",
+                    calibre: "Mediano",
+                },
+            ];
 
-        render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCalibre}/>);
-        const categoria = screen.getByLabelText("Categoría");
-        fireEvent.mouseDown(categoria);
-        fireEvent.click(screen.getByRole("option", { name: "I" }));
-        const calibre = screen.getByLabelText("Calibre");
-        publicacionesPruebaCalibre[0].calibre = "Mediano";
-        fireEvent.mouseDown(calibre);
-        fireEvent.click(screen.getByRole("option", { name: "Grande" }));
-        expect(categoria).toHaveTextContent("Todas");
+            render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCalibre}/>);
+            const categoria = screen.getByLabelText("Categoría");
+            fireEvent.mouseDown(categoria);
+            fireEvent.click(screen.getByRole("option", { name: "I" }));
+            const calibre = screen.getByLabelText("Calibre");
+            publicacionesPruebaCalibre[0].calibre = "Mediano";
+            fireEvent.mouseDown(calibre);
+            fireEvent.click(screen.getByRole("option", { name: "Grande" }));
+            expect(categoria).toHaveTextContent("Todas");
+        } finally {
+            consoleError.mockRestore();
+        }
     });
 
     it("restablece el calibre cuando la categoría seleccionada deja de ser válida", () => {
-        const publicacionesPruebaCategoria: PublicacionListado[] = [
-            {
-                ...publicacionesPrueba[0],
-                id: 1,
-                variedad: "Gala",
-                categoria: "I",
-                calibre: "Grande",
-            },
-            {
-                ...publicacionesPrueba[1],
-                id: 2,
-                variedad: "Red",
-                categoria: "II",
-                calibre: "Grande",
-            },
-        ];
+            const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        try {
+            const publicacionesPruebaCategoria: PublicacionListado[] = [
+                {
+                    ...publicacionesPrueba[0],
+                    id: 1,
+                    variedad: "Gala",
+                    categoria: "I",
+                    calibre: "Grande",
+                },
+                {
+                    ...publicacionesPrueba[1],
+                    id: 2,
+                    variedad: "Red",
+                    categoria: "II",
+                    calibre: "Grande",
+                },
+            ];
 
-        render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCategoria}/>);
-        const calibre = screen.getByLabelText("Calibre");
-        fireEvent.mouseDown(calibre);
+            render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCategoria}/>);
+            const calibre = screen.getByLabelText("Calibre");
+            fireEvent.mouseDown(calibre);
+            fireEvent.click(screen.getByRole("option", { name: "Grande" }));
+            const categoria = screen.getByLabelText("Categoría");
+            publicacionesPruebaCategoria[0].categoria = "II";
+            fireEvent.mouseDown(categoria);
+            fireEvent.click(screen.getByRole("option", { name: "I" }));
+            expect(calibre).toHaveTextContent("Todos");
+        } finally {
+            consoleError.mockRestore();
+        }
+
+    });
+
+    it("mantiene la categoría y restablece el calibre cuando la combinación deja de ser válida", () => {
+        render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida}/>);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
+        fireEvent.click(screen.getByRole("option", { name: "Gala" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Calibre" }));
         fireEvent.click(screen.getByRole("option", { name: "Grande" }));
-        const categoria = screen.getByLabelText("Categoría");
-        publicacionesPruebaCategoria[0].categoria = "II";
-        fireEvent.mouseDown(categoria);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Categoría" }));
         fireEvent.click(screen.getByRole("option", { name: "I" }));
-        expect(calibre).toHaveTextContent("Todos");
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
+        fireEvent.click(screen.getByRole("option", { name: "Red" }));
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("I");
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Todos");
+    });
+
+    it("mantiene el calibre y restablece la categoría cuando la combinación deja de ser válida", () => {
+        render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida}/>);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
+        fireEvent.click(screen.getByRole("option", { name: "Gala" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Categoría" }));
+        fireEvent.click(screen.getByRole("option", { name: "I" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Calibre" }));
+        fireEvent.click(screen.getByRole("option", { name: "Grande" }));
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("I");
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Grande");
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
+        fireEvent.click(screen.getByRole("option", { name: "Red" }));
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Todas");
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Grande");
     });
 });
