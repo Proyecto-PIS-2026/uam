@@ -44,9 +44,9 @@ export default function Drawer({ isOpen, onClose, children }: Props) {
                     sm:top-0
                     sm:h-full
                     sm:max-h-none
-                    sm:w-[560px]
+                    sm:w-[460px]
                     sm:rounded-none
-                    lg:w-[680px]
+                    lg:w-[500px]
                 "
                 onClick={(e) => e.stopPropagation()}
             >

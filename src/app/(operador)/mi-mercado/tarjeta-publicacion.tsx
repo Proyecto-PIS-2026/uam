@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-// import Link from "next/link";
 import type { Publicacion } from "./mi-mercado";
 import Detalle from "./[id]/detalle-publicacion";
 import Drawer from "@/compartido/drawer";
@@ -12,162 +11,379 @@ type Props = {
     incrementoPrecio: number;
 };
 
-export default function TarjetaPublicacion({ pub, incrementoPrecio }: Props) {
+export default function TarjetaPublicacion({
+    pub,
+    incrementoPrecio,
+}: Props) {
     let precioInicial = 0;
+
     if (Number(pub.precio)) {
         precioInicial = Number(pub.precio);
     }
-    const [precio, setPrecio] = useState(precioInicial);
-    const [estaAbierto, setEstaAbierto] = useState(false)
 
-    function restar() {
-        const nuevoPrecio = Math.max(0, precio - incrementoPrecio)
+    const [precio, setPrecio] = useState(precioInicial);
+    const [estaAbierto, setEstaAbierto] = useState(false);
+
+    const [editandoPrecio, setEditandoPrecio] = useState(false);
+    const [precioTemporal, setPrecioTemporal] = useState(
+        String(precioInicial)
+    );
+
+    function cambiarPrecio(nuevoPrecio: number) {
+        if (!Number.isFinite(nuevoPrecio) || nuevoPrecio < 0) {
+            return;
+        }
+
         setPrecio(nuevoPrecio);
         actualizarPrecio(pub.id, nuevoPrecio);
+    }
+
+    function restar() {
+        const nuevoPrecio = Math.max(
+            0,
+            precio - incrementoPrecio
+        );
+
+        cambiarPrecio(nuevoPrecio);
     }
 
     function sumar() {
-        const nuevoPrecio = precio + incrementoPrecio;
-        setPrecio(nuevoPrecio);
-        actualizarPrecio(pub.id, nuevoPrecio);
+        const nuevoPrecio =
+            precio + incrementoPrecio;
+
+        cambiarPrecio(nuevoPrecio);
     }
 
-    const variedad = pub.presentacion.variedad.nombreVariedad;
-    const especie = pub.presentacion.variedad.especie.nombreEspecie;
-    const presentacion = pub.presentacion.nombrePresentacion;
-    const categoria = pub.categoria.nombreCategoria;
-    const calibre = pub.calibre.nombreCalibre;
+    function comenzarEdicionPrecio() {
+        setPrecioTemporal(String(precio));
+        setEditandoPrecio(true);
+    }
+
+    function guardarPrecioManual() {
+        const texto =
+            precioTemporal.trim().replace(",", ".");
+
+        if (texto === "") {
+            setPrecioTemporal(String(precio));
+            setEditandoPrecio(false);
+            return;
+        }
+
+        const nuevoPrecio = Number(texto);
+
+        if (
+            !Number.isFinite(nuevoPrecio) ||
+            nuevoPrecio < 0
+        ) {
+            setPrecioTemporal(String(precio));
+            setEditandoPrecio(false);
+            return;
+        }
+
+        cambiarPrecio(nuevoPrecio);
+        setEditandoPrecio(false);
+    }
+
+    function cancelarEdicionPrecio() {
+        setPrecioTemporal(String(precio));
+        setEditandoPrecio(false);
+    }
+
+    const variedad =
+        pub.presentacion.variedad.nombreVariedad;
+
+    const especie =
+        pub.presentacion.variedad.especie.nombreEspecie;
+
+    const presentacion =
+        pub.presentacion.nombrePresentacion;
+
+    const categoria =
+        pub.categoria.nombreCategoria;
+
+    const calibre =
+        pub.calibre.nombreCalibre;
 
     const tieneVariedad =
-        pub.presentacion.variedad.nombreVariedad &&
-        pub.presentacion.variedad.nombreVariedad.trim() !== "" &&
-        pub.presentacion.variedad.nombreVariedad.trim() !== "-";
+        variedad &&
+        variedad.trim() !== "" &&
+        variedad.trim() !== "-";
+
+    const nombreProducto = tieneVariedad
+        ? `${especie} · ${variedad}`
+        : especie;
 
     return (
-        <div className="flex min-h-28 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            {/* Foto */}
-            <div className="w-28 shrink-0 bg-gray-100 sm:w-32">
-                {pub.foto ? (
-                    <img
-                        src={pub.foto}
-                        alt={`${especie}${
-                            tieneVariedad
-                                ? ` ${variedad}`
-                                : ""
-                        }`}
-                        className="h-full w-full object-cover"
-                    />
-                ) : pub.presentacion.variedad.especie.fotoEspecie ? (
-                    <img
-                        src={pub.presentacion.variedad.especie.fotoEspecie}
-                        alt={especie}
-                        className="h-full w-full object-cover opacity-70"
-                    />
-                ) : (
-                    <div className="flex h-full min-h-28 items-center justify-center px-2 text-center text-xs font-medium text-gray-400">
-                        Sin fotografía
-                    </div>
-                )}
-            </div>
+        <>
+            <div
+                className="
+                    flex min-h-28 overflow-hidden
+                    rounded-2xl border border-border
+                    bg-surface shadow-sm
 
-            <div className="flex min-w-0 flex-1 flex-col">
+                    md:min-h-0
+                    md:flex-col
+                    md:transition-all
+                    md:duration-150
+                    md:hover:-translate-y-0.5
+                    md:hover:border-primary
+                    md:hover:shadow-md
+                "
+            >
+                {/* Foto */}
                 <button
                     type="button"
                     onClick={() => setEstaAbierto(true)}
-                    className="flex min-w-0 flex-1 hover:bg-gray-50"
+                    className="
+                        w-28 shrink-0
+                        overflow-hidden
+                        bg-primary-soft
+                        text-left
+                        sm:w-32
+                        md:aspect-[8/5]
+                        md:w-full
+                    "
+                    aria-label={`Ver detalle de ${nombreProducto}`}
                 >
-                    {/* Información */}
-                    <div className="flex min-w-0 flex-1 flex-col">
+                    {pub.foto ? (
+                        <img
+                            src={pub.foto}
+                            alt={nombreProducto}
+                            className="h-full w-full object-cover"
+                        />
+                    ) : pub.presentacion.variedad.especie
+                          .fotoEspecie ? (
+                        <img
+                            src={
+                                pub.presentacion.variedad.especie
+                                    .fotoEspecie
+                            }
+                            alt={especie}
+                            className="h-full w-full object-cover opacity-70"
+                        />
+                    ) : (
+                        <div
+                            className="
+                                flex h-full min-h-28
+                                items-center justify-center
+                                bg-primary-soft
+                                px-2 text-center
+                                text-xs font-medium
+                                text-secondary
+                            "
+                        >
+                            Sin fotografía
+                        </div>
+                    )}
+                </button>
 
-                        {/* Datos principales */}
-                        <div className="flex-1 p-3 sm:p-4">
-                            <div className="flex items-start justify-between gap-2">
+                {/* Contenido */}
+                <div className="flex min-w-0 flex-1 flex-col">
 
-                                <div className="min-w-0">
-                                    <h3 className="truncate text-base font-bold text-foreground sm:text-lg">
-                                        {especie}
-                                        {tieneVariedad &&
-                                            ` · ${variedad}`}
-                                    </h3>
+                    {/* Información clickeable */}
+                    <button
+                        type="button"
+                        onClick={() => setEstaAbierto(true)}
+                        className="
+                            flex min-w-0 flex-1
+                            text-left
+                            hover:bg-primary-soft/30
+                        "
+                    >
+                        <div
+                            className="
+                                flex min-w-0 flex-1
+                                flex-col p-3
+                                sm:p-4
+                                md:p-3
+                            "
+                        >
+                            {/* Nombre + estado */}
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 
-                                    <p className="mt-1 text-xs leading-5 text-gray-500 sm:text-sm">
-                                        Cat {categoria ||
-                                            "-"}{" "}
-                                        ·{" "}
-                                        {calibre ||
-                                            "-"}{" "}
-                                        ·{" "}
-                                        {presentacion ||
-                                            "-"}
-                                    </p>
-                                </div>
-                                <span
-                                    className="text-xs text-gray-400 hover:text-gray-500"
+                                <h3
+                                    className="
+                                        min-w-0 flex-1
+                                        text-base font-bold
+                                        leading-tight
+                                        text-foreground
+                                        md:text-[1rem]
+                                    "
+                                    title={nombreProducto}
                                 >
-                                    Editar
-                                </span>
+                                    {nombreProducto}
+                                </h3>
+
                                 <span
-                                    className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold sm:text-xs ${
-                                        pub.publicacionDisponible
-                                            ? "bg-green-50 text-secondary"
-                                            : "bg-gray-100 text-gray-500"
-                                    }`}
+                                    className={`
+                                        w-fit shrink-0 rounded-full
+                                        px-2 py-1
+                                        text-[10px] font-bold
+                                        ${
+                                            pub.publicacionDisponible
+                                                ? "bg-primary-soft text-secondary"
+                                                : "bg-gray-100 text-muted"
+                                        }
+                                    `}
                                 >
                                     {pub.publicacionDisponible
                                         ? "Disponible"
                                         : "No disponible"}
                                 </span>
                             </div>
-                        </div>
-                    </div>
-                </button>
 
-                {/* Precio */}
-                <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2 sm:px-4">
-                    <div>
-                        
+                            {/* Datos */}
+                            <p className="mt-2 text-xs leading-5 text-muted">
+                                {calibre || "-"}
+                                {" · "}
+                                Cat. {categoria || "-"}
+                                {" · "}
+                                {presentacion || "-"}
+                            </p>
+                        </div>
+                    </button>
+
+                    {/* Precio */}
+                    <div
+                        className="
+                            flex items-center
+                            justify-between
+                            border-t border-border
+                            px-3 py-2.5
+                        "
+                    >
                         <div className="flex items-center gap-2">
+
                             <button
                                 type="button"
-                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-white font-bold text-xl"
+                                className="
+                                    flex h-8 w-8
+                                    items-center justify-center
+                                    rounded-lg
+                                    bg-secondary
+                                    text-xl font-bold
+                                    text-white
+                                    transition
+                                    hover:bg-primary-hover
+                                "
                                 onClick={restar}
+                                aria-label="Disminuir precio"
                             >
                                 −
                             </button>
-                            <p className="min-w-18 text-center text-xl font-extrabold text-foreground">
-                                {precio === 0 ?
-                                    "Sin precio" : 
-                                    `$${precio}`}
-                            </p>
-                            <button 
+
+                            {editandoPrecio ? (
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={precioTemporal}
+                                    onChange={(e) =>
+                                        setPrecioTemporal(
+                                            e.target.value
+                                        )
+                                    }
+                                    onBlur={
+                                        guardarPrecioManual
+                                    }
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            guardarPrecioManual();
+                                        }
+
+                                        if (e.key === "Escape") {
+                                            e.preventDefault();
+                                            cancelarEdicionPrecio();
+                                        }
+                                    }}
+                                    className="
+                                        w-20 rounded-lg
+                                        border border-primary
+                                        bg-surface
+                                        px-2 py-1
+                                        text-center
+                                        text-lg font-extrabold
+                                        text-foreground
+                                        outline-none
+                                        focus:ring-2
+                                        focus:ring-primary/20
+                                    "
+                                    aria-label="Editar precio"
+                                />
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={
+                                        comenzarEdicionPrecio
+                                    }
+                                    className="
+                                        min-w-16
+                                        cursor-text
+                                        text-center
+                                        text-xl font-extrabold
+                                        text-foreground
+                                        hover:underline
+                                    "
+                                    title="Editar precio"
+                                >
+                                    {precio === 0
+                                        ? "Sin precio"
+                                        : `$${precio}`}
+                                </button>
+                            )}
+
+                            <button
                                 type="button"
-                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-white font-bold text-xl"
+                                className="
+                                    flex h-8 w-8
+                                    items-center justify-center
+                                    rounded-lg
+                                    bg-secondary
+                                    text-xl font-bold
+                                    text-white
+                                    transition
+                                    hover:bg-primary-hover
+                                "
                                 onClick={sumar}
+                                aria-label="Aumentar precio"
                             >
                                 +
                             </button>
                         </div>
-                    </div>
 
-                    {/* Más adelante:
-                        acceso al detalle de BP-07.2
-                    */}
-                    <span className="text-xl text-secondary">
-                        ›
-                    </span>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setEstaAbierto(true)
+                            }
+                            className="
+                                text-xl font-bold
+                                text-secondary
+                                hover:text-primary
+                            "
+                            aria-label={`Ver detalle de ${nombreProducto}`}
+                        >
+                            ›
+                        </button>
+                    </div>
                 </div>
             </div>
+
             <Drawer
                 isOpen={estaAbierto}
-                onClose={() => setEstaAbierto(false)}
+                onClose={() =>
+                    setEstaAbierto(false)
+                }
             >
                 <Detalle
                     pub={pub}
                     precio={precio}
                     restar={restar}
                     sumar={sumar}
+                    cambiarPrecio={cambiarPrecio}
                 />
             </Drawer>
-        </div>
+        </>
     );
 }
