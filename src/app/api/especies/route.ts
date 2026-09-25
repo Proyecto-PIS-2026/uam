@@ -1,4 +1,4 @@
-import { obtenerEspeciesConPublicacionesActivas } from "@/infraestructura/persistencia/prisma/especies";
+import { obtenerEspeciesConPublicacionesActivas } from "@/modulos/consulta-mercado/inicio/consultas-inicio";
 import { NextResponse } from "next/server";
 
 export async function GET() {
