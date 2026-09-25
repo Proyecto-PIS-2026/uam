@@ -8,6 +8,7 @@ export type CambiosPublicacionOperador = {
     categoriaId: number;
     calibreId: number;
     presentacionId: number;
+    disponible: boolean;
 };
 
 export class ErrorEdicionPublicacion extends Error {
@@ -28,6 +29,10 @@ export async function modificarPublicacionOperador(
 
     if (cambios === null || typeof cambios !== "object" || Array.isArray(cambios)) {
         throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Los cambios no son válidos.");
+    }
+
+    if (typeof cambios.disponible !== "boolean") {
+        throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La disponibilidad no es válida.");
     }
 
     let precioParaGuardar: PrecioDb = null;
@@ -124,7 +129,8 @@ export async function modificarPublicacionOperador(
                 foto: cambios.foto,
                 categoriaId: cambios.categoriaId,
                 calibreId: cambios.calibreId,
-                presentacionId: cambios.presentacionId
+                presentacionId: cambios.presentacionId,
+                publicacionDisponible: cambios.disponible,
             });
 
         return {
