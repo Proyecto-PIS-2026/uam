@@ -41,6 +41,8 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
     const [categoria, setCategoria] = useState("Todas");        // Filtro Categoria
     const [calibre, setCalibre] = useState("Todas");            // Filtro Calibre
 
+    const [ultimaFaceta, setUltimaFaceta] = useState<"categoria" | "calibre" | null>(null);
+
     // Mostrar Filtros extendidos
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
@@ -127,12 +129,21 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
 
     // Ajuste de filtros de Categoria y Calibre
     const ajustarFiltrosCategoriaCalibre = (publicacionesBase: PublicacionListado[]) => {
-        const categoriaValida = categoria === "Todas" || publicacionesBase.some((publicacion) =>
-            publicacion.categoria === categoria && (calibre === "Todas" || publicacion.calibre === calibre));
+        const categoriaValida = categoria === "Todas" || publicacionesBase.some((publicacion) => 
+            publicacion.categoria === categoria);
         const calibreValido = calibre === "Todas" || publicacionesBase.some((publicacion) => 
-            publicacion.calibre === calibre && (categoria === "Todas" || publicacion.categoria === categoria));
-        if (!categoriaValida) setCategoria("Todas")
+            publicacion.calibre === calibre);
+        if (!categoriaValida) setCategoria("Todas");
         if (!calibreValido) setCalibre("Todas");
+        if (categoriaValida && calibreValido && categoria !== "Todas" && calibre !== "Todas"
+        ) {
+            const combinacionValida = publicacionesBase.some((publicacion) =>
+                publicacion.categoria === categoria && publicacion.calibre === calibre);
+            if (!combinacionValida) {
+                if (ultimaFaceta === "categoria") setCalibre("Todas");
+                if (ultimaFaceta === "calibre") setCategoria("Todas");
+            }
+        }
     };
 
     // Busqueda de precios y Debounce
@@ -142,6 +153,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
             setPrecioMinimoAplicado(precioMinimo);
             setPrecioMaximoAplicado(precioMaximo);
         }, 750);
+        
         return () => { clearTimeout(temporizador) };
     }, [busqueda, precioMinimo, precioMaximo]);
 
@@ -150,6 +162,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
         if (a.precio == null && b.precio == null) return 0;
         if (a.precio == null) return 1;
         if (b.precio == null) return -1;
+
         return ascendente ? a.precio - b.precio : b.precio - a.precio;
     }; 
 
@@ -184,9 +197,9 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                 );
                 if (!coincide) return false;
             }
-
             if (minimo !== null && !Number.isNaN(minimo) && (publicacion.precio == null || publicacion.precio < minimo)) return false;
             if (maximo !== null && !Number.isNaN(maximo) && (publicacion.precio == null || publicacion.precio > maximo)) return false;
+
             return true;
         });
 
@@ -197,6 +210,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
             return [...filtradas].sort((a, b) => {
                 const especie = a.especie.localeCompare(b.especie);
                 if (especie !== 0) return especie;
+
                 return a.variedad.localeCompare(b.variedad);
             });
         }
@@ -204,9 +218,11 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
             return [...filtradas].sort((a, b) => {
                 const especie = b.especie.localeCompare(a.especie);
                 if (especie !== 0) return especie;
+
                 return b.variedad.localeCompare(a.variedad);
             });
         }
+
         return filtradas;
     }, [publicaciones, especie, variedad, presentacion, categoria, calibre, busquedaAplicada, precioMinimoAplicado, precioMaximoAplicado, orden]);
     
@@ -241,14 +257,10 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
     // Manejador para el cambio de Especie
     const manejarCambioEspecie = (nuevaEspecie: string) => {
         let publicacionesBase = publicaciones;
-
         if (nuevaEspecie !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.especie === nuevaEspecie);
-
         const variedadesNuevas = [...new Set(publicacionesBase.map((p) => p.variedad))].sort();
-
         const nuevaVariedad =  nuevaEspecie !== "Todas" && variedadesNuevas.length === 1 && variedadesNuevas[0] === "-" ? "-" : "Todas";
         const nuevaPresentacion = "Todas";
-
         const publicacionesNuevas = obtenerPublicacionesJerarquia(nuevaEspecie, nuevaVariedad, nuevaPresentacion);
         ajustarFiltrosCategoriaCalibre(publicacionesNuevas);
         setEspecie(nuevaEspecie);
@@ -274,21 +286,19 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
 
     // Manejador para el cambio de Categoria
     const manejarCambioCategoria = (nuevaCategoria: string) => {
-        const calibreValido =
-            nuevaCategoria === "Todas" ||
-            calibre === "Todas" ||
-            publicacionesSegunJerarquia.some((publicacion) => publicacion.categoria === nuevaCategoria && publicacion.calibre === calibre);
+        const calibreValido = nuevaCategoria === "Todas" || calibre === "Todas" || publicacionesSegunJerarquia.some((publicacion) =>
+            publicacion.categoria === nuevaCategoria && publicacion.calibre === calibre);
         setCategoria(nuevaCategoria);
+        setUltimaFaceta("categoria");
         if (!calibreValido) setCalibre("Todas");
     };
 
     // Manejador para el cambio de Calibre
     const manejarCambioCalibre = (nuevoCalibre: string) => {
-        const categoriaValida =
-            nuevoCalibre === "Todas" ||
-            categoria === "Todas" ||
-            publicacionesSegunJerarquia.some((publicacion) => publicacion.calibre === nuevoCalibre && publicacion.categoria === categoria);
+        const categoriaValida = nuevoCalibre === "Todas" || categoria === "Todas" || publicacionesSegunJerarquia.some( (publicacion) => 
+            publicacion.calibre === nuevoCalibre && publicacion.categoria === categoria);
         setCalibre(nuevoCalibre);
+        setUltimaFaceta("calibre");
         if (!categoriaValida) setCategoria("Todas");
     };
 
