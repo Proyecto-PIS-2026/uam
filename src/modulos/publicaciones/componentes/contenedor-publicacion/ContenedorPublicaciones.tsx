@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
 //import FiltrosPublicaciones from "./../filtrosPublicaciones";
-import ListadoPublicaciones from "../listado-publicaciones/ListadoPublicacionesUnificado";
+import ListadoPublicaciones from "../listado-publicaciones/listadoPublicacionesUnificado";
 
 type PropiedadesContenedorPublicaciones = {
   publicaciones: PublicacionListado[];
