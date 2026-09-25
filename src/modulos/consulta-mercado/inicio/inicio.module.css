@@ -110,6 +110,21 @@
     }
 }
 
+.tituloMobile {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .tituloMobile {
+    display: block;
+    padding: 1.25rem 1rem 0;
+    color: black;
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+}
+
 .accesos {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

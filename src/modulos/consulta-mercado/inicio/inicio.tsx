@@ -57,6 +57,8 @@ export default function Inicio({ especies }: Props) {
             <Header />
             <HojasDecorativas variante="fondo" className={styles.hojasPagina} />
 
+
+            <h1 className={styles.tituloMobile}>Mercado de hoy</h1>
             <section className={styles.hero} aria-labelledby="titulo-home">
                 <div className={styles.heroTexto}>
                     <h1 className={styles.heroTitulo} id="titulo-home">Mercado de hoy</h1>
