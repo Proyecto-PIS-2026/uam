@@ -32,11 +32,11 @@ export default function Drawer({ isOpen, onClose, children }: Props) {
             <div
                 className="
                     absolute bottom-0 left-0 right-0
-                    max-h-[85dvh]
+                    max-h-[70dvh]
                     overflow-y-auto
                     rounded-t-2xl
                     bg-surface
-                    px-6 pb-6 pt-14
+                    px-6 pb-2 pt-5
 
                     sm:bottom-auto
                     sm:left-auto
