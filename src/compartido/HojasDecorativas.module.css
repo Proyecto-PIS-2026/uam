@@ -7,6 +7,11 @@
   user-select: none;
 }
 
+.patron {
+  position: relative;
+  height: 66rem;
+}
+
 .motivo {
   position: absolute;
   display: block;
@@ -131,7 +136,7 @@
 }
 
 .fondo .motivoUno {
-  top: 8rem;
+  top: 2rem;
   left: -3rem;
   --ancho: 12rem;
   --alto: 12rem;
@@ -139,7 +144,7 @@
 }
 
 .fondo .motivoDos {
-  top: 22rem;
+  top: 12rem;
   right: -2rem;
   --ancho: 11rem;
   --alto: 13rem;
@@ -147,7 +152,7 @@
 }
 
 .fondo .motivoTres {
-  top: 48%;
+  top: 22rem;
   left: -3rem;
   --ancho: 10rem;
   --alto: 15rem;
@@ -155,7 +160,7 @@
 }
 
 .fondo .motivoCuatro {
-  top: 68%;
+  top: 32rem;
   right: -3rem;
   --ancho: 11rem;
   --alto: 11rem;
@@ -163,7 +168,7 @@
 }
 
 .fondo .motivoCinco {
-  bottom: 13rem;
+  top: 42rem;
   left: -3rem;
   --ancho: 10rem;
   --alto: 12rem;
@@ -171,8 +176,8 @@
 }
 
 .fondo .motivoSeis {
+  top: 52rem;
   right: 2%;
-  bottom: -3rem;
   --ancho: 10rem;
   --alto: 14rem;
   --giro: 22deg;
@@ -214,8 +219,8 @@
 }
 
 @media (max-width: 767px) {
-  .fondo .motivoUno { top: 21rem; left: -4rem; --ancho: 9rem; --alto: 9rem; }
-  .fondo .motivoDos { top: 28rem; right: -4rem; --ancho: 9rem; --alto: 11rem; }
+  .fondo .motivoUno { left: -4rem; --ancho: 9rem; --alto: 9rem; }
+  .fondo .motivoDos { right: -4rem; --ancho: 9rem; --alto: 11rem; }
   .fondo .motivoTres { left: -4rem; --ancho: 8rem; --alto: 12rem; }
   .fondo .motivoCuatro { right: -4rem; --ancho: 9rem; --alto: 9rem; }
   .fondo .motivoCinco { left: -4rem; --ancho: 8rem; --alto: 10rem; }
