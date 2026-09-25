@@ -4,7 +4,19 @@ import styles from "./HeaderPublico.module.css";
 import HeaderPublico from "./HeaderPublico";
 
 vi.mock("next/navigation", () => ({ usePathname: vi.fn() }));
-vi.mock("next/image", () => ({ default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (<img {...props}/>) }));
+vi.mock("next/image", () => ({
+    default: ({
+        alt,
+        src,
+        className,
+    }: {
+        alt?: string;
+        src?: string;
+        className?: string;
+    }) => (
+        <span role="img" aria-label={alt} data-src={src} className={className}/>
+    ),
+}));
 vi.mock("next/link", () => ({ default: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (<a {...props}>{children}</a>) }));
 vi.mock("@mui/icons-material/Menu", () => ({ default: () => <span data-testid="menu-icon"/> }));
 vi.mock("@mui/icons-material/Close", () => ({ default: () => <span data-testid="close-icon"/> }));
@@ -16,7 +28,7 @@ describe("HeaderPublico", () => {
 
     it("renderiza el logo y las opciones del menú", () => {
         render(<HeaderPublico/>);
-        expect(screen.getByAltText("Unidad Agroalimentaria Metropolitana")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Unidad Agroalimentaria Metropolitana" })).toHaveAttribute("data-src", "/Logo.PNG");
         expect(screen.getAllByRole("link", { name: "Inicio" })).toHaveLength(2);
         expect(screen.getAllByRole("link", { name: "Catálogo" })).toHaveLength(2);
         expect(screen.getAllByRole("link", { name: "Listado de operadores" })).toHaveLength(2);
@@ -82,11 +94,21 @@ describe("HeaderPublico", () => {
         expect(screen.getAllByRole("link", { name: "Perfil público de operador" })[0]).toHaveAttribute("href", "/operadores/1");
         expect(screen.getAllByRole("link", { name: "Mi mercado" })[0]).toHaveAttribute("href", "/COMPLETAR-RUTA-MI-MERCADO");
     });
-
     it("el menú móvil tiene el atributo aria-controls correspondiente", () => {
         render(<HeaderPublico/>);
         const boton = screen.getByRole("button", { name: "Abrir menú" });
         expect(boton).toHaveAttribute("aria-controls", "menu-mobile");
         expect(screen.getByRole("navigation", { name: "Navegación móvil" })).toHaveAttribute("id", "menu-mobile");
+    });
+    it("cierra el menú móvil al hacer click sobre el overlay", () => {
+        const { container } = render(<HeaderPublico />);
+        const boton = screen.getByRole("button", { name: "Abrir menú" });
+        fireEvent.click(boton);
+        expect(screen.getByRole("button", { name: "Cerrar menú" })).toBeInTheDocument();
+        const overlay = container.querySelector(`.${styles.overlayMenu}`);
+        expect(overlay).toBeInTheDocument();
+        fireEvent.mouseDown(overlay!);
+        expect(screen.getByRole("button", { name: "Abrir menú" })).toBeInTheDocument();
+        expect(boton).toHaveAttribute("aria-expanded", "false");
     });
 });
