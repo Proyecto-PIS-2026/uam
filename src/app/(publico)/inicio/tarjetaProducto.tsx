@@ -1,5 +1,6 @@
 import Link from "next/link";
 const IMAGEN_POR_DEFECTO = "https://media.istockphoto.com/id/1396814518/es/vector/imagen-pr%C3%B3ximamente-sin-foto-sin-imagen-en-miniatura-disponible-ilustraci%C3%B3n-vectorial.jpg?s=612x612&w=0&k=20&c=aA0kj2K7ir8xAey-SaPc44r5f-MATKGN0X0ybu_A774=";
+export { IMAGEN_POR_DEFECTO };
 
 type Props = {
   nombre: string;
