@@ -35,6 +35,12 @@ export default function Inicio({ especies }: Props) {
   const indiceInicial = (paginaActual - 1) * especiesPorPagina;
   const indiceFinal = indiceInicial + especiesPorPagina;
   const especiesPagina = especiesActivas.slice(indiceInicial, indiceFinal);
+  const [favoritosSeleccionado, setFavoritosSeleccionado] = useState(false);
+  const volverAlInicio = () => {
+    setPaginaActual(1);
+    setFavoritosSeleccionado(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <main className="bg-[var(--color-background)] min-h-screen">
@@ -47,7 +53,7 @@ export default function Inicio({ especies }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
         <div className="flex justify-center px-6 py-4 md:py-10">
           <h1 className="text-7xl md:text-8xl font-extrabold leading-none text-left pt-7 md:pt-10 text-[var(--color-foreground)]">
-            <span className="text-[var(--color-secondary)]">Mercado</span>
+            <span className="text-[var(--color-primary)]">Mercado</span>
           <br />
             de hoy
           </h1>
@@ -98,10 +104,25 @@ export default function Inicio({ especies }: Props) {
 
         <div className="flex flex-row items-center justify-between mb-2">
           <div className="flex items-center gap-2 mb-2">
-            <button className="px-5 py-2 rounded-full bg-[var(--color-secondary)] text-white font-semibold text-sm">
+            <button
+              onClick={() => setFavoritosSeleccionado(false)}
+              className={`px-5 py-2 rounded-full font-semibold text-sm transition-all ${
+                !favoritosSeleccionado
+                  ? "bg-[var(--color-primary)] text-white"
+                  : "text-[var(--color-foreground)] hover:text-[var(--color-secondary)]"
+              }`}
+            >
               Todos
             </button>
-            <button className="px-2 font-medium text-sm text-[var(--color-foreground)]">
+
+            <button
+              onClick={() => setFavoritosSeleccionado(true)}
+              className={`px-5 py-2 rounded-full font-semibold text-sm transition-all ${
+                favoritosSeleccionado
+                  ? "bg-[var(--color-primary)] text-white"
+                  : "text-[var(--color-foreground)] hover:text-[var(--color-secondary)]"
+              }`}
+            >
               Favoritos
             </button>
           </div>
@@ -122,7 +143,7 @@ export default function Inicio({ especies }: Props) {
               className="w-full h-12 pl-11 pr-4 rounded-xl border border-gray-200/70 bg-white/70 text-[var(--color-foreground)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)]"
             />
           </div>
-          <button className="h-12 w-12 flex-shrink-0 flex items-center justify-center rounded-xl border border-[var(--color-secondary)] text-[var(--color-secondary)]">
+          <button className="h-12 w-12 flex-shrink-0 flex items-center justify-center rounded-xl border border-[var(--color-primary)] text-[var(--color-primary)]">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path d="M4 6h16M8 12h8M11 18h2" strokeLinecap="round" />
               <circle cx="14" cy="6" r="1.5" fill="currentColor" stroke="none" />
@@ -134,7 +155,7 @@ export default function Inicio({ especies }: Props) {
 
         <div className="flex justify-end items-center gap-2 mb-5">
           <span className="text-xs font-bold text-gray-500 tracking-wide">ORDENAR POR:</span>
-          <select className="text-sm font-bold text-[var(--color-secondary)] bg-transparent focus:outline-none">
+          <select className="text-sm font-bold text-[var(--color-primary)] bg-transparent focus:outline-none">
             <option>...</option>
             <option>...</option>
             <option>...</option>
@@ -164,60 +185,72 @@ export default function Inicio({ especies }: Props) {
      {/* ================================================= */
       /* == ANTERIOR / SELECTOR DE PAGINA / SIGUIENTE  === */
       /* ================================================= */}
-        <div className="flex justify-center items-center gap-2 mt-8">
-          <button
-            onClick={() => setPaginaActual(paginaActual - 1)}
-            disabled={paginaActual === 1}
-            className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-[var(--color-foreground)] disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ← Anterior
-          </button>
+          <div className="flex justify-center items-center gap-2 mt-8">
 
-          {/* Pagina anterior - Pagina actual - Paguina siguiente */}
-          {Array.from(
-            { length: Math.min(3, totalPaginas) },
-            (_, i) => Math.max(1, Math.min(paginaActual - 1, totalPaginas - 2)) + i
-          ).map((pagina) => (
             <button
-              key={pagina}
-              onClick={() => setPaginaActual(pagina)}
-              className={`w-10 h-10 rounded-lg font-semibold ${
-                paginaActual === pagina
-                  ? "bg-[var(--color-secondary)] text-white"
-                  : "bg-white border border-gray-300 text-[var(--color-foreground)]"
-              }`}
+              onClick={() => setPaginaActual(paginaActual - 1)}
+              disabled={paginaActual === 1}
+              className="boton-paginacion px-4 py-2"
             >
-              {pagina}
+              ← Anterior
             </button>
-          ))}
 
-          {/* ... */}
-          {totalPaginas > 4 && paginaActual < totalPaginas - 2 && (
-            <span className="px-1 text-gray-500">...</span>
-          )}
+            {/* Pagina anterior - Pagina actual - Pagina siguiente */}
+            {Array.from(
+              { length: Math.min(3, totalPaginas) },
+              (_, i) => Math.max(1, Math.min(paginaActual - 1, totalPaginas - 2)) + i
+            ).map((pagina) => (
+              <button
+                key={pagina}
+                onClick={() => setPaginaActual(pagina)}
+                className={
+                  paginaActual === pagina
+                    ? "w-10 h-10 rounded-lg font-semibold bg-[var(--color-secondary)] text-white"
+                    : "boton-paginacion w-10 h-10"
+                }
+              >
+                {pagina}
+              </button>
+            ))}
 
-          {/* Última página */}
-          {totalPaginas > 3 && paginaActual < totalPaginas - 1 && (
+            {/* ... */}
+            {totalPaginas > 4 && paginaActual < totalPaginas - 2 && (
+              <span className="px-1 text-gray-500">...</span>
+            )}
+
+            {/* Última página */}
+            {totalPaginas > 3 && paginaActual < totalPaginas - 1 && (
+              <button
+                onClick={() => setPaginaActual(totalPaginas)}
+                className={
+                  paginaActual === totalPaginas
+                    ? "w-10 h-10 rounded-lg font-semibold bg-[var(--color-secondary)] text-white"
+                    : "boton-paginacion w-10 h-10"
+                }
+              >
+                {totalPaginas}
+              </button>
+            )}
+
             <button
-              onClick={() => setPaginaActual(totalPaginas)}
-              className={`w-10 h-10 rounded-lg font-semibold ${
-                paginaActual === totalPaginas
-                  ? "bg-[var(--color-secondary)] text-white"
-                  : "bg-white border border-gray-300 text-[var(--color-foreground)]"
-              }`}
+              onClick={() => setPaginaActual(paginaActual + 1)}
+              disabled={paginaActual === totalPaginas}
+              className="boton-paginacion px-4 py-2"
             >
-              {totalPaginas}
+              Siguiente →
             </button>
-          )}
 
-          <button
-            onClick={() => setPaginaActual(paginaActual + 1)}
-            disabled={paginaActual === totalPaginas}
-            className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-[var(--color-foreground)] disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Siguiente →
-          </button>
-        </div>
+          </div>
+
+          {/* VOLVER AL INICIO */}
+          <div className="flex justify-center mt-1">
+            <button
+              onClick={volverAlInicio}
+              className="text-sm text-[var(--color-primary)] underline hover:text-[var(--color-secondary)] transition-colors"
+            >
+              Volver al inicio
+            </button>
+          </div>
         </>
         )}
       </section>
