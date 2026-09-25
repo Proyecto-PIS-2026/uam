@@ -7,7 +7,7 @@ const formatoPrecio = new Intl.NumberFormat("es-UY", {
     style: "currency",
     currency: "UYU",
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 2
 });
 
 type TarjetaPublicacionProps = {
@@ -15,12 +15,8 @@ type TarjetaPublicacionProps = {
     onClick: () => void;
 };
 
-export default function TarjetaPublicacionConOperador({
-    publicacion,
-    onClick,
-}: TarjetaPublicacionProps) {
+export default function TarjetaPublicacionConOperador({publicacion, onClick}: TarjetaPublicacionProps) {
     const nombreProducto = publicacion.variedad && publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
-
     const nombreOperador = publicacion.operador.nombreFantasia;
 
     return (
