@@ -9,7 +9,7 @@ interface Publicacion {
 }
 
 export default function TarjetaPublicacionConOperador({ publicacion, onClick }: Publicacion) {
-    const precioNumerico = Number(publicacion.precio);
+    const precioNumerico = publicacion.precio ? null : Number(publicacion.precio);
     const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
     const nombreOperador = publicacion.operador.nombreFantasia;
 
@@ -49,7 +49,9 @@ export default function TarjetaPublicacionConOperador({ publicacion, onClick }: 
                     </div>
 
                     <div className={styles.contenedorPrecio}>
-                        <span className={styles.precio}>${precioNumerico}</span>
+                        <span className={styles.precio}>
+                            {precioNumerico === null ? "Consultar precio" : `$${precioNumerico}`}
+                        </span>
                         <span className={styles.presentacionPrecio} title={`por ${publicacion.presentacion}`}>
                             por {publicacion.presentacion}
                         </span>

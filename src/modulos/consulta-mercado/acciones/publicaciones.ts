@@ -62,7 +62,7 @@ export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> 
     const filas = await db.runtime().query(plan);
     const publicaciones: PublicacionListado[] = filas.map((fila) => ({
         id: Number(fila.id),
-        precio: Number(fila.precio),
+        precio: fila.precio === null ? null : Number(fila.precio),
         foto: fila.foto,
         especie: fila.especie,
         variedad: fila.variedad,

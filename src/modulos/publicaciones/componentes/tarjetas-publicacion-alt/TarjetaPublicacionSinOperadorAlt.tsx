@@ -8,8 +8,8 @@ type TarjetaPublicacionProps = {
     onClick: () => void; 
 };
 
-export default function TarjetaPublicacionSinOperador({ publicacion, onClick }: TarjetaPublicacionProps) {
-    const precioNumerico = Number(publicacion.precio);
+export default function TarjetaPublicacionSinOperadorAlt({ publicacion, onClick }: TarjetaPublicacionProps) {
+    const precioNumerico = publicacion.precio ? Number(publicacion.precio) : null;
     const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
 
     const contenido = (
@@ -44,7 +44,9 @@ export default function TarjetaPublicacionSinOperador({ publicacion, onClick }: 
                     </div>
 
                     <div className={styles.contenedorPrecio}>
-                        <span className={styles.precio}>${precioNumerico}</span>
+                        <span className={styles.precio}>
+                            {precioNumerico === null ? "Consultar precio" : `$${precioNumerico}`}
+                        </span>
                         <span className={styles.presentacionPrecio}>por {publicacion.presentacion}</span>
                     </div>
                 </div>
