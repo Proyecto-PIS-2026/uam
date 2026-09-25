@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Drawer from "@mui/material/Drawer";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
@@ -180,13 +182,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </div>
                     </div>
 
-                    <div className={styles.resumen}>
-                        <div className={styles.datosProducto}>
-                            <strong className={styles.nombreProducto}>{especieSeleccionada?.nombre ?? publicacion.especie}</strong>
-                            <span className={styles.variedadProducto}>{variedadSeleccionada?.nombre ?? publicacion.variedad}</span>
-                        </div>
-                    </div>
-
                     <div className={styles.campo}>
                         <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
                         <input className={styles.entrada} id={`${idBase}-precio`} type="text" inputMode="decimal" placeholder="Ej. 185.00" value={precio} onChange={(evento) => setPrecio(evento.target.value)} />
@@ -194,41 +189,36 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                     </div>
 
                     <div className={styles.campo}>
-                        <label className={styles.etiqueta} htmlFor={`${idBase}-especie`}>Especie</label>
-                        <select className={styles.entrada} id={`${idBase}-especie`} value={especieId} onChange={(evento) => cambiarEspecie(Number(evento.target.value))} required>
-                            {especies.map((opcion) => <option key={opcion.id} value={opcion.id}>{opcion.nombre}</option>)}
-                        </select>
+                        <TextField select label="Especie" id={`${idBase}-especie`} value={especieId} onChange={(evento) => cambiarEspecie(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
+                            {especies.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                        </TextField>
                     </div>
 
                     <div className={styles.campo}>
-                        <label className={styles.etiqueta} htmlFor={`${idBase}-variedad`}>Variedad</label>
-                        <select className={styles.entrada} id={`${idBase}-variedad`} value={variedadId} onChange={(evento) => cambiarVariedad(Number(evento.target.value))} required>
-                            {variedadesDisponibles.length === 0 && <option value={0}>Sin variedades disponibles</option>}
-                            {variedadesDisponibles.map((opcion) => <option key={opcion.id} value={opcion.id}>{opcion.nombre}</option>)}
-                        </select>
+                        <TextField select label="Variedad" id={`${idBase}-variedad`} value={variedadId} onChange={(evento) => cambiarVariedad(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
+                            {variedadesDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin variedades disponibles</MenuItem>}
+                            {variedadesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                        </TextField>
                     </div>
 
                     <div className={styles.campo}>
-                        <label className={styles.etiqueta} htmlFor={`${idBase}-presentacion`}>Presentación</label>
-                        <select className={styles.entrada} id={`${idBase}-presentacion`} value={presentacionId} onChange={(evento) => setPresentacionId(Number(evento.target.value))} required>
-                            {presentacionesDisponibles.length === 0 && <option value={0}>Sin presentaciones disponibles</option>}
-                            {presentacionesDisponibles.map((opcion) => <option key={opcion.id} value={opcion.id}>{opcion.nombre}</option>)}
-                        </select>
+                        <TextField select label="Presentación" id={`${idBase}-presentacion`} value={presentacionId} onChange={(evento) => setPresentacionId(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
+                            {presentacionesDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin presentaciones disponibles</MenuItem>}
+                            {presentacionesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                        </TextField>
                     </div>
 
                     <div className={styles.rejilla}>
                         <div className={styles.campo}>
-                            <label className={styles.etiqueta} htmlFor={`${idBase}-categoria`}>Categoría</label>
-                            <select className={styles.entrada} id={`${idBase}-categoria`} value={categoriaId} onChange={(evento) => setCategoriaId(Number(evento.target.value))} required>
-                                {categoriasDisponibles.length === 0 && <option value={0}>Sin categorías disponibles</option>}
-                                {categoriasDisponibles.map((opcion) => <option key={opcion.id} value={opcion.id}>{opcion.nombre}</option>)}
-                            </select>
+                            <TextField select label="Categoría" id={`${idBase}-categoria`} value={categoriaId} onChange={(evento) => setCategoriaId(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
+                                {categoriasDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin categorías disponibles</MenuItem>}
+                                {categoriasDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                            </TextField>
                         </div>
                         <div className={styles.campo}>
-                            <label className={styles.etiqueta} htmlFor={`${idBase}-calibre`}>Calibre</label>
-                            <select className={styles.entrada} id={`${idBase}-calibre`} value={calibreId} onChange={(evento) => setCalibreId(Number(evento.target.value))} required>
-                                {calibres.map((opcion) => <option key={opcion.id} value={opcion.id}>{opcion.nombre}</option>)}
-                            </select>
+                            <TextField select label="Calibre" id={`${idBase}-calibre`} value={calibreId} onChange={(evento) => setCalibreId(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
+                                {calibres.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                            </TextField>
                         </div>
                     </div>
 

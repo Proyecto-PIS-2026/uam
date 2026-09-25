@@ -63,7 +63,6 @@
 }
 
 .cerrar:focus-visible,
-.entrada:focus-visible,
 .botonFoto:focus-visible,
 .cancelar:focus-visible,
 .guardar:focus-visible {
@@ -173,41 +172,6 @@
     white-space: nowrap;
 }
 
-.resumen {
-    display: flex;
-    align-items: center;
-    gap: 0.875rem;
-    min-width: 0;
-    padding: 0.875rem;
-    border-radius: 1rem;
-    background: var(--color-primary-soft);
-}
-
-.datosProducto {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.nombreProducto,
-.variedadProducto {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.nombreProducto {
-    font-size: 1rem;
-    font-weight: 700;
-    line-height: 1.4;
-}
-
-.variedadProducto {
-    color: var(--color-muted);
-    font-size: 0.875rem;
-    line-height: 1.4;
-}
-
 .campo {
     display: flex;
     flex-direction: column;
@@ -234,12 +198,60 @@
 }
 
 .entrada:focus {
+    outline: none;
     border-color: var(--color-primary);
+    border-width: 2px;
 }
 
 .entrada:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.selectMui {
+    width: 100%;
+}
+
+.selectMui :global(.MuiOutlinedInput-root) {
+    height: 3rem;
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 1rem;
+}
+
+.selectMui :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputLabel-root) {
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+.selectMui :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
+.selectMui :global(.MuiSelect-icon) {
+    color: var(--color-muted);
+}
+
+.opcionSelect {
+    color: var(--color-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 1rem;
+}
+
+.opcionSelect:global(.Mui-selected),
+.opcionSelect:global(.Mui-selected:hover),
+.opcionSelect:global(.Mui-focusVisible) {
+    background: var(--color-primary-soft) !important;
+    color: var(--color-secondary);
 }
 
 .ayuda {
