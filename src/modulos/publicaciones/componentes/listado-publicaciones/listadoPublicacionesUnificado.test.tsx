@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
+import type { SwipeableDrawerProps } from "@mui/material/SwipeableDrawer";
 import ListadoPublicaciones from "./listadoPublicacionesUnificado";
 
 function crearPublicacion(
@@ -76,7 +77,7 @@ function publicacionesDeEjemplo() {
 }
 
 describe("ListadoPublicaciones", () => {
-  it("informa cuando no hay resultados", () => {
+it("informa cuando no hay resultados", () => {
     render(<ListadoPublicaciones publicaciones={[]} />);
 
     expect(screen.getByRole("status")).toHaveTextContent(
@@ -237,3 +238,6 @@ describe("ListadoPublicaciones", () => {
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
 });
+
+
+

@@ -1,0 +1,206 @@
+.drawer {
+    height: 100dvh !important;
+    max-height: 100dvh;
+    width: 26.25rem;
+    max-width: 50vw;
+    background-color: var(--color-surface); 
+    color: var(--color-foreground);
+}
+
+.tarjeta {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+}
+
+.tarjeta::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    height: 18rem;
+    border-radius: 0.75rem; 
+    background-color: var(--color-primary-soft)
+}
+
+.bloqueSuperior {
+    display: flex;
+    height: 18rem; 
+    justify-content: center;
+    align-items: center;
+}
+
+.contenedorImagen {
+    position: relative; 
+    width: 20rem;
+    height: 14rem;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1rem #0002;
+    background-color: var(--color-surface);
+}
+
+.imagen {
+    object-fit: cover;
+    object-position: center;
+}
+
+.sinFoto {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    color: var(--color-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.iconoFoto {
+    font-size: 1.7rem !important;
+}
+
+.bloqueSuperiorDerecho {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 1rem; 
+    margin-top: 1rem;
+}
+
+.nombrePublicacion {
+    height: 6rem; 
+    display: flex; 
+    flex-direction: column;
+    justify-content: center;
+}
+
+.especie,
+.variedad,
+.precio {
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+    color: var(--color-secondary);
+}
+
+.especie {
+    font-weight: 650; 
+}
+
+.variedad {
+    font-weight: 550; 
+}
+
+.precio {
+    display: flex;
+    align-self: flex-end;
+    height: 4rem;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: flex-end; 
+    font-size: 3rem; 
+    font-weight: 650; 
+}
+
+.bloqueMedio {
+    display:flex; 
+    flex-direction: column;
+    min-width: 0;
+    gap: 1rem; 
+}
+
+.informacionDetallada {
+    display:flex; 
+    border-bottom: 0.01rem solid #cccccccc;
+    gap: 0.5rem; 
+}
+
+.nombreInformacion,
+.valorInformacion {
+    flex: 1; 
+    overflow: hidden; 
+    font-size: 1.2rem; 
+    font-weight: 600; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+}
+
+.valorInformacion {
+    color: var(--color-secondary); 
+    text-align: end;
+  
+}
+
+.bloqueInferior {
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+    position: sticky;
+    gap: 0.5rem; 
+}
+
+.operador {
+    display: flex;
+    gap: 0.5rem; 
+}
+
+.publicado,
+.nombreOperador {
+    overflow: hidden; 
+    font-size: 1.2rem; 
+    font-weight: 600; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+}
+
+.nombreOperador {
+    color: var(--color-secondary); 
+}
+
+.bloqueBotones {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+    bottom: 0;
+    background-color: var(--color-surface);
+}
+
+.botonPerfil,
+.botonWhatsApp {
+    display: flex; 
+    flex: 1; 
+    align-items: center; 
+    justify-content: center;
+    padding: 0.75rem 0.5rem; 
+    border-radius: 0.5rem; 
+    font-size: 1rem; 
+    font-weight: 600; 
+    cursor: pointer; 
+}
+
+.botonPerfil {
+    background: var(--color-secondary); 
+    color: white; 
+}
+
+.botonWhatsApp {
+    gap: 0.5rem; 
+    background: var(--color-primary-soft);  
+    color: var(--color-secondary); 
+}
+
+.iconoWhatsApp {
+    font-size: 1.20rem !important; 
+}
+

@@ -5,7 +5,9 @@ import type { PublicacionListado } from "../../../consulta-mercado/acciones/publ
 import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
 import TarjetaPublicacionOperadorAlt from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionOperadorAlt";
 import TarjetaPublicacionSinOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionSinOperadorAlt";
-import { DrawerPublicacion } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerPublicacion";
+import { DrawerDerechaPublicacion } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerDerechaPublicacion";
+import { DrawerAbajoPublicacion} from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerAbajoPublicacion";
+
 
 import { useMemo, useState } from "react";
 
@@ -100,13 +102,11 @@ export default function ListadoPublicaciones({publicaciones} : {publicaciones: P
 					))}
 				</ul>
 			)}
-			{publicacionSeleccionada && (
-				<DrawerPublicacion
-					publicacion={publicacionSeleccionada}
-					open={drawerAbierto}
-					onOpenChange={setDrawerAbierto}
-				/>
-			)}
+			{publicacionSeleccionada && (pantallaVertical ? (
+				<DrawerAbajoPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
+    		) : (
+        		<DrawerDerechaPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
+    		))}
 		</div>
   	);
 }
