@@ -60,122 +60,80 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
         return [...new Set(publicaciones.map((publicacion) => publicacion.especie))].sort();
     }, [publicaciones]);
 
+    // Opciones de Variedad disponibles segun Especie
     const variedades = useMemo(() => {
         let publicacionesBase = publicaciones;
-        if (especie !== "Todas") {
-            publicacionesBase = publicacionesBase.filter((publicacion) =>
-                publicacion.especie === especie
-            );
-        }
+        if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
+            publicacion.especie === especie);
+
         return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad))].sort();
     }, [publicaciones, especie]);
 
+    // Publicaciones segun Especie, Variedad y Presentacion
     const publicacionesSegunJerarquia = useMemo(() => {
         let publicacionesBase = publicaciones;
-
-        if (especie !== "Todas") {
-            publicacionesBase = publicacionesBase.filter(
-                (publicacion) => publicacion.especie === especie
-            );
-        }
-
-        if (variedad !== "Todas") {
-            publicacionesBase = publicacionesBase.filter(
-                (publicacion) => publicacion.variedad === variedad
-            );
-        }
-
-        if (presentacion !== "Todas") {
-            publicacionesBase = publicacionesBase.filter(
-                (publicacion) => publicacion.presentacion === presentacion
-            );
-        }
+        if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+            publicacion.especie === especie);
+        if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+            publicacion.variedad === variedad);
+        if (presentacion !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => 
+            publicacion.presentacion === presentacion);
 
         return publicacionesBase;
     }, [publicaciones, especie, variedad, presentacion]);
 
+    // Opciones de Presentacion disponibles segun Especie y Variedad
     const presentaciones = useMemo(() => {
         let publicacionesBase = publicaciones;
-        if (especie !== "Todas") {
-            publicacionesBase = publicacionesBase.filter((publicacion) =>
-                publicacion.especie === especie
-            );
-        }
-        if (variedad !== "Todas") {
-            publicacionesBase = publicacionesBase.filter((publicacion) =>
-                publicacion.variedad === variedad
-            );
-        }
+        if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
+            publicacion.especie === especie);
+        if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
+            publicacion.variedad === variedad);
+
         return [...new Set(publicacionesBase.map((publicacion) =>  publicacion.presentacion))].sort();
     }, [publicaciones, especie, variedad]);
 
+    // Opciones de Categoria disponibles segun Calibre
     const categorias = useMemo(() => {
         let publicacionesBase = publicacionesSegunJerarquia;
 
-        if (calibre !== "Todas") {
-            publicacionesBase = publicacionesBase.filter(
-                (publicacion) => publicacion.calibre === calibre
-            );
-        }
+        if (calibre !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+            publicacion.calibre === calibre);
 
-        return [
-            ...new Set(
-                publicacionesBase.map((publicacion) => publicacion.categoria)
-            ),
-        ].sort();
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.categoria))].sort();
     }, [publicacionesSegunJerarquia, calibre]);
 
+    // Opciones de Calibre disponibles segun Categoria
     const calibres = useMemo(() => {
         let publicacionesBase = publicacionesSegunJerarquia;
+        if (categoria !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+            publicacion.categoria === categoria);
 
-        if (categoria !== "Todas") {
-            publicacionesBase = publicacionesBase.filter(
-                (publicacion) => publicacion.categoria === categoria
-            );
-        }
-
-        return [
-            ...new Set(
-                publicacionesBase.map((publicacion) => publicacion.calibre)
-            ),
-        ].sort();
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.calibre))].sort();
     }, [publicacionesSegunJerarquia, categoria]);
 
-    useEffect(() => {
-        const categoriaValida =
-            categoria === "Todas" ||
-            publicacionesSegunJerarquia.some(
-                (publicacion) =>
-                    publicacion.categoria === categoria &&
-                    (
-                        calibre === "Todas" ||
-                        publicacion.calibre === calibre
-                    )
-            );
+    // Obtener Publicaciones segun la jerarquia de filtros
+    const obtenerPublicacionesJerarquia = (nuevaEspecie: string, nuevaVariedad: string, nuevaPresentacion: string) => {
+        let publicacionesBase = publicaciones;
+        if (nuevaEspecie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+            publicacion.especie === nuevaEspecie);
+        if (nuevaVariedad !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => 
+            publicacion.variedad === nuevaVariedad);
+        if (nuevaPresentacion !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+            publicacion.presentacion === nuevaPresentacion);
 
-        const calibreValido =
-            calibre === "Todas" ||
-            publicacionesSegunJerarquia.some(
-                (publicacion) =>
-                    publicacion.calibre === calibre &&
-                    (
-                        categoria === "Todas" ||
-                        publicacion.categoria === categoria
-                    )
-            );
+        return publicacionesBase;
+    };
 
-        if (!categoriaValida) {
-            setCategoria("Todas");
-        }
-
-        if (!calibreValido) {
-            setCalibre("Todas");
-        }
-    }, [
-        publicacionesSegunJerarquia,
-        categoria,
-        calibre,
-    ]);
+    // Ajuste de filtros de Categoria y Calibre
+    const ajustarFiltrosCategoriaCalibre = (publicacionesBase: PublicacionListado[]) => {
+        const categoriaValida = categoria === "Todas" || publicacionesBase.some((publicacion) =>
+            publicacion.categoria === categoria && (calibre === "Todas" || publicacion.calibre === calibre));
+        const calibreValido = calibre === "Todas" || publicacionesBase.some((publicacion) => 
+            publicacion.calibre === calibre && (categoria === "Todas" || publicacion.categoria === categoria));
+        if (!categoriaValida) setCategoria("Todas")
+        if (!calibreValido) setCalibre("Todas");
+    };
 
     // Busqueda de precios y Debounce
     useEffect(() => {
@@ -187,6 +145,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
         return () => { clearTimeout(temporizador) };
     }, [busqueda, precioMinimo, precioMaximo]);
 
+    // Comparacion de Precios
     const compararPrecios = (a: PublicacionListado, b: PublicacionListado, ascendente: boolean) => {
         if (a.precio == null && b.precio == null) return 0;
         if (a.precio == null) return 1;
@@ -197,11 +156,8 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
     // Aplicacion de Filtros
     const publicacionesFiltradas = useMemo(() => {
         const textoBusqueda = busquedaAplicada.trim().toLowerCase();
-
         const minimo = precioMinimoAplicado.trim() === "" ? null : Number(precioMinimoAplicado);
-
         const maximo = precioMaximoAplicado.trim() === "" ? null : Number(precioMaximoAplicado);
-
         if ( minimo !== null &&  maximo !== null &&  maximo < minimo) return [];
 
         const filtradas = publicaciones.filter((publicacion) => {
@@ -210,6 +166,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
             if (presentacion !== "Todas" && publicacion.presentacion !== presentacion) return false;
             if (categoria !== "Todas" && publicacion.categoria !== categoria) return false;
             if (calibre !== "Todas" && publicacion.calibre !== calibre) return false;
+            
             // Filtro de busqueda
             if (textoBusqueda !== "") {
                 const palabrasBusqueda = textoBusqueda.split(/\s+/);
@@ -250,8 +207,6 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                 return b.variedad.localeCompare(a.variedad);
             });
         }
-
-
         return filtradas;
     }, [publicaciones, especie, variedad, presentacion, categoria, calibre, busquedaAplicada, precioMinimoAplicado, precioMaximoAplicado, orden]);
     
@@ -285,43 +240,62 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
 
     // Manejador para el cambio de Especie
     const manejarCambioEspecie = (nuevaEspecie: string) => {
-        setEspecie(nuevaEspecie);
-
         let publicacionesBase = publicaciones;
 
-        if (nuevaEspecie !== "Todas") {
-            publicacionesBase = publicacionesBase.filter(
-                (p) => p.especie === nuevaEspecie
-            );
-        }
+        if (nuevaEspecie !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.especie === nuevaEspecie);
 
-        const variedadesNuevas = [
-            ...new Set(publicacionesBase.map((p) => p.variedad)),
-        ].sort();
+        const variedadesNuevas = [...new Set(publicacionesBase.map((p) => p.variedad))].sort();
 
-        if (
-            nuevaEspecie !== "Todas" &&
-            variedadesNuevas.length === 1 &&
-            variedadesNuevas[0] === "-"
-        ) {
-            setVariedad("-");
-        } else {
-            setVariedad("Todas");
-        }
+        const nuevaVariedad =  nuevaEspecie !== "Todas" && variedadesNuevas.length === 1 && variedadesNuevas[0] === "-" ? "-" : "Todas";
+        const nuevaPresentacion = "Todas";
 
-        setPresentacion("Todas");
+        const publicacionesNuevas = obtenerPublicacionesJerarquia(nuevaEspecie, nuevaVariedad, nuevaPresentacion);
+        ajustarFiltrosCategoriaCalibre(publicacionesNuevas);
+        setEspecie(nuevaEspecie);
+        setVariedad(nuevaVariedad);
+        setPresentacion(nuevaPresentacion);
     };
 
     // Manejador para el cambio de Variedad
     const manejarCambioVariedad = (nuevaVariedad: string) => {
+        const nuevaPresentacion = "Todas";
+        const publicacionesNuevas = obtenerPublicacionesJerarquia(especie, nuevaVariedad, nuevaPresentacion);
+        ajustarFiltrosCategoriaCalibre(publicacionesNuevas);
         setVariedad(nuevaVariedad);
-        setPresentacion("Todas");
+        setPresentacion(nuevaPresentacion);
+    };
+
+    // Manejador para el cambio de Presentacion
+    const manejarCambioPresentacion = (nuevaPresentacion: string) => {
+        const publicacionesNuevas = obtenerPublicacionesJerarquia(especie, variedad, nuevaPresentacion);
+        ajustarFiltrosCategoriaCalibre(publicacionesNuevas);
+        setPresentacion(nuevaPresentacion);
+    };
+
+    // Manejador para el cambio de Categoria
+    const manejarCambioCategoria = (nuevaCategoria: string) => {
+        const calibreValido =
+            nuevaCategoria === "Todas" ||
+            calibre === "Todas" ||
+            publicacionesSegunJerarquia.some((publicacion) => publicacion.categoria === nuevaCategoria && publicacion.calibre === calibre);
+        setCategoria(nuevaCategoria);
+        if (!calibreValido) setCalibre("Todas");
+    };
+
+    // Manejador para el cambio de Calibre
+    const manejarCambioCalibre = (nuevoCalibre: string) => {
+        const categoriaValida =
+            nuevoCalibre === "Todas" ||
+            categoria === "Todas" ||
+            publicacionesSegunJerarquia.some((publicacion) => publicacion.calibre === nuevoCalibre && publicacion.categoria === categoria);
+        setCalibre(nuevoCalibre);
+        if (!categoriaValida) setCategoria("Todas");
     };
 
     return (
         <div className={styles.contenedor}>
             <div className={`${styles.layoutFiltros} ${mostrarFiltros ? styles.filtrosAbiertos : ""} ${rangoPrecioInvalido ? styles.rangoInvalido : ""}`}>
-                {/* Barra de búsqueda */}
+                {/* Barra de busqueda */}
                 <TextField fullWidth size="small" label="Buscar publicaciones" type="search" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} className={`${styles.selectMui} ${styles.filtroBuscador}`}
                     slotProps={{input: {startAdornment: (<SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }}/>)}}}
                 />
@@ -336,7 +310,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                         </MenuItem>
                     ))}
                 </TextField>
-                {/* Precio mínimo */}
+                {/* Precio minimo */}
                 <div className={styles.filtroPrecioMinimo}>
                     <TextField fullWidth size="small" id="precio-minimo" label="Precio Mínimo" type="number" value={precioMinimo} placeholder="$ 0" className={styles.selectMui}
                         slotProps={{
@@ -351,7 +325,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                         }}
                     />
                 </div>
-                {/* Precio máximo */}
+                {/* Precio maximo */}
                 <div className={styles.filtroPrecioMaximo}>
                     <TextField fullWidth size="small" id="precio-maximo" label="Precio Máximo" type="number" value={precioMaximo} placeholder="Sin límite" className={styles.selectMui} error={rangoPrecioInvalido}
                         slotProps={{
@@ -386,8 +360,8 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                                 </MenuItem>
                             ))}
                         </TextField>
-                        {/* Presentación */}
-                        <TextField select fullWidth label="Presentación" value={presentacion} onChange={(evento) => setPresentacion(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroPresentacion}`} disabled={variedad === "Todas"}>
+                        {/* Presentacion */}
+                        <TextField select fullWidth label="Presentación" value={presentacion} onChange={(evento) => manejarCambioPresentacion(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroPresentacion}`} disabled={variedad === "Todas"}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
                                 Todas
                             </MenuItem>
@@ -399,8 +373,8 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                         </TextField>
                     </div>
                     <div className={styles.filtrosCategoriaCalibre}>
-                        {/* Categoría */}
-                        <TextField select fullWidth label="Categoría" value={categoria} onChange={(evento) => setCategoria(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCategoria}`}>
+                        {/* Categoria */}
+                        <TextField select fullWidth label="Categoría" value={categoria} onChange={(evento) => manejarCambioCategoria(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCategoria}`}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
                                 Todas
                             </MenuItem>
@@ -411,7 +385,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                             ))}
                         </TextField>
                         {/* Calibre */}
-                        <TextField select fullWidth label="Calibre" value={calibre} onChange={(evento) => setCalibre(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCalibre}`}>
+                        <TextField select fullWidth label="Calibre" value={calibre} onChange={(evento) => manejarCambioCalibre(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCalibre}`}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
                                 Todos
                             </MenuItem>
@@ -429,7 +403,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                 </div>
                 {/* Botones */}
                 <div className={styles.barraOpciones}>
-                    {/* Más filtros */}
+                    {/* Mas filtros */}
                     <button className={styles.botonExtendidos} type="button" onClick={() => setMostrarFiltros((valorActual) => !valorActual)}>
                         <span>Más filtros</span>
                         {mostrarFiltros ? (
