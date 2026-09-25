@@ -17,17 +17,88 @@ type FilaPublicacion = {
 };
 
 const { consulta, plan, query } = vi.hoisted(() => {
-  const plan = { sql: "consulta de publicaciones" };
-  return {
-    plan,
-    query: vi.fn<() => Promise<FilaPublicacion[]>>(),
-    consulta: {
-      innerJoin: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      build: vi.fn().mockReturnValue(plan),
-    },
-  };
+    const plan = { sql: "consulta de publicaciones" };
+
+    const tablas = {
+        publicacionOperador: {
+            publicacionId: "publicacionOperador.publicacionId",
+            operadorId: "publicacionOperador.operadorId",
+        },
+        publicacion: {
+            id: "publicacion.id",
+            presentacionId: "publicacion.presentacionId",
+            categoriaId: "publicacion.categoriaId",
+            calibreId: "publicacion.calibreId",
+            precio: "publicacion.precio",
+            foto: "publicacion.foto",
+            publicacionActiva: "publicacion.publicacionActiva",
+            publicacionDisponible: "publicacion.publicacionDisponible",
+        },
+        presentacion: {
+            id: "presentacion.id",
+            variedadId: "presentacion.variedadId",
+            nombrePresentacion: "presentacion.nombrePresentacion",
+        },
+        variedad: {
+            id: "variedad.id",
+            especieId: "variedad.especieId",
+            nombreVariedad: "variedad.nombreVariedad",
+        },
+        especie: {
+            id: "especie.id",
+            nombreEspecie: "especie.nombreEspecie",
+        },
+        categoria: {
+            id: "categoria.id",
+            nombreCategoria: "categoria.nombreCategoria",
+        },
+        calibre: {
+            id: "calibre.id",
+            nombreCalibre: "calibre.nombreCalibre",
+            codigoCalibre: "calibre.codigoCalibre",
+        },
+        operador: {
+            id: "operador.id",
+            nombreFantasia: "operador.nombreFantasia",
+            whatsApp: "operador.whatsApp",
+        },
+    };
+
+    const operaciones = {
+        eq: vi.fn((izquierda, derecha) => ({
+            tipo: "eq",
+            izquierda,
+            derecha,
+        })),
+        and: vi.fn((...condiciones) => ({
+            tipo: "and",
+            condiciones,
+        })),
+    };
+
+    return {
+        plan,
+        query: vi.fn<() => Promise<FilaPublicacion[]>>(),
+
+        consulta: {
+            innerJoin: vi.fn((_tabla, callback) => {
+                callback(tablas, operaciones);
+                return consulta;
+            }),
+
+            select: vi.fn((callback) => {
+                callback(tablas);
+                return consulta;
+            }),
+
+            where: vi.fn((callback) => {
+                callback(tablas, operaciones);
+                return consulta;
+            }),
+
+            build: vi.fn().mockReturnValue(plan),
+        },
+    };
 });
 
 // Se sustituye la base de datos para probar el mapeo y los errores de la consulta.
@@ -163,5 +234,14 @@ describe("consultarPublicaciones", () => {
     query.mockRejectedValue(error);
 
     await expect(consultarPublicaciones()).rejects.toBe(error);
+  });
+
+  it("construye la consulta con todos los joins necesarios", async () => {
+      await consultarPublicaciones();
+
+      expect(consulta.innerJoin).toHaveBeenCalledTimes(7);
+      expect(consulta.select).toHaveBeenCalledTimes(1);
+      expect(consulta.where).toHaveBeenCalledTimes(1);
+      expect(consulta.build).toHaveBeenCalledTimes(1);
   });
 });

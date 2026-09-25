@@ -106,4 +106,14 @@ describe("PublicacionSinOperador", () => {
     expect(() => fireEvent.click(screen.getByText("IMG"))).not.toThrow();
     expect(screen.getByText("Tomate Perita")).toBeInTheDocument();
   });
+
+  it("muestra un reemplazo cuando la publicación no tiene precio", () => {
+    render(
+      <PublicacionSinOperador
+        producto={{ ...crearPublicacion(), precio: null }}
+      />,
+    );
+
+    expect(screen.getByText("Sin precio")).toBeInTheDocument();
+  });
 });

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
 import ListadoPublicaciones from "./ListadoPublicacionesUnificado";
 
@@ -25,6 +26,10 @@ function crearPublicacion(
 type TarjetaProps = { publicacion: PublicacionListado; onClick: () => void };
 
 // Se aíslan los componentes hijos para verificar agrupación y selección del listado.
+vi.mock("@mui/material/useMediaQuery", () => ({
+  default: vi.fn(() => false),
+}));
+
 vi.mock(
   "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador",
   () => ({
@@ -41,6 +46,17 @@ vi.mock(
   () => ({
     default: ({ publicacion, onClick }: TarjetaProps) => (
       <button onClick={onClick}>{publicacion.especie}</button>
+    ),
+  }),
+);
+
+vi.mock(
+  "@/modulos/publicaciones/componentes/tarjetas-publicacion-alt/TarjetaPublicacionOperadorAlt",
+  () => ({
+    default: ({ publicacion, onClick }: TarjetaProps) => (
+      <button onClick={onClick}>
+        {publicacion.especie} — {publicacion.operador.nombreFantasia}
+      </button>
     ),
   }),
 );
@@ -76,6 +92,10 @@ function publicacionesDeEjemplo() {
 }
 
 describe("ListadoPublicaciones", () => {
+  beforeEach(() => {
+    vi.mocked(useMediaQuery).mockReturnValue(false);
+  });
+
   it("informa cuando no hay resultados", () => {
     render(<ListadoPublicaciones publicaciones={[]} />);
 
@@ -235,5 +255,27 @@ describe("ListadoPublicaciones", () => {
     rerender(<ListadoPublicaciones publicaciones={[]} />);
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
+  });
+
+  it("muestra y permite seleccionar una publicación en pantalla vertical", () => {
+    vi.mocked(useMediaQuery).mockReturnValue(true);
+
+    render(
+      <ListadoPublicaciones publicaciones={publicacionesDeEjemplo()} />,
+    );
+
+    const tarjeta = screen.getByRole("button", {
+      name: "Producto 7 — Huerta Sur",
+    });
+
+    expect(tarjeta).toBeInTheDocument();
+
+    fireEvent.click(tarjeta);
+
+    expect(
+      screen.getByRole("dialog", {
+        name: "Detalle Producto 7",
+      }),
+    ).toBeInTheDocument();
   });
 });

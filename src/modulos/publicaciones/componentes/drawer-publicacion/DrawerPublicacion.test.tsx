@@ -161,6 +161,19 @@ describe("DrawerPublicacion", () => {
     expect(screen.queryByText("Sin precio")).not.toBeInTheDocument();
   });
 
+  it("muestra 'Sin precio' cuando el precio es null", () => {
+    render(
+      <DrawerPublicacion
+        publicacion={{ ...crearPublicacion(), precio: null }}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Sin precio")).toBeInTheDocument();
+    expect(screen.queryByText("$150")).not.toBeInTheDocument();
+  });
+
   it("notifica la apertura y el cierre y respeta el estado recibido", () => {
     const onOpenChange = vi.fn();
     const publicacion = crearPublicacion();

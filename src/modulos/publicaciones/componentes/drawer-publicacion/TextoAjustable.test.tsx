@@ -1,5 +1,14 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("react", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("react")>();
+
+    return {
+        ...actual,
+        useLayoutEffect: vi.fn(actual.useLayoutEffect),
+    };
+});
+
+import { useLayoutEffect } from "react";
 import TextoAjustable from "./TextoAjustable";
 
 class ObservadorDePrueba implements ResizeObserver {
@@ -220,5 +229,22 @@ describe("TextoAjustable", () => {
     expect(
       HTMLSpanElement.prototype.getBoundingClientRect,
     ).not.toHaveBeenCalled();
+  });
+
+  it("termina el efecto si los refs todavía no existen", () => {
+      vi.mocked(useLayoutEffect).mockImplementationOnce((efecto) => {
+          const cleanup = efecto();
+          cleanup?.();
+      });
+
+      render(
+          <TextoAjustable
+              texto="Tomate"
+              minimo={10}
+              maximo={30}
+          />
+      );
+
+      expect(ObservadorDePrueba.instancias).toHaveLength(0);
   });
 });

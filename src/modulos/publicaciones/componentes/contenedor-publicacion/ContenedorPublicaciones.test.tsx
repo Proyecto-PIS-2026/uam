@@ -1,11 +1,11 @@
 import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
-import ListadoPublicaciones from "../listado-publicaciones/listadoPublicacionesUnificado";
+import ListadoPublicaciones from "../listado-publicaciones/ListadoPublicacionesUnificado";
 import ContenedorPublicaciones from "./ContenedorPublicaciones";
 
 // Se aísla el listado para verificar las publicaciones que recibe del contenedor.
-vi.mock("../listado-publicaciones/listadoPublicacionesUnificado", () => ({
+vi.mock("../listado-publicaciones/ListadoPublicacionesUnificado", () => ({
   default: vi.fn(() => null),
 }));
 
