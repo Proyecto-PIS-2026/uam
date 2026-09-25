@@ -1,4 +1,5 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarImagenPublicacion } from "./imagenes-publicacion";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 
@@ -23,7 +24,8 @@ export class ErrorEdicionPublicacion extends Error {
 export async function modificarPublicacionOperador(
     usuarioIdAutenticado: number,
     publicacionOperadorId: number,
-    cambios: CambiosPublicacionOperador
+    cambios: CambiosPublicacionOperador,
+    fotoNueva?: File | null
 ): Promise<{ publicacionOperadorId: number; publicacionId: number }> {
 
     if (cambios === null || typeof cambios !== "object" || Array.isArray(cambios)) {
@@ -44,92 +46,132 @@ export async function modificarPublicacionOperador(
         precioParaGuardar = precio as PrecioDb;
     }
 
-    return db.transaction(async (tx) => {
-        const operador = await tx.orm.public.Operador
-            .select("id")
-            .where({ usuarioId: usuarioIdAutenticado })
-            .first();
+    const imagenNuevaGuardada: { url: string | null; publicacionId: number | null } = { url: null, publicacionId: null };
+    let resultado: { publicacionOperadorId: number; publicacionId: number; fotoAnterior: string | null; fotoActual: string | null };
 
-        if (!operador) {
-            throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Operador no encontrado.");
-        }
+    try {
+        resultado = await db.transaction(async (tx) => {
+            const operador = await tx.orm.public.Operador
+                .select("id")
+                .where({ usuarioId: usuarioIdAutenticado })
+                .first();
 
-        const vinculo = await tx.orm.public.PublicacionOperador
-            .select("id", "publicacionId")
-            .where({
-                id: publicacionOperadorId,
-                operadorId: operador.id
-            })
-            .first();
+            if (!operador) {
+                throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Operador no encontrado.");
+            }
 
-        if (!vinculo) {
-            throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Publicación no encontrada para este operador.");
-        }
+            const vinculo = await tx.orm.public.PublicacionOperador
+                .select("id", "publicacionId")
+                .where({
+                    id: publicacionOperadorId,
+                    operadorId: operador.id
+                })
+                .first();
 
-        const publicacion = await tx.orm.public.Publicacion
-            .select("tipoPublicacion")
-            .where({ id: vinculo.publicacionId })
-            .first();
+            if (!vinculo) {
+                throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Publicación no encontrada para este operador.");
+            }
 
-        if (!publicacion || publicacion.tipoPublicacion !== "OPERADOR") {
-            throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Publicación no encontrada.");
-        }
+            const publicacion = await tx.orm.public.Publicacion
+                .select("tipoPublicacion", "foto")
+                .where({ id: vinculo.publicacionId })
+                .first();
 
-        const presentacion = await tx.orm.public.Presentacion
-            .select("id", "presentacionActiva")
-            .include("variedad", (variedad) =>
-                variedad
-                    .select("especieId", "variedadActiva")
-                    .include("especie", (especie) =>
-                        especie.select("especieActiva"),
-                    ),
-            )
-            .where({ id: cambios.presentacionId })
-            .first();
+            if (!publicacion || publicacion.tipoPublicacion !== "OPERADOR") {
+                throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Publicación no encontrada.");
+            }
 
-        if (!presentacion) {
-            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La presentación no existe.");
-        }
+            const presentacion = await tx.orm.public.Presentacion
+                .select("id", "presentacionActiva")
+                .include("variedad", (variedad) =>
+                    variedad
+                        .select("especieId", "variedadActiva")
+                        .include("especie", (especie) =>
+                            especie.select("especieActiva"),
+                        ),
+                )
+                .where({ id: cambios.presentacionId })
+                .first();
 
-        if (!presentacion.presentacionActiva || !presentacion.variedad.variedadActiva || !presentacion.variedad.especie.especieActiva) {
-            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La presentación seleccionada no está activa.");
-        }
+            if (!presentacion) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La presentación no existe.");
+            }
 
-        const categoria = await tx.orm.public.Categoria
-            .select("id", "especieId")
-            .where({ id: cambios.categoriaId })
-            .first();
+            if (!presentacion.presentacionActiva || !presentacion.variedad.variedadActiva || !presentacion.variedad.especie.especieActiva) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La presentación seleccionada no está activa.");
+            }
 
-        if (!categoria) {
-            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La categoría no existe.");
-        }
+            const categoria = await tx.orm.public.Categoria
+                .select("id", "especieId")
+                .where({ id: cambios.categoriaId })
+                .first();
 
-        if (categoria.especieId !== null && categoria.especieId !== presentacion.variedad.especieId) {
-            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La categoría no corresponde a la especie de la presentación.");
-        }
+            if (!categoria) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La categoría no existe.");
+            }
 
-        const calibre = await tx.orm.public.Calibre
-            .select("id")
-            .where({ id: cambios.calibreId })
-            .first();
+            if (categoria.especieId !== null && categoria.especieId !== presentacion.variedad.especieId) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La categoría no corresponde a la especie de la presentación.");
+            }
 
-        if (!calibre) {
-            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El calibre no existe.");
-        }
+            const calibre = await tx.orm.public.Calibre
+                .select("id")
+                .where({ id: cambios.calibreId })
+                .first();
 
-        await tx.orm.public.Publicacion
-            .where({ id: vinculo.publicacionId })
-            .update({
-                precio: precioParaGuardar,
-                foto: cambios.foto,
-                categoriaId: cambios.categoriaId,
-                calibreId: cambios.calibreId,
-                presentacionId: cambios.presentacionId
+            if (!calibre) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El calibre no existe.");
+            }
+
+            if (fotoNueva) {
+                try {
+                    imagenNuevaGuardada.url = await guardarImagenPublicacion(vinculo.publicacionId, fotoNueva);
+                    imagenNuevaGuardada.publicacionId = vinculo.publicacionId;
+                } catch (error) {
+                    if (error instanceof ErrorImagenPublicacion) {
+                        throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", error.message);
+                    }
+                    throw error;
+                }
+            }
+
+            const fotoActual = imagenNuevaGuardada.url ?? cambios.foto;
+
+            await tx.orm.public.Publicacion
+                .where({ id: vinculo.publicacionId })
+                .update({
+                    precio: precioParaGuardar,
+                    foto: fotoActual,
+                    categoriaId: cambios.categoriaId,
+                    calibreId: cambios.calibreId,
+                    presentacionId: cambios.presentacionId
             });
 
         return {
             publicacionOperadorId: vinculo.id,
-            publicacionId: vinculo.publicacionId
+            publicacionId: vinculo.publicacionId,
+            fotoAnterior: publicacion.foto,
+            fotoActual
         };
-    });
+        });
+    } catch (error) {
+        if (imagenNuevaGuardada.url && imagenNuevaGuardada.publicacionId !== null) {
+            try {
+                await eliminarImagenPublicacionGestionada(imagenNuevaGuardada.url, imagenNuevaGuardada.publicacionId);
+            } catch (errorLimpieza) {
+                console.error("No se pudo eliminar la imagen tras fallar la edición:", errorLimpieza);
+            }
+        }
+        throw error;
+    }
+
+    if (resultado.fotoAnterior !== resultado.fotoActual) {
+        try {
+            await eliminarImagenPublicacionGestionada(resultado.fotoAnterior, resultado.publicacionId);
+        } catch (error) {
+            console.error("No se pudo eliminar la imagen anterior:", error);
+        }
+    }
+
+    return { publicacionOperadorId: resultado.publicacionOperadorId, publicacionId: resultado.publicacionId };
 }

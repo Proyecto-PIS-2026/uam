@@ -30,6 +30,7 @@
 /out/
 /build
 /dist
+/storage/
 
 # TESTING (VITEST & PLAYWRIGHT)
 /coverage
