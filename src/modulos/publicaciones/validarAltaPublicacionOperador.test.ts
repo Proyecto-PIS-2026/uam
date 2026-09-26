@@ -39,3 +39,39 @@ describe("alta de publicación de operador: precio", () => {
 		});
 	});
 });
+
+describe("validarAltaPublicacionOperador", () => {
+	it("acepta una publicación completa con precio entero", () => {
+		const resultado = validarAltaPublicacionOperador({ ...datosValidos, precio: "1250" });
+
+		expect(resultado).toEqual({
+			esValido: true,
+			datos: { ...datosValidos, precio: "1250" },
+		});
+	});
+
+	it("rechaza una entrada que no es un objeto", () => {
+		expect(validarAltaPublicacionOperador(null)).toEqual({
+			esValido: false,
+			errores: ["Los datos de la publicación no son válidos."],
+		});
+	});
+
+	it("rechaza campos obligatorios inválidos", () => {
+		const resultado = validarAltaPublicacionOperador({ ...datosValidos, operadorId: 0, especieId: "1" });
+
+		expect(resultado).toEqual({
+			esValido: false,
+			errores: ["El campo operadorId es obligatorio.", "El campo especieId es obligatorio."],
+		});
+	});
+
+	it("rechaza una disponibilidad inválida", () => {
+		const resultado = validarAltaPublicacionOperador({ ...datosValidos, disponibilidad: "sí" });
+
+		expect(resultado).toEqual({
+			esValido: false,
+			errores: ["La disponibilidad no es válida."],
+		});
+	});
+});
