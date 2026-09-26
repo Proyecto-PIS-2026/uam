@@ -1,6 +1,6 @@
 "use client";
 
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 import styles from "./ListadoPublicacionesUnificado.module.css";
 
 import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";

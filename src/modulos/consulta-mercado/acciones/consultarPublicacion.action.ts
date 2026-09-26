@@ -3,7 +3,7 @@
 import {
   consultarPublicaciones,
   type ResultadoPublicaciones
-} from "./publicaciones";
+} from "./Publicaciones";
 
 export async function obtenerPublicaciones(): Promise<ResultadoPublicaciones | null> {
   return consultarPublicaciones();

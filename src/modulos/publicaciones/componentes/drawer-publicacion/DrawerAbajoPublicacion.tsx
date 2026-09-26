@@ -5,7 +5,7 @@ import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import Image from "next/image";
 
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 import TextoAjustable from "./TextoAjustable";
 import styles from "./DrawerAbajoPublicacion.module.css";
 

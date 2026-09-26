@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
 import { DrawerAbajoPublicacion } from "./DrawerAbajoPublicacion";
 
 vi.mock("@mui/material/SwipeableDrawer", () => ({

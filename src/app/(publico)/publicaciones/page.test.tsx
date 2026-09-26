@@ -1,11 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
 import PaginaPublicaciones from "./page";
 
 const consultarPublicacionesMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/modulos/consulta-mercado/acciones/publicaciones", () => ({
+vi.mock("@/modulos/consulta-mercado/acciones/Publicaciones", () => ({
   consultarPublicaciones: consultarPublicacionesMock,
 }));
 

@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
 import ContenedorPublicaciones from "./ContenedorPublicaciones";
 
 type PropsListadoPublicaciones = {

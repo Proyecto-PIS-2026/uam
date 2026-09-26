@@ -1,6 +1,6 @@
 "use client";
 
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 import TextoAjustable from "./TextoAjustable";
 import styles from "./DrawerDerechaPublicacion.module.css";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";

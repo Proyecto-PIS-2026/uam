@@ -1,6 +1,6 @@
 import Image from "next/image";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 import styles from "./TarjetaPublicacionConOperador.module.css";
 
 const formatoPrecio = new Intl.NumberFormat("es-UY", {

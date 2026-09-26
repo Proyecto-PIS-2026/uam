@@ -1,6 +1,6 @@
 import HeaderPublico from "@/compartido/HeaderPublico";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
-import { consultarPublicaciones } from "@/modulos/consulta-mercado/acciones/publicaciones";
+import { consultarPublicaciones } from "@/modulos/consulta-mercado/acciones/Publicaciones";
 import ContenedorPublicaciones from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones";
 
 export default async function PaginaPublicaciones() {

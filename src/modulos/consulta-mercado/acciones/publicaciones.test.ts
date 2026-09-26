@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { consultarPublicaciones } from "./publicaciones";
+import { consultarPublicaciones } from "./Publicaciones";
 
 type FilaPublicacion = {
 	id: number | string;

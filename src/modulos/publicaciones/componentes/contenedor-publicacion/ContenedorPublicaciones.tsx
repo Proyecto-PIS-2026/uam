@@ -1,7 +1,7 @@
 "use client";
 // ELIMINAR COMENTARIOS PARA CUANDO SE PUEDA INTEGRAR CON LOS FILTROS
 //import { useState, useEffect } from "react";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 //import FiltrosPublicaciones from "./../filtrosPublicaciones";
 import ListadoPublicaciones from "../listado-publicaciones/ListadoPublicacionesUnificado";
 

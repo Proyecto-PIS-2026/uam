@@ -1,8 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
-import { obtenerPublicaciones } from "./consultarPublicacion.action";
-import { consultarPublicaciones } from "./publicaciones";
+import { obtenerPublicaciones } from "./ConsultarPublicacion.action";
+import { consultarPublicaciones } from "./Publicaciones";
 
-vi.mock("./publicaciones", () => ({
+vi.mock("./Publicaciones", () => ({
     consultarPublicaciones: vi.fn(),
 }));
 

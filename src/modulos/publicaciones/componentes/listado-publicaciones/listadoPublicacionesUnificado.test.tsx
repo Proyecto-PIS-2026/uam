@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
 import ListadoPublicaciones from "./ListadoPublicacionesUnificado";
 
 function crearPublicacion(id: number, operadorId = 10, nombreFantasia = "Huerta Sur"): PublicacionListado {
