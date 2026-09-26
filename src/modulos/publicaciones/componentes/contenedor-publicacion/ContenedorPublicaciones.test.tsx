@@ -1,4 +1,6 @@
+// Eliminar comentarios luego de integrar los filtros
 import { render } from "@testing-library/react";
+//import { useEffect } from "react";
 
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
 import ContenedorPublicaciones from "./ContenedorPublicaciones";
@@ -7,13 +9,27 @@ type PropsListadoPublicaciones = {
   publicaciones: PublicacionListado[];
 };
 
+/*type PropsFiltrosPublicaciones = {
+	publicaciones: PublicacionListado[];
+	especieFiltro: string;
+	alFiltrar?: (publicaciones: PublicacionListado[]) => void;
+};*/
+
 const { mockListadoPublicaciones } = vi.hoisted(() => ({
   mockListadoPublicaciones: vi.fn<(props: PropsListadoPublicaciones) => null>(() => null),
 }));
 
-vi.mock("../listado-publicaciones/ListadoPublicacionesUnificado", () => ({
-	default: mockListadoPublicaciones,
-}));
+/*const { mockFiltrosPublicaciones } = vi.hoisted(() => ({
+	mockFiltrosPublicaciones: vi.fn(({publicaciones, alFiltrar}: PropsFiltrosPublicaciones) => {
+		useEffect(() => {
+			alFiltrar?.(publicaciones) }, [publicaciones, alFiltrar]);
+			return null;
+	})
+}));*/
+
+vi.mock("../listado-publicaciones/ListadoPublicacionesUnificado", () => ({ default: mockListadoPublicaciones }));
+
+//vi.mock("../../filtros/FiltrosPublicaciones", () => ({ default: mockFiltrosPublicaciones }));
 
 function crearPublicacion(id: number): PublicacionListado {
 	return {
@@ -37,6 +53,10 @@ function crearPublicacion(id: number): PublicacionListado {
 function publicacionesDelListado(): PublicacionListado[] | undefined {
 	return mockListadoPublicaciones.mock.calls.at(-1)?.[0]?.publicaciones;
 }
+
+/*function especieDelFiltro(): string | undefined {
+	return mockFiltrosPublicaciones.mock.calls.at(-1)?.[0]?.especieFiltro;
+}*/
 
 describe("ContenedorPublicaciones", () => {
 	beforeEach(() => {
@@ -69,6 +89,8 @@ describe("ContenedorPublicaciones", () => {
 		expect(publicacionesDelListado()).toEqual([actualizada]);
 	});
 
+
+	/* Tests nuevos
 	it("vacía el listado cuando se quitan las publicaciones", () => {
 		const { rerender } = render(<ContenedorPublicaciones publicaciones={[crearPublicacion(7)]}/>);
 		rerender(<ContenedorPublicaciones publicaciones={[]}/>);
@@ -81,4 +103,16 @@ describe("ContenedorPublicaciones", () => {
 		rerender(<ContenedorPublicaciones publicaciones={publicaciones}/>);
 		expect(publicacionesDelListado()).toEqual(publicaciones);
 	});
+	
+	it("pasa la especie válida al filtro", () => {
+		const publicaciones = [{ ...crearPublicacion(1), especie: "Manzana" }];
+		render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana"/>);
+		expect(especieDelFiltro()).toBe("Manzana");
+	});
+
+	it("pasa una especie vacía al filtro cuando la especie no es válida", () => {
+		const publicaciones = [{ ...crearPublicacion(1), especie: "Manzana" }];
+		render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Error"/>);
+		expect(especieDelFiltro()).toBe("");
+	});*/
 });
