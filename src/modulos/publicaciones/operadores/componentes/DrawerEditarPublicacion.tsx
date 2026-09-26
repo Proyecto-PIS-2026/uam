@@ -7,6 +7,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import MenuItem from "@mui/material/MenuItem";
+import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
@@ -119,7 +120,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
     }
 
     function cambiarEspecie(nuevaEspecieId: number) {
-        const primeraVariedad = variedades.find((opcion) => opcion.especieId === nuevaEspecieId);
+        const variedadesDeLaEspecie = variedades.filter((opcion) => opcion.especieId === nuevaEspecieId);
+        const primeraVariedad = variedadesDeLaEspecie.find((variedad) => presentaciones.some((presentacion) => presentacion.variedadId === variedad.id)) ?? variedadesDeLaEspecie[0];
         const primeraPresentacion = presentaciones.find((opcion) => opcion.variedadId === primeraVariedad?.id);
         const categoriaActual = categorias.find((opcion) => opcion.id === categoriaId);
         const categoriaCompatible = categoriaActual?.especieId === null || categoriaActual?.especieId === nuevaEspecieId;
@@ -214,15 +216,19 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         {fotoVisible && <button className={styles.borrarFoto} type="button" onClick={borrarFoto} disabled={guardando}>Borrar foto</button>}
                     </div>
 
-                    <button className={styles.disponibilidad} type="button" aria-pressed={disponible} onClick={() => setDisponible(!disponible)} disabled={guardando}>
-                        {disponible ? "Disponible" : "No disponible"}
-                    </button>
+                    <label className={styles.disponibilidad} htmlFor={`${idBase}-disponibilidad`} data-disponible={disponible} data-guardando={guardando}>
+                        <span className={styles.textoDisponibilidad}>
+                            <span className={styles.etiqueta}>Disponibilidad</span>
+                            <span className={styles.estadoDisponibilidad}>{disponible ? "Disponible" : "No disponible"}</span>
+                        </span>
+                        <Switch className={styles.interruptorDisponibilidad} checked={disponible} onChange={(_, seleccionado) => setDisponible(seleccionado)} disabled={guardando} slotProps={{ input: { id: `${idBase}-disponibilidad`, role: "switch", "aria-label": "Publicación disponible" } }} />
+                    </label>
 
                     <div className={styles.campo}>
                         <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
                         <div className={styles.controlesPrecio}>
                             <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-10)} disabled={guardando} aria-label="Disminuir precio en 10">−</button>
-                            <input className={styles.entrada} id={`${idBase}-precio`} type="text" inputMode="decimal" placeholder="Ej. 185.00" value={precio} onChange={(evento) => setPrecio(evento.target.value)} disabled={guardando} />
+                            <input className={styles.entrada} id={`${idBase}-precio`} type="text" inputMode="decimal" placeholder="Ingresar precio aquí" value={precio} onChange={(evento) => setPrecio(evento.target.value)} disabled={guardando} />
                             <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(10)} disabled={guardando} aria-label="Aumentar precio en 10">+</button>
                         </div>
                         <small className={styles.ayuda}>Dejalo vacío si el producto no tiene precio.</small>

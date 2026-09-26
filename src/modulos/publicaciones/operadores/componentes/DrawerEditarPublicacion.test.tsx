@@ -132,8 +132,11 @@ describe("DrawerEditarPublicacion", () => {
         render(<DrawerEditarPublicacion {...props} />);
 
         fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "150.25" } });
-        fireEvent.click(screen.getByRole("button", { name: "Disponible" }));
-        expect(screen.getByRole("button", { name: "No disponible" })).toHaveAttribute("aria-pressed", "false");
+        const disponibilidad = screen.getByRole("switch", { name: "Publicación disponible" });
+        expect(disponibilidad).toBeChecked();
+        fireEvent.click(disponibilidad);
+        expect(disponibilidad).not.toBeChecked();
+        expect(screen.getByText("No disponible")).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
         expect(mocks.guardar).not.toHaveBeenCalled();
         const dialogo = screen.getByRole("dialog", { name: "¿Guardar los cambios?" });
@@ -180,12 +183,16 @@ describe("DrawerEditarPublicacion", () => {
     });
 
     it("selecciona una variedad, presentación y categoría compatibles al cambiar especie", async () => {
-        render(<DrawerEditarPublicacion {...props} />);
+        render(<DrawerEditarPublicacion {...props} variedades={[{ id: 20, nombre: "Beurré d'Anjou", especieId: 2 }, ...props.variedades]} />);
 
         await seleccionar("Especie", "Pera");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Williams");
         expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Cajón");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Segunda");
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
+        expect(await screen.findByRole("option", { name: "Beurré d'Anjou" })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("option", { name: "Williams" }));
+        await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
         confirmar();
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
@@ -244,7 +251,8 @@ describe("DrawerEditarPublicacion", () => {
         render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, precio: null, foto: "/foto-existente.png", disponible: false }} />);
 
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("");
-        expect(screen.getByRole("button", { name: "No disponible" })).toHaveAttribute("aria-pressed", "false");
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
+        expect(screen.getByText("No disponible")).toBeInTheDocument();
         expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", "/foto-existente.png");
         expect(screen.getByRole("combobox", { name: "Especie" })).toHaveTextContent("Manzana");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Red Delicious");
@@ -331,6 +339,7 @@ describe("DrawerEditarPublicacion", () => {
         await waitFor(() => expect(screen.getByRole("button", { name: "Guardando..." })).toBeDisabled());
         expect(screen.getByLabelText("Precio en pesos")).toBeDisabled();
         expect(screen.getByLabelText("Seleccionar foto del producto")).toBeDisabled();
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Editar foto" })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Cerrar edición" })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
