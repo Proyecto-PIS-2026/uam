@@ -34,6 +34,22 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 	type Precio = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 	const precio = (datos.precio?.trim().replace(",", ".") || null) as Precio;
 	const id = await db.transaction(async (tx) => {
+		// Serializar las altas del mismo operador para que dos envíos simultáneos
+		// no pasen ambos la comprobación antes de insertar.
+		await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ${operador.id})`
+			.returnsRow({ locked: "pg/int4@1" }).build());
+
+		const relaciones = await tx.orm.public.PublicacionOperador.where({ operadorId: operador.id }).all();
+		if (relaciones.length > 0) {
+			const ids = new Set(relaciones.map((relacion) => relacion.publicacionId));
+			const coincidencias = await tx.orm.public.Publicacion.where({
+				presentacionId: presentacion.id,
+				categoriaId: categoria.id,
+				calibreId: calibre.id,
+			}).select("id").all();
+			if (coincidencias.some((publicacion) => ids.has(publicacion.id))) return null;
+		}
+
 		const publicacion = await tx.orm.public.Publicacion.create({
 			tipoPublicacion: "OPERADOR",
 			publicacionDisponible: datos.disponibilidad,
@@ -50,6 +66,10 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 		});
 		return publicacion.id;
 	});
+
+	if (id === null) {
+		return { esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre."] };
+	}
 
 	return { esValido: true, id, mensaje: "Publicación creada correctamente." };
 }
