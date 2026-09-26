@@ -29,6 +29,7 @@ vi.mock("next/link", () => ({
 // Mock de next/image
 vi.mock("next/image", () => ({
     default: ({src, alt, ...props}: {src: string; alt: string;}) => (
+        // eslint-disable-next-line @next/next/no-img-element -- El mock de next/image usa una imagen simple para verificar src y alt.
         <img
             src={src}
             alt={alt}
