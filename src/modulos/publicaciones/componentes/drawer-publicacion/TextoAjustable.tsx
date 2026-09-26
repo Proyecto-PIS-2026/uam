@@ -9,7 +9,7 @@ type TextoAjustableProps = {
     maximo: number;
 };
 
-export default function TextoAjustable({children, className, minimo, maximo}: TextoAjustableProps) {
+export default function TextoAjustable({ children, className, minimo, maximo }: TextoAjustableProps) {
     const contenedorRef = useRef<HTMLDivElement>(null);
     const textoRef = useRef<HTMLSpanElement>(null);
     useLayoutEffect(() => {

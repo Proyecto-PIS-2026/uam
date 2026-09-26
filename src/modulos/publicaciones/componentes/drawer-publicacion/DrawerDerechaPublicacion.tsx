@@ -9,28 +9,28 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import Image from "next/image";
 
 interface DrawerPublicacionProps {
-    open: boolean; 
-    onOpenChange: (open: boolean) => void; 
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     publicacion: PublicacionListado | null;
 
-} 
+}
 
-export function DrawerDerechaPublicacion({publicacion, open, onOpenChange}: DrawerPublicacionProps) {
+export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: DrawerPublicacionProps) {
     const numeroWhatsApp = publicacion?.operador.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
     const contenido = (
-        <SwipeableDrawer anchor="right" open={open} onClose={() => onOpenChange(false)} onOpen={() => onOpenChange(true)} slotProps={{paper:{className: styles.drawer}}} transitionDuration={{enter: 400, exit: 400}}>   
+        <SwipeableDrawer anchor="right" open={open} onClose={() => onOpenChange(false)} onOpen={() => onOpenChange(true)} slotProps={{ paper: { className: styles.drawer } }} transitionDuration={{ enter: 400, exit: 400 }}>
             {publicacion && (
                 <>
                     <div className={styles.tarjeta}>
                         <div className={styles.bloqueSuperior}>
                             <div className={styles.contenedorImagen}>
                                 {publicacion.foto ? (
-                                    <Image src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="(max-width: 380px) 72px, (max-width: 419px) 88px, 96px" className={styles.imagen}/>
+                                    <Image src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="(max-width: 380px) 72px, (max-width: 419px) 88px, 96px" className={styles.imagen} />
                                 ) : (
                                     <div className={styles.sinFoto}>
-                                        <ImageOutlinedIcon className={styles.iconoFoto}/>
+                                        <ImageOutlinedIcon className={styles.iconoFoto} />
                                         Foto
                                     </div>
                                 )}
@@ -47,15 +47,15 @@ export function DrawerDerechaPublicacion({publicacion, open, onOpenChange}: Draw
                                 {publicacion.precio ? <>${publicacion.precio}</> : "Sin precio"}
                             </div>
                             <div className={styles.bloqueMedio}>
-                                <div className={styles.informacionDetallada}> 
+                                <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Presentacion</span>
                                     <span className={styles.valorInformacion}>{publicacion.presentacion}</span>
                                 </div>
-                                <div className={styles.informacionDetallada}> 
+                                <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Calibre</span>
                                     <span className={styles.valorInformacion}>{publicacion.calibre}</span>
                                 </div>
-                                <div className={styles.informacionDetallada}> 
+                                <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Categoria</span>
                                     <span className={styles.valorInformacion}>{publicacion.categoria}</span>
                                 </div>
@@ -65,16 +65,16 @@ export function DrawerDerechaPublicacion({publicacion, open, onOpenChange}: Draw
                                 <div className={styles.bloqueBotones}>
                                     <button className={styles.botonPerfil}>Ver Perfil</button>
                                     <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${publicacion.operador.nombreFantasia} por WhatsApp`}>
-                                        <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true"/>
+                                        <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                                         <span>WhatsApp</span>
                                     </a>
-                                </div> 
+                                </div>
                             </div>
                         </div>
-                    </div>      
+                    </div>
                 </>
             )}
         </SwipeableDrawer>
     );
-    return contenido; 
+    return contenido;
 }
