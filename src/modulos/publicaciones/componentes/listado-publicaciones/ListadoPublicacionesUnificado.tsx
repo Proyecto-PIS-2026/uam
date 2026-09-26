@@ -75,7 +75,7 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
 
     if (publicaciones.length === 0) {
         return (
-            <p role="status">
+            <p role="status" className="text-[var(--color-primary)]">
                 No hay publicaciones que coincidan con la búsqueda.
             </p>
         );
