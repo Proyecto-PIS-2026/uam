@@ -35,8 +35,8 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 	}
 
 	if (datos.precio !== undefined && (typeof datos.precio !== "string" ||
-		(datos.precio.trim() !== "" && !/^\d{1,10}(?:[.,]\d{1,2})?$/.test(datos.precio.trim())))) {
-		errores.push("El precio debe ser un número con hasta dos decimales.");
+		(datos.precio.trim() !== "" && !/^\d{1,10}$/.test(datos.precio.trim())))) {
+		errores.push("El precio debe ser un número entero.");
 	}
 
 	if (datos.fotografia !== undefined && (typeof datos.fotografia !== "string" ||

@@ -216,7 +216,7 @@ export default function NuevaPublicacionPage() {
 			</div>
 			<dialog ref={drawerRef} aria-labelledby="titulo-nueva-publicacion" className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-none overflow-y-auto border-0 bg-[#f6f5f0] p-0 text-[#1a1a1a] shadow-xl backdrop:bg-black/40 sm:max-w-2xl">
 				<div className="p-4 sm:p-8">
-					<div className="mb-4 flex justify-end"><button type="button" onClick={() => drawerRef.current?.close()} className="min-h-11 rounded-lg bg-white px-4 py-2 font-semibold text-red-800">Cerrar</button></div>
+					<div className="mb-4 flex justify-end"><button type="button" onClick={() => drawerRef.current?.close()} className="min-h-11 rounded-lg border border-[red-600] bg-white px-4 py-2 text-red-800 font-semibold hover:bg-[#FEF2F2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#008332]">Cerrar</button></div>
 					<header className="mb-6 border-b border-[#deded7] pb-5">
 						<p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#008332]">Mercado del operador</p>
 						<h1 id="titulo-nueva-publicacion" className="text-3xl font-bold">Nueva publicación</h1>
@@ -240,11 +240,11 @@ export default function NuevaPublicacionPage() {
 						</div>
 						<h2 className="mb-4 mt-8 border-t border-[#deded7] pt-6 text-lg font-bold text-[#005d29]">Información opcional</h2>
 						<div className="grid gap-5 sm:grid-cols-2">
-							<label className="text-xs font-bold uppercase tracking-wide text-[#465047]">Precio<input className={estiloCampo} value={datos.precio} onChange={(evento) => actualizar({ precio: evento.target.value })} inputMode="decimal" placeholder="Ejemplo: 1250,50" /></label>
-							<label className="text-xs font-bold uppercase tracking-wide text-[#465047]">Fotografía<input className="mt-2 block w-full text-sm font-normal normal-case" type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFotografia} /></label>
+							<label className="text-xs font-bold uppercase tracking-wide text-[#465047]">Precio<input className={estiloCampo} value={datos.precio} onChange={(evento) => actualizar({ precio: evento.target.value.replace(/\D/g, "") })} type="text" inputMode="numeric" maxLength={10} placeholder="Ejemplo: 1250" /></label>
+							<label className="text-xs font-bold uppercase tracking-wide text-[#465047]">Fotografía<input className="mt-2 block min-h-12 w-full cursor-pointer rounded-lg border border-dashed border-[#008332] bg-[#f6f5f0] px-3 py-3 text-sm font-normal normal-case transition hover:bg-[#e9f2e5] file:mr-3 file:rounded-md file:border-0 file:bg-[#008332] file:px-3 file:py-2 file:font-semibold file:text-white focus:border-[#008332] focus:outline-none focus:ring-2 focus:ring-[#a8d05d]" type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFotografia} /></label>
 						</div>
 						{datos.fotografia && <div className="mt-5 rounded-xl border border-[#deded7] p-3"><p className="mb-2 text-xs font-bold uppercase">Vista previa</p><Image unoptimized width={640} height={360} className="max-h-56 w-full rounded-lg object-cover" src={datos.fotografia} alt="Vista previa de la fotografía" /></div>}
-						<button className="mt-6 min-h-12 w-full rounded-lg bg-[#008332] px-5 py-3 text-sm font-bold uppercase text-white disabled:opacity-50" type="submit" disabled={guardando || !catalogos}>{guardando ? "Guardando..." : "Crear publicación"}</button>
+						<button className="mt-6 min-h-12 w-full rounded-lg bg-[#008332] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#005d29] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#a8d05d] focus:ring-offset-2 active:bg-[#005d29] disabled:cursor-not-allowed disabled:opacity-50" type="submit" disabled={guardando || !catalogos}>{guardando ? "Guardando..." : "Crear publicación"}</button>
 					</form>
 				</div>
 			</dialog>
