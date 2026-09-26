@@ -44,7 +44,7 @@ export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: Dr
                                 }
                             </div>
                             <div className={styles.precio}>
-                                {publicacion.precio ? <>${publicacion.precio}</> : "Sin precio"}
+                                {publicacion.precio ? <>${publicacion.precio}</> : "Consultar precio"}
                             </div>
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
