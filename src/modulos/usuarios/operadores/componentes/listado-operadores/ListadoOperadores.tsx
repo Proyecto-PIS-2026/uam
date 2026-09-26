@@ -1,7 +1,7 @@
 "use client"; // https://nextjs.org/docs/app/api-reference/directives/use-client
 
 import { useState } from "react";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
+import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { OperadorListado } from "../../consultas-listado-publico";
 import ControlesListadoOperadores from "./ControlesListadoOperadores";
 import TarjetaOperador from "./TarjetaOperador";
