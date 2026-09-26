@@ -109,45 +109,42 @@ export default async function Page({
         db.orm.public.Categoria.where(() => all()).all(),
     ]);
 
-    const presentaciones = presentacionesBD
-        .filter(
-            (presentacion) =>
-                presentacion.variedad.especieId === especieId &&
-                presentacion.variedad.variedadActiva &&
-                presentacion.variedad.especie.especieActiva
-        )
-        .map(({ id: presentacionId, nombrePresentacion, variedad }) => ({
+    const presentacionesCatalogo = presentacionesBD
+        .filter((presentacion) => presentacion.variedad.variedadActiva && presentacion.variedad.especie.especieActiva)
+        .flatMap(({ id: presentacionId, nombrePresentacion, variedad }) => {
+            const nombre = nombrePresentacion.trim().toLocaleLowerCase();
+            if (nombre !== "bandeja" && !nombre.startsWith("caja")) return [];
+            return [{
             id: presentacionId,
-            nombrePresentacion,
+            nombrePresentacion: nombre === "bandeja" ? "Bandeja" : "Caja",
             nombreVariedad: variedad.nombreVariedad,
-        }));
+            }];
+        });
+    const presentaciones = Array.from(
+        new Map(
+            [...presentacionesCatalogo]
+                .sort((a, b) => Number(b.id === datosIniciales.presentacionId) - Number(a.id === datosIniciales.presentacionId))
+                .map((presentacion) => [presentacion.nombrePresentacion, presentacion])
+        ).values()
+    );
 
-    const calibres = calibresBD
-        .filter(({ nombreCalibre, codigoCalibre }) => {
-            const nombreNormalizado = nombreCalibre.trim().toLocaleUpperCase();
-            const codigoNormalizado = codigoCalibre.trim().toLocaleUpperCase();
+    const etiquetasCalibre: Record<string, string> = {
+        EG: "Extragrande - EG",
+        G: "Grande - G",
+        M: "Mediano - M",
+        C: "Chico - C",
+        SV: "Sin Variación",
+    };
+    const calibres = ["EG", "G", "M", "C", "SV"].flatMap((codigo) => {
+        const calibre = calibresBD.find((item) => item.codigoCalibre.trim().toLocaleUpperCase() === codigo);
+        return calibre ? [{ id: calibre.id, nombreCalibre: etiquetasCalibre[codigo] }] : [];
+    });
 
-            return (
-                nombreNormalizado !== "EXTRA" &&
-                codigoNormalizado !== "EX" &&
-                !nombreNormalizado.includes("PLANTAS")
-            );
-        })
-        .map(({ id: calibreId, nombreCalibre }) => ({
-            id: calibreId,
-            nombreCalibre,
-        }));
-
-    const categorias = categoriasBD
-        .filter(
-            (categoria) =>
-                categoria.especieId === null ||
-                Number(categoria.especieId) === especieId
-        )
-        .map(({ id: categoriaId, nombreCategoria }) => ({
-            id: Number(categoriaId),
-            nombreCategoria,
-        }));
+    const etiquetasCategoria: Record<string, string> = { E: "Especial - E", I: "Primera - I", II: "Segunda - II" };
+    const categorias = ["E", "I", "II"].flatMap((codigo) => {
+        const categoria = categoriasBD.find((item) => item.nombreCategoria.trim().toLocaleUpperCase() === codigo && (item.especieId === null || Number(item.especieId) === especieId));
+        return categoria ? [{ id: Number(categoria.id), nombreCategoria: etiquetasCategoria[codigo] }] : [];
+    });
 
     return (
         <FormularioEdicion

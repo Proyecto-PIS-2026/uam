@@ -177,13 +177,13 @@ export default function FormularioEdicion({
 
                     <section className="relative rounded-2xl border border-[#dedede]">
                         <FilaEditable etiqueta="Presentación">
-                            <SelectorDesplegable ariaLabel="Presentación" value={datos.presentacionId} opciones={presentaciones.map((item) => ({ id: item.id, nombre: item.nombrePresentacion }))} onChange={(id) => { const item = presentaciones.find((opcion) => opcion.id === id); if (item) { setDatos((actuales) => ({ ...actuales, presentacionId: item.id })); setTextoVariedad(item.nombreVariedad); } }} />
+                            <SelectorDesplegable ariaLabel="Presentación" valorVacio="-" value={datos.presentacionId} opciones={presentaciones.map((item) => ({ id: item.id, nombre: item.nombrePresentacion }))} onChange={(id) => { const item = presentaciones.find((opcion) => opcion.id === id); if (item) { setDatos((actuales) => ({ ...actuales, presentacionId: item.id })); setTextoVariedad(item.nombreVariedad); } }} />
                         </FilaEditable>
                         <FilaEditable etiqueta="Calibre">
-                            <SelectorDesplegable ariaLabel="Calibre" value={datos.calibreId} opciones={calibres.map((item) => ({ id: item.id, nombre: item.nombreCalibre }))} onChange={(id) => setDatos((actuales) => ({ ...actuales, calibreId: id }))} />
+                            <SelectorDesplegable ariaLabel="Calibre" valorVacio="Sin Variación" value={datos.calibreId} opciones={calibres.map((item) => ({ id: item.id, nombre: item.nombreCalibre }))} onChange={(id) => setDatos((actuales) => ({ ...actuales, calibreId: id }))} />
                         </FilaEditable>
                         <FilaEditable etiqueta="Categoría">
-                            <SelectorDesplegable ariaLabel="Categoría" value={datos.categoriaId} opciones={categorias.map((item) => ({ id: item.id, nombre: item.nombreCategoria }))} onChange={(id) => setDatos((actuales) => ({ ...actuales, categoriaId: id }))} />
+                            <SelectorDesplegable ariaLabel="Categoría" valorVacio="-" value={datos.categoriaId} opciones={categorias.map((item) => ({ id: item.id, nombre: item.nombreCategoria }))} onChange={(id) => setDatos((actuales) => ({ ...actuales, categoriaId: id }))} />
                         </FilaEditable>
                         <FilaEditable etiqueta="Variedad">
                             <input aria-label="Variedad" type="text" value={textoVariedad} onChange={(event) => setTextoVariedad(event.target.value)} className="w-[60%] min-w-0 border-0 border-b border-transparent bg-transparent p-1 text-right text-lg font-semibold text-[#006633] outline-none focus:border-[#006633] focus:ring-0" />
@@ -226,11 +226,13 @@ function FilaEditable({ etiqueta, children }: { etiqueta: string; children: Reac
 
 function SelectorDesplegable({
     ariaLabel,
+    valorVacio = "-",
     value,
     opciones,
     onChange,
 }: {
     ariaLabel: string;
+    valorVacio?: string;
     value: number;
     opciones: { id: number; nombre: string }[];
     onChange: (id: number) => void;
@@ -257,7 +259,7 @@ function SelectorDesplegable({
                 onClick={() => setAbierto((actual) => !actual)}
                 className="flex min-h-10 w-full cursor-pointer items-center justify-end gap-2 rounded-lg px-2 text-right text-lg font-semibold text-[#006633] outline-none transition hover:bg-[#f2f7f3] focus-visible:ring-2 focus-visible:ring-[#006633]/30"
             >
-                <span className="truncate">{seleccionada?.nombre ?? "Elegir"}</span>
+                <span className="truncate">{seleccionada?.nombre ?? valorVacio}</span>
                 <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className={`h-4 w-4 shrink-0 transition-transform ${abierto ? "rotate-180" : ""}`}>
                     <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
