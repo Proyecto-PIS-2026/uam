@@ -1,6 +1,7 @@
 "use client"; // https://nextjs.org/docs/app/api-reference/directives/use-client
 
 import { useState } from "react";
+import HojasDecorativas from "@/compartido/HojasDecorativas";
 import type { OperadorListado } from "../../consultas-listado-publico";
 import ControlesListadoOperadores from "./ControlesListadoOperadores";
 import TarjetaOperador from "./TarjetaOperador";
@@ -60,6 +61,7 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
     const contenido = (
         <section className={styles.contenedor}>
             <div className={styles.tituloContenedor}>
+                <HojasDecorativas variante="separador" />
                 <p className={styles.titulo}>Operadores</p>
                 <p className={styles.subtitulo}>{operadores.length} Operadores en la plataforma</p>
             </div>
