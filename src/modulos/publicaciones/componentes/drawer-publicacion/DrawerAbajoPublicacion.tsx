@@ -1,6 +1,5 @@
 "use client";
 
-import useMediaQuery from "@mui/material/useMediaQuery";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
@@ -14,7 +13,6 @@ interface DrawerPublicacionProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     publicacion: PublicacionListado | null;
-
 }
 
 export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: DrawerPublicacionProps) {
