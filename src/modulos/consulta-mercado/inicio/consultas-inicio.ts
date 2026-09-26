@@ -1,6 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { db } from "@/infraestructura/persistencia/prisma/db";
+import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 const runtime = db.runtime();
 
