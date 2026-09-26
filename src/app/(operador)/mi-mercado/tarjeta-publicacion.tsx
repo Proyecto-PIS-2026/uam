@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Publicacion } from "./mi-mercado";
 import Detalle from "./[id]/detalle-publicacion";
-import Drawer from "@/compartido/drawer";
+import Drawer from "../../../compartido/drawer";
 import { actualizarPrecio } from "./actions";
 
 type Props = {
