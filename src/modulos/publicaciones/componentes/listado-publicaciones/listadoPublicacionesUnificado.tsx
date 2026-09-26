@@ -1,17 +1,19 @@
 "use client";
 
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/publicaciones";
+import styles from "./ListadoPublicacionesUnificado.module.css";
 
 import TarjetaPublicacionConOperador from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConOperador";
 import { DrawerDerechaPublicacion } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerDerechaPublicacion";
 import { DrawerAbajoPublicacion} from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerAbajoPublicacion";
 import TarjetaPublicacion from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionSinOperador";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import ViewListIcon from "@mui/icons-material/ViewList";
 import ViewModuleIcon from "@mui/icons-material/ViewModule";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 
 type PublicacionesAgrupadas = {
     id: number;
@@ -26,6 +28,25 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
     const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionListado | null>(null);
     const [drawerAbierto, setDrawerAbierto] = useState(false);
     const pantallaVertical = useMediaQuery("(orientation: portrait)");
+    const [mostrarBotonArriba, setMostrarBotonArriba] = useState(false);
+    const [animandoSalida, setAnimandoSalida] = useState(false);
+
+    useEffect(() => {
+        const manejarScroll = () => {
+            if (window.scrollY > 400) {
+                setMostrarBotonArriba(true);
+                setAnimandoSalida(false);
+            } else if (mostrarBotonArriba) {
+                setAnimandoSalida(true);
+                window.setTimeout(() => {
+                    setMostrarBotonArriba(false);
+                    setAnimandoSalida(false);
+                }, 400);
+            }
+        };
+        window.addEventListener("scroll", manejarScroll);
+        return () => { window.removeEventListener("scroll", manejarScroll) };
+    }, [mostrarBotonArriba]);
 
     function abrirPublicacion(publicacion: PublicacionListado) {
         setPublicacionSeleccionada(publicacion);
@@ -58,6 +79,13 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
                 No hay publicaciones que coincidan con la búsqueda.
             </p>
         );
+    }
+
+    function volverArriba() {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
     }
 
     return (
@@ -122,6 +150,12 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
     		) : (
         		<DrawerDerechaPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
     		))}
+            {mostrarBotonArriba && (
+                <button type="button" onClick={volverArriba} aria-label="Volver arriba"
+                    className={`${styles.botonArriba} ${animandoSalida ? styles.botonArribaOcultando : styles.botonArribaVisible}`}>
+                    <KeyboardArrowUpIcon/>
+                </button>
+            )}
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/publicaciones";
 import ListadoPublicaciones from "./ListadoPublicacionesUnificado";
@@ -206,7 +206,44 @@ describe("ListadoPublicaciones", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Producto 2 — Frutas Norte" }));
 		expect(screen.getByRole("dialog", { name: "Detalle Producto 2" })).toBeInTheDocument();
 	});
+
+	it("no muestra el botón de volver arriba mientras no se ha desplazado suficiente", () => {
+		render(<ListadoPublicaciones publicaciones={publicacionesDeEjemplo()}/>);
+		Object.defineProperty(window, "scrollY", {configurable: true, value: 300});
+		fireEvent.scroll(window);
+		expect(screen.queryByRole("button", { name: "Volver arriba" })).not.toBeInTheDocument();
+	});
+
+	it("oculta el botón después de volver por debajo del umbral", async () => {
+		vi.useFakeTimers();
+		try {
+			render(<ListadoPublicaciones publicaciones={publicacionesDeEjemplo()}/>);
+			Object.defineProperty(window, "scrollY", {configurable: true, value: 500});
+			act(() => { fireEvent.scroll(window) });
+			expect(screen.getByRole("button", { name: "Volver arriba" })).toBeInTheDocument();
+			Object.defineProperty(window, "scrollY", {configurable: true, value: 300});
+			act(() => { fireEvent.scroll(window) });
+			await act(async () => { vi.advanceTimersByTime(400) });
+			expect(screen.queryByRole("button", { name: "Volver arriba" })).not.toBeInTheDocument();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("muestra el botón de volver arriba después de desplazarse suficiente", () => {
+		render(<ListadoPublicaciones publicaciones={publicacionesDeEjemplo()}/>);
+		Object.defineProperty(window, "scrollY", { configurable: true, value: 500});
+		act(() => {fireEvent.scroll(window)});
+		expect(screen.getByRole("button", { name: "Volver arriba" })).toBeInTheDocument();
+	});
+
+	it("vuelve al inicio al hacer click en el botón de volver arriba", () => {
+		const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+		render(<ListadoPublicaciones publicaciones={publicacionesDeEjemplo()}/>);
+		Object.defineProperty(window, "scrollY", {configurable: true, value: 500});
+		fireEvent.scroll(window);
+		fireEvent.click(screen.getByRole("button", { name: "Volver arriba" }));
+		expect(scrollTo).toHaveBeenCalledWith({top: 0, behavior: "smooth"});
+		scrollTo.mockRestore();
+	});
 });
-
-
-
