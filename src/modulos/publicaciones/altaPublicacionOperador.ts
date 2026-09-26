@@ -1,4 +1,4 @@
-import { db } from "@/infraestructura/persistencia/prisma/db";
+import { db } from "../../infraestructura/persistencia/prisma/db";
 import { validarAltaPublicacionOperador } from "./validarAltaPublicacionOperador";
 
 export type ResultadoAltaPublicacion =
