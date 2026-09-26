@@ -49,6 +49,10 @@
     grid-row: 1;
 }
 
+.filtroBuscador :global(input[type="search"])::-webkit-search-cancel-button {
+    filter: invert(94.63%) sepia(94%) saturate(1606%) hue-rotate(73.59deg) brightness(50.79%) contrast(173.72%);
+}
+
 .filtroEspecie {
     grid-column: 1 / -1;
     grid-row: 2;
