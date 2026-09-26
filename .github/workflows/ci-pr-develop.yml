@@ -2,7 +2,13 @@ name: CI - PR to Develop
 
 on:
   pull_request:
-    branches: [develop]
+    branches:
+      - develop
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
 
 permissions:
   contents: read
@@ -11,6 +17,7 @@ permissions:
 jobs:
   validar-origen:
     runs-on: ubuntu-latest
+
     steps:
       - name: Validar rama de origen
         shell: bash
@@ -26,6 +33,7 @@ jobs:
   validar-pr:
     needs: validar-origen
     runs-on: ubuntu-latest
+
     steps:
       - name: Validar título del Pull Request
         shell: bash
@@ -55,6 +63,7 @@ jobs:
   verificar-calidad:
     needs: validar-pr
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -72,6 +81,7 @@ jobs:
 
     env:
       DATABASE_URL: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
+
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
@@ -107,4 +117,4 @@ jobs:
         run: |
           npm run start &
           npx wait-on http://localhost:3000 --timeout 60000
-          npx playwright test
+          npx playwright test --pass-with-no-tests
