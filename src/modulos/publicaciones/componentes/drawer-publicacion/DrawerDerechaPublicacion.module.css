@@ -190,14 +190,14 @@
 }
 
 .botonPerfil {
-    background: var(--color-secondary);
-    color: white;
+    background: var(--color-primary-soft);
+    color: var(--color-secondary);
 }
 
 .botonWhatsApp {
     gap: 0.5rem;
-    background: var(--color-primary-soft);
-    color: var(--color-secondary);
+    background: var(--color-secondary);
+    color: white;
 }
 
 .iconoWhatsApp {
