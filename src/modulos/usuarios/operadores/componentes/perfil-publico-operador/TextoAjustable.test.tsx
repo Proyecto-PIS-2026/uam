@@ -58,7 +58,7 @@ describe("TextoAjustable", () => {
         vi.spyOn(
             HTMLElement.prototype,
             "getBoundingClientRect"
-        ).mockImplementation(function () {
+        ).mockImplementation(function (this: HTMLElement) {
             const tamaño = parseFloat(this.style.fontSize || "0");
             const ancho = tamaño * 6;
 
