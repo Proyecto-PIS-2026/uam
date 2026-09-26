@@ -44,7 +44,7 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
                                     }
                                 </div>
                                 <div className={styles.precio}>
-                                    {publicacion.precio ? <>${publicacion.precio}</> : "Sin precio"}
+                                    {publicacion.precio ? <>${publicacion.precio}</> : "Consultar precio"}
                                 </div>
                             </div>
                         </div>
