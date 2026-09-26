@@ -1,11 +1,16 @@
 import HeaderPublico from "@/compartido/HeaderPublico";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
-import { consultarPublicaciones } from "@/modulos/consulta-mercado/acciones/Publicaciones";
+import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacion.action";
 import ContenedorPublicaciones from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones";
 
-export default async function PaginaPublicaciones() {
-    const resultado = await consultarPublicaciones();
+type Props = {
+    searchParams: Promise<{especie?: string}>;
+};
 
+export default async function PaginaPublicaciones({searchParams}: Props) {
+    const {especie} = await searchParams;
+    const resultado = await obtenerPublicaciones();
+    const publicaciones = resultado?.publicaciones ?? [];
     return (
         <>
             <HeaderPublico />
@@ -26,15 +31,13 @@ export default async function PaginaPublicaciones() {
                                 </h1>
                                 <p className="mt-1 text-sm text-[rgb(168,208,93)]">
                                     <span className="font-semibold">
-                                        {resultado.publicaciones.length}
+                                        {publicaciones.length}
                                     </span>{" "}
                                     publicaciones en la plataforma
                                 </p>
                             </div>
                         </div>
-                        <ContenedorPublicaciones
-                            publicaciones={resultado.publicaciones}
-                        />
+                        <ContenedorPublicaciones publicaciones={publicaciones} especie={especie}/>
                     </div>
                 </main>
             </div>

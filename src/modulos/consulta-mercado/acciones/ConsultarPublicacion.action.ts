@@ -5,6 +5,6 @@ import {
   type ResultadoPublicaciones
 } from "./Publicaciones";
 
-export async function obtenerPublicaciones(): Promise<ResultadoPublicaciones | null> {
+export default async function obtenerPublicaciones(): Promise<ResultadoPublicaciones | null> {
   return consultarPublicaciones();
 }

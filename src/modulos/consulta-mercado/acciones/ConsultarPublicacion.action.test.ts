@@ -1,4 +1,4 @@
-import { obtenerPublicaciones } from "./ConsultarPublicacion.action";
+import obtenerPublicaciones from "./ConsultarPublicacion.action";
 import { consultarPublicaciones } from "./Publicaciones";
 
 vi.mock("./Publicaciones", () => ({

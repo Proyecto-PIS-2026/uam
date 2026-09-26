@@ -6,15 +6,16 @@ import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publ
 import ListadoPublicaciones from "../listado-publicaciones/ListadoPublicacionesUnificado";
 
 type PropiedadesContenedorPublicaciones = {
-  publicaciones: PublicacionListado[];
+	publicaciones: PublicacionListado[];
+	especie?: string;
 };
 
-export default function ContenedorPublicaciones({ publicaciones }: PropiedadesContenedorPublicaciones) {
-  //const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(publicaciones);
-  return (
-    <div className="flex flex-col gap-8">
-      {/* <FiltrosPublicaciones publicaciones={publicaciones} alFiltrar={setPublicacionesFiltradas}/> */}
-      <ListadoPublicaciones publicaciones={publicaciones} />
-    </div>
-  );
+export default function ContenedorPublicaciones({ publicaciones, /* especie = "" */ }: PropiedadesContenedorPublicaciones) {
+	//const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(publicaciones);
+	return (
+		<div className="flex flex-col gap-8">
+			{/* <FiltrosPublicaciones publicaciones={publicaciones} especie={especie} alFiltrar={setPublicacionesFiltradas}/> */}
+			<ListadoPublicaciones publicaciones={publicaciones} />
+		</div>
+	);
 }

@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
 import { DrawerAbajoPublicacion } from "./DrawerAbajoPublicacion";
 
@@ -90,13 +89,13 @@ describe("DrawerPublicacion", () => {
     it.each([[150, "$150"], [1234.5, "$1234.5"]])("muestra el precio %s", (precio, esperado) => {
         render(<DrawerAbajoPublicacion publicacion={{ ...crearPublicacion(), precio }} open onOpenChange={vi.fn()} />);
         expect(screen.getByText(esperado)).toBeInTheDocument();
-        expect(screen.queryByText("Sin precio")).not.toBeInTheDocument();
+        expect(screen.queryByText("Consultar precio")).not.toBeInTheDocument();
     });
     it.each([0, null])(
-        "muestra 'Sin precio' cuando el precio es %s",
+        "muestra 'Consultar precio' cuando el precio es %s",
         (precio) => {
             render(<DrawerAbajoPublicacion publicacion={{ ...crearPublicacion(), precio }} open onOpenChange={vi.fn()} />);
-            expect(screen.getByText("Sin precio")).toBeInTheDocument();
+            expect(screen.getByText("Consultar precio")).toBeInTheDocument();
             expect(screen.queryByText("$0")).not.toBeInTheDocument();
         },
     );
