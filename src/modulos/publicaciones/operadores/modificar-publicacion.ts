@@ -1,4 +1,4 @@
-import { db } from "@/infraestructura/persistencia/prisma/db";
+import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarImagenPublicacion } from "./imagenes-publicacion";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
@@ -9,6 +9,7 @@ export type CambiosPublicacionOperador = {
     categoriaId: number;
     calibreId: number;
     presentacionId: number;
+    disponible: boolean;
 };
 
 export class ErrorEdicionPublicacion extends Error {
@@ -30,6 +31,10 @@ export async function modificarPublicacionOperador(
 
     if (cambios === null || typeof cambios !== "object" || Array.isArray(cambios)) {
         throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Los cambios no son válidos.");
+    }
+
+    if (typeof cambios.disponible !== "boolean") {
+        throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La disponibilidad no es válida.");
     }
 
     let precioParaGuardar: PrecioDb = null;
@@ -144,15 +149,16 @@ export async function modificarPublicacionOperador(
                     foto: fotoActual,
                     categoriaId: cambios.categoriaId,
                     calibreId: cambios.calibreId,
-                    presentacionId: cambios.presentacionId
-            });
+                    presentacionId: cambios.presentacionId,
+                    publicacionDisponible: cambios.disponible,
+                });
 
-        return {
-            publicacionOperadorId: vinculo.id,
-            publicacionId: vinculo.publicacionId,
-            fotoAnterior: publicacion.foto,
-            fotoActual
-        };
+            return {
+                publicacionOperadorId: vinculo.id,
+                publicacionId: vinculo.publicacionId,
+                fotoAnterior: publicacion.foto,
+                fotoActual
+            };
         });
     } catch (error) {
         if (imagenNuevaGuardada.url && imagenNuevaGuardada.publicacionId !== null) {

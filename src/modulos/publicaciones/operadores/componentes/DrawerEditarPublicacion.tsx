@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Drawer from "@mui/material/Drawer";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -51,8 +55,9 @@ type DrawerEditarPublicacionProps = {
 
 const formatoPrecio = /^(0|[1-9]\d{0,9})(\.\d{1,2})?$/;
 
-function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, esWeb }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean }) {
+function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
     const [precio, setPrecio] = useState(publicacion.precio ?? "");
+    const [foto, setFoto] = useState(publicacion.foto);
     const [fotoNueva, setFotoNueva] = useState<File | null>(null);
     const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
     const [especieId, setEspecieId] = useState(publicacion.especieId);
@@ -60,12 +65,13 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
     const [categoriaId, setCategoriaId] = useState(publicacion.categoriaId);
     const [calibreId, setCalibreId] = useState(publicacion.calibreId);
     const [presentacionId, setPresentacionId] = useState(publicacion.presentacionId);
+    const [disponible, setDisponible] = useState(publicacion.disponible);
     const [error, setError] = useState("");
-    const [guardando, setGuardando] = useState(false);
+    const [confirmacionAbierta, setConfirmacionAbierta] = useState(false);
     const inputFotoRef = useRef<HTMLInputElement>(null);
     const urlVistaPreviaRef = useRef<string | null>(null);
     const idBase = `editar-publicacion-${publicacion.publicacionOperadorId}`;
-    const fotoVisible = vistaPrevia ?? publicacion.foto;
+    const fotoVisible = vistaPrevia ?? foto;
     const especieSeleccionada = especies.find((opcion) => opcion.id === especieId);
     const variedadSeleccionada = variedades.find((opcion) => opcion.id === variedadId);
     const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
@@ -82,8 +88,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         const archivo = evento.target.files?.[0];
         if (!archivo) return;
 
-        if (!archivo.type.startsWith("image/")) {
-            setError("Seleccioná un archivo de imagen.");
+        if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 5 * 1024 * 1024) {
+            setError("Seleccioná una imagen JPEG, PNG o WebP de hasta 5 MB.");
             evento.target.value = "";
             return;
         }
@@ -95,6 +101,21 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         setFotoNueva(archivo);
         setError("");
         evento.target.value = "";
+    }
+
+    function borrarFoto() {
+        if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
+        urlVistaPreviaRef.current = null;
+        setVistaPrevia(null);
+        setFotoNueva(null);
+        setFoto(null);
+    }
+
+    function cambiarPrecio(cantidad: number) {
+        const precioActual = Number(precio || "0");
+        if (!Number.isFinite(precioActual)) return;
+        const nuevoPrecio = Math.min(9999999999.99, Math.max(0, precioActual + cantidad));
+        setPrecio(String(Math.round(nuevoPrecio * 100) / 100));
     }
 
     function cambiarEspecie(nuevaEspecieId: number) {
@@ -116,8 +137,9 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         setPresentacionId(primeraPresentacion?.id ?? 0);
     }
 
-    async function guardar(evento: FormEvent<HTMLFormElement>) {
+    function solicitarGuardado(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
+        if (guardando) return;
         setError("");
 
         const precioNormalizado = precio.trim();
@@ -129,25 +151,34 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         const variedadValida = variedadesDisponibles.some((opcion) => opcion.id === variedadId);
         const presentacionValida = presentacionesDisponibles.some((opcion) => opcion.id === presentacionId);
         const categoriaValida = categoriasDisponibles.some((opcion) => opcion.id === categoriaId);
-        if (!especieSeleccionada || !variedadValida || !presentacionValida || !categoriaValida) {
-            setError("Elegí una especie, variedad, presentación y categoría válidas.");
+        const calibreValido = calibres.some((opcion) => opcion.id === calibreId);
+        if (!especieSeleccionada || !variedadValida || !presentacionValida || !categoriaValida || !calibreValido) {
+            setError("Elegí una especie, variedad, presentación, categoría y calibre válidos.");
             return;
         }
 
+        setConfirmacionAbierta(true);
+    }
+
+    async function guardar() {
+        if (guardando) return;
+        setConfirmacionAbierta(false);
+
         const cambios: CambiosPublicacionOperador = {
-            precio: precioNormalizado || null,
-            foto: publicacion.foto,
+            precio: precio.trim() || null,
+            foto,
             categoriaId,
             calibreId,
             presentacionId,
+            disponible,
         };
 
         setGuardando(true);
         try {
             await alGuardar(publicacion.publicacionOperadorId, cambios, fotoNueva);
             alCerrar();
-        } catch {
-            setError("No se pudieron guardar los cambios. Intentá de nuevo.");
+        } catch (error) {
+            setError(error instanceof Error ? error.message : "No se pudieron guardar los cambios. Intentá de nuevo.");
         } finally {
             setGuardando(false);
         }
@@ -161,12 +192,12 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                     <h2 className={styles.titulo} id={`${idBase}-titulo`}>Editar publicación</h2>
                     <p className={styles.subtitulo}>Actualizá los datos de tu producto</p>
                 </div>
-                <button className={styles.cerrar} type="button" onClick={alCerrar} aria-label="Cerrar edición">
+                <button className={styles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar edición">
                     <CloseIcon fontSize="small" />
                 </button>
             </div>
 
-            <form className={styles.formulario} onSubmit={guardar}>
+            <form className={styles.formulario} onSubmit={solicitarGuardado}>
                 <div className={styles.cuerpo}>
                     <div className={styles.seccionFoto}>
                         <div className={styles.marcoFoto}>
@@ -178,31 +209,41 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                             <button className={styles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={guardando}>
                                 <PhotoCameraOutlinedIcon fontSize="small" /> Editar foto
                             </button>
-                            <input ref={inputFotoRef} className={styles.inputFoto} type="file" accept="image/*" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} aria-label="Seleccionar foto del producto" />
+                            <input ref={inputFotoRef} className={styles.inputFoto} type="file" accept="image/jpeg,image/png,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={guardando} aria-label="Seleccionar foto del producto" />
+                        </div>
+                        {fotoVisible && <button className={styles.borrarFoto} type="button" onClick={borrarFoto} disabled={guardando}>Borrar foto</button>}
+                    </div>
+
+                    <button className={styles.disponibilidad} type="button" aria-pressed={disponible} onClick={() => setDisponible(!disponible)} disabled={guardando}>
+                        {disponible ? "Disponible" : "No disponible"}
+                    </button>
+
+                    <div className={styles.campo}>
+                        <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
+                        <div className={styles.controlesPrecio}>
+                            <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-10)} disabled={guardando} aria-label="Disminuir precio en 10">−</button>
+                            <input className={styles.entrada} id={`${idBase}-precio`} type="text" inputMode="decimal" placeholder="Ej. 185.00" value={precio} onChange={(evento) => setPrecio(evento.target.value)} disabled={guardando} />
+                            <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(10)} disabled={guardando} aria-label="Aumentar precio en 10">+</button>
+                        </div>
+                        <small className={styles.ayuda}>Dejalo vacío si el producto no tiene precio.</small>
+                    </div>
+
+                    <div className={styles.datosProducto}>
+                        <div className={styles.campo}>
+                            <TextField select label="Especie" id={`${idBase}-especie`} value={especies.some((opcion) => opcion.id === especieId) ? especieId : ""} onChange={(evento) => cambiarEspecie(Number(evento.target.value))} size="small" fullWidth required disabled={guardando} className={styles.selectMui}>
+                                {especies.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                            </TextField>
+                        </div>
+                        <div className={styles.campo}>
+                            <TextField select label="Variedad" id={`${idBase}-variedad`} value={variedadesDisponibles.some((opcion) => opcion.id === variedadId) ? variedadId : ""} onChange={(evento) => cambiarVariedad(Number(evento.target.value))} size="small" fullWidth required disabled={guardando} className={styles.selectMui}>
+                                {variedadesDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin variedades disponibles</MenuItem>}
+                                {variedadesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                            </TextField>
                         </div>
                     </div>
 
                     <div className={styles.campo}>
-                        <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
-                        <input className={styles.entrada} id={`${idBase}-precio`} type="text" inputMode="decimal" placeholder="Ej. 185.00" value={precio} onChange={(evento) => setPrecio(evento.target.value)} />
-                        <small className={styles.ayuda}>Dejalo vacío si el producto no tiene precio.</small>
-                    </div>
-
-                    <div className={styles.campo}>
-                        <TextField select label="Especie" id={`${idBase}-especie`} value={especieId} onChange={(evento) => cambiarEspecie(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
-                            {especies.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
-                        </TextField>
-                    </div>
-
-                    <div className={styles.campo}>
-                        <TextField select label="Variedad" id={`${idBase}-variedad`} value={variedadId} onChange={(evento) => cambiarVariedad(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
-                            {variedadesDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin variedades disponibles</MenuItem>}
-                            {variedadesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
-                        </TextField>
-                    </div>
-
-                    <div className={styles.campo}>
-                        <TextField select label="Presentación" id={`${idBase}-presentacion`} value={presentacionId} onChange={(evento) => setPresentacionId(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
+                        <TextField select label="Presentación" id={`${idBase}-presentacion`} value={presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) ? presentacionId : ""} onChange={(evento) => setPresentacionId(Number(evento.target.value))} size="small" fullWidth required disabled={guardando} className={styles.selectMui}>
                             {presentacionesDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin presentaciones disponibles</MenuItem>}
                             {presentacionesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                         </TextField>
@@ -210,13 +251,13 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
 
                     <div className={styles.rejilla}>
                         <div className={styles.campo}>
-                            <TextField select label="Categoría" id={`${idBase}-categoria`} value={categoriaId} onChange={(evento) => setCategoriaId(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
+                            <TextField select label="Categoría" id={`${idBase}-categoria`} value={categoriasDisponibles.some((opcion) => opcion.id === categoriaId) ? categoriaId : ""} onChange={(evento) => setCategoriaId(Number(evento.target.value))} size="small" fullWidth required disabled={guardando} className={styles.selectMui}>
                                 {categoriasDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin categorías disponibles</MenuItem>}
                                 {categoriasDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                             </TextField>
                         </div>
                         <div className={styles.campo}>
-                            <TextField select label="Calibre" id={`${idBase}-calibre`} value={calibreId} onChange={(evento) => setCalibreId(Number(evento.target.value))} size="small" fullWidth required className={styles.selectMui}>
+                            <TextField select label="Calibre" id={`${idBase}-calibre`} value={calibres.some((opcion) => opcion.id === calibreId) ? calibreId : ""} onChange={(evento) => setCalibreId(Number(evento.target.value))} size="small" fullWidth required disabled={guardando} className={styles.selectMui}>
                                 {calibres.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                             </TextField>
                         </div>
@@ -230,17 +271,31 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                     <button className={styles.guardar} type="submit" disabled={guardando}>{guardando ? "Guardando..." : "Guardar cambios"}</button>
                 </div>
             </form>
+
+            <Dialog className={styles.confirmacion} open={confirmacionAbierta} onClose={() => setConfirmacionAbierta(false)} aria-labelledby={`${idBase}-confirmacion`} fullWidth maxWidth="xs">
+                <DialogTitle id={`${idBase}-confirmacion`}>¿Guardar los cambios?</DialogTitle>
+                <DialogContent>Se actualizarán los datos de esta publicación.</DialogContent>
+                <DialogActions>
+                    <button className={styles.cancelar} type="button" onClick={() => setConfirmacionAbierta(false)}>Cancelar</button>
+                    <button className={styles.guardar} type="button" onClick={() => void guardar()}>Confirmar</button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 }
 
 export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones }: DrawerEditarPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
+    const [guardando, setGuardando] = useState(false);
+
+    function cerrar() {
+        if (!guardando) alCerrar();
+    }
 
     return (
-        <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={alCerrar} slotProps={{ paper: { className: styles.panel } }}>
+        <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} esWeb={esWeb} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
             )}
         </Drawer>
     );
