@@ -1,15 +1,21 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
   plugins: [react()],
 
   test: {
     coverage: {
-      provider: 'v8',
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.d.ts",
+        "src/**/migrations/**",
+        "src/infraestructura/persistencia/prisma/**"
+      ],
       thresholds: {
-        lines: 30,
+        lines: 80,
+        perFile: false,
       },
     },
     projects: [
@@ -29,11 +35,6 @@ export default defineConfig({
         },
       },
       {
-        resolve: {
-          alias: {
-            '@': fileURLToPath(new URL('./src', import.meta.url)),
-          },
-        },
         test: {
           name: 'integration',
           environment: 'node',
