@@ -1,0 +1,505 @@
+.panel:global(.MuiDrawer-paper) {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-height: 92dvh;
+    overflow: hidden;
+    border-radius: 1.5rem 1.5rem 0 0;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    box-shadow: 0 -0.5rem 2rem rgb(0 0 0 / 12%);
+}
+
+.asa {
+    width: 2.75rem;
+    height: 0.3rem;
+    flex: 0 0 auto;
+    align-self: center;
+    margin: 0.625rem 0 0.25rem;
+    border-radius: 999px;
+    background: var(--color-border);
+}
+
+.encabezado {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.titulo {
+    margin: 0;
+    font-size: 1.375rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.subtitulo {
+    margin: 0.25rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.cerrar {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    cursor: pointer;
+}
+
+.cerrar:hover,
+.cancelar:hover {
+    background: var(--color-primary-soft);
+}
+
+.cerrar:focus-visible,
+.botonFoto:focus-visible,
+.cancelar:focus-visible,
+.guardar:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: 2px;
+}
+
+.formulario {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.cuerpo {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1.25rem;
+}
+
+.seccionFoto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-surface);
+}
+
+.marcoFoto {
+    position: relative;
+    display: grid;
+    width: 100%;
+    max-height: 12.5rem;
+    aspect-ratio: 16 / 9;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 0.875rem;
+    background: var(--color-primary-soft);
+    color: var(--color-secondary);
+}
+
+.imagenFoto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sinFoto {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    color: var(--color-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.sinFoto svg {
+    font-size: 2rem;
+}
+
+.botonFoto {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 1;
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--color-primary);
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-secondary);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 12%);
+    cursor: pointer;
+}
+
+.botonFoto:hover {
+    background: var(--color-primary-soft);
+}
+
+.botonFoto:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.borrarFoto {
+    align-self: flex-end;
+    border: 0;
+    background: transparent;
+    color: var(--color-muted);
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.disponibilidad {
+    display: flex;
+    box-sizing: border-box;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    cursor: pointer;
+}
+
+.disponibilidad[data-disponible="true"] {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+}
+
+.textoDisponibilidad {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.estadoDisponibilidad {
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
+.disponibilidad[data-disponible="true"] .estadoDisponibilidad {
+    color: var(--color-secondary);
+}
+
+.disponibilidad[data-guardando="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.interruptorDisponibilidad {
+    flex-shrink: 0;
+}
+
+.interruptorDisponibilidad :global(.MuiSwitch-switchBase.Mui-checked) {
+    color: var(--color-primary);
+}
+
+.interruptorDisponibilidad :global(.MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track) {
+    background-color: var(--color-primary);
+}
+
+.interruptorDisponibilidad :global(.MuiSwitch-switchBase:hover) {
+    background-color: var(--color-primary-soft);
+}
+
+.interruptorDisponibilidad :global(.Mui-focusVisible) {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 2px;
+}
+
+.controlesPrecio {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+    gap: 0.5rem;
+}
+
+.ajustarPrecio {
+    border: 0;
+    border-radius: 0.75rem;
+    background: var(--color-primary);
+    color: var(--color-surface);
+    font: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.ajustarPrecio:hover {
+    background: var(--color-primary-hover);
+}
+
+.cerrar:disabled,
+.cancelar:disabled,
+.ajustarPrecio:disabled,
+.borrarFoto:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.inputFoto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    min-width: 0;
+}
+
+.datosProducto {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.etiqueta {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.entrada {
+    min-width: 0;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    font: inherit;
+    font-size: 1rem;
+}
+
+.entrada:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    border-width: 2px;
+}
+
+.entrada:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.selectMui {
+    width: 100%;
+}
+
+.selectMui :global(.MuiOutlinedInput-root) {
+    height: 3rem;
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 1rem;
+}
+
+.selectMui :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputLabel-root) {
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+.selectMui :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
+.selectMui :global(.MuiSelect-icon) {
+    color: var(--color-muted);
+}
+
+.opcionSelect {
+    color: var(--color-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 1rem;
+}
+
+.opcionSelect:global(.Mui-selected),
+.opcionSelect:global(.Mui-selected:hover),
+.opcionSelect:global(.Mui-focusVisible) {
+    background: var(--color-primary-soft) !important;
+    color: var(--color-secondary);
+}
+
+.ayuda {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.rejilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    gap: 1rem;
+}
+
+.error {
+    margin: 0;
+    color: #b42332;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.confirmacion :global(.MuiDialog-paper) {
+    border-radius: 1rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+.confirmacion :global(.MuiTypography-root) {
+    font-family: inherit;
+}
+
+.pie {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.75rem;
+    padding: 0.875rem 1.25rem calc(0.875rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.cancelar,
+.guardar {
+    display: inline-flex;
+    min-height: 3rem;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1rem;
+    border-radius: 0.75rem;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cancelar {
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-foreground);
+}
+
+.guardar {
+    border: 1px solid var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-surface);
+}
+
+.guardar:hover {
+    background: var(--color-primary-hover);
+}
+
+.guardar:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+@media (min-width: 768px) {
+    .panel:global(.MuiDrawer-paper) {
+        width: min(30rem, 100vw);
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+        box-shadow: -0.5rem 0 2rem rgb(0 0 0 / 12%);
+    }
+
+    .asa {
+        display: none;
+    }
+
+    .encabezado {
+        padding-top: 1.5rem;
+    }
+
+    .cuerpo > * {
+        flex-shrink: 0;
+    }
+
+    .datosProducto {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 768px) and (max-height: 800px) {
+    .encabezado {
+        padding-top: 0.875rem;
+        padding-bottom: 0.875rem;
+    }
+
+    .cuerpo {
+        gap: 0.625rem;
+        padding: 1rem;
+    }
+
+    .seccionFoto {
+        flex-grow: 1;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .marcoFoto {
+        flex: 1;
+        height: auto;
+        min-height: 8rem;
+        max-height: none;
+        aspect-ratio: auto;
+    }
+
+    .disponibilidad {
+        min-height: 3rem;
+    }
+
+    .datosProducto,
+    .rejilla {
+        gap: 0.625rem;
+    }
+}
