@@ -1,6 +1,6 @@
 import MiMercado, { type Publicacion } from "./mi-mercado";
 import varsTemp from "./vars-temporales";
-import { obtenerPublicacionesDeOperador } from "@/infraestructura/persistencia/prisma/publicaciones";
+import { obtenerPublicacionesDeOperador } from "@/modulos/publicaciones/mi-mercado/consultas-mi-mercado";
 
 // TODO: reemplazar por el valor real de Configuración ("incremento_precio")
 // cuando se implemente el ítem BP-18.2

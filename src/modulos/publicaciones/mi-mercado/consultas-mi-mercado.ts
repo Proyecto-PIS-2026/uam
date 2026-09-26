@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "@/infraestructura/persistencia/prisma/db";
 
 export async function obtenerPublicacionesDeOperador(operadorId: number) {
     const publicaciones = await db.orm.public.PublicacionOperador 
@@ -17,8 +17,16 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
     return resultado;
 }
 
-export async function actualizarPrecioPublicacion(publicacionId: number, nuevoPrecio: number) {
-    const publicacion = await db.orm.public.Publicacion
+export async function actualizarPrecioPublicacion(operadorId: number, publicacionId: number, nuevoPrecio: number) {
+    const pertenencia = await db.orm.public.PublicacionOperador
+        .where({ operadorId, publicacionId })
+        .all();
+
+    if (pertenencia.length === 0) {
+        throw new Error("La publicación no existe o no pertenece al operador.");
+    }
+
+    await db.orm.public.Publicacion
         .where({ id: publicacionId })
         .update({ precio: String(nuevoPrecio) as any});
 }
