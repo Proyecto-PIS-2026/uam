@@ -22,3 +22,33 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-geist-sans), sans-serif;
 }
+
+/* ====================================================== */
+/* ========= BOTONES DE ACCESO EN PAGINA INICIO ========= */
+/* ====================================================== */
+    .boton-inicio {
+      @apply bg-white border border-gray-100 rounded-2xl h-16 sm:h-24 flex items-center justify-center text-center text-base md:text-base font-semibold text-gray-800 shadow-sm hover:shadow-md transition-all;
+    }
+    .boton-inicio:hover {
+      border-color: var(--color-secondary);
+      color: var(--color-secondary);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+/* ====================================================== */
+/* ============== BOTONES DE PAGINACIÓN ================= */
+/* ====================================================== */
+    .boton-paginacion {
+      @apply bg-white border border-gray-100 rounded-lg font-semibold transition-all;
+      color: var(--color-foreground);
+    }
+
+    .boton-paginacion:hover:not(:disabled) {
+      border-color: var(--color-secondary);
+      color: var(--color-secondary);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .boton-paginacion:disabled {
+      @apply opacity-40 cursor-not-allowed;
+    }

@@ -1,0 +1,411 @@
+.pagina {
+    position: relative;
+    isolation: isolate;
+    min-height: 100dvh;
+    background: var(--color-background);
+    color: var(--color-foreground);
+}
+
+.pagina .hojasPagina {
+    top: 5rem;
+}
+
+.contenedor {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0.875rem 0.875rem 3rem;
+}
+
+.hero {
+    --velo-hero: rgb(3 28 23 / 88%);
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
+    display: grid;
+    grid-template-rows: 11rem auto;
+    overflow: hidden;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-primary-soft);
+    color: var(--color-foreground);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+}
+
+.heroTexto {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+    grid-row: 2;
+    padding: 1.5rem 1.25rem 1.75rem;
+}
+
+.heroTitulo {
+    max-width: 12ch;
+    color: var(--color-secondary);
+    font-size: clamp(2.25rem, 5vw, 4rem);
+    font-weight: 800;
+    line-height: 1.05;
+}
+
+.heroDescripcion {
+    max-width: 34rem;
+    color: var(--color-foreground);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.heroImagen {
+    position: relative;
+    grid-row: 1;
+    min-height: 11rem;
+}
+
+.heroImagen::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent 88%, var(--color-primary-soft));
+}
+
+.heroFoto {
+    object-fit: cover;
+    object-position: center 55%;
+}
+
+@media (max-width: 1023px) {
+    .hero {
+        background: #10231f;
+    }
+
+    .heroImagen {
+        position: absolute;
+        inset: 0;
+        min-height: 0;
+    }
+
+    .heroImagen::after {
+        display: none;
+    }
+
+    .heroTexto {
+        position: relative;
+        z-index: 1;
+        background: linear-gradient(to bottom, transparent, var(--velo-hero) 1.5rem);
+    }
+
+    .heroTitulo,
+    .heroDescripcion {
+        color: white;
+        text-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+    }
+}
+
+@media (max-width: 767px) {
+    .hero {
+        display: none;
+    }
+}
+
+.tituloMobile {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .tituloMobile {
+    display: block;
+    padding: 1.25rem 1rem 0;
+    color: black;
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+}
+
+.accesos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0 0 1.5rem;
+}
+
+.acceso {
+    display: flex;
+    flex-direction: row;
+    min-height: 4.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.acceso .accesoIcono {
+    flex-shrink: 0;
+    color: var(--color-secondary);
+    font-size: 1.75rem;
+}
+
+.acceso span {
+    min-width: 0;
+    text-align: left;
+}
+
+.acceso:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 10px rgb(0 0 0 / 8%);
+}
+
+.acceso:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.tituloContenedor {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    width: 100%;
+    padding: 2rem 1rem;
+    border: 1px solid var(--color-primary-hover);
+    border-radius: 0.75rem;
+    background: var(--color-secondary);
+    color: white;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+}
+
+.titulo {
+    position: relative;
+    z-index: 1;
+    font-size: 1.875rem;
+    font-weight: 700;
+}
+
+.subtitulo {
+    position: relative;
+    z-index: 1;
+    color: rgb(168, 208, 93);
+    font-size: 0.75rem;
+}
+
+.controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.buscador {
+    position: relative;
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.iconoBusqueda {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    transform: translateY(-50%);
+    color: var(--color-foreground);
+    pointer-events: none;
+}
+
+.inputBusqueda {
+    width: 100%;
+    height: 3rem;
+    padding: 0.75rem 1rem 0.75rem 2.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 200ms, box-shadow 200ms;
+}
+
+.inputBusqueda::placeholder {
+    color: var(--color-muted);
+}
+
+.inputBusqueda:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgb(0 143 61 / 20%);
+}
+
+.controles .selectMui {
+    flex: 0 0 9rem;
+    width: 9rem;
+    min-width: 9rem;
+    margin-left: auto;
+}
+
+.selectMui :global(.MuiOutlinedInput-root) {
+    height: 3rem;
+}
+
+.selectMui :global(.MuiInputLabel-sizeSmall:not(.MuiInputLabel-shrink)) {
+    transform: translate(14px, 13px) scale(1);
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
+.opcionSelect:global(.Mui-selected) {
+    background: var(--color-primary-soft) !important;
+}
+
+.lista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.sinResultados {
+    margin-top: 1.25rem;
+    padding: 2rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-muted);
+    text-align: center;
+}
+
+.paginacion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+.botonPagina {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.botonPagina:hover:not(:disabled),
+.botonPagina:focus-visible {
+    border-color: var(--color-primary);
+    color: var(--color-secondary);
+}
+
+.botonPagina:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.paginaActual {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+    .accesos {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .acceso {
+        min-height: 5rem;
+        font-size: 1rem;
+    }
+
+    .lista {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .hero {
+        display: flex;
+        align-items: center;
+        min-height: clamp(24rem, 36vw, 30rem);
+        border: 0;
+        background: #10231f;
+    }
+
+    .hero::before {
+        position: absolute;
+        z-index: 1;
+        inset: 0;
+        content: "";
+        pointer-events: none;
+        background: linear-gradient(90deg, rgb(3 28 23 / 88%) 0%, rgb(3 28 23 / 74%) 28%, rgb(3 28 23 / 24%) 62%, transparent 84%);
+    }
+
+    .heroTexto {
+        position: relative;
+        z-index: 2;
+        width: min(100%, 80rem);
+        margin-inline: auto;
+        padding: 3rem 0.875rem;
+        background: none;
+    }
+
+    .heroTitulo,
+    .heroDescripcion {
+        color: white;
+        text-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+    }
+
+    .heroDescripcion {
+        font-size: 1.125rem;
+    }
+
+    .heroImagen {
+        position: absolute;
+        inset: 0;
+        min-height: 0;
+    }
+
+    .heroImagen::after {
+        display: none;
+    }
+
+    .heroFoto {
+        object-position: center 20%;
+    }
+
+    .lista {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1280px) {
+    .lista {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
