@@ -27,19 +27,20 @@ export type PublicacionListado = {
 
 type FiltrosPublicacionesProps = {
     publicaciones: PublicacionListado[];
+    especieFiltro: string;
     alFiltrar?: (publicaciones: PublicacionListado[]) => void;
 };
 
-export default function FiltrosPublicaciones({publicaciones, alFiltrar}: FiltrosPublicacionesProps) {
+export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFiltrar}: FiltrosPublicacionesProps) {
     // Hooks useState para los filtros
-    const [busqueda, setBusqueda] = useState("");               // Barra de busqueda
-    const [precioMinimo, setPrecioMinimo] = useState("");       // Precio Minimo
-    const [precioMaximo, setPrecioMaximo] = useState("");       // Precio Maximo
-    const [especie, setEspecie] = useState("Todas");            // Filtro Especie
-    const [variedad, setVariedad] = useState("Todas");          // Filtro Variedad
-    const [presentacion, setPresentacion] = useState("Todas");  // Filtro Presentacion
-    const [categoria, setCategoria] = useState("Todas");        // Filtro Categoria
-    const [calibre, setCalibre] = useState("Todas");            // Filtro Calibre
+    const [busqueda, setBusqueda] = useState("");                                           // Barra de busqueda
+    const [precioMinimo, setPrecioMinimo] = useState("");                                   // Precio Minimo
+    const [precioMaximo, setPrecioMaximo] = useState("");                                   // Precio Maximo
+    const [especie, setEspecie] = useState(especieFiltro === "" ? "Todas" : especieFiltro); // Filtro Especie
+    const [variedad, setVariedad] = useState("Todas");                                      // Filtro Variedad
+    const [presentacion, setPresentacion] = useState("Todas");                              // Filtro Presentacion
+    const [categoria, setCategoria] = useState("Todas");                                    // Filtro Categoria
+    const [calibre, setCalibre] = useState("Todas");                                        // Filtro Calibre
 
     const [ultimaFaceta, setUltimaFaceta] = useState<"categoria" | "calibre" | null>(null);
 
@@ -384,7 +385,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                     </div>
                     <div className={styles.filtrosCategoriaCalibre}>
                         {/* Categoria */}
-                        <TextField select fullWidth label="Categoría" value={categoria} onChange={(evento) => manejarCambioCategoria(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCategoria}`}>
+                        <TextField select fullWidth label="Categoría" value={categorias.includes(categoria) ? categoria : "Todas"} onChange={(evento) => manejarCambioCategoria(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCategoria}`}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
                                 Todas
                             </MenuItem>
@@ -395,7 +396,7 @@ export default function FiltrosPublicaciones({publicaciones, alFiltrar}: Filtros
                             ))}
                         </TextField>
                         {/* Calibre */}
-                        <TextField select fullWidth label="Calibre" value={calibre} onChange={(evento) => manejarCambioCalibre(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCalibre}`}>
+                        <TextField select fullWidth label="Calibre" value={calibres.includes(calibre) ? calibre : "Todas"} onChange={(evento) => manejarCambioCalibre(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCalibre}`}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
                                 Todos
                             </MenuItem>

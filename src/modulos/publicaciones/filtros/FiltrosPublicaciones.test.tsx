@@ -185,7 +185,7 @@ describe("FiltrosPublicaciones", () => {
     afterEach(() => { vi.useRealTimers() });
 
     it("renderiza los controles principales", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones}/>);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
 
         // Buscador y filtros principales
         expect(screen.getByLabelText("Buscar publicaciones")).toBeInTheDocument();
@@ -214,7 +214,7 @@ describe("FiltrosPublicaciones", () => {
 
     // Tests de estado inicial
     it("mantiene cerrados inicialmente los filtros adicionales y el ordenamiento", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones}/>);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const filtrosExtendidos = document.querySelector(`.${styles.filtrosExtendidos}`);
         const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
         expect(filtrosExtendidos).toBeInTheDocument();
@@ -224,7 +224,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("abre y cierra los filtros adicionales al hacer click en Más filtros", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones}/>);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const layoutFiltros = document.querySelector(`.${styles.layoutFiltros}`);
         const botonMasFiltros = screen.getByRole("button", { name: /más filtros/i });
         expect(layoutFiltros).not.toHaveClass(styles.filtrosAbiertos);
@@ -235,7 +235,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("abre y cierra las opciones de ordenamiento al hacer click en Ordenar por", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones}/>);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
         const botonOrdenar = screen.getByRole("button", { name: /ordenar por/i });
 
@@ -252,7 +252,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("renderiza correctamente los campos de búsqueda y precio", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones}/>);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
@@ -268,7 +268,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("cierra el menú de ordenamiento al seleccionar una opción", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} />);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
         const botonOrdenar = screen.getByRole("button", { name: /ordenar por/i });
         fireEvent.click(botonOrdenar);
@@ -278,13 +278,13 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("marca inicialmente Sin ordenar como opción activa", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} />);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const sinOrdenar = screen.getByRole("button", {  name: /sin ordenar/i });
         expect(sinOrdenar).toHaveClass(styles.opcionOrdenamientoActiva);
     });
 
     it("cambia visualmente la opción activa del ordenamiento", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} />);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const botonOrdenar = screen.getByRole("button", {  name: /ordenar por/i });
         fireEvent.click(botonOrdenar);
         const sinOrdenar = screen.getByRole("button", { name: /sin ordenar/i });
@@ -296,7 +296,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("muestra la cantidad de publicaciones inicial", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} />);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         expect(screen.getByText("1 publicación")).toBeInTheDocument();
     });
 
@@ -308,12 +308,12 @@ describe("FiltrosPublicaciones", () => {
                 id: 2,
             },
         ];
-        render(<FiltrosPublicaciones publicaciones={variasPublicaciones}/>);
+        render(<FiltrosPublicaciones publicaciones={variasPublicaciones} especieFiltro=""/>);
         expect(screen.getByText("2 publicaciones")).toBeInTheDocument();
     });
 
     it("inicia los filtros con sus valores por defecto", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} />);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         expect(screen.getByLabelText("Especie")).toHaveTextContent("Todas");
         expect(screen.getByLabelText("Variedad")).toHaveTextContent("Todas");
         expect(screen.getByLabelText("Presentación")).toHaveTextContent("Todas");
@@ -322,7 +322,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("habilita los filtros dependientes de forma secuencial", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} />);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
         const presentacion = screen.getByLabelText("Presentación");
@@ -341,7 +341,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it('selecciona automáticamente la variedad "-" y habilita Presentación', () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesVariedadUnica}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesVariedadUnica} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
         const presentacion = screen.getByLabelText("Presentación");
@@ -355,7 +355,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("limpia los filtros al hacer click en Limpiar filtros", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} />);
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
@@ -372,7 +372,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("muestra la cantidad de publicaciones al filtrar por especie", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -381,7 +381,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("devuelve las publicaciones filtradas por especie mediante alFiltrar", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -393,7 +393,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por variedad", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -407,7 +407,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por presentación", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPresentacion} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPresentacion} especieFiltro="" alFiltrar={alFiltrar}/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -424,7 +424,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por categoría", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const categoria = screen.getByLabelText("Categoría");
         fireEvent.mouseDown(categoria);
         fireEvent.click(screen.getByRole("option", { name: "E" }));
@@ -435,7 +435,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por calibre", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const calibre = screen.getByLabelText("Calibre");
         fireEvent.mouseDown(calibre);
         fireEvent.click(screen.getByRole("option", { name: "Pequeño" }));
@@ -447,7 +447,7 @@ describe("FiltrosPublicaciones", () => {
     it("filtra las publicaciones por búsqueda de texto", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "manzana" } });
         act(() => { vi.advanceTimersByTime(750) });
@@ -459,7 +459,7 @@ describe("FiltrosPublicaciones", () => {
     it("filtra las publicaciones por nombre de operador", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "Mercado Verde" } });
         act(() => { vi.advanceTimersByTime(750) });
@@ -471,7 +471,7 @@ describe("FiltrosPublicaciones", () => {
     it("filtra las publicaciones por precio minimo", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         fireEvent.change(precioMinimo, { target: { value: "250" } });
         act(() => { vi.advanceTimersByTime(750) });
@@ -487,7 +487,7 @@ describe("FiltrosPublicaciones", () => {
     it("filtra las publicaciones por precio maximo", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMaximo, { target: { value: "250" } });
         act(() => { vi.advanceTimersByTime(750) });
@@ -503,7 +503,7 @@ describe("FiltrosPublicaciones", () => {
     it("filtra las publicaciones por rango de precio", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMinimo, { target: { value: "150" } });
@@ -517,7 +517,7 @@ describe("FiltrosPublicaciones", () => {
     it("no devuelve publicaciones cuando el rango de precio es inválido", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones  publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones  publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMinimo, { target: { value: "350" } });
@@ -529,7 +529,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("ordena las publicaciones por precio ascendente", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
@@ -539,7 +539,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("ordena las publicaciones por precio descendente", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
@@ -549,7 +549,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("ordena las publicaciones alfabéticamente de A a Z", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "A-Z" }));
@@ -559,7 +559,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("ordena las publicaciones alfabéticamente de Z a A", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar} />);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} />);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "Z-A" }));
@@ -571,7 +571,7 @@ describe("FiltrosPublicaciones", () => {
     it("filtra por varias palabras sin distinguir mayúsculas y minúsculas", () => {
         vi.useFakeTimers();
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "MANZANA mercado" } });
         act(() => { vi.advanceTimersByTime(750) });
@@ -583,7 +583,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("permite volver a seleccionar Sin ordenar", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} />);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
@@ -595,7 +595,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("coloca las publicaciones sin precio al final al ordenar por precio", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesConPrecioNulo} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
@@ -607,7 +607,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("mantiene las publicaciones sin precio al final al ordenar por precio descendente", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesConPrecioNulo} alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
@@ -618,7 +618,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("restaura todas las variedades al seleccionar Todas", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
         fireEvent.mouseDown(especie);
@@ -633,7 +633,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("mantiene categoría y calibre válidos al cambiar la variedad", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} />);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
         const categoria = screen.getByLabelText("Categoría");
@@ -651,7 +651,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("restablece categoría y calibre cuando dejan de ser válidos al cambiar la variedad", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} />);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -669,7 +669,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("permite restablecer el calibre seleccionando Todos", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} />);
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const calibre = screen.getByLabelText("Calibre");
         fireEvent.mouseDown(calibre);
         fireEvent.click(screen.getByRole("option", { name: "Grande" }));
@@ -699,7 +699,7 @@ describe("FiltrosPublicaciones", () => {
                 },
             ];
 
-            render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCalibre}/>);
+            render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCalibre} especieFiltro=""/>);
             const categoria = screen.getByLabelText("Categoría");
             fireEvent.mouseDown(categoria);
             fireEvent.click(screen.getByRole("option", { name: "I" }));
@@ -733,7 +733,7 @@ describe("FiltrosPublicaciones", () => {
                 },
             ];
 
-            render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCategoria}/>);
+            render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCategoria} especieFiltro=""/>);
             const calibre = screen.getByLabelText("Calibre");
             fireEvent.mouseDown(calibre);
             fireEvent.click(screen.getByRole("option", { name: "Grande" }));
@@ -749,7 +749,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("mantiene la categoría y restablece el calibre cuando la combinación deja de ser válida", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida} especieFiltro=""/>);
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
@@ -765,7 +765,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("mantiene el calibre y restablece la categoría cuando la combinación deja de ser válida", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida}/>);
+        render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida} especieFiltro=""/>);
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
@@ -780,5 +780,13 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.click(screen.getByRole("option", { name: "Red" }));
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Todas");
         expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Grande");
+    });
+
+    it("aplica la especie recibida como filtro inicial", () => {
+        const alFiltrar = vi.fn();
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
+        expect(resultado).toHaveLength(2);
+        expect(resultado.every((publicacion) => publicacion.especie === "Manzana")).toBe(true);
     });
 });
