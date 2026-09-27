@@ -18,7 +18,19 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
     return resultado;
 }
 
-export async function actualizarPrecioPublicacion(operadorId: number, publicacionId: number, nuevoPrecio: number) {
+export async function actualizarPrecioPublicacion(
+    operadorId: number,
+    publicacionId: number,
+    nuevoPrecio: number
+) {
+    if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) {
+        throw new Error("El precio debe ser un número mayor a cero.");
+    }
+
+    if (nuevoPrecio > 9_999_999_999.99) {
+        throw new Error("El precio excede el valor máximo permitido.");
+    }
+
     const pertenencia = await db.orm.public.PublicacionOperador
         .where({ operadorId, publicacionId })
         .all();
@@ -29,6 +41,6 @@ export async function actualizarPrecioPublicacion(operadorId: number, publicacio
 
     await db.orm.public.Publicacion
         .where({ id: publicacionId })
-        .update({ precio: String(nuevoPrecio) as Numeric<12, 2> });
+        .update({ precio: nuevoPrecio.toFixed(2) as Numeric<12, 2> });
 }
 

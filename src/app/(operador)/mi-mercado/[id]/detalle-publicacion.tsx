@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Publicacion } from "../mi-mercado";
+import Image from "next/image";
 
 type Props = {
     pub: Publicacion;
@@ -92,10 +93,11 @@ export default function DetallePublicacion({
                 {/* Foto */}
                 <div className="relative ml-1 h-40 w-40 shrink-0 self-center overflow-hidden rounded-full bg-primary-soft">
                     {foto ? (
-                        <img
+                        <Image
                             src={foto}
                             alt={especie}
-                            className="h-full w-full object-cover"
+                            fill
+                            className="object-cover"
                         />
                     ) : (
                         <div className="flex h-full w-full items-center justify-center text-xs font-medium text-muted">
