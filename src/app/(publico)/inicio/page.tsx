@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Inicio from "../../../modulos/consulta-mercado/inicio/inicio";
 import { obtenerEspeciesInicio } from "../../../modulos/consulta-mercado/inicio/consultas-inicio";
 

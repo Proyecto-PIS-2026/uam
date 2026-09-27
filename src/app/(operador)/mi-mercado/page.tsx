@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import MiMercado, { type Publicacion } from "./mi-mercado";
 import varsTemp from "./vars-temporales";
 import { obtenerPublicacionesDeOperador } from "@/modulos/publicaciones/mi-mercado/consultas-mi-mercado";
