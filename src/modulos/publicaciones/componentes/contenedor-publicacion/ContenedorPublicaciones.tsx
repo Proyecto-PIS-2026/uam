@@ -10,7 +10,7 @@ type PropiedadesContenedorPublicaciones = {
 	especie?: string;
 };
 
-export default function ContenedorPublicaciones({ publicaciones, /*especie = ""*/ }: PropiedadesContenedorPublicaciones) {
+export default function ContenedorPublicaciones({ publicaciones, especie = "" }: PropiedadesContenedorPublicaciones) {
 	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(publicaciones);
 	const especieValida = especie !== "" && publicaciones.some((publicacion) => publicacion.especie === especie) ? especie : "";
 	return (
