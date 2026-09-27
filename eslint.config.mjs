@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "migrations/**",
     "src/infraestructura/persistencia/prisma/contract.d.ts",
+    "src/infraestructura/persistencia/prisma/migrations/snapshots/**",
   ]),
 ]);
 
