@@ -112,3 +112,4 @@ jobs:
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
           containerAppName: uam-staging
           resourceGroup: Proyecto-PIS-2026
+          environmentVariables: DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
