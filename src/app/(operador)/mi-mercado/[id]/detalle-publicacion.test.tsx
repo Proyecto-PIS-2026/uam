@@ -42,9 +42,9 @@ function crearPublicacion(): Publicacion {
 }
 
 describe("DetallePublicacion", () => {
-  let restar: ReturnType<typeof vi.fn>;
-  let sumar: ReturnType<typeof vi.fn>;
-  let cambiarPrecio: ReturnType<typeof vi.fn>;
+  let restar: () => void;
+  let sumar: () => void;
+  let cambiarPrecio: (nuevoPrecio: number) => void;
 
   beforeEach(() => {
     restar = vi.fn();

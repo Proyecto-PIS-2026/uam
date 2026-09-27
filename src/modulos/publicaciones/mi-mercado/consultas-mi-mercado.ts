@@ -1,4 +1,5 @@
-import { db } from "@/infraestructura/persistencia/prisma/db";
+import { db } from "../../../infraestructura/persistencia/prisma/db";
+import type { Numeric } from "@prisma/orm-postgres/target/codec-types";
 
 export async function obtenerPublicacionesDeOperador(operadorId: number) {
     const publicaciones = await db.orm.public.PublicacionOperador 
@@ -28,6 +29,6 @@ export async function actualizarPrecioPublicacion(operadorId: number, publicacio
 
     await db.orm.public.Publicacion
         .where({ id: publicacionId })
-        .update({ precio: String(nuevoPrecio) as any});
+        .update({ precio: String(nuevoPrecio) as Numeric<12, 2> });
 }
 
