@@ -9,8 +9,8 @@ export async function GET() {
   } catch (error) {
     console.error("ERROR REAL:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+        { error: "Ocurrió un error al procesar la solicitud." },
+        { status: 500 }
     );
-  }
+}
 }

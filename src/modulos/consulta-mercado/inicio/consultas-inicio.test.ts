@@ -1,4 +1,3 @@
-import { readdir } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerEspeciesConPublicacionesActivas, obtenerEspeciesInicio } from "./consultas-inicio";
 
