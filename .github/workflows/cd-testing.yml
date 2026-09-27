@@ -47,18 +47,9 @@ jobs:
         with:
           appSourcePath: ${{ github.workspace }}
           dockerfilePath: Dockerfile
-
           registryUrl: uamgrupo10acr.azurecr.io
           registryUsername: ${{ secrets.REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
-
-          imageToBuild: uamgrupo10acr.azurecr.io/uam-testing:${{ github.sha }}
-
           containerAppName: uam-testing
           resourceGroup: Proyecto-PIS-2026
-
-          targetPort: 3000
-          ingress: external
-
-          environmentVariables: >
-            DATABASE_URL=${{ secrets.TESTING_DATABASE_URL }}
+          environmentVariables: DATABASE_URL=${{ secrets.TESTING_DATABASE_URL }}
