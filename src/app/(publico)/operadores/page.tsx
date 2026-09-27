@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { obtenerOperadoresPublicos } from '@/modulos/usuarios/operadores/consultas-listado-publico';
 import ListadoOperadores from '@/modulos/usuarios/operadores/componentes/listado-operadores/ListadoOperadores';
 import HojasDecorativas from '@/compartido/HojasDecorativas';
