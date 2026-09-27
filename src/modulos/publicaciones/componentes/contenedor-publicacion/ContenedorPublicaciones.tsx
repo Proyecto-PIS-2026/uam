@@ -1,9 +1,8 @@
 "use client";
 
-// Para integrar filtros, eliminar comentarios y reemplazar publicaciones por publicacionesFiltradas.
-//import { useState } from "react";
+import { useState } from "react";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
-//import FiltrosPublicaciones from "../../filtros/FiltrosPublicaciones"
+import FiltrosPublicaciones from "../../filtros/FiltrosPublicaciones"
 import ListadoPublicaciones from "../listado-publicaciones/ListadoPublicacionesUnificado";
 
 type PropiedadesContenedorPublicaciones = {
@@ -12,12 +11,12 @@ type PropiedadesContenedorPublicaciones = {
 };
 
 export default function ContenedorPublicaciones({ publicaciones, /*especie = ""*/ }: PropiedadesContenedorPublicaciones) {
-	//const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(publicaciones);
-	//const especieValida = especie !== "" && publicaciones.some((publicacion) => publicacion.especie === especie) ? especie : "";
+	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(publicaciones);
+	const especieValida = especie !== "" && publicaciones.some((publicacion) => publicacion.especie === especie) ? especie : "";
 	return (
 		<div className="flex flex-col gap-8">
-			{/*<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especieValida} alFiltrar={setPublicacionesFiltradas}/>*/}
-			<ListadoPublicaciones publicaciones={publicaciones /*publicacionesFiltradas*/} />
+			<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especieValida} alFiltrar={setPublicacionesFiltradas}/>
+			<ListadoPublicaciones publicaciones={publicacionesFiltradas} />
 		</div>
 	);
 }

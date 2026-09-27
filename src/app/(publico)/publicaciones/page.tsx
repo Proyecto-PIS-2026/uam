@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import HeaderPublico from "@/compartido/HeaderPublico";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacion.action";
