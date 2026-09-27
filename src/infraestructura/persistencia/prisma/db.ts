@@ -1,3 +1,4 @@
+import 'temporal-polyfill/global';
 import 'dotenv/config';
 import 'temporal-polyfill/full/global';
 import 'temporal-polyfill/types/global';
