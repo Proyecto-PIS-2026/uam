@@ -1,0 +1,14 @@
+.pagina {
+    flex: 1;
+    position: relative;
+    isolation: isolate;
+    padding-bottom: 2rem;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+.contenido {
+    position: relative;
+    z-index: 1;
+}

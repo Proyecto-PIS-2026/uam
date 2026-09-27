@@ -1,0 +1,394 @@
+.tarjeta {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    gap: 0.875rem;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.875rem;
+    background-color: var(--color-surface);
+    color: var(--color-foreground);
+    box-shadow: 0 2px 5px rgb(0 0 0 / 8%);
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+.tarjeta:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.contenedorImagen {
+    position: relative;
+    width: 5.5rem;
+    height: 5.5rem;
+    flex-shrink: 0;
+    align-self: center;
+    overflow: hidden;
+    border-radius: 0.65rem;
+    background-color: var(--color-primary-soft);
+}
+
+.imagen {
+    object-fit: cover;
+}
+
+.sinFoto {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #5f5f5f;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.iconoFoto {
+    display: none !important;
+}
+
+.textoSinFotoWeb {
+    display: none;
+}
+
+.contenido {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+}
+
+.encabezado {
+    display: flex;
+    min-width: 0;
+    padding-bottom: 0.4rem;
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.especie {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.informacionWeb {
+    display: none;
+}
+
+.cuerpo {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.informacionMobile {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    padding-right: 0.25rem;
+    align-items: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dato {
+    display: flex;
+    min-width: 0;
+    height: fit-content;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.etiqueta {
+    color: #5f5f5f;
+    font-size: 0.7rem;
+    line-height: 1;
+}
+
+.chip {
+    display: inline-flex;
+    min-width: 2.5rem;
+    height: 1.45rem;
+    padding: 0 0.6rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.45rem;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.contenedorPrecio {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0 0.5rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-left: 1px solid var(--color-border);
+}
+
+.precio {
+    color: var(--color-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.consultarPrecio {
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.presentacionPrecio {
+    width: 100%;
+    min-width: 0;
+    margin-top: 0.2rem;
+    overflow: hidden;
+    color: var(--color-foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    font-weight: 400;
+    line-height: 1.2;
+    text-align: center;
+}
+
+@media (max-width: 380px) {
+    .tarjeta {
+        gap: 0.5rem;
+        padding: 0.6rem;
+    }
+
+    .contenedorImagen {
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+
+    .encabezado {
+        padding-bottom: 0.3rem;
+    }
+
+    .especie {
+        font-size: 0.9rem;
+    }
+
+    .informacionMobile {
+        padding-right: 0.1rem;
+    }
+
+    .etiqueta {
+        font-size: 0.62rem;
+    }
+
+    .chip {
+        min-width: 2rem;
+        height: 1.25rem;
+        padding: 0 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    .contenedorPrecio {
+        padding: 0 0.3rem;
+    }
+
+    .precio {
+        font-size: 0.95rem;
+    }
+
+    .consultarPrecio {
+        font-size: 0.7rem;
+    }
+
+    .presentacionPrecio {
+        margin-top: 0.15rem;
+        font-size: 0.6rem;
+    }
+
+    .sinFoto {
+        font-size: 0.65rem;
+    }
+}
+
+@media (min-width: 381px) and (max-width: 419px) {
+    .tarjeta {
+        gap: 0.75rem;
+    }
+}
+
+@media (min-width: 420px) and (max-width: 767px) {
+    .tarjeta {
+        gap: 1rem;
+        padding: 0.875rem;
+    }
+
+    .contenedorImagen {
+        width: 6rem;
+        height: 6rem;
+    }
+
+    .encabezado {
+        padding-bottom: 0.45rem;
+    }
+
+    .especie {
+        font-size: 1.05rem;
+    }
+
+    .informacionMobile {
+        padding-right: 0.25rem;
+    }
+
+    .contenedorPrecio {
+        padding: 0 0.75rem;
+    }
+
+    .precio {
+        font-size: 1.25rem;
+    }
+
+    .presentacionPrecio {
+        font-size: 0.75rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .tarjeta {
+        height: 100%;
+        flex-direction: column;
+        gap: 0;
+        padding: 0;
+        overflow: hidden;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgb(26 26 26 / 5%);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .tarjeta:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 10px 28px rgb(26 26 26 / 10%);
+        transform: translateY(-2px);
+    }
+
+    .tarjeta:active {
+        transform: translateY(0);
+    }
+
+    .contenedorImagen {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 8 / 5;
+        align-self: auto;
+        border-radius: 0;
+    }
+
+    .sinFoto {
+        gap: 6px;
+        color: var(--color-secondary);
+        font-size: 0.75rem;
+    }
+
+    .iconoFoto {
+        display: block !important;
+        font-size: 2rem !important;
+    }
+
+    .textoSinFotoMobile {
+        display: none;
+    }
+
+    .textoSinFotoWeb {
+        display: inline;
+    }
+
+    .contenido {
+        padding: 14px 12px 12px;
+    }
+
+    .encabezado {
+        display: block;
+        padding-bottom: 14px;
+        border-bottom: 0;
+    }
+
+    .especie {
+        overflow: visible;
+        text-overflow: initial;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        font-size: 1.0625rem;
+    }
+
+    .informacionWeb {
+        display: block;
+        margin: 6px 0 0;
+        color: var(--color-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .cuerpo {
+        display: flex;
+        margin-top: auto;
+        flex-direction: column;
+        justify-content: flex-end;
+    }
+
+    .informacionMobile {
+        display: none;
+    }
+
+    .contenedorPrecio {
+        width: 100%;
+        min-width: 0;
+        height: auto;
+        padding: 12px 0 0;
+        flex: 0 1 auto;
+        align-items: flex-end;
+        border-top: 1px solid var(--color-border);
+        border-left: 0;
+        text-align: right;
+    }
+
+    .precio {
+        font-size: 1.5rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .consultarPrecio {
+        color: var(--color-primary);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .presentacionPrecio {
+        margin-top: 4px;
+        color: var(--color-muted);
+        font-size: 0.75rem;
+        text-align: right;
+    }
+}
