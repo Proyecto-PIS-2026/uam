@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type SubmitEvent } from "react";
 import Image from "next/image";
-import { ConfirmModal } from "@/compartido/componentes/ConfirmModal";
-import type { DatosAltaPublicacionOperador } from "@/modulos/publicaciones/validarAltaPublicacionOperador";
+import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
+import type { DatosAltaPublicacionOperador } from "../../../../modulos/publicaciones/validarAltaPublicacionOperador";
 
 type Opcion = { id: number; nombre: string };
 type OpcionRelacionada = Opcion & { especieId?: number | null; variedadId?: number };
