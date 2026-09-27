@@ -16,14 +16,14 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout del codigo
+      - name: Checkout del código
         uses: actions/checkout@v4
 
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          cache: 'npm'
+          node-version: "24"
+          cache: "npm"
 
       - name: Instalar dependencias
         run: npm ci
@@ -47,9 +47,18 @@ jobs:
         with:
           appSourcePath: ${{ github.workspace }}
           dockerfilePath: Dockerfile
+
           registryUrl: uamgrupo10acr.azurecr.io
           registryUsername: ${{ secrets.REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
+
+          imageToBuild: uamgrupo10acr.azurecr.io/uam-testing:${{ github.sha }}
+
           containerAppName: uam-testing
           resourceGroup: Proyecto-PIS-2026
-          environmentVariables: DATABASE_URL=${{ secrets.TESTING_DATABASE_URL }}
+
+          targetPort: 3000
+          ingress: external
+
+          environmentVariables: >
+            DATABASE_URL=${{ secrets.TESTING_DATABASE_URL }}
