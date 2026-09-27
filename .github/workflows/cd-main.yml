@@ -51,3 +51,4 @@ jobs:
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
           containerAppName: uam-production
           resourceGroup: Proyecto-PIS-2026
+          environmentVariables: DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}
