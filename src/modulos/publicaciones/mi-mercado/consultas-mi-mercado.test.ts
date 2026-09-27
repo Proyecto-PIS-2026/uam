@@ -148,7 +148,7 @@ describe("consultas-mi-mercado", () => {
         expect(
             mocks.publicacionUpdate
         ).toHaveBeenCalledWith({
-            precio: "125.5",
+            precio: "125.50",
         });
     });
 

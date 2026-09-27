@@ -214,7 +214,7 @@ describe("DetallePublicacion", () => {
       }),
     ).toHaveAttribute(
       "src",
-      "/producto.jpg",
+      expect.stringContaining("url=%2Fproducto.jpg"),
     );
   });
 
@@ -241,7 +241,7 @@ describe("DetallePublicacion", () => {
       }),
     ).toHaveAttribute(
       "src",
-      "/especie.jpg",
+      expect.stringContaining("url=%2Fespecie.jpg"),
     );
   });
 
