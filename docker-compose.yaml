@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Base de datos de desarrollo
   postgres_uam:
     image: postgres:16-alpine
     container_name: bd_uam_local
@@ -12,7 +13,21 @@ services:
       - "5435:5432"
     volumes:
       - pgdata_uam:/var/lib/postgresql/data
-
+  # Base de datos para tests
+  postgres_uam_test:
+    image: postgres:16-alpine
+    container_name: bd_uam_test
+    environment:
+      POSTGRES_USER: uam
+      POSTGRES_PASSWORD: uam_local
+      POSTGRES_DB: uam_test
+    ports:
+      - "5436:5432"
+    volumes:
+      - pgdata_uam_test:/var/lib/postgresql/data
+      
 volumes:
   pgdata_uam:
     name: uam_postgres_data
+  pgdata_uam_test:
+    name: uam_postgres_test_data
