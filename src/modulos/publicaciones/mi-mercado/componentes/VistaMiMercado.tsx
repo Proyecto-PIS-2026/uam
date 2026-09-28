@@ -1,18 +1,23 @@
 import MiMercado, { type Publicacion } from "./MiMercado";
 import { obtenerPublicacionesDeOperador } from "../consultas-mi-mercado";
 import { obtenerOpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
-import { obtenerOperadorActual } from "../../../usuarios/operadores/operador-actual";
+import { obtenerOperadorActual, obtenerOperadorPorId } from "../../../usuarios/operadores/operador-actual";
+import { notFound } from "next/navigation";
 
 type VistaMiMercadoProps = {
     abrirAltaInicial?: boolean;
+    operadorId?: number;
 };
 
 // TODO: reemplazar por el valor real de Configuración ("incremento_precio")
 // cuando se implemente el ítem BP-18.2
 const incrementoPrecio = 10;
 
-export default async function VistaMiMercado({ abrirAltaInicial = false }: VistaMiMercadoProps) {
-    const operador = await obtenerOperadorActual();
+export default async function VistaMiMercado({ abrirAltaInicial = false, operadorId }: VistaMiMercadoProps) {
+    const operador = operadorId === undefined
+        ? await obtenerOperadorActual()
+        : await obtenerOperadorPorId(operadorId);
+    if (!operador) notFound();
     const [publicacionesBD, opcionesEdicion] = await Promise.all([
         obtenerPublicacionesDeOperador(operador.id),
         obtenerOpcionesEdicionPublicacion(),
@@ -49,5 +54,5 @@ export default async function VistaMiMercado({ abrirAltaInicial = false }: Vista
         };
     });
 
-    return <MiMercado publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} abrirAltaInicial={abrirAltaInicial} />;
+    return <MiMercado key={operador.id} publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} abrirAltaInicial={abrirAltaInicial} />;
 }

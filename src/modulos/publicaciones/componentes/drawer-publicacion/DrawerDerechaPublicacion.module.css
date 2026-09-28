@@ -121,6 +121,10 @@
     line-height: 1.1;
 }
 
+.precioSinValor {
+    font-size: 1.5rem;
+}
+
 .bloqueMedio {
     display: flex;
     flex-direction: column;
@@ -166,18 +170,15 @@
 }
 
 .operador {
-    display: flex;
     min-width: 0;
-    gap: 0.5rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 
 .publicado,
 .nombreOperador {
-    overflow: hidden;
     font-size: 1rem;
     font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .nombreOperador {

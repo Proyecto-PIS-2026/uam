@@ -132,7 +132,7 @@ export default function MiMercado({
         formulario.set("cambios", JSON.stringify(cambios));
         if (fotoNueva) formulario.set("fotografia", fotoNueva);
 
-        const respuesta = await fetch(`/api/publicaciones/${publicacionSeleccionada.id}`, { method: "PATCH", body: formulario });
+        const respuesta = await fetch(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "PATCH", body: formulario });
         const resultado = await respuesta.json();
         if (!respuesta.ok) throw new Error(resultado.errores?.[0] ?? "No se pudieron guardar los cambios.");
 
@@ -147,7 +147,7 @@ export default function MiMercado({
         setEliminando(true);
         setError("");
         try {
-            const respuesta = await fetch(`/api/publicaciones/${publicacion.id}`, { method: "DELETE" });
+            const respuesta = await fetch(`/api/publicaciones/${publicacion.id}?operadorId=${operadorId}`, { method: "DELETE" });
             const resultado = await respuesta.json();
             if (!respuesta.ok) throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
 
@@ -286,6 +286,7 @@ export default function MiMercado({
                                                 <TarjetaPublicacion
                                                     key={pub.id}
                                                     pub={pub}
+                                                    operadorId={operadorId}
                                                     incrementoPrecio={
                                                         incrementoPrecio
                                                     }
@@ -302,6 +303,7 @@ export default function MiMercado({
                                     <TarjetaPublicacion
                                         key={pub.id}
                                         pub={pub}
+                                        operadorId={operadorId}
                                         incrementoPrecio={incrementoPrecio}
                                         alConsultar={consultarPublicacion}
                                     />

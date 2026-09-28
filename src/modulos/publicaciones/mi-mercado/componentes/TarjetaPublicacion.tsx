@@ -7,12 +7,14 @@ import { actualizarPrecio } from "../acciones";
 
 type Props = {
     pub: Publicacion;
+    operadorId: number;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
 };
 
 export default function TarjetaPublicacion({
     pub,
+    operadorId,
     incrementoPrecio,
     alConsultar,
 }: Props) {
@@ -48,7 +50,7 @@ export default function TarjetaPublicacion({
         setGuardandoPrecio(true);
         setErrorPrecio("");
         try {
-            await actualizarPrecio(pub.id, nuevoPrecio);
+            await actualizarPrecio(pub.id, nuevoPrecio, operadorId);
             setPrecioGuardado({ base: pub.precio, valor: nuevoPrecio });
         } catch (error) {
             setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");

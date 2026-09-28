@@ -1,7 +1,9 @@
-import VistaMiMercado from "../../../modulos/publicaciones/mi-mercado/componentes/VistaMiMercado";
+import { redirect } from "next/navigation";
+import { obtenerOperadorActual } from "../../../modulos/usuarios/operadores/operador-actual";
 
 export const dynamic = "force-dynamic";
 
-export default function Page() {
-    return <VistaMiMercado />;
+export default async function Page() {
+    const operador = await obtenerOperadorActual();
+    redirect(`/mi-mercado/${operador.id}`);
 }

@@ -31,7 +31,7 @@ describe("HeaderPublico", () => {
         expect(screen.getByRole("img", { name: "Unidad Agroalimentaria Metropolitana" })).toHaveAttribute("data-src", "/Logo.PNG");
         expect(screen.getAllByRole("link", { name: "Inicio" })).toHaveLength(2);
         expect(screen.getAllByRole("link", { name: "Publicaciones" })).toHaveLength(2);
-        expect(screen.getAllByRole("link", { name: "Listado de operadores" })).toHaveLength(2);
+        expect(screen.getAllByRole("link", { name: "Operadores" })).toHaveLength(2);
         expect(screen.getAllByRole("link", { name: "Mi mercado" })).toHaveLength(2);
     });
 
@@ -41,6 +41,12 @@ describe("HeaderPublico", () => {
         const enlacesPublicaciones = screen.getAllByRole("link", { name: "Publicaciones" });
         expect(enlacesPublicaciones[0]).toHaveClass(styles.enlaceActivo);
         expect(enlacesPublicaciones[1]).not.toHaveClass(styles.enlaceActivo);
+    });
+
+    it("marca Mi mercado como activo al entrar al operador indicado por ID", () => {
+        mockUsePathname.mockReturnValue("/mi-mercado/13");
+        render(<HeaderPublico/>);
+        expect(screen.getAllByRole("link", { name: "Mi mercado" })[0]).toHaveAttribute("aria-current", "page");
     });
 
     it("no marca como activa ninguna opción cuando la ruta no coincide", () => {
@@ -89,7 +95,7 @@ describe("HeaderPublico", () => {
         render(<HeaderPublico/>);
         expect(screen.getAllByRole("link", { name: "Inicio" })[0]).toHaveAttribute("href", "/inicio");
         expect(screen.getAllByRole("link", { name: "Publicaciones" })[0]).toHaveAttribute("href", "/publicaciones");
-        expect(screen.getAllByRole("link", { name: "Listado de operadores" })[0]).toHaveAttribute("href", "/operadores");
+        expect(screen.getAllByRole("link", { name: "Operadores" })[0]).toHaveAttribute("href", "/operadores");
         expect(screen.getAllByRole("link", { name: "Mi mercado" })[0]).toHaveAttribute("href", "/mi-mercado");
     });
     it("el menú móvil tiene el atributo aria-controls correspondiente", () => {

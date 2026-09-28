@@ -1,7 +1,7 @@
 .drawer {
     width: 100%;
     height: auto;
-    max-height: 62dvh;
+    max-height: 90dvh;
     border-radius: 1.5rem 1.5rem 0 0;
     background-color: var(--color-surface);
     color: var(--color-foreground);
@@ -146,6 +146,12 @@
     font-weight: 650;
 }
 
+.consultarPrecio {
+    max-width: 100%;
+    padding-right: 0.25rem;
+    font-size: clamp(0.875rem, 4.3vw, 1.25rem);
+}
+
 .bloqueMedio {
     display: flex;
     flex-direction: column;
@@ -175,22 +181,19 @@
 }
 
 .operador {
-    display: flex;
-    gap: 0.5rem;
     padding-bottom: 0.5rem;
+    line-height: 1.4;
 }
 
 .publicado,
 .nombreOperador {
-    overflow: hidden;
     font-size: 1rem;
     font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .nombreOperador {
     color: var(--color-secondary);
+    overflow-wrap: anywhere;
 }
 
 .bloqueBotones {

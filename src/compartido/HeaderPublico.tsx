@@ -20,7 +20,7 @@ const opcionesMenu = [
         ruta: "/publicaciones",
     },
     {
-        nombre: "Listado de operadores",
+        nombre: "Operadores",
         ruta: "/operadores",
     },
     {
@@ -35,7 +35,7 @@ export default function HeaderPublico() {
 
     function esRutaActiva(ruta: string) {
         if (ruta === "/mi-mercado") {
-            return pathname === ruta || pathname.startsWith("/publicaciones/nueva");
+            return pathname === ruta || pathname.startsWith(`${ruta}/`) || pathname.startsWith("/publicaciones/nueva");
         }
         if (ruta === "/publicaciones" && pathname.startsWith("/publicaciones/nueva")) {
             return false;

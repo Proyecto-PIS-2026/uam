@@ -325,7 +325,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </>
                     ) : (
                         <>
-                            <button className={styles.cancelar} type="button" onClick={alEliminar} disabled={ocupado || !alEliminar}>{eliminando ? "Eliminando..." : "Eliminar"}</button>
+                            <button className={`${styles.cancelar} ${styles.eliminar}`} type="button" onClick={alEliminar} disabled={ocupado || !alEliminar}>{eliminando ? "Eliminando..." : "Eliminar"}</button>
                             <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); setError(""); setEditando(true); }} disabled={ocupado}>Editar</button>
                         </>
                     )}

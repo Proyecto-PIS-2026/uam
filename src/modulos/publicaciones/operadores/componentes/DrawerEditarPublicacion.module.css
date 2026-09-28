@@ -471,6 +471,20 @@
     color: var(--color-secondary);
 }
 
+.eliminar {
+    border-color: #f2c4cc;
+    background: #fbeaec;
+    color: #b42332;
+}
+
+.eliminar:hover {
+    background: #f8dadd;
+}
+
+.eliminar:focus-visible {
+    outline-color: #b42332;
+}
+
 .guardar {
     border: 1px solid var(--color-secondary);
     background: var(--color-secondary);
