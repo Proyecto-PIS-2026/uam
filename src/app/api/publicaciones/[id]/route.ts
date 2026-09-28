@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { bajaPublicacionOperador } from "@/modulos/publicaciones/bajaPublicacionOperador";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { obtenerOperadorActual } from "@/modulos/usuarios/operadores/operador-actual";
+import { obtenerOperadorActual, obtenerOperadorPorId } from "@/modulos/usuarios/operadores/operador-actual";
 import { ErrorEdicionPublicacion, modificarPublicacionOperador, type CambiosPublicacionOperador } from "@/modulos/publicaciones/operadores/modificar-publicacion";
 import { revalidatePath } from "next/cache";
 
@@ -9,23 +9,41 @@ export const runtime = "nodejs";
 
 type Contexto = { params: Promise<{ id: string }> };
 
+function leerOperadorId(solicitud: Request): number | null | undefined {
+	const valores = new URL(solicitud.url).searchParams.getAll("operadorId");
+	if (valores.length === 0) return undefined;
+	if (valores.length !== 1 || !/^[1-9]\d*$/.test(valores[0])) return null;
+	const operadorId = Number(valores[0]);
+	return Number.isSafeInteger(operadorId) ? operadorId : null;
+}
+
 function actualizarVistas(operadorId: number) {
 	revalidatePath("/mi-mercado");
+	revalidatePath(`/mi-mercado/${operadorId}`);
 	revalidatePath("/publicaciones");
 	revalidatePath(`/operadores/${operadorId}`);
 	revalidatePath("/operadores");
 	revalidatePath("/inicio");
 }
 
-export async function DELETE(_solicitud: Request, contexto: Contexto) {
+export async function DELETE(solicitud: Request, contexto: Contexto) {
 	const { id: identificador } = await contexto.params;
 	const publicacionId = Number(identificador);
 	if (!Number.isSafeInteger(publicacionId) || publicacionId <= 0) {
 		return NextResponse.json({ errores: ["La publicación o el operador no son válidos."] }, { status: 400 });
 	}
+	const operadorId = leerOperadorId(solicitud);
+	if (operadorId === null) {
+		return NextResponse.json({ errores: ["El operador no es válido."] }, { status: 400 });
+	}
 
 	try {
-		const operador = await obtenerOperadorActual();
+		const operador = operadorId === undefined
+			? await obtenerOperadorActual()
+			: await obtenerOperadorPorId(operadorId);
+		if (!operador) {
+			return NextResponse.json({ errores: ["No se encontró el operador seleccionado."] }, { status: 404 });
+		}
 		const eliminada = await bajaPublicacionOperador(publicacionId, operador.id);
 		if (!eliminada) return NextResponse.json({ errores: ["La publicación no pertenece al operador seleccionado."] }, { status: 404 });
 		actualizarVistas(operador.id);
@@ -41,6 +59,10 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 	const publicacionId = Number(identificador);
 	if (!Number.isSafeInteger(publicacionId) || publicacionId <= 0) {
 		return NextResponse.json({ errores: ["La publicación no es válida."] }, { status: 400 });
+	}
+	const operadorId = leerOperadorId(solicitud);
+	if (operadorId === null) {
+		return NextResponse.json({ errores: ["El operador no es válido."] }, { status: 400 });
 	}
 
 	let cambios: unknown;
@@ -72,7 +94,12 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 	}
 
 	try {
-		const operador = await obtenerOperadorActual();
+		const operador = operadorId === undefined
+			? await obtenerOperadorActual()
+			: await obtenerOperadorPorId(operadorId);
+		if (!operador) {
+			return NextResponse.json({ errores: ["No se encontró el operador seleccionado."] }, { status: 404 });
+		}
 		const vinculo = await db.orm.public.PublicacionOperador
 			.select("id")
 			.where({ publicacionId, operadorId: operador.id })

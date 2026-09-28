@@ -63,6 +63,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
+        operadorId={37}
       />,
     );
 
@@ -85,7 +86,7 @@ describe("TarjetaPublicacion", () => {
     pub.publicacionDisponible = false;
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -98,7 +99,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.variedad.nombreVariedad = "-";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(screen.getByText("Manzana")).toBeInTheDocument();
@@ -113,7 +114,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.variedad.nombreVariedad = "";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(screen.getByText("Manzana")).toBeInTheDocument();
@@ -124,7 +125,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.variedad.nombreVariedad = "   ";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(screen.getByText("Manzana")).toBeInTheDocument();
@@ -138,7 +139,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.nombrePresentacion = "";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -154,7 +155,7 @@ describe("TarjetaPublicacion", () => {
       "/especie.jpg";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -172,7 +173,7 @@ describe("TarjetaPublicacion", () => {
       "/especie.jpg";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -189,7 +190,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.variedad.especie.fotoEspecie = null;
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -202,7 +203,7 @@ describe("TarjetaPublicacion", () => {
     pub.precio = null;
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -215,6 +216,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
+        operadorId={37}
       />,
     );
 
@@ -229,6 +231,7 @@ describe("TarjetaPublicacion", () => {
     expect(actualizarPrecio).toHaveBeenCalledWith(
       1,
       110,
+      37,
     );
   });
 
@@ -237,6 +240,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
+        operadorId={37}
       />,
     );
 
@@ -251,6 +255,7 @@ describe("TarjetaPublicacion", () => {
     expect(actualizarPrecio).toHaveBeenCalledWith(
       1,
       90,
+      37,
     );
   });
 
@@ -259,7 +264,7 @@ describe("TarjetaPublicacion", () => {
     pub.precio = "5";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     fireEvent.click(
@@ -277,6 +282,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
+        operadorId={37}
       />,
     );
 
@@ -303,6 +309,7 @@ describe("TarjetaPublicacion", () => {
     expect(actualizarPrecio).toHaveBeenCalledWith(
       1,
       150,
+      37,
     );
   });
 
@@ -311,6 +318,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
+        operadorId={37}
       />,
     );
 
@@ -343,6 +351,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
+        operadorId={37}
       />,
     );
 
@@ -374,6 +383,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
+        operadorId={37}
       />,
     );
 
@@ -405,6 +415,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
+        operadorId={37}
       />,
     );
 
@@ -438,6 +449,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
+        operadorId={37}
       />,
     );
 
@@ -468,7 +480,7 @@ describe("TarjetaPublicacion", () => {
 
   it("no guarda el precio cuando no se modificó", () => {
     render(
-      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />,
     );
 
     fireEvent.click(screen.getByTitle("Editar precio"));
@@ -480,7 +492,7 @@ describe("TarjetaPublicacion", () => {
 
   it("impide escribir precios de más de diez dígitos", () => {
     render(
-      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} />,
+      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />,
     );
 
     fireEvent.click(screen.getByTitle("Editar precio"));
@@ -506,6 +518,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={pub}
         incrementoPrecio={10}
+        operadorId={37}
         alConsultar={alConsultar}
       />,
     );
@@ -528,6 +541,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion
         pub={pub}
         incrementoPrecio={10}
+        operadorId={37}
         alConsultar={alConsultar}
       />,
     );
@@ -543,7 +557,7 @@ describe("TarjetaPublicacion", () => {
     const alConsultar = vi.fn();
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} alConsultar={alConsultar} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} alConsultar={alConsultar} />,
     );
 
     fireEvent.click(
@@ -560,7 +574,7 @@ describe("TarjetaPublicacion", () => {
     const alConsultar = vi.fn();
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} alConsultar={alConsultar} />,
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} alConsultar={alConsultar} />,
     );
 
     fireEvent.click(
@@ -584,7 +598,7 @@ describe("TarjetaPublicacion", () => {
     const alConsultar = vi.fn();
 
     render(
-      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} alConsultar={alConsultar} />,
+      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} alConsultar={alConsultar} />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));

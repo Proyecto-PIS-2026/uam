@@ -86,15 +86,18 @@ vi.mock("../../operadores/componentes/NuevaPublicacion", () => ({
 vi.mock("./TarjetaPublicacion", () => ({
   default: ({
     pub,
+    operadorId,
     incrementoPrecio,
     alConsultar,
   }: {
     pub: Publicacion;
+    operadorId: number;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
   }) => (
     <div
       data-testid={`publicacion-${pub.id}`}
+      data-operador={operadorId}
       data-incremento={incrementoPrecio}
     >
       {pub.presentacion.variedad.nombreVariedad}
@@ -203,6 +206,7 @@ describe("MiMercado", () => {
     fireEvent.click(within(drawer).getByRole("button", { name: "Cerrar consulta" }));
     expect(screen.queryByRole("dialog", { name: "Publicación seleccionada" })).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
+    expect(screen.getByTestId("publicacion-52")).toHaveAttribute("data-operador", "9");
   });
 
   it("permite cancelar la baja sin cerrar la consulta ni enviar una solicitud", () => {
@@ -246,7 +250,7 @@ describe("MiMercado", () => {
       await propsIniciales.alGuardar(13, cambios, archivo);
     });
 
-    expect(mocks.solicitud).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/52", { method: "PATCH", body: expect.any(FormData) });
+    expect(mocks.solicitud).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/52?operadorId=9", { method: "PATCH", body: expect.any(FormData) });
     const solicitud = mocks.solicitud.mock.lastCall;
     if (!solicitud) throw new Error("No se envió la modificación.");
     const cuerpo = solicitud[1].body as FormData;
@@ -326,7 +330,7 @@ describe("MiMercado", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
 
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Publicación seleccionada" })).not.toBeInTheDocument());
-    expect(mocks.solicitud).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/52", { method: "DELETE" });
+    expect(mocks.solicitud).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/52?operadorId=9", { method: "DELETE" });
     expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Publicación eliminada.");
     expect(mocks.refrescar).toHaveBeenCalledOnce();

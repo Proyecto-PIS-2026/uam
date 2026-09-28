@@ -40,7 +40,8 @@ function CampoSelect({ nombre, valor, opciones, cambiar, deshabilitado = false }
     deshabilitado?: boolean;
 }) {
     return (
-        <TextField select label={nombre} value={valor || ""} onChange={(evento) => cambiar(Number(evento.target.value))} size="small" fullWidth required disabled={deshabilitado} className={drawerStyles.selectMui}>
+        <TextField select label={nombre} value={valor || ""} onChange={(evento) => cambiar(Number(evento.target.value))} size="small" fullWidth required disabled={deshabilitado} className={drawerStyles.selectMui}
+            slotProps={{ select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } }}>
             <MenuItem value="" disabled className={drawerStyles.opcionSelect}>Seleccioná {nombre.toLowerCase()}</MenuItem>
             {opciones.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={drawerStyles.opcionSelect}>{opcion.nombre}</MenuItem>)}
         </TextField>

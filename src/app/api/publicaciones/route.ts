@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { altaPublicacionOperador } from "@/modulos/publicaciones/altaPublicacionOperador";
-import { obtenerOperadorActual } from "@/modulos/usuarios/operadores/operador-actual";
+import { obtenerOperadorActual, obtenerOperadorPorId } from "@/modulos/usuarios/operadores/operador-actual";
 import { revalidatePath } from "next/cache";
 
 export async function GET() {
@@ -39,14 +39,29 @@ export async function POST(request: Request) {
 		return NextResponse.json({ errores: ["El cuerpo de la solicitud no es un JSON válido."] }, { status: 400 });
 	}
 
+	let operadorId: number | undefined;
+	if (typeof datos === "object" && datos !== null && !Array.isArray(datos) && "operadorId" in datos) {
+		const valor = (datos as Record<string, unknown>).operadorId;
+		if (typeof valor !== "number" || !Number.isSafeInteger(valor) || valor <= 0) {
+			return NextResponse.json({ errores: ["El operador no es válido."] }, { status: 400 });
+		}
+		operadorId = valor;
+	}
+
 	try {
-		const operador = await obtenerOperadorActual();
+		const operador = operadorId === undefined
+			? await obtenerOperadorActual()
+			: await obtenerOperadorPorId(operadorId);
+		if (!operador) {
+			return NextResponse.json({ errores: ["No se encontró el operador seleccionado."] }, { status: 404 });
+		}
 		const datosDelOperador = typeof datos === "object" && datos !== null && !Array.isArray(datos)
 			? { ...datos, operadorId: operador.id }
 			: datos;
 		const resultado = await altaPublicacionOperador(datosDelOperador);
 		if (resultado.esValido) {
 			revalidatePath("/mi-mercado");
+			revalidatePath(`/mi-mercado/${operador.id}`);
 			revalidatePath("/publicaciones");
 			revalidatePath(`/operadores/${operador.id}`);
 			revalidatePath("/operadores");

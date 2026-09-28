@@ -7,6 +7,8 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
 import styles from "./FiltrosPublicaciones.module.css";
 
+const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
+
 // Tipo de datos que recibe
 export type PublicacionListado = {
     id: number;
@@ -312,7 +314,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                     slotProps={{input: {startAdornment: (<SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }}/>)}}}
                 />
                 {/* Especie */}
-                <TextField select fullWidth label="Especie" value={especie} onChange={(e) => manejarCambioEspecie(e.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroEspecie}`}>
+                <TextField select fullWidth label="Especie" value={especie} onChange={(e) => manejarCambioEspecie(e.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroEspecie}`} slotProps={propiedadesMenuSelect}>
                     <MenuItem value="Todas" className={styles.opcionSelect}>
                         Todas
                     </MenuItem>
@@ -360,7 +362,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                 <div className={styles.filtrosExtendidos}>
                     <div className={styles.filtrosVariedadPresentacion}>
                         {/* Variedad */}
-                        <TextField select fullWidth label="Variedad" value={variedadUnica ? "-" : variedad} onChange={(e) => manejarCambioVariedad(e.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroVariedad}`} disabled={especie === "Todas" || variedadUnica}>
+                        <TextField select fullWidth label="Variedad" value={variedadUnica ? "-" : variedad} onChange={(e) => manejarCambioVariedad(e.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroVariedad}`} disabled={especie === "Todas" || variedadUnica} slotProps={propiedadesMenuSelect}>
                             {!variedadUnica && (
                                 <MenuItem value="Todas" className={styles.opcionSelect}>
                                     Todas
@@ -373,7 +375,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                             ))}
                         </TextField>
                         {/* Presentacion */}
-                        <TextField select fullWidth label="Presentación" value={presentacion} onChange={(evento) => manejarCambioPresentacion(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroPresentacion}`} disabled={variedad === "Todas"}>
+                        <TextField select fullWidth label="Presentación" value={presentacion} onChange={(evento) => manejarCambioPresentacion(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroPresentacion}`} disabled={variedad === "Todas"} slotProps={propiedadesMenuSelect}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
                                 Todas
                             </MenuItem>
@@ -386,7 +388,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                     </div>
                     <div className={styles.filtrosCategoriaCalibre}>
                         {/* Categoria */}
-                        <TextField select fullWidth label="Categoría" value={categorias.includes(categoria) ? categoria : "Todas"} onChange={(evento) => manejarCambioCategoria(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCategoria}`}>
+                        <TextField select fullWidth label="Categoría" value={categorias.includes(categoria) ? categoria : "Todas"} onChange={(evento) => manejarCambioCategoria(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCategoria}`} slotProps={propiedadesMenuSelect}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
                                 Todas
                             </MenuItem>
@@ -397,7 +399,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                             ))}
                         </TextField>
                         {/* Calibre */}
-                        <TextField select fullWidth label="Calibre" value={calibres.includes(calibre) ? calibre : "Todas"} onChange={(evento) => manejarCambioCalibre(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCalibre}`}>
+                        <TextField select fullWidth label="Calibre" value={calibres.includes(calibre) ? calibre : "Todas"} onChange={(evento) => manejarCambioCalibre(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroCalibre}`} slotProps={propiedadesMenuSelect}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
                                 Todos
                             </MenuItem>

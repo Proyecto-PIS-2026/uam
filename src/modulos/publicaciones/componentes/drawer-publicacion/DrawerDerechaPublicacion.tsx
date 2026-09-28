@@ -47,7 +47,7 @@ export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: Dr
                                         <TextoAjustable className={styles.variedad} minimo={14} maximo={26}>{publicacion.variedad}</TextoAjustable>
                                     }
                                 </div>
-                                <div className={styles.precio}>
+                                <div className={`${styles.precio} ${publicacion.precio == null ? styles.precioSinValor : ""}`}>
                                     {publicacion.precio != null ? <>${publicacion.precio}</> : "Consultar precio"}
                                 </div>
                             </div>
@@ -71,7 +71,7 @@ export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: Dr
                             </div>
                         </div>
                         <div className={styles.bloqueInferior}>
-                            <TextoAjustable className={styles.operador} minimo={12} maximo={16}><span className={styles.publicado}>Publicado por</span>{" "}<span className={styles.nombreOperador}>{publicacion.operador.nombreFantasia}</span></TextoAjustable>
+                            <div className={styles.operador}><span className={styles.publicado}>Publicado por</span>{" "}<span className={styles.nombreOperador}>{publicacion.operador.nombreFantasia}</span></div>
                             <div className={styles.bloqueBotones}>
                                 <Link href={`/operadores/${publicacion.operador.id}`} className={styles.botonPerfil} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
                                 <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${publicacion.operador.nombreFantasia} por WhatsApp`}>
