@@ -129,7 +129,7 @@ describe("consultas-mi-mercado", () => {
         await actualizarPrecioPublicacion(
             10,
             20,
-            125.5
+            125
         );
 
         expect(
@@ -148,7 +148,7 @@ describe("consultas-mi-mercado", () => {
         expect(
             mocks.publicacionUpdate
         ).toHaveBeenCalledWith({
-            precio: "125.50",
+            precio: "125.00",
         });
     });
 
@@ -161,7 +161,7 @@ describe("consultas-mi-mercado", () => {
             actualizarPrecioPublicacion(
                 10,
                 20,
-                125.5
+                125
             )
         ).rejects.toThrow(
             "La publicación no existe o no pertenece al operador."
@@ -174,5 +174,27 @@ describe("consultas-mi-mercado", () => {
         expect(
             mocks.publicacionUpdate
         ).not.toHaveBeenCalled();
+    });
+
+    it("rechaza precios decimales antes de consultar la base de datos", async () => {
+        await expect(
+            actualizarPrecioPublicacion(10, 20, 125.5)
+        ).rejects.toThrow(
+            "El precio debe ser un número entero, sin decimales."
+        );
+
+        expect(mocks.publicacionOperadorWhere).not.toHaveBeenCalled();
+        expect(mocks.publicacionWhere).not.toHaveBeenCalled();
+        expect(mocks.publicacionUpdate).not.toHaveBeenCalled();
+    });
+
+    it("rechaza precios que superan el límite antes de consultar la base de datos", async () => {
+        await expect(
+            actualizarPrecioPublicacion(10, 20, 10_000_000_000)
+        ).rejects.toThrow();
+
+        expect(mocks.publicacionOperadorWhere).not.toHaveBeenCalled();
+        expect(mocks.publicacionWhere).not.toHaveBeenCalled();
+        expect(mocks.publicacionUpdate).not.toHaveBeenCalled();
     });
 });

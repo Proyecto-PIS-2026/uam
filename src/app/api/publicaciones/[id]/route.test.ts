@@ -1,12 +1,37 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const bajaPublicacionOperadorMock = vi.hoisted(() => vi.fn());
+const vinculoPublicacionMock = vi.hoisted(() => ({
+	select: vi.fn(),
+	where: vi.fn(),
+	first: vi.fn(),
+}));
+
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
+	obtenerOperadorActual: vi.fn(() => Promise.resolve({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" })),
+}));
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
+	db: { orm: { public: { PublicacionOperador: vinculoPublicacionMock } } },
+}));
+vi.mock("@/modulos/publicaciones/operadores/modificar-publicacion", () => ({
+	modificarPublicacionOperador: vi.fn(),
+	ErrorEdicionPublicacion: class extends Error {
+		constructor(public readonly codigo: "DATOS_INVALIDOS" | "NO_ENCONTRADA", mensaje: string) {
+			super(mensaje);
+		}
+	},
+}));
 
 vi.mock("@/modulos/publicaciones/bajaPublicacionOperador", () => ({
 	bajaPublicacionOperador: bajaPublicacionOperadorMock,
 }));
 
-import { DELETE } from "./route";
+import { revalidatePath } from "next/cache";
+import { obtenerOperadorActual } from "@/modulos/usuarios/operadores/operador-actual";
+import { ErrorEdicionPublicacion, modificarPublicacionOperador } from "@/modulos/publicaciones/operadores/modificar-publicacion";
+import { DELETE, PATCH } from "./route";
 
 describe("DELETE /api/publicaciones/[id]", () => {
     it("devuelve 404 si la publicación no pertenece al operador", async () => {
@@ -97,4 +122,105 @@ describe("DELETE /api/publicaciones/[id]", () => {
         });
     });
 
+});
+
+const cambiosEdicion = {
+	precio: "125",
+	foto: null,
+	categoriaId: 4,
+	calibreId: 2,
+	presentacionId: 8,
+	paisId: 218,
+	disponible: true,
+};
+
+function solicitudEdicion(cambios: unknown = cambiosEdicion, fotografia?: File): Request {
+	const formulario = new FormData();
+	formulario.set("cambios", JSON.stringify(cambios));
+	if (fotografia) formulario.set("fotografia", fotografia);
+	return new Request("http://localhost/api/publicaciones/20", { method: "PATCH", body: formulario });
+}
+
+const contextoEdicion = { params: Promise.resolve({ id: "20" }) };
+
+describe("PATCH /api/publicaciones/[id]", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vinculoPublicacionMock.select.mockReturnThis();
+		vinculoPublicacionMock.where.mockReturnThis();
+		vinculoPublicacionMock.first.mockResolvedValue({ id: 12 });
+		vi.mocked(modificarPublicacionOperador).mockResolvedValue({ publicacionOperadorId: 12, publicacionId: 20 });
+	});
+
+	it("propaga el país y el precio entero de los cambios multipart y actualiza las vistas", async () => {
+		const respuesta = await PATCH(solicitudEdicion(), contextoEdicion);
+
+		expect(respuesta.status).toBe(200);
+		expect(await respuesta.json()).toEqual({
+			publicacionOperadorId: 12,
+			publicacionId: 20,
+			mensaje: "Publicación modificada correctamente.",
+		});
+		expect(vinculoPublicacionMock.where).toHaveBeenCalledWith({ publicacionId: 20, operadorId: 3 });
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosEdicion, null);
+		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado");
+		expect(revalidatePath).toHaveBeenCalledWith("/publicaciones");
+		expect(revalidatePath).toHaveBeenCalledWith("/operadores/3");
+		expect(revalidatePath).toHaveBeenCalledWith("/operadores");
+		expect(revalidatePath).toHaveBeenCalledWith("/inicio");
+	});
+
+	it("propaga la fotografía junto con el país seleccionado", async () => {
+		const fotografia = new File(["foto simulada"], "nueva.jpg", { type: "image/jpeg" });
+		const respuesta = await PATCH(solicitudEdicion(cambiosEdicion, fotografia), contextoEdicion);
+
+		expect(respuesta.status).toBe(200);
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(
+			10, 12, cambiosEdicion, expect.objectContaining({ name: "nueva.jpg", type: "image/jpeg", size: 13 }),
+		);
+	});
+
+	it.each([undefined, null, "218", 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])(
+		"devuelve 400 para un país ausente o inválido: %s",
+		async (paisId) => {
+			const respuesta = await PATCH(solicitudEdicion({ ...cambiosEdicion, paisId }), contextoEdicion);
+
+			expect(respuesta.status).toBe(400);
+			expect(await respuesta.json()).toEqual({ errores: ["Los cambios no son válidos."] });
+			expect(obtenerOperadorActual).not.toHaveBeenCalled();
+			expect(vinculoPublicacionMock.first).not.toHaveBeenCalled();
+			expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+			expect(revalidatePath).not.toHaveBeenCalled();
+		},
+	);
+
+	it("devuelve 400 cuando el país no existe", async () => {
+		vi.mocked(modificarPublicacionOperador).mockRejectedValue(new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El país no existe."));
+		const respuesta = await PATCH(solicitudEdicion(), contextoEdicion);
+
+		expect(respuesta.status).toBe(400);
+		expect(await respuesta.json()).toEqual({ errores: ["El país no existe."] });
+		expect(revalidatePath).not.toHaveBeenCalled();
+	});
+
+	it.each(["125.50", "125.00"])("devuelve el error de validación del precio decimal %s", async (precio) => {
+		const mensaje = "El precio debe ser un número entero de hasta 10 dígitos, sin decimales.";
+		vi.mocked(modificarPublicacionOperador).mockRejectedValue(new ErrorEdicionPublicacion("DATOS_INVALIDOS", mensaje));
+		const respuesta = await PATCH(solicitudEdicion({ ...cambiosEdicion, precio }), contextoEdicion);
+
+		expect(respuesta.status).toBe(400);
+		expect(await respuesta.json()).toEqual({ errores: [mensaje] });
+		expect(modificarPublicacionOperador).toHaveBeenCalledWith(10, 12, { ...cambiosEdicion, precio }, null);
+		expect(revalidatePath).not.toHaveBeenCalled();
+	});
+
+	it("devuelve 404 si la publicación no pertenece al operador autenticado", async () => {
+		vinculoPublicacionMock.first.mockResolvedValue(null);
+		const respuesta = await PATCH(solicitudEdicion(), contextoEdicion);
+
+		expect(respuesta.status).toBe(404);
+		expect(await respuesta.json()).toEqual({ errores: ["La publicación no pertenece al operador seleccionado."] });
+		expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+		expect(revalidatePath).not.toHaveBeenCalled();
+	});
 });

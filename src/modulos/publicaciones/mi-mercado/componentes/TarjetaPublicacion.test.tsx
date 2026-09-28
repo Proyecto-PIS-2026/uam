@@ -2,6 +2,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import {
   beforeEach,
@@ -10,32 +11,28 @@ import {
   it,
   vi,
 } from "vitest";
-import TarjetaPublicacion from "./tarjeta-publicacion";
-import type { Publicacion } from "./mi-mercado";
-import { actualizarPrecio } from "./actions";
+import TarjetaPublicacion from "./TarjetaPublicacion";
+import type { Publicacion } from "./MiMercado";
+import { actualizarPrecio } from "../acciones";
 
-vi.mock("./[id]/detalle-publicacion", () => ({
-  default: ({ pub }: { pub: Publicacion }) => (
-    <div data-testid="detalle-publicacion">
-      Detalle {pub.id}
-    </div>
-  ),
-}));
-
-vi.mock("./actions", () => ({
+vi.mock("../acciones", () => ({
   actualizarPrecio: vi.fn(),
 }));
 
 function crearPublicacion(): Publicacion {
   return {
     id: 1,
+    publicacionOperadorId: 1,
+    paisId: 44,
     foto: null,
     precio: "100",
     publicacionActiva: true,
     publicacionDisponible: true,
     presentacion: {
+      id: 1,
       nombrePresentacion: "Caja",
       variedad: {
+        id: 1,
         nombreVariedad: "Red Delicious",
         especie: {
           id: 10,
@@ -45,9 +42,11 @@ function crearPublicacion(): Publicacion {
       },
     },
     categoria: {
+      id: 1,
       nombreCategoria: "Primera",
     },
     calibre: {
+      id: 1,
       codigoCalibre: "A",
       nombreCalibre: "Grande",
     },
@@ -211,7 +210,7 @@ describe("TarjetaPublicacion", () => {
     ).toBeInTheDocument();
   });
 
-  it("aumenta el precio con el botón", () => {
+  it("aumenta el precio con el botón", async () => {
     render(
       <TarjetaPublicacion
         pub={crearPublicacion()}
@@ -225,7 +224,7 @@ describe("TarjetaPublicacion", () => {
       }),
     );
 
-    expect(screen.getByText("$110")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("$110")).toBeInTheDocument());
 
     expect(actualizarPrecio).toHaveBeenCalledWith(
       1,
@@ -233,7 +232,7 @@ describe("TarjetaPublicacion", () => {
     );
   });
 
-  it("disminuye el precio con el botón", () => {
+  it("disminuye el precio con el botón", async () => {
     render(
       <TarjetaPublicacion
         pub={crearPublicacion()}
@@ -247,7 +246,7 @@ describe("TarjetaPublicacion", () => {
       }),
     );
 
-    expect(screen.getByText("$90")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("$90")).toBeInTheDocument());
 
     expect(actualizarPrecio).toHaveBeenCalledWith(
       1,
@@ -255,7 +254,7 @@ describe("TarjetaPublicacion", () => {
     );
   });
 
-  it("no permite disminuir el precio por debajo de cero", () => {
+  it("no permite disminuir el precio hasta cero", () => {
     const pub = crearPublicacion();
     pub.precio = "5";
 
@@ -269,17 +268,11 @@ describe("TarjetaPublicacion", () => {
       }),
     );
 
-    expect(
-      screen.getByText("Sin precio"),
-    ).toBeInTheDocument();
-
-    expect(actualizarPrecio).toHaveBeenCalledWith(
-      1,
-      0,
-    );
+    expect(screen.getByText("$5")).toBeInTheDocument();
+    expect(actualizarPrecio).not.toHaveBeenCalled();
   });
 
-  it("permite editar manualmente el precio", () => {
+  it("permite editar manualmente el precio", async () => {
     render(
       <TarjetaPublicacion
         pub={crearPublicacion()}
@@ -305,7 +298,7 @@ describe("TarjetaPublicacion", () => {
       key: "Enter",
     });
 
-    expect(screen.getByText("$150")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("$150")).toBeInTheDocument());
 
     expect(actualizarPrecio).toHaveBeenCalledWith(
       1,
@@ -313,7 +306,7 @@ describe("TarjetaPublicacion", () => {
     );
   });
 
-  it("acepta coma decimal al editar manualmente el precio", () => {
+  it.each(["125,5", "125.5"])("rechaza el precio decimal %s al escribirlo", (precioDecimal) => {
     render(
       <TarjetaPublicacion
         pub={crearPublicacion()}
@@ -331,22 +324,18 @@ describe("TarjetaPublicacion", () => {
 
     fireEvent.change(input, {
       target: {
-        value: "125,5",
+        value: precioDecimal,
       },
     });
+
+    expect(input).toHaveValue("100");
 
     fireEvent.keyDown(input, {
       key: "Enter",
     });
 
-    expect(
-      screen.getByText("$125.5"),
-    ).toBeInTheDocument();
-
-    expect(actualizarPrecio).toHaveBeenCalledWith(
-      1,
-      125.5,
-    );
+    expect(screen.getByText("$100")).toBeInTheDocument();
+    expect(actualizarPrecio).not.toHaveBeenCalled();
   });
 
   it("cancela la edición manual con Escape", () => {
@@ -398,9 +387,11 @@ describe("TarjetaPublicacion", () => {
 
     fireEvent.change(input, {
       target: {
-        value: "   ",
+        value: "",
       },
     });
+
+    expect(input).toHaveValue("");
 
     fireEvent.blur(input);
 
@@ -409,7 +400,7 @@ describe("TarjetaPublicacion", () => {
     expect(actualizarPrecio).not.toHaveBeenCalled();
   });
 
-  it("descarta un precio manual negativo", () => {
+  it("impide escribir un precio manual negativo", () => {
     render(
       <TarjetaPublicacion
         pub={crearPublicacion()}
@@ -431,6 +422,8 @@ describe("TarjetaPublicacion", () => {
       },
     });
 
+    expect(input).toHaveValue("100");
+
     fireEvent.keyDown(input, {
       key: "Enter",
     });
@@ -440,7 +433,7 @@ describe("TarjetaPublicacion", () => {
     expect(actualizarPrecio).not.toHaveBeenCalled();
   });
 
-  it("descarta un precio manual no numérico", () => {
+  it("impide escribir un precio manual no numérico", () => {
     render(
       <TarjetaPublicacion
         pub={crearPublicacion()}
@@ -462,6 +455,8 @@ describe("TarjetaPublicacion", () => {
       },
     });
 
+    expect(input).toHaveValue("100");
+
     fireEvent.keyDown(input, {
       key: "Enter",
     });
@@ -471,35 +466,84 @@ describe("TarjetaPublicacion", () => {
     expect(actualizarPrecio).not.toHaveBeenCalled();
   });
 
-  it("abre el detalle al seleccionar la publicación", () => {
+  it("no guarda el precio cuando no se modificó", () => {
     render(
-      <TarjetaPublicacion
-        pub={crearPublicacion()}
-        incrementoPrecio={10}
-      />,
+      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} />,
     );
 
-    expect(
-      screen.queryByTestId("detalle-publicacion"),
-    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTitle("Editar precio"));
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Editar precio" }), { key: "Enter" });
 
-    fireEvent.click(
-      screen.getAllByRole("button", {
-        name: "Ver detalle de Manzana · Red Delicious",
-      })[0],
-    );
-
-    expect(
-      screen.getByTestId("detalle-publicacion"),
-    ).toHaveTextContent("Detalle 1");
+    expect(screen.getByText("$100")).toBeInTheDocument();
+    expect(actualizarPrecio).not.toHaveBeenCalled();
   });
 
-  it("puede cerrar el detalle abierto", () => {
+  it("impide escribir precios de más de diez dígitos", () => {
+    render(
+      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} />,
+    );
+
+    fireEvent.click(screen.getByTitle("Editar precio"));
+    const input = screen.getByRole("textbox", { name: "Editar precio" });
+    fireEvent.change(input, { target: { value: "10000000000" } });
+
+    expect(input).toHaveValue("100");
+
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(screen.getByText("$100")).toBeInTheDocument();
+    expect(actualizarPrecio).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { elemento: "fotografía", indice: 0 },
+    { elemento: "flecha", indice: 1 },
+  ])("consulta la publicación al seleccionar la $elemento", ({ indice }) => {
+    const pub = crearPublicacion();
+    const alConsultar = vi.fn();
+
     render(
       <TarjetaPublicacion
-        pub={crearPublicacion()}
+        pub={pub}
         incrementoPrecio={10}
+        alConsultar={alConsultar}
       />,
+    );
+
+    fireEvent.click(
+      screen.getAllByRole("button", {
+        name: "Ver detalle de Manzana · Red Delicious",
+      })[indice],
+    );
+
+    expect(alConsultar).toHaveBeenCalledWith(pub);
+    expect(alConsultar).toHaveBeenCalledTimes(1);
+  });
+
+  it("consulta la publicación al seleccionar su información", () => {
+    const pub = crearPublicacion();
+    const alConsultar = vi.fn();
+
+    render(
+      <TarjetaPublicacion
+        pub={pub}
+        incrementoPrecio={10}
+        alConsultar={alConsultar}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Manzana · Red Delicious"));
+
+    expect(alConsultar).toHaveBeenCalledWith(pub);
+  });
+
+  it("conserva el precio nulo al consultar una publicación sin precio", () => {
+    const pub = crearPublicacion();
+    pub.precio = null;
+    const alConsultar = vi.fn();
+
+    render(
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} alConsultar={alConsultar} />,
     );
 
     fireEvent.click(
@@ -508,18 +552,51 @@ describe("TarjetaPublicacion", () => {
       })[0],
     );
 
-    expect(
-      screen.getByTestId("detalle-publicacion"),
-    ).toBeInTheDocument();
+    expect(alConsultar).toHaveBeenCalledWith(expect.objectContaining({ precio: null }));
+  });
+
+  it("consulta con el precio actualizado desde la tarjeta", async () => {
+    const pub = crearPublicacion();
+    const alConsultar = vi.fn();
+
+    render(
+      <TarjetaPublicacion pub={pub} incrementoPrecio={10} alConsultar={alConsultar} />,
+    );
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Cerrar",
+        name: "Aumentar precio",
       }),
     );
 
-    expect(
-      screen.queryByTestId("detalle-publicacion"),
-    ).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("$110")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Manzana · Red Delicious"));
+
+    expect(alConsultar).toHaveBeenCalledWith({ ...pub, precio: "110" });
+  });
+
+  it("no consulta mientras se está guardando el precio", async () => {
+    let finalizarGuardado: () => void = () => undefined;
+    vi.mocked(actualizarPrecio).mockImplementationOnce(() => new Promise<void>((resolve) => {
+      finalizarGuardado = resolve;
+    }));
+    const alConsultar = vi.fn();
+
+    render(
+      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} alConsultar={alConsultar} />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+    fireEvent.click(screen.getByText("Manzana · Red Delicious"));
+
+    expect(alConsultar).not.toHaveBeenCalled();
+
+    finalizarGuardado();
+    await waitFor(() => expect(screen.getByText("$110")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Manzana · Red Delicious"));
+
+    expect(alConsultar).toHaveBeenCalledWith(expect.objectContaining({ precio: "110" }));
   });
 });

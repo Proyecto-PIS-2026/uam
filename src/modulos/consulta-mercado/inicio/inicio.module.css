@@ -6,17 +6,13 @@
     color: var(--color-foreground);
 }
 
-.pagina .hojasPagina {
-    top: 5rem;
-}
-
 .contenedor {
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 80rem;
+    max-width: var(--ancho-maximo-pagina);
     margin: 0 auto;
-    padding: 0.875rem 0.875rem 3rem;
+    padding: var(--padding-exterior-pagina);
 }
 
 .hero {
@@ -39,7 +35,7 @@
     justify-content: center;
     gap: 0.75rem;
     grid-row: 2;
-    padding: 1.5rem 1.25rem 1.75rem;
+    padding: 1.5rem var(--padding-exterior-pagina) 1.75rem;
 }
 
 .heroTitulo {
@@ -111,13 +107,15 @@
 }
 
 .tituloMobile {
+  position: relative;
+  z-index: 1;
   display: none;
 }
 
 @media (max-width: 767px) {
   .tituloMobile {
     display: block;
-    padding: 1.25rem 1rem 0;
+    padding: var(--padding-exterior-pagina) var(--padding-exterior-pagina) 0;
     color: black;
     font-size: 1.75rem;
     font-weight: 800;
@@ -181,7 +179,7 @@
     isolation: isolate;
     overflow: hidden;
     width: 100%;
-    padding: 2rem 1rem;
+    padding: var(--padding-titulo-pagina);
     border: 1px solid var(--color-primary-hover);
     border-radius: 0.75rem;
     background: var(--color-secondary);
@@ -192,8 +190,9 @@
 .titulo {
     position: relative;
     z-index: 1;
-    font-size: 1.875rem;
+    font-size: var(--tamano-titulo-pagina);
     font-weight: 700;
+    line-height: var(--interlineado-titulo-pagina);
 }
 
 .subtitulo {
@@ -369,9 +368,10 @@
     .heroTexto {
         position: relative;
         z-index: 2;
-        width: min(100%, 80rem);
+        width: 100%;
+        max-width: var(--ancho-maximo-pagina);
         margin-inline: auto;
-        padding: 3rem 0.875rem;
+        padding: 3rem var(--padding-exterior-pagina);
         background: none;
     }
 

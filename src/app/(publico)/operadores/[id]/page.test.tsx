@@ -45,6 +45,7 @@ const perfil: PerfilPublicoOperador = {
         presentacion: "Cajón",
         categoria: "Extra",
         calibre: "A",
+        pais: "URUGUAY",
     }],
 };
 

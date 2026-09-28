@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { altaPublicacionOperador } from "@/modulos/publicaciones/altaPublicacionOperador";
+import { obtenerOperadorActual } from "@/modulos/usuarios/operadores/operador-actual";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
 	try {
@@ -38,7 +40,18 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const resultado = await altaPublicacionOperador(datos);
+		const operador = await obtenerOperadorActual();
+		const datosDelOperador = typeof datos === "object" && datos !== null && !Array.isArray(datos)
+			? { ...datos, operadorId: operador.id }
+			: datos;
+		const resultado = await altaPublicacionOperador(datosDelOperador);
+		if (resultado.esValido) {
+			revalidatePath("/mi-mercado");
+			revalidatePath("/publicaciones");
+			revalidatePath(`/operadores/${operador.id}`);
+			revalidatePath("/operadores");
+			revalidatePath("/inicio");
+		}
 		return NextResponse.json(resultado, { status: resultado.esValido ? 201 : 400 });
 	} catch (error) {
 		console.error("Error al crear publicación:", error);

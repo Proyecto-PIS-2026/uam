@@ -189,10 +189,10 @@ describe("obtenerPerfilPublicoOperador", () => {
 
         mockDb.operador.first.mockResolvedValue(operadorConLocal);
         mockDb.publicaciones.all.mockResolvedValue([
-            { publicacion: publicacionVisible },
-            { publicacion: { ...publicacionVisible, id: 102, publicacionActiva: false } },
-            { publicacion: { ...publicacionVisible, id: 103, publicacionDisponible: false } },
-            { publicacion: { ...publicacionVisible, id: 104, tipoPublicacion: "PRODUCTOR" } },
+            { publicacion: publicacionVisible, pais: { nombrePais: "URUGUAY" } },
+            { publicacion: { ...publicacionVisible, id: 102, publicacionActiva: false }, pais: { nombrePais: "URUGUAY" } },
+            { publicacion: { ...publicacionVisible, id: 103, publicacionDisponible: false }, pais: { nombrePais: "URUGUAY" } },
+            { publicacion: { ...publicacionVisible, id: 104, tipoPublicacion: "PRODUCTOR" }, pais: { nombrePais: "URUGUAY" } },
         ]);
 
         const resultado = await obtenerPerfilPublicoOperador(13);
@@ -207,7 +207,9 @@ describe("obtenerPerfilPublicoOperador", () => {
                 presentacion: "Cajón",
                 categoria: "Extra",
                 calibre: "A",
+                pais: "URUGUAY",
             },
         ]);
+        expect(mockDb.publicaciones.include).toHaveBeenCalledWith("pais", expect.any(Function));
     });
 });

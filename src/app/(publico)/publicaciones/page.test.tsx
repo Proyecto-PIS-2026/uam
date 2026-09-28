@@ -3,13 +3,14 @@ import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Pub
 import PaginaPublicaciones from "./page";
 
 const consultarPublicacionesMock = vi.hoisted(() => vi.fn());
+const buscarEspecieMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
+	db: {orm: {public: {Especie: {select: () => ({first: buscarEspecieMock})}}}},
+}));
 
 vi.mock("@/modulos/consulta-mercado/acciones/Publicaciones", () => ({
 	consultarPublicaciones: consultarPublicacionesMock,
-}));
-
-vi.mock("@/compartido/HeaderPublico", () => ({
-	default: () => <header>Header público</header>,
 }));
 
 vi.mock(
@@ -17,10 +18,12 @@ vi.mock(
 	() => ({
 		default: ({
 			publicaciones,
+			especie,
 		}: {
 			publicaciones: PublicacionListado[];
+			especie?: string;
 		}) => (
-			<div data-testid="contenedor-publicaciones">
+			<div data-testid="contenedor-publicaciones" data-especie={especie}>
 				{publicaciones.map((publicacion) => (
 					<span key={publicacion.id}>{publicacion.especie}</span>
 				))}
@@ -40,6 +43,7 @@ function crearPublicacion(id: number): PublicacionListado {
 		categoria: "Primera",
 		calibre: "Mediano",
 		codigoCalibre: "M",
+		pais: "Uruguay",
 		operador: {
 			id: 10,
 			nombreFantasia: "Huerta Sur",
@@ -49,6 +53,18 @@ function crearPublicacion(id: number): PublicacionListado {
 }
 
 describe("PaginaPublicaciones", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("resuelve el ID de la especie de inicio y lo pasa al filtro del catálogo", async () => {
+		buscarEspecieMock.mockResolvedValue({nombreEspecie: "Manzana"});
+		consultarPublicacionesMock.mockResolvedValue({publicaciones: []});
+		render(await PaginaPublicaciones({searchParams: Promise.resolve({especieId: "7"})}));
+		expect(buscarEspecieMock).toHaveBeenCalledWith({id: 7});
+		expect(screen.getByTestId("contenedor-publicaciones")).toHaveAttribute("data-especie", "Manzana");
+	});
+
 	it("consulta las publicaciones y muestra la cantidad obtenida", async () => {
 		const publicaciones = [crearPublicacion(1), crearPublicacion(2), crearPublicacion(3)];
 		consultarPublicacionesMock.mockResolvedValue({ publicaciones });

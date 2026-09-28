@@ -22,6 +22,7 @@ const publicacion: PublicacionPerfil = {
     presentacion: "Cajón",
     categoria: "Extra",
     calibre: "A",
+    pais: "URUGUAY",
 };
 
 describe("TarjetaPublicacion", () => {

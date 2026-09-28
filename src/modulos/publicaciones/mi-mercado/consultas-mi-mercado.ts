@@ -27,7 +27,11 @@ export async function actualizarPrecioPublicacion(
         throw new Error("El precio debe ser un número mayor a cero.");
     }
 
-    if (nuevoPrecio > 9_999_999_999.99) {
+    if (!Number.isInteger(nuevoPrecio)) {
+        throw new Error("El precio debe ser un número entero, sin decimales.");
+    }
+
+    if (nuevoPrecio > 9_999_999_999) {
         throw new Error("El precio excede el valor máximo permitido.");
     }
 

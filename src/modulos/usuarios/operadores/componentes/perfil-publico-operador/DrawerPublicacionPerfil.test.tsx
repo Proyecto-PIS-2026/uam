@@ -49,6 +49,7 @@ const publicacion: PublicacionPerfil = {
     presentacion: "Cajón",
     categoria: "Extra",
     calibre: "A",
+    pais: "URUGUAY",
 };
 
 describe("DrawerPublicacionPerfil", () => {
@@ -107,6 +108,8 @@ describe("DrawerPublicacionPerfil", () => {
         expect(screen.getByText("A")).toBeInTheDocument();
         expect(screen.getByText("Categoría")).toBeInTheDocument();
         expect(screen.getByText("Extra")).toBeInTheDocument();
+        expect(screen.getByText("País")).toBeInTheDocument();
+        expect(screen.getByText("URUGUAY")).toBeInTheDocument();
     });
 
     it("no muestra la variedad cuando es guion", () => {

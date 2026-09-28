@@ -7,11 +7,9 @@ import Page from "./page";
 const {
     obtenerOperadoresMock,
     listadoOperadoresMock,
-    hojasDecorativasMock,
 } = vi.hoisted(() => ({
     obtenerOperadoresMock: vi.fn(),
     listadoOperadoresMock: vi.fn(() => null),
-    hojasDecorativasMock: vi.fn(() => null),
 }));
 
 vi.mock("@/modulos/usuarios/operadores/consultas-listado-publico", () => ({
@@ -20,10 +18,6 @@ vi.mock("@/modulos/usuarios/operadores/consultas-listado-publico", () => ({
 
 vi.mock("@/modulos/usuarios/operadores/componentes/listado-operadores/ListadoOperadores", () => ({
     default: listadoOperadoresMock,
-}));
-
-vi.mock("@/compartido/HojasDecorativas", () => ({
-    default: hojasDecorativasMock,
 }));
 
 const operadores: OperadorListado[] = [
@@ -52,7 +46,7 @@ describe("Página de operadores", () => {
     it("consulta los operadores y los pasa al listado", async () => {
         obtenerOperadoresMock.mockResolvedValue(operadores);
         const contenido = await Page();
-        const [, contenedorListado] = contenido.props.children;
+        const contenedorListado = contenido.props.children;
         const listado = contenedorListado.props.children;
         expect(obtenerOperadoresMock).toHaveBeenCalledOnce();
         expect(obtenerOperadoresMock).toHaveBeenCalledWith();
@@ -61,18 +55,10 @@ describe("Página de operadores", () => {
         expect(listado.props.operadores).toBe(operadores);
     });
 
-    it("incluye las hojas decorativas de fondo", async () => {
-        obtenerOperadoresMock.mockResolvedValue(operadores);
-        const contenido = await Page();
-        const [hojas] = contenido.props.children;
-        expect(hojas.type).toBe(hojasDecorativasMock);
-        expect(hojas.props.variante).toBe("fondo");
-    });
-
     it("pasa un listado vacío cuando no hay operadores", async () => {
         obtenerOperadoresMock.mockResolvedValue([]);
         const contenido = await Page();
-        const [, contenedorListado] = contenido.props.children;
+        const contenedorListado = contenido.props.children;
         const listado = contenedorListado.props.children;
         expect(listado.type).toBe(listadoOperadoresMock);
         expect(listado.props.operadores).toEqual([]);

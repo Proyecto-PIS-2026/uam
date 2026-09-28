@@ -27,6 +27,7 @@ const tomate: PublicacionPerfil = {
     presentacion: "Cajón",
     categoria: "Extra",
     calibre: "A",
+    pais: "URUGUAY",
 };
 
 const tomateCherry: PublicacionPerfil = {
@@ -48,7 +49,7 @@ describe("CatalogoOperador", () => {
     it("muestra el mensaje de vacío cuando no hay publicaciones", () => {
         render(<CatalogoOperador publicaciones={[]}/>);
         expect(screen.getByRole("heading", {name: "Publicaciones"})).toBeInTheDocument();
-        expect(screen.getByText("Filtros")).toBeInTheDocument();
+        expect(screen.getByRole("searchbox", {name: "Buscar publicaciones"})).toBeInTheDocument();
         expect(screen.getByRole("button", {name: "Agrupar por especie"})).toBeInTheDocument();
         expect(screen.getByText("No hay publicaciones disponibles.")).toBeInTheDocument();
         expect(screen.queryAllByRole("button", {name: /Ver detalles de/})).toHaveLength(0);
@@ -112,6 +113,6 @@ describe("CatalogoOperador", () => {
 
     it("muestra la sección de filtros", () => {
         render(<CatalogoOperador publicaciones={[tomate]}/>);
-        expect(screen.getByText("Filtros")).toBeInTheDocument();
+        expect(screen.getByRole("searchbox", {name: "Buscar publicaciones"})).toBeInTheDocument();
     });
 });

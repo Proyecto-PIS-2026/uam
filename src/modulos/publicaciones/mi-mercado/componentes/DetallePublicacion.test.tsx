@@ -10,19 +10,23 @@ import {
   it,
   vi,
 } from "vitest";
-import DetallePublicacion from "./detalle-publicacion";
-import type { Publicacion } from "../mi-mercado";
+import DetallePublicacion from "./DetallePublicacion";
+import type { Publicacion } from "./MiMercado";
 
 function crearPublicacion(): Publicacion {
   return {
     id: 1,
+    publicacionOperadorId: 1,
+    paisId: 44,
     foto: null,
     precio: "100",
     publicacionActiva: true,
     publicacionDisponible: true,
     presentacion: {
+      id: 1,
       nombrePresentacion: "Caja",
       variedad: {
+        id: 1,
         nombreVariedad: "Red Delicious",
         especie: {
           id: 10,
@@ -32,9 +36,11 @@ function crearPublicacion(): Publicacion {
       },
     },
     categoria: {
+      id: 1,
       nombreCategoria: "Primera",
     },
     calibre: {
+      id: 1,
       codigoCalibre: "A",
       nombreCalibre: "Grande",
     },

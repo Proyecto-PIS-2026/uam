@@ -39,6 +39,7 @@ function crearPublicacion(): PublicacionListado {
         categoria: "Primera",
         calibre: "Mediano",
         codigoCalibre: "M",
+        pais: "Uruguay",
         operador: {
             id: 10,
             nombreFantasia: "Huerta Sur",
@@ -51,10 +52,10 @@ describe("DrawerPublicacion", () => {
     it("muestra los datos de la publicación y los botones de contacto", () => {
         render(<DrawerAbajoPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} />);
         expect(screen.getByRole("dialog")).toBeInTheDocument();
-        for (const texto of ["Tomate", "Perita", "Cajón", "Mediano", "Primera", "Huerta Sur"]) {
+        for (const texto of ["Tomate", "Perita", "Cajón", "Mediano", "Primera", "País", "Uruguay", "Huerta Sur"]) {
             expect(screen.getByText(texto)).toBeInTheDocument();
         }
-        expect(screen.getByRole("button", { name: "Ver Perfil" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/operadores/10");
         expect(screen.getByRole("link", { name: "Contactar a Huerta Sur por WhatsApp" })).toBeInTheDocument();
     });
     it("no muestra el detalle cuando está cerrado", () => {
@@ -66,7 +67,8 @@ describe("DrawerPublicacion", () => {
         render(<DrawerAbajoPublicacion publicacion={null} open onOpenChange={vi.fn()} />,);
         expect(screen.queryByText("Publicado por")).not.toBeInTheDocument();
         expect(screen.queryByRole("img")).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Ver Perfil" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Ver Perfil" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: /WhatsApp/i })).not.toBeInTheDocument();
     });
     it("oculta la variedad cuando es un guion", () => {
@@ -86,12 +88,12 @@ describe("DrawerPublicacion", () => {
         expect(screen.queryByRole("img")).not.toBeInTheDocument();
     });
 
-    it.each([[150, "$150"], [1234.5, "$1234.5"]])("muestra el precio %s", (precio, esperado) => {
+    it.each([[150, "$150"], [1234.5, "$1234.5"], [0, "$0"]])("muestra el precio %s", (precio, esperado) => {
         render(<DrawerAbajoPublicacion publicacion={{ ...crearPublicacion(), precio }} open onOpenChange={vi.fn()} />);
         expect(screen.getByText(esperado)).toBeInTheDocument();
         expect(screen.queryByText("Consultar precio")).not.toBeInTheDocument();
     });
-    it.each([0, null])(
+    it.each([null])(
         "muestra 'Consultar precio' cuando el precio es %s",
         (precio) => {
             render(<DrawerAbajoPublicacion publicacion={{ ...crearPublicacion(), precio }} open onOpenChange={vi.fn()} />);

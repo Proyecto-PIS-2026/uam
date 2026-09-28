@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
+import FiltrosPublicaciones, { type PublicacionListado } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
 import DrawerPublicacionPerfil from "./DrawerPublicacionPerfil";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import styles from "./CatalogoOperador.module.css";
@@ -9,19 +10,35 @@ import styles from "./CatalogoOperador.module.css";
 type CatalogoOperadorProps = {
     publicaciones: PublicacionPerfil[];
     whatsAppOperador?: string;
+    idOperador?: number;
+    nombreOperador?: string;
 };
 
-export default function CatalogoOperador({publicaciones, whatsAppOperador = ""}: CatalogoOperadorProps) {
+export default function CatalogoOperador({publicaciones, whatsAppOperador = "", idOperador = 0, nombreOperador = ""}: CatalogoOperadorProps) {
     const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionPerfil | null>(null);
     const [drawerAbierto, setDrawerAbierto] = useState(false);
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(false);
+    const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicaciones.map((publicacion) => ({
+        ...publicacion,
+        precio: publicacion.precio === null ? null : Number(publicacion.precio),
+        codigoCalibre: publicacion.calibre,
+        operador: {id: idOperador, nombreFantasia: nombreOperador, whatsApp: whatsAppOperador},
+    })), [publicaciones, idOperador, nombreOperador, whatsAppOperador]);
+    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(publicacionesParaFiltros);
+
+    const publicacionesPorId = new Map(publicaciones.map((publicacion) => [publicacion.id, publicacion]));
+    const publicacionesVisibles: PublicacionPerfil[] = [];
+    for (const publicacionFiltrada of publicacionesFiltradas) {
+        const publicacion = publicacionesPorId.get(publicacionFiltrada.id);
+        if (publicacion) publicacionesVisibles.push(publicacion);
+    }
 
     function abrirDrawer(publicacion: PublicacionPerfil) {
         setPublicacionSeleccionada(publicacion);
         setDrawerAbierto(true);
     }
 
-    const publicacionesPorEspecie = publicaciones.reduce<Record<string, PublicacionPerfil[]>>((grupos, publicacion) => {
+    const publicacionesPorEspecie = publicacionesVisibles.reduce<Record<string, PublicacionPerfil[]>>((grupos, publicacion) => {
         const especie = publicacion.especie;
 
         if (!grupos[especie]) {
@@ -37,8 +54,8 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = ""}:
         <>
             <section className={styles.contenedor}>
                 <div className={styles.catalogo}>
-                    <div className={styles.placeholderFiltros}>
-                        Filtros
+                    <div className={styles.filtros}>
+                        <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" alFiltrar={setPublicacionesFiltradas}/>
                     </div>
 
                     <div className={styles.encabezadoCatalogo}>
@@ -49,7 +66,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = ""}:
                         </button>
                     </div>
 
-                    {publicaciones.length > 0 ? (
+                    {publicacionesVisibles.length > 0 ? (
                         agruparPorEspecie ? (
                             <div className={styles.grupos}>
                                 {Object.entries(publicacionesPorEspecie).map(([especie, publicacionesEspecie]) => (
@@ -74,13 +91,13 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = ""}:
                             </div>
                         ) : (
                             <div className={styles.lista}>
-                                {publicaciones.map((publicacion) => (
+                                {publicacionesVisibles.map((publicacion) => (
                                     <TarjetaPublicacion key={publicacion.id} publicacion={publicacion} onSeleccionar={abrirDrawer}/>
                                 ))}
                             </div>
                         )
                     ) : (
-                        <p className={styles.sinResultados}>No hay publicaciones disponibles.</p>
+                        <p className={styles.sinResultados}>{publicaciones.length === 0 ? "No hay publicaciones disponibles." : "No hay publicaciones que coincidan con la búsqueda."}</p>
                     )}
                 </div>
             </section>

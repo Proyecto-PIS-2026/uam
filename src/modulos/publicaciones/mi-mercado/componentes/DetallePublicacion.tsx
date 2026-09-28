@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Publicacion } from "../mi-mercado";
+import type { Publicacion } from "./MiMercado";
 import Image from "next/image";
 
 type Props = {
@@ -10,6 +10,10 @@ type Props = {
     restar: () => void;
     sumar: () => void;
     cambiarPrecio: (nuevoPrecio: number) => void;
+    guardandoPrecio?: boolean;
+    errorPrecio?: string;
+    alEditar?: () => void;
+    alEliminar?: () => void;
 };
 
 export default function DetallePublicacion({
@@ -18,6 +22,10 @@ export default function DetallePublicacion({
     restar,
     sumar,
     cambiarPrecio,
+    guardandoPrecio = false,
+    errorPrecio = "",
+    alEditar,
+    alEliminar,
 }: Props) {
     const [editandoPrecio, setEditandoPrecio] =
         useState(false);
@@ -68,7 +76,7 @@ export default function DetallePublicacion({
 
         if (
             !Number.isFinite(nuevoPrecio) ||
-            nuevoPrecio < 0
+            nuevoPrecio <= 0
         ) {
             setPrecioTemporal(String(precio));
             setEditandoPrecio(false);
@@ -97,6 +105,7 @@ export default function DetallePublicacion({
                             src={foto}
                             alt={especie}
                             fill
+                            unoptimized={/^https?:\/\//.test(foto)}
                             className="object-cover"
                         />
                     ) : (
@@ -144,6 +153,7 @@ export default function DetallePublicacion({
                                 type="button"
                                 className="flex h-10 w-14 items-center justify-center rounded-lg bg-secondary text-xl font-bold text-white"
                                 onClick={restar}
+                                disabled={guardandoPrecio}
                                 aria-label="Disminuir precio"
                             >
                                 −
@@ -194,6 +204,7 @@ export default function DetallePublicacion({
                                     onClick={
                                         comenzarEdicionPrecio
                                     }
+                                    disabled={guardandoPrecio}
                                     className="
                                         min-w-24
                                         cursor-text
@@ -214,6 +225,7 @@ export default function DetallePublicacion({
                                 type="button"
                                 className="flex h-10 w-14 items-center justify-center rounded-lg bg-secondary text-xl font-bold text-white"
                                 onClick={sumar}
+                                disabled={guardandoPrecio}
                                 aria-label="Aumentar precio"
                             >
                                 +
@@ -266,6 +278,11 @@ export default function DetallePublicacion({
                     </div>
                 </div>
             </section>
+            {errorPrecio && <p role="alert" className="text-sm text-red-800">{errorPrecio}</p>}
+            {(alEditar || alEliminar) && <div className="flex gap-3 pb-4">
+                {alEditar && <button type="button" onClick={alEditar} disabled={guardandoPrecio} className="flex-1 rounded-lg bg-secondary px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">Editar</button>}
+                {alEliminar && <button type="button" onClick={alEliminar} disabled={guardandoPrecio} className="flex-1 rounded-lg border border-border bg-surface px-4 py-3 text-sm font-semibold text-red-800 disabled:opacity-50">Eliminar</button>}
+            </div>}
         </div>
     );
 }

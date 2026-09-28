@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import MuiDrawer from "@mui/material/Drawer";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import CloseIcon from "@mui/icons-material/Close";
+import styles from "../modulos/publicaciones/operadores/componentes/DrawerEditarPublicacion.module.css";
 
 type Props = {
     isOpen: boolean;
@@ -9,58 +13,27 @@ type Props = {
 };
 
 export default function Drawer({ isOpen, onClose, children }: Props) {
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const overflowAnterior = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-
-        return () => {
-            document.body.style.overflow = overflowAnterior;
-        };
-    }, [isOpen]);
-
-    if (!isOpen) {
-        return null;
-    }
+    const esWeb = useMediaQuery("(min-width: 768px)");
 
     return (
-        <div
-            className="fixed inset-0 z-50 bg-black/40"
-            onClick={onClose}
+        <MuiDrawer
+            anchor={esWeb ? "right" : "bottom"}
+            open={isOpen}
+            onClose={onClose}
+            slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Detalle de publicación" } }}
         >
-            <div
-                className="
-                    absolute bottom-0 left-0 right-0
-                    max-h-[70dvh]
-                    overflow-y-auto
-                    rounded-t-2xl
-                    bg-surface
-                    px-6 pb-2 pt-5
-
-                    sm:bottom-auto
-                    sm:left-auto
-                    sm:right-0
-                    sm:top-0
-                    sm:h-full
-                    sm:max-h-none
-                    sm:w-[460px]
-                    sm:rounded-none
-                    lg:w-[500px]
-                "
-                onClick={(e) => e.stopPropagation()}
-            >
+            <div className={styles.asa} aria-hidden="true" />
+            <div className={styles.encabezado} style={{ justifyContent: "flex-end" }}>
                 <button
                     type="button"
-                    className="absolute right-4 top-2 text-3xl text-muted hover:text-foreground"
+                    className={styles.cerrar}
                     onClick={onClose}
                     aria-label="Cerrar"
                 >
-                    ×
+                    <CloseIcon fontSize="small" />
                 </button>
-
-                {children}
             </div>
-        </div>
+            <div className={styles.cuerpo}>{children}</div>
+        </MuiDrawer>
     );
 }

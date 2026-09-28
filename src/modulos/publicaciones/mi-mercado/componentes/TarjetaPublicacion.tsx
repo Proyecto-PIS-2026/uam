@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import type { Publicacion } from "./mi-mercado";
-import Detalle from "./[id]/detalle-publicacion";
-import Drawer from "../../../compartido/drawer";
-import { actualizarPrecio } from "./actions";
+import { useRef, useState } from "react";
+import Image from "next/image";
+import type { Publicacion } from "./MiMercado";
+import { actualizarPrecio } from "../acciones";
 
 type Props = {
     pub: Publicacion;
     incrementoPrecio: number;
+    alConsultar?: (publicacion: Publicacion) => void;
 };
 
 export default function TarjetaPublicacion({
     pub,
     incrementoPrecio,
+    alConsultar,
 }: Props) {
     let precioInicial = 0;
 
@@ -21,21 +22,45 @@ export default function TarjetaPublicacion({
         precioInicial = Number(pub.precio);
     }
 
-    const [precio, setPrecio] = useState(precioInicial);
-    const [estaAbierto, setEstaAbierto] = useState(false);
+    const [precioGuardado, setPrecioGuardado] = useState({ base: pub.precio, valor: precioInicial });
+    const precio = precioGuardado.base === pub.precio ? precioGuardado.valor : precioInicial;
+    const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+    const [errorPrecio, setErrorPrecio] = useState("");
+    const guardandoPrecioRef = useRef(false);
 
     const [editandoPrecio, setEditandoPrecio] = useState(false);
     const [precioTemporal, setPrecioTemporal] = useState(
         String(precioInicial)
     );
 
-    function cambiarPrecio(nuevoPrecio: number) {
-        if (!Number.isFinite(nuevoPrecio) || nuevoPrecio < 0) {
+    async function cambiarPrecio(nuevoPrecio: number) {
+        if (guardandoPrecioRef.current) return;
+        if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) {
+            setErrorPrecio("El precio debe ser un número mayor a cero.");
+            return;
+        }
+        if (!Number.isInteger(nuevoPrecio)) {
+            setErrorPrecio("El precio debe ser un número entero, sin decimales.");
             return;
         }
 
-        setPrecio(nuevoPrecio);
-        actualizarPrecio(pub.id, nuevoPrecio);
+        guardandoPrecioRef.current = true;
+        setGuardandoPrecio(true);
+        setErrorPrecio("");
+        try {
+            await actualizarPrecio(pub.id, nuevoPrecio);
+            setPrecioGuardado({ base: pub.precio, valor: nuevoPrecio });
+        } catch (error) {
+            setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
+        } finally {
+            guardandoPrecioRef.current = false;
+            setGuardandoPrecio(false);
+        }
+    }
+
+    function consultarPublicacion() {
+        if (guardandoPrecioRef.current) return;
+        alConsultar?.({ ...pub, precio: pub.precio === null && precio === 0 ? null : String(precio) });
     }
 
     function restar() {
@@ -44,14 +69,14 @@ export default function TarjetaPublicacion({
             precio - incrementoPrecio
         );
 
-        cambiarPrecio(nuevoPrecio);
+        void cambiarPrecio(nuevoPrecio);
     }
 
     function sumar() {
         const nuevoPrecio =
             precio + incrementoPrecio;
 
-        cambiarPrecio(nuevoPrecio);
+        void cambiarPrecio(nuevoPrecio);
     }
 
     function comenzarEdicionPrecio() {
@@ -60,8 +85,7 @@ export default function TarjetaPublicacion({
     }
 
     function guardarPrecioManual() {
-        const texto =
-            precioTemporal.trim().replace(",", ".");
+        const texto = precioTemporal.trim();
 
         if (texto === "") {
             setPrecioTemporal(String(precio));
@@ -72,15 +96,16 @@ export default function TarjetaPublicacion({
         const nuevoPrecio = Number(texto);
 
         if (
-            !Number.isFinite(nuevoPrecio) ||
-            nuevoPrecio < 0
+            !Number.isInteger(nuevoPrecio) ||
+            nuevoPrecio <= 0 ||
+            nuevoPrecio === precio
         ) {
             setPrecioTemporal(String(precio));
             setEditandoPrecio(false);
             return;
         }
 
-        cambiarPrecio(nuevoPrecio);
+        void cambiarPrecio(nuevoPrecio);
         setEditandoPrecio(false);
     }
 
@@ -114,7 +139,6 @@ export default function TarjetaPublicacion({
         : especie;
 
     return (
-        <>
             <div
                 className="
                     flex min-h-28 overflow-hidden
@@ -133,9 +157,9 @@ export default function TarjetaPublicacion({
                 {/* Foto */}
                 <button
                     type="button"
-                    onClick={() => setEstaAbierto(true)}
+                    onClick={consultarPublicacion}
                     className="
-                        w-28 shrink-0
+                        relative w-28 shrink-0
                         overflow-hidden
                         bg-primary-soft
                         text-left
@@ -146,19 +170,25 @@ export default function TarjetaPublicacion({
                     aria-label={`Ver detalle de ${nombreProducto}`}
                 >
                     {pub.foto ? (
-                        <img
+                        <Image
                             src={pub.foto}
                             alt={nombreProducto}
+                            fill
+                            sizes="(min-width: 768px) 320px, 128px"
+                            unoptimized
                             className="h-full w-full object-cover"
                         />
                     ) : pub.presentacion.variedad.especie
                           .fotoEspecie ? (
-                        <img
+                        <Image
                             src={
                                 pub.presentacion.variedad.especie
                                     .fotoEspecie
                             }
                             alt={especie}
+                            fill
+                            sizes="(min-width: 768px) 320px, 128px"
+                            unoptimized
                             className="h-full w-full object-cover opacity-70"
                         />
                     ) : (
@@ -183,7 +213,7 @@ export default function TarjetaPublicacion({
                     {/* Información clickeable */}
                     <button
                         type="button"
-                        onClick={() => setEstaAbierto(true)}
+                        onClick={consultarPublicacion}
                         className="
                             flex min-w-0 flex-1
                             text-left
@@ -267,6 +297,7 @@ export default function TarjetaPublicacion({
                                     hover:bg-primary-hover
                                 "
                                 onClick={restar}
+                                disabled={guardandoPrecio}
                                 aria-label="Disminuir precio"
                             >
                                 −
@@ -276,13 +307,12 @@ export default function TarjetaPublicacion({
                                 <input
                                     autoFocus
                                     type="text"
-                                    inputMode="decimal"
+                                    inputMode="numeric"
+                                    maxLength={10}
                                     value={precioTemporal}
-                                    onChange={(e) =>
-                                        setPrecioTemporal(
-                                            e.target.value
-                                        )
-                                    }
+                                    onChange={(e) => {
+                                        if (/^\d{0,10}$/.test(e.target.value)) setPrecioTemporal(e.target.value);
+                                    }}
                                     onBlur={
                                         guardarPrecioManual
                                     }
@@ -298,10 +328,10 @@ export default function TarjetaPublicacion({
                                         }
                                     }}
                                     className="
-                                        w-20 rounded-lg
+                                        box-border h-8 w-20 rounded-lg
                                         border border-primary
                                         bg-surface
-                                        px-2 py-1
+                                        px-2 py-0
                                         text-center
                                         text-lg font-extrabold
                                         text-foreground
@@ -317,6 +347,7 @@ export default function TarjetaPublicacion({
                                     onClick={
                                         comenzarEdicionPrecio
                                     }
+                                    disabled={guardandoPrecio}
                                     className="
                                         min-w-16
                                         cursor-text
@@ -346,6 +377,7 @@ export default function TarjetaPublicacion({
                                     hover:bg-primary-hover
                                 "
                                 onClick={sumar}
+                                disabled={guardandoPrecio}
                                 aria-label="Aumentar precio"
                             >
                                 +
@@ -354,9 +386,7 @@ export default function TarjetaPublicacion({
 
                         <button
                             type="button"
-                            onClick={() =>
-                                setEstaAbierto(true)
-                            }
+                            onClick={consultarPublicacion}
                             className="
                                 text-xl font-bold
                                 text-secondary
@@ -367,23 +397,9 @@ export default function TarjetaPublicacion({
                             ›
                         </button>
                     </div>
+                    {errorPrecio && <p role="alert" className="px-3 pb-3 text-sm text-red-800">{errorPrecio}</p>}
                 </div>
             </div>
 
-            <Drawer
-                isOpen={estaAbierto}
-                onClose={() =>
-                    setEstaAbierto(false)
-                }
-            >
-                <Detalle
-                    pub={pub}
-                    precio={precio}
-                    restar={restar}
-                    sumar={sumar}
-                    cambiarPrecio={cambiarPrecio}
-                />
-            </Drawer>
-        </>
     );
 }

@@ -9,6 +9,7 @@ export type CambiosPublicacionOperador = {
     categoriaId: number;
     calibreId: number;
     presentacionId: number;
+    paisId: number;
     disponible: boolean;
 };
 
@@ -37,6 +38,10 @@ export async function modificarPublicacionOperador(
         throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La disponibilidad no es válida.");
     }
 
+    if (typeof cambios.paisId !== "number" || !Number.isSafeInteger(cambios.paisId) || cambios.paisId <= 0) {
+        throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El país no es válido.");
+    }
+
     let precioParaGuardar: PrecioDb = null;
 
     if (cambios.precio !== null) {
@@ -44,9 +49,9 @@ export async function modificarPublicacionOperador(
             throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El precio no es válido.");
         }
         const precio = cambios.precio.trim();
-        const formatoValido = /^(0|[1-9]\d{0,9})(\.\d{1,2})?$/.test(precio);
+        const formatoValido = /^(0|[1-9]\d{0,9})$/.test(precio);
         if (!formatoValido) {
-            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS","El precio debe tener hasta 10 dígitos enteros y 2 decimales.");
+            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El precio debe ser un número entero de hasta 10 dígitos, sin decimales.");
         }
         precioParaGuardar = precio as PrecioDb;
     }
@@ -128,6 +133,15 @@ export async function modificarPublicacionOperador(
                 throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El calibre no existe.");
             }
 
+            const pais = await tx.orm.public.Pais
+                .select("id")
+                .where({ id: cambios.paisId })
+                .first();
+
+            if (!pais) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El país no existe.");
+            }
+
             if (fotoNueva) {
                 try {
                     imagenNuevaGuardada.url = await guardarImagenPublicacion(vinculo.publicacionId, fotoNueva);
@@ -152,6 +166,10 @@ export async function modificarPublicacionOperador(
                     presentacionId: cambios.presentacionId,
                     publicacionDisponible: cambios.disponible,
                 });
+
+            await tx.orm.public.PublicacionOperador
+                .where({ id: vinculo.id })
+                .update({ paisId: cambios.paisId });
 
             return {
                 publicacionOperadorId: vinculo.id,

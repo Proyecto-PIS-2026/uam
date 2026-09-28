@@ -1,0 +1,45 @@
+.encabezado {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    box-sizing: border-box;
+    width: 100%;
+    padding: var(--padding-titulo-pagina);
+    border: 1px solid var(--color-primary-hover);
+    border-radius: 0.75rem;
+    background-color: var(--color-secondary);
+    color: white;
+    font-family: var(--font-geist-sans), sans-serif;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+}
+
+.contenido {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.titulo {
+    margin: 0;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: var(--tamano-titulo-pagina);
+    font-weight: 700;
+    line-height: var(--interlineado-titulo-pagina);
+}
+
+.subtitulo {
+    margin: 0;
+    color: rgb(168, 208, 93);
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.25rem;
+}
+
+.cantidad {
+    color: inherit;
+    font: inherit;
+}
