@@ -16,7 +16,7 @@ const opcionesMenu = [
         ruta: "/inicio",
     },
     {
-        nombre: "Catálogo",
+        nombre: "Publicaciones",
         ruta: "/publicaciones",
     },
     {
@@ -24,29 +24,35 @@ const opcionesMenu = [
         ruta: "/operadores",
     },
     {
-        nombre: "Perfil público de operador",
-        ruta: "/operadores/1",
-    },
-    {
         nombre: "Mi mercado",
-        ruta: "/COMPLETAR-RUTA-MI-MERCADO",
+        ruta: "/mi-mercado",
     },
 ];
 
 export default function HeaderPublico() {
     const [menuAbierto, setMenuAbierto] = useState(false);
-    const pathname = usePathname();
+    const pathname = usePathname() ?? "";
+
+    function esRutaActiva(ruta: string) {
+        if (ruta === "/mi-mercado") {
+            return pathname === ruta || pathname.startsWith("/publicaciones/nueva");
+        }
+        if (ruta === "/publicaciones" && pathname.startsWith("/publicaciones/nueva")) {
+            return false;
+        }
+        return pathname === ruta || pathname.startsWith(`${ruta}/`);
+    }
 
     const contenido = (
         <>
             <header className={styles.header}>
                 <div className={styles.contenido}>
-                    <div className={styles.marca}>
+                    <Link href="/inicio" className={styles.marca} aria-label="Ir al inicio" onClick={() => setMenuAbierto(false)}>
                         <Image src="/Logo.PNG" alt="Unidad Agroalimentaria Metropolitana" width={410} height={94} priority className={styles.logo}/>
-                    </div>
+                    </Link>
                     <nav className={styles.navegacion} aria-label="Navegación principal">
                         {opcionesMenu.map((opcion) => (
-                            <Link key={opcion.nombre} href={opcion.ruta} className={`${styles.enlace} ${pathname === opcion.ruta ? styles.enlaceActivo : ""}`}>
+                            <Link key={opcion.nombre} href={opcion.ruta} aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined} className={`${styles.enlace} ${esRutaActiva(opcion.ruta) ? styles.enlaceActivo : ""}`}>
                                 {opcion.nombre}
                             </Link>
                         ))}
@@ -59,7 +65,7 @@ export default function HeaderPublico() {
                 </div>
                 <nav id="menu-mobile" className={`${styles.navegacionMobile} ${menuAbierto ? styles.navegacionMobileAbierta : ""}`} aria-label="Navegación móvil">
                     {opcionesMenu.map((opcion) => (
-                        <Link key={opcion.nombre} href={opcion.ruta} className={styles.enlaceMobile} onClick={() => setMenuAbierto(false)}>
+                        <Link key={opcion.nombre} href={opcion.ruta} aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined} className={styles.enlaceMobile} onClick={() => setMenuAbierto(false)}>
                             {opcion.nombre}
                         </Link>
                     ))}

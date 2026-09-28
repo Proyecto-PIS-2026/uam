@@ -17,7 +17,8 @@ type PruebaEdicionPublicacionProps = {
 
 function crearPublicacionInicial(opciones: OpcionesEdicionPublicacion): PublicacionParaEditar | null {
     const calibre = opciones.calibres.find((opcion) => opcion.nombre === "G - GRANDE") ?? opciones.calibres[0];
-    if (!calibre) return null;
+    const pais = opciones.paises.find((opcion) => opcion.nombre === "Uruguay") ?? opciones.paises[0];
+    if (!calibre || !pais) return null;
 
     let primeraPublicacion: PublicacionParaEditar | null = null;
 
@@ -37,11 +38,12 @@ function crearPublicacionInicial(opciones: OpcionesEdicionPublicacion): Publicac
             variedadId: variedad.id,
             especie: especie.nombre,
             variedad: variedad.nombre,
-            precio: "180.00",
+            precio: "180",
             foto: null,
             categoriaId: categoria.id,
             calibreId: calibre.id,
             presentacionId: presentacion.id,
+            paisId: pais.id,
             disponible: true,
         };
 
@@ -59,7 +61,7 @@ function nombreOpcion(opciones: OpcionEdicion[], id: number) {
 }
 
 export default function PruebaEdicionPublicacion({ opciones }: PruebaEdicionPublicacionProps) {
-    const { especies, variedades, presentaciones, categorias, calibres } = opciones;
+    const { especies, variedades, presentaciones, categorias, calibres, paises } = opciones;
     const [publicacion, setPublicacion] = useState(() => crearPublicacionInicial(opciones));
     const [abierto, setAbierto] = useState(false);
     const [aviso, setAviso] = useState("");
@@ -136,7 +138,7 @@ export default function PruebaEdicionPublicacion({ opciones }: PruebaEdicionPubl
                 </article>
             </div>
 
-            <DrawerEditarPublicacion abierto={abierto} alCerrar={() => setAbierto(false)} alGuardar={guardarCambios} publicacion={publicacion} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} />
+            <DrawerEditarPublicacion abierto={abierto} alCerrar={() => setAbierto(false)} alGuardar={guardarCambios} publicacion={publicacion} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} />
         </main>
     );
 }

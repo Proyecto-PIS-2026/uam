@@ -27,7 +27,7 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
     const [agruparPorOperador, setAgruparPorOperador] = useState(false);
     const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionListado | null>(null);
     const [drawerAbierto, setDrawerAbierto] = useState(false);
-    const pantallaVertical = useMediaQuery("(orientation: portrait)");
+    const esMobile = useMediaQuery("(max-width: 767px)");
     const [mostrarBotonArriba, setMostrarBotonArriba] = useState(false);
     const [animandoSalida, setAnimandoSalida] = useState(false);
 
@@ -145,7 +145,7 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
                     ))}
                 </ul>
             )}
-            {publicacionSeleccionada && (pantallaVertical ? (
+            {publicacionSeleccionada && (esMobile ? (
 				<DrawerAbajoPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
     		) : (
         		<DrawerDerechaPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>

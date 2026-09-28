@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => {
         presentaciones: consulta(),
         categorias: consulta(),
         calibres: consulta(),
+        paises: consulta(),
     };
 });
 
@@ -24,6 +25,7 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
         Presentacion: mocks.presentaciones,
         Categoria: mocks.categorias,
         Calibre: mocks.calibres,
+        Pais: mocks.paises,
     } } },
 }));
 
@@ -59,6 +61,10 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
             { id: 501, codigoCalibre: "EX", nombreCalibre: "EXTRA" },
             { id: 502, codigoCalibre: "SV", nombreCalibre: "SIN VARIACION" },
         ]);
+        mocks.paises.all.mockResolvedValue([
+            { id: 117, nombrePais: "Argentina" },
+            { id: 218, nombrePais: "Uruguay" },
+        ]);
     });
 
     it("mapea los IDs reales y conserva solo relaciones de especies y variedades activas", async () => {
@@ -80,15 +86,18 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
                 { id: 501, nombre: "EX - EXTRA" },
                 { id: 502, nombre: "SV - SIN VARIACION" },
             ],
+            paises: [{ id: 117, nombre: "Argentina" }, { id: 218, nombre: "Uruguay" }],
         });
         expect(mocks.especies.where).toHaveBeenCalledWith({ especieActiva: true });
         expect(mocks.variedades.where).toHaveBeenCalledWith({ variedadActiva: true });
         expect(mocks.presentaciones.where).toHaveBeenCalledWith({ presentacionActiva: true });
         expect(mocks.categorias.where).not.toHaveBeenCalled();
         expect(mocks.calibres.where).not.toHaveBeenCalled();
+        expect(mocks.paises.where).not.toHaveBeenCalled();
+        expect(mocks.paises.select).toHaveBeenCalledWith("id", "nombrePais");
     });
 
-    it("consulta los cinco catálogos ordenados por nombre", async () => {
+    it("consulta los seis catálogos ordenados por nombre", async () => {
         await obtenerOpcionesEdicionPublicacion();
 
         const ordenamientos = [
@@ -97,6 +106,7 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
             { consulta: mocks.presentaciones, campo: "nombrePresentacion" },
             { consulta: mocks.categorias, campo: "nombreCategoria" },
             { consulta: mocks.calibres, campo: "nombreCalibre" },
+            { consulta: mocks.paises, campo: "nombrePais" },
         ];
         for (const { consulta, campo } of ordenamientos) {
             expect(consulta.all).toHaveBeenCalledOnce();
@@ -107,7 +117,7 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         }
     });
 
-    it("mantiene categorías generales y calibres aunque no haya especies activas", async () => {
+    it("mantiene categorías generales, calibres y países aunque no haya especies activas", async () => {
         mocks.especies.all.mockResolvedValue([]);
 
         await expect(obtenerOpcionesEdicionPublicacion()).resolves.toEqual({
@@ -117,12 +127,20 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
                 { id: 501, nombre: "EX - EXTRA" },
                 { id: 502, nombre: "SV - SIN VARIACION" },
             ],
+            paises: [{ id: 117, nombre: "Argentina" }, { id: 218, nombre: "Uruguay" }],
         });
     });
 
     it("propaga el error de una consulta sin devolver un catálogo parcial", async () => {
         const error = new Error("No se pudo consultar las presentaciones.");
         mocks.presentaciones.all.mockRejectedValue(error);
+
+        await expect(obtenerOpcionesEdicionPublicacion()).rejects.toBe(error);
+    });
+
+    it("propaga un fallo al consultar los países sin devolver opciones parciales", async () => {
+        const error = new Error("No se pudo consultar los países.");
+        mocks.paises.all.mockRejectedValue(error);
 
         await expect(obtenerOpcionesEdicionPublicacion()).rejects.toBe(error);
     });

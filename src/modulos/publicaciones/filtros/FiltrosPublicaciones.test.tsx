@@ -13,6 +13,7 @@ const publicaciones: PublicacionListado[] = [
         categoria: "I",
         calibre: "Grande",
         codigoCalibre: "G",
+        pais: "Uruguay",
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",
@@ -40,6 +41,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         categoria: "I",
         calibre: "Grande",
         codigoCalibre: "G",
+        pais: "Uruguay",
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",
@@ -56,6 +58,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         categoria: "II",
         calibre: "Mediano",
         codigoCalibre: "M",
+        pais: "Uruguay",
         operador: {
             id: 2,
             nombreFantasia: "Mercado Verde",
@@ -72,6 +75,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         categoria: "I",
         calibre: "Grande",
         codigoCalibre: "G",
+        pais: "Uruguay",
         operador: {
             id: 3,
             nombreFantasia: "Frutas del Sur",
@@ -88,6 +92,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         categoria: "E",
         calibre: "Pequeño",
         codigoCalibre: "P",
+        pais: "Uruguay",
         operador: {
             id: 4,
             nombreFantasia: "Mercado Verde",
@@ -140,6 +145,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
         categoria: "I",
         calibre: "Grande",
         codigoCalibre: "G",
+        pais: "Uruguay",
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",
@@ -156,6 +162,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
         categoria: "I",
         calibre: "Mediano",
         codigoCalibre: "M",
+        pais: "Uruguay",
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",
@@ -172,6 +179,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
         categoria: "II",
         calibre: "Grande",
         codigoCalibre: "G",
+        pais: "Uruguay",
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",

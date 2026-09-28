@@ -18,6 +18,7 @@ export type PublicacionListado = {
     categoria: string;
     calibre: string;
     codigoCalibre: string;
+    pais: string;
     operador: {
         id: number;
         nombreFantasia: string;

@@ -25,9 +25,9 @@ vi.mock("./DrawerEditarPublicacion", () => ({
 
         async function guardar() {
             if (!props.publicacion) return;
-            const { precio, foto, categoriaId, calibreId, presentacionId, disponible } = props.publicacion;
+            const { precio, foto, categoriaId, calibreId, presentacionId, paisId, disponible } = props.publicacion;
             await props.alGuardar(props.publicacion.publicacionOperadorId, mocks.cambios ?? {
-                precio, foto, categoriaId, calibreId, presentacionId, disponible,
+                precio, foto, categoriaId, calibreId, presentacionId, paisId, disponible,
             }, mocks.foto);
             props.alCerrar();
         }
@@ -67,6 +67,10 @@ function crearOpciones(): OpcionesEdicionPublicacion {
             { id: 901, nombre: "G - GRANDE" },
             { id: 902, nombre: "SV - SIN VARIACION" },
         ],
+        paises: [
+            { id: 1001, nombre: "Uruguay" },
+            { id: 1002, nombre: "Brasil" },
+        ],
     };
 }
 
@@ -105,7 +109,7 @@ describe("PruebaEdicionPublicacion", () => {
 
         expect(screen.getByRole("heading", { name: "Mis publicaciones" })).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Manzana · Gala" })).toBeInTheDocument();
-        expect(screen.getByText("$ 180.00")).toBeInTheDocument();
+        expect(screen.getByText("$ 180")).toBeInTheDocument();
         expect(screen.getByText("Cajon · I · G - GRANDE")).toBeInTheDocument();
         expect(ultimoDrawer().publicacion).toEqual(expect.objectContaining({
             publicacionId: 52,
@@ -115,6 +119,7 @@ describe("PruebaEdicionPublicacion", () => {
             presentacionId: 701,
             categoriaId: 801,
             calibreId: 901,
+            paisId: 1001,
             foto: null,
             disponible: true,
         }));
@@ -136,6 +141,7 @@ describe("PruebaEdicionPublicacion", () => {
         expect(drawer.presentaciones).toEqual(opciones.presentaciones);
         expect(drawer.categorias).toEqual(opciones.categorias);
         expect(drawer.calibres).toEqual(opciones.calibres);
+        expect(drawer.paises).toEqual(opciones.paises);
     });
 
     it("prefiere Manzana, Gala, Cajon, I y G - GRANDE aunque otras opciones aparezcan primero", () => {
@@ -146,6 +152,7 @@ describe("PruebaEdicionPublicacion", () => {
             presentaciones: [...opciones.presentaciones].reverse(),
             categorias: [...opciones.categorias].reverse(),
             calibres: [...opciones.calibres].reverse(),
+            paises: opciones.paises,
         }} />);
 
         expect(screen.getByRole("heading", { name: "Manzana · Gala" })).toBeInTheDocument();
@@ -154,7 +161,7 @@ describe("PruebaEdicionPublicacion", () => {
 
     it("actualiza precio y nombres según los IDs y conserva los cambios al reabrir", async () => {
         mocks.cambios = {
-            precio: "220", foto: null, categoriaId: 802, calibreId: 902, presentacionId: 702, disponible: false,
+            precio: "220", foto: null, categoriaId: 802, calibreId: 902, presentacionId: 702, paisId: 1002, disponible: false,
         };
         render(<PruebaEdicionPublicacion opciones={crearOpciones()} />);
         await guardarDemo();
@@ -168,13 +175,13 @@ describe("PruebaEdicionPublicacion", () => {
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(ultimoDrawer()).toEqual(expect.objectContaining({
             abierto: true,
-            publicacion: expect.objectContaining({ especieId: 502, variedadId: 602, disponible: false, precio: "220" }),
+            publicacion: expect.objectContaining({ especieId: 502, variedadId: 602, paisId: 1002, disponible: false, precio: "220" }),
         }));
     });
 
     it("permite aplicar una categoría específica al cambiar a otra especie", async () => {
         mocks.cambios = {
-            precio: "90", foto: null, categoriaId: 803, calibreId: 902, presentacionId: 703, disponible: true,
+            precio: "90", foto: null, categoriaId: 803, calibreId: 902, presentacionId: 703, paisId: 1001, disponible: true,
         };
         render(<PruebaEdicionPublicacion opciones={crearOpciones()} />);
         await guardarDemo();
@@ -188,7 +195,7 @@ describe("PruebaEdicionPublicacion", () => {
 
     it("muestra Sin precio y vuelve a los datos iniciales al montar otra vez", async () => {
         mocks.cambios = {
-            precio: null, foto: null, categoriaId: 801, calibreId: 901, presentacionId: 701, disponible: true,
+            precio: null, foto: null, categoriaId: 801, calibreId: 901, presentacionId: 701, paisId: 1001, disponible: true,
         };
         const { unmount } = render(<PruebaEdicionPublicacion opciones={crearOpciones()} />);
         await guardarDemo();
@@ -197,7 +204,7 @@ describe("PruebaEdicionPublicacion", () => {
         unmount();
         render(<PruebaEdicionPublicacion opciones={crearOpciones()} />);
 
-        expect(screen.getByText("$ 180.00")).toBeInTheDocument();
+        expect(screen.getByText("$ 180")).toBeInTheDocument();
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
@@ -230,15 +237,15 @@ describe("PruebaEdicionPublicacion", () => {
         render(<PruebaEdicionPublicacion opciones={crearOpciones()} />);
         const drawer = ultimoDrawer();
         const cambios: CambiosPublicacionOperador = {
-            precio: "90", foto: null, categoriaId: 801, calibreId: 901, presentacionId: 701, disponible: true,
+            precio: "90", foto: null, categoriaId: 801, calibreId: 901, presentacionId: 701, paisId: 1001, disponible: true,
         };
 
         expect(() => drawer.alGuardar(999, cambios, null)).toThrow("La publicación seleccionada cambió.");
-        expect(screen.getByText("$ 180.00")).toBeInTheDocument();
+        expect(screen.getByText("$ 180")).toBeInTheDocument();
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
-    it.each(["especies", "variedades", "presentaciones", "categorias", "calibres"] as const)(
+    it.each(["especies", "variedades", "presentaciones", "categorias", "calibres", "paises"] as const)(
         "explica que el catálogo está incompleto si no tiene %s y no renderiza el drawer",
         (campo) => {
             const opciones = crearOpciones();
@@ -268,6 +275,7 @@ describe("PruebaEdicionPublicacion", () => {
             presentaciones: opciones.presentaciones.filter((opcion) => opcion.id === 703),
             categorias: opciones.categorias.filter((opcion) => opcion.id === 803),
             calibres: opciones.calibres.filter((opcion) => opcion.id === 902),
+            paises: opciones.paises,
         }} />);
 
         expect(screen.getByRole("heading", { name: "Tomate · Cherry" })).toBeInTheDocument();

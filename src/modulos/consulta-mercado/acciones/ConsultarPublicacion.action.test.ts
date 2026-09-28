@@ -19,6 +19,7 @@ describe("obtenerPublicaciones", () => {
                     categoria: "Primera",
                     calibre: "Mediano",
                     codigoCalibre: "M",
+                    pais: "Uruguay",
                     operador: {
                         id: 10,
                         nombreFantasia: "Huerta Sur",

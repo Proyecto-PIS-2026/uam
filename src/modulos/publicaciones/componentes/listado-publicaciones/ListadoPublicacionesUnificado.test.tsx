@@ -14,6 +14,7 @@ function crearPublicacion(id: number, operadorId = 10, nombreFantasia = "Huerta 
 		categoria: "Primera",
 		calibre: "Mediano",
 		codigoCalibre: "M",
+		pais: "Uruguay",
 		operador: { id: operadorId, nombreFantasia, whatsApp: "099123456" },
 	};
 }
@@ -200,7 +201,7 @@ describe("ListadoPublicaciones", () => {
 		expect(screen.queryByRole("list")).not.toBeInTheDocument();
 	});
 
-	it("abre el detalle inferior en pantalla vertical", () => {
+	it("abre el detalle inferior en mobile", () => {
 		vi.mocked(useMediaQuery).mockReturnValue(true);
 		render(<ListadoPublicaciones publicaciones={publicacionesDeEjemplo()}/>);
 		fireEvent.click(screen.getByRole("button", { name: "Producto 2 — Frutas Norte" }));

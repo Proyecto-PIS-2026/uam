@@ -1,49 +1,56 @@
-.drawer {
-    height: 100dvh !important;
+.drawer.drawer {
+    width: min(26rem, 100vw);
+    height: 100dvh;
     max-height: 100dvh;
-    width: 26.25rem;
-    max-width: 50vw;
+    border-radius: 0;
     background-color: var(--color-surface);
     color: var(--color-foreground);
+    overflow-y: auto;
 }
 
 .tarjeta {
     position: relative;
     isolation: isolate;
-    display: flex;
-    flex-direction: column;
-    min-height: 100%;
     box-sizing: border-box;
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
     padding: 1rem;
 }
 
-.tarjeta::before {
-    content: "";
-    position: absolute;
+.tarjeta .hojasDrawer {
     z-index: -1;
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
-    height: 18rem;
-    border-radius: 0.75rem;
-    background-color: var(--color-primary-soft)
+    opacity: 0.08;
 }
 
 .bloqueSuperior {
     display: flex;
-    height: 18rem;
-    justify-content: center;
+    height: auto;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.marcoImagen {
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    height: clamp(13rem, 32dvh, 19rem);
+    flex-shrink: 0;
     align-items: center;
+    justify-content: center;
+    padding: clamp(1rem, 2.5dvh, 2rem);
+    border-radius: 1rem;
+    background-color: var(--color-primary-soft);
 }
 
 .contenedorImagen {
     position: relative;
-    width: 20rem;
-    height: 14rem;
+    width: 100%;
+    height: 100%;
     flex-shrink: 0;
     overflow: hidden;
-    border-radius: 0.75rem;
-    box-shadow: 0 0.5rem 1rem #0002;
+    border-radius: 1rem;
+    box-shadow: 0 0.75rem 1.5rem #0002;
     background-color: var(--color-surface);
 }
 
@@ -59,30 +66,32 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.15rem;
+    gap: 0.35rem;
     color: var(--color-secondary);
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 500;
 }
 
 .iconoFoto {
-    font-size: 1.7rem !important;
+    font-size: 2rem !important;
 }
 
 .bloqueSuperiorDerecho {
     display: flex;
+    width: 100%;
     flex-direction: column;
-    flex: 1;
-    min-width: 0;
-    gap: 1rem;
-    margin-top: 1rem;
+    flex: initial;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0.75rem;
 }
 
 .nombrePublicacion {
-    height: 6rem;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    gap: 0.25rem;
+    text-align: left;
 }
 
 .especie,
@@ -95,70 +104,77 @@
 }
 
 .especie {
-    font-weight: 650;
+    font-weight: 700;
 }
 
 .variedad {
-    font-weight: 550;
+    font-weight: 600;
 }
 
 .precio {
     display: flex;
     align-self: flex-end;
-    height: 4rem;
-    box-sizing: border-box;
     align-items: center;
     justify-content: flex-end;
-    font-size: 3rem;
-    font-weight: 650;
+    font-size: 2.75rem;
+    font-weight: 700;
+    line-height: 1.1;
 }
 
 .bloqueMedio {
     display: flex;
     flex-direction: column;
+    width: 100%;
     min-width: 0;
-    gap: 1rem;
+    gap: 0;
+    margin-top: 1rem;
 }
 
 .informacionDetallada {
     display: flex;
-    border-bottom: 0.01rem solid #cccccccc;
     gap: 0.5rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .nombreInformacion,
 .valorInformacion {
     flex: 1;
-    overflow: hidden;
-    font-size: 1.2rem;
+    overflow: visible;
+    font-size: 1rem;
     font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.nombreInformacion {
+    color: var(--color-foreground);
 }
 
 .valorInformacion {
     color: var(--color-secondary);
-    text-align: end;
-
+    text-align: right;
 }
 
 .bloqueInferior {
     display: flex;
     flex-direction: column;
     margin-top: auto;
-    position: sticky;
+    padding-top: 1rem;
     gap: 0.5rem;
 }
 
 .operador {
     display: flex;
+    min-width: 0;
     gap: 0.5rem;
 }
 
 .publicado,
 .nombreOperador {
     overflow: hidden;
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -172,8 +188,6 @@
     display: flex;
     width: 100%;
     gap: 0.5rem;
-    bottom: 0;
-    background-color: var(--color-surface);
 }
 
 .botonPerfil,
@@ -182,11 +196,13 @@
     flex: 1;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem 0.5rem;
-    border-radius: 0.5rem;
+    min-height: 3rem;
+    padding: 0.9rem 0.5rem;
+    border-radius: 0.65rem;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
+    text-decoration: none;
 }
 
 .botonPerfil {
@@ -200,6 +216,16 @@
     color: white;
 }
 
+.botonWhatsApp:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.botonPerfil:focus-visible,
+.botonWhatsApp:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 .iconoWhatsApp {
-    font-size: 1.20rem !important;
+    font-size: 1.3rem !important;
 }

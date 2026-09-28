@@ -1,7 +1,7 @@
 .drawer {
     width: 100%;
     height: auto;
-    max-height: 55dvh;
+    max-height: 62dvh;
     border-radius: 1.5rem 1.5rem 0 0;
     background-color: var(--color-surface);
     color: var(--color-foreground);
@@ -24,6 +24,11 @@
     isolation: isolate;
     padding: 1rem;
 
+}
+
+.tarjeta .hojasDrawer {
+    z-index: -1;
+    opacity: 0.08;
 }
 
 .tarjeta::before {
@@ -57,10 +62,14 @@
     gap: 0.5rem;
 }
 
+.marcoImagen {
+    display: contents;
+}
+
 .contenedorImagen {
+    position: relative;
     width: 10rem;
     height: 10rem;
-
     flex-shrink: 0;
     align-self: center;
     overflow: hidden;
@@ -142,7 +151,7 @@
     flex-direction: column;
     min-width: 0;
     gap: 0.5rem;
-    padding-bottom: 0.5rem;
+    padding-bottom: 1rem;
 }
 
 .informacionDetallada {
@@ -163,8 +172,6 @@
 
 .valorInformacion {
     color: var(--color-secondary);
-    padding-right: 0.75rem;
-    text-align: end;
 }
 
 .operador {

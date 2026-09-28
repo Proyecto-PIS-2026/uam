@@ -9,18 +9,41 @@
   --color-surface: #ffffff;
   --color-foreground: #1a1a1a;
   --color-muted: #5f5f5f;
+  --color-muted-foreground: #5f5f5f;
   --color-border: #dedede;
   --font-sans: var(--font-geist-sans);
 }
 
 :root {
   color-scheme: light;
+  --ancho-maximo-pagina: 80rem;
+  --padding-exterior-pagina: 1rem;
+  --padding-titulo-pagina: 2rem 1rem;
+  --tamano-titulo-pagina: 1.875rem;
+  --interlineado-titulo-pagina: 1.2;
 }
 
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-geist-sans), sans-serif;
+}
+
+.contenedor-pagina {
+  width: 100%;
+  max-width: var(--ancho-maximo-pagina);
+  margin: 0 auto;
+  padding: var(--padding-exterior-pagina);
+}
+
+.encabezado-pagina {
+  padding: var(--padding-titulo-pagina);
+}
+
+.titulo-pagina {
+  font-size: var(--tamano-titulo-pagina);
+  font-weight: 700;
+  line-height: var(--interlineado-titulo-pagina);
 }
 
 .confirm-modal {

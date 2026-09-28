@@ -11,11 +11,17 @@ type PropiedadesContenedorPublicaciones = {
 };
 
 export default function ContenedorPublicaciones({ publicaciones, especie = "" }: PropiedadesContenedorPublicaciones) {
-	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(publicaciones);
 	const especieValida = especie !== "" && publicaciones.some((publicacion) => publicacion.especie === especie) ? especie : "";
+	return <ContenidoPublicaciones key={especieValida} publicaciones={publicaciones} especie={especieValida} />;
+}
+
+function ContenidoPublicaciones({publicaciones, especie = ""}: PropiedadesContenedorPublicaciones) {
+	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() =>
+		especie ? publicaciones.filter((publicacion) => publicacion.especie === especie) : publicaciones
+	);
 	return (
 		<div className="flex flex-col gap-8">
-			<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especieValida} alFiltrar={setPublicacionesFiltradas}/>
+			<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especie} alFiltrar={setPublicacionesFiltradas}/>
 			<ListadoPublicaciones publicaciones={publicacionesFiltradas} />
 		</div>
 	);

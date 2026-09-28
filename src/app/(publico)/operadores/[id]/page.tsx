@@ -5,7 +5,9 @@ import CatalogoOperador from "../../../../modulos/usuarios/operadores/componente
 import PerfilOperador from "../../../../modulos/usuarios/operadores/componentes/perfil-publico-operador/PerfilOperador";
 
 import styles from "./page.module.css";
-import HojasDecorativas from "../../../../compartido/HojasDecorativas";
+// import HojasDecorativas from "../../../../compartido/HojasDecorativas";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
     params: Promise<{ id: string; }>;
@@ -15,6 +17,10 @@ export default async function Page({ params }: PageProps) {
     const { id } = await params;
     const idOperador = Number(id);
 
+    if (!Number.isSafeInteger(idOperador) || idOperador <= 0) {
+        notFound();
+    }
+
     const perfil = await obtenerPerfilPublicoOperador(idOperador);
 
     if (!perfil) {
@@ -23,10 +29,10 @@ export default async function Page({ params }: PageProps) {
 
     const contenido = (
         <main className={styles.pagina}>
-            <HojasDecorativas variante="fondo" />
+            {/* <HojasDecorativas variante="fondo" /> */}
             <div className={styles.contenido}>
                 <PerfilOperador operador={ perfil } />
-                <CatalogoOperador publicaciones={perfil.publicaciones} whatsAppOperador={perfil.whatsApp} />
+                <CatalogoOperador key={perfil.id} publicaciones={perfil.publicaciones} whatsAppOperador={perfil.whatsApp} idOperador={perfil.id} nombreOperador={perfil.nombreFantasia} />
             </div>
         </main>
     );

@@ -10,6 +10,7 @@ export type PublicacionListado = {
     categoria: string;
     calibre: string;
     codigoCalibre: string;
+    pais: string;
     operador: {
         id: number;
         nombreFantasia: string;
@@ -35,6 +36,8 @@ export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> 
             operaciones.eq(tablas.publicacion.categoriaId, tablas.categoria.id))
         .innerJoin(db.sql.public.calibre, (tablas, operaciones) =>
             operaciones.eq(tablas.publicacion.calibreId, tablas.calibre.id))
+        .innerJoin(db.sql.public.pais, (tablas, operaciones) =>
+            operaciones.eq(tablas.publicacionOperador.paisId, tablas.pais.id))
         .innerJoin(db.sql.public.operador, (tablas, operaciones) =>
             operaciones.eq(tablas.publicacionOperador.operadorId, tablas.operador.id))
         .select((tablas) => ({
@@ -47,6 +50,7 @@ export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> 
             categoria: tablas.categoria.nombreCategoria,
             calibre: tablas.calibre.nombreCalibre,
             codigoCalibre: tablas.calibre.codigoCalibre,           
+            pais: tablas.pais.nombrePais,
             operadorId: tablas.operador.id,
             operadorNombreFantasia: tablas.operador.nombreFantasia,
             operadorWhatsApp: tablas.operador.whatsApp,
@@ -70,6 +74,7 @@ export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> 
         categoria: fila.categoria,
         calibre: fila.calibre,
         codigoCalibre: fila.codigoCalibre,
+        pais: fila.pais,
         operador: {
             id: Number(fila.operadorId),
             nombreFantasia: fila.operadorNombreFantasia,

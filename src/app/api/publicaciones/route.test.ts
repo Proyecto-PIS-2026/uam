@@ -10,6 +10,12 @@ const mocks = vi.hoisted(() => ({
   calibres: vi.fn(),
   paises: vi.fn(),
   altaPublicacionOperador: vi.fn(),
+  obtenerOperadorActual: vi.fn(() => Promise.resolve({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" })),
+}));
+
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
+  obtenerOperadorActual: mocks.obtenerOperadorActual,
 }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({

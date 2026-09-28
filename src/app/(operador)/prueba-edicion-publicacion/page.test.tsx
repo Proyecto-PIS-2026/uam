@@ -27,6 +27,7 @@ describe("Page de prueba de edición de publicaciones", () => {
             presentaciones: [{ id: 701, nombre: "Cajon", variedadId: 601 }],
             categorias: [{ id: 801, nombre: "I", especieId: null }],
             calibres: [{ id: 901, nombre: "G - GRANDE" }],
+            paises: [{ id: 1001, nombre: "Uruguay" }],
         };
         mocks.obtenerOpciones.mockResolvedValue(opciones);
 
@@ -39,7 +40,7 @@ describe("Page de prueba de edición de publicaciones", () => {
 
     it("delega el catálogo vacío a la vista sin agregar datos ficticios", async () => {
         const opciones: OpcionesEdicionPublicacion = {
-            especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [],
+            especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [],
         };
         mocks.obtenerOpciones.mockResolvedValue(opciones);
 

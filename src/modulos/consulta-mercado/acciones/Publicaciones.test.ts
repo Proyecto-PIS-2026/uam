@@ -10,6 +10,7 @@ type FilaPublicacion = {
 	categoria: string;
 	calibre: string;
 	codigoCalibre: string;
+	pais: string;
 	operadorId: number | string;
 	operadorNombreFantasia: string;
 	operadorWhatsApp: string;
@@ -21,7 +22,8 @@ const { consulta, plan, query } = vi.hoisted(() => {
 	const tablas = {
 		publicacionOperador: {
 			publicacionId: "publicacionOperador.publicacionId",
-			operadorId: "publicacionOperador.operadorId"
+			operadorId: "publicacionOperador.operadorId",
+			paisId: "publicacionOperador.paisId"
 		},
 		publicacion: {
 			id: "publicacion.id",
@@ -55,6 +57,10 @@ const { consulta, plan, query } = vi.hoisted(() => {
 			id: "calibre.id",
 			nombreCalibre: "calibre.nombreCalibre",
 			codigoCalibre: "calibre.codigoCalibre"
+		},
+		pais: {
+			id: "pais.id",
+			nombrePais: "pais.nombrePais"
 		},
 			operador: {
 			id: "operador.id",
@@ -111,6 +117,7 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
 			especie: {},
 			categoria: {},
 			calibre: {},
+			pais: {},
 			operador: {},
 		},
 		},
@@ -129,6 +136,7 @@ function crearFila(id = 7): FilaPublicacion {
 		categoria: "Primera",
 		calibre: "Mediano",
 		codigoCalibre: "M",
+		pais: "Uruguay",
 		operadorId: 10,
 		operadorNombreFantasia: "Huerta Sur",
 		operadorWhatsApp: "099123456",
@@ -170,6 +178,7 @@ describe("consultarPublicaciones", () => {
 			categoria: "Primera",
 			calibre: "Mediano",
 			codigoCalibre: "M",
+			pais: "Uruguay",
 			operador: {
 				id: 10,
 				nombreFantasia: "Huerta Sur",
@@ -261,7 +270,7 @@ describe("consultarPublicaciones", () => {
 	it("construye la consulta con todos los joins necesarios", async () => {
 		await consultarPublicaciones();
 
-		expect(consulta.innerJoin).toHaveBeenCalledTimes(7);
+		expect(consulta.innerJoin).toHaveBeenCalledTimes(8);
 		expect(consulta.select).toHaveBeenCalledTimes(1);
 		expect(consulta.where).toHaveBeenCalledTimes(1);
 		expect(consulta.build).toHaveBeenCalledTimes(1);

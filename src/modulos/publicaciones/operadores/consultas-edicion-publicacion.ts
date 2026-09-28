@@ -7,10 +7,11 @@ export type OpcionesEdicionPublicacion = {
     presentaciones: OpcionPresentacion[];
     categorias: OpcionCategoria[];
     calibres: OpcionEdicion[];
+    paises: OpcionEdicion[];
 };
 
 export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdicionPublicacion> {
-    const [especies, variedades, presentaciones, categorias, calibres] = await Promise.all([
+    const [especies, variedades, presentaciones, categorias, calibres, paises] = await Promise.all([
         db.orm.public.Especie
             .select("id", "nombreEspecie")
             .where({ especieActiva: true })
@@ -33,6 +34,10 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
         db.orm.public.Calibre
             .select("id", "codigoCalibre", "nombreCalibre")
             .orderBy((calibre) => calibre.nombreCalibre.asc())
+            .all(),
+        db.orm.public.Pais
+            .select("id", "nombrePais")
+            .orderBy((pais) => pais.nombrePais.asc())
             .all(),
     ]);
 
@@ -63,5 +68,6 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
             id: calibre.id,
             nombre: `${calibre.codigoCalibre} - ${calibre.nombreCalibre}`,
         })),
+        paises: paises.map((pais) => ({ id: pais.id, nombre: pais.nombrePais })),
     };
 }

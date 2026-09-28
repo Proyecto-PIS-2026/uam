@@ -10,7 +10,6 @@ import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlin
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
-import Header from "../../../compartido/header";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
 import ProductoCard from "./tarjetaProducto";
 import styles from "./inicio.module.css";
@@ -54,8 +53,7 @@ export default function Inicio({ especies }: Props) {
 
     const contenido = (
         <main className={styles.pagina}>
-            <Header />
-            <HojasDecorativas variante="fondo" className={styles.hojasPagina} />
+            {/* <HojasDecorativas variante="fondo" /> */}
 
 
             <h1 className={styles.tituloMobile}>Mercado de hoy</h1>

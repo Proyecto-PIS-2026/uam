@@ -2,14 +2,15 @@
 
 .pagina {
     min-height: 100dvh;
-    padding: 2rem 1rem;
     background: var(--color-background);
     color: var(--color-foreground);
 }
 
 .contenedor {
-    width: min(100%, 64rem);
+    width: 100%;
+    max-width: var(--ancho-maximo-pagina);
     margin: 0 auto;
+    padding: var(--padding-exterior-pagina);
 }
 
 .introduccion {
@@ -125,10 +126,6 @@
 }
 
 @media (min-width: 768px) {
-    .pagina {
-        padding: 3rem 2rem;
-    }
-
     .tarjeta {
         grid-template-columns: 6rem minmax(0, 1fr) auto;
         align-items: center;

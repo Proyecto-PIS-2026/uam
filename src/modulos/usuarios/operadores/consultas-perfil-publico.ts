@@ -11,6 +11,7 @@ export type PublicacionPerfil = {
     presentacion: string;
     categoria: string;
     calibre: string;
+    pais: string;
 };
 
 export type PerfilPublicoOperador = {
@@ -70,6 +71,7 @@ export async function obtenerPerfilPublicoOperador(id: number): Promise<PerfilPu
     // Obtener las publicaciones
     const consultaCompleta = db.orm.public.PublicacionOperador // Solo armo la consulta sin ejecutarla
         .where({ operadorId: id })
+        .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
         .include("publicacion", (consultaPublicacion) => {
             const camposPublicacion = consultaPublicacion.select(
                 "id",
@@ -109,6 +111,7 @@ export async function obtenerPerfilPublicoOperador(id: number): Promise<PerfilPu
                 presentacion: publicacion.presentacion.nombrePresentacion,
                 categoria: publicacion.categoria.nombreCategoria,
                 calibre: publicacion.calibre.codigoCalibre,
+                pais: completa.pais.nombrePais,
             });
         }
     }
