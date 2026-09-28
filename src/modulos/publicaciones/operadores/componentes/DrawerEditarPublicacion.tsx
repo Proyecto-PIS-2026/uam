@@ -67,6 +67,7 @@ type DrawerEditarPublicacionProps = {
 };
 
 const formatoPrecio = /^(0|[1-9]\d{0,9})$/;
+const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
 function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
     const [editando, setEditando] = useState(modoInicial === "edicion");
@@ -237,40 +238,40 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                 <div className={styles.cuerpo}>
                     <div className={styles.datosProducto} data-editando={editando}>
                         <div className={styles.campo}>
-                            <TextField select label="Especie" id={`${idBase}-especie`} value={!editando || especies.some((opcion) => opcion.id === especieId) ? especieId : ""} onChange={(evento) => cambiarEspecie(Number(evento.target.value))} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui}>
+                            <TextField select label="Especie" id={`${idBase}-especie`} value={!editando || especies.some((opcion) => opcion.id === especieId) ? especieId : ""} onChange={(evento) => cambiarEspecie(Number(evento.target.value))} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
                                 {!editando && !especies.some((opcion) => opcion.id === especieId) && <MenuItem value={especieId} className={styles.opcionSelect}>{publicacion.especie}</MenuItem>}
                                 {especies.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                             </TextField>
                         </div>
                         <div className={styles.campo}>
-                            <TextField select label="Variedad" id={`${idBase}-variedad`} value={!editando || variedadesDisponibles.some((opcion) => opcion.id === variedadId) ? variedadId : ""} onChange={(evento) => cambiarVariedad(Number(evento.target.value))} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui}>
+                            <TextField select label="Variedad" id={`${idBase}-variedad`} value={!editando || variedadesDisponibles.some((opcion) => opcion.id === variedadId) ? variedadId : ""} onChange={(evento) => cambiarVariedad(Number(evento.target.value))} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
                                 {!editando && !variedadesDisponibles.some((opcion) => opcion.id === variedadId) && <MenuItem value={variedadId} className={styles.opcionSelect}>{publicacion.variedad}</MenuItem>}
                                 {variedadesDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin variedades disponibles</MenuItem>}
                                 {variedadesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                             </TextField>
                         </div>
                         <div className={styles.campo}>
-                            <TextField select label="Presentación" id={`${idBase}-presentacion`} value={!editando || presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) ? presentacionId : ""} onChange={(evento) => { if (!bloqueado) setPresentacionId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui}>
+                            <TextField select label="Presentación" id={`${idBase}-presentacion`} value={!editando || presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) ? presentacionId : ""} onChange={(evento) => { if (!bloqueado) setPresentacionId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
                                 {!editando && !presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) && <MenuItem value={presentacionId} className={styles.opcionSelect}>{publicacion.presentacion ?? "Sin presentación"}</MenuItem>}
                                 {presentacionesDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin presentaciones disponibles</MenuItem>}
                                 {presentacionesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                             </TextField>
                         </div>
                         <div className={styles.campo}>
-                            <TextField select label="País" id={`${idBase}-pais`} value={paises.some((opcion) => opcion.id === paisId) ? paisId : ""} onChange={(evento) => { if (!bloqueado) setPaisId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui}>
+                            <TextField select label="País" id={`${idBase}-pais`} value={paises.some((opcion) => opcion.id === paisId) ? paisId : ""} onChange={(evento) => { if (!bloqueado) setPaisId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
                                 {paises.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin países disponibles</MenuItem>}
                                 {paises.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                             </TextField>
                         </div>
                         <div className={styles.campo}>
-                            <TextField select label="Categoría" id={`${idBase}-categoria`} value={!editando || categoriasDisponibles.some((opcion) => opcion.id === categoriaId) ? categoriaId : ""} onChange={(evento) => { if (!bloqueado) setCategoriaId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui}>
+                            <TextField select label="Categoría" id={`${idBase}-categoria`} value={!editando || categoriasDisponibles.some((opcion) => opcion.id === categoriaId) ? categoriaId : ""} onChange={(evento) => { if (!bloqueado) setCategoriaId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
                                 {!editando && !categoriasDisponibles.some((opcion) => opcion.id === categoriaId) && <MenuItem value={categoriaId} className={styles.opcionSelect}>{publicacion.categoria ?? "Sin categoría"}</MenuItem>}
                                 {categoriasDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin categorías disponibles</MenuItem>}
                                 {categoriasDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                             </TextField>
                         </div>
                         <div className={styles.campo}>
-                            <TextField select label="Calibre" id={`${idBase}-calibre`} value={!editando || calibres.some((opcion) => opcion.id === calibreId) ? calibreId : ""} onChange={(evento) => { if (!bloqueado) setCalibreId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui}>
+                            <TextField select label="Calibre" id={`${idBase}-calibre`} value={!editando || calibres.some((opcion) => opcion.id === calibreId) ? calibreId : ""} onChange={(evento) => { if (!bloqueado) setCalibreId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
                                 {!editando && !calibres.some((opcion) => opcion.id === calibreId) && <MenuItem value={calibreId} className={styles.opcionSelect}>{publicacion.calibre ?? "Sin calibre"}</MenuItem>}
                                 {calibres.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                             </TextField>
