@@ -1,7 +1,7 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 // TODO: reemplazar el operador temporal de Mi Mercado por el de la sesión.
-const operadorIdTemporal = 9;
+const operadorIdTemporal = 22;
 
 export async function obtenerOperadorActual() {
     const operador = await db.orm.public.Operador
