@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import styles from "./FiltrosPublicaciones.module.css";
 import FiltrosPublicaciones, { type PublicacionListado } from "./FiltrosPublicaciones";
 
@@ -189,8 +189,6 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
 ];
 
 describe("FiltrosPublicaciones", () => {
-
-    afterEach(() => { vi.useRealTimers() });
 
     it("renderiza los controles principales", () => {
         render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
@@ -453,36 +451,45 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("filtra las publicaciones por búsqueda de texto", () => {
-        vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "manzana" } });
-        act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(2);
         expect(resultado.every((publicacion) => publicacion.especie === "Manzana")).toBe(true); 
     });
 
+    it("filtra inmediatamente sin distinguir tildes", () => {
+        const alFiltrar = vi.fn();
+        const publicacionesConTildes = [
+            { ...publicacionesPrueba[0], especie: "Ananá" },
+            publicacionesPrueba[1],
+        ];
+        render(<FiltrosPublicaciones publicaciones={publicacionesConTildes} especieFiltro="" alFiltrar={alFiltrar}/>);
+
+        fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "anana" } });
+
+        const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
+        expect(resultado.map((publicacion) => publicacion.especie)).toEqual(["Ananá"]);
+        expect(screen.getByText("1 publicación")).toBeInTheDocument();
+    });
+
     it("filtra las publicaciones por nombre de operador", () => {
-        vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "Mercado Verde" } });
-        act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(2);
         expect(resultado.every((publicacion) => publicacion.operador.nombreFantasia === "Mercado Verde")).toBe(true);
     });
 
     it("filtra las publicaciones por precio minimo", () => {
-        vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         fireEvent.change(precioMinimo, { target: { value: "250" } });
-        act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(2);
         expect(resultado[0].precio).toBe(300);
@@ -493,12 +500,10 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("filtra las publicaciones por precio maximo", () => {
-        vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMaximo, { target: { value: "250" } });
-        act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(2);
         expect(resultado[0].precio).toBe(100);
@@ -509,28 +514,24 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("filtra las publicaciones por rango de precio", () => {
-        vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMinimo, { target: { value: "150" } });
         fireEvent.change(precioMaximo, { target: { value: "350" } });
-        act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(2);
         expect(resultado.every((publicacion) => publicacion.precio !== null && publicacion.precio >= 150 && publicacion.precio <= 350)).toBe(true)
     });
 
     it("no devuelve publicaciones cuando el rango de precio es inválido", () => {
-        vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones  publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMinimo, { target: { value: "350" } });
         fireEvent.change(precioMaximo, { target: { value: "150" } });
-        act(() => { vi.advanceTimersByTime(750) });
         const resultado =  alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(0);
     });
@@ -577,12 +578,10 @@ describe("FiltrosPublicaciones", () => {
 
 
     it("filtra por varias palabras sin distinguir mayúsculas y minúsculas", () => {
-        vi.useFakeTimers();
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "MANZANA mercado" } });
-        act(() => { vi.advanceTimersByTime(750) });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(1);
         expect(resultado[0].id).toBe(2);
