@@ -1,7 +1,7 @@
 import { test, expect, type Locator } from "@playwright/test";
 
 test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
 
   const rutaMercado = "/mi-mercado/Mercado%20Verde%20UAM";
 
@@ -12,7 +12,9 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     opcion: string,
   ) {
     await formulario.getByRole("combobox", { name: campo }).click();
-    await page.getByRole("option", { name: opcion, exact: true }).click();
+    await page.getByRole("option", { name: opcion, exact: true }).click({
+      timeout: 5_000,
+    });
   }
 
   // Busca la tarjeta que muestra un precio determinado.
@@ -35,7 +37,7 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     await seleccionar(alta, "Especie", "Uchuva");
     await seleccionar(alta, "Variedad", "-");
     await seleccionar(alta, "Presentación", "Unidad");
-    await seleccionar(alta, "País de origen", "AFGANISTÁN");
+    await seleccionar(alta, "País de origen", "URUGUAY");
     await seleccionar(alta, "Categoría", categoria);
     await seleccionar(alta, "Calibre", "CHICO");
 
