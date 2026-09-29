@@ -1,7 +1,7 @@
 import { test, expect, type Locator } from "@playwright/test";
 
 test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(60_000);
 
   const rutaMercado = "/mi-mercado/Mercado%20Verde%20UAM";
 
@@ -34,10 +34,10 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
 
     await seleccionar(alta, "Especie", "Uchuva");
     await seleccionar(alta, "Variedad", "-");
-    await seleccionar(alta, "Presentación", "Petaca");
+    await seleccionar(alta, "Presentación", "Unidad");
     await seleccionar(alta, "País de origen", "AFGANISTÁN");
     await seleccionar(alta, "Categoría", categoria);
-    await seleccionar(alta, "Calibre", "EXTRA");
+    await seleccionar(alta, "Calibre", "CHICO");
 
     await alta
       .getByRole("textbox", { name: "Precio en pesos" })
