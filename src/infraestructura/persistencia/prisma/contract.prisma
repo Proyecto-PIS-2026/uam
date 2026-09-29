@@ -46,6 +46,7 @@ model Operador {
   usuario               Usuario               @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
   nombreFantasia        String                @unique
   enLicencia            Boolean               @default(false)
+  fotoPerfil            String?
   comentario            String?
   whatsApp              String
 
@@ -78,13 +79,13 @@ model Nave {
 
 // LOCALES
 model Local {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   numeroLocal String
-  finContrato DateTime
+  finContrato DateTime?
   operadorId  Int
-  operador    Operador @relation(fields:[operadorId], references:[id])
+  operador    Operador  @relation(fields:[operadorId], references:[id])
   naveId      Int
-  nave        Nave     @relation(fields:[naveId], references:[id])
+  nave        Nave      @relation(fields:[naveId], references:[id])
 
   @@unique([numeroLocal, naveId])
   @@map("local")
@@ -96,6 +97,7 @@ model Especie {
   uamId         Int?        @unique
   nombreEspecie String
   especieActiva Boolean     @default(true)
+  fotoEspecie   String?
   variedades    Variedad[]
   categorias    Categoria[]
 

@@ -406,6 +406,13 @@
                   "kind": "scalar"
                 }
               },
+              "fotoEspecie": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -465,6 +472,9 @@
                 "especieActiva": {
                   "column": "especieActiva"
                 },
+                "fotoEspecie": {
+                  "column": "fotoEspecie"
+                },
                 "id": {
                   "column": "id"
                 },
@@ -482,7 +492,7 @@
           "Local": {
             "fields": {
               "finContrato": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "kind": "scalar"
@@ -711,6 +721,13 @@
                   "kind": "scalar"
                 }
               },
+              "fotoPerfil": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -794,6 +811,9 @@
                 },
                 "enLicencia": {
                   "column": "enLicencia"
+                },
+                "fotoPerfil": {
+                  "column": "fotoPerfil"
                 },
                 "id": {
                   "column": "id"
@@ -1866,6 +1886,11 @@
                   "nativeType": "bool",
                   "nullable": false
                 },
+                "fotoEspecie": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -1906,7 +1931,7 @@
                 "finContrato": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
-                  "nullable": false
+                  "nullable": true
                 },
                 "id": {
                   "codecId": "pg/int4@1",
@@ -2118,6 +2143,11 @@
                   },
                   "nativeType": "bool",
                   "nullable": false
+                },
+                "fotoPerfil": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "id": {
                   "codecId": "pg/int4@1",
@@ -2935,7 +2965,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "52517bb0a16d58db079daa0aef1b9c3237b7c28579ac4d236f9129304d447ff4"
+    "storageHash": "7424030b0a98dc9adbb50f725ad28058531ed36184456a6f5871df6feb32b282"
   },
   "capabilities": {
     "postgres": {
