@@ -36,6 +36,11 @@ export type PublicacionListado = {
 
 export type OrdenPublicaciones = "ninguno" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
 
+export function compararPublicacionesAlfabeticamente(a: Pick<PublicacionListado, "especie" | "variedad">, b: Pick<PublicacionListado, "especie" | "variedad">) {
+    const especie = compararOpciones(a.especie, b.especie);
+    return especie !== 0 ? especie : compararOpciones(a.variedad, b.variedad);
+}
+
 type FiltrosPublicacionesProps = {
     publicaciones: PublicacionListado[];
     especieFiltro: string;
@@ -205,22 +210,8 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         // Ordenamiento
         if (orden === "precioAsc") return [...filtradas].sort((a, b) => compararPrecios(a, b, true));
         if (orden === "precioDesc") return [...filtradas].sort((a, b) => compararPrecios(a, b, false));
-        if (orden === "alfabeticoAsc") {
-            return [...filtradas].sort((a, b) => {
-                const especie = a.especie.localeCompare(b.especie);
-                if (especie !== 0) return especie;
-
-                return a.variedad.localeCompare(b.variedad);
-            });
-        }
-        if (orden === "alfabeticoDesc") {
-            return [...filtradas].sort((a, b) => {
-                const especie = b.especie.localeCompare(a.especie);
-                if (especie !== 0) return especie;
-
-                return b.variedad.localeCompare(a.variedad);
-            });
-        }
+        if (orden === "alfabeticoAsc") return [...filtradas].sort(compararPublicacionesAlfabeticamente);
+        if (orden === "alfabeticoDesc") return [...filtradas].sort((a, b) => compararPublicacionesAlfabeticamente(b, a));
 
         return filtradas;
     }, [publicaciones, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden]);

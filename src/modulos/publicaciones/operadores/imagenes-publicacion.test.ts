@@ -11,16 +11,11 @@ import {
 } from "./imagenes-publicacion";
 
 const sistemaArchivos = vi.hoisted(() => ({
-    mkdir: vi.fn<(ruta: string, opciones: { recursive: boolean }) => Promise<void>>(),
     readFile: vi.fn<(ruta: string) => Promise<Buffer>>(),
     unlink: vi.fn<(ruta: string) => Promise<void>>(),
-    writeFile: vi.fn<(ruta: string, contenido: Buffer, opciones: { flag: string }) => Promise<void>>(),
 }));
 
-const generarUUID = vi.hoisted(() => vi.fn(() => "12345678-1234-4234-8234-123456789abc"));
-
 vi.mock("node:fs/promises", () => ({ ...sistemaArchivos, default: sistemaArchivos }));
-vi.mock("node:crypto", () => ({ randomUUID: generarUUID, default: { randomUUID: generarUUID } }));
 
 const UUID = "12345678-1234-4234-8234-123456789abc";
 const NOMBRE_PNG = `${UUID}.png`;
@@ -61,9 +56,6 @@ function errorArchivo(codigo: string): NodeJS.ErrnoException {
 
 beforeEach(() => {
     vi.resetAllMocks();
-    generarUUID.mockReturnValue(UUID);
-    sistemaArchivos.mkdir.mockResolvedValue(undefined);
-    sistemaArchivos.writeFile.mockResolvedValue(undefined);
     sistemaArchivos.readFile.mockResolvedValue(PNG_PEQUENO);
     sistemaArchivos.unlink.mockResolvedValue(undefined);
 });
@@ -74,26 +66,18 @@ afterEach(() => {
 
 describe("guardarImagenPublicacion", () => {
     it.each([
-        { formato: "JPEG", extension: "jpg", contenido: JPEG_PEQUENO },
-        { formato: "PNG", extension: "png", contenido: PNG_PEQUENO },
-        { formato: "WebP", extension: "webp", contenido: WEBP_PEQUENO },
-    ])("guarda $formato bajo el ID real y reconoce el formato sin confiar en el nombre o MIME", async ({ extension, contenido }) => {
-        const nombreArchivo = `${UUID}.${extension}`;
+        { formato: "JPEG", tipo: "jpeg", contenido: JPEG_PEQUENO },
+        { formato: "PNG", tipo: "png", contenido: PNG_PEQUENO },
+        { formato: "WebP", tipo: "webp", contenido: WEBP_PEQUENO },
+    ])("codifica $formato para guardar en la base sin depender del nombre ni del MIME", async ({ tipo, contenido }) => {
 
         const url = await guardarImagenPublicacion(42, archivo(contenido));
 
-        expect(url).toBe(`/api/publicaciones/imagenes/42/${nombreArchivo}`);
-        expect(sistemaArchivos.mkdir).toHaveBeenCalledWith(
-            join(process.cwd(), "storage", "publicaciones", "42"),
-            { recursive: true },
-        );
-        expect(sistemaArchivos.writeFile).toHaveBeenCalledExactlyOnceWith(rutaGuardada(nombreArchivo), contenido, { flag: "wx" });
+        expect(url).toBe(`data:image/${tipo};base64,${contenido.toString("base64")}`);
     });
 
     it.each(IDS_INVALIDOS)("rechaza el ID inválido %s antes de guardar", async (id) => {
         await expect(guardarImagenPublicacion(id, archivo(PNG_PEQUENO))).rejects.toBeInstanceOf(ErrorImagenPublicacion);
-        expect(sistemaArchivos.mkdir).not.toHaveBeenCalled();
-        expect(sistemaArchivos.writeFile).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -103,23 +87,17 @@ describe("guardarImagenPublicacion", () => {
         { caso: "tamaño declarado mayor a 10 MB", crear: () => archivo(PNG_PEQUENO, TAMANO_MAXIMO + 1) },
         { caso: "contenido vacío aunque declare tamaño válido", crear: () => archivo(Buffer.alloc(0), 1) },
         { caso: "contenido mayor a 10 MB aunque declare tamaño válido", crear: () => archivo(Buffer.alloc(TAMANO_MAXIMO + 1), 1) },
-    ])("rechaza $caso sin escribir archivos", async ({ crear }) => {
+    ])("rechaza $caso", async ({ crear }) => {
         await expect(guardarImagenPublicacion(42, crear())).rejects.toThrow("10 MB");
-        expect(sistemaArchivos.mkdir).not.toHaveBeenCalled();
-        expect(sistemaArchivos.writeFile).not.toHaveBeenCalled();
     });
 
     it("acepta una imagen de exactamente 10 MB", async () => {
         const contenido = Buffer.alloc(TAMANO_MAXIMO);
         PNG_PEQUENO.copy(contenido);
 
-        await expect(guardarImagenPublicacion(42, archivo(contenido))).resolves.toBe(URL_PNG);
-        expect(sistemaArchivos.writeFile).toHaveBeenCalledTimes(1);
-        const [ruta, guardado, opciones] = sistemaArchivos.writeFile.mock.calls[0];
-        expect(ruta).toBe(rutaGuardada());
-        expect(guardado.length).toBe(TAMANO_MAXIMO);
-        expect(guardado.equals(contenido)).toBe(true);
-        expect(opciones).toEqual({ flag: "wx" });
+        const url = await guardarImagenPublicacion(42, archivo(contenido));
+        expect(url.startsWith("data:image/png;base64,")).toBe(true);
+        expect(url.length).toBe("data:image/png;base64,".length + 4 * Math.ceil(TAMANO_MAXIMO / 3));
     });
 
     it.each([
@@ -127,10 +105,8 @@ describe("guardarImagenPublicacion", () => {
         { caso: "PNG con firma incompleta", contenido: PNG_PEQUENO.subarray(0, 7) },
         { caso: "JPEG sin terminación", contenido: Buffer.from([0xff, 0xd8, 0xff, 0xe0]) },
         { caso: "RIFF de otro formato", contenido: Buffer.from("RIFF0000WAVE") },
-    ])("rechaza $caso sin guardar", async ({ contenido }) => {
+    ])("rechaza $caso", async ({ contenido }) => {
         await expect(guardarImagenPublicacion(42, archivo(contenido))).rejects.toThrow("JPEG, PNG o WebP");
-        expect(sistemaArchivos.mkdir).not.toHaveBeenCalled();
-        expect(sistemaArchivos.writeFile).not.toHaveBeenCalled();
     });
 
     it("propaga el error al leer el archivo de entrada", async () => {
@@ -139,23 +115,6 @@ describe("guardarImagenPublicacion", () => {
         vi.spyOn(foto, "arrayBuffer").mockRejectedValue(error);
 
         await expect(guardarImagenPublicacion(42, foto)).rejects.toBe(error);
-        expect(sistemaArchivos.mkdir).not.toHaveBeenCalled();
-        expect(sistemaArchivos.writeFile).not.toHaveBeenCalled();
-    });
-
-    it("propaga un error al crear la carpeta y no intenta escribir", async () => {
-        const error = errorArchivo("EACCES");
-        sistemaArchivos.mkdir.mockRejectedValueOnce(error);
-
-        await expect(guardarImagenPublicacion(42, archivo(PNG_PEQUENO))).rejects.toBe(error);
-        expect(sistemaArchivos.writeFile).not.toHaveBeenCalled();
-    });
-
-    it("propaga el error al escribir y no devuelve una URL de éxito", async () => {
-        const error = errorArchivo("ENOSPC");
-        sistemaArchivos.writeFile.mockRejectedValueOnce(error);
-
-        await expect(guardarImagenPublicacion(42, archivo(PNG_PEQUENO))).rejects.toBe(error);
     });
 });
 

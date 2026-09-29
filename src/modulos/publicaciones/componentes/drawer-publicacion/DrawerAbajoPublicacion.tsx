@@ -3,7 +3,7 @@
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import Image from "next/image";
+import ImagenPublicacion from "../ImagenPublicacion";
 import Link from "next/link";
 // import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 
@@ -31,14 +31,12 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
                         <div className={styles.bloqueSuperior}>
                             <div className={styles.marcoImagen}>
                                 <div className={styles.contenedorImagen}>
-                                    {publicacion.foto ? (
-                                        <Image src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="160px" className={styles.imagen} />
-                                    ) : (
+                                    <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} fill sizes="160px" className={styles.imagen} reemplazo={
                                         <div className={styles.sinFoto}>
                                             <ImageOutlinedIcon className={styles.iconoFoto} />
                                             Foto
                                         </div>
-                                    )}
+                                    } />
                                 </div>
                             </div>
                             <div className={styles.bloqueSuperiorDerecho}>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
-import FiltrosPublicaciones from "../../filtros/FiltrosPublicaciones"
+import FiltrosPublicaciones, { compararPublicacionesAlfabeticamente } from "../../filtros/FiltrosPublicaciones"
 import ListadoPublicaciones from "../listado-publicaciones/ListadoPublicacionesUnificado";
 
 type PropiedadesContenedorPublicaciones = {
@@ -16,9 +16,10 @@ export default function ContenedorPublicaciones({ publicaciones, especie = "" }:
 }
 
 function ContenidoPublicaciones({publicaciones, especie = ""}: PropiedadesContenedorPublicaciones) {
-	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() =>
-		especie ? publicaciones.filter((publicacion) => publicacion.especie === especie) : publicaciones
-	);
+	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => {
+		const iniciales = especie ? publicaciones.filter((publicacion) => publicacion.especie === especie) : [...publicaciones];
+		return iniciales.sort(compararPublicacionesAlfabeticamente);
+	});
 
 	function quitarEspecieDeUrl() {
 		const url = new URL(window.location.href);
@@ -29,7 +30,7 @@ function ContenidoPublicaciones({publicaciones, especie = ""}: PropiedadesConten
 
 	return (
 		<div className="flex flex-col gap-6">
-			<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especie} alFiltrar={setPublicacionesFiltradas} alLimpiar={quitarEspecieDeUrl}/>
+			<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especie} ordenInicial="alfabeticoAsc" alFiltrar={setPublicacionesFiltradas} alLimpiar={quitarEspecieDeUrl}/>
 			<ListadoPublicaciones publicaciones={publicacionesFiltradas} />
 		</div>
 	);

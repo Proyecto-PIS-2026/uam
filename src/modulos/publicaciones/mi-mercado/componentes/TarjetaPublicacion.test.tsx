@@ -162,7 +162,18 @@ describe("TarjetaPublicacion", () => {
       screen.getByRole("img", {
         name: "Manzana · Red Delicious",
       }),
-    ).toHaveAttribute("src", "/producto.jpg");
+    ).toHaveAttribute("src", expect.stringContaining("/producto.jpg"));
+  });
+
+  it("muestra el reemplazo si la URL de la foto ya no existe", () => {
+    const pub = crearPublicacion();
+    pub.foto = "/api/publicaciones/imagenes/1/foto-perdida.jpg";
+    render(<TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />);
+
+    fireEvent.error(screen.getByRole("img", { name: "Manzana · Red Delicious" }));
+
+    expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Manzana · Red Delicious" })).not.toBeInTheDocument();
   });
 
   it("muestra sin fotografía aunque la especie tenga una imagen", () => {

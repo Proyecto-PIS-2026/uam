@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
-import FiltrosPublicaciones, { type PublicacionListado } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
+import FiltrosPublicaciones, { compararPublicacionesAlfabeticamente, type PublicacionListado } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
 import DrawerPublicacionPerfil from "./DrawerPublicacionPerfil";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import styles from "./CatalogoOperador.module.css";
@@ -24,7 +24,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
         codigoCalibre: publicacion.calibre,
         operador: {id: idOperador, nombreFantasia: nombreOperador, whatsApp: whatsAppOperador},
     })), [publicaciones, idOperador, nombreOperador, whatsAppOperador]);
-    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(publicacionesParaFiltros);
+    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => [...publicacionesParaFiltros].sort(compararPublicacionesAlfabeticamente));
 
     const publicacionesPorId = new Map(publicaciones.map((publicacion) => [publicacion.id, publicacion]));
     const publicacionesVisibles: PublicacionPerfil[] = [];
@@ -55,7 +55,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
             <section className={styles.contenedor}>
                 <div className={styles.catalogo}>
                     <div className={styles.filtros}>
-                        <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" alFiltrar={setPublicacionesFiltradas}/>
+                        <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={setPublicacionesFiltradas}/>
                     </div>
 
                     <div className={styles.encabezadoCatalogo}>

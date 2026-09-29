@@ -139,7 +139,7 @@ describe("DrawerEditarPublicacion", () => {
         expect(precio).toHaveAttribute("readonly");
         expect(screen.queryByRole("switch", { name: "Publicación disponible" })).not.toBeInTheDocument();
         expect(screen.getByText("Disponible")).toBeInTheDocument();
-        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", "/foto-existente.png");
+        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", expect.stringContaining("/foto-existente.png"));
         for (const campo of ["Especie", "Variedad", "Presentación", "País", "Categoría", "Calibre"]) {
             expect(screen.getByRole("combobox", { name: campo })).toHaveAttribute("aria-disabled", "true");
         }
@@ -287,7 +287,7 @@ describe("DrawerEditarPublicacion", () => {
         seleccionarFoto(archivo);
         guardarDesdeBoton();
 
-        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ precio: "100", foto: "/foto-anterior.png" }), archivo));
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ precio: "100", foto: undefined }), archivo));
         await waitFor(() => expect(screen.getByRole("heading", { name: "Consultar publicación" })).toBeInTheDocument());
         expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", "blob:foto-publicacion");
         expect(screen.queryByRole("button", { name: "Cámara" })).not.toBeInTheDocument();
@@ -301,7 +301,7 @@ describe("DrawerEditarPublicacion", () => {
         expect(screen.getByRole("heading", { name: "Consultar publicación" })).toBeInTheDocument();
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("250");
         expect(screen.getByLabelText("Precio en pesos")).toHaveAttribute("readonly");
-        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", "/uploads/publicaciones/41.webp");
+        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", expect.stringContaining("/uploads/publicaciones/41.webp"));
         expect(screen.getByText("Disponible")).toBeInTheDocument();
         expect(screen.queryByRole("switch", { name: "Publicación disponible" })).not.toBeInTheDocument();
         expect(mocks.borrarVistaPrevia).toHaveBeenCalledWith("blob:foto-publicacion");
@@ -311,7 +311,7 @@ describe("DrawerEditarPublicacion", () => {
         guardarDesdeBoton();
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledTimes(2));
-        expect(mocks.guardar).toHaveBeenLastCalledWith(15, expect.objectContaining({ precio: "250", foto: "/uploads/publicaciones/41.webp" }), null);
+        expect(mocks.guardar).toHaveBeenLastCalledWith(15, expect.objectContaining({ precio: "250", foto: undefined }), null);
         await waitFor(() => expect(screen.getByRole("heading", { name: "Consultar publicación" })).toBeInTheDocument());
         expect(mocks.cerrar).not.toHaveBeenCalled();
     });
@@ -342,7 +342,7 @@ describe("DrawerEditarPublicacion", () => {
         expect(screen.getByRole("combobox", { name: "País" })).toHaveAttribute("aria-disabled", "true");
         expect(screen.getByText("Disponible")).toBeInTheDocument();
         expect(screen.queryByRole("switch", { name: "Publicación disponible" })).not.toBeInTheDocument();
-        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", "/foto-existente.png");
+        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", expect.stringContaining("/foto-existente.png"));
         expect(screen.getByRole("button", { name: "Editar" })).toBeEnabled();
         expect(screen.getByRole("button", { name: "Eliminar" })).toBeEnabled();
         expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
@@ -355,7 +355,7 @@ describe("DrawerEditarPublicacion", () => {
         expect(precio).toHaveValue("100");
         expect(screen.getByRole("combobox", { name: "País" })).toHaveTextContent("Uruguay");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
-        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", "/foto-existente.png");
+        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", expect.stringContaining("/foto-existente.png"));
     });
 
     it("ignora el envío del formulario mientras sigue en consulta", () => {
@@ -396,7 +396,7 @@ describe("DrawerEditarPublicacion", () => {
         expect(screen.queryByRole("dialog", { name: "¿Guardar los cambios?" })).not.toBeInTheDocument();
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, {
-            precio: "150", foto: null, categoriaId: 3, calibreId: 4, presentacionId: 111, paisId: 44, disponible: false,
+            precio: "150", foto: undefined, categoriaId: 3, calibreId: 4, presentacionId: 111, paisId: 44, disponible: false,
         }, null));
         expect(mocks.guardar).toHaveBeenCalledOnce();
         await waitFor(() => expect(mocks.cerrar).toHaveBeenCalledOnce());
@@ -524,7 +524,7 @@ describe("DrawerEditarPublicacion", () => {
         expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", "blob:foto-publicacion");
         guardarDesdeBoton();
 
-        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ foto: null }), foto));
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ foto: undefined }), foto));
         unmount();
         expect(mocks.borrarVistaPrevia).toHaveBeenCalledWith("blob:foto-publicacion");
     });
@@ -535,7 +535,7 @@ describe("DrawerEditarPublicacion", () => {
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
         expect(screen.getByText("No disponible")).toBeInTheDocument();
-        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", "/foto-existente.png");
+        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", expect.stringContaining("/foto-existente.png"));
         expect(screen.getByRole("combobox", { name: "Especie" })).toHaveTextContent("Manzana");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Red Delicious");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Primera");
@@ -704,7 +704,7 @@ describe("DrawerEditarPublicacion", () => {
         seleccionarFoto(foto);
 
         expect(screen.getByRole("alert")).toHaveTextContent("Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB.");
-        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", "/foto-existente.png");
+        expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", expect.stringContaining("/foto-existente.png"));
         expect(mocks.crearVistaPrevia).not.toHaveBeenCalled();
         expect(mocks.guardar).not.toHaveBeenCalled();
     });

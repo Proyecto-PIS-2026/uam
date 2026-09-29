@@ -1,5 +1,4 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { readFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
 
 const TAMANO_MAXIMO = 10 * 1024 * 1024;
@@ -41,7 +40,7 @@ function rutaImagen(publicacionId: number, nombreArchivo: string): string {
 }
 
 export async function guardarImagenPublicacion(publicacionId: number, archivo: File): Promise<string> {
-    const directorio = directorioPublicacion(publicacionId);
+    directorioPublicacion(publicacionId);
 
     if (!archivo || typeof archivo.arrayBuffer !== "function" || archivo.size === 0 || archivo.size > TAMANO_MAXIMO) {
         throw new ErrorImagenPublicacion("La imagen debe pesar entre 1 byte y 10 MB.");
@@ -57,11 +56,8 @@ export async function guardarImagenPublicacion(publicacionId: number, archivo: F
         throw new ErrorImagenPublicacion("La imagen debe ser JPEG, PNG o WebP.");
     }
 
-    const nombreArchivo = `${randomUUID()}.${extension}`;
-    await mkdir(directorio, { recursive: true });
-    await writeFile(join(directorio, nombreArchivo), contenido, { flag: "wx" });
-
-    return `${PREFIJO_URL}/${publicacionId}/${nombreArchivo}`;
+    const tipo = extension === "jpg" ? "jpeg" : extension;
+    return `data:image/${tipo};base64,${contenido.toString("base64")}`;
 }
 
 export async function leerImagenPublicacion(publicacionId: number, nombreArchivo: string): Promise<Buffer> {

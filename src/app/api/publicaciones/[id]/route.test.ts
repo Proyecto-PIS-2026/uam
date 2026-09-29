@@ -234,6 +234,13 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		expect(revalidatePath).toHaveBeenCalledWith("/inicio");
 	});
 
+	it("acepta la edición sin campo foto para conservar la imagen actual", async () => {
+		const cambiosSinFoto = { precio: "125", categoriaId: 4, calibreId: 2, presentacionId: 8, paisId: 218, disponible: true };
+		const respuesta = await PATCH(solicitudEdicion(cambiosSinFoto), contextoEdicion);
+		expect(respuesta.status).toBe(200);
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosSinFoto, null);
+	});
+
 	it("modifica la publicación usando el operador indicado", async () => {
 		obtenerOperadorPorIdMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
 

@@ -89,7 +89,7 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 	const datos = cambios as Record<string, unknown>;
 	const identificadores = [datos.presentacionId, datos.categoriaId, datos.calibreId, datos.paisId];
 	if (identificadores.some((id) => typeof id !== "number" || !Number.isSafeInteger(id) || id <= 0) ||
-		(datos.foto !== null && typeof datos.foto !== "string")) {
+		(datos.foto !== undefined && datos.foto !== null && typeof datos.foto !== "string")) {
 		return NextResponse.json({ errores: ["Los cambios no son válidos."] }, { status: 400 });
 	}
 

@@ -63,6 +63,15 @@ describe("CatalogoOperador", () => {
         expect(screen.queryByText("No hay publicaciones disponibles.")).not.toBeInTheDocument();
     });
 
+    it("ordena alfabéticamente las publicaciones por defecto", () => {
+        render(<CatalogoOperador publicaciones={[tomate, manzana, tomateCherry]}/>);
+        expect(screen.getAllByRole("button", {name: /Ver detalles de/}).map((boton) => boton.getAttribute("aria-label"))).toEqual([
+            "Ver detalles de Manzana",
+            "Ver detalles de Tomate - Cherry",
+            "Ver detalles de Tomate - Perita",
+        ]);
+    });
+
     it("agrupa las publicaciones por especie", () => {
         render(<CatalogoOperador publicaciones={[tomate, tomateCherry, manzana]}/>);
         const botonAgrupar = screen.getByRole("button", {name: "Agrupar por especie"});
