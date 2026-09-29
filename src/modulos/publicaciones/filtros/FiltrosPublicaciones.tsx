@@ -9,6 +9,10 @@ import styles from "./FiltrosPublicaciones.module.css";
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
+function normalizarTexto(texto: string) {
+    return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 // Tipo de datos que recibe
 export type PublicacionListado = {
     id: number;
@@ -55,11 +59,6 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Filtros de Ordenamiento
     const [orden, setOrden] = useState("ninguno");
-
-    // Valores luego del debounce
-    const [busquedaAplicada, setBusquedaAplicada] = useState("");
-    const [precioMinimoAplicado, setPrecioMinimoAplicado] = useState("");
-    const [precioMaximoAplicado, setPrecioMaximoAplicado] = useState("");
 
     // Opciones de Filtros disponibles
     const especies = useMemo(() => {
@@ -150,17 +149,6 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         }
     };
 
-    // Busqueda de precios y Debounce
-    useEffect(() => {
-        const temporizador = setTimeout(() => {
-            setBusquedaAplicada(busqueda);
-            setPrecioMinimoAplicado(precioMinimo);
-            setPrecioMaximoAplicado(precioMaximo);
-        }, 750);
-        
-        return () => { clearTimeout(temporizador) };
-    }, [busqueda, precioMinimo, precioMaximo]);
-
     // Comparacion de Precios
     const compararPrecios = (a: PublicacionListado, b: PublicacionListado, ascendente: boolean) => {
         if (a.precio == null && b.precio == null) return 0;
@@ -172,9 +160,9 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Aplicacion de Filtros
     const publicacionesFiltradas = useMemo(() => {
-        const textoBusqueda = busquedaAplicada.trim().toLowerCase();
-        const minimo = precioMinimoAplicado.trim() === "" ? null : Number(precioMinimoAplicado);
-        const maximo = precioMaximoAplicado.trim() === "" ? null : Number(precioMaximoAplicado);
+        const textoBusqueda = normalizarTexto(busqueda.trim());
+        const minimo = precioMinimo.trim() === "" ? null : Number(precioMinimo);
+        const maximo = precioMaximo.trim() === "" ? null : Number(precioMaximo);
         if ( minimo !== null &&  maximo !== null &&  maximo < minimo) return [];
 
         const filtradas = publicaciones.filter((publicacion) => {
@@ -195,7 +183,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                     publicacion.calibre,
                     publicacion.codigoCalibre,
                     publicacion.operador.nombreFantasia,
-                ].map((campo) => campo.toLowerCase());
+                ].map(normalizarTexto);
                 const coincide = palabrasBusqueda.every((palabra) =>
                     camposBusqueda.some((campo) => campo.includes(palabra))
                 );
@@ -228,7 +216,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         }
 
         return filtradas;
-    }, [publicaciones, especie, variedad, presentacion, categoria, calibre, busquedaAplicada, precioMinimoAplicado, precioMaximoAplicado, orden]);
+    }, [publicaciones, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden]);
     
     // Devolver al Componente Padre
     useEffect(() => { alFiltrar?.(publicacionesFiltradas) }, [publicacionesFiltradas, alFiltrar]);
@@ -241,10 +229,6 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         setBusqueda("");
         setPrecioMinimo("");
         setPrecioMaximo("");
-
-        setBusquedaAplicada("");
-        setPrecioMinimoAplicado("");
-        setPrecioMaximoAplicado("");
 
         setEspecie("Todas");
         setVariedad("Todas");
