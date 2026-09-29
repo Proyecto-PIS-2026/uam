@@ -86,7 +86,10 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
   ).toBeVisible();
 
   // Evita mezclar esta prueba con Uchuvas de ejecuciones anteriores.
-  await expect(page.locator('h3[title="Uchuva"]')).toHaveCount(0);
+  await expect(tarjeta("1371")).toHaveCount(0);
+  await expect(tarjeta("1482")).toHaveCount(0);
+  await expect(tarjeta("2637")).toHaveCount(0);
+
 
   try {
     // ALTA: creamos dos publicaciones del mismo producto.
@@ -164,7 +167,11 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     // Eliminamos la segunda.
     await eliminar("2637");
     await page.reload();
-    await expect(page.locator('h3[title="Uchuva"]')).toHaveCount(0);
+
+    // Ya no aparecen las publicaciones usadas en esta prueba.
+    await expect(tarjeta("1371")).toHaveCount(0);
+    await expect(tarjeta("1482")).toHaveCount(0);
+    await expect(tarjeta("2637")).toHaveCount(0);
   } finally {
     await page.goto(rutaMercado);
 
