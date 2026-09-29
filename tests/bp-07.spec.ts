@@ -173,18 +173,20 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     await expect(tarjeta("1482")).toHaveCount(0);
     await expect(tarjeta("2637")).toHaveCount(0);
   } finally {
-    await page.goto(rutaMercado);
+  // En CI se descarta la base de datos al terminar el job.
+  // Evitamos que la limpieza tape el error original si vence el timeout.
+    if (!process.env.CI) {
+      await page.goto(rutaMercado);
 
-    // La primera puede tener el precio inicial o el modificado
-    if (await tarjeta("1482").count()) {
-      await eliminar("1482");
-    } else if (await tarjeta("1371").count()) {
-      await eliminar("1371");
-    }
+      if (await tarjeta("1482").count()) {
+        await eliminar("1482");
+      } else if (await tarjeta("1371").count()) {
+        await eliminar("1371");
+      }
 
-    // Eliminamos la segunda si todavía existe.
-    if (await tarjeta("2637").count()) {
-      await eliminar("2637");
+      if (await tarjeta("2637").count()) {
+        await eliminar("2637");
+      }
     }
   }
 });
