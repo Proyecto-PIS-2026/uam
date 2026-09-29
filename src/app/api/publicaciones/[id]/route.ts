@@ -17,11 +17,11 @@ function leerOperadorId(solicitud: Request): number | null | undefined {
 	return Number.isSafeInteger(operadorId) ? operadorId : null;
 }
 
-function actualizarVistas(operadorId: number) {
+function actualizarVistas(operador: { nombreFantasia: string }) {
 	revalidatePath("/mi-mercado");
-	revalidatePath(`/mi-mercado/${operadorId}`);
+	revalidatePath(`/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`);
 	revalidatePath("/publicaciones");
-	revalidatePath(`/operadores/${operadorId}`);
+	revalidatePath(`/operadores/${encodeURIComponent(operador.nombreFantasia)}`);
 	revalidatePath("/operadores");
 	revalidatePath("/inicio");
 }
@@ -46,7 +46,7 @@ export async function DELETE(solicitud: Request, contexto: Contexto) {
 		}
 		const eliminada = await bajaPublicacionOperador(publicacionId, operador.id);
 		if (!eliminada) return NextResponse.json({ errores: ["La publicación no pertenece al operador seleccionado."] }, { status: 404 });
-		actualizarVistas(operador.id);
+		actualizarVistas(operador);
 		return NextResponse.json({ mensaje: "Publicación eliminada." });
 	} catch (error) {
 		console.error("Error al eliminar publicación:", error);
@@ -108,7 +108,7 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 			return NextResponse.json({ errores: ["La publicación no pertenece al operador seleccionado."] }, { status: 404 });
 		}
 		const resultado = await modificarPublicacionOperador(operador.usuarioId, vinculo.id, cambios as CambiosPublicacionOperador, fotoNueva);
-		actualizarVistas(operador.id);
+		actualizarVistas(operador);
 		return NextResponse.json({ ...resultado, mensaje: "Publicación modificada correctamente." });
 	} catch (error) {
 		if (error instanceof ErrorEdicionPublicacion) {

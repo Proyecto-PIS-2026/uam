@@ -164,6 +164,17 @@
     background: var(--color-primary-soft);
 }
 
+.botonGaleria {
+    right: 0.75rem;
+}
+
+@media (max-width: 767px) {
+    .botonFoto:not(.botonGaleria):not(.borrarFoto) {
+        right: auto;
+        left: 0.75rem;
+    }
+}
+
 .botonFoto:disabled {
     opacity: 0.55;
     cursor: not-allowed;
@@ -426,17 +437,6 @@
     color: #b42332;
     font-size: 0.875rem;
     line-height: 1.4;
-}
-
-.confirmacion :global(.MuiDialog-paper) {
-    border-radius: 1rem;
-    background: var(--color-surface);
-    color: var(--color-foreground);
-    font-family: var(--font-geist-sans), sans-serif;
-}
-
-.confirmacion :global(.MuiTypography-root) {
-    font-family: inherit;
 }
 
 .pie {

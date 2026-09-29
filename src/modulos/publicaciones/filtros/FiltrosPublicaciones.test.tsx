@@ -263,14 +263,84 @@ describe("FiltrosPublicaciones", () => {
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         expect(buscador).toHaveAttribute("type", "search");
-        expect(precioMinimo).toHaveAttribute("type", "number");
-        expect(precioMinimo).toHaveAttribute("min", "0");
+        expect(precioMinimo).toHaveAttribute("type", "text");
         expect(precioMinimo).toHaveAttribute("inputmode", "numeric");
+        expect(precioMinimo).toHaveAttribute("pattern", "[0-9]*");
         expect(precioMinimo).toHaveAttribute("placeholder", "$ 0");
-        expect(precioMaximo).toHaveAttribute("type", "number");
-        expect(precioMaximo).toHaveAttribute("min", "0");
+        expect(precioMaximo).toHaveAttribute("type", "text");
         expect(precioMaximo).toHaveAttribute("inputmode", "numeric");
+        expect(precioMaximo).toHaveAttribute("pattern", "[0-9]*");
         expect(precioMaximo).toHaveAttribute("placeholder", "Sin límite");
+    });
+
+    it("rechaza separadores, signos y letras en ambos precios, incluso al pegar", () => {
+        const alFiltrar = vi.fn();
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        const precioMinimo = screen.getByLabelText("Precio Mínimo");
+        const precioMaximo = screen.getByLabelText("Precio Máximo");
+
+        fireEvent.change(precioMinimo, { target: { value: "100" } });
+        fireEvent.change(precioMaximo, { target: { value: "400" } });
+        const llamadasValidas = alFiltrar.mock.calls.length;
+
+        for (const valorInvalido of ["100.5", "100,5", "-100", "+100", "1e2", "abc"]) {
+            fireEvent.change(precioMinimo, { target: { value: valorInvalido } });
+            fireEvent.change(precioMaximo, { target: { value: valorInvalido } });
+            expect(precioMinimo).toHaveValue("100");
+            expect(precioMaximo).toHaveValue("400");
+        }
+
+        fireEvent.paste(precioMinimo, { clipboardData: { getData: () => "1.000" } });
+        fireEvent.change(precioMinimo, { target: { value: "1.000" } });
+        expect(precioMinimo).toHaveValue("100");
+        expect(alFiltrar).toHaveBeenCalledTimes(llamadasValidas);
+    });
+
+    it("ordena las opciones con las tildes según el alfabeto español", () => {
+        const nombres = ["Zeta", "Ágata", "Berro"];
+        const publicacionesConOpciones = nombres.map((nombre, indice) => ({
+            ...publicaciones[0],
+            id: indice + 1,
+            especie: "Manzana",
+            variedad: nombre,
+            presentacion: "Zeta",
+            categoria: "Zeta",
+            calibre: "Zeta",
+        })).concat(["Ágata", "Berro"].map((nombre, indice) => ({
+            ...publicaciones[0],
+            id: indice + 4,
+            especie: "Manzana",
+            variedad: "Ágata",
+            presentacion: nombre,
+            categoria: nombre,
+            calibre: nombre,
+        })));
+        render(<FiltrosPublicaciones publicaciones={publicacionesConOpciones} especieFiltro=""/>);
+
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
+
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Ágata", "Berro", "Zeta"]);
+        fireEvent.click(screen.getByRole("option", { name: "Ágata" }));
+
+        for (const [nombre, opcionInicial] of [["Presentación", "Todas"], ["Categoría", "Todas"], ["Calibre", "Todos"]]) {
+            fireEvent.mouseDown(screen.getByRole("combobox", { name: nombre }));
+            expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual([opcionInicial, "Ágata", "Berro", "Zeta"]);
+            fireEvent.click(screen.getByRole("option", { name: opcionInicial }));
+        }
+    });
+
+    it("ordena también las especies con tildes", () => {
+        const publicacionesConEspecies = ["Zanahoria", "Árbol", "Berro"].map((especie, indice) => ({
+            ...publicaciones[0],
+            id: indice + 1,
+            especie,
+        }));
+        render(<FiltrosPublicaciones publicaciones={publicacionesConEspecies} especieFiltro=""/>);
+
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Árbol", "Berro", "Zanahoria"]);
     });
 
     it("cierra el menú de ordenamiento al seleccionar una opción", () => {
@@ -283,10 +353,15 @@ describe("FiltrosPublicaciones", () => {
         expect(listaOrdenamiento).not.toHaveClass(styles.listaOrdenamientoAbierta);
     });
 
-    it("marca inicialmente Sin ordenar como opción activa", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+    it("mantiene Sin ordenar y el orden recibido cuando no se indica orden inicial", () => {
+        const alFiltrar = vi.fn();
+        const alCambiarOrden = vi.fn();
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
         const sinOrdenar = screen.getByRole("button", {  name: /sin ordenar/i });
         expect(sinOrdenar).toHaveClass(styles.opcionOrdenamientoActiva);
+        const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
+        expect(resultado.map((publicacion) => publicacion.id)).toEqual([1, 2, 3, 4]);
+        expect(alCambiarOrden).not.toHaveBeenCalled();
     });
 
     it("cambia visualmente la opción activa del ordenamiento", () => {
@@ -369,12 +444,12 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.change(precioMinimo, { target: { value: "50" } });
         fireEvent.change(precioMaximo, { target: { value: "200" } });
         expect(buscador).toHaveValue("manzana");
-        expect(precioMinimo).toHaveValue(50);
-        expect(precioMaximo).toHaveValue(200);
+        expect(precioMinimo).toHaveValue("50");
+        expect(precioMaximo).toHaveValue("200");
         fireEvent.click(screen.getByRole("button", { name: /limpiar filtros/i }));
         expect(buscador).toHaveValue("");
-        expect(precioMinimo).toHaveValue(null);
-        expect(precioMaximo).toHaveValue(null);
+        expect(precioMinimo).toHaveValue("");
+        expect(precioMaximo).toHaveValue("");
     });
 
     it("muestra la cantidad de publicaciones al filtrar por especie", () => {
@@ -496,7 +571,7 @@ describe("FiltrosPublicaciones", () => {
         expect(resultado[1].precio).toBe(400);
         fireEvent.change(precioMinimo, { target: { value: "250" } });
         fireEvent.change(precioMinimo, { target: { value: "-10" } });
-        expect(precioMinimo).toHaveValue(250);
+        expect(precioMinimo).toHaveValue("250");
     });
 
     it("filtra las publicaciones por precio maximo", () => {
@@ -510,7 +585,7 @@ describe("FiltrosPublicaciones", () => {
         expect(resultado[1].precio).toBe(200);
         fireEvent.change(precioMaximo, { target: { value: "250" } });
         fireEvent.change(precioMaximo, { target: { value: "-10" } });
-        expect(precioMaximo).toHaveValue(250);
+        expect(precioMaximo).toHaveValue("250");
     });
 
     it("filtra las publicaciones por rango de precio", () => {
@@ -564,6 +639,35 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.click(screen.getByRole("button", { name: "A-Z" }));
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => [publicacion.especie, publicacion.variedad])).toEqual([["Manzana", "Gala"], ["Manzana", "Red"], ["Pera", "Packham"], ["Pera", "Williams"]]);
+    });
+
+    it("aplica A-Z desde el inicio cuando se indica ordenInicial", () => {
+        const alFiltrar = vi.fn();
+        const alCambiarOrden = vi.fn();
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
+
+        expect(screen.getByRole("button", { name: "A-Z" })).toHaveClass(styles.opcionOrdenamientoActiva);
+        expect(screen.getByRole("button", { name: "Sin ordenar" })).not.toHaveClass(styles.opcionOrdenamientoActiva);
+        const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
+        expect(resultado.map((publicacion) => publicacion.id)).toEqual([1, 2, 4, 3]);
+        expect(alCambiarOrden).not.toHaveBeenCalled();
+    });
+
+    it("restaura el orden inicial A-Z y avisa al limpiar filtros", () => {
+        const alFiltrar = vi.fn();
+        const alCambiarOrden = vi.fn();
+        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
+
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
+        expect(alCambiarOrden).toHaveBeenLastCalledWith("precioDesc");
+        expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([4, 3, 2, 1]);
+
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        expect(screen.getByRole("button", { name: "A-Z" })).toHaveClass(styles.opcionOrdenamientoActiva);
+        expect(alCambiarOrden).toHaveBeenCalledTimes(2);
+        expect(alCambiarOrden).toHaveBeenLastCalledWith("alfabeticoAsc");
+        expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([1, 2, 4, 3]);
     });
 
     it("ordena las publicaciones alfabéticamente de Z a A", () => {

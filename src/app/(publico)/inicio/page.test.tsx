@@ -16,8 +16,8 @@ describe("Page (mercado de hoy)", () => {
 
     it("obtiene las especies y se las pasa al componente Inicio", async () => {
         const especiesMock = [
-            { idEspecie: 1, nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: null },
-            { idEspecie: 2, nombreEspecie: "Manzana", cantidadOperadores: 5, fotoGenerica: null },
+            { nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: null },
+            { nombreEspecie: "Manzana", cantidadOperadores: 5, fotoGenerica: null },
         ];
         mockObtenerEspeciesInicio.mockResolvedValue(especiesMock);
 

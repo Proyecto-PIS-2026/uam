@@ -29,26 +29,29 @@ describe("alta de publicación de operador", () => {
 	});
 
 	it("rechaza catálogos inactivos", async () => {
-		const { relacion, publicacion, presentacion } = await obtenerDatosDePublicacionSemilla();
-		const variedadInactiva = await db.orm.public.Variedad.where({ variedadActiva: false }).first();
-		if (!variedadInactiva) throw new Error("El test necesita una variedad inactiva cargada por el seed.");
+		const { relacion, publicacion, presentacion, variedad } = await obtenerDatosDePublicacionSemilla();
+		await db.orm.public.Variedad.where({ id: variedad.id }).update({ variedadActiva: false });
 
-		const resultado = await altaPublicacionOperador({
-			operadorId: relacion.operadorId,
-			especieId: variedadInactiva.especieId,
-			variedadId: variedadInactiva.id,
-			presentacionId: presentacion.id,
-			categoriaId: publicacion.categoriaId,
-			calibreId: publicacion.calibreId,
-			paisId: relacion.paisId,
-			disponibilidad: true,
-			precio: "999",
-		});
+		try {
+			const resultado = await altaPublicacionOperador({
+				operadorId: relacion.operadorId,
+				especieId: variedad.especieId,
+				variedadId: variedad.id,
+				presentacionId: presentacion.id,
+				categoriaId: publicacion.categoriaId,
+				calibreId: publicacion.calibreId,
+				paisId: relacion.paisId,
+				disponibilidad: true,
+				precio: "999",
+			});
 
-		expect(resultado).toEqual({
-			esValido: false,
-			errores: ["La selección contiene datos que ya no están disponibles. Actualizá el formulario."],
-		});
+			expect(resultado).toEqual({
+				esValido: false,
+				errores: ["La selección contiene datos que ya no están disponibles. Actualizá el formulario."],
+			});
+		} finally {
+			await db.orm.public.Variedad.where({ id: variedad.id }).update({ variedadActiva: variedad.variedadActiva });
+		}
 	});
 
 	it("crea una publicación válida y su relación con el operador", async () => {

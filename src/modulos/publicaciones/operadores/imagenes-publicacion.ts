@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const TAMANO_MAXIMO = 5 * 1024 * 1024;
+const TAMANO_MAXIMO = 10 * 1024 * 1024;
 const PREFIJO_URL = "/api/publicaciones/imagenes";
 const NOMBRE_ARCHIVO_VALIDO = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$/;
 
@@ -44,12 +44,12 @@ export async function guardarImagenPublicacion(publicacionId: number, archivo: F
     const directorio = directorioPublicacion(publicacionId);
 
     if (!archivo || typeof archivo.arrayBuffer !== "function" || archivo.size === 0 || archivo.size > TAMANO_MAXIMO) {
-        throw new ErrorImagenPublicacion("La imagen debe pesar entre 1 byte y 5 MB.");
+        throw new ErrorImagenPublicacion("La imagen debe pesar entre 1 byte y 10 MB.");
     }
 
     const contenido = Buffer.from(await archivo.arrayBuffer());
     if (contenido.length === 0 || contenido.length > TAMANO_MAXIMO) {
-        throw new ErrorImagenPublicacion("La imagen debe pesar entre 1 byte y 5 MB.");
+        throw new ErrorImagenPublicacion("La imagen debe pesar entre 1 byte y 10 MB.");
     }
 
     const extension = extensionImagen(contenido);

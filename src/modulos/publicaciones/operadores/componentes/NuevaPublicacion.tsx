@@ -12,6 +12,7 @@ import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import Image from "next/image";
 // import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 import type { DatosAltaPublicacionOperador } from "../../validarAltaPublicacionOperador";
+import { ordenarOpcionesPorNombre } from "../ordenar-opciones";
 import drawerStyles from "./DrawerEditarPublicacion.module.css";
 
 type Opcion = { id: number; nombre: string };
@@ -66,7 +67,9 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
     const [errores, setErrores] = useState<string[]>([]);
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
+    const [leyendoFoto, setLeyendoFoto] = useState(false);
     const inputFotoRef = useRef<HTMLInputElement>(null);
+    const inputGaleriaRef = useRef<HTMLInputElement>(null);
     const lecturaFotoRef = useRef(0);
 
     useEffect(() => {
@@ -76,7 +79,17 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
                 if (!respuesta.ok) throw new Error("No se pudieron cargar los datos del formulario.");
                 return respuesta.json() as Promise<Catalogos>;
             })
-            .then((resultado) => { if (activo) setCatalogos(resultado); })
+            .then((resultado) => {
+                if (!activo) return;
+                setCatalogos({
+                    especies: ordenarOpcionesPorNombre(resultado.especies),
+                    variedades: ordenarOpcionesPorNombre(resultado.variedades),
+                    presentaciones: ordenarOpcionesPorNombre(resultado.presentaciones),
+                    categorias: ordenarOpcionesPorNombre(resultado.categorias),
+                    calibres: ordenarOpcionesPorNombre(resultado.calibres),
+                    paises: ordenarOpcionesPorNombre(resultado.paises),
+                });
+            })
             .catch(() => { if (activo) setErrores(["No se pudieron cargar los datos del formulario."]); })
             .finally(() => { if (activo) setCargando(false); });
         return () => { activo = false; };
@@ -95,15 +108,16 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
     }
 
     async function seleccionarFotografia(evento: ChangeEvent<HTMLInputElement>) {
-        const lecturaActual = ++lecturaFotoRef.current;
         const archivo = evento.target.files?.[0];
-        if (!archivo) { actualizar({ fotografia: "" }); return; }
-        if (!["image/png", "image/jpeg", "image/webp"].includes(archivo.type) || archivo.size > 2_000_000) {
-            actualizar({ fotografia: "" });
-            setErrores(["La fotografía debe ser PNG, JPEG o WebP y pesar menos de 2 MB."]);
+        if (!archivo) return;
+        const lecturaActual = ++lecturaFotoRef.current;
+        if (!["image/png", "image/jpeg", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
+            setLeyendoFoto(false);
+            setErrores(["La fotografía debe ser PNG, JPEG o WebP y pesar hasta 10 MB."]);
             evento.target.value = "";
             return;
         }
+        setLeyendoFoto(true);
         try {
             const fotografia = await new Promise<string>((resolver, rechazar) => {
                 const lector = new FileReader();
@@ -115,18 +129,22 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
             actualizar({ fotografia });
         } catch {
             if (lecturaActual === lecturaFotoRef.current) setErrores(["No se pudo leer la fotografía."]);
+        } finally {
+            if (lecturaActual === lecturaFotoRef.current) setLeyendoFoto(false);
         }
     }
 
     function borrarFotografia() {
         lecturaFotoRef.current += 1;
+        setLeyendoFoto(false);
         actualizar({ fotografia: "" });
         if (inputFotoRef.current) inputFotoRef.current.value = "";
+        if (inputGaleriaRef.current) inputGaleriaRef.current.value = "";
     }
 
     async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
-        if (guardando) return;
+        if (guardando || leyendoFoto) return;
         setErrores([]);
         setGuardando(true);
         try {
@@ -213,14 +231,16 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
                         <div className={drawerStyles.marcoFoto}>
                             {datos.fotografia ? <Image className={drawerStyles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill sizes="(min-width: 768px) 480px, 100vw" unoptimized /> : <div className={drawerStyles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>}
                             {datos.fotografia && <button className={`${drawerStyles.botonFoto} ${drawerStyles.borrarFoto}`} type="button" onClick={borrarFotografia} disabled={guardando}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
-                            <button className={drawerStyles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={guardando}><PhotoCameraOutlinedIcon fontSize="small" /> Editar foto</button>
+                            <button className={drawerStyles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={guardando}><PhotoCameraOutlinedIcon fontSize="small" /> {esWeb ? "Editar foto" : "Cámara"}</button>
+                            {!esWeb && <button className={`${drawerStyles.botonFoto} ${drawerStyles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={guardando}>Galería</button>}
                             <input ref={inputFotoRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFotografia} disabled={guardando} aria-label="Fotografía" />
+                            {!esWeb && <input ref={inputGaleriaRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFotografia} disabled={guardando} aria-label="Fotografía desde galería" />}
                         </div>
                     </div>
                 </div>
                 <div className={drawerStyles.pie}>
                     <button className={drawerStyles.cancelar} type="button" onClick={alCerrar} disabled={guardando}>Cancelar</button>
-                    <button className={drawerStyles.guardar} type="submit" disabled={deshabilitado}>{guardando ? "Guardando..." : "Confirmar"}</button>
+                    <button className={drawerStyles.guardar} type="submit" disabled={deshabilitado || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button>
                 </div>
             </form>
         </Drawer>

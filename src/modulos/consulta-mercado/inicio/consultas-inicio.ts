@@ -9,9 +9,7 @@ export async function obtenerEspeciesConPublicacionesActivas() {
 
   const plan = db.raw.sql`
     SELECT
-      e.id AS "idEspecie",
       e."nombreEspecie",
-      e."fotoEspecie",
       COUNT(DISTINCT po."operadorId")::int AS "cantidadOperadores"
     FROM publicacion p
     JOIN "publicacionOperador" po ON po."publicacionId" = p.id
@@ -20,13 +18,11 @@ export async function obtenerEspeciesConPublicacionesActivas() {
     JOIN especie e ON e.id = v."especieId"
     WHERE p."publicacionDisponible" = true
       AND p."publicacionActiva" = true
-    GROUP BY e.id, e."nombreEspecie", e."fotoEspecie"
+    GROUP BY e."nombreEspecie"
     ORDER BY e."nombreEspecie"
   `
     .returnsRow({
-      idEspecie: especie.columns.id,
       nombreEspecie: especie.columns.nombreEspecie,
-      fotoEspecie: especie.columns.fotoEspecie,
       cantidadOperadores: "pg/int4@1",
     })
     .build();
@@ -70,7 +66,6 @@ export async function obtenerEspeciesInicio() {
   ]);
 
   return especies.map((especie) => ({
-    idEspecie: especie.idEspecie,
     nombreEspecie: especie.nombreEspecie,
     cantidadOperadores: especie.cantidadOperadores,
     fotoGenerica: buscarFotoGenerica(especie.nombreEspecie, archivosGenericos),

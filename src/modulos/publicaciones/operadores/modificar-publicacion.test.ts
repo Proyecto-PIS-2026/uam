@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => {
         where: vi.fn().mockReturnThis(),
         include: vi.fn().mockReturnThis(),
         first: vi.fn(),
+        all: vi.fn(),
         update: vi.fn(),
     });
 
@@ -24,6 +25,8 @@ const mocks = vi.hoisted(() => {
         calibre: consulta(),
         pais: consulta(),
         transaction: vi.fn(),
+        rawSql: vi.fn(),
+        execute: vi.fn(),
         guardarImagen: vi.fn(),
         eliminarImagen: vi.fn(),
     };
@@ -32,6 +35,7 @@ const mocks = vi.hoisted(() => {
 vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
     db: {
         transaction: mocks.transaction,
+        raw: { sql: mocks.rawSql },
         orm: { public: {
             Operador: mocks.operador,
             PublicacionOperador: mocks.vinculo,
@@ -65,6 +69,7 @@ const cambios: CambiosPublicacionOperador = {
 };
 
 const transaccion = {
+    execute: mocks.execute,
     orm: { public: {
         Operador: mocks.operador,
         PublicacionOperador: mocks.vinculo,
@@ -88,7 +93,9 @@ function prepararTransaccion() {
     }
     mocks.operador.first.mockResolvedValue({ id: 3 });
     mocks.vinculo.first.mockResolvedValue({ id: 12, publicacionId: 20 });
+    mocks.vinculo.all.mockResolvedValue([{ id: 12, publicacionId: 20, operadorId: 3 }]);
     mocks.publicacion.first.mockResolvedValue({ tipoPublicacion: "OPERADOR", foto: FOTO_ANTERIOR });
+    mocks.publicacion.all.mockResolvedValue([]);
     mocks.presentacion.first.mockResolvedValue({
         id: 8,
         presentacionActiva: true,
@@ -100,6 +107,8 @@ function prepararTransaccion() {
     mocks.publicacion.update.mockResolvedValue(undefined);
     mocks.vinculo.update.mockResolvedValue(undefined);
     mocks.transaction.mockImplementation((callback: (tx: typeof transaccion) => unknown) => callback(transaccion));
+    mocks.rawSql.mockReturnValue({ returnsRow: () => ({ build: () => ({}) }) });
+    mocks.execute.mockResolvedValue(undefined);
     mocks.guardarImagen.mockResolvedValue(FOTO_NUEVA);
     mocks.eliminarImagen.mockResolvedValue(undefined);
 }
@@ -131,8 +140,39 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.vinculo.update).toHaveBeenCalledExactlyOnceWith({ paisId: 5 });
         expect(mocks.pais.where).toHaveBeenCalledWith({ id: 5 });
         expect(mocks.publicacion.where).toHaveBeenCalledWith({ id: 20 });
+        expect(mocks.execute).toHaveBeenCalledOnce();
+        expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.vinculo.all.mock.invocationCallOrder[0]);
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+    });
+
+    it("rechaza una combinación ya publicada por el mismo operador antes de guardar la foto", async () => {
+        mocks.vinculo.all.mockResolvedValue([
+            { id: 12, publicacionId: 20, operadorId: 3 },
+            { id: 13, publicacionId: 21, operadorId: 3 },
+        ]);
+        mocks.publicacion.all.mockResolvedValue([{ id: 21 }]);
+
+        await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({
+            codigo: "DATOS_INVALIDOS",
+            message: "Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre.",
+        });
+        expect(mocks.vinculo.where).toHaveBeenCalledWith({ operadorId: 3 });
+        expect(mocks.publicacion.where).toHaveBeenCalledWith({ presentacionId: 8, categoriaId: 4, calibreId: 2 });
+        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+        expect(mocks.vinculo.update).not.toHaveBeenCalled();
+    });
+
+    it("no considera duplicado a la propia publicación ni a otra de otro operador", async () => {
+        mocks.vinculo.all.mockResolvedValue([
+            { id: 12, publicacionId: 20, operadorId: 3 },
+            { id: 13, publicacionId: 21, operadorId: 3 },
+        ]);
+        mocks.publicacion.all.mockResolvedValue([{ id: 20 }, { id: 90 }]);
+
+        await expect(modificarPublicacionOperador(9, 12, cambios)).resolves.toEqual(resultadoEsperado);
+        expect(mocks.publicacion.update).toHaveBeenCalledOnce();
     });
 
     it.each(["12.50", "12,50", "1.00", "0.00", "9999999999.99", "-1", "10000000000", "1.234", "1e2", "+1", "01", ""])(

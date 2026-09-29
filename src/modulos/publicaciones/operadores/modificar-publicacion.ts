@@ -70,6 +70,10 @@ export async function modificarPublicacionOperador(
                 throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Operador no encontrado.");
             }
 
+            // Compartir el bloqueo del alta evita que dos cambios simultáneos creen duplicados.
+            await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ${operador.id})`
+                .returnsRow({ locked: "pg/int4@1" }).build());
+
             const vinculo = await tx.orm.public.PublicacionOperador
                 .select("id", "publicacionId")
                 .where({
@@ -140,6 +144,22 @@ export async function modificarPublicacionOperador(
 
             if (!pais) {
                 throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El país no existe.");
+            }
+
+            const relaciones = await tx.orm.public.PublicacionOperador.where({ operadorId: operador.id }).all();
+            const idsDeOtrasPublicaciones = new Set(
+                relaciones.filter((relacion) => relacion.publicacionId !== vinculo.publicacionId)
+                    .map((relacion) => relacion.publicacionId),
+            );
+            if (idsDeOtrasPublicaciones.size > 0) {
+                const coincidencias = await tx.orm.public.Publicacion.where({
+                    presentacionId: cambios.presentacionId,
+                    categoriaId: cambios.categoriaId,
+                    calibreId: cambios.calibreId,
+                }).select("id").all();
+                if (coincidencias.some((coincidencia) => idsDeOtrasPublicaciones.has(coincidencia.id))) {
+                    throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre.");
+                }
             }
 
             if (fotoNueva) {

@@ -51,8 +51,8 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
                                 {publicacion.variedad !== "-" && <TextoAjustable texto={publicacion.variedad} className={styles.variedad} minimo={esWeb ? 14 : 10} maximo={esWeb ? 26 : 23} />}
                             </div>
 
-                            <div className={styles.precio}>
-                                {publicacion.precio != null ? `$${Number(publicacion.precio).toString()}` : "Sin precio"}
+                            <div className={`${styles.precio} ${publicacion.precio == null ? styles.consultarPrecio : ""}`}>
+                                {publicacion.precio != null ? `$${Number(publicacion.precio).toString()}` : "Consultar precio"}
                             </div>
                         </div>
                     </div>

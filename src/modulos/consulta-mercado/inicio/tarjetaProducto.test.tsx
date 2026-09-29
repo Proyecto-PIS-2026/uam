@@ -5,7 +5,7 @@ describe("ProductoCard", () => {
 
     it("muestra correctamente el nombre del producto", () => {
         render(
-            <ProductoCard idEspecie={60} nombre="Manzana" operadores={5} imagen={null} />);
+            <ProductoCard nombre="Manzana" operadores={5} imagen={null} />);
 
             expect(screen.getByText("Manzana")).toBeInTheDocument();
         });
@@ -13,7 +13,6 @@ describe("ProductoCard", () => {
     it("muestra 1 OPERADOR cuando hay un solo operador", () => {
         render(
         <ProductoCard
-            idEspecie={60}
             nombre="Manzana"
             operadores={1}
             imagen={null}
@@ -27,7 +26,6 @@ describe("ProductoCard", () => {
     it("muestra ... OPERADORES cuando hay varios operadores", () => {
         render(
         <ProductoCard
-            idEspecie={60}
             nombre="Manzana"
             operadores={5}
             imagen={null}
@@ -41,7 +39,6 @@ describe("ProductoCard", () => {
     it("muestra la imagen proporcionada", () => {
         render(
         <ProductoCard
-            idEspecie={60}
             nombre="Manzana"
             operadores={2}
             imagen="https://ejemplo.com/manzana.jpg"
@@ -59,7 +56,6 @@ describe("ProductoCard", () => {
     it("muestra la inicial del nombre cuando no se proporciona una imagen", () => {
         render(
         <ProductoCard
-            idEspecie={60}
             nombre="Manzana"
             operadores={2}
             imagen={null}
@@ -73,7 +69,6 @@ describe("ProductoCard", () => {
     it("muestra la inicial cuando la imagen proporcionada falla", () => {
         render(
         <ProductoCard
-            idEspecie={60}
             nombre="Manzana"
             operadores={2}
             imagen="https://ejemplo.com/imagen-inexistente.jpg"
@@ -91,8 +86,7 @@ describe("ProductoCard", () => {
     it("enlaza la tarjeta con la página de productos", () => {
         render(
         <ProductoCard
-            idEspecie={60}
-            nombre="Manzana"
+            nombre="Pera Williams"
             operadores={2}
             imagen={null}
         />
@@ -102,7 +96,7 @@ describe("ProductoCard", () => {
 
         expect(enlace).toHaveAttribute(
         "href",
-            "/publicaciones?especieId=60"
+            "/publicaciones?especie=Pera%20Williams"
         );
     });
 });
