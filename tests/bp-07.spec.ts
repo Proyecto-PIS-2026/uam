@@ -1,7 +1,7 @@
 import { test, expect, type Locator } from "@playwright/test";
 
 test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
-  test.setTimeout(90_000);
+  test.slow();
 
   const rutaMercado = "/mi-mercado/Mercado%20Verde%20UAM";
 
@@ -160,8 +160,7 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     await expect(tarjeta("1482")).toHaveCount(0);
     await expect(tarjeta("2637")).toHaveCount(0);
   } finally {
-    // En CI se descarta la base de datos al terminar el job.
-    if (!process.env.CI) {
+    await test.step("Limpiar publicaciones de la prueba", async () => {
       await page.goto(rutaMercado);
 
       if (await tarjeta("1482").count()) {
@@ -173,6 +172,6 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
       if (await tarjeta("2637").count()) {
         await eliminar("2637");
       }
-    }
+    });
   }
 });
