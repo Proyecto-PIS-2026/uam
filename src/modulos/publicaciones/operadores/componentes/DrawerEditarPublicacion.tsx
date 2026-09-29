@@ -9,7 +9,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
-import Image from "next/image";
+import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 // import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 import type { CambiosPublicacionOperador } from "../modificar-publicacion";
 import styles from "./DrawerEditarPublicacion.module.css";
@@ -32,6 +32,7 @@ export type OpcionCategoria = OpcionEdicion & {
 };
 
 export type PublicacionParaEditar = CambiosPublicacionOperador & {
+    foto: string | null;
     publicacionOperadorId: number;
     publicacionId: number;
     especieId: number;
@@ -222,7 +223,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
 
         const cambios: CambiosPublicacionOperador = {
             precio: precio.trim() || null,
-            foto,
+            foto: foto === publicacion.foto ? undefined : foto,
             categoriaId,
             calibreId,
             presentacionId,
@@ -322,11 +323,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
 
                     <div className={styles.seccionFoto}>
                         <div className={styles.marcoFoto}>
-                            {fotoVisible ? (
-                                <Image className={styles.imagenFoto} src={fotoVisible} alt={`Foto de ${especieSeleccionada?.nombre ?? publicacion.especie} ${variedadSeleccionada?.nombre ?? publicacion.variedad}`} fill sizes="(min-width: 768px) 480px, 100vw" unoptimized />
-                            ) : (
-                                <div className={styles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>
-                            )}
+                            <ImagenPublicacion className={styles.imagenFoto} src={fotoVisible} alt={`Foto de ${especieSeleccionada?.nombre ?? publicacion.especie} ${variedadSeleccionada?.nombre ?? publicacion.variedad}`} fill sizes="(min-width: 768px) 480px, 100vw" unoptimized reemplazo={<div className={styles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>} />
                             {editando && (
                                 <>
                                     {fotoVisible && <button className={`${styles.botonFoto} ${styles.borrarFoto}`} type="button" onClick={borrarFoto} disabled={bloqueado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
@@ -364,6 +361,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
 export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
+    const foto = publicacion?.foto;
+    const identidadFoto = foto ? `${foto.length}:${foto.slice(0, 32)}:${foto.slice(-32)}` : "sin-foto";
 
     function cerrar() {
         if (!guardando && !eliminando && !actualizando) alCerrar();
@@ -373,7 +372,7 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
         <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {/* <HojasDecorativas variante="fondo" className={styles.hojasDrawer} /> */}
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}-${publicacion.precio}-${publicacion.foto}-${publicacion.presentacionId}-${publicacion.categoriaId}-${publicacion.calibreId}-${publicacion.paisId}-${publicacion.disponible}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} modoInicial={modoInicial} alEliminar={alEliminar} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}-${publicacion.precio}-${identidadFoto}-${publicacion.presentacionId}-${publicacion.categoriaId}-${publicacion.calibreId}-${publicacion.paisId}-${publicacion.disponible}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} modoInicial={modoInicial} alEliminar={alEliminar} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
             )}
             {publicacion && children}
         </Drawer>

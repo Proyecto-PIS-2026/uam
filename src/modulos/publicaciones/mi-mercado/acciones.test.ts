@@ -60,6 +60,30 @@ describe("actualizarPrecio", () => {
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/operadores/Operador%2037");
     });
 
+    it("no informa un fallo de precio si falla la revalidación después de guardarlo", async () => {
+        mocks.obtenerOperadorPorId.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
+        mocks.revalidatePath.mockImplementationOnce(() => { throw new Error("Falló la caché"); });
+        const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        try {
+            await expect(actualizarPrecio(5, 110, 37)).resolves.toBeUndefined();
+
+            expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110);
+            expect(mocks.revalidatePath).toHaveBeenCalledTimes(6);
+            expect(registrarError).toHaveBeenCalledOnce();
+        } finally {
+            registrarError.mockRestore();
+        }
+    });
+
+    it("mantiene el error cuando el precio no llegó a guardarse", async () => {
+        mocks.obtenerOperadorPorId.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
+        mocks.actualizarPrecioPublicacion.mockRejectedValue(new Error("Error de base de datos"));
+
+        await expect(actualizarPrecio(5, 110, 37)).rejects.toThrow("Error de base de datos");
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
+    });
+
     it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
         "rechaza el ID de operador inválido %s",
         async (operadorId) => {

@@ -78,7 +78,7 @@ export default function PruebaEdicionPublicacion({ opciones }: PruebaEdicionPubl
             throw new Error("La publicación seleccionada cambió.");
         }
 
-        let foto = cambios.foto;
+        let foto = cambios.foto === undefined ? publicacion.foto : cambios.foto;
         if (fotoNueva) {
             if (fotoTemporalRef.current) URL.revokeObjectURL(fotoTemporalRef.current);
             foto = URL.createObjectURL(fotoNueva);

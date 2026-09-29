@@ -28,10 +28,21 @@ export async function actualizarPrecio(publicacionId: number, nuevoPrecio: numbe
 
     await actualizarPrecioPublicacion(operador.id, publicacionId, nuevoPrecio);
 
-    revalidatePath("/mi-mercado");
-    revalidatePath(`/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`);
-    revalidatePath("/publicaciones");
-    revalidatePath(`/operadores/${encodeURIComponent(operador.nombreFantasia)}`);
-    revalidatePath("/operadores");
-    revalidatePath("/inicio");
+    const rutas = [
+        "/mi-mercado",
+        `/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`,
+        "/publicaciones",
+        `/operadores/${encodeURIComponent(operador.nombreFantasia)}`,
+        "/operadores",
+        "/inicio",
+    ];
+
+    for (const ruta of rutas) {
+        try {
+            revalidatePath(ruta);
+        } catch (error) {
+            // El precio ya se guardó. El cliente recarga Mi Mercado directamente.
+            console.error(`No se pudo revalidar ${ruta} tras guardar el precio:`, error);
+        }
+    }
 }

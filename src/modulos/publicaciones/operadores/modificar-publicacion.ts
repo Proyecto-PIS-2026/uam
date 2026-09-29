@@ -5,7 +5,7 @@ type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"]
 
 export type CambiosPublicacionOperador = {
     precio: string | null;
-    foto: string | null;
+    foto?: string | null;
     categoriaId: number;
     calibreId: number;
     presentacionId: number;
@@ -56,11 +56,7 @@ export async function modificarPublicacionOperador(
         precioParaGuardar = precio as PrecioDb;
     }
 
-    const imagenNuevaGuardada: { url: string | null; publicacionId: number | null } = { url: null, publicacionId: null };
-    let resultado: { publicacionOperadorId: number; publicacionId: number; fotoAnterior: string | null; fotoActual: string | null };
-
-    try {
-        resultado = await db.transaction(async (tx) => {
+    const resultado = await db.transaction(async (tx) => {
             const operador = await tx.orm.public.Operador
                 .select("id")
                 .where({ usuarioId: usuarioIdAutenticado })
@@ -162,10 +158,10 @@ export async function modificarPublicacionOperador(
                 }
             }
 
+            let imagenNueva: string | null = null;
             if (fotoNueva) {
                 try {
-                    imagenNuevaGuardada.url = await guardarImagenPublicacion(vinculo.publicacionId, fotoNueva);
-                    imagenNuevaGuardada.publicacionId = vinculo.publicacionId;
+                    imagenNueva = await guardarImagenPublicacion(vinculo.publicacionId, fotoNueva);
                 } catch (error) {
                     if (error instanceof ErrorImagenPublicacion) {
                         throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", error.message);
@@ -174,7 +170,9 @@ export async function modificarPublicacionOperador(
                 }
             }
 
-            const fotoActual = imagenNuevaGuardada.url ?? cambios.foto;
+            // Una edición abierta antes de otro cambio no debe restaurar una URL vieja.
+            // Sólo null solicita borrar la foto; el archivo nuevo la reemplaza.
+            const fotoActual = imagenNueva ?? (cambios.foto === null ? null : publicacion.foto);
 
             await tx.orm.public.Publicacion
                 .where({ id: vinculo.publicacionId })
@@ -198,16 +196,6 @@ export async function modificarPublicacionOperador(
                 fotoActual
             };
         });
-    } catch (error) {
-        if (imagenNuevaGuardada.url && imagenNuevaGuardada.publicacionId !== null) {
-            try {
-                await eliminarImagenPublicacionGestionada(imagenNuevaGuardada.url, imagenNuevaGuardada.publicacionId);
-            } catch (errorLimpieza) {
-                console.error("No se pudo eliminar la imagen tras fallar la edición:", errorLimpieza);
-            }
-        }
-        throw error;
-    }
 
     if (resultado.fotoAnterior !== resultado.fotoActual) {
         try {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
+import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "./MiMercado";
 import { actualizarPrecio } from "../acciones";
 
@@ -174,16 +174,7 @@ export default function TarjetaPublicacion({
                     "
                     aria-label={`Ver detalle de ${nombreProducto}`}
                 >
-                    {pub.foto ? (
-                        <Image
-                            src={pub.foto}
-                            alt={nombreProducto}
-                            fill
-                            sizes="(min-width: 768px) 320px, 128px"
-                            unoptimized
-                            className="h-full w-full object-cover"
-                        />
-                    ) : (
+                    <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(min-width: 768px) 320px, 128px" unoptimized className="h-full w-full object-cover" reemplazo={
                         <div
                             className="
                                 flex h-full min-h-28
@@ -196,7 +187,7 @@ export default function TarjetaPublicacion({
                         >
                             Sin fotografía
                         </div>
-                    )}
+                    } />
                 </button>
 
                 {/* Contenido */}

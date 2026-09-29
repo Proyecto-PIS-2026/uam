@@ -55,7 +55,7 @@ vi.mock("./imagenes-publicacion", () => ({
 }));
 
 const FOTO_ANTERIOR = "/api/publicaciones/imagenes/20/11111111-1111-4111-8111-111111111111.jpg";
-const FOTO_NUEVA = "/api/publicaciones/imagenes/20/22222222-2222-4222-8222-222222222222.jpg";
+const FOTO_NUEVA = "data:image/jpeg;base64,/9j/2Q==";
 const resultadoEsperado = { publicacionOperadorId: 12, publicacionId: 20 };
 
 const cambios: CambiosPublicacionOperador = {
@@ -143,6 +143,22 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.execute).toHaveBeenCalledOnce();
         expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.vinculo.all.mock.invocationCallOrder[0]);
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+    });
+
+    it("conserva la foto actual cuando una edición vieja envía la URL anterior", async () => {
+        mocks.publicacion.first.mockResolvedValue({ tipoPublicacion: "OPERADOR", foto: FOTO_NUEVA });
+        await modificarPublicacionOperador(9, 12, cambios);
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: FOTO_NUEVA }));
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+    });
+
+    it("conserva la foto actual si la edición no incluye el campo foto", async () => {
+        mocks.publicacion.first.mockResolvedValue({ tipoPublicacion: "OPERADOR", foto: FOTO_NUEVA });
+        const cambiosSinFoto = { ...cambios };
+        delete cambiosSinFoto.foto;
+        await modificarPublicacionOperador(9, 12, cambiosSinFoto);
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: FOTO_NUEVA }));
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
@@ -330,7 +346,7 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
 
-    it("guarda el archivo bajo el ID de publicación y elimina la foto anterior al confirmar la transacción", async () => {
+    it("guarda la foto en la base y elimina el archivo anterior al confirmar la transacción", async () => {
         const fotoNueva = archivoNuevo();
         const confirmarTransaccion = vi.fn();
         mocks.transaction.mockImplementation(async (callback: (tx: typeof transaccion) => Promise<unknown>) => {
@@ -364,30 +380,30 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
-    it("propaga un fallo de almacenamiento sin borrar la foto anterior", async () => {
-        const errorOriginal = new Error("No hay espacio para guardar la imagen.");
+    it("propaga un fallo al leer la imagen sin borrar la foto anterior", async () => {
+        const errorOriginal = new Error("No se pudo leer la imagen.");
         mocks.guardarImagen.mockRejectedValue(errorOriginal);
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toBe(errorOriginal);
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
-    it("limpia únicamente la foto nueva cuando falla la actualización", async () => {
+    it("no borra archivos cuando falla la actualización de la foto en base", async () => {
         const errorOriginal = new Error("Falló la actualización.");
         mocks.publicacion.update.mockRejectedValue(errorOriginal);
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toBe(errorOriginal);
-        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
-    it("limpia la foto nueva cuando falla la actualización del país dentro de la transacción", async () => {
+    it("no borra archivos cuando falla la actualización del país", async () => {
         const errorOriginal = new Error("Falló la actualización del país.");
         mocks.vinculo.update.mockRejectedValue(errorOriginal);
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toBe(errorOriginal);
         expect(mocks.publicacion.update).toHaveBeenCalledOnce();
-        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
-    it("limpia la foto nueva si falla la confirmación de la transacción después de actualizar", async () => {
+    it("no borra archivos si falla la confirmación de la transacción", async () => {
         const errorOriginal = new Error("No se pudo confirmar la transacción.");
         mocks.transaction.mockImplementation(async (callback: (tx: typeof transaccion) => Promise<unknown>) => {
             await callback(transaccion);
@@ -395,7 +411,7 @@ describe("modificarPublicacionOperador", () => {
         });
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toBe(errorOriginal);
         expect(mocks.publicacion.update).toHaveBeenCalledOnce();
-        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
     it("conserva la foto anterior si falla la actualización sin archivo nuevo", async () => {
@@ -404,17 +420,6 @@ describe("modificarPublicacionOperador", () => {
         await expect(modificarPublicacionOperador(9, 12, { ...cambios, foto: null })).rejects.toBe(errorOriginal);
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
-    });
-
-    it("conserva el error original y registra el fallo si no puede limpiar tras rollback", async () => {
-        const errorOriginal = new Error("Falló la actualización.");
-        const errorLimpieza = new Error("No se pudo borrar el archivo.");
-        const registrarError = vi.spyOn(console, "error").mockImplementation(() => undefined);
-        mocks.publicacion.update.mockRejectedValue(errorOriginal);
-        mocks.eliminarImagen.mockRejectedValue(errorLimpieza);
-        await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toBe(errorOriginal);
-        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
-        expect(registrarError).toHaveBeenCalledWith("No se pudo eliminar la imagen tras fallar la edición:", errorLimpieza);
     });
 
     it("mantiene el guardado exitoso y registra el fallo al limpiar la foto anterior", async () => {

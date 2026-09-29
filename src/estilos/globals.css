@@ -18,7 +18,7 @@
   color-scheme: light;
   --ancho-maximo-pagina: 80rem;
   --padding-exterior-pagina: 1rem;
-  --padding-titulo-pagina: 2rem 1rem;
+  --padding-titulo-pagina: 1rem;
   --tamano-titulo-pagina: 1.875rem;
   --interlineado-titulo-pagina: 1.2;
 }

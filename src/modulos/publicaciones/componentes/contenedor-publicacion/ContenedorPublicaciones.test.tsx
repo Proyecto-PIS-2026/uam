@@ -64,10 +64,10 @@ describe("ContenedorPublicaciones", () => {
 		vi.clearAllMocks();
 	});
 
-	it("entrega al listado todas las publicaciones en el orden recibido", () => {
+	it("entrega al listado las publicaciones ordenadas alfabéticamente por defecto", () => {
 		const publicaciones = [crearPublicacion(7), crearPublicacion(2)];
 		render(<ContenedorPublicaciones publicaciones={publicaciones}/>);
-		expect(publicacionesDelListado()).toEqual(publicaciones);
+		expect(publicacionesDelListado()).toEqual([publicaciones[1], publicaciones[0]]);
 	});
 
 	it("entrega una lista vacía cuando no hay publicaciones", () => {
