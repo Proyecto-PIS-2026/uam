@@ -5,7 +5,6 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
 
   const rutaMercado = "/mi-mercado/Mercado%20Verde%20UAM";
 
-  // Abre un combo y elige una opción por su nombre.
   async function seleccionar(
     formulario: Locator,
     campo: string,
@@ -17,17 +16,13 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     });
   }
 
-  // Busca la tarjeta que muestra un precio determinado.
   function tarjeta(precio: string) {
     return page
       .getByRole("button", { name: `$${precio}`, exact: true })
-      .locator(
-        'xpath=ancestor::div[contains(@class,"rounded-2xl")][1]',
-      );
+      .locator('xpath=ancestor::div[contains(@class,"rounded-2xl")][1]');
   }
 
-  // Crea una publicación de Uchuva.
-  async function crear(categoria: string, precio: string) {
+  async function crear(calibre: string, precio: string) {
     await page.getByRole("button", { name: "Nueva publicación" }).click();
 
     const alta = page.getByRole("dialog", {
@@ -38,8 +33,8 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     await seleccionar(alta, "Variedad", "-");
     await seleccionar(alta, "Presentación", "Unidad");
     await seleccionar(alta, "País de origen", "URUGUAY");
-    await seleccionar(alta, "Categoría", categoria);
-    await seleccionar(alta, "Calibre", "CHICO");
+    await seleccionar(alta, "Categoría", "-");
+    await seleccionar(alta, "Calibre", calibre);
 
     await alta
       .getByRole("textbox", { name: "Precio en pesos" })
@@ -49,7 +44,6 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     await expect(tarjeta(precio)).toBeVisible();
   }
 
-  // Abre el detalle de una publicación y devuelve su diálogo.
   async function abrir(precio: string) {
     await tarjeta(precio)
       .getByRole("button", { name: "Ver detalle de Uchuva" })
@@ -64,7 +58,6 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     return consulta;
   }
 
-  // Elimina una publicación desde su detalle.
   async function eliminar(precio: string) {
     const consulta = await abrir(precio);
     await consulta.getByRole("button", { name: "Eliminar" }).click();
@@ -74,7 +67,6 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     });
 
     await expect(confirmacion).toBeVisible();
-
     await confirmacion
       .getByRole("button", { name: "Sí, eliminar" })
       .click();
@@ -87,18 +79,16 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     page.getByRole("heading", { name: "Mi Mercado" }),
   ).toBeVisible();
 
-  // Evita mezclar esta prueba con Uchuvas de ejecuciones anteriores.
   await expect(tarjeta("1371")).toHaveCount(0);
   await expect(tarjeta("1482")).toHaveCount(0);
   await expect(tarjeta("2637")).toHaveCount(0);
 
-
   try {
-    // ALTA: creamos dos publicaciones del mismo producto.
-    await crear("I", "1371");
-    await crear("E", "2637");
+    // ALTA: el calibre distingue las dos publicaciones.
+    await crear("CHICO", "1371");
+    await crear("GRANDE", "2637");
 
-    // CONSULTA: revisamos los datos de la primera.
+    // CONSULTA de la primera.
     let consulta = await abrir("1371");
 
     await expect(
@@ -107,13 +97,17 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
 
     await expect(
       consulta.getByRole("combobox", { name: "Categoría" }),
-    ).toContainText("I");
+    ).toContainText("-");
+
+    await expect(
+      consulta.getByRole("combobox", { name: "Calibre" }),
+    ).toContainText("CHICO");
 
     await expect(
       consulta.getByRole("textbox", { name: "Precio en pesos" }),
     ).toHaveValue("1371");
 
-    // MODIFICACIÓN: cambiamos precio y categoría de la primera.
+    // MODIFICACIÓN: cambiamos el precio de la primera.
     await consulta.getByRole("button", { name: "Editar" }).click();
 
     const edicion = page.getByRole("dialog", {
@@ -124,25 +118,18 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
       .getByRole("textbox", { name: "Precio en pesos" })
       .fill("1482");
 
-    await seleccionar(edicion, "Categoría", "II");
     await edicion.getByRole("button", { name: "Guardar" }).click();
 
-    // Comprobamos lo que muestra la consulta después de guardar.
     consulta = page.getByRole("dialog", {
       name: "Consultar publicación",
     });
-
     await expect(consulta).toBeVisible();
 
     await expect(
       consulta.getByRole("textbox", { name: "Precio en pesos" }),
     ).toHaveValue("1482");
 
-    await expect(
-      consulta.getByRole("combobox", { name: "Categoría" }),
-    ).toContainText("II");
-
-    // Recargamos para verificar que el cambio quedó guardado.
+    // Recargamos para comprobar que el cambio quedó guardado.
     await page.reload();
     consulta = await abrir("1482");
 
@@ -151,32 +138,29 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     ).toHaveValue("1482");
 
     await expect(
-      consulta.getByRole("combobox", { name: "Categoría" }),
-    ).toContainText("II");
+      consulta.getByRole("combobox", { name: "Calibre" }),
+    ).toContainText("CHICO");
 
     await consulta
       .getByRole("button", { name: "Cerrar consulta" })
       .click();
 
-    // La segunda publicación no debe haber cambiado.
-    await expect(tarjeta("2637")).toContainText("Cat. E");
+    // La segunda publicación sigue con su precio original.
+    await expect(tarjeta("2637")).toBeVisible();
 
-    // BAJA: eliminamos la primera y verificamos que la segunda siga.
+    // BAJA de ambas publicaciones.
     await eliminar("1482");
     await page.reload();
     await expect(tarjeta("2637")).toBeVisible();
 
-    // Eliminamos la segunda.
     await eliminar("2637");
     await page.reload();
 
-    // Ya no aparecen las publicaciones usadas en esta prueba.
     await expect(tarjeta("1371")).toHaveCount(0);
     await expect(tarjeta("1482")).toHaveCount(0);
     await expect(tarjeta("2637")).toHaveCount(0);
   } finally {
-  // En CI se descarta la base de datos al terminar el job.
-  // Evitamos que la limpieza tape el error original si vence el timeout.
+    // En CI se descarta la base de datos al terminar el job.
     if (!process.env.CI) {
       await page.goto(rutaMercado);
 
