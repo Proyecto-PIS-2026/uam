@@ -39,7 +39,6 @@ jobs:
           github-token: ${{ secrets.SEGUIMIENTO_TOKEN || github.token }}
           script: |
             const body = context.payload.pull_request.body || "";
-
             const secciones = [
               "Descripción",
               "Issue asociado",
@@ -47,7 +46,6 @@ jobs:
               "Pruebas realizadas",
               "Consideraciones"
             ];
-
             function obtenerContenidoSeccion(nombre) {
               const inicioRegex = new RegExp(
                 `^##[\\t ]+${nombre}[\\t ]*\\r?$`,
@@ -55,7 +53,6 @@ jobs:
               );
 
               const match = inicioRegex.exec(body);
-
               if (!match) {
                 return null;
               }
@@ -326,6 +323,14 @@ jobs:
                   repo,
                   name: labelName
                 });
+              }
+              try {
+                await github.rest.issues.createLabel({owner, repo,name: labelName, color: "0E8A16", description:"El PR ya fue notificado en el canal de Code Review"});
+              } catch (createError) {
+                if (createError.status !== 422) {
+                  throw createError;
+                }
+                await github.rest.issues.getLabel({owner, repo,name: labelName});
               }
             }
 
