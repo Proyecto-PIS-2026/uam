@@ -10,14 +10,14 @@ describe("ControlesListadoOperadores", () => {
         alCambiarBusqueda: vi.fn(),
         orden: "a-z",
         alCambiarOrden: vi.fn(),
-        naveSeleccionada: "",
+        naveSeleccionada: "Todas",
         alCambiarNave: vi.fn(),
         navesDisponibles: ["Nave A", "Nave B"],
     };
 
     it("Mostrar buscador operadores", () => {
         render(<ControlesListadoOperadores {...propsIniciales} />);
-        expect(screen.getByPlaceholderText("Buscar operadores")).toBeInTheDocument();
+        expect(screen.getByRole("searchbox", { name: "Buscar operadores" })).toBeInTheDocument();
     });
 
     it("Mostrar las naves disponibles", () => {
@@ -27,7 +27,7 @@ describe("ControlesListadoOperadores", () => {
 
         fireEvent.mouseDown(selectorNave);
 
-        expect(screen.getByText("Todas")).toBeInTheDocument();
+        expect(screen.getByRole("option", { name: "Todas" })).toBeInTheDocument();
         expect(screen.getByText("Nave Nave A")).toBeInTheDocument();
         expect(screen.getByText("Nave Nave B")).toBeInTheDocument();
     });
@@ -52,7 +52,7 @@ describe("ControlesListadoOperadores", () => {
         const alCambiarBusqueda = vi.fn();
         render(<ControlesListadoOperadores {...propsIniciales} alCambiarBusqueda={alCambiarBusqueda}/>);
 
-        const buscador = screen.getByPlaceholderText("Buscar operadores");
+        const buscador = screen.getByRole("searchbox", { name: "Buscar operadores" });
         fireEvent.change(buscador, {target: {value: "Jose",},});
 
         expect(alCambiarBusqueda).toHaveBeenCalledWith("Jose");

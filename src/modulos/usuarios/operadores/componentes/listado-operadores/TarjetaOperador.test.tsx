@@ -52,7 +52,7 @@ describe("TarjetaOperador", () => {
     it("Enlaza al detalle del operador", () => {
         render(<TarjetaOperador operador={operador} />);
         const link = screen.getByRole("link");
-        expect(link).toHaveAttribute("href","/operadores/1");
+        expect(link).toHaveAttribute("href","/operadores/Nombre%201");
     });
 
     it("Mostrar inicial si no tiene foto", () => {

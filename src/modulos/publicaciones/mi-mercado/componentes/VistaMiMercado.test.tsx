@@ -5,7 +5,7 @@ import VistaMiMercado from "./VistaMiMercado";
 
 const mocks = vi.hoisted(() => ({
     obtenerOperadorActual: vi.fn(),
-    obtenerOperadorPorId: vi.fn(),
+    obtenerOperadorPorNombre: vi.fn(),
     obtenerPublicaciones: vi.fn(),
     obtenerOpcionesEdicion: vi.fn(),
     miMercado: vi.fn(() => null),
@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../../../usuarios/operadores/operador-actual", () => ({
     obtenerOperadorActual: mocks.obtenerOperadorActual,
-    obtenerOperadorPorId: mocks.obtenerOperadorPorId,
+    obtenerOperadorPorNombre: mocks.obtenerOperadorPorNombre,
 }));
 
 vi.mock("../consultas-mi-mercado", () => ({
@@ -40,32 +40,35 @@ describe("VistaMiMercado", () => {
         mocks.obtenerOpcionesEdicion.mockResolvedValue(opcionesEdicion);
     });
 
-    it("usa el operador actual cuando no llega un ID", async () => {
+    it("usa el operador actual cuando no llega un nombre", async () => {
         const vista = await VistaMiMercado({});
 
         expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
-        expect(mocks.obtenerOperadorPorId).not.toHaveBeenCalled();
+        expect(mocks.obtenerOperadorPorNombre).not.toHaveBeenCalled();
         expect(mocks.obtenerPublicaciones).toHaveBeenCalledExactlyOnceWith(13);
         expect(vista.type).toBe(mocks.miMercado);
         expect(vista.props.operadorId).toBe(13);
+        expect(vista.props.nombreOperador).toBe("Operador 13");
     });
 
     it("usa el operador indicado en la ruta", async () => {
-        mocks.obtenerOperadorPorId.mockResolvedValue({ id: 37, usuarioId: 11, nombreFantasia: "Operador 37" });
+        mocks.obtenerOperadorPorNombre.mockResolvedValue({ id: 37, usuarioId: 11, nombreFantasia: "Frutas & Más" });
 
-        const vista = await VistaMiMercado({ operadorId: 37 });
+        const vista = await VistaMiMercado({ operadorNombre: "Frutas & Más" });
 
-        expect(mocks.obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(37);
+        expect(mocks.obtenerOperadorPorNombre).toHaveBeenCalledExactlyOnceWith("Frutas & Más");
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
         expect(mocks.obtenerPublicaciones).toHaveBeenCalledExactlyOnceWith(37);
         expect(vista.type).toBe(mocks.miMercado);
         expect(vista.props.operadorId).toBe(37);
+        expect(vista.props.nombreOperador).toBe("Frutas & Más");
     });
 
     it("responde 404 si el operador indicado no existe", async () => {
-        mocks.obtenerOperadorPorId.mockResolvedValue(null);
+        mocks.obtenerOperadorPorNombre.mockResolvedValue(null);
 
-        await expect(VistaMiMercado({ operadorId: 99 })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+        await expect(VistaMiMercado({ operadorNombre: "No existe" })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+        expect(mocks.obtenerOperadorPorNombre).toHaveBeenCalledExactlyOnceWith("No existe");
         expect(mocks.notFound).toHaveBeenCalledOnce();
         expect(mocks.obtenerPublicaciones).not.toHaveBeenCalled();
         expect(mocks.obtenerOpcionesEdicion).not.toHaveBeenCalled();

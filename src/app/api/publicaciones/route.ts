@@ -61,9 +61,9 @@ export async function POST(request: Request) {
 		const resultado = await altaPublicacionOperador(datosDelOperador);
 		if (resultado.esValido) {
 			revalidatePath("/mi-mercado");
-			revalidatePath(`/mi-mercado/${operador.id}`);
+			revalidatePath(`/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`);
 			revalidatePath("/publicaciones");
-			revalidatePath(`/operadores/${operador.id}`);
+			revalidatePath(`/operadores/${encodeURIComponent(operador.nombreFantasia)}`);
 			revalidatePath("/operadores");
 			revalidatePath("/inicio");
 		}

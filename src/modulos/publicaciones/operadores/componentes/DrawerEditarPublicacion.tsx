@@ -2,10 +2,6 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import Drawer from "@mui/material/Drawer";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -69,13 +65,15 @@ type DrawerEditarPublicacionProps = {
 const formatoPrecio = /^(0|[1-9]\d{0,9})$/;
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
+function precioParaEdicion(precio: string | null) {
+    if (precio === null) return "";
+    const valor = Number(precio);
+    return Number.isInteger(valor) ? String(valor) : precio;
+}
+
 function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
     const [editando, setEditando] = useState(modoInicial === "edicion");
-    const [precio, setPrecio] = useState(() => {
-        if (publicacion.precio === null) return "";
-        const valor = Number(publicacion.precio);
-        return Number.isInteger(valor) ? String(valor) : publicacion.precio;
-    });
+    const [precio, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
     const [foto, setFoto] = useState(publicacion.foto);
     const [fotoNueva, setFotoNueva] = useState<File | null>(null);
     const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
@@ -87,8 +85,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
     const [paisId, setPaisId] = useState(publicacion.paisId);
     const [disponible, setDisponible] = useState(publicacion.disponible);
     const [error, setError] = useState("");
-    const [confirmacionAbierta, setConfirmacionAbierta] = useState(false);
     const inputFotoRef = useRef<HTMLInputElement>(null);
+    const inputGaleriaRef = useRef<HTMLInputElement>(null);
     const urlVistaPreviaRef = useRef<string | null>(null);
     const idBase = `editar-publicacion-${publicacion.publicacionOperadorId}`;
     const ocupado = guardando || eliminando || actualizando;
@@ -111,8 +109,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         const archivo = evento.target.files?.[0];
         if (!archivo) return;
 
-        if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 5 * 1024 * 1024) {
-            setError("Seleccioná una imagen JPEG, PNG o WebP de hasta 5 MB.");
+        if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
+            setError("Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB.");
             evento.target.value = "";
             return;
         }
@@ -170,6 +168,31 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         setPresentacionId(primeraPresentacion?.id ?? 0);
     }
 
+    function cancelarEdicion() {
+        if (modoInicial === "edicion") {
+            alCerrar();
+            return;
+        }
+
+        if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
+        urlVistaPreviaRef.current = null;
+        if (inputFotoRef.current) inputFotoRef.current.value = "";
+        if (inputGaleriaRef.current) inputGaleriaRef.current.value = "";
+        setVistaPrevia(null);
+        setFotoNueva(null);
+        setFoto(publicacion.foto);
+        setPrecio(precioParaEdicion(publicacion.precio));
+        setEspecieId(publicacion.especieId);
+        setVariedadId(publicacion.variedadId);
+        setPresentacionId(publicacion.presentacionId);
+        setCategoriaId(publicacion.categoriaId);
+        setCalibreId(publicacion.calibreId);
+        setPaisId(publicacion.paisId);
+        setDisponible(publicacion.disponible);
+        setError("");
+        setEditando(false);
+    }
+
     function solicitarGuardado(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (bloqueado) return;
@@ -191,12 +214,11 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
             return;
         }
 
-        setConfirmacionAbierta(true);
+        void guardar();
     }
 
     async function guardar() {
         if (bloqueado) return;
-        setConfirmacionAbierta(false);
 
         const cambios: CambiosPublicacionOperador = {
             precio: precio.trim() || null,
@@ -309,9 +331,11 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                                 <>
                                     {fotoVisible && <button className={`${styles.botonFoto} ${styles.borrarFoto}`} type="button" onClick={borrarFoto} disabled={bloqueado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
                                     <button className={styles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={bloqueado}>
-                                        <PhotoCameraOutlinedIcon fontSize="small" /> Editar foto
+                                        <PhotoCameraOutlinedIcon fontSize="small" /> {esWeb ? "Editar foto" : "Cámara"}
                                     </button>
+                                    {!esWeb && <button className={`${styles.botonFoto} ${styles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={bloqueado}>Galería</button>}
                                     <input ref={inputFotoRef} className={styles.inputFoto} type="file" accept="image/jpeg,image/png,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={bloqueado} aria-label="Seleccionar foto del producto" />
+                                    {!esWeb && <input ref={inputGaleriaRef} className={styles.inputFoto} type="file" accept="image/jpeg,image/png,image/webp" onChange={seleccionarFoto} disabled={bloqueado} aria-label="Seleccionar foto desde galería" />}
                                 </>
                             )}
                         </div>
@@ -321,7 +345,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                 <div className={styles.pie}>
                     {editando ? (
                         <>
-                            <button className={styles.cancelar} type="button" onClick={alCerrar} disabled={ocupado}>Cancelar</button>
+                            <button className={styles.cancelar} type="button" onClick={cancelarEdicion} disabled={ocupado}>Cancelar</button>
                             <button className={styles.guardar} type="submit" disabled={ocupado}>{guardando ? "Guardando..." : "Guardar"}</button>
                         </>
                     ) : (
@@ -333,14 +357,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                 </div>
             </form>
 
-            <Dialog className={styles.confirmacion} open={confirmacionAbierta} onClose={() => setConfirmacionAbierta(false)} aria-labelledby={`${idBase}-confirmacion`} fullWidth maxWidth="xs">
-                <DialogTitle id={`${idBase}-confirmacion`}>¿Guardar los cambios?</DialogTitle>
-                <DialogContent>Se actualizarán los datos de esta publicación.</DialogContent>
-                <DialogActions>
-                    <button className={styles.cancelar} type="button" onClick={() => setConfirmacionAbierta(false)}>Cancelar</button>
-                    <button className={styles.guardar} type="button" onClick={() => void guardar()}>Confirmar</button>
-                </DialogActions>
-            </Dialog>
         </>
     );
 }

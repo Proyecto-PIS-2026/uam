@@ -55,7 +55,7 @@ describe("DrawerPublicacion", () => {
         for (const texto of ["Tomate", "Perita", "Cajón", "Mediano", "Primera", "País", "Uruguay", "Huerta Sur"]) {
             expect(screen.getByText(texto)).toBeInTheDocument();
         }
-        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/operadores/10");
+        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/operadores/Huerta%20Sur");
         expect(screen.getByRole("link", { name: "Contactar a Huerta Sur por WhatsApp" })).toBeInTheDocument();
     });
     it("no muestra el detalle cuando está cerrado", () => {

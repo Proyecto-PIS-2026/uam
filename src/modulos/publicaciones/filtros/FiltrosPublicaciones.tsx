@@ -13,6 +13,8 @@ function normalizarTexto(texto: string) {
     return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+const compararOpciones = (a: string, b: string) => a.localeCompare(b, "es", { sensitivity: "base" });
+
 // Tipo de datos que recibe
 export type PublicacionListado = {
     id: number;
@@ -32,13 +34,18 @@ export type PublicacionListado = {
     };
 };
 
+export type OrdenPublicaciones = "ninguno" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
+
 type FiltrosPublicacionesProps = {
     publicaciones: PublicacionListado[];
     especieFiltro: string;
     alFiltrar?: (publicaciones: PublicacionListado[]) => void;
+    alLimpiar?: () => void;
+    ordenInicial?: OrdenPublicaciones;
+    alCambiarOrden?: (orden: OrdenPublicaciones) => void;
 };
 
-export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFiltrar}: FiltrosPublicacionesProps) {
+export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFiltrar, alLimpiar, ordenInicial = "ninguno", alCambiarOrden}: FiltrosPublicacionesProps) {
     // Hooks useState para los filtros
     const [busqueda, setBusqueda] = useState("");                                           // Barra de busqueda
     const [precioMinimo, setPrecioMinimo] = useState("");                                   // Precio Minimo
@@ -58,11 +65,11 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
     const [mostrarOrdenamiento, setMostrarOrdenamiento] = useState(false);
 
     // Filtros de Ordenamiento
-    const [orden, setOrden] = useState("ninguno");
+    const [orden, setOrden] = useState<OrdenPublicaciones>(ordenInicial);
 
     // Opciones de Filtros disponibles
     const especies = useMemo(() => {
-        return [...new Set(publicaciones.map((publicacion) => publicacion.especie))].sort();
+        return [...new Set(publicaciones.map((publicacion) => publicacion.especie))].sort(compararOpciones);
     }, [publicaciones]);
 
     // Opciones de Variedad disponibles segun Especie
@@ -71,7 +78,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === especie);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad))].sort();
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad))].sort(compararOpciones);
     }, [publicaciones, especie]);
 
     // Publicaciones segun Especie, Variedad y Presentacion
@@ -95,7 +102,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.variedad === variedad);
 
-        return [...new Set(publicacionesBase.map((publicacion) =>  publicacion.presentacion))].sort();
+        return [...new Set(publicacionesBase.map((publicacion) =>  publicacion.presentacion))].sort(compararOpciones);
     }, [publicaciones, especie, variedad]);
 
     // Opciones de Categoria disponibles segun Calibre
@@ -105,7 +112,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         if (calibre !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
             publicacion.calibre === calibre);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.categoria))].sort();
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.categoria))].sort(compararOpciones);
     }, [publicacionesSegunJerarquia, calibre]);
 
     // Opciones de Calibre disponibles segun Categoria
@@ -114,7 +121,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         if (categoria !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
             publicacion.categoria === categoria);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.calibre))].sort();
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.calibre))].sort(compararOpciones);
     }, [publicacionesSegunJerarquia, categoria]);
 
     // Obtener Publicaciones segun la jerarquia de filtros
@@ -221,6 +228,12 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
     // Devolver al Componente Padre
     useEffect(() => { alFiltrar?.(publicacionesFiltradas) }, [publicacionesFiltradas, alFiltrar]);
 
+    const cambiarOrden = (nuevoOrden: OrdenPublicaciones) => {
+        setOrden(nuevoOrden);
+        alCambiarOrden?.(nuevoOrden);
+        setMostrarOrdenamiento(false);
+    };
+
     // Variedad Unica
     const variedadUnica = (especie !== "Todas" && variedades.length === 1 && variedades[0] === "-");
 
@@ -236,7 +249,9 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         setCategoria("Todas");
         setCalibre("Todas");
 
-        setOrden("ninguno");
+        setOrden(ordenInicial);
+        alCambiarOrden?.(ordenInicial);
+        alLimpiar?.();
     };
 
     // Rango de precio invalido
@@ -246,7 +261,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
     const manejarCambioEspecie = (nuevaEspecie: string) => {
         let publicacionesBase = publicaciones;
         if (nuevaEspecie !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.especie === nuevaEspecie);
-        const variedadesNuevas = [...new Set(publicacionesBase.map((p) => p.variedad))].sort();
+        const variedadesNuevas = [...new Set(publicacionesBase.map((p) => p.variedad))].sort(compararOpciones);
         const nuevaVariedad =  nuevaEspecie !== "Todas" && variedadesNuevas.length === 1 && variedadesNuevas[0] === "-" ? "-" : "Todas";
         const nuevaPresentacion = "Todas";
         const publicacionesNuevas = obtenerPublicacionesJerarquia(nuevaEspecie, nuevaVariedad, nuevaPresentacion);
@@ -310,31 +325,31 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                 </TextField>
                 {/* Precio minimo */}
                 <div className={styles.filtroPrecioMinimo}>
-                    <TextField fullWidth size="small" id="precio-minimo" label="Precio Mínimo" type="number" value={precioMinimo} placeholder="$ 0" className={styles.selectMui}
+                    <TextField fullWidth size="small" id="precio-minimo" label="Precio Mínimo" type="text" value={precioMinimo} placeholder="$ 0" className={styles.selectMui}
                         slotProps={{
                             htmlInput: {
-                                min: 0,
                                 inputMode: "numeric",
+                                pattern: "[0-9]*",
                             },
                         }}
                         onChange={(evento) => {
                             const valor = evento.target.value;
-                            if (valor === "" || Number(valor) >= 0) setPrecioMinimo(valor)
+                            if (/^[0-9]*$/.test(valor)) setPrecioMinimo(valor);
                         }}
                     />
                 </div>
                 {/* Precio maximo */}
                 <div className={styles.filtroPrecioMaximo}>
-                    <TextField fullWidth size="small" id="precio-maximo" label="Precio Máximo" type="number" value={precioMaximo} placeholder="Sin límite" className={styles.selectMui} error={rangoPrecioInvalido}
+                    <TextField fullWidth size="small" id="precio-maximo" label="Precio Máximo" type="text" value={precioMaximo} placeholder="Sin límite" className={styles.selectMui} error={rangoPrecioInvalido}
                         slotProps={{
                             htmlInput: {
-                                min: 0,
                                 inputMode: "numeric",
+                                pattern: "[0-9]*",
                             },
                         }}
                         onChange={(evento) => {
                             const valor = evento.target.value;
-                            if (valor === "" || Number(valor) >= 0)  setPrecioMaximo(valor)
+                            if (/^[0-9]*$/.test(valor)) setPrecioMaximo(valor);
                         }}
                     />
                 </div>
@@ -430,38 +445,23 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                     {/* Opciones de ordenamiento */}
                     <div className={`${styles.listaOrdenamiento} ${mostrarOrdenamiento ? styles.listaOrdenamientoAbierta : ""}`}>
                         <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "ninguno" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => {
-                                setOrden("ninguno");
-                                setMostrarOrdenamiento(false);
-                            }}>
+                            onClick={() => cambiarOrden("ninguno")}>
                             Sin ordenar
                         </button>
                         <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "precioAsc" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => {
-                                setOrden("precioAsc");
-                                setMostrarOrdenamiento(false);
-                            }}>
+                            onClick={() => cambiarOrden("precioAsc")}>
                             Menor Precio
                         </button>
                         <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "precioDesc" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => {
-                                setOrden("precioDesc");
-                                setMostrarOrdenamiento(false);
-                            }}>
+                            onClick={() => cambiarOrden("precioDesc")}>
                             Mayor Precio
                         </button>
                         <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "alfabeticoAsc" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => {
-                                setOrden("alfabeticoAsc");
-                                setMostrarOrdenamiento(false);
-                            }}>
+                            onClick={() => cambiarOrden("alfabeticoAsc")}>
                             A-Z
                         </button>
                         <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "alfabeticoDesc" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => {
-                                setOrden("alfabeticoDesc");
-                                setMostrarOrdenamiento(false);
-                            }}>
+                            onClick={() => cambiarOrden("alfabeticoDesc")}>
                             Z-A
                         </button>
                     </div>

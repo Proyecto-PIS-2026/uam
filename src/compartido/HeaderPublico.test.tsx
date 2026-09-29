@@ -43,8 +43,8 @@ describe("HeaderPublico", () => {
         expect(enlacesPublicaciones[1]).not.toHaveClass(styles.enlaceActivo);
     });
 
-    it("marca Mi mercado como activo al entrar al operador indicado por ID", () => {
-        mockUsePathname.mockReturnValue("/mi-mercado/13");
+    it("marca Mi mercado como activo al entrar al operador indicado por nombre", () => {
+        mockUsePathname.mockReturnValue("/mi-mercado/Frutas%20del%20Norte");
         render(<HeaderPublico/>);
         expect(screen.getAllByRole("link", { name: "Mi mercado" })[0]).toHaveAttribute("aria-current", "page");
     });

@@ -102,7 +102,8 @@ describe("DELETE /api/publicaciones/[id]", () => {
             mensaje: "Publicación eliminada.",
         });
         expect(obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(3);
-        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/3");
+        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%203");
+        expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%203");
     });
 
     it("usa el operador actual si no se indica un ID", async () => {
@@ -128,7 +129,8 @@ describe("DELETE /api/publicaciones/[id]", () => {
         expect(obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(7);
         expect(obtenerOperadorActual).not.toHaveBeenCalled();
         expect(bajaPublicacionOperadorMock).toHaveBeenCalledWith(15, 7);
-        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/7");
+        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
+        expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
     });
 
     it.each(["", "0", "-1", "1.5", "abc", "9007199254740992", "7&operadorId=8"])(
@@ -225,9 +227,9 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		expect(obtenerOperadorActual).toHaveBeenCalledOnce();
 		expect(obtenerOperadorPorId).not.toHaveBeenCalled();
 		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado");
-		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/3");
+		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%203");
 		expect(revalidatePath).toHaveBeenCalledWith("/publicaciones");
-		expect(revalidatePath).toHaveBeenCalledWith("/operadores/3");
+		expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%203");
 		expect(revalidatePath).toHaveBeenCalledWith("/operadores");
 		expect(revalidatePath).toHaveBeenCalledWith("/inicio");
 	});
@@ -242,8 +244,8 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		expect(obtenerOperadorActual).not.toHaveBeenCalled();
 		expect(vinculoPublicacionMock.where).toHaveBeenCalledWith({ publicacionId: 20, operadorId: 7 });
 		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(70, 12, cambiosEdicion, null);
-		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/7");
-		expect(revalidatePath).toHaveBeenCalledWith("/operadores/7");
+		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
+		expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
 	});
 
 	it.each(["", "0", "-1", "1.5", "abc", "9007199254740992", "7&operadorId=8"])(

@@ -9,17 +9,17 @@ vi.mock("../../../../modulos/publicaciones/mi-mercado/componentes/VistaMiMercado
 
 import Page from "./page";
 
-describe("/mi-mercado/[id]", () => {
+describe("/mi-mercado/[nombre]", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it("pasa el ID del operador a Mi Mercado", async () => {
-        const contenido = await Page({ params: Promise.resolve({ id: "13" }) });
-        expect(contenido.props.operadorId).toBe(13);
+    it("pasa el nombre del operador a Mi Mercado", async () => {
+        const contenido = await Page({ params: Promise.resolve({ nombre: "Frutas%20%26%20M%C3%A1s" }) });
+        expect(contenido.props.operadorNombre).toBe("Frutas & Más");
         expect(notFoundMock).not.toHaveBeenCalled();
     });
 
-    it.each(["abc", "0", "-1", "1.5", "1e3", "0x16", "9007199254740992"])("rechaza el ID inválido %s", async (id) => {
-        await expect(Page({ params: Promise.resolve({ id }) })).rejects.toThrow("NOT_FOUND");
+    it.each(["", "   "])("rechaza el nombre vacío %s", async (nombre) => {
+        await expect(Page({ params: Promise.resolve({ nombre }) })).rejects.toThrow("NOT_FOUND");
         expect(notFoundMock).toHaveBeenCalledOnce();
     });
 });

@@ -117,6 +117,44 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         }
     });
 
+    it("ordena los nombres visibles sin perder las relaciones entre especies, variedades y presentaciones", async () => {
+        mocks.especies.all.mockResolvedValue([
+            { id: 909, nombreEspecie: "Ñame" },
+            { id: 401, nombreEspecie: "Ácelga" },
+        ]);
+        mocks.variedades.all.mockResolvedValue([
+            { id: 22, nombreVariedad: "Zeta", especieId: 401 },
+            { id: 7, nombreVariedad: "Ámbar", especieId: 401 },
+        ]);
+        mocks.presentaciones.all.mockResolvedValue([
+            { id: 424, nombrePresentacion: "Saco", variedadId: 7 },
+            { id: 321, nombrePresentacion: "Caja", variedadId: 7 },
+        ]);
+        mocks.categorias.all.mockResolvedValue([
+            { id: 4, nombreCategoria: "Zeta", especieId: 401 },
+            { id: 3, nombreCategoria: "Álfa", especieId: null },
+        ]);
+        mocks.calibres.all.mockResolvedValue([
+            { id: 501, codigoCalibre: "Z", nombreCalibre: "ALTO" },
+            { id: 502, codigoCalibre: "A", nombreCalibre: "BAJO" },
+        ]);
+        mocks.paises.all.mockResolvedValue([
+            { id: 218, nombrePais: "Uruguay" },
+            { id: 117, nombrePais: "Argentina" },
+        ]);
+
+        const opciones = await obtenerOpcionesEdicionPublicacion();
+
+        expect(opciones.especies.map((opcion) => opcion.id)).toEqual([401, 909]);
+        expect(opciones.variedades.map((opcion) => opcion.id)).toEqual([7, 22]);
+        expect(opciones.variedades[0].especieId).toBe(401);
+        expect(opciones.presentaciones.map((opcion) => opcion.id)).toEqual([321, 424]);
+        expect(opciones.presentaciones[0].variedadId).toBe(7);
+        expect(opciones.categorias.map((opcion) => opcion.id)).toEqual([3, 4]);
+        expect(opciones.calibres.map((opcion) => opcion.nombre)).toEqual(["A - BAJO", "Z - ALTO"]);
+        expect(opciones.paises.map((opcion) => opcion.id)).toEqual([117, 218]);
+    });
+
     it("mantiene categorías generales, calibres y países aunque no haya especies activas", async () => {
         mocks.especies.all.mockResolvedValue([]);
 

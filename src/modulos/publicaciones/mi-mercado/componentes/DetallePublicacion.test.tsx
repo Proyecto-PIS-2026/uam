@@ -224,7 +224,7 @@ describe("DetallePublicacion", () => {
     );
   });
 
-  it("usa la fotografía de la especie cuando la publicación no tiene foto", () => {
+  it("muestra sin fotografía aunque la especie tenga una imagen", () => {
     const pub = crearPublicacion();
 
     pub.foto = null;
@@ -241,14 +241,8 @@ describe("DetallePublicacion", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("img", {
-        name: "Manzana",
-      }),
-    ).toHaveAttribute(
-      "src",
-      expect.stringContaining("url=%2Fespecie.jpg"),
-    );
+    expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Manzana" })).not.toBeInTheDocument();
   });
 
   it("muestra sin fotografía cuando no existe ninguna imagen", () => {

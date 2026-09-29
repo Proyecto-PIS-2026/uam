@@ -53,9 +53,7 @@ export default function DetallePublicacion({
         variedad.trim() !== "" &&
         variedad.trim() !== "-";
 
-    const foto =
-        pub.foto ||
-        pub.presentacion.variedad.especie.fotoEspecie;
+    const foto = pub.foto;
 
     function comenzarEdicionPrecio() {
         setPrecioTemporal(String(precio));

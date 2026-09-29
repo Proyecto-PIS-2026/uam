@@ -41,6 +41,27 @@ describe("alta de publicación de operador: precio", () => {
 });
 
 describe("validarAltaPublicacionOperador", () => {
+	it("acepta una fotografía de exactamente 10 MB", () => {
+		const tamano = 10 * 1024 * 1024;
+		const base64 = "A".repeat(Math.floor(tamano / 3) * 4) + "AA==";
+		const fotografia = `data:image/jpeg;base64,${base64}`;
+		expect(validarAltaPublicacionOperador({ ...datosValidos, fotografia }).esValido).toBe(true);
+	});
+
+	it("rechaza una fotografía de más de 10 MB aunque el base64 tenga el mismo largo", () => {
+		const tamano = 10 * 1024 * 1024;
+		const base64 = "A".repeat(Math.floor(tamano / 3) * 4) + "AAA=";
+		const fotografia = `data:image/jpeg;base64,${base64}`;
+		expect(validarAltaPublicacionOperador({ ...datosValidos, fotografia })).toEqual({
+			esValido: false,
+			errores: ["La fotografía debe ser PNG, JPEG o WebP y pesar hasta 10 MB."],
+		});
+	});
+
+	it.each(["data:image/jpeg;base64,A", "data:image/jpeg;base64,", "data:image/gif;base64,AAAA"])("rechaza una fotografía codificada inválida: %s", (fotografia) => {
+		expect(validarAltaPublicacionOperador({ ...datosValidos, fotografia }).esValido).toBe(false);
+	});
+
 	it("acepta una publicación completa con precio entero", () => {
 		const resultado = validarAltaPublicacionOperador({ ...datosValidos, precio: "1250" });
 

@@ -18,7 +18,7 @@ function normalizarTexto(texto: string) {
 export default function ListadoOperadores({ operadores }: ListadoOperadoresProps) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState("a-z");
-    const [naveSeleccionada, setNaveSeleccionada] = useState("");
+    const [naveSeleccionada, setNaveSeleccionada] = useState("Todas");
 
     const conjuntoNaves = new Set<string>();
     for (const operador of operadores) {
@@ -38,7 +38,7 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
         const nombreOperador = normalizarTexto(operador.nombreFantasia);
         const coincideConBusqueda = nombreOperador.includes(textoBuscado);
         if (coincideConBusqueda) {
-            let coincideConNave = naveSeleccionada === ""; // No hay nave seleccionada
+            let coincideConNave = naveSeleccionada === "Todas";
             if (!coincideConNave) {
                 for (const local of operador.locales) {
                     if (local.nombreNave === naveSeleccionada) {
@@ -59,7 +59,7 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
     });
 
     const contenido = (
-        <section className="contenedor-pagina">
+        <section className="contenedor-pagina flex flex-col gap-6">
             <EncabezadoPagina titulo="Operadores" cantidad={operadores.length} subtitulo="operadores en la plataforma" />
 
             <ControlesListadoOperadores

@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { obtenerOperadorActual, obtenerOperadorPorId } from "./operador-actual";
+import { obtenerOperadorActual, obtenerOperadorPorId, obtenerOperadorPorNombre } from "./operador-actual";
 
 const operadorMock = vi.hoisted(() => ({
     select: vi.fn().mockReturnThis(),
@@ -54,5 +54,20 @@ describe("selección del operador de Mi Mercado", () => {
 
         await expect(obtenerOperadorPorId(37)).resolves.toBeNull();
         expect(operadorMock.where).toHaveBeenCalledExactlyOnceWith({ id: 37 });
+    });
+
+    it("consulta al operador indicado por su nombre de fantasía", async () => {
+        const operador = { id: 37, usuarioId: 11, nombreFantasia: "Frutas & Más" };
+        operadorMock.first.mockResolvedValue(operador);
+
+        await expect(obtenerOperadorPorNombre("Frutas & Más")).resolves.toBe(operador);
+        expect(operadorMock.where).toHaveBeenCalledExactlyOnceWith({ nombreFantasia: "Frutas & Más" });
+    });
+
+    it("devuelve null si el nombre indicado no existe", async () => {
+        operadorMock.first.mockResolvedValue(null);
+
+        await expect(obtenerOperadorPorNombre("No existe")).resolves.toBeNull();
+        expect(operadorMock.where).toHaveBeenCalledExactlyOnceWith({ nombreFantasia: "No existe" });
     });
 });

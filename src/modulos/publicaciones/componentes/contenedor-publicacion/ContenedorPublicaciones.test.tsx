@@ -1,5 +1,5 @@
 // Eliminar comentarios luego de integrar los filtros
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 //import { useEffect } from "react";
 
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
@@ -90,6 +90,29 @@ describe("ContenedorPublicaciones", () => {
 		expect(publicacionesDelListado()).toEqual([actualizada]);
 	});
 
+
+	it("quita la especie de la URL al limpiar filtros y conserva los demás parámetros", async () => {
+		const urlAnterior = window.location.href;
+		window.history.replaceState(window.history.state, "", "/publicaciones?especie=Manzana&orden=asc#lista");
+
+		try {
+			const publicaciones = [
+				{ ...crearPublicacion(1), especie: "Manzana" },
+				{ ...crearPublicacion(2), especie: "Pera" },
+			];
+			render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana" />);
+			expect(publicacionesDelListado()).toEqual([publicaciones[0]]);
+
+			fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+
+			await waitFor(() => expect(publicacionesDelListado()).toEqual(publicaciones));
+			expect(window.location.pathname).toBe("/publicaciones");
+			expect(window.location.search).toBe("?orden=asc");
+			expect(window.location.hash).toBe("#lista");
+		} finally {
+			window.history.replaceState(window.history.state, "", urlAnterior);
+		}
+	});
 
 	/* Tests nuevos
 	it("vacía el listado cuando se quitan las publicaciones", () => {

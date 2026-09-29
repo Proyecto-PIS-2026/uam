@@ -3,6 +3,7 @@
     max-width: var(--ancho-maximo-pagina);
     margin: 0 auto;
     padding: var(--padding-exterior-pagina);
+    padding-bottom: 1.5rem;
 }
 
 .tarjetaPerfil {

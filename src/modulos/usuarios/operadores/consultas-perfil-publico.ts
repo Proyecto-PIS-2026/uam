@@ -26,8 +26,8 @@ export type PerfilPublicoOperador = {
     publicaciones: PublicacionPerfil[];
 }
 
-export async function obtenerPerfilPublicoOperador(id: number): Promise<PerfilPublicoOperador | null> {
-    if (!Number.isSafeInteger(id) || id<=0){
+export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Promise<PerfilPublicoOperador | null> {
+    if (!nombreFantasia.trim()) {
         return null;
     }
 
@@ -37,7 +37,7 @@ export async function obtenerPerfilPublicoOperador(id: number): Promise<PerfilPu
         .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
             .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
             .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
-        .first({ id }); // El primer operador que tenga este id
+        .first({ nombreFantasia });
 
     if (!operador) {
         return null;
@@ -70,7 +70,7 @@ export async function obtenerPerfilPublicoOperador(id: number): Promise<PerfilPu
 
     // Obtener las publicaciones
     const consultaCompleta = db.orm.public.PublicacionOperador // Solo armo la consulta sin ejecutarla
-        .where({ operadorId: id })
+        .where({ operadorId: operador.id })
         .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
         .include("publicacion", (consultaPublicacion) => {
             const camposPublicacion = consultaPublicacion.select(

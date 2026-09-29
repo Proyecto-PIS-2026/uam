@@ -13,7 +13,7 @@ export default function TarjetaOperador({ operador }: TarjetaOperadorProps) {
     const inicial = operador.nombreFantasia.trim().charAt(0).toLocaleUpperCase("es");
 
     const contenido = (
-        <Link href={`/operadores/${operador.id}`} className={styles.tarjeta}>
+        <Link href={`/operadores/${encodeURIComponent(operador.nombreFantasia)}`} className={styles.tarjeta}>
             <div className={styles.imagen}>
                 {foto ? (
                     <Image src={foto} alt={`Foto de ${operador.nombreFantasia}`} fill sizes="(max-width: 767px) 64px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.foto} />

@@ -165,7 +165,7 @@ describe("TarjetaPublicacion", () => {
     ).toHaveAttribute("src", "/producto.jpg");
   });
 
-  it("usa la fotografía de la especie cuando la publicación no tiene foto", () => {
+  it("muestra sin fotografía aunque la especie tenga una imagen", () => {
     const pub = crearPublicacion();
 
     pub.foto = null;
@@ -176,11 +176,8 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
-    expect(
-      screen.getByRole("img", {
-        name: "Manzana",
-      }),
-    ).toHaveAttribute("src", "/especie.jpg");
+    expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Manzana" })).not.toBeInTheDocument();
   });
 
   it("muestra sin fotografía cuando no existe ninguna imagen", () => {
@@ -212,11 +209,13 @@ describe("TarjetaPublicacion", () => {
   });
 
   it("aumenta el precio con el botón", async () => {
+    const alPrecioActualizado = vi.fn();
     render(
       <TarjetaPublicacion
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
+        alPrecioActualizado={alPrecioActualizado}
       />,
     );
 
@@ -233,6 +232,7 @@ describe("TarjetaPublicacion", () => {
       110,
       37,
     );
+    expect(alPrecioActualizado).toHaveBeenCalledOnce();
   });
 
   it("disminuye el precio con el botón", async () => {

@@ -57,10 +57,10 @@ describe("Página pública del operador", () => {
     it("consulta el operador indicado en la URL y muestra su perfil y catálogo", async () => {
         mocks.obtenerPerfil.mockResolvedValue(perfil);
 
-        const contenido = await Page({params: Promise.resolve({id: "13"})});
+        const contenido = await Page({params: Promise.resolve({nombre: "Frutas%20del%20Norte"})});
         render(contenido);
 
-        expect(mocks.obtenerPerfil).toHaveBeenCalledWith(13);
+        expect(mocks.obtenerPerfil).toHaveBeenCalledWith("Frutas del Norte");
         expect(mocks.notFound).not.toHaveBeenCalled();
         expect(screen.getByRole("main")).toBeInTheDocument();
         expect(screen.getByRole("heading", {name: "Frutas del Norte"})).toBeInTheDocument();
@@ -71,9 +71,16 @@ describe("Página pública del operador", () => {
     it("llama a notFound cuando el operador no existe", async () => {
         mocks.obtenerPerfil.mockResolvedValue(null);
 
-        await expect(Page({params: Promise.resolve({id: "999"})})).rejects.toThrow("PERFIL_NO_ENCONTRADO");
+        await expect(Page({params: Promise.resolve({nombre: "Operador inexistente"})})).rejects.toThrow("PERFIL_NO_ENCONTRADO");
 
-        expect(mocks.obtenerPerfil).toHaveBeenCalledWith(999);
+        expect(mocks.obtenerPerfil).toHaveBeenCalledWith("Operador inexistente");
+        expect(mocks.notFound).toHaveBeenCalledOnce();
+    });
+
+    it.each(["", "   "])("llama a notFound cuando el nombre está vacío: %s", async (nombre) => {
+        await expect(Page({params: Promise.resolve({nombre})})).rejects.toThrow("PERFIL_NO_ENCONTRADO");
+
+        expect(mocks.obtenerPerfil).not.toHaveBeenCalled();
         expect(mocks.notFound).toHaveBeenCalledOnce();
     });
 });

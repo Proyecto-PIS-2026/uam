@@ -18,12 +18,12 @@ describe("/mi-mercado", () => {
     beforeEach(() => vi.clearAllMocks());
 
     it("redirige al primer operador disponible", async () => {
-        mocks.obtenerOperadorActual.mockResolvedValue({ id: 13 });
+        mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, nombreFantasia: "Frutas & Más" });
 
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
 
         expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
-        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado/13");
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado/Frutas%20%26%20M%C3%A1s");
     });
 
     it("no redirige si no hay operadores", async () => {

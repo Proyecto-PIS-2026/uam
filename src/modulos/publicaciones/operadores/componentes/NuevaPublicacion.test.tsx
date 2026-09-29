@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 
 const mocks = vi.hoisted(() => ({ alCerrar: vi.fn(), alCrear: vi.fn(), esWeb: false }));
@@ -56,6 +56,10 @@ describe("NuevaPublicacion", () => {
         prepararFetch();
     });
 
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
     it("muestra el formulario del operador actual", async () => {
         renderDrawer();
         expect(screen.getByRole("heading", { name: "Nueva publicación" })).toBeInTheDocument();
@@ -69,9 +73,29 @@ describe("NuevaPublicacion", () => {
         expect(precio).toHaveValue("1250");
     });
 
-    it("abre el selector de fotografía al editar la foto", () => {
+    it("ofrece cámara primero y también galería en mobile", () => {
         renderDrawer();
-        const abrirSelector = vi.spyOn(screen.getByLabelText("Fotografía"), "click").mockImplementation(() => {});
+        const camara = screen.getByLabelText("Fotografía");
+        const galeria = screen.getByLabelText("Fotografía desde galería");
+        const abrirCamara = vi.spyOn(camara, "click").mockImplementation(() => {});
+        const abrirGaleria = vi.spyOn(galeria, "click").mockImplementation(() => {});
+        expect(camara).toHaveAttribute("capture", "environment");
+        expect(galeria).not.toHaveAttribute("capture");
+        fireEvent.click(screen.getByRole("button", { name: "Cámara" }));
+        expect(abrirCamara).toHaveBeenCalledOnce();
+        fireEvent.click(screen.getByRole("button", { name: "Galería" }));
+        expect(abrirGaleria).toHaveBeenCalledOnce();
+        abrirCamara.mockRestore();
+        abrirGaleria.mockRestore();
+    });
+
+    it("mantiene el selector de archivos en web", () => {
+        mocks.esWeb = true;
+        renderDrawer();
+        const archivo = screen.getByLabelText("Fotografía");
+        const abrirSelector = vi.spyOn(archivo, "click").mockImplementation(() => {});
+        expect(archivo).not.toHaveAttribute("capture");
+        expect(screen.queryByRole("button", { name: "Galería" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Editar foto" }));
         expect(abrirSelector).toHaveBeenCalledOnce();
         abrirSelector.mockRestore();
@@ -87,6 +111,54 @@ describe("NuevaPublicacion", () => {
         const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
         fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
         expect(await screen.findByAltText("Vista previa de la fotografía")).toBeInTheDocument();
+    });
+
+    it("conserva la foto elegida al cancelar el selector de galería", async () => {
+        vi.stubGlobal("FileReader", class {
+            result = "data:image/png;base64,aW1hZ2Vu";
+            onload: (() => void) | null = null;
+            readAsDataURL() { this.onload?.(); }
+        });
+        renderDrawer();
+        const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
+        fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
+        expect(await screen.findByAltText("Vista previa de la fotografía")).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("Fotografía desde galería"), { target: { files: [] } });
+        expect(screen.getByAltText("Vista previa de la fotografía")).toBeInTheDocument();
+    });
+
+    it("espera a que termine la lectura de la foto antes de confirmar", async () => {
+        let terminarLectura: (() => void) | undefined;
+        vi.stubGlobal("FileReader", class {
+            result = "data:image/png;base64,aW1hZ2Vu";
+            onload: (() => void) | null = null;
+            readAsDataURL() { terminarLectura = () => this.onload?.(); }
+        });
+        renderDrawer();
+        const confirmar = screen.getByRole("button", { name: "Confirmar" });
+        await waitFor(() => expect(confirmar).toBeEnabled());
+
+        const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
+        fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
+        expect(confirmar).toBeDisabled();
+
+        await act(async () => { terminarLectura?.(); });
+        expect(confirmar).toBeEnabled();
+        expect(screen.getByAltText("Vista previa de la fotografía")).toBeInTheDocument();
+    });
+
+    it("acepta una foto de 10 MB elegida desde la galería", async () => {
+        vi.stubGlobal("FileReader", class {
+            result = "data:image/png;base64,aW1hZ2Vu";
+            onload: (() => void) | null = null;
+            readAsDataURL() { this.onload?.(); }
+        });
+        renderDrawer();
+        const archivo = new File([new Uint8Array(10 * 1024 * 1024)], "foto.png", { type: "image/png" });
+        fireEvent.change(screen.getByLabelText("Fotografía desde galería"), { target: { files: [archivo] } });
+        expect(await screen.findByAltText("Vista previa de la fotografía")).toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
     it("borra la fotografía y envía la publicación sin ella", async () => {
@@ -122,6 +194,13 @@ describe("NuevaPublicacion", () => {
         const archivo = new File(["texto"], "archivo.txt", { type: "text/plain" });
         fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
         expect(await screen.findByRole("alert")).toHaveTextContent("La fotografía debe ser PNG, JPEG o WebP");
+    });
+
+    it("rechaza una fotografía mayor a 10 MB", async () => {
+        renderDrawer();
+        const archivo = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "foto.png", { type: "image/png" });
+        fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
+        expect(await screen.findByRole("alert")).toHaveTextContent("hasta 10 MB");
     });
 
     it("muestra los errores devueltos al enviar", async () => {

@@ -19,14 +19,13 @@ export default function ControlesListadoOperadores({busqueda, alCambiarBusqueda,
 
     const contenido = (
         <div className={styles.contenedor}>
-            <div className={styles.buscador}>
-                <SearchIcon aria-hidden="true" className={styles.iconoBusqueda}/>
-                <input className={styles.inputBusqueda} type="search" value={busqueda} onChange={(evento) => alCambiarBusqueda(evento.target.value)} placeholder="Buscar operadores"/>
-            </div>
+            <TextField fullWidth size="small" label="Buscar operadores" type="search" value={busqueda} onChange={(evento) => alCambiarBusqueda(evento.target.value)} className={`${styles.selectMui} ${styles.buscador}`}
+                slotProps={{input: {startAdornment: <SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }} />}}}
+            />
 
             <div className={styles.controles}>
                 <TextField select label="Nave" value={naveSeleccionada} onChange={(evento) => alCambiarNave(evento.target.value)} size="small" className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    <MenuItem value="" className={styles.opcionSelect}>Todas</MenuItem>
+                    <MenuItem value="Todas" className={styles.opcionSelect}>Todas</MenuItem>
                     {navesDisponibles.map((nave) => (
                         <MenuItem key={nave} value={nave} className={styles.opcionSelect}>
                             Nave {nave}

@@ -19,8 +19,9 @@ const listaOperadoresConTilde = [
 
 describe("ListadoOperadores", () => {
     
-    it("Mostrar los operadores", () => {
+    it("Mostrar todos los operadores con Todas seleccionado por defecto", () => {
         render(<ListadoOperadores operadores={listaOperadores} />);
+        expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Todas");
         expect(screen.getByText("Juan")).toBeInTheDocument();
         expect(screen.getByText("Jose")).toBeInTheDocument();
         expect(screen.getByText("Alberto")).toBeInTheDocument();
@@ -30,7 +31,7 @@ describe("ListadoOperadores", () => {
     //que funcione la busqueda
     it("Buscar operadores por nombre", () => {
         render(<ListadoOperadores operadores={listaOperadores}/>);
-        const buscador = screen.getByPlaceholderText("Buscar operadores");
+        const buscador = screen.getByRole("searchbox", { name: "Buscar operadores" });
         fireEvent.change(buscador, {target: {value: "Jose",},});
 
         expect(screen.getByText("Jose")).toBeInTheDocument();
@@ -42,7 +43,7 @@ describe("ListadoOperadores", () => {
     //que funcione la busqueda buscando por nombre que este incompleto 
     it("Buscar operadores por nombre incompleto", () => {
         render(<ListadoOperadores operadores={listaOperadores}/>);
-        const buscador = screen.getByPlaceholderText("Buscar operadores");
+        const buscador = screen.getByRole("searchbox", { name: "Buscar operadores" });
         fireEvent.change(buscador, {target: {value: "Jua",},});
 
         expect(screen.getByText("Juan")).toBeInTheDocument();
@@ -54,7 +55,7 @@ describe("ListadoOperadores", () => {
     //que funcione sin mayusculas
     it("Buscar ignorando mayúsculas", () => {
         render(<ListadoOperadores operadores={listaOperadores}/>);
-        const buscador = screen.getByPlaceholderText("Buscar operadores");
+        const buscador = screen.getByRole("searchbox", { name: "Buscar operadores" });
         fireEvent.change(buscador, {target: {value: "JOSE",},});
         expect(screen.getByText("Jose")).toBeInTheDocument();
     });
@@ -62,7 +63,7 @@ describe("ListadoOperadores", () => {
     //buscando todo con minusculas
     it("Buscando solo con minusculas", () => {
         render(<ListadoOperadores operadores={listaOperadores}/>);
-        const buscador = screen.getByPlaceholderText("Buscar operadores");
+        const buscador = screen.getByRole("searchbox", { name: "Buscar operadores" });
         fireEvent.change(buscador, {target: {value: "jose",},});
         expect(screen.getByText("Jose")).toBeInTheDocument();
     });
@@ -70,7 +71,7 @@ describe("ListadoOperadores", () => {
     //operador con tilde 
     it("Buscar un operador que tiene tilde, sin tilde", () => {
         render(<ListadoOperadores operadores={listaOperadoresConTilde}/>);
-        const buscador = screen.getByPlaceholderText("Buscar operadores");
+        const buscador = screen.getByRole("searchbox", { name: "Buscar operadores" });
         fireEvent.change(buscador, {target: {value: "Maria",},});
         expect(screen.getByText("María")).toBeInTheDocument();
     });

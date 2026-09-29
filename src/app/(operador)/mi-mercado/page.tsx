@@ -5,5 +5,5 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
     const operador = await obtenerOperadorActual();
-    redirect(`/mi-mercado/${operador.id}`);
+    redirect(`/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`);
 }

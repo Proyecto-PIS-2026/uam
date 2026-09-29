@@ -7,7 +7,6 @@ import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import styles from "./tarjetaProducto.module.css";
 
 type Props = {
-  idEspecie: number;
   nombre: string;
   operadores: number;
   imagen: string | null;
@@ -28,9 +27,9 @@ function FotoProducto({ imagen, nombre }: Pick<Props, "imagen" | "nombre">) {
   );
 }
 
-export default function ProductoCard({ idEspecie, nombre, operadores, imagen }: Props) {
+export default function ProductoCard({ nombre, operadores, imagen }: Props) {
   return (
-    <Link href={`/publicaciones?especieId=${idEspecie}`} className={styles.tarjeta}>
+    <Link href={`/publicaciones?especie=${encodeURIComponent(nombre)}`} className={styles.tarjeta}>
       <FotoProducto key={`${nombre}:${imagen ?? ""}`} imagen={imagen} nombre={nombre} />
 
       <div className={styles.contenido}>

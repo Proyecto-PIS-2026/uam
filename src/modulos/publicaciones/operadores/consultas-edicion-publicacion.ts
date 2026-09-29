@@ -1,5 +1,6 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import type { OpcionCategoria, OpcionEdicion, OpcionPresentacion, OpcionVariedad } from "./componentes/DrawerEditarPublicacion";
+import { ordenarOpcionesPorNombre } from "./ordenar-opciones";
 
 export type OpcionesEdicionPublicacion = {
     especies: OpcionEdicion[];
@@ -48,26 +49,26 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
     const categoriasDisponibles = categorias.filter((categoria) => categoria.especieId === null || especiesActivas.has(categoria.especieId));
 
     return {
-        especies: especies.map((especie) => ({ id: especie.id, nombre: especie.nombreEspecie })),
-        variedades: variedadesDisponibles.map((variedad) => ({
+        especies: ordenarOpcionesPorNombre(especies.map((especie) => ({ id: especie.id, nombre: especie.nombreEspecie }))),
+        variedades: ordenarOpcionesPorNombre(variedadesDisponibles.map((variedad) => ({
             id: variedad.id,
             nombre: variedad.nombreVariedad,
             especieId: variedad.especieId,
-        })),
-        presentaciones: presentacionesDisponibles.map((presentacion) => ({
+        }))),
+        presentaciones: ordenarOpcionesPorNombre(presentacionesDisponibles.map((presentacion) => ({
             id: presentacion.id,
             nombre: presentacion.nombrePresentacion,
             variedadId: presentacion.variedadId,
-        })),
-        categorias: categoriasDisponibles.map((categoria) => ({
+        }))),
+        categorias: ordenarOpcionesPorNombre(categoriasDisponibles.map((categoria) => ({
             id: categoria.id,
             nombre: categoria.nombreCategoria,
             especieId: categoria.especieId,
-        })),
-        calibres: calibres.map((calibre) => ({
+        }))),
+        calibres: ordenarOpcionesPorNombre(calibres.map((calibre) => ({
             id: calibre.id,
             nombre: `${calibre.codigoCalibre} - ${calibre.nombreCalibre}`,
-        })),
-        paises: paises.map((pais) => ({ id: pais.id, nombre: pais.nombrePais })),
+        }))),
+        paises: ordenarOpcionesPorNombre(paises.map((pais) => ({ id: pais.id, nombre: pais.nombrePais }))),
     };
 }

@@ -119,9 +119,9 @@ describe("DrawerPublicacionPerfil", () => {
         expect(screen.queryByText("-")).not.toBeInTheDocument();
     });
 
-    it("muestra Sin precio cuando la publicación no tiene precio", () => {
+    it("muestra Consultar precio cuando la publicación no tiene precio", () => {
         render(<DrawerPublicacionPerfil publicacion={{...publicacion, precio: null}} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        expect(screen.getByText("Sin precio")).toBeInTheDocument();
+        expect(screen.getByText("Consultar precio")).toBeInTheDocument();
         expect(screen.queryByText("$120")).not.toBeInTheDocument();
     });
 

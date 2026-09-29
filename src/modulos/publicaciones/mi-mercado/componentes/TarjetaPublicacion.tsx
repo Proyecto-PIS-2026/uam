@@ -10,6 +10,7 @@ type Props = {
     operadorId: number;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
+    alPrecioActualizado?: () => void;
 };
 
 export default function TarjetaPublicacion({
@@ -17,6 +18,7 @@ export default function TarjetaPublicacion({
     operadorId,
     incrementoPrecio,
     alConsultar,
+    alPrecioActualizado,
 }: Props) {
     let precioInicial = 0;
 
@@ -52,6 +54,7 @@ export default function TarjetaPublicacion({
         try {
             await actualizarPrecio(pub.id, nuevoPrecio, operadorId);
             setPrecioGuardado({ base: pub.precio, valor: nuevoPrecio });
+            alPrecioActualizado?.();
         } catch (error) {
             setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
         } finally {
@@ -179,19 +182,6 @@ export default function TarjetaPublicacion({
                             sizes="(min-width: 768px) 320px, 128px"
                             unoptimized
                             className="h-full w-full object-cover"
-                        />
-                    ) : pub.presentacion.variedad.especie
-                          .fotoEspecie ? (
-                        <Image
-                            src={
-                                pub.presentacion.variedad.especie
-                                    .fotoEspecie
-                            }
-                            alt={especie}
-                            fill
-                            sizes="(min-width: 768px) 320px, 128px"
-                            unoptimized
-                            className="h-full w-full object-cover opacity-70"
                         />
                     ) : (
                         <div

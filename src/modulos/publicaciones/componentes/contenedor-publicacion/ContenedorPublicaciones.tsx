@@ -19,9 +19,17 @@ function ContenidoPublicaciones({publicaciones, especie = ""}: PropiedadesConten
 	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() =>
 		especie ? publicaciones.filter((publicacion) => publicacion.especie === especie) : publicaciones
 	);
+
+	function quitarEspecieDeUrl() {
+		const url = new URL(window.location.href);
+		if (!url.searchParams.has("especie")) return;
+		url.searchParams.delete("especie");
+		window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+	}
+
 	return (
-		<div className="flex flex-col gap-8">
-			<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especie} alFiltrar={setPublicacionesFiltradas}/>
+		<div className="flex flex-col gap-6">
+			<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especie} alFiltrar={setPublicacionesFiltradas} alLimpiar={quitarEspecieDeUrl}/>
 			<ListadoPublicaciones publicaciones={publicacionesFiltradas} />
 		</div>
 	);

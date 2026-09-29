@@ -151,7 +151,8 @@ describe("POST /api/publicaciones", () => {
         expect(mocks.obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(1);
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
         expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado");
-        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/1");
+        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%201");
+        expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%201");
         expect(cuerpo).toEqual(resultadoEsperado);
     });
 
@@ -187,8 +188,8 @@ describe("POST /api/publicaciones", () => {
         expect(mocks.obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(7);
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
         expect(mocks.altaPublicacionOperador).toHaveBeenCalledWith({ especieId: 4, operadorId: 7 });
-        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/7");
-        expect(revalidatePath).toHaveBeenCalledWith("/operadores/7");
+        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
+        expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
     });
 
     it.each([null, "7", 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])(

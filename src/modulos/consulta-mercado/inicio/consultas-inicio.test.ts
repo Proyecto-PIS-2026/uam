@@ -4,6 +4,10 @@ import { obtenerEspeciesConPublicacionesActivas, obtenerEspeciesInicio } from ".
 // Mocks hoisteados: se declaran antes de que vi.mock los referencie internamente
 const mockDb = vi.hoisted(() => ({
     query: vi.fn(),
+    sql: vi.fn((fragmentos: TemplateStringsArray) => {
+        void fragmentos;
+        return {returnsRow: () => ({build: () => ({})})};
+    }),
 }));
 
 const mockFs = vi.hoisted(() => ({
@@ -22,20 +26,12 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
             public: {
                 especie: {
                     columns: {
-                        id: "id",
                         nombreEspecie: "nombreEspecie",
-                        fotoEspecie: "fotoEspecie",
                     },
                 },
             },
         },
-        raw: {
-            sql: () => ({
-                returnsRow: () => ({
-                    build: () => ({}),
-                }),
-            }),
-        },
+        raw: {sql: mockDb.sql},
     },
 }));
 
@@ -56,8 +52,8 @@ describe("consultas-inicio", () => {
 
         it("obtiene las especies con publicaciones activas", async () => {
             const especiesMock = [
-                { idEspecie: 1, nombreEspecie: "Banana", fotoEspecie: null, cantidadOperadores: 3 },
-                { idEspecie: 2, nombreEspecie: "Manzana", fotoEspecie: null, cantidadOperadores: 5 },
+                { nombreEspecie: "Banana", cantidadOperadores: 3 },
+                { nombreEspecie: "Manzana", cantidadOperadores: 5 },
             ];
 
             mockDb.query.mockResolvedValue(especiesMock);
@@ -66,6 +62,9 @@ describe("consultas-inicio", () => {
 
             expect(resultado).toEqual(especiesMock);
             expect(mockDb.query).toHaveBeenCalled();
+            const sql = mockDb.sql.mock.calls[0][0].join("");
+            expect(sql).toContain('GROUP BY e."nombreEspecie"');
+            expect(sql).toContain('COUNT(DISTINCT po."operadorId")');
         });
 
     });
@@ -74,33 +73,33 @@ describe("consultas-inicio", () => {
 
         it("devuelve las especies con su foto genérica", async () => {
             mockDb.query.mockResolvedValue([
-                { idEspecie: 1, nombreEspecie: "Banana", fotoEspecie: null, cantidadOperadores: 3 },
+                { nombreEspecie: "Banana", cantidadOperadores: 3 },
             ]);
             mockFs.readdir.mockResolvedValue(["banana.webp"]);
 
             const resultado = await obtenerEspeciesInicio();
 
             expect(resultado).toEqual([
-                { idEspecie: 1, nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: "/generico/banana.webp" },
+                { nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: "/generico/banana.webp" },
             ]);
         });
 
         it("devuelve null cuando la especie no tiene foto genérica", async () => {
             mockDb.query.mockResolvedValue([
-                { idEspecie: 1, nombreEspecie: "Banana", fotoEspecie: null, cantidadOperadores: 3 },
+                { nombreEspecie: "Banana", cantidadOperadores: 3 },
             ]);
             mockFs.readdir.mockResolvedValue([]);
 
             const resultado = await obtenerEspeciesInicio();
 
             expect(resultado).toEqual([
-                { idEspecie: 1, nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: null },
+                { nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: null },
             ]);
         });
 
         it("usa una foto PNG cuando no existe WEBP", async () => {
             mockDb.query.mockResolvedValue([
-                { idEspecie: 1, nombreEspecie: "Manzana", fotoEspecie: null, cantidadOperadores: 5 },
+                { nombreEspecie: "Manzana", cantidadOperadores: 5 },
             ]);
             mockFs.readdir.mockResolvedValue(["manzana.png"]);
 
@@ -111,7 +110,7 @@ describe("consultas-inicio", () => {
 
         it("usa una foto JPG cuando no existe WEBP ni PNG", async () => {
             mockDb.query.mockResolvedValue([
-                { idEspecie: 1, nombreEspecie: "Sandía", fotoEspecie: null, cantidadOperadores: 1 },
+                { nombreEspecie: "Sandía", cantidadOperadores: 1 },
             ]);
             mockFs.readdir.mockResolvedValue(["sandia.jpg"]);
 
@@ -122,7 +121,7 @@ describe("consultas-inicio", () => {
 
         it("ignora tildes y mayúsculas al buscar el archivo genérico", async () => {
             mockDb.query.mockResolvedValue([
-                { idEspecie: 1, nombreEspecie: "Sandía", fotoEspecie: null, cantidadOperadores: 1 },
+                { nombreEspecie: "Sandía", cantidadOperadores: 1 },
             ]);
             mockFs.readdir.mockResolvedValue(["sandia.webp"]);
 
@@ -133,7 +132,7 @@ describe("consultas-inicio", () => {
 
         it("devuelve fotoGenerica null si la carpeta /public/generico no existe (ENOENT)", async () => {
             mockDb.query.mockResolvedValue([
-                { idEspecie: 1, nombreEspecie: "Kiwi", fotoEspecie: null, cantidadOperadores: 1 },
+                { nombreEspecie: "Kiwi", cantidadOperadores: 1 },
             ]);
 
             const error = Object.assign(new Error("no existe"), { code: "ENOENT" });

@@ -10,18 +10,18 @@ import styles from "./page.module.css";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-    params: Promise<{ id: string; }>;
+    params: Promise<{ nombre: string; }>;
 };
 
 export default async function Page({ params }: PageProps) {
-    const { id } = await params;
-    const idOperador = Number(id);
+    const { nombre: nombreCodificado } = await params;
+    const nombre = decodeURIComponent(nombreCodificado);
 
-    if (!Number.isSafeInteger(idOperador) || idOperador <= 0) {
+    if (!nombre.trim()) {
         notFound();
     }
 
-    const perfil = await obtenerPerfilPublicoOperador(idOperador);
+    const perfil = await obtenerPerfilPublicoOperador(nombre);
 
     if (!perfil) {
         notFound(); // https://nextjs.org/docs/app/api-reference/functions/not-found

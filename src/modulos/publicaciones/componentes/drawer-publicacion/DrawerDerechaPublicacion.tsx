@@ -73,7 +73,7 @@ export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: Dr
                         <div className={styles.bloqueInferior}>
                             <div className={styles.operador}><span className={styles.publicado}>Publicado por</span>{" "}<span className={styles.nombreOperador}>{publicacion.operador.nombreFantasia}</span></div>
                             <div className={styles.bloqueBotones}>
-                                <Link href={`/operadores/${publicacion.operador.id}`} className={styles.botonPerfil} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
+                                <Link href={`/operadores/${encodeURIComponent(publicacion.operador.nombreFantasia)}`} className={styles.botonPerfil} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
                                 <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${publicacion.operador.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                                     <span>WhatsApp</span>

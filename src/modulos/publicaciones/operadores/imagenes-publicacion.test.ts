@@ -25,7 +25,7 @@ vi.mock("node:crypto", () => ({ randomUUID: generarUUID, default: { randomUUID: 
 const UUID = "12345678-1234-4234-8234-123456789abc";
 const NOMBRE_PNG = `${UUID}.png`;
 const URL_PNG = `/api/publicaciones/imagenes/42/${NOMBRE_PNG}`;
-const TAMANO_MAXIMO = 5 * 1024 * 1024;
+const TAMANO_MAXIMO = 10 * 1024 * 1024;
 const PNG_PEQUENO = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l8sAAAAASUVORK5CYII=",
     "base64",
@@ -100,16 +100,16 @@ describe("guardarImagenPublicacion", () => {
         { caso: "archivo ausente", crear: () => null as unknown as File },
         { caso: "archivo sin arrayBuffer", crear: () => ({ size: 10 }) as File },
         { caso: "archivo vacío", crear: () => archivo(Buffer.alloc(0)) },
-        { caso: "tamaño declarado mayor a 5 MB", crear: () => archivo(PNG_PEQUENO, TAMANO_MAXIMO + 1) },
+        { caso: "tamaño declarado mayor a 10 MB", crear: () => archivo(PNG_PEQUENO, TAMANO_MAXIMO + 1) },
         { caso: "contenido vacío aunque declare tamaño válido", crear: () => archivo(Buffer.alloc(0), 1) },
-        { caso: "contenido mayor a 5 MB aunque declare tamaño válido", crear: () => archivo(Buffer.alloc(TAMANO_MAXIMO + 1), 1) },
+        { caso: "contenido mayor a 10 MB aunque declare tamaño válido", crear: () => archivo(Buffer.alloc(TAMANO_MAXIMO + 1), 1) },
     ])("rechaza $caso sin escribir archivos", async ({ crear }) => {
-        await expect(guardarImagenPublicacion(42, crear())).rejects.toThrow("5 MB");
+        await expect(guardarImagenPublicacion(42, crear())).rejects.toThrow("10 MB");
         expect(sistemaArchivos.mkdir).not.toHaveBeenCalled();
         expect(sistemaArchivos.writeFile).not.toHaveBeenCalled();
     });
 
-    it("acepta una imagen de exactamente 5 MB", async () => {
+    it("acepta una imagen de exactamente 10 MB", async () => {
         const contenido = Buffer.alloc(TAMANO_MAXIMO);
         PNG_PEQUENO.copy(contenido);
 

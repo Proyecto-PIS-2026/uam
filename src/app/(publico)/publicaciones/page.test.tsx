@@ -3,11 +3,6 @@ import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Pub
 import PaginaPublicaciones from "./page";
 
 const consultarPublicacionesMock = vi.hoisted(() => vi.fn());
-const buscarEspecieMock = vi.hoisted(() => vi.fn());
-
-vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
-	db: {orm: {public: {Especie: {select: () => ({first: buscarEspecieMock})}}}},
-}));
 
 vi.mock("@/modulos/consulta-mercado/acciones/Publicaciones", () => ({
 	consultarPublicaciones: consultarPublicacionesMock,
@@ -57,11 +52,9 @@ describe("PaginaPublicaciones", () => {
 		vi.clearAllMocks();
 	});
 
-	it("resuelve el ID de la especie de inicio y lo pasa al filtro del catálogo", async () => {
-		buscarEspecieMock.mockResolvedValue({nombreEspecie: "Manzana"});
+	it("pasa el nombre de la especie de inicio al filtro del catálogo", async () => {
 		consultarPublicacionesMock.mockResolvedValue({publicaciones: []});
-		render(await PaginaPublicaciones({searchParams: Promise.resolve({especieId: "7"})}));
-		expect(buscarEspecieMock).toHaveBeenCalledWith({id: 7});
+		render(await PaginaPublicaciones({searchParams: Promise.resolve({especie: "Manzana"})}));
 		expect(screen.getByTestId("contenedor-publicaciones")).toHaveAttribute("data-especie", "Manzana");
 	});
 

@@ -67,23 +67,23 @@ describe("obtenerPerfilPublicoOperador", () => {
         );
     });
 
-    // Verifica que IDs invalidos sean rechazados sin consultar la base de datos
-    it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
-        "rechaza el ID inválido %s sin consultar la base",
-        async (id) => {
-            const resultado = await obtenerPerfilPublicoOperador(id);
+    // Verifica que nombres vacíos sean rechazados sin consultar la base de datos
+    it.each(["", "   "])(
+        "rechaza el nombre vacío %s sin consultar la base",
+        async (nombreFantasia) => {
+            const resultado = await obtenerPerfilPublicoOperador(nombreFantasia);
 
             expect(resultado).toBeNull();
             expect(mockDb.operador.first).not.toHaveBeenCalled();
         }
     );
 
-    // Verifica que se devuelva null cuando no existe un operador con ese ID
+    // Verifica que se devuelva null cuando no existe un operador con ese nombre
     it("devuelve null si el operador no existe", async () => {
-        const resultado = await obtenerPerfilPublicoOperador(13);
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
 
         expect(resultado).toBeNull();
-        expect(mockDb.operador.first).toHaveBeenCalledWith({ id: 13 });
+        expect(mockDb.operador.first).toHaveBeenCalledWith({ nombreFantasia: "Frutas del Norte" });
         expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
     });
 
@@ -94,7 +94,7 @@ describe("obtenerPerfilPublicoOperador", () => {
             locales: [],
         });
 
-        const resultado = await obtenerPerfilPublicoOperador(13);
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
 
         expect(resultado).toBeNull();
         expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe("obtenerPerfilPublicoOperador", () => {
             ],
         });
 
-        const resultado = await obtenerPerfilPublicoOperador(13);
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
 
         expect(resultado).toBeNull();
         expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
@@ -123,7 +123,7 @@ describe("obtenerPerfilPublicoOperador", () => {
     it("incluye un local sin fecha de fin aunque no haya publicaciones", async () => {
         mockDb.operador.first.mockResolvedValue(operadorConLocal);
 
-        const resultado = await obtenerPerfilPublicoOperador(13);
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
 
         expect(resultado).toEqual({
             id: 13,
@@ -160,7 +160,7 @@ describe("obtenerPerfilPublicoOperador", () => {
             ],
         });
 
-        const resultado = await obtenerPerfilPublicoOperador(13);
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
 
         expect(resultado?.locales).toEqual([
             { numeroLocal: "18", nombreNave: "B" },
@@ -195,7 +195,7 @@ describe("obtenerPerfilPublicoOperador", () => {
             { publicacion: { ...publicacionVisible, id: 104, tipoPublicacion: "PRODUCTOR" }, pais: { nombrePais: "URUGUAY" } },
         ]);
 
-        const resultado = await obtenerPerfilPublicoOperador(13);
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
 
         expect(resultado?.publicaciones).toEqual([
             {

@@ -15,7 +15,6 @@ import ProductoCard from "./tarjetaProducto";
 import styles from "./inicio.module.css";
 
 type EspecieInicio = {
-    idEspecie: number;
     nombreEspecie: string;
     fotoGenerica: string | null;
     cantidadOperadores: number;
@@ -75,7 +74,7 @@ export default function Inicio({ especies }: Props) {
                     <button type="button" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></button>
                 </nav>
 
-                <section aria-labelledby="titulo-especies">
+                <section className={styles.especies} aria-labelledby="titulo-especies">
                     <div className={styles.tituloContenedor}>
                         <HojasDecorativas variante="separador" />
                         <h2 className={styles.titulo} id="titulo-especies">Especies</h2>
@@ -83,11 +82,10 @@ export default function Inicio({ especies }: Props) {
                     </div>
 
                     <div className={styles.controles}>
-                        <div className={styles.buscador}>
-                            <SearchIcon aria-hidden="true" className={styles.iconoBusqueda} />
-                            <input className={styles.inputBusqueda} type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }} placeholder="Buscar especies" aria-label="Buscar especies"/>
-                        </div>
-                        <TextField select label="Ordenar por" value={orden} onChange={(evento) => { setOrden(evento.target.value); setPaginaActual(1); }} size="small" className={styles.selectMui}>
+                        <TextField fullWidth size="small" label="Buscar especies" type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }} className={`${styles.selectMui} ${styles.filtroBuscador}`}
+                            slotProps={{input: {startAdornment: <SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }} />}}}
+                        />
+                        <TextField select label="Ordenar por" value={orden} onChange={(evento) => { setOrden(evento.target.value); setPaginaActual(1); }} size="small" className={`${styles.selectMui} ${styles.filtroOrden}`}>
                             <MenuItem value="a-z" className={styles.opcionSelect}>A-Z</MenuItem>
                             <MenuItem value="z-a" className={styles.opcionSelect}>Z-A</MenuItem>
                         </TextField>
@@ -99,7 +97,7 @@ export default function Inicio({ especies }: Props) {
                         <>
                             <div className={styles.lista}>
                                 {especiesPagina.map((especie) => (
-                                    <ProductoCard key={especie.idEspecie} idEspecie={especie.idEspecie} nombre={especie.nombreEspecie} operadores={especie.cantidadOperadores} imagen={especie.fotoGenerica} />
+                                    <ProductoCard key={especie.nombreEspecie} nombre={especie.nombreEspecie} operadores={especie.cantidadOperadores} imagen={especie.fotoGenerica} />
                                 ))}
                             </div>
 
