@@ -1,0 +1,44 @@
+[
+  {
+    "id": "dropDefault.publicacion.fecha",
+    "label": "Drop default on \"publicacion\".\"fecha\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "fecha",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"fecha\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "fecha"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop default on \"fecha\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ALTER COLUMN \"fecha\" DROP DEFAULT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"fecha\" has no default",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"column_default\" IS NULL)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "fecha"
+        ]
+      }
+    ]
+  }
+]
