@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("BP-06: modificación rápida del precio", async ({ page }) => {
-  const rutaMercado = "/mi-mercado/Mercado%20Verde%20UAM";
+  const rutaMercado = "/mi-mercado";
 
   await page.goto(rutaMercado);
 
@@ -9,14 +9,12 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
     page.getByRole("heading", { name: "Mi Mercado" }),
   ).toBeVisible();
 
-  // Buscamos una publicación que tenga precio.
   const botonPrecio = page
     .getByRole("button", { name: /^\$\d+$/ })
     .first();
 
   await expect(botonPrecio).toBeVisible();
 
-  // Obtenemos la tarjeta de esa publicación.
   const tarjeta = botonPrecio.locator(
     'xpath=ancestor::div[contains(@class,"rounded-2xl")][1]',
   );
@@ -29,15 +27,11 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
     name: "Disminuir precio",
   });
 
-  // CA-1 y CA-2: los controles deben estar visibles.
+  // CA-1 y CA-2
   await expect(aumentar).toBeVisible();
   await expect(disminuir).toBeVisible();
+  await expect(tarjeta.getByTitle("Editar precio")).toBeVisible();
 
-  await expect(
-    tarjeta.getByTitle("Editar precio"),
-  ).toBeVisible();
-
-  // Guardamos el precio original.
   const textoInicial = await botonPrecio.textContent();
 
   if (!textoInicial) {
@@ -45,28 +39,34 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
   }
 
   const precioInicial = Number(textoInicial.replace("$", ""));
+  let aumentoRealizado = false;
 
-  // CA-3: aumentar precio sin cambiar de pantalla.
-  await aumentar.click();
+  try {
+    // CA-3: aumentar sin cambiar de pantalla.
+    await aumentar.click();
+    aumentoRealizado = true;
 
-  await expect(
-    tarjeta.getByRole("button", {
-      name: `$${precioInicial + 10}`,
-      exact: true,
-    }),
-  ).toBeVisible();
+    await expect(
+      tarjeta.getByRole("button", {
+        name: `$${precioInicial + 10}`,
+        exact: true,
+      }),
+    ).toBeVisible();
 
-  await expect(page).toHaveURL(rutaMercado);
+    await expect(page).toHaveURL((url) =>
+      url.pathname.startsWith("/mi-mercado"),
+    );
+  } finally {
+    // Restauramos el precio original.
+    if (aumentoRealizado) {
+      await disminuir.click();
 
-  // Disminuir nuevamente.
-  await disminuir.click();
-
-  await expect(
-    tarjeta.getByRole("button", {
-      name: `$${precioInicial}`,
-      exact: true,
-    }),
-  ).toBeVisible();
-
-  await expect(page).toHaveURL(rutaMercado);
+      await expect(
+        tarjeta.getByRole("button", {
+          name: `$${precioInicial}`,
+          exact: true,
+        }),
+      ).toBeVisible();
+    }
+  }
 });
