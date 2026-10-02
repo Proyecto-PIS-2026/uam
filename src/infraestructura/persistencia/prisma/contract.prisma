@@ -183,7 +183,6 @@ model Publicacion {
   cantidadUnidades      Int?
   foto                  String?
   tipoPublicacion       TipoPublicacion
-
   presentacionId        Int
   presentacion          Presentacion          @relation(fields:[presentacionId], references:[id])
   categoriaId           Int
