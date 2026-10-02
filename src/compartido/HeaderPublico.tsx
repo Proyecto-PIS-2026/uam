@@ -27,6 +27,10 @@ const opcionesMenu = [
         nombre: "Mi mercado",
         ruta: "/mi-mercado",
     },
+        {
+        nombre: "Alta Usuarios",
+        ruta: "/alta-usuario",
+    },
 ];
 
 export default function HeaderPublico() {
