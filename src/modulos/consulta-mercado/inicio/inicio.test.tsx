@@ -105,11 +105,10 @@ describe("inicio", () => {
         expect(enlace).toHaveAttribute("target", "_blank");
     });
 
-    it("avisa cuando se selecciona Lista Inteligente y no hay URL configurada", () => {
-        const alerta = vi.spyOn(window, "alert").mockImplementation(() => {});
-        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
+    it("avisa cuando se selecciona Lista Inteligente y no hay URL configurada", async () => {
+        render(<Inicio especies={especiesMock} urlListaInteligente={null}/>);
         fireEvent.click(screen.getByRole("button", { name: "Lista inteligente" }));
-        expect(alerta).toHaveBeenCalledWith("La Lista Inteligente no está disponible");
-        alerta.mockRestore();
+        const aviso = await screen.findByRole("alert");
+        expect(aviso).toHaveTextContent("La Lista Inteligente no está disponible");
     });
 })
