@@ -180,6 +180,7 @@ model Publicacion {
   publicacionDisponible Boolean               @default(true)
   publicacionActiva     Boolean               @default(true)
   precio                Numeric(12, 2)?
+  cantidadUnidades      Int?
   foto                  String?
   tipoPublicacion       TipoPublicacion
 
