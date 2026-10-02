@@ -2,6 +2,8 @@
 import styles from "./FormularioAltaUsuario.module.css";
 import { useState, type FormEvent } from "react";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import { altaOperador } from "./altaOperador";
+
 
 export default function FormularioAltaUsuario() {
     const [rol, setRol] = useState("");
@@ -13,14 +15,64 @@ export default function FormularioAltaUsuario() {
     const [locales, setLocales] = useState([
         { nombre: "", nave: "", contrato: "" }
     ]);
+    const [codigoPais, setCodigoPais] = useState("+598");
 
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        "hacer el alta en la bd";
+    const [errores, setErrores] = useState<string[]>([]);
+    const [enviando, setEnviando] = useState(false);
+
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setErrores([]);
+        setEnviando(true);
+
+        try {
+            if (rol === "operador") {
+                const resultado = await altaOperador({
+                    rol,
+                    nombreUsuario,
+                    contraseña,
+                    confirmacionContraseña: confirmacioncontraseña,
+                    nombre,
+                    codigoPais,
+                    telefono,
+                    locales: locales.map((local) => ({
+                        nombre: local.nombre,
+                        naveId: Number(local.nave),
+                        contrato: local.contrato,
+                    })),
+                });
+
+                if (!resultado.esValido) {
+                    setErrores(resultado.errores);
+                    return;
+                }
+
+                setRol("");
+                setNombreUsuario("");
+                setContraseña("");
+                setConfirmacionContraseña("");
+                setCodigoPais("+598");
+                setNombre("");
+                settelefono("");
+                setLocales([{ nombre: "", nave: "", contrato: "" }]);
+                alert(resultado.mensaje); // provisorio
+                return;
+            }
+
+            // Pendiente: productor y administrador
+            setErrores(["Esta alta todavía no está disponible para el rol seleccionado."]);
+        } finally {
+            setEnviando(false);
+        }
     }
 
     function agregarLocal() {
         setLocales([...locales, { nombre: "", nave: "", contrato: "" }]);
     }
+
+    function actualizarLocal(index: number, campo: "nombre" | "nave" | "contrato", valor: string) {
+        setLocales(locales.map((l, i) => (i === index ? { ...l, [campo]: valor } : l)));
+    }       
         
     function eliminarLocal(index: number) {
         if (locales.length === 1) {
@@ -65,18 +117,25 @@ export default function FormularioAltaUsuario() {
                     <input
                         id="nombreUsuario"
                         type="text"
+                        value={nombreUsuario}
+                        required
+                        onChange={(e) => setNombreUsuario(e.target.value)}
                         placeholder="Ingresar nombre de usuario"
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
                     />
                 </div>
 
                 <div className={styles.campo}>
-                    <label htmlFor="contrseña" className={styles.label}>
+                    <label htmlFor="contraseña" className={styles.label}>
                         Contraseña<span className="text-red-500">*</span>
                     </label>
                     <input
                         id="contraseña"
-                        type="text"
+                        type="password"
+                        value={contraseña}
+                        required
+                        minLength={8}
+                        onChange={(e) => setContraseña(e.target.value)}
                         placeholder="Ingresar contraseña"
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
                     />
@@ -87,8 +146,12 @@ export default function FormularioAltaUsuario() {
                         Confirmación de Contraseña<span className="text-red-500">*</span>
                     </label>
                     <input
-                        id="nombreUsuario"
-                        type="text"
+                        id="confirmacionContraseña"
+                        type="password"
+                        value={confirmacioncontraseña}
+                        required
+                        minLength={8}
+                        onChange={(e) => setConfirmacionContraseña(e.target.value)}
                         placeholder="ingresar confirmación de contraseña"
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
                     />
@@ -103,6 +166,9 @@ export default function FormularioAltaUsuario() {
                         <input
                             id="nombre"
                             type="text"
+                            value={nombre}
+                            required
+                            onChange={(e) => setNombre(e.target.value)}
                             placeholder="Ingresar nombre"
                             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
                         />
@@ -112,12 +178,29 @@ export default function FormularioAltaUsuario() {
                         <label htmlFor="numero" className={styles.label}>
                             Numero de Teléfono (whatsApp)<span className="text-red-500">*</span>
                         </label>
-                        <input
-                            id="numero"
-                            type="text"
-                            placeholder="Ingresar número de teléfono"
-                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
-                        />
+                        <div className="flex gap-2">
+                            <select
+                                value={codigoPais}
+                                onChange={(e) => setCodigoPais(e.target.value)}
+                                aria-label="Código de país"
+                                className="w-44 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="+598">+598 (Uruguay)</option>
+                                <option value="+54">+54 (Argentina)</option>
+                                <option value="+55">+55 (Brasil)</option>
+                                <option value="+56">+56 (Chile)</option>
+                                <option value="+595">+595 (Paraguay)</option>
+                            </select>
+                            <input
+                                id="numero"
+                                type="tel"
+                                value={telefono}
+                                required
+                                onChange={(e) => settelefono(e.target.value)}
+                                placeholder="Ej: 99123456"
+                                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            />
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-3">
@@ -128,41 +211,31 @@ export default function FormularioAltaUsuario() {
                             <div key={index} className="flex flex-row gap-3">
                                 <input
                                     type="text"
-                                    placeholder="Nombre del local"
+                                    placeholder="Numero del local"
                                     value={local.nombre}
-                                    onChange={(e) => {
-                                        const nuevosLocales = [...locales];
-                                        nuevosLocales[index].nombre = e.target.value;
-                                        setLocales(nuevosLocales);
-                                    }}
+                                    required
+                                    onChange={(e) => actualizarLocal(index, "nombre", e.target.value)}
                                     className="w-1/3 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
                                 />
 
                                 <select
                                     value={local.nave}
-                                    onChange={(e) => {
-                                        const nuevosLocales = [...locales];
-                                        nuevosLocales[index].nave = e.target.value;
-                                        setLocales(nuevosLocales);
-                                    }}
+                                    required
+                                    onChange={(e) => actualizarLocal(index, "nave", e.target.value)}
                                     className="w-1/4 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
                                 >
+                                    {/* Provisorio, luego se traerá de la base de datos */}
                                     <option value="">Seleccionar nave</option>
-                                    <option value="nave1">Nave A</option>
-                                    <option value="nave2">Nave B</option>
-                                    <option value="nave3">Nave C</option>
-                                    <option value="nave4">Nave D</option>
+                                    <option value="1">Nave A</option>
+                                    <option value="2">Nave B</option>
+                                    <option value="3">Nave C</option>
+                                    <option value="4">Nave D</option>
                                 </select>
 
                                 <input
-                                    type="text"
-                                    placeholder="Contrato"
+                                    type="date"
                                     value={local.contrato}
-                                    onChange={(e) => {
-                                        const nuevosLocales = [...locales];
-                                        nuevosLocales[index].contrato = e.target.value;
-                                        setLocales(nuevosLocales);
-                                    }}
+                                    onChange={(e) => actualizarLocal(index, "contrato", e.target.value)}
                                     className="w-1/3 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
                                 />
 
@@ -190,6 +263,13 @@ export default function FormularioAltaUsuario() {
                 </>
                 )}
 
+                {errores.length > 0 && (
+                        <ul className="text-sm text-red-500">
+                            {errores.map((error) => (
+                                <li key={error}>{error}</li>
+                            ))}
+                        </ul>
+                )}
                 <div className="flex justify-end gap-3 pt-2">
                     <button
                         type="reset"
@@ -200,6 +280,8 @@ export default function FormularioAltaUsuario() {
                                 setConfirmacionContraseña("");
                                 setNombre("");
                                 settelefono("");
+                                setCodigoPais("+598");
+                                setErrores([]);
                                 setLocales([{ nombre: "", nave: "", contrato: "" }]);
                             }}
                         className="rounded-lg border border-border px-5 py-2 text-sm font-medium hover:bg-muted"
@@ -209,9 +291,10 @@ export default function FormularioAltaUsuario() {
 
                     <button
                         type="submit"
+                        disabled={enviando}
                         className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
                     >
-                        Registrar usuario
+                        {enviando ? "Registrando..." : "Registrar usuario"}
                     </button>
                 </div>
             </form>
