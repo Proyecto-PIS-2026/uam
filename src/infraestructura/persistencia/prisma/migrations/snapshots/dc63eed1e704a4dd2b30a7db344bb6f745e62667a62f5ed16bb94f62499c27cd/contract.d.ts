@@ -33,9 +33,8 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'090c3a8f7ee1cafc69f331595d913a1e306bd4d66ae029c517f6a15f4dd6e864'>;
-export type ExecutionHash =
-  ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
+  StorageHashBase<'dc63eed1e704a4dd2b30a7db344bb6f745e62667a62f5ed16bb94f62499c27cd'>;
+export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -1350,6 +1349,7 @@ type ContractBase = Omit<
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-temporal@1';
                   readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
                 };
                 readonly publicacionDisponible: {
                   readonly nativeType: 'bool';
@@ -2830,22 +2830,6 @@ type ContractBase = Omit<
     };
   };
   readonly extensions: {};
-  readonly execution: {
-    readonly executionHash: ExecutionHash;
-    readonly mutations: {
-      readonly defaults: readonly [
-        {
-          readonly ref: {
-            readonly namespace: 'public';
-            readonly table: 'publicacion';
-            readonly column: 'fecha';
-          };
-          readonly onCreate: { readonly kind: 'generator'; readonly id: 'instantNow' };
-          readonly onUpdate: { readonly kind: 'generator'; readonly id: 'instantNow' };
-        },
-      ];
-    };
-  };
   readonly meta: {};
 
   readonly profileHash: ProfileHash;
