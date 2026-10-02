@@ -22,6 +22,7 @@ type EspecieInicio = {
 
 type Props = {
     especies: EspecieInicio[];
+    urlListaInteligente: string | null; 
 };
 
 const especiesPorPagina = 20;
@@ -30,7 +31,7 @@ function normalizarTexto(texto: string) {
     return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-export default function Inicio({ especies }: Props) {
+export default function Inicio({ especies, urlListaInteligente }: Props) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState("a-z");
     const [paginaActual, setPaginaActual] = useState(1);
@@ -70,10 +71,13 @@ export default function Inicio({ especies }: Props) {
                 <nav className={styles.accesos} aria-label="Accesos principales">
                     <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver publicaciones</span></Link>
                     <Link href="/operadores" className={styles.acceso}><StorefrontOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver operadores</span></Link>
-                    <button type="button" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
+                    {urlListaInteligente ? (
+                        <a href={urlListaInteligente} target="_blank" rel="noopener noreferrer" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></a>
+                    ) : (
+                        <button type="button" className={styles.acceso} onClick={() => window.alert("La Lista Inteligente no está disponible")}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
+                    )}
                     <button type="button" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></button>
                 </nav>
-
                 <section className={styles.especies} aria-labelledby="titulo-especies">
                     <div className={styles.tituloContenedor}>
                         <HojasDecorativas variante="separador" />

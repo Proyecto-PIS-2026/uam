@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+import { vi } from "vitest";
 import Inicio from "./inicio";
 
 const especiesMock = [
@@ -10,7 +11,7 @@ const especiesMock = [
 describe("inicio", () => {
 
     it("muestra todas las especies cuando el campo de búsqueda está vacío", () => {
-        render(<Inicio especies={especiesMock} />);
+        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
 
         expect(screen.getByText("Banana")).toBeInTheDocument();
         expect(screen.getByText("Manzana")).toBeInTheDocument();
@@ -18,7 +19,7 @@ describe("inicio", () => {
     });
 
     it("filtra las especies según el texto ingresado", async () => {
-        render(<Inicio especies={especiesMock} />);
+        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
         const input = screen.getByRole("searchbox", { name: "Buscar especies" })
         fireEvent.change(input, { target: { value: "man" } });
 
@@ -28,7 +29,7 @@ describe("inicio", () => {
     })
 
     it("ignora mayúsculas y tildes al buscar", () => {
-        render(<Inicio especies={especiesMock} />);
+        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
         const input = screen.getByRole("searchbox", { name: "Buscar especies" });
         fireEvent.change(input, { target: { value: "SANDIA" } });
 
@@ -38,7 +39,7 @@ describe("inicio", () => {
     })
 
     it("muestra el mensaje de 'sin resultados' cuando ninguna especie coincide", () => {
-        render(<Inicio especies={especiesMock} />);
+        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
         const input = screen.getByRole("searchbox", { name: "Buscar especies" });
         fireEvent.change(input, { target: { value: "DSAFSADDSA" } });
 
@@ -48,7 +49,7 @@ describe("inicio", () => {
     })
 
     it("ordena las especies de forma ascendente (A-Z)", () => {
-        render(<Inicio especies={especiesMock} />);
+        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
 
         const select = screen.getByRole("combobox");
         fireEvent.mouseDown(select);
@@ -63,7 +64,7 @@ describe("inicio", () => {
 
     
     it("ordena las especies de forma descendente (Z-A)", () => {
-        render(<Inicio especies={especiesMock} />);
+        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
 
         const select = screen.getByRole("combobox");
         fireEvent.mouseDown(select);
@@ -82,7 +83,7 @@ describe("inicio", () => {
             fotoGenerica: null,
             cantidadOperadores: 1,
         }));
-        render(<Inicio especies={especies} />);
+        render(<Inicio especies={especies} urlListaInteligente={null} />);
         expect(screen.getByText("Especie 01")).toBeInTheDocument();
         expect(screen.queryByText("Especie 21")).not.toBeInTheDocument();
 
@@ -96,7 +97,19 @@ describe("inicio", () => {
         expect(screen.queryByText("Especie 21")).not.toBeInTheDocument();
         expect(screen.queryByText("Especie 01")).toBeInTheDocument();
         expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
-
     })
+    it("muestra un enlace a la Lista Inteligente cuando hay una URL configurada", () => {
+        render(<Inicio especies={especiesMock} urlListaInteligente="https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf" />);
+        const enlace = screen.getByRole("link", { name: "Lista inteligente" });
+        expect(enlace).toHaveAttribute("href", "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf");
+        expect(enlace).toHaveAttribute("target", "_blank");
+    });
 
+    it("avisa cuando se selecciona Lista Inteligente y no hay URL configurada", () => {
+        const alerta = vi.spyOn(window, "alert").mockImplementation(() => {});
+        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
+        fireEvent.click(screen.getByRole("button", { name: "Lista inteligente" }));
+        expect(alerta).toHaveBeenCalledWith("La Lista Inteligente no está disponible");
+        alerta.mockRestore();
+    });
 })
