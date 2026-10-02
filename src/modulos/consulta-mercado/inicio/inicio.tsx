@@ -10,6 +10,8 @@ import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlin
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
+import Alert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
 import ProductoCard from "./tarjetaProducto";
 import styles from "./inicio.module.css";
@@ -35,6 +37,7 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState("a-z");
     const [paginaActual, setPaginaActual] = useState(1);
+    const [mostrarAvisoLista, setMostrarAvisoLista] = useState(false);
 
     const textoBuscado = normalizarTexto(busqueda.trim());
     const especiesFiltradas = especies.filter((especie) =>
@@ -74,10 +77,13 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                     {urlListaInteligente ? (
                         <a href={urlListaInteligente} target="_blank" rel="noopener noreferrer" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></a>
                     ) : (
-                        <button type="button" className={styles.acceso} onClick={() => window.alert("La Lista Inteligente no está disponible")}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
+                        <button type="button" className={styles.acceso} onClick={() => {setMostrarAvisoLista(true)}}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
                     )}
                     <button type="button" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></button>
                 </nav>
+                <Snackbar className={styles.avisoSnackbar}open={mostrarAvisoLista} autoHideDuration={700} transitionDuration={{ enter: 250, exit: 900 }} onClose={() => setMostrarAvisoLista(false)}anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+                    <Alert className={styles.avisoAlerta} severity="warning" variant="filled" onClose={() => setMostrarAvisoLista(false)}><span>La Lista Inteligente no está disponible</span></Alert>
+                </Snackbar>
                 <section className={styles.especies} aria-labelledby="titulo-especies">
                     <div className={styles.tituloContenedor}>
                         <HojasDecorativas variante="separador" />
