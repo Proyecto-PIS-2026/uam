@@ -3,6 +3,13 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 // Datos de una publicación tal como los ve el administrador
 export type PublicacionPerfilAdmin = {
     id: number;
+    publicacionOperadorId: number;
+    especieId: number;
+    variedadId: number;
+    presentacionId: number;
+    categoriaId: number;
+    calibreId: number;
+    paisId: number;
     foto: string | null;
     precio: string | null;
     disponible: boolean; // El admin ve también las publicaciones no disponibles
@@ -65,6 +72,11 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         });
     }
 
+    locales.sort((a, b) => 
+        a.nombreNave.localeCompare(b.nombreNave, "es")
+        || a.numeroLocal.localeCompare(b.numeroLocal, "es", { numeric: true})
+    );
+
     // Obtener las publicaciones
     const consultaCompleta = db.orm.public.PublicacionOperador // Solo armo la consulta sin ejecutarla
         .where({ operadorId: operador.id })
@@ -76,7 +88,10 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 "precio",
                 "publicacionActiva",
                 "publicacionDisponible",
-                "tipoPublicacion"
+                "tipoPublicacion",
+                "presentacionId",
+                "categoriaId",
+                "calibreId"
             );
             const conPresentacion = camposPublicacion.include(
                 "presentacion",
@@ -101,6 +116,13 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,
+                publicacionOperadorId: completa.id,
+                especieId: publicacion.presentacion.variedad.especieId,
+                variedadId: publicacion.presentacion.variedad.id,
+                presentacionId: publicacion.presentacionId,
+                categoriaId: publicacion.categoriaId,
+                calibreId: publicacion.calibreId,
+                paisId: completa.paisId,
                 foto: publicacion.foto,
                 precio: publicacion.precio,
                 disponible: publicacion.publicacionDisponible,

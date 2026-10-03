@@ -33,7 +33,25 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
 
             <div className={styles.contenido}>
                 <div className={styles.encabezado}>
-                    <h3 className={styles.especie} title={nombreProducto}>{nombreProducto}</h3>
+                    <div className="flex w-full min-w-0 items-start justify-between gap-2">
+                        <h3 className={`${styles.especie} min-w-0 flex-1`} title={nombreProducto}>{nombreProducto}</h3>
+                        <span
+                            className={`
+                                shrink-0 rounded-full
+                                px-2 py-0.5
+                                text-[10px] font-bold
+                                ${
+                                    publicacion.disponible
+                                        ? "bg-primary-soft text-secondary"
+                                        : "bg-gray-100 text-muted"
+                                }
+                            `}
+                        >
+                            {publicacion.disponible
+                                ? "Disponible"
+                                : "No disponible"}
+                        </span>
+                    </div>
                     <p className={styles.informacionWeb}>{publicacion.calibre} · Categoría {publicacion.categoria}</p>
                 </div>
                 <div className={styles.cuerpo}>
@@ -54,9 +72,6 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
                             <span className={styles.consultarPrecio}>Sin precio</span>
                         )}
                         <span className={styles.presentacionPrecio}>por {publicacion.presentacion}</span>
-                        {!publicacion.disponible && (
-                            <span className={styles.noDisponible}>No disponible</span>
-                        )}
                     </div>
                 </div>
             </div>

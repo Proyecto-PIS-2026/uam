@@ -185,4 +185,26 @@ describe("obtenerPerfilAdminOperador", () => {
         ]);
     });
 
+    // Los locales se ordenan por nave y, dentro de cada nave, por número de local
+    it("ordena los locales por nave y por número de local", async () => {
+        mockDb.operador.first.mockResolvedValue({
+            ...operadorBase,
+            locales: [
+                { numeroLocal: "180", finContrato: null, nave: { nombreNave: "D" } },
+                { numeroLocal: "10", finContrato: null, nave: { nombreNave: "A" } },
+                { numeroLocal: "161", finContrato: null, nave: { nombreNave: "D" } },
+                { numeroLocal: "9", finContrato: null, nave: { nombreNave: "A" } },
+            ],
+        });
+
+        const resultado = await obtenerPerfilAdminOperador(13);
+
+        expect(resultado?.locales.map((local) => `${local.nombreNave}-${local.numeroLocal}`)).toEqual([
+            "A-9",
+            "A-10",
+            "D-161",
+            "D-180",
+        ]);
+    });
+
 });

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { obtenerPerfilAdminOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-admin";
+import { obtenerOpcionesEdicionPublicacion } from "../../../../modulos/publicaciones/operadores/consultas-edicion-publicacion";
 import PerfilOperadorAdmin from "../../../../modulos/usuarios/operadores/componentes/perfil-admin-operador/PerfilOperadorAdmin";
 
 export const dynamic = "force-dynamic"; // Consultar la base en cada visita, sin cachear la página
@@ -14,7 +15,10 @@ export default async function Page({ params }: PageProps) {
     // con el mecanismo de identidad-acceso cuando esté implementado.
 
     const { id } = await params;
-    const perfil = await obtenerPerfilAdminOperador(Number(id));
+    const [perfil, opciones] = await Promise.all([
+        obtenerPerfilAdminOperador(Number(id)),
+        obtenerOpcionesEdicionPublicacion()
+    ])
 
     if (!perfil) {
         notFound();
@@ -22,7 +26,7 @@ export default async function Page({ params }: PageProps) {
 
     return (
         <main>
-            <PerfilOperadorAdmin operador={perfil} />
+            <PerfilOperadorAdmin operador={perfil} opciones={opciones} />
         </main>
     );
 }

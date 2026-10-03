@@ -1,5 +1,6 @@
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
+import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/consultas-edicion-publicacion";
 
 import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
@@ -8,6 +9,7 @@ import Link from "next/link";
 
 type PerfilOperadorAdminProps = {
     operador: PerfilAdminOperador;
+    opciones: OpcionesEdicionPublicacion;
 };
 
 function formatearFecha(fecha: string): string {
@@ -15,7 +17,7 @@ function formatearFecha(fecha: string): string {
     return `${dia}/${mes}/${anio}`;
 }
 
-export default function PerfilOperadorAdmin({ operador }: PerfilOperadorAdminProps) {
+export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperadorAdminProps) {
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
@@ -53,13 +55,13 @@ export default function PerfilOperadorAdmin({ operador }: PerfilOperadorAdminPro
                                 <li key={`${local.nombreNave}-${local.numeroLocal}`} className={styles.local}>
                                     <span>
                                         <span className={styles.nombreNave}>Nave {local.nombreNave}</span>
-                                        {" - "}Local {local.numeroLocal}                                    
+                                        {" · "}Local {local.numeroLocal}                                    
                                     </span>
-                                    <br></br>
+                                    
                                     <span className={styles.finContrato}>
                                         {local.finContrato
-                                            ? `Fin de contrato: ${formatearFecha(local.finContrato)}`
-                                            : "Sin fecha de finalización"
+                                            ? `Vence: ${formatearFecha(local.finContrato)}`
+                                            : "Sin fecha de fin"
                                         }
                                     </span>
                                 </li>
@@ -70,7 +72,7 @@ export default function PerfilOperadorAdmin({ operador }: PerfilOperadorAdminPro
             </div>
 
             <h2 className={styles.subtituloPublicaciones}>Publicaciones ({operador.publicaciones.length})</h2>
-            <CatalogoOperadorAdmin publicaciones={operador.publicaciones} />
+            <CatalogoOperadorAdmin publicaciones={operador.publicaciones} opciones={opciones} />
         </section>
     );
 
