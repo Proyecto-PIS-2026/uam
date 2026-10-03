@@ -63,9 +63,9 @@ jobs:
 
       - name: Aplicar migraciones de base de datos
         run: npm run db:setup
-
-      - name: Ejecutar Tests Unitarios, Integración y Cobertura (Vitest)
-        run: npm run test:coverage
+        
+      - name: Ejecutar Suite Completa de Tests (Vitest)
+        run: npm run test:vitest
 
       - name: Instalar Navegadores de Playwright
         run: npx playwright install --with-deps
