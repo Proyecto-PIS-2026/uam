@@ -11,6 +11,7 @@ import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
+import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import ProductoCard from "./tarjetaProducto";
 import styles from "./inicio.module.css";
 
@@ -32,7 +33,7 @@ function normalizarTexto(texto: string) {
 
 export default function Inicio({ especies }: Props) {
     const [busqueda, setBusqueda] = useState("");
-    const [orden, setOrden] = useState("a-z");
+    const [orden, setOrden] = useState<"prioridad" | "a-z" | "z-a">("prioridad");
     const [paginaActual, setPaginaActual] = useState(1);
 
     const textoBuscado = normalizarTexto(busqueda.trim());
@@ -41,6 +42,9 @@ export default function Inicio({ especies }: Props) {
     );
 
     especiesFiltradas.sort((primera, segunda) => {
+        if (orden === "prioridad") {
+            return compararEspeciesPorPrioridad(primera.nombreEspecie, segunda.nombreEspecie);
+        }
         const comparacion = primera.nombreEspecie.localeCompare(segunda.nombreEspecie, "es", { sensitivity: "base" });
         return orden === "z-a" ? -comparacion : comparacion;
     });
@@ -85,7 +89,7 @@ export default function Inicio({ especies }: Props) {
                         <TextField fullWidth size="small" label="Buscar especies" type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }} className={`${styles.selectMui} ${styles.filtroBuscador}`}
                             slotProps={{input: {startAdornment: <SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }} />}}}
                         />
-                        <TextField select label="Ordenar por" value={orden} onChange={(evento) => { setOrden(evento.target.value); setPaginaActual(1); }} size="small" className={`${styles.selectMui} ${styles.filtroOrden}`}>
+                        <TextField select label="Ordenar por" value={orden === "prioridad" ? "" : orden} onChange={(evento) => { setOrden(evento.target.value as "a-z" | "z-a"); setPaginaActual(1); }} size="small" className={`${styles.selectMui} ${styles.filtroOrden}`}>
                             <MenuItem value="a-z" className={styles.opcionSelect}>A-Z</MenuItem>
                             <MenuItem value="z-a" className={styles.opcionSelect}>Z-A</MenuItem>
                         </TextField>
