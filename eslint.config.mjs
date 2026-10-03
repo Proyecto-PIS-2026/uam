@@ -16,6 +16,10 @@ const eslintConfig = defineConfig([
     "migrations/**",
     "src/infraestructura/persistencia/prisma/contract.d.ts",
     "src/infraestructura/persistencia/prisma/migrations/snapshots/**",
+    "**/.agents/**",
+    "**/.claude/**",
+    "**/.cursor/**",
+    "**/.devin/**",
   ]),
 ]);
 

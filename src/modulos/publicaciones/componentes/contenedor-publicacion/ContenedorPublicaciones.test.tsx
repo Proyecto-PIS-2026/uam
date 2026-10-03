@@ -64,10 +64,15 @@ describe("ContenedorPublicaciones", () => {
 		vi.clearAllMocks();
 	});
 
-	it("entrega al listado las publicaciones ordenadas alfabéticamente por defecto", () => {
-		const publicaciones = [crearPublicacion(7), crearPublicacion(2)];
+	it("entrega primero las especies prioritarias y luego las demás en orden alfabético", () => {
+		const publicaciones = [
+			{...crearPublicacion(1), especie: "Pera"},
+			{...crearPublicacion(2), especie: "Manzana"},
+			{...crearPublicacion(3), especie: "Acelga"},
+			{...crearPublicacion(4), especie: "Papa"},
+		];
 		render(<ContenedorPublicaciones publicaciones={publicaciones}/>);
-		expect(publicacionesDelListado()).toEqual([publicaciones[1], publicaciones[0]]);
+		expect(publicacionesDelListado()).toEqual([publicaciones[3], publicaciones[1], publicaciones[2], publicaciones[0]]);
 	});
 
 	it("entrega una lista vacía cuando no hay publicaciones", () => {
