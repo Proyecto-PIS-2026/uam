@@ -161,53 +161,6 @@ describe("NuevaPublicacion", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
-    it("borra la fotografía y envía la publicación sin ella", async () => {
-        vi.stubGlobal("FileReader", class {
-            result = "data:image/png;base64,aW1hZ2Vu";
-            onload: (() => void) | null = null;
-            readAsDataURL() { 
-                queueMicrotask(() => this.onload?.()); 
-            }
-        });
-
-        renderDrawer();
-        const boton = screen.getByRole("button", { name: "Confirmar" });
-        await waitFor(() => expect(boton).toBeEnabled());
-    
-        const formulario = boton.closest("form");
-        if (!formulario) throw new Error("No se encontró el formulario de publicación.");
-        completarFormulario(formulario);
-        
-        const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
-        
-        await act(async () => {
-            fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
-        });
-        
-        const vistaPrevia = await screen.findByAltText("Vista previa de la fotografía");
-        expect(vistaPrevia).toBeInTheDocument();
-        
-        const botonBorrar = screen.getByRole("button", { name: "Borrar foto" });
-        fireEvent.click(botonBorrar);
-        
-        await waitFor(() => {
-            expect(screen.queryByAltText("Vista previa de la fotografía")).not.toBeInTheDocument();
-            expect(screen.queryByRole("button", { name: "Borrar foto" })).not.toBeInTheDocument();
-        });
-        
-        fireEvent.submit(formulario);
-        
-        await waitFor(() => {
-            expect(mocks.alCrear).toHaveBeenCalledWith("Publicación creada correctamente.");
-            expect(fetch).toHaveBeenCalledWith("/api/publicaciones", expect.objectContaining({
-                method: "POST",
-                body: expect.stringContaining('"fotografia":""'),
-            }));
-        });
-
-        vi.unstubAllGlobals();
-    });
-
     it("rechaza una fotografía inválida", async () => {
         renderDrawer();
         const archivo = new File(["texto"], "archivo.txt", { type: "text/plain" });

@@ -143,7 +143,14 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
 
     function escribirCantidadUnidades(nuevaCantidad: string) {
         if (bloqueado) return;
-        if (/^\d{0,10}$/.test(nuevaCantidad)) setCantidadUnidades(nuevaCantidad);
+        if (nuevaCantidad === "") {
+            setCantidadUnidades("");
+            return;
+        }
+        if (!/^\d+$/.test(nuevaCantidad)) return;
+        const valorLimpio = String(Number(nuevaCantidad));
+        if (Number(valorLimpio) > 2147483647) return;
+        setCantidadUnidades(valorLimpio);
     }
 
     function cambiarPrecio(cantidad: number) {
@@ -265,6 +272,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         }
     }
 
+    const presentacionActual = presentaciones.find(p => p.id === presentacionId)?.nombre || publicacion.presentacion;
+
     return (
         <>
             <div className={styles.asa} aria-hidden="true" />
@@ -330,7 +339,9 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                     </div>
 
                     <div className={styles.campo}>
-                        <label className={styles.etiqueta} htmlFor={`${idBase}-cantidadUnidades`}>Unidades ({publicacion.presentacion})</label>
+                        <label className={styles.etiqueta} htmlFor={`${idBase}-cantidadUnidades`}>
+                            Unidades ({presentacionActual})
+                        </label>
                         <div className={styles.controlesPrecio} data-editando={false}>
                             <input className={`${styles.entrada} w-full grow shrink-0`} id={`${idBase}-cantidadUnidades`} type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar cantidad aquí" value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
                         </div>

@@ -234,7 +234,19 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
                                     Unidades {textoPresentacion}
                                 </label>
                                 <div className={drawerStyles.controlesPrecio} data-editando={false}>
-                                    <input className={`${drawerStyles.entrada} w-full`} id="nueva-publicacion-cantidadUnidades" type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar cantidad aquí" value={datos.cantidadUnidades} onChange={(evento) => actualizar({ cantidadUnidades: evento.target.value.replace(/\D/g, "") })} disabled={guardando}/>
+                                    <input className={`${drawerStyles.entrada} w-full`} id="nueva-publicacion-cantidadUnidades" type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar cantidad aquí" value={datos.cantidadUnidades} 
+                                        onChange={(evento) => {
+                                            const valorOriginal = evento.target.value;
+                                            if (valorOriginal === "") {
+                                                actualizar({ cantidadUnidades: "" });
+                                                return;
+                                            }
+                                            if (/\D/.test(valorOriginal)) return;
+                                            const valorLimpio = String(Number(valorOriginal));
+                                            if (Number(valorLimpio) > 2147483647) return;
+                                            actualizar({ cantidadUnidades: valorLimpio });
+                                        }} disabled={guardando}
+                                    />
                                 </div>
                                 <small className={drawerStyles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>
                             </div>
