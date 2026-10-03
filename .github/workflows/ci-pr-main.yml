@@ -40,6 +40,8 @@ jobs:
 
     env:
       DATABASE_URL: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
+      DATABASE_URL_TEST: "postgresql://uam:uam_local@localhost:5432/uam?schema=public"
+      
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
