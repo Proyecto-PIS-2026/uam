@@ -25,7 +25,7 @@ type Catalogos = {
     calibres: Opcion[];
     paises: Opcion[];
 };
-type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "fotografia"> & { precio: string; fotografia: string };
+type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia"> & { precio: string; cantidadUnidades: string; fotografia: string };
 type NuevaPublicacionProps = {
     operadorId: number;
     abierto: boolean;
@@ -62,6 +62,7 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
         paisId: 0,
         disponibilidad: true,
         precio: "",
+        cantidadUnidades: "",
         fotografia: "",
     });
     const [errores, setErrores] = useState<string[]>([]);
@@ -148,10 +149,16 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
         setErrores([]);
         setGuardando(true);
         try {
+            const datosProcesados = {
+                ...datos,
+                cantidadUnidades: datos.cantidadUnidades.trim() !== "" 
+                    ? parseInt(datos.cantidadUnidades, 10) 
+                    : null
+            };
             const respuesta = await fetch("/api/publicaciones", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos),
+                body: JSON.stringify(datosProcesados),
             });
             const resultado = await respuesta.json();
             if (!respuesta.ok) {
@@ -218,6 +225,23 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
                         </div>
                         <small className={drawerStyles.ayuda}>Dejalo vacío si el producto no tiene precio.</small>
                     </div>
+
+                    {(() => {
+                        const presentacionSeleccionada = catalogos?.presentaciones.find(p => p.id === datos.presentacionId);
+                        const textoPresentacion = presentacionSeleccionada ? ` (${presentacionSeleccionada.nombre})` : "";
+
+                        return (
+                            <div className={drawerStyles.campo}>
+                                <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-cantidadUnidades">
+                                    Unidades {textoPresentacion}
+                                </label>
+                                <div className={drawerStyles.controlesPrecio} data-editando={false}>
+                                    <input className={`${drawerStyles.entrada} w-full`} id="nueva-publicacion-cantidadUnidades" type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar cantidad aquí" value={datos.cantidadUnidades} onChange={(evento) => actualizar({ cantidadUnidades: evento.target.value.replace(/\D/g, "") })} disabled={guardando}/>
+                                </div>
+                                <small className={drawerStyles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>
+                            </div>
+                        );
+                    })()}
 
                     <label className={drawerStyles.disponibilidad} htmlFor="nueva-publicacion-disponibilidad" data-disponible={datos.disponibilidad} data-guardando={guardando}>
                         <span className={drawerStyles.textoDisponibilidad}>

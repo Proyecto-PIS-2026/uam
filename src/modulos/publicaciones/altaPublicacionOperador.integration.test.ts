@@ -104,7 +104,6 @@ describe("alta de publicación de operador", () => {
 
 	it("rechaza una publicación duplicada sin crear otro registro", async () => {
 		const { relacion, publicacion, presentacion, variedad } = await obtenerDatosDePublicacionSemilla();
-
 		const publicacionesAntes = await db.orm.public.PublicacionOperador.where({ operadorId: relacion.operadorId }).all();
 		const registrosAntes = await db.orm.public.Publicacion.all();
 		const resultado = await altaPublicacionOperador({

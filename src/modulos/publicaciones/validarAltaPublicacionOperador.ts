@@ -8,6 +8,7 @@ export type DatosAltaPublicacionOperador = {
 	paisId: number;
 	disponibilidad: boolean;
 	precio?: string;
+	cantidadUnidades?: number | null;
 	fotografia?: string;
 };
 

@@ -2,9 +2,11 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarImagenPublicacion } from "./imagenes-publicacion";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
+type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
 
 export type CambiosPublicacionOperador = {
     precio: string | null;
+    cantidadUnidades?: number | null;
     foto?: string | null;
     categoriaId: number;
     calibreId: number;
@@ -54,6 +56,25 @@ export async function modificarPublicacionOperador(
             throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El precio debe ser un número entero de hasta 10 dígitos, sin decimales.");
         }
         precioParaGuardar = precio as PrecioDb;
+    }
+
+    let cantidadUnidadesParaGuardar: CantidadUnidadesDb | undefined = undefined;
+
+    if (cambios.cantidadUnidades !== undefined) {
+        if (cambios.cantidadUnidades !== null) {
+            if (typeof cambios.cantidadUnidades !== "number") {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La cantidad de unidades debe ser un número.");
+            }
+            if (!Number.isSafeInteger(cambios.cantidadUnidades)) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La cantidad de unidades debe ser un número entero válido.");
+            }
+            if (cambios.cantidadUnidades < 0 || cambios.cantidadUnidades > 9999999999) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La cantidad de unidades debe ser un número positivo de hasta 10 dígitos.");
+            }
+            cantidadUnidadesParaGuardar = cambios.cantidadUnidades as CantidadUnidadesDb;
+        } else {
+            cantidadUnidadesParaGuardar = null;
+        }
     }
 
     const resultado = await db.transaction(async (tx) => {
@@ -178,6 +199,7 @@ export async function modificarPublicacionOperador(
                 .where({ id: vinculo.publicacionId })
                 .update({
                     precio: precioParaGuardar,
+                    cantidadUnidades: cantidadUnidadesParaGuardar,
                     foto: fotoActual,
                     categoriaId: cambios.categoriaId,
                     calibreId: cambios.calibreId,

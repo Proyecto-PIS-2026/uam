@@ -23,6 +23,7 @@ export type PublicacionListado = {
     especie: string;
     variedad: string;
     presentacion: string;
+    cantidadUnidades?: number | null;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
