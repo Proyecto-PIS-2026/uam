@@ -18,12 +18,21 @@ function leerOperadorId(solicitud: Request): number | null | undefined {
 }
 
 function actualizarVistas(operador: { nombreFantasia: string }) {
-	revalidatePath("/mi-mercado");
-	revalidatePath(`/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`);
-	revalidatePath("/publicaciones");
-	revalidatePath(`/operadores/${encodeURIComponent(operador.nombreFantasia)}`);
-	revalidatePath("/operadores");
-	revalidatePath("/inicio");
+	const rutas = [
+		"/mi-mercado",
+		`/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`,
+		"/publicaciones",
+		`/operadores/${encodeURIComponent(operador.nombreFantasia)}`,
+		"/operadores",
+		"/inicio",
+	];
+	for (const ruta of rutas) {
+		try {
+			revalidatePath(ruta);
+		} catch (error) {
+			console.error(`No se pudo revalidar ${ruta} tras guardar la publicacion:`, error);
+		}
+	}
 }
 
 export async function DELETE(solicitud: Request, contexto: Contexto) {
