@@ -2,6 +2,7 @@
 
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { validarAltaOperador } from "./validarAltaOperador";
+import argon2 from "argon2";
 
 export type ResultadoAltaOperador =
 	| { esValido: false; errores: string[] }
@@ -19,6 +20,7 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
 		return { esValido: false, errores: ["Alguna de las naves seleccionadas ya no está disponible. Actualizá el formulario."] };
 	}
 
+	const passwordHash = await argon2.hash(datos.contraseña, { type: argon2.argon2id });
 	const resultadoTx  = await db.transaction(async (tx) => {
 		// Serializar altas con el mismo nombre de usuario para que dos envíos
 		// simultáneos no pasen ambos la comprobación antes de insertar.
@@ -43,7 +45,7 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
 
 		const usuario = await tx.orm.public.Usuario.create({
 			username: datos.nombreUsuario,
-			passwordHash: datos.contraseña,
+			passwordHash,
 			rol: "OPERADOR",
 		});
 		const operador = await tx.orm.public.Operador.create({

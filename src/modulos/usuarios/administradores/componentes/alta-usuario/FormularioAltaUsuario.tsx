@@ -1,11 +1,11 @@
 "use client";
 import styles from "./FormularioAltaUsuario.module.css";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent  } from "react";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "./altaOperador";
+import type { NaveOpcion } from "./obtenerNaves";
 
-
-export default function FormularioAltaUsuario() {
+export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }) {
     const [rol, setRol] = useState("");
     const [nombreUsuario, setNombreUsuario] = useState("");
     const [contraseña, setContraseña] = useState("");
@@ -16,9 +16,20 @@ export default function FormularioAltaUsuario() {
         { nombre: "", nave: "", contrato: "" }
     ]);
     const [codigoPais, setCodigoPais] = useState("+598");
-
+    const [mensajeExito, setMensajeExito] = useState("");
     const [errores, setErrores] = useState<string[]>([]);
     const [enviando, setEnviando] = useState(false);
+    const [mensajeVisible, setMensajeVisible] = useState(false);
+    useEffect(() => {
+    if (!mensajeExito) return;
+    
+    const ocultar = setTimeout(() => setMensajeVisible(false), 3500);
+    const borrar = setTimeout(() => setMensajeExito(""), 4000);
+    return () => {
+        clearTimeout(ocultar);
+        clearTimeout(borrar);
+    };
+    }, [mensajeExito]);
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -55,7 +66,8 @@ export default function FormularioAltaUsuario() {
                 setNombre("");
                 settelefono("");
                 setLocales([{ nombre: "", nave: "", contrato: "" }]);
-                alert(resultado.mensaje); // provisorio
+                setMensajeExito(resultado.mensaje);
+                setMensajeVisible(true);
                 return;
             }
 
@@ -224,12 +236,12 @@ export default function FormularioAltaUsuario() {
                                     onChange={(e) => actualizarLocal(index, "nave", e.target.value)}
                                     className="w-1/4 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
                                 >
-                                    {/* Provisorio, luego se traerá de la base de datos */}
                                     <option value="">Seleccionar nave</option>
-                                    <option value="1">Nave A</option>
-                                    <option value="2">Nave B</option>
-                                    <option value="3">Nave C</option>
-                                    <option value="4">Nave D</option>
+                                    {naves.map((nave) => (
+                                        <option key={nave.id} value={nave.id}>
+                                            {nave.nombre}
+                                        </option>
+                                    ))}
                                 </select>
 
                                 <input
@@ -263,6 +275,16 @@ export default function FormularioAltaUsuario() {
                 </>
                 )}
 
+                {mensajeExito && (
+                    <p
+                        className={`text-sm text-green-600 transition-opacity duration-500 ${
+                            mensajeVisible ? "opacity-100" : "opacity-0"
+                        }`}
+                        role="status"
+                    >
+                        {mensajeExito}
+                    </p>
+                )}
                 {errores.length > 0 && (
                         <ul className="text-sm text-red-500">
                             {errores.map((error) => (
@@ -282,6 +304,7 @@ export default function FormularioAltaUsuario() {
                                 settelefono("");
                                 setCodigoPais("+598");
                                 setErrores([]);
+                                setMensajeExito("");
                                 setLocales([{ nombre: "", nave: "", contrato: "" }]);
                             }}
                         className="rounded-lg border border-border px-5 py-2 text-sm font-medium hover:bg-muted"
