@@ -214,8 +214,6 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
                         </div>
                     </div>
 
-                    {errores.length > 0 && <div role="alert" className={drawerStyles.error}>{errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}
-
                     <div className={drawerStyles.campo}>
                         <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-precio">Precio en pesos</label>
                         <div className={drawerStyles.controlesPrecio}>
@@ -242,6 +240,8 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
                             </div>
                         );
                     })()}
+
+                    {errores.length > 0 && <div role="alert" className={drawerStyles.error}>{errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}
 
                     <label className={drawerStyles.disponibilidad} htmlFor="nueva-publicacion-disponibilidad" data-disponible={datos.disponibilidad} data-guardando={guardando}>
                         <span className={drawerStyles.textoDisponibilidad}>

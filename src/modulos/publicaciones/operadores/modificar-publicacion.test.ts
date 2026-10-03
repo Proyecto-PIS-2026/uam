@@ -473,13 +473,19 @@ describe("modificarPublicacionOperador", () => {
     it("rechaza cantidad de unidades si es menor a 0", async () => {
         const cambiosInvalidos = { ...cambios, cantidadUnidades: -5 };
         await expect(modificarPublicacionOperador(9, 12, cambiosInvalidos))
-            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La cantidad de unidades debe ser un número positivo de hasta 10 dígitos." });
+            .rejects.toMatchObject({ 
+                codigo: "DATOS_INVALIDOS", 
+                message: "La cantidad de unidades debe ser un número entero entre 0 y 2147483647."
+            });
     });
 
     it("rechaza cantidad de unidades si supera los 10 dígitos", async () => {
         const cambiosInvalidos = { ...cambios, cantidadUnidades: 10000000000 };
         await expect(modificarPublicacionOperador(9, 12, cambiosInvalidos))
-            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La cantidad de unidades debe ser un número positivo de hasta 10 dígitos." });
+            .rejects.toMatchObject({ 
+                codigo: "DATOS_INVALIDOS", 
+                message: "La cantidad de unidades debe ser un número entero entre 0 y 2147483647."
+            });
     });
 
     it("rechaza cantidad de unidades si el tipo de dato es un texto string", async () => {

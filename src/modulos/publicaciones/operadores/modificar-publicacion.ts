@@ -68,8 +68,8 @@ export async function modificarPublicacionOperador(
             if (!Number.isSafeInteger(cambios.cantidadUnidades)) {
                 throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La cantidad de unidades debe ser un número entero válido.");
             }
-            if (cambios.cantidadUnidades < 0 || cambios.cantidadUnidades > 9999999999) {
-                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La cantidad de unidades debe ser un número positivo de hasta 10 dígitos.");
+            if (cambios.cantidadUnidades < 0 || cambios.cantidadUnidades > 2147483647) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La cantidad de unidades debe ser un número entero entre 0 y 2147483647.");
             }
             cantidadUnidadesParaGuardar = cambios.cantidadUnidades as CantidadUnidadesDb;
         } else {

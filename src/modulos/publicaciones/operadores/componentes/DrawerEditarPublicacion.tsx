@@ -319,8 +319,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </div>
                     </div>
 
-                    {(error || errorConsulta) && <p className={styles.error} role="alert">{error || errorConsulta}</p>}
-
                     <div className={styles.campo}>
                         <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
                         <div className={styles.controlesPrecio} data-editando={editando}>
@@ -338,6 +336,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </div>
                         <small className={styles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>
                     </div>
+
+                    {(error || errorConsulta) && <p className={styles.error} role="alert">{error || errorConsulta}</p>}
 
                     <label className={styles.disponibilidad} htmlFor={editando ? `${idBase}-disponibilidad` : undefined} data-disponible={disponible} data-guardando={ocupado} data-editando={editando}>
                         <span className={styles.textoDisponibilidad}>

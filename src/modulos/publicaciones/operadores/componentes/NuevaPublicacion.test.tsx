@@ -166,10 +166,10 @@ describe("NuevaPublicacion", () => {
             result = "data:image/png;base64,aW1hZ2Vu";
             onload: (() => void) | null = null;
             readAsDataURL() { 
-                // Usamos una macro-tarea con setTimeout para simular el comportamiento real del navegador
-                setTimeout(() => this.onload?.(), 0); 
+                queueMicrotask(() => this.onload?.()); 
             }
         });
+
         renderDrawer();
         const boton = screen.getByRole("button", { name: "Confirmar" });
         await waitFor(() => expect(boton).toBeEnabled());
@@ -177,24 +177,35 @@ describe("NuevaPublicacion", () => {
         const formulario = boton.closest("form");
         if (!formulario) throw new Error("No se encontró el formulario de publicación.");
         completarFormulario(formulario);
+        
         const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
+        
         await act(async () => {
             fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
         });
+        
         const vistaPrevia = await screen.findByAltText("Vista previa de la fotografía");
         expect(vistaPrevia).toBeInTheDocument();
+        
         const botonBorrar = screen.getByRole("button", { name: "Borrar foto" });
         fireEvent.click(botonBorrar);
+        
         await waitFor(() => {
             expect(screen.queryByAltText("Vista previa de la fotografía")).not.toBeInTheDocument();
             expect(screen.queryByRole("button", { name: "Borrar foto" })).not.toBeInTheDocument();
         });
+        
         fireEvent.submit(formulario);
-        await waitFor(() => expect(mocks.alCrear).toHaveBeenCalledWith("Publicación creada correctamente."));
-        expect(fetch).toHaveBeenCalledWith("/api/publicaciones", expect.objectContaining({
-            method: "POST",
-            body: expect.stringContaining('"fotografia":""'),
-        }));
+        
+        await waitFor(() => {
+            expect(mocks.alCrear).toHaveBeenCalledWith("Publicación creada correctamente.");
+            expect(fetch).toHaveBeenCalledWith("/api/publicaciones", expect.objectContaining({
+                method: "POST",
+                body: expect.stringContaining('"fotografia":""'),
+            }));
+        });
+
+        vi.unstubAllGlobals();
     });
 
     it("rechaza una fotografía inválida", async () => {
