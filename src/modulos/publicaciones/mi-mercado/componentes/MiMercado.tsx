@@ -19,6 +19,7 @@ export type Publicacion = {
     paisId: number;
     foto: string | null;
     precio: string | null;
+    fecha: string; 
     publicacionActiva: boolean;
     publicacionDisponible: boolean;
     presentacion: {
@@ -54,14 +55,7 @@ type Props = {
     opcionesEdicion: OpcionesEdicionPublicacion;
 };
 
-export default function MiMercado({
-    operadorId,
-    nombreOperador = "",
-    abrirAltaInicial = false,
-    publicaciones,
-    incrementoPrecio,
-    opcionesEdicion,
-}: Props) {
+export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaInicial = false, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(abrirAltaInicial);
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(true);
@@ -118,6 +112,7 @@ export default function MiMercado({
         calibre: publicacionSeleccionada.calibre.nombreCalibre,
         precio: publicacionSeleccionada.precio,
         foto: publicacionSeleccionada.foto,
+        fecha: publicacionSeleccionada.fecha,
         categoriaId: publicacionSeleccionada.categoria.id,
         calibreId: publicacionSeleccionada.calibre.id,
         presentacionId: publicacionSeleccionada.presentacion.id,

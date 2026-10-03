@@ -3,6 +3,7 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 export type PublicacionListado = {
     id: number;
     precio: number | null;
+    fecha: string;
     foto: string | null;
     especie: string;
     variedad: string;
@@ -43,6 +44,7 @@ export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> 
         .select((tablas) => ({
             id: tablas.publicacion.id,
             precio: tablas.publicacion.precio,
+            fecha: tablas.publicacion.fecha,
             foto: tablas.publicacion.foto,
             especie: tablas.especie.nombreEspecie,
             variedad: tablas.variedad.nombreVariedad,
@@ -67,6 +69,7 @@ export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> 
     const publicaciones: PublicacionListado[] = filas.map((fila) => ({
         id: Number(fila.id),
         precio: fila.precio === null ? null : Number(fila.precio),
+        fecha: fila.fecha.toString(),
         foto: fila.foto,
         especie: fila.especie,
         variedad: fila.variedad,

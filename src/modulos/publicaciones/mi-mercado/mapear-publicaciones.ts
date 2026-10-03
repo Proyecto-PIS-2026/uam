@@ -12,6 +12,7 @@ export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion):
             paisId: rel.paisId,
             foto: pub.foto as string | null,
             precio: pub.precio === null ? null : String(pub.precio),
+            fecha: pub.fecha.toString(),
             publicacionActiva: pub.publicacionActiva as boolean,
             publicacionDisponible: pub.publicacionDisponible as boolean,
             presentacion: {

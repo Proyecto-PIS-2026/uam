@@ -23,14 +23,13 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
     const nombreProducto = publicacion ? publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie : "";
     const mensajeWhatsApp = publicacion ? `Hola, vi tu publicación de ${nombreProducto} en Mercado UAM y quisiera hacerte una consulta.` : "";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-
+    const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     const contenido = (
         <>
             {publicacion && (
                 <div className={styles.tarjeta}>
                     {/* <HojasDecorativas variante="fondo" className={styles.hojasDrawer} /> */}
                     <div className={styles.indicador} />
-
                     <div className={styles.bloqueSuperior}>
                         <div className={styles.marcoImagen}>
                             <div className={styles.contenedorImagen}>
@@ -42,41 +41,38 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
                                 } />
                             </div>
                         </div>
-
                         <div className={styles.bloqueSuperiorDerecho}>
                             <div className={styles.nombrePublicacion}>
                                 <TextoAjustable texto={publicacion.especie} className={styles.especie} minimo={esWeb ? 16 : 10} maximo={esWeb ? 34 : 30} />
                                 {publicacion.variedad !== "-" && <TextoAjustable texto={publicacion.variedad} className={styles.variedad} minimo={esWeb ? 14 : 10} maximo={esWeb ? 26 : 23} />}
                             </div>
-
                             <div className={`${styles.precio} ${publicacion.precio == null ? styles.consultarPrecio : ""}`}>
                                 {publicacion.precio != null ? `$${Number(publicacion.precio).toString()}` : "Consultar precio"}
                             </div>
                         </div>
                     </div>
-
                     <div className={styles.bloqueMedio}>
                         <div className={styles.informacionDetallada}>
                             <span className={styles.nombreInformacion}>Presentación</span>
                             <span className={styles.valorInformacion}>{publicacion.presentacion}</span>
                         </div>
-
                         <div className={styles.informacionDetallada}>
                             <span className={styles.nombreInformacion}>Calibre</span>
                             <span className={styles.valorInformacion}>{publicacion.calibre}</span>
                         </div>
-
                         <div className={styles.informacionDetallada}>
                             <span className={styles.nombreInformacion}>Categoría</span>
                             <span className={styles.valorInformacion}>{publicacion.categoria}</span>
                         </div>
-
                         <div className={styles.informacionDetallada}>
                             <span className={styles.nombreInformacion}>País</span>
                             <span className={styles.valorInformacion}>{publicacion.pais}</span>
                         </div>
+                        <div className={styles.informacionDetallada}>
+                            <span className={styles.nombreInformacion}>Actualización</span>
+                            <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
+                        </div>
                     </div>
-
                     <div className={styles.bloqueBotones}>
                         <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Consultar por ${nombreProducto} por WhatsApp`}>
                             <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
@@ -87,7 +83,6 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
             )}
         </>
     );
-
     return (
         <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={open && publicacion !== null} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }}>
             {contenido}
