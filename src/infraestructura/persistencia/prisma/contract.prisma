@@ -176,7 +176,7 @@ model Departamento {
 // PUBLICACIONES ABSTRACTAS
 model Publicacion {
   id                    Int                   @id @default(autoincrement())
-  fecha                 DateTime              @default(now())
+  fecha                 temporal.updatedAt()
   publicacionDisponible Boolean               @default(true)
   publicacionActiva     Boolean               @default(true)
   precio                Numeric(12, 2)?
