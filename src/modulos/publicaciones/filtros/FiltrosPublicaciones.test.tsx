@@ -1,11 +1,13 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import styles from "./FiltrosPublicaciones.module.css";
-import FiltrosPublicaciones, { type PublicacionListado } from "./FiltrosPublicaciones";
+import FiltrosPublicaciones from "./FiltrosPublicaciones";
+import type { PublicacionListado } from "../../consulta-mercado/acciones/Publicaciones";
 
 const publicaciones: PublicacionListado[] = [
     {
         id: 1,
         precio: 100,
+        fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
         especie: "Manzana",
         variedad: "Gala",
@@ -34,6 +36,7 @@ const publicacionesPrueba: PublicacionListado[] = [
     {
         id: 1,
         precio: 100,
+        fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
         especie: "Manzana",
         variedad: "Gala",
@@ -51,6 +54,7 @@ const publicacionesPrueba: PublicacionListado[] = [
     {
         id: 2,
         precio: 200,
+        fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
         especie: "Manzana",
         variedad: "Red",
@@ -68,6 +72,7 @@ const publicacionesPrueba: PublicacionListado[] = [
     {
         id: 3,
         precio: 300,
+        fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
         especie: "Pera",
         variedad: "Williams",
@@ -85,6 +90,7 @@ const publicacionesPrueba: PublicacionListado[] = [
     {
         id: 4,
         precio: 400,
+        fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
         especie: "Pera",
         variedad: "Packham",
@@ -138,6 +144,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
     {
         id: 1,
         precio: 100,
+        fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
         especie: "Manzana",
         variedad: "Gala",
@@ -155,6 +162,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
     {
         id: 2,
         precio: 200,
+        fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
         especie: "Manzana",
         variedad: "Red",
@@ -172,6 +180,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
     {
         id: 3,
         precio: 300,
+        fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
         especie: "Manzana",
         variedad: "Red",

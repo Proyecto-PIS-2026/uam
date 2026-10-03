@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
-import FiltrosPublicaciones, { compararPublicacionesAlfabeticamente, type PublicacionListado } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
+import FiltrosPublicaciones, { compararPublicacionesAlfabeticamente } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
+import type { PublicacionListado } from "../../../../consulta-mercado/acciones/Publicaciones";
 import DrawerPublicacionPerfil from "./DrawerPublicacionPerfil";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import styles from "./CatalogoOperador.module.css";

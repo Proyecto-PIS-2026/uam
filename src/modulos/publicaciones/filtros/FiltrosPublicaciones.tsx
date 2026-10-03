@@ -7,32 +7,15 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
 import styles from "./FiltrosPublicaciones.module.css";
 
+import type { PublicacionListado } from "../../consulta-mercado/acciones/Publicaciones";
+
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
 function normalizarTexto(texto: string) {
     return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-const compararOpciones = (a: string, b: string) => a.localeCompare(b, "es", { sensitivity: "base" });
-
-// Tipo de datos que recibe
-export type PublicacionListado = {
-    id: number;
-    precio: number | null;
-    foto: string | null;
-    especie: string;
-    variedad: string;
-    presentacion: string;
-    categoria: string;
-    calibre: string;
-    codigoCalibre: string;
-    pais: string;
-    operador: {
-        id: number;
-        nombreFantasia: string;
-        whatsApp: string;
-    };
-};
+const compararOpciones = (a: string, b: string) => a.localeCompare(b, "es", { sensitivity: "base" })
 
 export type OrdenPublicaciones = "ninguno" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
 

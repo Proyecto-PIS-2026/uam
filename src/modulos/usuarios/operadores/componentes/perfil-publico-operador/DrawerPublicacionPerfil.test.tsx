@@ -44,6 +44,7 @@ const publicacion: PublicacionPerfil = {
     id: 101,
     foto: "/tomate.jpg",
     precio: "120",
+    fecha: "2026-10-03T15:00:00.000Z",
     especie: "Tomate",
     variedad: "Perita",
     presentacion: "Cajón",

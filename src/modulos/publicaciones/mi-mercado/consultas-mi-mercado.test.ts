@@ -13,10 +13,10 @@ const mocks = vi.hoisted(() => {
     const publicacionUpdate = vi.fn();
 
     const relationInclude = vi.fn();
+    const relationSelect = vi.fn();
+    const relationBuilder = {select: relationSelect, include: relationInclude};
 
-    const relationBuilder = {
-        include: relationInclude,
-    };
+    relationSelect.mockReturnValue(relationBuilder);
 
     relationInclude.mockImplementation(
         (

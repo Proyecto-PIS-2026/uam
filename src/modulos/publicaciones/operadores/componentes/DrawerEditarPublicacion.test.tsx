@@ -425,8 +425,9 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
     ])("normaliza el precio existente $precio como entero $esperado", async ({ precio, esperado }) => {
         render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, precio }} />);
         expect(mocks.guardar).not.toHaveBeenCalled();
+        await seleccionar("País", "Brasil");
         guardarDesdeBoton();
-        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ precio: esperado }), null));
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ precio: esperado, paisId: 55 }), null));
     });
 
     it("permite corregir un precio existente con decimales antes de guardar", async () => {
