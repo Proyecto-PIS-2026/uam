@@ -1,5 +1,4 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
 import Inicio from "./inicio";
 
 const especiesMock = [
@@ -59,14 +58,14 @@ describe("inicio", () => {
     })
 
     it("muestra primero las especies prioritarias y después las restantes en orden alfabético", () => {
-        render(<Inicio especies={especiesOrdenMock} />);
+        render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
 
         expect(nombresEnPantalla()).toEqual(["Papa", "Banana", "Manzana", "Acelga", "Berro"]);
         expect(screen.getByRole("combobox", { name: "Ordenar por" })).not.toHaveTextContent("A-Z");
     });
 
     it("ordena todas las especies de forma ascendente al elegir A-Z", () => {
-        render(<Inicio especies={especiesOrdenMock} />);
+        render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
 
         const select = screen.getByRole("combobox");
         fireEvent.mouseDown(select);
@@ -77,13 +76,13 @@ describe("inicio", () => {
     });
 
     it("recupera el orden prioritario al volver a entrar a la página", () => {
-        const vista = render(<Inicio especies={especiesOrdenMock} />);
+        const vista = render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Ordenar por" }));
         fireEvent.click(screen.getByRole("option", { name: "A-Z" }));
         expect(nombresEnPantalla()).toEqual(["Acelga", "Banana", "Berro", "Manzana", "Papa"]);
 
         vista.unmount();
-        render(<Inicio especies={especiesOrdenMock} />);
+        render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
         expect(nombresEnPantalla()).toEqual(["Papa", "Banana", "Manzana", "Acelga", "Berro"]);
     });
 
