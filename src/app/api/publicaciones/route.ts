@@ -60,12 +60,21 @@ export async function POST(request: Request) {
 			: datos;
 		const resultado = await altaPublicacionOperador(datosDelOperador);
 		if (resultado.esValido) {
-			revalidatePath("/mi-mercado");
-			revalidatePath(`/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`);
-			revalidatePath("/publicaciones");
-			revalidatePath(`/operadores/${encodeURIComponent(operador.nombreFantasia)}`);
-			revalidatePath("/operadores");
-			revalidatePath("/inicio");
+			const rutas = [
+				"/mi-mercado",
+				`/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`,
+				"/publicaciones",
+				`/operadores/${encodeURIComponent(operador.nombreFantasia)}`,
+				"/operadores",
+				"/inicio",
+			];
+			for (const ruta of rutas) {
+				try {
+					revalidatePath(ruta);
+				} catch (error) {
+					console.error(`No se pudo revalidar ${ruta} tras crear la publicacion:`, error);
+				}
+			}
 		}
 		return NextResponse.json(resultado, { status: resultado.esValido ? 201 : 400 });
 	} catch (error) {
