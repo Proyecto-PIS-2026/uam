@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.publicacion.cantidadUnidades",
+    "label": "Add column \"cantidadUnidades\" to \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "cantidadUnidades",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"cantidadUnidades\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "cantidadUnidades"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"cantidadUnidades\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ADD COLUMN \"cantidadUnidades\" int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"cantidadUnidades\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "cantidadUnidades"
+        ]
+      }
+    ]
+  }
+]
