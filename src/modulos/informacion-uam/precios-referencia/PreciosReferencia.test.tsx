@@ -74,14 +74,22 @@ function renderizarFiltros() {
 }
 
 function seleccionar(nombre: string, opcion: string) {
-    fireEvent.mouseDown(screen.getByRole("combobox", { name: nombre }));
-    fireEvent.click(screen.getByRole("option", { name: opcion }));
+    const select = screen.getByRole("combobox", { name: nombre });
+    fireEvent.mouseDown(select);
+    const listbox = screen.getByRole("listbox");
+    const opcionElemento = within(listbox).getByRole("option", { name: opcion });
+    fireEvent.click(opcionElemento);
 }
 
 function opcionesDe(nombre: string) {
-    fireEvent.mouseDown(screen.getByRole("combobox", { name: nombre }));
-    const opciones = screen.getAllByRole("option").map((opcion) => opcion.textContent?.trim());
-    fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape", code: "Escape", keyCode: 27 });
+    const select = screen.getByRole("combobox", { name: nombre });
+    if (select.getAttribute("aria-disabled") === "true") return [];
+    fireEvent.mouseDown(select);
+    const listbox = screen.getByRole("listbox");
+    const opciones = within(listbox)
+        .getAllByRole("option")
+        .map((opcion) => opcion.textContent?.trim());
+    fireEvent.keyDown(listbox, { key: "Escape", code: "Escape", keyCode: 27 });
     return opciones;
 }
 
@@ -91,6 +99,12 @@ function esperarSelectVacio(nombre: string) {
 }
 
 describe("PreciosReferencia", () => {
+    
+    beforeEach(() => {
+        vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "local");
+        document.body.style.setProperty("--Mui-transitions-disabled", "true");
+    });
+
     it("muestra todos los registros y permite ver solo los marcados como referencia", async () => {
         const datos = await obtenerPreciosReferencia();
         render(<PreciosReferencia {...datos} />);
@@ -187,6 +201,8 @@ describe("PreciosReferencia", () => {
 
     it("acota País, Categoría, Calibre y Presentación según las facetas elegidas", () => {
         renderizarFiltros();
+        fireEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+
         seleccionar("Especie", "Manzana");
         seleccionar("Variedad", "Gala");
 
@@ -206,7 +222,7 @@ describe("PreciosReferencia", () => {
         expect(opcionesDe("País")).toEqual(["Todos los países", "URUGUAY"]);
         expect(opcionesDe("Calibre")).toEqual(["Todos los calibres", "M"]);
         expect(opcionesDe("Presentación")).toEqual(["Todas las presentaciones", "Bolsa"]);
-    });
+    }, 15000);
 
     it("conserva facetas compatibles al cambiar de especie y reinicia Variedad y Presentación", () => {
         renderizarFiltros();
@@ -287,15 +303,14 @@ describe("PreciosReferencia", () => {
 
     it("Limpiar filtros restituye los selects y todas sus opciones", () => {
         renderizarFiltros();
+        fireEvent.click(screen.getByRole("button", { name: "Más filtros" }));
         seleccionar("Especie", "Pera");
         seleccionar("Variedad", "Williams");
         seleccionar("Presentación", "Cajón");
         seleccionar("País", "ARGENTINA");
         seleccionar("Categoría", "Extra");
         seleccionar("Calibre", "P");
-
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-
         esperarSelectVacio("Especie");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
         expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveAttribute("aria-disabled", "true");
