@@ -352,6 +352,18 @@ describe("FiltrosPublicaciones", () => {
         expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Árbol", "Berro", "Zanahoria"]);
     });
 
+    it("muestra las especies prioritarias primero en el selector del listado público", () => {
+        const publicacionesConEspecies = ["Pera", "Morrón", "Banana", "Acelga", "Papa"].map((especie, indice) => ({
+            ...publicaciones[0],
+            id: indice + 1,
+            especie,
+        }));
+        render(<FiltrosPublicaciones publicaciones={publicacionesConEspecies} especieFiltro="" ordenInicial="prioridad"/>);
+
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Papa", "Banana", "Morrón", "Acelga", "Pera"]);
+    });
+
     it("cierra el menú de ordenamiento al seleccionar una opción", () => {
         render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
         const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
@@ -677,6 +689,51 @@ describe("FiltrosPublicaciones", () => {
         expect(alCambiarOrden).toHaveBeenCalledTimes(2);
         expect(alCambiarOrden).toHaveBeenLastCalledWith("alfabeticoAsc");
         expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([1, 2, 4, 3]);
+    });
+
+    it("aplica la prioridad solo como orden inicial y no la ofrece en el menú público", () => {
+        const alFiltrar = vi.fn();
+        const datos = [
+            { ...publicaciones[0], id: 1, especie: "Pera", variedad: "Williams" },
+            { ...publicaciones[0], id: 2, especie: "Manzana", variedad: "Red" },
+            { ...publicaciones[0], id: 3, especie: "Papa", variedad: "-" },
+            { ...publicaciones[0], id: 4, especie: "Manzana", variedad: "Gala" },
+            { ...publicaciones[0], id: 5, especie: "Acelga", variedad: "-" },
+            { ...publicaciones[0], id: 6, especie: "Banana", variedad: "-" },
+        ];
+        render(<FiltrosPublicaciones publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
+        const ids = () => (alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id);
+
+        expect(ids()).toEqual([3, 6, 4, 2, 5, 1]);
+        expect(screen.queryByRole("button", { name: "Sin ordenar" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /prioridad/i })).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "manzana" } });
+        expect(ids()).toEqual([4, 2]);
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        expect(ids()).toEqual([3, 6, 4, 2, 5, 1]);
+    });
+
+    it("conserva A-Z después de limpiar filtros y solo vuelve a prioridad al montar de nuevo", () => {
+        const alFiltrar = vi.fn();
+        const datos = [
+            { ...publicaciones[0], id: 1, especie: "Pera" },
+            { ...publicaciones[0], id: 2, especie: "Papa" },
+            { ...publicaciones[0], id: 3, especie: "Acelga" },
+        ];
+        const vista = render(<FiltrosPublicaciones publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
+        const ids = () => (alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id);
+
+        expect(ids()).toEqual([2, 3, 1]);
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("button", { name: "A-Z" }));
+        expect(ids()).toEqual([3, 2, 1]);
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        expect(ids()).toEqual([3, 2, 1]);
+        expect(screen.getByRole("button", { name: "A-Z" })).toHaveClass(styles.opcionOrdenamientoActiva);
+
+        vista.unmount();
+        render(<FiltrosPublicaciones publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
+        expect(ids()).toEqual([2, 3, 1]);
     });
 
     it("ordena las publicaciones alfabéticamente de Z a A", () => {

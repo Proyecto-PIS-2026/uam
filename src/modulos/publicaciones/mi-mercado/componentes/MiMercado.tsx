@@ -4,11 +4,12 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
+import { compararEspeciesPorPrioridad } from "../../../../compartido/prioridad-especies";
 import DrawerEditarPublicacion, { type PublicacionParaEditar } from "../../operadores/componentes/DrawerEditarPublicacion";
 import NuevaPublicacion from "../../operadores/componentes/NuevaPublicacion";
 import type { OpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
 import type { CambiosPublicacionOperador } from "../../operadores/modificar-publicacion";
-import FiltrosPublicaciones, { type OrdenPublicaciones } from "../../filtros/FiltrosPublicaciones";
+import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../filtros/FiltrosPublicaciones";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
@@ -60,7 +61,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(abrirAltaInicial);
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(true);
-    const [ordenActual, setOrdenActual] = useState<OrdenPublicaciones>("alfabeticoAsc");
+    const [ordenActual, setOrdenActual] = useState<OrdenPublicaciones>("prioridad");
     const [seleccion, setSeleccion] = useState<{ publicacion: Publicacion; listado: Publicacion[] } | null>(null);
     const [listadoRecargado, setListadoRecargado] = useState<{ origen: Publicacion[]; datos: Publicacion[] } | null>(null);
     const [sincronizando, setSincronizando] = useState(false);
@@ -86,10 +87,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         pais: "",
         operador: { id: operadorId, nombreFantasia: nombreOperador, whatsApp: "" },
     })), [publicacionesVigentes, operadorId, nombreOperador]);
-    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort((primera, segunda) => {
-        const especie = primera.especie.localeCompare(segunda.especie);
-        return especie !== 0 ? especie : primera.variedad.localeCompare(segunda.variedad);
-    }));
+    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
     const publicacionesPorId = new Map(publicacionesVigentes.map((publicacion) => [publicacion.id, publicacion]));
     const publicacionesVisibles: Publicacion[] = [];
     for (const publicacionFiltrada of publicacionesFiltradas) {
@@ -99,7 +97,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
 
     let publicacionSeleccionada = seleccion?.publicacion ?? null;
     if (seleccion && seleccion.listado !== publicacionesActuales) {
-        publicacionSeleccionada = publicacionesActuales.find((publicacion) => publicacion.id === seleccion.publicacion.id) ?? seleccion.publicacion;
+        publicacionSeleccionada = publicacionesActuales.find((publicacion) => publicacion.id === seleccion.publicacion.id) ?? null;
     }
 
     const publicacionParaEditar: PublicacionParaEditar | null = publicacionSeleccionada ? {
@@ -142,8 +140,10 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
             if (recarga !== ultimaRecarga.current) return false;
             setListadoRecargado({ origen: publicaciones, datos });
             setIdsEliminados((actuales) => actuales.filter((id) => datos.some((publicacion) => publicacion.id === id)));
+            setSeleccion((actual) => actual && datos.some((publicacion) => publicacion.id === actual.publicacion.id) ? actual : null);
+            setPublicacionPendiente((actual) => actual && datos.some((publicacion) => publicacion.id === actual.id) ? actual : null);
             router.refresh();
-            return true;
+            return datos;
         } catch {
             if (recarga !== ultimaRecarga.current) return false;
             setMensaje("");
@@ -186,10 +186,21 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
 
         const respuesta = await fetch(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "PATCH", body: formulario });
         const resultado = await respuesta.json();
-        if (!respuesta.ok) throw new Error(resultado.errores?.[0] ?? "No se pudieron guardar los cambios.");
+        if (!respuesta.ok) {
+            if (respuesta.status === 404) {
+                const datos = await sincronizarPublicaciones();
+                if (datos && !datos.some((publicacion) => publicacion.id === publicacionSeleccionada.id)) {
+                    setMensaje("La publicación ya no está disponible. Se actualizó el listado.");
+                    return;
+                }
+            }
+            throw new Error(resultado.errores?.[0] ?? "No se pudieron guardar los cambios.");
+        }
 
-        if (await sincronizarPublicaciones()) {
-            setMensaje(resultado.mensaje ?? "Publicación actualizada.");
+        const datos = await sincronizarPublicaciones();
+        if (datos) {
+            const sigueDisponible = datos.some((publicacion) => publicacion.id === publicacionSeleccionada.id);
+            setMensaje(sigueDisponible ? resultado.mensaje ?? "Publicación actualizada." : "La publicación ya no está disponible. Se actualizó el listado.");
         }
     }
 
@@ -201,7 +212,18 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         try {
             const respuesta = await fetch(`/api/publicaciones/${publicacion.id}?operadorId=${operadorId}`, { method: "DELETE" });
             const resultado = await respuesta.json();
-            if (!respuesta.ok) throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
+            if (!respuesta.ok) {
+                if (respuesta.status === 404) {
+                    const datos = await sincronizarPublicaciones();
+                    if (datos && !datos.some((actual) => actual.id === publicacion.id)) {
+                        setPublicacionPendiente(null);
+                        setSeleccion((actual) => actual?.publicacion.id === publicacion.id ? null : actual);
+                        setMensaje("La publicación ya había sido eliminada. Se actualizó el listado.");
+                        return;
+                    }
+                }
+                throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
+            }
 
             setIdsEliminados((actuales) => [...actuales, publicacion.id]);
             setPublicacionPendiente(null);
@@ -240,6 +262,9 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
 
     const grupos = Array.from(gruposPorEspecie.values());
     grupos.sort((primero, segundo) => {
+        if (ordenActual === "prioridad" || ordenActual === "precioAsc" || ordenActual === "precioDesc") {
+            return compararEspeciesPorPrioridad(primero.especie.nombreEspecie, segundo.especie.nombreEspecie);
+        }
         const comparacion = primero.especie.nombreEspecie.localeCompare(segundo.especie.nombreEspecie, "es", { sensitivity: "base" });
         return ordenActual === "alfabeticoDesc" ? -comparacion : comparacion;
     });
@@ -293,7 +318,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                 ) : (
                     <>
                         <div className={styles.filtros}>
-                            <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual} />
+                            <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual} />
                         </div>
                         {/* Controles */}
                         <div className={styles.encabezadoCatalogo}>
@@ -349,7 +374,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                                         incrementoPrecio
                                                     }
                                                     alConsultar={consultarPublicacion}
-                                                    alPrecioActualizado={() => { void sincronizarPublicaciones(); }}
+                                                    alPrecioActualizado={sincronizarPublicaciones}
                                                 />
                                             ))}
                                         </div>
@@ -365,7 +390,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                         operadorId={operadorId}
                                         incrementoPrecio={incrementoPrecio}
                                         alConsultar={consultarPublicacion}
-                                        alPrecioActualizado={() => { void sincronizarPublicaciones(); }}
+                                        alPrecioActualizado={sincronizarPublicaciones}
                                     />
                                 ))}
                             </div>

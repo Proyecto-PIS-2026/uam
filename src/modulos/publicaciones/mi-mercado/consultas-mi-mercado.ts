@@ -43,16 +43,25 @@ export async function actualizarPrecioPublicacion(
         throw new Error("El precio excede el valor máximo permitido.");
     }
 
-    const pertenencia = await db.orm.public.PublicacionOperador
-        .where({ operadorId, publicacionId })
-        .all();
+    await db.transaction(async (tx) => {
+        await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ${operadorId})`
+            .returnsRow({ locked: "pg/int4@1" }).build());
 
-    if (pertenencia.length === 0) {
-        throw new Error("La publicación no existe o no pertenece al operador.");
-    }
+        const pertenencia = await tx.orm.public.PublicacionOperador
+            .where({ operadorId, publicacionId })
+            .all();
 
-    await db.orm.public.Publicacion
-        .where({ id: publicacionId })
-        .update({ precio: nuevoPrecio.toFixed(2) as Numeric<12, 2> });
+        if (pertenencia.length === 0) {
+            throw new Error("La publicación no existe o no pertenece al operador.");
+        }
+
+        const publicacionActualizada = await tx.orm.public.Publicacion
+            .where({ id: publicacionId })
+            .update({ precio: nuevoPrecio.toFixed(2) as Numeric<12, 2> });
+
+        if (!publicacionActualizada) {
+            throw new Error("La publicación no existe o no pertenece al operador.");
+        }
+    });
 }
 

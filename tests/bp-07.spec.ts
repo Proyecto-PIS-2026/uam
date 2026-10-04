@@ -3,7 +3,7 @@ import { test, expect, type Locator } from "@playwright/test";
 test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
   test.slow();
 
-  const rutaMercado = "/mi-mercado/Mercado%20Verde%20UAM";
+  const rutaMercado = "/mi-mercado";
 
   async function seleccionar(
     formulario: Locator,

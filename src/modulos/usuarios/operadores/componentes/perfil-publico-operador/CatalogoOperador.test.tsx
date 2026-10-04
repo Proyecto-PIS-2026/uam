@@ -46,6 +46,13 @@ const manzana: PublicacionPerfil = {
     variedad: "-",
 };
 
+const papa: PublicacionPerfil = {...tomate, id: 4, especie: "Papa", variedad: "Blanca"};
+const acelga: PublicacionPerfil = {...tomate, id: 5, especie: "Acelga", variedad: "-"};
+
+function nombresDeGrupos() {
+    return screen.getAllByRole("heading", {level: 3}).filter((titulo) => !titulo.closest("button")).map((titulo) => titulo.textContent);
+}
+
 describe("CatalogoOperador", () => {
     it("muestra el mensaje de vacío cuando no hay publicaciones", () => {
         render(<CatalogoOperador publicaciones={[]}/>);
@@ -64,12 +71,45 @@ describe("CatalogoOperador", () => {
         expect(screen.queryByText("No hay publicaciones disponibles.")).not.toBeInTheDocument();
     });
 
-    it("ordena alfabéticamente las publicaciones por defecto", () => {
-        render(<CatalogoOperador publicaciones={[tomate, manzana, tomateCherry]}/>);
+    it("muestra primero las especies prioritarias presentes y después el resto en orden alfabético", () => {
+        render(<CatalogoOperador publicaciones={[acelga, tomate, manzana, tomateCherry, papa]}/>);
         expect(screen.getAllByRole("button", {name: /Ver detalles de/}).map((boton) => boton.getAttribute("aria-label"))).toEqual([
+            "Ver detalles de Papa - Blanca",
             "Ver detalles de Manzana",
             "Ver detalles de Tomate - Cherry",
             "Ver detalles de Tomate - Perita",
+            "Ver detalles de Acelga",
+        ]);
+    });
+
+    it("ofrece en el selector solo las especies publicadas por el operador y respeta la prioridad", () => {
+        render(<CatalogoOperador publicaciones={[acelga, tomate, papa]}/>);
+        fireEvent.mouseDown(screen.getByRole("combobox", {name: "Especie"}));
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Papa", "Tomate", "Acelga"]);
+    });
+
+    it("respeta la prioridad al agrupar y aplica A-Z cuando se elige explícitamente", () => {
+        render(<CatalogoOperador publicaciones={[acelga, tomate, manzana, papa]}/>);
+        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        expect(nombresDeGrupos()).toEqual(["Papa", "Manzana", "Tomate", "Acelga"]);
+
+        fireEvent.click(screen.getByRole("button", {name: "Ordenar por"}));
+        fireEvent.click(screen.getByRole("button", {name: "A-Z"}));
+        expect(nombresDeGrupos()).toEqual(["Acelga", "Manzana", "Papa", "Tomate"]);
+    });
+
+    it("mantiene el orden prioritario de los grupos cuando se ordenan sus publicaciones por precio", () => {
+        render(<CatalogoOperador publicaciones={[{...acelga, precio: "10"}, {...papa, precio: "300"}, {...tomate, precio: "200"}, {...tomateCherry, precio: "50"}]}/>);
+        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: "Ordenar por"}));
+        fireEvent.click(screen.getByRole("button", {name: "Menor Precio"}));
+
+        expect(nombresDeGrupos()).toEqual(["Papa", "Tomate", "Acelga"]);
+        expect(screen.getAllByRole("button", {name: /Ver detalles de/}).map((boton) => boton.getAttribute("aria-label"))).toEqual([
+            "Ver detalles de Papa - Blanca",
+            "Ver detalles de Tomate - Cherry",
+            "Ver detalles de Tomate - Perita",
+            "Ver detalles de Acelga",
         ]);
     });
 
