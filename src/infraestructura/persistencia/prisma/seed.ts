@@ -165,6 +165,16 @@ function clave(...partes: Array<string | number>): string {
   return JSON.stringify(partes);
 }
 
+function cantidadUnidadesDemo(indice: number, unidad: string): number | null {
+  if (indice % 4 !== 0) return null;
+
+  const variacion = Math.floor(indice / 4) % 5;
+  if (unidad === "KG") return 100 + variacion * 50;
+  if (unidad === "DOC") return 12 + variacion * 6;
+  if (unidad === "CAB") return 40 + variacion * 20;
+  return 20 + variacion * 10;
+}
+
 function idRequerido(mapa: Map<string, number>, llave: string, descripcion: string): number {
   const id = mapa.get(llave);
   if (id === undefined) throw new Error(`No se encontró ${descripcion} en el catálogo de la seed.`);
@@ -522,6 +532,7 @@ async function main() {
       publicacionDisponible: oferta.available,
       publicacionActiva: oferta.active,
       precio,
+      cantidadUnidades: cantidadUnidadesDemo(indice, oferta.measureUnit),
       foto,
       tipoPublicacion: "OPERADOR",
       presentacionId,
