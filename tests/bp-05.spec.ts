@@ -76,9 +76,13 @@ for (const pantalla of [
     await page.goto(rutaListado);
     await expect(tarjetas.first()).toBeVisible();
 
-    const publicaciones = await leerPublicaciones();
-    await ordenar("Sin ordenar");
-    const publicacionesSinOrdenar = await leerPublicaciones();
+    const publicacionesPrioridad = await leerPublicaciones();
+    const publicaciones = [...publicacionesPrioridad].sort((a, b) => {
+      const [especieA, variedadA = "-"] = a.nombre.split(" - ");
+      const [especieB, variedadB = "-"] = b.nombre.split(" - ");
+      return especieA.localeCompare(especieB, "es", { sensitivity: "base" })
+        || variedadA.localeCompare(variedadB, "es", { sensitivity: "base" });
+    });
     await ordenar("A-Z");
     await comprobarResultados(publicaciones);
     const producto = publicaciones.find((publicacion) =>
@@ -202,6 +206,7 @@ for (const pantalla of [
       await precioMinimo.fill(String(Math.max(...publicaciones.map((publicacion) => publicacion.precio ?? 0)) + 1));
       await comprobarResultados([]);
 
+      await ordenar("A-Z");
       await page.getByRole("button", { name: "Limpiar filtros" }).click();
       await expect(busqueda).toHaveValue("");
       await expect(precioMinimo).toHaveValue("");
@@ -227,30 +232,21 @@ for (const pantalla of [
           .toEqual([...esperados, ...Array<null>(sinPrecio).fill(null)]);
       }
 
-      const alfabeticas = [...publicaciones].sort((a, b) => {
-        const [especieA, variedadA = "-"] = a.nombre.split(" - ");
-        const [especieB, variedadB = "-"] = b.nombre.split(" - ");
-        return especieA.localeCompare(especieB, "es", { sensitivity: "base" })
-          || variedadA.localeCompare(variedadB, "es", { sensitivity: "base" });
-      });
-
       await ordenar("A-Z");
-      await comprobarResultados(alfabeticas);
+      await comprobarResultados(publicaciones);
       await ordenar("Z-A");
-      await expect(tarjetas.getByRole("heading")).toHaveText(alfabeticas.map((publicacion) => publicacion.nombre).reverse());
+      await expect(tarjetas.getByRole("heading")).toHaveText(publicaciones.map((publicacion) => publicacion.nombre).reverse());
 
-      await ordenar("Sin ordenar");
-      await comprobarResultados(publicacionesSinOrdenar);
-
-      await ordenar("Z-A");
       await page.getByRole("button", { name: "Limpiar filtros" }).click();
-      await comprobarResultados(alfabeticas);
+      await expect(tarjetas).toHaveCount(publicaciones.length);
+      await expect(tarjetas.getByRole("heading")).toHaveText(publicaciones.map((publicacion) => publicacion.nombre).reverse());
 
       await busqueda.fill("producto-inexistente-bp-05");
       await ordenar("Mayor Precio");
       await comprobarResultados([]);
+      await ordenar("A-Z");
       await page.getByRole("button", { name: "Limpiar filtros" }).click();
-      await comprobarResultados(alfabeticas);
+      await comprobarResultados(publicaciones);
     });
   });
 }
