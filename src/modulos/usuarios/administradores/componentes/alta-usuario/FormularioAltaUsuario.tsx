@@ -18,7 +18,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const [nombre, setNombre] = useState("");
     const [telefono, settelefono] = useState("");
     const [locales, setLocales] = useState([
-        { nombre: "", nave: "", contrato: "", mostrarContrato: false }
+        { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
     ]);
     const [codigoPais, setCodigoPais] = useState("+598");
     const [mensajeExito, setMensajeExito] = useState("");
@@ -62,7 +62,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     codigoPais,
                     telefono,
                     locales: locales.map((local) => ({
-                        nombre: local.nombre,
+                        numeroLocal: local.numeroLocal,
                         naveId: Number(local.nave),
                         contrato: local.contrato,
                     })),
@@ -79,7 +79,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 setCodigoPais("+598");
                 setNombre("");
                 settelefono("");
-                setLocales([{ nombre: "", nave: "", contrato: "" }]);
+                setLocales([{ numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }]);
 
                 setMensajeExito(resultado.mensaje);
                 setMensajeVisible(true);
@@ -97,11 +97,11 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     function agregarLocal() {
         setLocales([
             ...locales,
-            { nombre: "", nave: "", contrato: "", mostrarContrato: false }
+            { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
         ]);
     }
 
-    function actualizarLocal(index: number, campo: "nombre" | "nave" | "contrato", valor: string) {
+    function actualizarLocal(index: number, campo: "numeroLocal" | "nave" | "contrato", valor: string) {
         setLocales(locales.map((l, i) => (i === index ? { ...l, [campo]: valor } : l)));
     }       
         
@@ -251,9 +251,9 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 <input
                                     type="text"
                                     placeholder="Número de local"
-                                    value={local.nombre}
+                                    value={local.numeroLocal}
                                     required
-                                    onChange={(e) => actualizarLocal(index, "nombre", e.target.value)}
+                                    onChange={(e) => actualizarLocal(index, "numeroLocal", e.target.value)}
                                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary lg:w-1/4"
                                 />
 
@@ -364,7 +364,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 setCodigoPais("+598");
                                 setErrores([]);
                                 setMensajeExito("");
-                                setLocales([{ nombre: "", nave: "", contrato: "" }]);
+                                setLocales([{ numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }]);
                             }}
                         className={styles.botonSecundario}
                     >

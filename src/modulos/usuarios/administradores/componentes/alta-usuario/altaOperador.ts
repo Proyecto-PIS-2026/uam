@@ -36,10 +36,10 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
         for (const local of datos.locales) {
             const localExistente = await tx.orm.public.Local.where({
                 naveId: local.naveId,
-                numeroLocal: local.nombre,
+                numeroLocal: local.numeroLocal,
             }).first();
             if (localExistente) {
-                return `El local ${local.nombre} ya existe en la nave seleccionada.`;
+                return `El local ${local.numeroLocal} ya existe en la nave seleccionada.`;
             }
         }
 
@@ -57,7 +57,7 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
 			await tx.orm.public.Local.create({
             operadorId: operador.id,
             naveId: local.naveId,
-            numeroLocal: local.nombre,
+            numeroLocal: local.numeroLocal,
             finContrato: local.contrato
                 ? Temporal.PlainDate.from(local.contrato)
                     .toPlainDateTime({ hour: 23, minute: 59, second: 59 })
