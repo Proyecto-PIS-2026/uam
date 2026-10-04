@@ -17,8 +17,8 @@ export default async function Page({ params }: PageProps) {
     const { id } = await params;
     const [perfil, opciones] = await Promise.all([
         obtenerPerfilAdminOperador(Number(id)),
-        obtenerOpcionesEdicionPublicacion()
-    ])
+        obtenerOpcionesEdicionPublicacion(),
+    ]);
 
     if (!perfil) {
         notFound();
