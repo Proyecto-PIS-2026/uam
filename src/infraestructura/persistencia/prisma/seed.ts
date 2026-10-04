@@ -148,7 +148,7 @@ const operadores: OperadorDemo[] = [
     username: "sandias_de_rivera",
     nombreFantasia: "Sandias de Rivera",
     whatsApp: "+598914",
-    locales: [{ nave: "Tingado", numero: "N10", finContrato: null }],
+    locales: [{ nave: "Tinglado", numero: "N10", finContrato: null }],
   },
   {
     username: "citricola_salto_grande",
