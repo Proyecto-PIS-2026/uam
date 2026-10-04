@@ -35,6 +35,20 @@ function leerPrecio(valor: string): number | null {
     return Number.isFinite(precio) ? precio : null;
 }
 
+function abrirHistorico(fila: PrecioReferencia) {
+    const [clasificacion, especie] = JSON.parse(fila.id);
+    const parametros = new URLSearchParams({
+        classification_id: String(clasificacion),
+        species_id: String(especie),
+        producto: fila.especie,
+        variedad: fila.variedad,
+        pais: fila.pais,
+        calibre: fila.calibre,
+        categoria: fila.categoria,
+    });
+    window.location.assign(`/precios-historicos?${parametros}`);
+}
+
 export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     const [busqueda, setBusqueda] = useState("");
     const [especie, setEspecie] = useState("");
@@ -338,7 +352,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 </thead>
                                 <tbody>
                                     {visibles.map((fila) => (
-                                        <tr key={fila.id} className={fila.esReferencia ? styles.filaReferencia : undefined}>
+                                        <tr key={fila.id} className={fila.esReferencia ? styles.filaReferencia : undefined} onClick={() => abrirHistorico(fila)} style={{ cursor: "pointer" }}>
                                             <td className={styles.producto}><strong>{fila.especie}</strong></td>
                                             <td className={styles.variedad}>{fila.variedad}</td>
                                             <td className={styles.referencia}>
@@ -372,6 +386,8 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                     key={fila.id}
                                     className={`${styles.filaMobile} ${fila.esReferencia ? styles.filaMobileReferencia : ""}`}
                                     role="listitem"
+                                    onClick={() => abrirHistorico(fila)}
+                                    style={{ cursor: "pointer" }}
                                 >
                                     <div className={styles.filaMobileCabecera}>
                                         <div className={styles.filaMobileProducto}>

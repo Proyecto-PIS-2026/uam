@@ -1,0 +1,33 @@
+.pagina { display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; }
+.volver { display: inline-flex; align-items: center; align-self: flex-start; gap: .35rem; padding: 0; border: 0; background: none; color: var(--color-primary); font: inherit; font-size: .875rem; font-weight: 600; text-decoration: none; cursor: pointer; }
+.volver:hover { text-decoration: underline; }
+.filtrosPanel, .tablaPanel { min-width: 0; border: 1px solid var(--color-border); border-radius: .875rem; background: var(--color-surface); box-shadow: 0 1px 3px rgb(0 0 0 / 5%); }
+.filtrosPanel { padding: .875rem; }
+.filtrosCabecera, .tablaCabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
+.filtrosCabecera h2, .tablaCabecera h2 { margin: 0; color: var(--color-secondary); font-size: 1.05rem; font-weight: 700; }
+.filtrosCabecera span { color: var(--color-muted-foreground); font-size: .82rem; }
+.camposFecha { display: flex; align-items: end; gap: .75rem; margin-top: 1rem; }
+.camposFecha label { display: grid; gap: .35rem; color: var(--color-muted-foreground); font-size: .8rem; font-weight: 600; }
+.camposFecha input { min-height: 2.5rem; padding: .35rem .6rem; border: 1px solid var(--color-border); border-radius: .45rem; background: var(--color-background); color: var(--color-foreground); font: inherit; }
+.separador { padding-bottom: .55rem; color: var(--color-muted-foreground); }
+.tablaPanel { overflow: hidden; }
+.tablaCabecera { padding: 1rem; border-bottom: 1px solid var(--color-border); }
+.tablaContenedor { width: 100%; overflow-x: auto; }
+.tabla { width: 100%; border-collapse: collapse; text-align: left; font-size: .85rem; }
+.tabla th { padding: .75rem; border-bottom: 1px solid var(--color-border); background: var(--color-background); color: var(--color-secondary); font-size: .75rem; font-weight: 700; white-space: nowrap; }
+.tabla td { padding: .75rem; border-bottom: 1px solid #e9e9e9; vertical-align: middle; }
+.tabla tbody tr:nth-child(even) { background: #fafbf9; }
+.tabla tbody tr:hover { background: #eaf3e9; }
+.precio { color: var(--color-secondary); font-weight: 700; white-space: nowrap; }
+.precio small { display: inline-block; margin-left: .4rem; border-radius: 999px; background: #e8f4ea; padding: .2rem .45rem; color: #28633a; font-size: .68rem; }
+.listaMobile { display: none; }
+.filaMobile { padding: .75rem .875rem; border-bottom: 1px solid var(--color-border); }
+.filaMobile:nth-child(even) { background: #fafbf9; }
+.filaMobile header, .filaMobile > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .3rem .75rem; }
+.filaMobile header { color: var(--color-secondary); font-size: .875rem; }
+.filaMobile header span, .filaMobile p, .volumen { color: var(--color-muted-foreground); font-size: .78rem; }
+.filaMobile p { margin: .35rem 0; }
+.filaMobile > div strong { color: var(--color-secondary); font-size: .84rem; }
+.filaMobile small { border-radius: 999px; background: #e8f4ea; padding: .2rem .45rem; color: #28633a; font-size: .68rem; }
+@media (max-width: 800px) { .tablaContenedor { display: none; }.listaMobile { display: block; border-top: 1px solid var(--color-border); } }
+@media (max-width: 520px) { .camposFecha { align-items: stretch; flex-direction: column; }.separador { display: none; } }
