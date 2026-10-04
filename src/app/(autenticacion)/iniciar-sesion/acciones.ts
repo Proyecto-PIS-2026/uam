@@ -8,17 +8,23 @@ export type EstadoInicioSesion = {
     error?: string;
 };
 
-export async function iniciarSesion(_: EstadoInicioSesion, datos: FormData): Promise<EstadoInicioSesion> {
-    const rol = datos.get("rol");
+export async function iniciarSesion(
+    _estadoAnterior: EstadoInicioSesion,
+    datos: FormData,
+): Promise<EstadoInicioSesion> {
     const identificador = datos.get("identificador");
     const contrasena = datos.get("contrasena");
 
-    if ((rol !== "OPERADOR" && rol !== "ADMINISTRADOR") || typeof identificador !== "string" || typeof contrasena !== "string" || !identificador.trim() || !contrasena) {
+    if (
+        typeof identificador !== "string" ||
+        typeof contrasena !== "string" ||
+        !identificador.trim() ||
+        !contrasena
+    ) {
         return { error: "Ingresá tus credenciales para continuar." };
     }
 
     const usuario = await autenticarUsuario({
-        rol,
         identificador: identificador.trim(),
         contrasena,
     });

@@ -1,24 +1,35 @@
-import bcrypt from "bcryptjs";
+import cifrado from "bcryptjs";
 import {
     obtenerUsuarioAdministradorPorCorreo,
     obtenerUsuarioOperadorPorNombre,
+    obtenerUsuarioProductorPorNombre,
 } from "./consultasAutenticacion";
 
 export type Credenciales = {
     identificador: string;
     contrasena: string;
-    rol: "OPERADOR" | "ADMINISTRADOR";
 };
 
 export async function autenticarUsuario(credenciales: Credenciales) {
-    const usuario = credenciales.rol === "OPERADOR"
-        ? await obtenerUsuarioOperadorPorNombre(credenciales.identificador)
-        : await obtenerUsuarioAdministradorPorCorreo(credenciales.identificador);
+    const usuario =
+        (await obtenerUsuarioAdministradorPorCorreo(credenciales.identificador)) ||
+        (await obtenerUsuarioOperadorPorNombre(credenciales.identificador)) ||
+        (await obtenerUsuarioProductorPorNombre(credenciales.identificador));
 
-    if (!usuario) return null;
+    if (
+        !usuario ||
+        (usuario.rol !== "ADMINISTRADOR" &&
+            usuario.rol !== "OPERADOR" &&
+            usuario.rol !== "PRODUCTOR")
+    ) {
+        return null;
+    }
 
-    const contrasenaValida = await bcrypt.compare(credenciales.contrasena, usuario.passwordHash);
+    const contrasenaValida = await cifrado.compare(
+        credenciales.contrasena,
+        usuario.passwordHash,
+    );
     if (!contrasenaValida) return null;
 
-    return { usuarioId: usuario.id, rol: credenciales.rol };
+    return { usuarioId: usuario.id, rol: usuario.rol };
 }

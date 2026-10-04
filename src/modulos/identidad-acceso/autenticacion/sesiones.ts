@@ -4,9 +4,11 @@ import { cookies } from "next/headers";
 const nombreCookieSesion = "uam_sesion";
 const duracionSesionEnSegundos = 60 * 60 * 8;
 
+export type RolUsuario = "OPERADOR" | "ADMINISTRADOR" | "PRODUCTOR";
+
 type DatosSesion = {
     usuarioId: number;
-    rol: "OPERADOR" | "ADMINISTRADOR";
+    rol: RolUsuario;
     expiraEn: number;
 };
 
@@ -53,15 +55,26 @@ export async function obtenerSesion(): Promise<DatosSesion | null> {
     const firmaEsperada = firmar(contenido);
     const firmaRecibida = Buffer.from(firma, "base64url");
     const firmaCalculada = Buffer.from(firmaEsperada, "base64url");
-    if (firmaRecibida.length !== firmaCalculada.length || !timingSafeEqual(firmaRecibida, firmaCalculada)) {
+    if (
+        firmaRecibida.length !== firmaCalculada.length ||
+        !timingSafeEqual(firmaRecibida, firmaCalculada)
+    ) {
         return null;
     }
 
     try {
-        const datos = JSON.parse(Buffer.from(contenido, "base64url").toString("utf8")) as DatosSesion;
+        const datos = JSON.parse(
+            Buffer.from(contenido, "base64url").toString("utf8"),
+        ) as DatosSesion;
         if (datos.expiraEn <= Math.floor(Date.now() / 1000)) return null;
         if (!Number.isSafeInteger(datos.usuarioId)) return null;
-        if (datos.rol !== "OPERADOR" && datos.rol !== "ADMINISTRADOR") return null;
+        if (
+            datos.rol !== "OPERADOR" &&
+            datos.rol !== "ADMINISTRADOR" &&
+            datos.rol !== "PRODUCTOR"
+        ) {
+            return null;
+        }
         return datos;
     } catch {
         return null;
