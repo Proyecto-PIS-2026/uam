@@ -40,6 +40,7 @@ export type PublicacionParaEditar = CambiosPublicacionOperador & {
     especie: string;
     variedad: string;
     presentacion?: string;
+    cantidadUnidades?: number | null;
     categoria?: string;
     calibre?: string;
 };
@@ -75,6 +76,7 @@ function precioParaEdicion(precio: string | null) {
 function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
     const [editando, setEditando] = useState(modoInicial === "edicion");
     const [precio, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
+    const [cantidadUnidades, setCantidadUnidades] = useState(() => publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
     const [foto, setFoto] = useState(publicacion.foto);
     const [fotoNueva, setFotoNueva] = useState<File | null>(null);
     const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
@@ -139,6 +141,18 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         if (/^\d{0,10}$/.test(nuevoPrecio)) setPrecio(nuevoPrecio);
     }
 
+    function escribirCantidadUnidades(nuevaCantidad: string) {
+        if (bloqueado) return;
+        if (nuevaCantidad === "") {
+            setCantidadUnidades("");
+            return;
+        }
+        if (!/^\d+$/.test(nuevaCantidad)) return;
+        const valorLimpio = String(Number(nuevaCantidad));
+        if (Number(valorLimpio) > 2147483647) return;
+        setCantidadUnidades(valorLimpio);
+    }
+
     function cambiarPrecio(cantidad: number) {
         if (bloqueado) return;
         const precioActual = Number(precio || "0");
@@ -183,6 +197,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         setFotoNueva(null);
         setFoto(publicacion.foto);
         setPrecio(precioParaEdicion(publicacion.precio));
+        setCantidadUnidades(publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
         setEspecieId(publicacion.especieId);
         setVariedadId(publicacion.variedadId);
         setPresentacionId(publicacion.presentacionId);
@@ -205,6 +220,12 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
             return;
         }
 
+        const cantidadNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
+        if (cantidadNormalizada !== "" && !formatoPrecio.test(cantidadNormalizada)) {
+            setError("La cantidad de unidades debe ser un número entero de hasta 10 dígitos.");
+            return;
+        }
+
         const variedadValida = variedadesDisponibles.some((opcion) => opcion.id === variedadId);
         const presentacionValida = presentacionesDisponibles.some((opcion) => opcion.id === presentacionId);
         const categoriaValida = categoriasDisponibles.some((opcion) => opcion.id === categoriaId);
@@ -221,8 +242,12 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
     async function guardar() {
         if (bloqueado) return;
 
+        const cantidadUnidadesNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
+        const cantidadFinal = (cantidadUnidadesNormalizada === "" ? null : Number(cantidadUnidadesNormalizada)) as number | null;
+
         const cambios: CambiosPublicacionOperador = {
             precio: precio.trim() || null,
+            cantidadUnidades: cantidadFinal,
             foto: foto === publicacion.foto ? undefined : foto,
             categoriaId,
             calibreId,
@@ -246,6 +271,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
             setGuardando(false);
         }
     }
+
+    const presentacionActual = presentaciones.find(p => p.id === presentacionId)?.nombre || publicacion.presentacion;
 
     return (
         <>
@@ -301,8 +328,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </div>
                     </div>
 
-                    {(error || errorConsulta) && <p className={styles.error} role="alert">{error || errorConsulta}</p>}
-
                     <div className={styles.campo}>
                         <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
                         <div className={styles.controlesPrecio} data-editando={editando}>
@@ -312,6 +337,18 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </div>
                         <small className={styles.ayuda}>Dejalo vacío si el producto no tiene precio.</small>
                     </div>
+
+                    <div className={styles.campo}>
+                        <label className={styles.etiqueta} htmlFor={`${idBase}-cantidadUnidades`}>
+                            Unidades ({presentacionActual})
+                        </label>
+                        <div className={styles.controlesPrecio} data-editando={false}>
+                            <input className={`${styles.entrada} w-full grow shrink-0`} id={`${idBase}-cantidadUnidades`} type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar cantidad aquí" value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
+                        </div>
+                        <small className={styles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>
+                    </div>
+
+                    {(error || errorConsulta) && <p className={styles.error} role="alert">{error || errorConsulta}</p>}
 
                     <label className={styles.disponibilidad} htmlFor={editando ? `${idBase}-disponibilidad` : undefined} data-disponible={disponible} data-guardando={ocupado} data-editando={editando}>
                         <span className={styles.textoDisponibilidad}>
