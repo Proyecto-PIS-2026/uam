@@ -246,6 +246,17 @@ describe("TarjetaPublicacion", () => {
     expect(alPrecioActualizado).toHaveBeenCalledOnce();
   });
 
+  it("actualiza el listado sin mostrar error si otra persona eliminó la publicación", async () => {
+    vi.mocked(actualizarPrecio).mockRejectedValueOnce(new Error("La publicación no existe o no pertenece al operador."));
+    const alPrecioActualizado = vi.fn().mockResolvedValue([]);
+    render(<TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} alPrecioActualizado={alPrecioActualizado} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+
+    await waitFor(() => expect(alPrecioActualizado).toHaveBeenCalledOnce());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("disminuye el precio con el botón", async () => {
     render(
       <TarjetaPublicacion
