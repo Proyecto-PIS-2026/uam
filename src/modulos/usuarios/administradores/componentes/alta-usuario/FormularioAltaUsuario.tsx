@@ -1,25 +1,40 @@
 "use client";
+import Link from "next/link";
 import styles from "./FormularioAltaUsuario.module.css";
-import { useState, useEffect, type FormEvent  } from "react";
+import { useState, useEffect, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "./altaOperador";
 import type { NaveOpcion } from "./obtenerNaves";
 
 export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }) {
-    const [rol, setRol] = useState("");
+    const searchParams = useSearchParams();
+    const rolInicial = searchParams.get("rol");
+
+    const [rol, setRol] = useState(rolInicial === "operador" ? "operador" : "");
     const [nombreUsuario, setNombreUsuario] = useState("");
     const [contraseña, setContraseña] = useState("");
     const [confirmacioncontraseña, setConfirmacionContraseña] = useState("");
     const [nombre, setNombre] = useState("");
     const [telefono, settelefono] = useState("");
     const [locales, setLocales] = useState([
-        { nombre: "", nave: "", contrato: "" }
+        { nombre: "", nave: "", contrato: "", mostrarContrato: false }
     ]);
     const [codigoPais, setCodigoPais] = useState("+598");
     const [mensajeExito, setMensajeExito] = useState("");
     const [errores, setErrores] = useState<string[]>([]);
     const [enviando, setEnviando] = useState(false);
     const [mensajeVisible, setMensajeVisible] = useState(false);
+    const [mostrarPopup, setMostrarPopup] = useState(false);
+
+    useEffect(() => {
+        const rolInicial = searchParams.get("rol");
+
+        if (rolInicial === "operador") {
+            setRol("operador");
+        }
+    }, [searchParams]);
+
     useEffect(() => {
     if (!mensajeExito) return;
     
@@ -58,7 +73,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     return;
                 }
 
-                setRol("");
                 setNombreUsuario("");
                 setContraseña("");
                 setConfirmacionContraseña("");
@@ -66,8 +80,10 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 setNombre("");
                 settelefono("");
                 setLocales([{ nombre: "", nave: "", contrato: "" }]);
+
                 setMensajeExito(resultado.mensaje);
                 setMensajeVisible(true);
+                setMostrarPopup(true);
                 return;
             }
 
@@ -79,7 +95,10 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     }
 
     function agregarLocal() {
-        setLocales([...locales, { nombre: "", nave: "", contrato: "" }]);
+        setLocales([
+            ...locales,
+            { nombre: "", nave: "", contrato: "", mostrarContrato: false }
+        ]);
     }
 
     function actualizarLocal(index: number, campo: "nombre" | "nave" | "contrato", valor: string) {
@@ -220,14 +239,14 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             Locales <span className="text-red-500">(Mínimo 1)</span>
                         </label>
                         {locales.map((local, index) => (
-                            <div key={index} className="flex flex-row gap-3">
+                            <div key={index} className="flex flex-wrap gap-3">
                                 <input
                                     type="text"
                                     placeholder="Numero del local"
                                     value={local.nombre}
                                     required
                                     onChange={(e) => actualizarLocal(index, "nombre", e.target.value)}
-                                    className="w-1/3 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                                    className="w-1/4 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
                                 />
 
                                 <select
@@ -244,22 +263,55 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                     ))}
                                 </select>
 
-                                <input
-                                    type="date"
-                                    value={local.contrato}
-                                    onChange={(e) => actualizarLocal(index, "contrato", e.target.value)}
-                                    className="w-1/3 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
-                                />
+                                {local.mostrarContrato ? (
+                                    <div className="flex w-1/3 gap-2">
+                                        <input
+                                            type="date"
+                                            value={local.contrato}
+                                            onChange={(e) =>
+                                                actualizarLocal(index, "contrato", e.target.value)
+                                            }
+                                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setLocales(locales.map((l, i) =>
+                                                    i === index
+                                                        ? { ...l, contrato: "", mostrarContrato: false }
+                                                        : l
+                                                ))
+                                            }
+                                        className={styles.botonSecundario}
+                                        >
+                                            Eliminar Fecha
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setLocales(locales.map((l, i) =>
+                                                i === index
+                                                    ? { ...l, mostrarContrato: true }
+                                                    : l
+                                            ))
+                                        }
+                                        className={styles.botonSecundario}
+                                    >
+                                        + Agregar fecha
+                                    </button>
+                                )}
 
                                 <button
                                     type="button"
                                     onClick={() => eliminarLocal(index)}
                                     disabled={index === 0}
-                                    className={`rounded-lg border border-border px-4 py-2 text-sm font-medium ${
-                                        index === 0 ? "invisible" : "hover:bg-muted"
+                                    className={`${styles.botonSecundario} ${
+                                        index === 0 ? "invisible" : ""
                                     }`}
                                 >
-                                    Eliminar
+                                    Eliminar Local
                                 </button>
                             </div>
                         ))}
@@ -267,9 +319,9 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         <button
                             type="button"
                             onClick={agregarLocal}
-                            className="w-fit rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+                            className={styles.botonSecundario}
                         >
-                            + Agregar nuevo local
+                            + Agregar local
                         </button>
                     </div>
                 </>
@@ -292,11 +344,10 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             ))}
                         </ul>
                 )}
-                <div className="flex justify-end gap-3 pt-2">
+                <div className="flex justify-end gap-3 pt-6">
                     <button
                         type="reset"
                             onClick={() => {
-                                setRol("");
                                 setNombreUsuario("");
                                 setContraseña("");
                                 setConfirmacionContraseña("");
@@ -307,7 +358,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 setMensajeExito("");
                                 setLocales([{ nombre: "", nave: "", contrato: "" }]);
                             }}
-                        className="rounded-lg border border-border px-5 py-2 text-sm font-medium hover:bg-muted"
+                        className={styles.botonSecundario}
                     >
                         Limpiar
                     </button>
@@ -315,12 +366,43 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     <button
                         type="submit"
                         disabled={enviando}
-                        className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+                        className={styles.botonConfirmar}
                     >
                         {enviando ? "Registrando..." : "Registrar usuario"}
                     </button>
                 </div>
             </form>
+
+            {mostrarPopup && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-foreground te">
+                Operador creado satisfactoriamente
+            </h2>
+
+            <p className="mt-3 text-sm text-muted-foreground">
+                ¿Desea precargar productos para este operador?
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+                <button
+                    type="button"
+                    onClick={() => setMostrarPopup(false)}
+                    className={styles.botonSecundario}
+                >
+                    Ahora no
+                </button>
+
+                <Link
+                    href="/precargar-productos"
+                    className={styles.botonConfirmar}
+                >
+                    Precargar productos
+                </Link>
+            </div>
+        </div>
+    </div>
+)}
         </section>
     );
 }

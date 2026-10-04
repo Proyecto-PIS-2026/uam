@@ -1,5 +1,7 @@
 "use client"; // https://nextjs.org/docs/app/api-reference/directives/use-client
 
+import Link from "next/link";
+import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import { useState } from "react";
 import EncabezadoPagina from "../../../../../compartido/EncabezadoPagina";
 import type { OperadorListado } from "../../consultas-listado-publico";
@@ -60,7 +62,39 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
 
     const contenido = (
         <section className="contenedor-pagina flex flex-col gap-6">
-            <EncabezadoPagina titulo="Operadores" cantidad={operadores.length} subtitulo="operadores en la plataforma" />
+            <header className="encabezado-pagina relative isolate overflow-hidden rounded-2xl bg-secondary">
+                <HojasDecorativas variante="separador" />
+
+                <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="mb-1 text-xs font-bold uppercase tracking-widest text-primary-soft">
+                            Administración
+                        </p>
+
+                        <h1 className="titulo-pagina text-white">
+                            Operadores
+                        </h1>
+
+                        <p className="mt-2 text-sm text-white/80 sm:text-base">
+                            Consultá los operadores de la plataforma.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 sm:items-end">
+                        <p className="text-sm font-semibold text-white/80">
+                            {operadores.length}{" "}
+                            {operadores.length === 1 ? "operador" : "operadores"}
+                        </p>
+
+                        <Link
+                            href="/alta-usuario?rol=operador"
+                            className="rounded-lg bg-surface px-4 py-3 text-sm font-semibold text-secondary hover:bg-primary-soft"
+                        >
+                            Nuevo operador
+                        </Link>
+                    </div>
+                </div>
+            </header>
 
             <ControlesListadoOperadores
                 busqueda={busqueda}
