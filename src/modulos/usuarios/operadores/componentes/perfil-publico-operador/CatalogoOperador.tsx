@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
-import FiltrosPublicaciones, { compararPublicacionesAlfabeticamente, type PublicacionListado } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
+import { compararEspeciesPorPrioridad } from "../../../../../compartido/prioridad-especies";
+import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones, type PublicacionListado } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
 import DrawerPublicacionPerfil from "./DrawerPublicacionPerfil";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import styles from "./CatalogoOperador.module.css";
@@ -18,13 +19,14 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
     const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionPerfil | null>(null);
     const [drawerAbierto, setDrawerAbierto] = useState(false);
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(false);
+    const [ordenActual, setOrdenActual] = useState<OrdenPublicaciones>("prioridad");
     const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicaciones.map((publicacion) => ({
         ...publicacion,
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
         codigoCalibre: publicacion.calibre,
         operador: {id: idOperador, nombreFantasia: nombreOperador, whatsApp: whatsAppOperador},
     })), [publicaciones, idOperador, nombreOperador, whatsAppOperador]);
-    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => [...publicacionesParaFiltros].sort(compararPublicacionesAlfabeticamente));
+    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
 
     const publicacionesPorId = new Map(publicaciones.map((publicacion) => [publicacion.id, publicacion]));
     const publicacionesVisibles: PublicacionPerfil[] = [];
@@ -49,13 +51,18 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
 
         return grupos;
     }, {});
+    const gruposOrdenados = Object.entries(publicacionesPorEspecie).sort(([primera], [segunda]) => {
+        if (ordenActual === "alfabeticoAsc") return primera.localeCompare(segunda, "es", {sensitivity: "base"});
+        if (ordenActual === "alfabeticoDesc") return segunda.localeCompare(primera, "es", {sensitivity: "base"});
+        return compararEspeciesPorPrioridad(primera, segunda);
+    });
 
     return (
         <>
             <section className={styles.contenedor}>
                 <div className={styles.catalogo}>
                     <div className={styles.filtros}>
-                        <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={setPublicacionesFiltradas}/>
+                        <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual}/>
                     </div>
 
                     <div className={styles.encabezadoCatalogo}>
@@ -69,7 +76,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
                     {publicacionesVisibles.length > 0 ? (
                         agruparPorEspecie ? (
                             <div className={styles.grupos}>
-                                {Object.entries(publicacionesPorEspecie).map(([especie, publicacionesEspecie]) => (
+                                {gruposOrdenados.map(([especie, publicacionesEspecie]) => (
                                     <section key={especie} className={styles.grupo}>
                                         <div className={styles.separadorGrupo}>
                                             <h3 className={styles.nombreEspecie}>{especie}</h3>

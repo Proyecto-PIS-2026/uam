@@ -10,7 +10,7 @@ type Props = {
     operadorId: number;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
-    alPrecioActualizado?: () => void;
+    alPrecioActualizado?: () => void | Promise<Publicacion[] | false>;
 };
 
 export default function TarjetaPublicacion({
@@ -56,6 +56,15 @@ export default function TarjetaPublicacion({
             setPrecioGuardado({ base: pub.precio, valor: nuevoPrecio });
             alPrecioActualizado?.();
         } catch (error) {
+            if (error instanceof Error && error.message === "La publicación no existe o no pertenece al operador.") {
+                try {
+                    const actuales = await alPrecioActualizado?.();
+                    if (Array.isArray(actuales) && !actuales.some((publicacion) => publicacion.id === pub.id)) return;
+                } catch {
+                    setErrorPrecio(error.message);
+                    return;
+                }
+            }
             setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
         } finally {
             guardandoPrecioRef.current = false;
