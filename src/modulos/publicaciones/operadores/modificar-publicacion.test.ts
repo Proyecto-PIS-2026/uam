@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { ErrorImagenPublicacion } from "./imagenes-publicacion";
 import {
     ErrorEdicionPublicacion,
@@ -7,14 +7,32 @@ import {
 } from "./modificar-publicacion";
 
 const mocks = vi.hoisted(() => {
-    const consulta = () => ({
-        select: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        include: vi.fn().mockReturnThis(),
-        first: vi.fn(),
-        all: vi.fn(),
-        update: vi.fn(),
-    });
+    interface ConsultaMock {
+        select: Mock<(...args: (string | string[])[]) => ConsultaMock>;
+        where: Mock<(...args: Record<string, unknown>[]) => ConsultaMock>;
+        include: Mock<(_relacion: string, callback?: (sub: ConsultaMock) => unknown) => ConsultaMock>;
+        first: Mock<() => Promise<unknown>>;
+        all: Mock<() => Promise<unknown[]>>;
+        update: Mock<(...args: unknown[]) => Promise<unknown>>;
+    }
+
+    const consulta = (): ConsultaMock => {
+        const objetoConsulta: ConsultaMock = {
+            select: vi.fn().mockImplementation(() => objetoConsulta),
+            where: vi.fn().mockImplementation(() => objetoConsulta),
+            include: vi.fn().mockImplementation((_relacion, callback) => {
+                if (typeof callback === "function") {
+                    callback(objetoConsulta);
+                }
+                return objetoConsulta;
+            }),
+            first: vi.fn(),
+            all: vi.fn(),
+            update: vi.fn(),
+        };
+        return objetoConsulta;
+    };
+
 
     return {
         operador: consulta(),
@@ -430,5 +448,88 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: FOTO_NUEVA }));
         expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_ANTERIOR, 20);
         expect(registrarError).toHaveBeenCalledWith("No se pudo eliminar la imagen anterior:", errorLimpieza);
+    });
+
+    it("permite actualizar la cantidad de unidades con un número válido entero", async () => {
+        await modificarPublicacionOperador(9, 12, { ...cambios, cantidadUnidades: 150 });
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({
+            cantidadUnidades: 150
+        }));
+    });
+
+    it("permite guardar la cantidad de unidades como nula", async () => {
+        await modificarPublicacionOperador(9, 12, { ...cambios, cantidadUnidades: null });
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({
+            cantidadUnidades: null
+        }));
+    });
+
+    it("rechaza cantidad de unidades si no es un número entero", async () => {
+        const cambiosInvalidos = { ...cambios, cantidadUnidades: 12.5 };
+        await expect(modificarPublicacionOperador(9, 12, cambiosInvalidos))
+            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La cantidad de unidades debe ser un número entero válido." });
+    });
+
+    it("rechaza cantidad de unidades si es menor a 0", async () => {
+        const cambiosInvalidos = { ...cambios, cantidadUnidades: -5 };
+        await expect(modificarPublicacionOperador(9, 12, cambiosInvalidos))
+            .rejects.toMatchObject({ 
+                codigo: "DATOS_INVALIDOS", 
+                message: "La cantidad de unidades debe ser un número entero entre 0 y 2147483647."
+            });
+    });
+
+    it("rechaza cantidad de unidades si supera los 10 dígitos", async () => {
+        const cambiosInvalidos = { ...cambios, cantidadUnidades: 10000000000 };
+        await expect(modificarPublicacionOperador(9, 12, cambiosInvalidos))
+            .rejects.toMatchObject({ 
+                codigo: "DATOS_INVALIDOS", 
+                message: "La cantidad de unidades debe ser un número entero entre 0 y 2147483647."
+            });
+    });
+
+    it("rechaza cantidad de unidades si el tipo de dato es un texto string", async () => {
+        const cambiosInvalidos = { ...cambios, cantidadUnidades: "150" as unknown as number };
+        await expect(modificarPublicacionOperador(9, 12, cambiosInvalidos))
+            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La cantidad de unidades debe ser un número." });
+    });
+
+    it("guarda los cambios de una publicación del operador", async () => {
+        const cambiosConUnidades = { ...cambios, cantidadUnidades: 200 };
+
+        await expect(modificarPublicacionOperador(9, 12, cambiosConUnidades)).resolves.toEqual({
+            publicacionOperadorId: 12,
+            publicacionId: 20,
+        });
+        expect(mocks.publicacion.update).toHaveBeenCalledWith({
+            precio: "125",
+            foto: cambios.foto,
+            categoriaId: 4,
+            calibreId: 2,
+            presentacionId: 8,
+            publicacionDisponible: true,
+            cantidadUnidades: 200, 
+        });
+        expect(mocks.operador.where).toHaveBeenCalledWith({ usuarioId: 9 });
+        expect(mocks.vinculo.where).toHaveBeenCalledWith({ id: 12, operadorId: 3 });
+        expect(mocks.vinculo.where).toHaveBeenCalledWith({ id: 12 });
+        expect(mocks.vinculo.update).toHaveBeenCalledExactlyOnceWith({ paisId: 5 });
+        expect(mocks.pais.where).toHaveBeenCalledWith({ id: 5 });
+        expect(mocks.publicacion.where).toHaveBeenCalledWith({ id: 20 });
+        expect(mocks.execute).toHaveBeenCalledOnce();
+        expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.vinculo.all.mock.invocationCallOrder[0]);
+        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+    });
+
+    it("ejecuta de forma exitosa la validación profunda de la especie activa al modificar", async () => {
+        mocks.presentacion.first.mockResolvedValue({
+            id: 8,
+            presentacionActiva: true,
+            variedad: { especieId: 6, variedadActiva: true, especie: { especieActiva: true } },
+        });
+
+        await expect(modificarPublicacionOperador(9, 12, { ...cambios, cantidadUnidades: 100 }))
+            .resolves.toEqual(resultadoEsperado);
     });
 });

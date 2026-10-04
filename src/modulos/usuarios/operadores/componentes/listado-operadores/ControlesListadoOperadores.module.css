@@ -35,6 +35,28 @@
     min-width: 7.5rem;
 }
 
+.selectorNave {
+    display: grid;
+    width: max-content;
+    min-width: 7.5rem;
+    max-width: 100%;
+}
+
+.selectorNave::before {
+    content: attr(data-opcion-mas-larga);
+    grid-area: 1 / 1;
+    visibility: hidden;
+    white-space: nowrap;
+    padding: 0 2.5rem 0 0.875rem;
+    font-size: 1rem;
+}
+
+.controles .selectorNave .selectMui {
+    grid-area: 1 / 1;
+    width: 100%;
+    min-width: 0;
+}
+
 .selectMui :global(.MuiOutlinedInput-root) {
     background-color: var(--color-surface);
 }

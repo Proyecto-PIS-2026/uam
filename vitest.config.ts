@@ -15,7 +15,8 @@ export default defineConfig({
       exclude: [
         "src/**/*.d.ts",
         "src/**/migrations/**",
-        "src/infraestructura/persistencia/prisma/**"
+        "src/infraestructura/persistencia/prisma/**",
+        '**/*.integration.test.ts'
       ],
       thresholds: {
         lines: 80,
