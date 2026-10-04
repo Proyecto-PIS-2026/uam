@@ -1,10 +1,3 @@
-.contenedor {
-    width: 100%;
-    margin: auto;
-    padding: 1rem;
-    box-sizing: border-box;
-}
-
 .formulario {
     display: flex;
     flex-direction: column;
@@ -51,114 +44,6 @@
         var(--color-primary) 20%,
         transparent
     );
-}
-
-.locales {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.local {
-    display: flex;
-    flex-direction: row;
-    gap: 0.75rem;
-    align-items: center;
-}
-
-.localNombre {
-    width: 33.333%;
-}
-
-.localNave {
-    width: 25%;
-}
-
-.localContrato {
-    width: 33.333%;
-}
-
-.boton {
-    width: fit-content;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    background-color: transparent;
-    color: var(--color-foreground);
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.boton:hover {
-    background-color: var(--color-primary-soft);
-}
-
-.botonEliminar {
-    width: 90px;
-}
-
-.botonEliminarInvisible {
-    visibility: hidden;
-}
-
-.botones {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding-top: 0.5rem;
-}
-
-.botonLimpiar {
-    padding: 0.5rem 1.25rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    background-color: transparent;
-    color: var(--color-foreground);
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.botonLimpiar:hover {
-    background-color: var(--color-primary-soft);
-}
-
-.botonRegistrar {
-    padding: 0.5rem 1.25rem;
-    border: 0;
-    border-radius: 0.5rem;
-    background-color: var(--color-primary);
-    color: var(--color-primary-foreground);
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.botonRegistrar:hover {
-    opacity: 0.9;
-}
-
-@media (max-width: 600px) {
-    .local {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .localNombre,
-    .localNave,
-    .localContrato {
-        width: 100%;
-    }
-
-    .botones {
-        flex-direction: column;
-    }
-
-    .botonLimpiar,
-    .botonRegistrar {
-        width: 100%;
-    }
 }
 
 .botonSecundario {
@@ -215,4 +100,40 @@
 .botonConfirmar:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.control {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    background-color: var(--color-background);
+    padding: 0.5rem 0.75rem;
+    color: var(--color-foreground);
+    outline: none;
+}
+
+.control:focus {
+    box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.local {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background-color: var(--color-background);
+    padding: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+    .local {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        border: 0;
+        border-radius: 0;
+        background-color: transparent;
+        padding: 0;
+    }
 }

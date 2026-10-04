@@ -130,7 +130,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         value={rol}
                         onChange={(e) => setRol(e.target.value)}
                         required
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                        className={styles.control}
                     >
                         <option value="" disabled>
                             Seleccionar un rol
@@ -152,7 +152,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         required
                         onChange={(e) => setNombreUsuario(e.target.value)}
                         placeholder="Ingresar nombre de usuario"
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                        className={styles.control}
                     />
                 </div>
 
@@ -168,7 +168,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         minLength={8}
                         onChange={(e) => setContraseña(e.target.value)}
                         placeholder="Ingresar contraseña"
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                        className={styles.control}
                     />
                 </div>
 
@@ -184,7 +184,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         minLength={8}
                         onChange={(e) => setConfirmacionContraseña(e.target.value)}
                         placeholder="ingresar confirmación de contraseña"
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                        className={styles.control}
                     />
                 </div>
                 
@@ -201,7 +201,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             required
                             onChange={(e) => setNombre(e.target.value)}
                             placeholder="Ingresar nombre"
-                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            className={styles.control}
                         />
                     </div>
 
@@ -214,7 +214,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 value={codigoPais}
                                 onChange={(e) => setCodigoPais(e.target.value)}
                                 aria-label="Código de país"
-                                className="w-44 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                                className={`${styles.control} w-44`}
                             >
                                 <option value="+598">+598 (Uruguay)</option>
                                 <option value="+54">+54 (Argentina)</option>
@@ -229,7 +229,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 required
                                 onChange={(e) => settelefono(e.target.value)}
                                 placeholder="Ej: 99123456"
-                                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                                className={styles.control}
                             />
                         </div>
                     </div>
@@ -239,23 +239,31 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             Locales <span className="text-red-500">(Mínimo 1)</span>
                         </label>
                         {locales.map((local, index) => (
-                            <div key={index} className="flex flex-wrap gap-3">
+                            <div
+                                key={index}
+                                className={styles.local}
+                            >
+
+                                <h3 className="text-sm font-semibold text-foreground lg:hidden">
+                                    Local {index + 1}
+                                </h3>
+
                                 <input
                                     type="text"
-                                    placeholder="Numero del local"
+                                    placeholder="Número de local"
                                     value={local.nombre}
                                     required
                                     onChange={(e) => actualizarLocal(index, "nombre", e.target.value)}
-                                    className="w-1/4 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary lg:w-1/4"
                                 />
 
                                 <select
                                     value={local.nave}
                                     required
                                     onChange={(e) => actualizarLocal(index, "nave", e.target.value)}
-                                    className="w-1/4 rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary lg:w-1/4"
                                 >
-                                    <option value="">Seleccionar nave</option>
+                                    <option value="" disabled>Seleccionar nave</option>
                                     {naves.map((nave) => (
                                         <option key={nave.id} value={nave.id}>
                                             {nave.nombre}
@@ -264,14 +272,14 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 </select>
 
                                 {local.mostrarContrato ? (
-                                    <div className="flex w-1/3 gap-2">
+                                    <div className="flex w-full flex-col gap-2 lg:w-1/3 lg:flex-row">
                                         <input
                                             type="date"
                                             value={local.contrato}
                                             onChange={(e) =>
                                                 actualizarLocal(index, "contrato", e.target.value)
                                             }
-                                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                                            className={`${styles.control} min-w-0`}
                                         />
                                         <button
                                             type="button"
@@ -282,9 +290,9 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                                         : l
                                                 ))
                                             }
-                                        className={styles.botonSecundario}
+                                            className={styles.botonSecundario}
                                         >
-                                            Eliminar Fecha
+                                            Eliminar fecha
                                         </button>
                                     </div>
                                 ) : (
@@ -299,7 +307,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                         }
                                         className={styles.botonSecundario}
                                     >
-                                        + Agregar fecha
+                                        + Agregar fin de contrato
                                     </button>
                                 )}
 
@@ -311,7 +319,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                         index === 0 ? "invisible" : ""
                                     }`}
                                 >
-                                    Eliminar Local
+                                    Eliminar local
                                 </button>
                             </div>
                         ))}
@@ -346,7 +354,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 )}
                 <div className="flex justify-end gap-3 pt-6">
                     <button
-                        type="reset"
+                        type="button"
                             onClick={() => {
                                 setNombreUsuario("");
                                 setContraseña("");
