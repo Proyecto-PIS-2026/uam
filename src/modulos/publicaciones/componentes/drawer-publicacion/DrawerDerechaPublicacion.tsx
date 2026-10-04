@@ -65,6 +65,10 @@ export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: Dr
                                 <span className={styles.valorInformacion}>{publicacion.categoria}</span>
                             </div>
                             <div className={styles.informacionDetallada}>
+                                <span className={styles.nombreInformacion}>Unidades ({publicacion.presentacion})</span>
+                                <span className={styles.valorInformacion}>{publicacion.cantidadUnidades === null ? "-" : publicacion.cantidadUnidades}</span>
+                            </div>
+                            <div className={styles.informacionDetallada}>
                                 <span className={styles.nombreInformacion}>País</span>
                                 <span className={styles.valorInformacion}>{publicacion.pais}</span>
                             </div>

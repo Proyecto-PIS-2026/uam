@@ -37,6 +37,7 @@ export type Publicacion = {
             };
         };
     };
+    cantidadUnidades?: number | null;
     categoria: {
         id: number;
         nombreCategoria: string;
@@ -81,6 +82,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         especie: publicacion.presentacion.variedad.especie.nombreEspecie,
         variedad: publicacion.presentacion.variedad.nombreVariedad,
         presentacion: publicacion.presentacion.nombrePresentacion,
+        cantidadUnidades: publicacion.cantidadUnidades === null ? null : Number(publicacion.cantidadUnidades),
         categoria: publicacion.categoria.nombreCategoria,
         calibre: publicacion.calibre.nombreCalibre,
         codigoCalibre: publicacion.calibre.codigoCalibre,
@@ -108,6 +110,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         especie: publicacionSeleccionada.presentacion.variedad.especie.nombreEspecie,
         variedad: publicacionSeleccionada.presentacion.variedad.nombreVariedad,
         presentacion: publicacionSeleccionada.presentacion.nombrePresentacion,
+        cantidadUnidades: publicacionSeleccionada.cantidadUnidades,
         categoria: publicacionSeleccionada.categoria.nombreCategoria,
         calibre: publicacionSeleccionada.calibre.nombreCalibre,
         precio: publicacionSeleccionada.precio,

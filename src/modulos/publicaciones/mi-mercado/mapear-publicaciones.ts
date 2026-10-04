@@ -15,6 +15,7 @@ export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion):
             fecha: pub.fecha.toString(),
             publicacionActiva: pub.publicacionActiva as boolean,
             publicacionDisponible: pub.publicacionDisponible as boolean,
+            cantidadUnidades: pub.cantidadUnidades as number | null,
             presentacion: {
                 id: pub.presentacion.id,
                 nombrePresentacion: pub.presentacion.nombrePresentacion,

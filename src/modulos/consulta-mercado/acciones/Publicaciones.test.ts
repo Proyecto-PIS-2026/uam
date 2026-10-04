@@ -5,6 +5,7 @@ type FilaPublicacion = {
 	precio: number | null;
 	fecha: Date; 
 	foto: string | null;
+	cantidadUnidades?: number | string | null;
 	especie: string;
 	variedad: string;
 	presentacion: string;
@@ -132,6 +133,7 @@ function crearFila(id = 7): FilaPublicacion {
 		precio: 150,
 		fecha: new Date("2026-10-03T15:00:00.000Z"), 
 		foto: "/tomate.jpg",
+		cantidadUnidades: null,
 		especie: "Tomate",
 		variedad: "Perita",
 		presentacion: "Cajón",
@@ -173,6 +175,7 @@ describe("consultarPublicaciones", () => {
 			precio: 150,
 			fecha: new Date("2026-10-03T15:00:00.000Z").toString(),
 			foto: "/tomate.jpg",
+			cantidadUnidades: null,
 			especie: "Tomate",
 			variedad: "Perita",
 			presentacion: "Cajón",
@@ -249,5 +252,16 @@ describe("consultarPublicaciones", () => {
 		const { publicaciones } = await consultarPublicaciones();
 		expect(publicaciones).toHaveLength(1);
 		expect(publicaciones[0].precio).toBeNull();
+	});
+
+	it("mantiene la cantidad de unidades entera recibida de la consulta", async () => {
+		query.mockResolvedValue([
+			{ ...crearFila(), cantidadUnidades: 45 },
+		]);
+
+		const { publicaciones } = await consultarPublicaciones();
+
+		expect(publicaciones).toHaveLength(1);
+		expect(publicaciones[0].cantidadUnidades).toBe(45);
 	});
 });

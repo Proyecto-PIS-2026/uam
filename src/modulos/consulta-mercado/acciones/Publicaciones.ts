@@ -8,6 +8,7 @@ export type PublicacionListado = {
     especie: string;
     variedad: string;
     presentacion: string;
+    cantidadUnidades?: number | null;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -49,6 +50,7 @@ export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> 
             especie: tablas.especie.nombreEspecie,
             variedad: tablas.variedad.nombreVariedad,
             presentacion: tablas.presentacion.nombrePresentacion,
+            cantidadUnidades: tablas.publicacion.cantidadUnidades,
             categoria: tablas.categoria.nombreCategoria,
             calibre: tablas.calibre.nombreCalibre,
             codigoCalibre: tablas.calibre.codigoCalibre,           
@@ -74,6 +76,7 @@ export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> 
         especie: fila.especie,
         variedad: fila.variedad,
         presentacion: fila.presentacion,
+        cantidadUnidades: fila.cantidadUnidades === null ? null : Number(fila.cantidadUnidades),
         categoria: fila.categoria,
         calibre: fila.calibre,
         codigoCalibre: fila.codigoCalibre,
