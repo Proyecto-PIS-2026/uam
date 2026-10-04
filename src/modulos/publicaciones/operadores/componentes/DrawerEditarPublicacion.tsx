@@ -242,8 +242,13 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         if (bloqueado) return;
         const precioNuevo = precio.trim() || null;
         const precioOriginal = precioParaEdicion(publicacion.precio).trim() || null;
+        const cantidadUnidadesNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
+        const cantidadFinal = (cantidadUnidadesNormalizada === "" ? null : Number(cantidadUnidadesNormalizada)) as number | null;
+        const cantidadOriginal = publicacion.cantidadUnidades ?? null;
+
         const sinCambios =
             precioNuevo === precioOriginal &&
+            cantidadFinal === cantidadOriginal &&
             foto === publicacion.foto &&
             fotoNueva === null &&
             categoriaId === publicacion.categoriaId &&
@@ -261,8 +266,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
             }
             return; 
         }
-        const cantidadUnidadesNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
-        const cantidadFinal = (cantidadUnidadesNormalizada === "" ? null : Number(cantidadUnidadesNormalizada)) as number | null;
 
         const cambios: CambiosPublicacionOperador = {
             precio: precio.trim() || null,
@@ -348,7 +351,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                             </TextField>
                         </div>
                     </div>
-                    {(error || errorConsulta) && <p className={styles.error} role="alert">{error || errorConsulta}</p>}
                     <div className={styles.campo}>
                         <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
                         <div className={styles.controlesPrecio} data-editando={editando}>

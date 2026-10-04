@@ -10,6 +10,7 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
                     "id",
                     "foto",
                     "precio",
+                    "cantidadUnidades",
                     "fecha",
                     "publicacionActiva",
                     "publicacionDisponible",
