@@ -1086,6 +1086,13 @@
                   "kind": "scalar"
                 }
               },
+              "cantidadUnidades": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "categoriaId": {
                 "nullable": false,
                 "type": {
@@ -1211,6 +1218,9 @@
               "fields": {
                 "calibreId": {
                   "column": "calibreId"
+                },
+                "cantidadUnidades": {
+                  "column": "cantidadUnidades"
                 },
                 "categoriaId": {
                   "column": "categoriaId"
@@ -2418,6 +2428,11 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "cantidadUnidades": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "categoriaId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -2425,10 +2440,6 @@
                 },
                 "fecha": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
@@ -2965,7 +2976,29 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "7424030b0a98dc9adbb50f725ad28058531ed36184456a6f5871df6feb32b282"
+    "storageHash": "090c3a8f7ee1cafc69f331595d913a1e306bd4d66ae029c517f6a15f4dd6e864"
+  },
+  "execution": {
+    "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",
+    "mutations": {
+      "defaults": [
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "fecha",
+            "namespace": "public",
+            "table": "publicacion"
+          }
+        }
+      ]
+    }
   },
   "capabilities": {
     "postgres": {

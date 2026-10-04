@@ -156,6 +156,31 @@ describe("POST /api/publicaciones", () => {
         expect(cuerpo).toEqual(resultadoEsperado);
     });
 
+    it("confirma la creacion aunque falle una revalidacion posterior", async () => {
+        const resultado = { esValido: true, id: 15, errores: [] };
+        mocks.altaPublicacionOperador.mockResolvedValue(resultado);
+        vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache"); });
+        const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        try {
+            const solicitud = new Request("http://localhost/api/publicaciones", {
+                method: "POST",
+                body: JSON.stringify({ operadorId: 1 }),
+                headers: { "Content-Type": "application/json" },
+            });
+            const respuesta = await POST(solicitud);
+
+            expect(respuesta.status).toBe(201);
+            expect(await respuesta.json()).toEqual(resultado);
+            expect(mocks.altaPublicacionOperador).toHaveBeenCalledOnce();
+            expect(revalidatePath).toHaveBeenCalledTimes(6);
+            expect(revalidatePath).toHaveBeenCalledWith("/inicio");
+            expect(registrarError).toHaveBeenCalledOnce();
+        } finally {
+            registrarError.mockRestore();
+        }
+    });
+
     it("usa el operador actual cuando no se indica un ID", async () => {
         mocks.altaPublicacionOperador.mockResolvedValue({ esValido: true, id: 15, mensaje: "Creada" });
         const datos = { especieId: 4 };
