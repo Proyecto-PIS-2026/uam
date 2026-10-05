@@ -84,6 +84,18 @@ describe("actualizarPrecio", () => {
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 
+    it("informa la baja concurrente sin revalidar un precio no guardado", async () => {
+        mocks.obtenerOperadorPorId.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
+        mocks.actualizarPrecioPublicacion.mockRejectedValue(
+            new Error("La publicación no existe o no pertenece al operador.")
+        );
+
+        await expect(actualizarPrecio(5, 110, 37)).rejects.toThrow(
+            "La publicación no existe o no pertenece al operador."
+        );
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
+    });
+
     it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
         "rechaza el ID de operador inválido %s",
         async (operadorId) => {

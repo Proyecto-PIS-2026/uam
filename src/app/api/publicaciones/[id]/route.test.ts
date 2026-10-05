@@ -106,6 +106,26 @@ describe("DELETE /api/publicaciones/[id]", () => {
         expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%203");
     });
 
+    it("confirma la eliminacion aunque falle una revalidacion posterior", async () => {
+        bajaPublicacionOperadorMock.mockResolvedValue(true);
+        vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache"); });
+        const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        try {
+            const solicitud = new Request("http://localhost/api/publicaciones/15?operadorId=3");
+            const respuesta = await DELETE(solicitud, { params: Promise.resolve({ id: "15" }) });
+
+            expect(respuesta.status).toBe(200);
+            expect(await respuesta.json()).toEqual({ mensaje: "Publicación eliminada." });
+            expect(bajaPublicacionOperadorMock).toHaveBeenCalledExactlyOnceWith(15, 3);
+            expect(revalidatePath).toHaveBeenCalledTimes(6);
+            expect(revalidatePath).toHaveBeenCalledWith("/inicio");
+            expect(registrarError).toHaveBeenCalledOnce();
+        } finally {
+            registrarError.mockRestore();
+        }
+    });
+
     it("usa el operador actual si no se indica un ID", async () => {
         bajaPublicacionOperadorMock.mockResolvedValue(true);
         const solicitud = new Request("http://localhost/api/publicaciones/15");
@@ -232,6 +252,28 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%203");
 		expect(revalidatePath).toHaveBeenCalledWith("/operadores");
 		expect(revalidatePath).toHaveBeenCalledWith("/inicio");
+	});
+
+	it("confirma la edicion aunque falle una revalidacion posterior", async () => {
+		vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache"); });
+		const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+		try {
+			const respuesta = await PATCH(solicitudEdicion(), contextoEdicion);
+
+			expect(respuesta.status).toBe(200);
+			expect(await respuesta.json()).toEqual({
+				publicacionOperadorId: 12,
+				publicacionId: 20,
+				mensaje: "Publicación modificada correctamente.",
+			});
+			expect(modificarPublicacionOperador).toHaveBeenCalledOnce();
+			expect(revalidatePath).toHaveBeenCalledTimes(6);
+			expect(revalidatePath).toHaveBeenCalledWith("/inicio");
+			expect(registrarError).toHaveBeenCalledOnce();
+		} finally {
+			registrarError.mockRestore();
+		}
 	});
 
 	it("acepta la edición sin campo foto para conservar la imagen actual", async () => {

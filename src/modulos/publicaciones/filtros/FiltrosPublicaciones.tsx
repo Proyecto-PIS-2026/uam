@@ -5,6 +5,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
+import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import styles from "./FiltrosPublicaciones.module.css";
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
@@ -23,6 +24,7 @@ export type PublicacionListado = {
     especie: string;
     variedad: string;
     presentacion: string;
+    cantidadUnidades?: number | null;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -34,10 +36,15 @@ export type PublicacionListado = {
     };
 };
 
-export type OrdenPublicaciones = "ninguno" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
+export type OrdenPublicaciones = "ninguno" | "prioridad" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
 
 export function compararPublicacionesAlfabeticamente(a: Pick<PublicacionListado, "especie" | "variedad">, b: Pick<PublicacionListado, "especie" | "variedad">) {
     const especie = compararOpciones(a.especie, b.especie);
+    return especie !== 0 ? especie : compararOpciones(a.variedad, b.variedad);
+}
+
+export function compararPublicacionesPorPrioridad(a: Pick<PublicacionListado, "especie" | "variedad">, b: Pick<PublicacionListado, "especie" | "variedad">) {
+    const especie = compararEspeciesPorPrioridad(a.especie, b.especie);
     return especie !== 0 ? especie : compararOpciones(a.variedad, b.variedad);
 }
 
@@ -74,8 +81,9 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Opciones de Filtros disponibles
     const especies = useMemo(() => {
-        return [...new Set(publicaciones.map((publicacion) => publicacion.especie))].sort(compararOpciones);
-    }, [publicaciones]);
+        const nombres = [...new Set(publicaciones.map((publicacion) => publicacion.especie))];
+        return nombres.sort(ordenInicial === "prioridad" ? compararEspeciesPorPrioridad : compararOpciones);
+    }, [publicaciones, ordenInicial]);
 
     // Opciones de Variedad disponibles segun Especie
     const variedades = useMemo(() => {
@@ -210,6 +218,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         // Ordenamiento
         if (orden === "precioAsc") return [...filtradas].sort((a, b) => compararPrecios(a, b, true));
         if (orden === "precioDesc") return [...filtradas].sort((a, b) => compararPrecios(a, b, false));
+        if (orden === "prioridad") return [...filtradas].sort(compararPublicacionesPorPrioridad);
         if (orden === "alfabeticoAsc") return [...filtradas].sort(compararPublicacionesAlfabeticamente);
         if (orden === "alfabeticoDesc") return [...filtradas].sort((a, b) => compararPublicacionesAlfabeticamente(b, a));
 
@@ -240,8 +249,10 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         setCategoria("Todas");
         setCalibre("Todas");
 
-        setOrden(ordenInicial);
-        alCambiarOrden?.(ordenInicial);
+        if (ordenInicial !== "prioridad") {
+            setOrden(ordenInicial);
+            alCambiarOrden?.(ordenInicial);
+        }
         alLimpiar?.();
     };
 
@@ -435,10 +446,12 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                     </button>
                     {/* Opciones de ordenamiento */}
                     <div className={`${styles.listaOrdenamiento} ${mostrarOrdenamiento ? styles.listaOrdenamientoAbierta : ""}`}>
-                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "ninguno" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => cambiarOrden("ninguno")}>
-                            Sin ordenar
-                        </button>
+                        {ordenInicial !== "prioridad" && (
+                            <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "ninguno" ? styles.opcionOrdenamientoActiva : ""}`}
+                                onClick={() => cambiarOrden("ninguno")}>
+                                Sin ordenar
+                            </button>
+                        )}
                         <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "precioAsc" ? styles.opcionOrdenamientoActiva : ""}`}
                             onClick={() => cambiarOrden("precioAsc")}>
                             Menor Precio
