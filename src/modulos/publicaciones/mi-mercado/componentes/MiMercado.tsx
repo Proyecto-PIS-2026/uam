@@ -384,6 +384,7 @@ export default function MiMercado({
                                                     }
                                                     alConsultar={consultarPublicacion}
                                                     alPrecioActualizado={sincronizarPublicaciones}
+                                                    alPublicacionEliminada={() => window.location.reload()}
                                                 />
                                             ))}
                                         </div>
@@ -400,6 +401,7 @@ export default function MiMercado({
                                         incrementoPrecio={incrementoPrecio}
                                         alConsultar={consultarPublicacion}
                                         alPrecioActualizado={sincronizarPublicaciones}
+                                        alPublicacionEliminada={() => window.location.reload()}
                                     />
                                 ))}
                             </div>

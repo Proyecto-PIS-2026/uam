@@ -2,6 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { actualizarPrecio, cargarPublicacionesMiMercado } from "./acciones";
+import { PublicacionNoEncontradaError } from "./consultas-mi-mercado";
 
 const mocks = vi.hoisted(() => ({
     obtenerOperadorActual: vi.fn(),
@@ -20,6 +21,11 @@ vi.mock("../../usuarios/operadores/operador-actual", () => ({
 vi.mock("./consultas-mi-mercado", () => ({
     actualizarPrecioPublicacion: mocks.actualizarPrecioPublicacion,
     obtenerPublicacionesDeOperador: mocks.obtenerPublicacionesDeOperador,
+    PublicacionNoEncontradaError: class extends Error {
+        constructor() {
+            super("La publicación no existe o no pertenece al operador.");
+        }
+    },
 }));
 
 vi.mock("./mapear-publicaciones", () => ({
@@ -66,7 +72,7 @@ describe("actualizarPrecio", () => {
         const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
 
         try {
-            await expect(actualizarPrecio(5, 110, 37)).resolves.toBeUndefined();
+            await expect(actualizarPrecio(5, 110, 37)).resolves.toEqual({ publicacionEliminada: false });
 
             expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110);
             expect(mocks.revalidatePath).toHaveBeenCalledTimes(4);
@@ -86,13 +92,9 @@ describe("actualizarPrecio", () => {
 
     it("informa la baja concurrente sin revalidar un precio no guardado", async () => {
         mocks.obtenerOperadorPorId.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
-        mocks.actualizarPrecioPublicacion.mockRejectedValue(
-            new Error("La publicación no existe o no pertenece al operador.")
-        );
+        mocks.actualizarPrecioPublicacion.mockRejectedValue(new PublicacionNoEncontradaError());
 
-        await expect(actualizarPrecio(5, 110, 37)).rejects.toThrow(
-            "La publicación no existe o no pertenece al operador."
-        );
+        await expect(actualizarPrecio(5, 110, 37)).resolves.toEqual({ publicacionEliminada: true });
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 
