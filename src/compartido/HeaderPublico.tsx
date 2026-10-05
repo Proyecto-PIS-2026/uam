@@ -27,6 +27,7 @@ const opcionesMenu = [
         nombre: "Mi mercado",
         ruta: "/mi-mercado",
     },
+    { nombre: "Administración", ruta: "/administracion" },
 ];
 
 export default function HeaderPublico() {
