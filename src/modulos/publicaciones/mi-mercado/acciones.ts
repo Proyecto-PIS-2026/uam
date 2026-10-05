@@ -28,9 +28,12 @@ export async function actualizarPrecio(publicacionId: number, nuevoPrecio: numbe
 
     await actualizarPrecioPublicacion(operador.id, publicacionId, nuevoPrecio);
 
+    /*
+     * DEMO: Mi Mercado actualiza su listado con cargarPublicacionesMiMercado.
+     * Para recuperar la revalidación automática de esa vista, volver a incluir
+     * "/mi-mercado" y la ruta con el nombre del operador en este arreglo.
+     */
     const rutas = [
-        "/mi-mercado",
-        `/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`,
         "/publicaciones",
         `/operadores/${encodeURIComponent(operador.nombreFantasia)}`,
         "/operadores",

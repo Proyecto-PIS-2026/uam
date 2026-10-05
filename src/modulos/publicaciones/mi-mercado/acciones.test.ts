@@ -43,12 +43,12 @@ describe("actualizarPrecio", () => {
         expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
         expect(mocks.obtenerOperadorPorId).not.toHaveBeenCalled();
         expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(13, 5, 110);
-        expect(mocks.revalidatePath).toHaveBeenCalledWith("/mi-mercado");
-        expect(mocks.revalidatePath).toHaveBeenCalledWith("/mi-mercado/Frutas%20%26%20M%C3%A1s");
+        expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/mi-mercado");
+        expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/mi-mercado/Frutas%20%26%20M%C3%A1s");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/operadores/Frutas%20%26%20M%C3%A1s");
     });
 
-    it("usa el operador indicado y revalida su mercado", async () => {
+    it("usa el operador indicado y revalida las vistas públicas", async () => {
         mocks.obtenerOperadorPorId.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
 
         await actualizarPrecio(5, 110, 37);
@@ -56,7 +56,7 @@ describe("actualizarPrecio", () => {
         expect(mocks.obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(37);
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
         expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110);
-        expect(mocks.revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%2037");
+        expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/mi-mercado/Operador%2037");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/operadores/Operador%2037");
     });
 
@@ -69,7 +69,7 @@ describe("actualizarPrecio", () => {
             await expect(actualizarPrecio(5, 110, 37)).resolves.toBeUndefined();
 
             expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110);
-            expect(mocks.revalidatePath).toHaveBeenCalledTimes(6);
+            expect(mocks.revalidatePath).toHaveBeenCalledTimes(4);
             expect(registrarError).toHaveBeenCalledOnce();
         } finally {
             registrarError.mockRestore();
