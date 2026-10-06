@@ -2,6 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { actualizarPrecio, cargarPublicacionesMiMercado } from "./acciones";
+import { PublicacionNoEncontradaError } from "./consultas-mi-mercado";
 
 const mocks = vi.hoisted(() => ({
     obtenerOperadorActual: vi.fn(),
@@ -20,6 +21,11 @@ vi.mock("../../usuarios/operadores/operador-actual", () => ({
 vi.mock("./consultas-mi-mercado", () => ({
     actualizarPrecioPublicacion: mocks.actualizarPrecioPublicacion,
     obtenerPublicacionesDeOperador: mocks.obtenerPublicacionesDeOperador,
+    PublicacionNoEncontradaError: class extends Error {
+        constructor() {
+            super("La publicación no existe o no pertenece al operador.");
+        }
+    },
 }));
 
 vi.mock("./mapear-publicaciones", () => ({
@@ -43,12 +49,12 @@ describe("actualizarPrecio", () => {
         expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
         expect(mocks.obtenerOperadorPorId).not.toHaveBeenCalled();
         expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(13, 5, 110);
-        expect(mocks.revalidatePath).toHaveBeenCalledWith("/mi-mercado");
-        expect(mocks.revalidatePath).toHaveBeenCalledWith("/mi-mercado/Frutas%20%26%20M%C3%A1s");
+        expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/mi-mercado");
+        expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/mi-mercado/Frutas%20%26%20M%C3%A1s");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/operadores/Frutas%20%26%20M%C3%A1s");
     });
 
-    it("usa el operador indicado y revalida su mercado", async () => {
+    it("usa el operador indicado y revalida las vistas públicas", async () => {
         mocks.obtenerOperadorPorId.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
 
         await actualizarPrecio(5, 110, 37);
@@ -56,7 +62,7 @@ describe("actualizarPrecio", () => {
         expect(mocks.obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(37);
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
         expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110);
-        expect(mocks.revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%2037");
+        expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/mi-mercado/Operador%2037");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/operadores/Operador%2037");
     });
 
@@ -66,10 +72,10 @@ describe("actualizarPrecio", () => {
         const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
 
         try {
-            await expect(actualizarPrecio(5, 110, 37)).resolves.toBeUndefined();
+            await expect(actualizarPrecio(5, 110, 37)).resolves.toEqual({ publicacionEliminada: false });
 
             expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110);
-            expect(mocks.revalidatePath).toHaveBeenCalledTimes(6);
+            expect(mocks.revalidatePath).toHaveBeenCalledTimes(4);
             expect(registrarError).toHaveBeenCalledOnce();
         } finally {
             registrarError.mockRestore();
@@ -81,6 +87,14 @@ describe("actualizarPrecio", () => {
         mocks.actualizarPrecioPublicacion.mockRejectedValue(new Error("Error de base de datos"));
 
         await expect(actualizarPrecio(5, 110, 37)).rejects.toThrow("Error de base de datos");
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("informa la baja concurrente sin revalidar un precio no guardado", async () => {
+        mocks.obtenerOperadorPorId.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
+        mocks.actualizarPrecioPublicacion.mockRejectedValue(new PublicacionNoEncontradaError());
+
+        await expect(actualizarPrecio(5, 110, 37)).resolves.toEqual({ publicacionEliminada: true });
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 

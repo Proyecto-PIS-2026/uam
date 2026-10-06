@@ -173,6 +173,7 @@ describe("obtenerPerfilPublicoOperador", () => {
             id: 101,
             foto: "/publicaciones/tomate.jpg",
             precio: "120.00",
+            cantidadUnidades: null,
             publicacionActiva: true,
             publicacionDisponible: true,
             tipoPublicacion: "OPERADOR",
@@ -202,6 +203,54 @@ describe("obtenerPerfilPublicoOperador", () => {
                 id: 101,
                 foto: "/publicaciones/tomate.jpg",
                 precio: "120.00",
+                cantidadUnidades: null,
+                especie: "Tomate",
+                variedad: "Perita",
+                presentacion: "Cajón",
+                categoria: "Extra",
+                calibre: "A",
+                pais: "URUGUAY",
+            },
+        ]);
+        expect(mockDb.publicaciones.include).toHaveBeenCalledWith("pais", expect.any(Function));
+    });
+
+    it("devuelve solo las publicaciones visibles con sus datos, version con unidades", async () => {
+        const publicacionVisible = {
+            id: 101,
+            foto: "/publicaciones/tomate.jpg",
+            precio: "120.00",
+            cantidadUnidades: 5,
+            publicacionActiva: true,
+            publicacionDisponible: true,
+            tipoPublicacion: "OPERADOR",
+            presentacion: {
+                nombrePresentacion: "Cajón",
+                variedad: {
+                    nombreVariedad: "Perita",
+                    especie: { nombreEspecie: "Tomate" },
+                },
+            },
+            categoria: { nombreCategoria: "Extra" },
+            calibre: { codigoCalibre: "A" },
+        };
+
+        mockDb.operador.first.mockResolvedValue(operadorConLocal);
+        mockDb.publicaciones.all.mockResolvedValue([
+            { publicacion: publicacionVisible, pais: { nombrePais: "URUGUAY" } },
+            { publicacion: { ...publicacionVisible, id: 102, publicacionActiva: false }, pais: { nombrePais: "URUGUAY" } },
+            { publicacion: { ...publicacionVisible, id: 103, publicacionDisponible: false }, pais: { nombrePais: "URUGUAY" } },
+            { publicacion: { ...publicacionVisible, id: 104, tipoPublicacion: "PRODUCTOR" }, pais: { nombrePais: "URUGUAY" } },
+        ]);
+
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
+
+        expect(resultado?.publicaciones).toEqual([
+            {
+                id: 101,
+                foto: "/publicaciones/tomate.jpg",
+                precio: "120.00",
+                cantidadUnidades: 5,
                 especie: "Tomate",
                 variedad: "Perita",
                 presentacion: "Cajón",
