@@ -241,3 +241,12 @@ model Configuracion {
 
   @@map("configuracion")
 }
+
+// PRECIOS DE REFERENCIA
+model CachePreciosReferencia {
+  id          Int    @id @default(autoincrement())
+  claveCache  String @unique
+  estadoCache String
+
+  @@map("cachePreciosReferencia")
+}
