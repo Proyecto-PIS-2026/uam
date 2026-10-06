@@ -1,4 +1,4 @@
-import cifrado from "bcryptjs";
+import argon2 from "argon2";
 import {
     obtenerUsuarioAdministradorPorCorreo,
     obtenerUsuarioOperadorPorNombre,
@@ -25,9 +25,9 @@ export async function autenticarUsuario(credenciales: Credenciales) {
         return null;
     }
 
-    const contrasenaValida = await cifrado.compare(
-        credenciales.contrasena,
+    const contrasenaValida = await argon2.verify(
         usuario.passwordHash,
+        credenciales.contrasena,
     );
     if (!contrasenaValida) return null;
 

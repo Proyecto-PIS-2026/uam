@@ -1,4 +1,4 @@
-import cifrado from "bcryptjs";
+import argon2 from "argon2";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { autenticarUsuario } from "./autenticarUsuario";
 
@@ -10,7 +10,9 @@ const consultasSimuladas = vi.hoisted(() => ({
 
 vi.mock("./consultasAutenticacion", () => consultasSimuladas);
 
-const hashContrasena = cifrado.hashSync("contrasena-de-prueba", 4);
+const hashContrasena = await argon2.hash("contrasena-de-prueba", {
+    type: argon2.argon2id,
+});
 
 describe("autenticarUsuario", () => {
     beforeEach(() => {

@@ -64,75 +64,75 @@ type OperadorDemo = {
   locales: LocalDemo[];
 };
 
-// Cuentas ficticias para la demostración. Se conservan los hashes de la seed
-// anterior; los números de WhatsApp son intencionalmente ficticios.
+// Cuentas ficticias para la demostración. Las contraseñas se entregan junto
+// con la documentación de la seed; los números de WhatsApp son ficticios.
 const operadores: OperadorDemo[] = [
   {
     username: "mercado_verde",
-    passwordHash: "$2b$10$cQoQ65pnEH0aqvETVNLt0evxHpSvfIZ4IUHfQ/aIAb1I17CcwcYSq",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$fDUJ3Y1DptTIBU2IPjyqxw$Q0HyF4LnyUKJ1VubZRupwxZ3BfUEgMDk2K1ut/HOPVQ",
     nombreFantasia: "Mercado Verde UAM",
     whatsApp: "+598901",
     locales: [{ nave: "A", numero: "001", finContrato: null }],
   },
   {
     username: "frutas_del_plata",
-    passwordHash: "$2b$10$sffK9RFZOeyGbAd1EKdmouBu0hSmSMInVEmOjXufYKGnexy0uRUQS",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$2iKaSnHzDhvP359veoZwGw$iaLrSa6gwc7seCwotqAcFAU4InC7UJrJHAxX8h82wD8",
     nombreFantasia: "Frutas del Plata",
     whatsApp: "+598902",
     locales: [{ nave: "A", numero: "010", finContrato: "2030-03-31T23:59:59Z" }],
   },
   {
     username: "granja_del_sur",
-    passwordHash: "$2b$10$hcFh6d9lPWUZJo4.TZKSReBgsuzUPU8j598LrnEP8kFtG.6fB2UyO",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$Ygr+aXrMD+nTFSzqLuUidQ$+e04s9eIV1KCoSZZKeXH4jpH2TbfUi9s9yIyrk54s74",
     nombreFantasia: "Granja del Sur",
     whatsApp: "+598903",
     locales: [{ nave: "A", numero: "020", finContrato: "2030-09-30T23:59:59Z" }],
   },
   {
     username: "huerta_central",
-    passwordHash: "$2b$10$5Ap30NxcFM2NhwMGYao81O4Sh49yA3WgsPOBDlwifFq78Ory1aE3.",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$/SB9RgUcKNoiiq4HPplZUQ$ClK4lJPCPm59vHHd29TLa6V6CEmLQdPiQJZGeKPZzd0",
     nombreFantasia: "Huerta Central",
     whatsApp: "+598904",
     locales: [{ nave: "B", numero: "030", finContrato: "2030-06-30T23:59:59Z" }],
   },
   {
     username: "agro_este",
-    passwordHash: "$2b$10$08TXVIEBi.JgB.wuFmh8RONjENJhsIacxUFJyOEnFtZgPj.JqxFsW",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$n4evH5GByMDzpGbEmuK2aA$+OVfHqeLA5N9zthMqU2H2G277MJ2zwmSyPUlYnMgmdQ",
     nombreFantasia: "Agro del Este",
     whatsApp: "+598905",
     locales: [{ nave: "B", numero: "040", finContrato: "2030-11-30T23:59:59Z" }],
   },
   {
     username: "campos_litoral",
-    passwordHash: "$2b$10$q/vpYvqL1IduoatRIQ0qyeybbvXlkWN8Ms5i3iFQQavdOGsT/2Pdm",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$hF/AFXqrOlAQ2mC1k/1dXQ$r6vWhyIo+US0rQq53m9cl9JeH4CyowVzgWBRAVvg6YQ",
     nombreFantasia: "Campos del Litoral",
     whatsApp: "+598906",
     locales: [{ nave: "C", numero: "050", finContrato: "2031-01-31T23:59:59Z" }],
   },
   {
     username: "produccion_oriental",
-    passwordHash: "$2b$10$6d8ZWAtEocxK7bTCMHZefOVU3TtWCjafo01UPYDWUKo5tY./MwV6i",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$7Cd96JLCSvnk7fg/Y2+8EA$lK2htJFM2CKJuibqqYWk9mUnwbQ6edhVNYJ7MgXixUs",
     nombreFantasia: "Producción Oriental",
     whatsApp: "+598907",
     locales: [{ nave: "C", numero: "060", finContrato: "2030-08-31T23:59:59Z" }],
   },
   {
     username: "cosechas_norte",
-    passwordHash: "$2b$10$ZC4MeCqmvsrSAim4k2VhX.zeYbpJD9P7F2FSHLygtiUujXa4ncWg6",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$8NDsUPFEKNPhG6mlelqs5A$phXmGWz+scLp0mn4WIM35s/kNuO92ZkilAa2XPRc6Jc",
     nombreFantasia: "Cosechas del Norte",
     whatsApp: "+598908",
     locales: [{ nave: "D", numero: "070", finContrato: "2030-10-31T23:59:59Z" }],
   },
   {
     username: "frescos_del_prado",
-    passwordHash: "$2b$10$m6jaAE1ikpjRuCuvNsjaZOjJn42gy0sEJAd1l5nD8RzrViF0YePwu",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$cKXbLw5hEujDXRL0HjCKjQ$7YHrm9Ux3OyCITod5/bwR6AyXuQVxyyq+1lXB5VeQV8",
     nombreFantasia: "Frescos del Prado",
     whatsApp: "+598909",
     locales: [{ nave: "D", numero: "080", finContrato: "2030-12-31T23:59:59Z" }],
   },
   {
     username: "cooperativa_4_estaciones",
-    passwordHash: "$2b$10$q4Ubqfv9LSrTDW4438zvneZU5ig10PxXryvebftDjlV2DsvXl6hBy",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$qasEF9MSpl/4Kqh40XRtKg$vbI0lscZ7NZXwSZEK3Z8d9g8IdfZ16TdOePnztkfjZM",
     nombreFantasia: "Cooperativa 4 Estaciones",
     whatsApp: "+598910",
     locales: [
@@ -142,7 +142,7 @@ const operadores: OperadorDemo[] = [
   },
   {
     username: "agro_montevideo",
-    passwordHash: "$2b$10$sb3gkjNqaUx4/vYuMXfQ0eei.PqEvNUIaYZA5o7tfGc9E6Rzb5OH.",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$Noa0h8guBFaFWakrLxud/Q$o7pScj68SzUoMtX5uOMr1NKZ9F+q1s4VikoRMmwvQbQ",
     nombreFantasia: "Agro Montevideo",
     whatsApp: "+598911",
     locales: [
@@ -152,7 +152,7 @@ const operadores: OperadorDemo[] = [
   },
   {
     username: "mercado_rural_olivos",
-    passwordHash: "$2b$10$a9PJnKXLnlYb1MJYSR38Zuq1OSJmvDD7d7xrJSIZDbyLJW1aRvIEO",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$tPD9noGDYv/08hC9PsAGGA$3sN2+Db1wHPx04DA9qi85qTOsn3qn0BPoV13idJB588",
     nombreFantasia: "Mercado Rural Los Olivos",
     whatsApp: "+598912",
     locales: [
@@ -355,7 +355,7 @@ async function crearOperadores() {
 
   const usuarioAdmin = await prisma.orm.public.Usuario.create({
     username: "admin",
-    passwordHash: "$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQOEg6Lruj3vjPGga31lW",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$Qv57p7oX1yOvmzQUhP4E9w$VKE7w99CmdB0qBEIPya5FmH2mjehnzj8juyKMX9/rBo",
     rol: "ADMINISTRADOR",
     twoFactorEnabled: false,
   });
