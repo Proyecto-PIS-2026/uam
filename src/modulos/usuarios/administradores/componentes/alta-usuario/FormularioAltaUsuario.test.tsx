@@ -1,13 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import FormularioAltaUsuario from "./FormularioAltaUsuario";
-import { altaOperador } from "./altaOperador";
+import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 
 vi.mock("next/navigation", () => ({
     useSearchParams: vi.fn(),
 }));
 
-vi.mock("./altaOperador", () => ({
+vi.mock("@/modulos/usuarios/operadores/altaOperador", () => ({
     altaOperador: vi.fn(),
 }));
 

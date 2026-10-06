@@ -4,7 +4,7 @@ import styles from "./FormularioAltaUsuario.module.css";
 import { useState, useEffect, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
-import { altaOperador } from "./altaOperador";
+import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 import type { NaveOpcion } from "./obtenerNaves";
 
 export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }) {
