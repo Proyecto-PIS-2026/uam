@@ -55,6 +55,7 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 			publicacionDisponible: datos.disponibilidad,
 			precio,
 			foto: datos.fotografia || null,
+			cantidadUnidades: datos.cantidadUnidades,
 			presentacionId: presentacion.id,
 			categoriaId: categoria.id,
 			calibreId: calibre.id,

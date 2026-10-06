@@ -10,6 +10,8 @@ import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlin
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
+import Alert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import ProductoCard from "./tarjetaProducto";
@@ -23,6 +25,7 @@ type EspecieInicio = {
 
 type Props = {
     especies: EspecieInicio[];
+    urlListaInteligente: string | null; 
 };
 
 const especiesPorPagina = 20;
@@ -31,10 +34,11 @@ function normalizarTexto(texto: string) {
     return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-export default function Inicio({ especies }: Props) {
+export default function Inicio({ especies, urlListaInteligente }: Props) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState<"prioridad" | "a-z" | "z-a">("prioridad");
     const [paginaActual, setPaginaActual] = useState(1);
+    const [mostrarAvisoLista, setMostrarAvisoLista] = useState(false);
 
     const textoBuscado = normalizarTexto(busqueda.trim());
     const especiesFiltradas = especies.filter((especie) =>
@@ -74,10 +78,16 @@ export default function Inicio({ especies }: Props) {
                 <nav className={styles.accesos} aria-label="Accesos principales">
                     <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver publicaciones</span></Link>
                     <Link href="/operadores" className={styles.acceso}><StorefrontOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver operadores</span></Link>
-                    <button type="button" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
+                    {urlListaInteligente ? (
+                        <a href={urlListaInteligente} target="_blank" rel="noopener noreferrer" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></a>
+                    ) : (
+                        <button type="button" className={styles.acceso} onClick={() => {setMostrarAvisoLista(true)}}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
+                    )}
                     <Link href="/precios-referencia" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></Link>
                 </nav>
-
+                <Snackbar className={styles.avisoSnackbar}open={mostrarAvisoLista} autoHideDuration={700} transitionDuration={{ enter: 250, exit: 900 }} onClose={() => setMostrarAvisoLista(false)}anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+                    <Alert className={styles.avisoAlerta} severity="warning" variant="filled" onClose={() => setMostrarAvisoLista(false)}><span>La Lista Inteligente no está disponible</span></Alert>
+                </Snackbar>
                 <section className={styles.especies} aria-labelledby="titulo-especies">
                     <div className={styles.tituloContenedor}>
                         <HojasDecorativas variante="separador" />

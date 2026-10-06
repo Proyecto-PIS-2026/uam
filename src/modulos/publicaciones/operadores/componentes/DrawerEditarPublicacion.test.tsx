@@ -168,6 +168,23 @@ describe("DrawerEditarPublicacion", () => {
         expect(mocks.cerrar).not.toHaveBeenCalled();
     });
 
+    it("muestra un error si la cantidad de unidades existente tiene un formato inválido", () => {
+        render(
+            <DrawerEditarPublicacion
+                {...props}
+                publicacion={{
+                    ...publicacionInicial,
+                    cantidadUnidades: 125.50,
+                }}
+            />,
+        );
+        guardarDesdeBoton();
+        expect(screen.getByRole("alert")).toHaveTextContent(
+            "La cantidad de unidades debe ser un número entero de hasta 10 dígitos.",
+        );
+        expect(mocks.guardar).not.toHaveBeenCalled();
+    });
+
     it("vuelve a consulta tras guardar y permite una segunda edición en el mismo drawer", async () => {
         render(<DrawerEditarPublicacion {...props} modoInicial="consulta" alEliminar={mocks.eliminar} />);
         const drawer = screen.getByRole("dialog", { name: "Drawer de publicación" });
@@ -392,15 +409,28 @@ describe("DrawerEditarPublicacion", () => {
         fireEvent.click(disponibilidad);
         expect(disponibilidad).not.toBeChecked();
         expect(screen.getByText("No disponible")).toBeInTheDocument();
+    
+        const inputUnidades = screen.getByPlaceholderText("Ingresar cantidad aquí") as HTMLInputElement;
+        fireEvent.change(inputUnidades, { target: { value: "abc" } });
+        expect(inputUnidades.value).toBe("");
+
         guardarDesdeBoton();
         expect(screen.queryByRole("dialog", { name: "¿Guardar los cambios?" })).not.toBeInTheDocument();
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, {
-            precio: "150", foto: undefined, categoriaId: 3, calibreId: 4, presentacionId: 111, paisId: 44, disponible: false,
+            precio: "150", 
+            foto: undefined, 
+            categoriaId: 3, 
+            calibreId: 4, 
+            presentacionId: 111, 
+            paisId: 44, 
+            disponible: false,
+            cantidadUnidades: null
         }, null));
         expect(mocks.guardar).toHaveBeenCalledOnce();
         await waitFor(() => expect(mocks.cerrar).toHaveBeenCalledOnce());
     });
+
 
     it.each(["125,50", "125.50", "-1", "10000000000", "1.234", "texto"])("conserva el precio entero al intentar escribir o pegar %s", async (precio) => {
         render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, precio: "125" }} />);
