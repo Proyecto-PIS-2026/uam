@@ -1,6 +1,12 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import type { Numeric } from "@prisma/orm-postgres/target/codec-types";
 
+export class PublicacionNoEncontradaError extends Error {
+    constructor() {
+        super("La publicación no existe o no pertenece al operador.");
+    }
+}
+
 export async function obtenerPublicacionesDeOperador(operadorId: number) {
     const publicaciones = await db.orm.public.PublicacionOperador 
         .where({ operadorId })
@@ -44,7 +50,7 @@ export async function actualizarPrecioPublicacion(
             .all();
 
         if (pertenencia.length === 0) {
-            throw new Error("La publicación no existe o no pertenece al operador.");
+            throw new PublicacionNoEncontradaError();
         }
 
         const publicacionActualizada = await tx.orm.public.Publicacion
@@ -52,7 +58,7 @@ export async function actualizarPrecioPublicacion(
             .update({ precio: nuevoPrecio.toFixed(2) as Numeric<12, 2> });
 
         if (!publicacionActualizada) {
-            throw new Error("La publicación no existe o no pertenece al operador.");
+            throw new PublicacionNoEncontradaError();
         }
     });
 }

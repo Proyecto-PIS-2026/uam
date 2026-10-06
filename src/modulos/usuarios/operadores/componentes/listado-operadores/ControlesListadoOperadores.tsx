@@ -18,7 +18,7 @@ type ControlesListadoOperadoresProps = {
 export default function ControlesListadoOperadores({busqueda, alCambiarBusqueda, orden, alCambiarOrden, naveSeleccionada, alCambiarNave, navesDisponibles}: ControlesListadoOperadoresProps) {
     let etiquetaNaveMasLarga = "Todas";
     for (const nave of navesDisponibles) {
-        const etiqueta = `Nave ${nave}`;
+        const etiqueta = nave === "Tinglado" ? nave : `Nave ${nave}`;
         if (etiqueta.length > etiquetaNaveMasLarga.length) etiquetaNaveMasLarga = etiqueta;
     }
 
@@ -34,7 +34,7 @@ export default function ControlesListadoOperadores({busqueda, alCambiarBusqueda,
                         <MenuItem value="Todas" className={styles.opcionSelect}>Todas</MenuItem>
                         {navesDisponibles.map((nave) => (
                             <MenuItem key={nave} value={nave} className={styles.opcionSelect}>
-                                Nave {nave}
+                                {nave === "Tinglado" ? nave : `Nave ${nave}`}
                             </MenuItem>
                         ))}
                     </TextField>
