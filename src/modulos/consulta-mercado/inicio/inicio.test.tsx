@@ -7,6 +7,16 @@ const especiesMock = [
   { nombreEspecie: "Sandía", fotoGenerica: null, cantidadOperadores: 1 },
 ];
 
+const especiesOrdenMock = ["Berro", "Manzana", "Papa", "Acelga", "Banana"].map((nombreEspecie) => ({
+    nombreEspecie,
+    fotoGenerica: null,
+    cantidadOperadores: 1,
+}));
+
+function nombresEnPantalla() {
+    return screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent);
+}
+
 describe("inicio", () => {
 
     it("muestra todas las especies cuando el campo de búsqueda está vacío", () => {
@@ -47,18 +57,33 @@ describe("inicio", () => {
         ).toBeInTheDocument();
     })
 
-    it("ordena las especies de forma ascendente (A-Z)", () => {
-        render(<Inicio especies={especiesMock} />);
+    it("muestra primero las especies prioritarias y después las restantes en orden alfabético", () => {
+        render(<Inicio especies={especiesOrdenMock} />);
+
+        expect(nombresEnPantalla()).toEqual(["Papa", "Banana", "Manzana", "Acelga", "Berro"]);
+        expect(screen.getByRole("combobox", { name: "Ordenar por" })).not.toHaveTextContent("A-Z");
+    });
+
+    it("ordena todas las especies de forma ascendente al elegir A-Z", () => {
+        render(<Inicio especies={especiesOrdenMock} />);
 
         const select = screen.getByRole("combobox");
         fireEvent.mouseDown(select);
         const opcion = screen.getByRole("option", { name: "A-Z" });
-        fireEvent.click(opcion);;
-        const especies = screen.getAllByText(/Banana|Manzana|Sandía/);
+        fireEvent.click(opcion);
 
-        expect(especies[0]).toHaveTextContent("Banana");
-        expect(especies[1]).toHaveTextContent("Manzana");
-        expect(especies[2]).toHaveTextContent("Sandía");
+        expect(nombresEnPantalla()).toEqual(["Acelga", "Banana", "Berro", "Manzana", "Papa"]);
+    });
+
+    it("recupera el orden prioritario al volver a entrar a la página", () => {
+        const vista = render(<Inicio especies={especiesOrdenMock} />);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("option", { name: "A-Z" }));
+        expect(nombresEnPantalla()).toEqual(["Acelga", "Banana", "Berro", "Manzana", "Papa"]);
+
+        vista.unmount();
+        render(<Inicio especies={especiesOrdenMock} />);
+        expect(nombresEnPantalla()).toEqual(["Papa", "Banana", "Manzana", "Acelga", "Berro"]);
     });
 
     
