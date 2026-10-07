@@ -296,7 +296,7 @@ describe("MiMercado", () => {
     expect(cuerpo.get("cambios")).toBe(JSON.stringify(cambios));
     expect(cuerpo.get("fotografia")).toMatchObject({ name: "pera.webp", type: "image/webp" });
     expect(mocks.cargarPublicaciones).toHaveBeenCalledExactlyOnceWith(9);
-    expect(mocks.refrescar).toHaveBeenCalledOnce();
+    expect(mocks.refrescar).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-modo", "consulta");
     expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-actualizando", "false");
     expect(screen.getByTestId("publicacion-52")).toHaveTextContent("Williams");
@@ -349,6 +349,45 @@ describe("MiMercado", () => {
     expect(mocks.refrescar).not.toHaveBeenCalled();
   });
 
+  it("cierra una consulta obsoleta si otra persona eliminó la publicación antes de guardar", async () => {
+    renderMiMercado([crearPublicacion(52, 10, "Manzana")]);
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+    mocks.solicitud.mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ errores: ["Publicación no encontrada."] }),
+    });
+    mocks.cargarPublicaciones.mockResolvedValue([]);
+
+    await act(async () => {
+      await obtenerPropsDrawer().alGuardar(52, {
+        precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+      }, null);
+    });
+
+    expect(screen.queryByRole("dialog", { name: "Publicación seleccionada" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("La publicación ya no está disponible. Se actualizó el listado.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("avisa de la baja si alguien eliminó la publicación inmediatamente después de editarla", async () => {
+    renderMiMercado([crearPublicacion(52, 10, "Manzana")]);
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+    mocks.solicitud.mockResolvedValue({ ok: true, json: async () => ({ mensaje: "Publicación actualizada." }) });
+    mocks.cargarPublicaciones.mockResolvedValue([]);
+
+    await act(async () => {
+      await obtenerPropsDrawer().alGuardar(52, {
+        precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+      }, null);
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("La publicación ya no está disponible. Se actualizó el listado.");
+    expect(screen.queryByRole("dialog", { name: "Publicación seleccionada" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("avisa si se guardó la edición pero falló la recarga del listado", async () => {
     const publicacion = crearPublicacion(52, 10, "Manzana");
     renderMiMercado([publicacion]);
@@ -366,7 +405,7 @@ describe("MiMercado", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-actualizando", "false");
-    expect(mocks.refrescar).toHaveBeenCalledOnce();
+    expect(mocks.refrescar).not.toHaveBeenCalled();
   });
 
   it("borra la publicación seleccionada y cierra la consulta después del éxito", async () => {
@@ -394,7 +433,26 @@ describe("MiMercado", () => {
     expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-53")).toBeInTheDocument();
     expect(screen.getAllByText("1 publicación").length).toBeGreaterThan(0);
-    expect(mocks.refrescar).toHaveBeenCalledOnce();
+    expect(mocks.refrescar).not.toHaveBeenCalled();
+  });
+
+  it("actualiza el listado sin mostrar un error si otra persona ya eliminó la publicación", async () => {
+    renderMiMercado([crearPublicacion(52, 10, "Manzana")]);
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar desde consulta" }));
+    mocks.solicitud.mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ errores: ["Publicación no encontrada."] }),
+    });
+    mocks.cargarPublicaciones.mockResolvedValue([]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
+
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("La publicación ya había sido eliminada. Se actualizó el listado."));
+    expect(screen.queryByRole("dialog", { name: "Publicación seleccionada" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("mantiene la baja visible y avisa si falla la recarga posterior", async () => {
@@ -460,7 +518,7 @@ describe("MiMercado", () => {
     expect(screen.getByRole("searchbox", { name: "Buscar publicaciones" })).toHaveValue("Pera");
     expect(screen.queryByRole("dialog", { name: "Nueva publicación" })).not.toBeInTheDocument();
     expect(mocks.cargarPublicaciones).toHaveBeenCalledExactlyOnceWith(9);
-    expect(mocks.refrescar).toHaveBeenCalledOnce();
+    expect(mocks.refrescar).not.toHaveBeenCalled();
   });
 
   it("muestra el listado de publicaciones del operador", () => {
@@ -478,7 +536,7 @@ describe("MiMercado", () => {
     ).toBeInTheDocument();
   });
 
-  it("muestra los filtros compartidos y agrupa por especie de A a Z desde el inicio", () => {
+  it("agrupa inicialmente por prioridad sin mostrar especies sin publicaciones", () => {
     renderMiMercado([
       crearPublicacion(1, 20, "Pera"),
       crearPublicacion(2, 30, "Sandía"),
@@ -492,7 +550,27 @@ describe("MiMercado", () => {
     expect(screen.getByRole("button", { name: "Más filtros" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ordenar por" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Desagrupar" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Manzana", "Pera", "Sandía"]);
+    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Manzana", "Sandía", "Pera"]);
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+    expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Manzana", "Sandía", "Pera"]);
+  });
+
+  it("mantiene la prioridad al desagrupar y respeta A-Z cuando se elige", () => {
+    renderMiMercado([
+      crearPublicacion(1, 20, "Pera"),
+      crearPublicacion(2, 30, "Manzana"),
+      crearPublicacion(3, 40, "Papa"),
+      crearPublicacion(4, 50, "Acelga"),
+    ]);
+
+    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Papa", "Manzana", "Acelga", "Pera"]);
+    fireEvent.click(screen.getByRole("button", { name: "Desagrupar" }));
+    expect(idsTarjetas()).toEqual(["publicacion-3", "publicacion-2", "publicacion-4", "publicacion-1"]);
+
+    elegirOrden("A-Z");
+    expect(idsTarjetas()).toEqual(["publicacion-4", "publicacion-2", "publicacion-3", "publicacion-1"]);
+    fireEvent.click(screen.getByRole("button", { name: "Agrupar por especie" }));
+    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Acelga", "Manzana", "Papa", "Pera"]);
   });
 
   it("filtra al escribir sin distinguir mayúsculas ni tildes y restaura las tarjetas al limpiar", () => {
@@ -513,7 +591,7 @@ describe("MiMercado", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
     expect(buscador).toHaveValue("");
-    expect(idsTarjetas()).toEqual(["publicacion-1", "publicacion-3", "publicacion-2"]);
+    expect(idsTarjetas()).toEqual(["publicacion-1", "publicacion-2", "publicacion-3"]);
   });
 
   it("combina especie con precio mínimo y máximo sobre las tarjetas del operador", () => {
@@ -537,20 +615,20 @@ describe("MiMercado", () => {
     expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Pera"]);
   });
 
-  it("ordena por precio dentro de cada especie y conserva los grupos de A a Z", () => {
+  it("ordena por precio dentro de cada especie y conserva la prioridad entre grupos", () => {
     renderMiMercado([
       crearPublicacionConPrecio(1, 20, "Pera", "80"),
-      crearPublicacionConPrecio(2, 10, "Manzana", "70"),
+      crearPublicacionConPrecio(2, 10, "Sandía", "70"),
       crearPublicacionConPrecio(3, 20, "Pera", "20"),
-      crearPublicacionConPrecio(4, 10, "Manzana", "150"),
+      crearPublicacionConPrecio(4, 10, "Sandía", "150"),
     ]);
 
     elegirOrden("Menor Precio");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Manzana", "Pera"]);
+    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía", "Pera"]);
     expect(idsTarjetas()).toEqual(["publicacion-2", "publicacion-4", "publicacion-3", "publicacion-1"]);
 
     elegirOrden("Mayor Precio");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Manzana", "Pera"]);
+    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía", "Pera"]);
     expect(idsTarjetas()).toEqual(["publicacion-4", "publicacion-2", "publicacion-1", "publicacion-3"]);
   });
 

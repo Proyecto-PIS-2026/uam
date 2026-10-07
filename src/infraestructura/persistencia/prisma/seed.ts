@@ -10,7 +10,7 @@ import { all } from "@prisma/orm-postgres/orm-client";
 import type { Contract } from "./contract.d";
 import contractJson from "./contract.json" with { type: "json" };
 import { cargarConsultaUam, type ConsultaUam } from "./catalogo-consulta";
-import { crearOfertasDemo } from "./ofertas-demo";
+import { crearOfertasDemo, type OfertaDemo } from "./ofertas-demo";
 
 const prisma = postgres<Contract>({
   contractJson,
@@ -58,108 +58,103 @@ const departamentos = [
 type LocalDemo = { nave: string; numero: string; finContrato: string | null };
 type OperadorDemo = {
   username: string;
-  passwordHash: string;
   nombreFantasia: string;
   whatsApp: string;
   locales: LocalDemo[];
 };
 
-// Cuentas ficticias para la demostración. Se conservan los hashes de la seed
-// anterior; los números de WhatsApp son intencionalmente ficticios.
+// Cuentas de demostración: los teléfonos son ficticios y no hay login activo.
+const passwordHashDemo = "$2b$10$cQoQ65pnEH0aqvETVNLt0evxHpSvfIZ4IUHfQ/aIAb1I17CcwcYSq";
 const operadores: OperadorDemo[] = [
   {
-    username: "mercado_verde",
-    passwordHash: "$2b$10$cQoQ65pnEH0aqvETVNLt0evxHpSvfIZ4IUHfQ/aIAb1I17CcwcYSq",
-    nombreFantasia: "Mercado Verde UAM",
+    username: "jorge_ferias",
+    nombreFantasia: "Jorge Ferias",
     whatsApp: "+598901",
-    locales: [{ nave: "A", numero: "001", finContrato: null }],
+    locales: [{ nave: "E", numero: "141", finContrato: null }],
   },
   {
-    username: "frutas_del_plata",
-    passwordHash: "$2b$10$sffK9RFZOeyGbAd1EKdmouBu0hSmSMInVEmOjXufYKGnexy0uRUQS",
-    nombreFantasia: "Frutas del Plata",
+    username: "pablo_sappa",
+    nombreFantasia: "Pablo Sappa",
     whatsApp: "+598902",
-    locales: [{ nave: "A", numero: "010", finContrato: "2030-03-31T23:59:59Z" }],
+    locales: [{ nave: "E", numero: "133", finContrato: null }],
   },
   {
-    username: "granja_del_sur",
-    passwordHash: "$2b$10$hcFh6d9lPWUZJo4.TZKSReBgsuzUPU8j598LrnEP8kFtG.6fB2UyO",
-    nombreFantasia: "Granja del Sur",
+    username: "diego_figueroa",
+    nombreFantasia: "Diego Figueroa",
     whatsApp: "+598903",
-    locales: [{ nave: "A", numero: "020", finContrato: "2030-09-30T23:59:59Z" }],
+    locales: [{ nave: "E", numero: "145", finContrato: null }],
   },
   {
-    username: "huerta_central",
-    passwordHash: "$2b$10$5Ap30NxcFM2NhwMGYao81O4Sh49yA3WgsPOBDlwifFq78Ory1aE3.",
-    nombreFantasia: "Huerta Central",
+    username: "bacigalupi",
+    nombreFantasia: "Bacigalupi",
     whatsApp: "+598904",
-    locales: [{ nave: "B", numero: "030", finContrato: "2030-06-30T23:59:59Z" }],
+    locales: [{ nave: "E", numero: "153", finContrato: null }],
   },
   {
-    username: "agro_este",
-    passwordHash: "$2b$10$08TXVIEBi.JgB.wuFmh8RONjENJhsIacxUFJyOEnFtZgPj.JqxFsW",
-    nombreFantasia: "Agro del Este",
+    username: "lucas_blanco",
+    nombreFantasia: "Lucas Blanco",
     whatsApp: "+598905",
-    locales: [{ nave: "B", numero: "040", finContrato: "2030-11-30T23:59:59Z" }],
+    locales: [{ nave: "E", numero: "155", finContrato: null }],
   },
   {
-    username: "campos_litoral",
-    passwordHash: "$2b$10$q/vpYvqL1IduoatRIQ0qyeybbvXlkWN8Ms5i3iFQQavdOGsT/2Pdm",
-    nombreFantasia: "Campos del Litoral",
+    username: "britos_hns",
+    nombreFantasia: "Britos HNS",
     whatsApp: "+598906",
-    locales: [{ nave: "C", numero: "050", finContrato: "2031-01-31T23:59:59Z" }],
+    locales: [{ nave: "B", numero: "145", finContrato: null }],
   },
   {
-    username: "produccion_oriental",
-    passwordHash: "$2b$10$6d8ZWAtEocxK7bTCMHZefOVU3TtWCjafo01UPYDWUKo5tY./MwV6i",
-    nombreFantasia: "Producción Oriental",
+    username: "ciro_gentile",
+    nombreFantasia: "Ciro Gentile",
     whatsApp: "+598907",
-    locales: [{ nave: "C", numero: "060", finContrato: "2030-08-31T23:59:59Z" }],
+    locales: [{ nave: "A", numero: "067", finContrato: null }],
   },
   {
-    username: "cosechas_norte",
-    passwordHash: "$2b$10$ZC4MeCqmvsrSAim4k2VhX.zeYbpJD9P7F2FSHLygtiUujXa4ncWg6",
-    nombreFantasia: "Cosechas del Norte",
+    username: "guarino",
+    nombreFantasia: "Guarino",
     whatsApp: "+598908",
-    locales: [{ nave: "D", numero: "070", finContrato: "2030-10-31T23:59:59Z" }],
+    locales: [{ nave: "D", numero: "104", finContrato: null }],
   },
   {
-    username: "frescos_del_prado",
-    passwordHash: "$2b$10$m6jaAE1ikpjRuCuvNsjaZOjJn42gy0sEJAd1l5nD8RzrViF0YePwu",
-    nombreFantasia: "Frescos del Prado",
+    username: "pizzorno",
+    nombreFantasia: "Pizzorno",
     whatsApp: "+598909",
-    locales: [{ nave: "D", numero: "080", finContrato: "2030-12-31T23:59:59Z" }],
+    locales: [{ nave: "B", numero: "146", finContrato: null }],
   },
   {
-    username: "cooperativa_4_estaciones",
-    passwordHash: "$2b$10$q4Ubqfv9LSrTDW4438zvneZU5ig10PxXryvebftDjlV2DsvXl6hBy",
-    nombreFantasia: "Cooperativa 4 Estaciones",
+    username: "don_juan",
+    nombreFantasia: "Don Juan",
     whatsApp: "+598910",
-    locales: [
-      { nave: "A", numero: "100", finContrato: null },
-      { nave: "A", numero: "101", finContrato: "2025-12-31T23:59:59Z" },
-    ],
+    locales: [{ nave: "D", numero: "073", finContrato: null }],
   },
   {
-    username: "agro_montevideo",
-    passwordHash: "$2b$10$sb3gkjNqaUx4/vYuMXfQ0eei.PqEvNUIaYZA5o7tfGc9E6Rzb5OH.",
-    nombreFantasia: "Agro Montevideo",
+    username: "caporale",
+    nombreFantasia: "Caporale",
     whatsApp: "+598911",
-    locales: [
-      { nave: "B", numero: "120", finContrato: "2030-10-31T23:59:59Z" },
-      { nave: "C", numero: "145", finContrato: null },
-    ],
+    locales: [{ nave: "B", numero: "022", finContrato: null }],
   },
   {
-    username: "mercado_rural_olivos",
-    passwordHash: "$2b$10$a9PJnKXLnlYb1MJYSR38Zuq1OSJmvDD7d7xrJSIZDbyLJW1aRvIEO",
-    nombreFantasia: "Mercado Rural Los Olivos",
+    username: "punto_natural",
+    nombreFantasia: "Punto Natural",
     whatsApp: "+598912",
-    locales: [
-      { nave: "D", numero: "160", finContrato: "2031-03-31T23:59:59Z" },
-      { nave: "D", numero: "161", finContrato: "2031-03-31T23:59:59Z" },
-      { nave: "A", numero: "180", finContrato: null },
-    ],
+    locales: [{ nave: "A", numero: "114", finContrato: null }],
+  },
+  {
+    username: "pepe",
+    nombreFantasia: "Pepe",
+    whatsApp: "+598913",
+    locales: [{ nave: "B", numero: "129", finContrato: null }],
+  },
+  {
+    username: "sandias_de_rivera",
+    nombreFantasia: "Sandias de Rivera",
+    whatsApp: "+598914",
+    locales: [{ nave: "Tinglado", numero: "N10", finContrato: null }],
+  },
+  {
+    username: "citricola_salto_grande",
+    nombreFantasia: "Citricola Salto Grande",
+    whatsApp: "+598915",
+    locales: [{ nave: "A", numero: "025", finContrato: null }],
   },
 ];
 
@@ -170,10 +165,51 @@ function clave(...partes: Array<string | number>): string {
   return JSON.stringify(partes);
 }
 
+function cantidadUnidadesDemo(indice: number, unidad: string): number | null {
+  if (indice % 4 !== 0) return null;
+
+  const variacion = Math.floor(indice / 4) % 5;
+  if (unidad === "KG") return 100 + variacion * 50;
+  if (unidad === "DOC") return 12 + variacion * 6;
+  if (unidad === "CAB") return 40 + variacion * 20;
+  return 20 + variacion * 10;
+}
+
 function idRequerido(mapa: Map<string, number>, llave: string, descripcion: string): number {
   const id = mapa.get(llave);
   if (id === undefined) throw new Error(`No se encontró ${descripcion} en el catálogo de la seed.`);
   return id;
+}
+
+function validarOperadores(ofertas: OfertaDemo[]): void {
+  if (ofertas.length > 75) throw new Error(`La seed supera el máximo de 75 publicaciones: ${ofertas.length}`);
+  const usuarios = new Set<string>();
+  const nombres = new Set<string>();
+  const ubicaciones = new Set<string>();
+
+  for (const operador of operadores) {
+    if (usuarios.has(operador.username)) throw new Error(`Usuario de operador duplicado: ${operador.username}`);
+    if (nombres.has(operador.nombreFantasia)) throw new Error(`Nombre de operador duplicado: ${operador.nombreFantasia}`);
+    if (operador.locales.length === 0) throw new Error(`El operador ${operador.nombreFantasia} no tiene local`);
+    usuarios.add(operador.username);
+    nombres.add(operador.nombreFantasia);
+
+    for (const local of operador.locales) {
+      const ubicacion = clave(local.nave, local.numero);
+      if (ubicaciones.has(ubicacion)) throw new Error(`Local duplicado: ${local.nave} ${local.numero}`);
+      ubicaciones.add(ubicacion);
+    }
+  }
+
+  const usuariosConOfertas = new Set(ofertas.map((oferta) => oferta.operatorUsername));
+  const usuariosConOfertasVisibles = new Set(ofertas.filter((oferta) => oferta.active && oferta.available).map((oferta) => oferta.operatorUsername));
+  for (const username of usuariosConOfertas) {
+    if (!usuarios.has(username)) throw new Error(`La oferta pertenece a un operador inexistente: ${username}`);
+  }
+  for (const username of usuarios) {
+    if (!usuariosConOfertas.has(username)) throw new Error(`El operador ${username} no tiene publicaciones`);
+    if (!usuariosConOfertasVisibles.has(username)) throw new Error(`El operador ${username} no tiene publicaciones visibles`);
+  }
 }
 
 function archivosGenericos(): Set<string> {
@@ -195,6 +231,63 @@ function fotoGenerica(nombreEspecie: string, archivos: Set<string>): string | nu
   for (const extension of [".webp", ".png", ".jpg"]) {
     const archivo = `${base}${extension}`;
     if (archivos.has(archivo)) return `/generico/${archivo}`;
+  }
+  return null;
+}
+
+function fotosPublicacionesDemo(consulta: ConsultaUam, ofertas: OfertaDemo[]): Map<string, string> {
+  const nombresPorEspecie = new Map(consulta.types.flatMap((tipo) =>
+    tipo.products.map((producto) => [producto.species_id, producto.species] as const)
+  ));
+  const archivos = new Set(readdirSync(new URL("../../../../public/publicaciones-demo/", import.meta.url)));
+  const fotos = new Map<string, string>();
+  const nombresUsados = new Set<string>();
+  const nombreArchivo = (texto: string) => texto.toLocaleLowerCase("es")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  for (const oferta of ofertas) {
+    const especie = nombresPorEspecie.get(oferta.speciesId);
+    if (!especie) throw new Error(`No se encontró la especie ${oferta.speciesId} para su foto de publicación.`);
+
+    const producto = oferta.variety === "-" ? especie : `${especie} ${oferta.variety}`;
+    const categoria = oferta.category === "-" ? "sin-categoria" : oferta.category;
+    const archivo = [oferta.operatorUsername, producto, oferta.measureUnit, oferta.caliber, categoria, oferta.country]
+      .map(nombreArchivo).join("--") + ".webp";
+    const llave = clave(oferta.operatorUsername, oferta.speciesId, oferta.variety,
+      oferta.measureUnit, oferta.caliber, oferta.category, oferta.country);
+    if (fotos.has(llave)) throw new Error(`La oferta ${producto} de ${oferta.operatorUsername} está duplicada.`);
+    if (nombresUsados.has(archivo)) throw new Error(`Dos publicaciones comparten la foto ${archivo}.`);
+    if (!archivos.has(archivo)) throw new Error(`Falta la foto de demostración ${archivo} para ${producto}.`);
+    nombresUsados.add(archivo);
+    fotos.set(llave, `/publicaciones-demo/${archivo}`);
+  }
+
+  return fotos;
+}
+
+function archivosOperadores(): Map<string, string> {
+  try {
+    const archivos = readdirSync(new URL("../../../../public/operadores/", import.meta.url));
+    return new Map(archivos.map((archivo) => [archivo.toLocaleLowerCase("es"), archivo]));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Map();
+    throw error;
+  }
+}
+
+function fotoOperador(nombreOperador: string, archivos: Map<string, string>): string | null {
+  const base = nombreOperador.toLocaleLowerCase("es")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  for (const extension of [".webp", ".jpeg", ".jpg", ".png", ".jfif"]) {
+    const archivo = archivos.get(`${base}${extension}`);
+    if (archivo) return `/operadores/${encodeURIComponent(archivo)}`;
   }
   return null;
 }
@@ -348,8 +441,9 @@ async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, nu
   return { presentacionIds, categoriaIds, cantidadVariedades };
 }
 
-async function crearOperadores() {
-  for (const nombreNave of ["A", "B", "C", "D"]) {
+async function crearOperadores(archivos: Map<string, string>) {
+  const nombresNave = new Set(operadores.flatMap((operador) => operador.locales.map((local) => local.nave)));
+  for (const nombreNave of nombresNave) {
     await prisma.orm.public.Nave.create({ nombreNave });
   }
 
@@ -368,13 +462,14 @@ async function crearOperadores() {
   for (const datos of operadores) {
     const usuario = await prisma.orm.public.Usuario.create({
       username: datos.username,
-      passwordHash: datos.passwordHash,
+      passwordHash: passwordHashDemo,
       rol: "OPERADOR",
       twoFactorEnabled: false,
     });
     const operador = await prisma.orm.public.Operador.create({
       usuarioId: usuario.id,
       nombreFantasia: datos.nombreFantasia,
+      fotoPerfil: fotoOperador(datos.nombreFantasia, archivos),
       enLicencia: false,
       comentario: null,
       whatsApp: datos.whatsApp,
@@ -400,7 +495,10 @@ async function main() {
   const consulta = cargarConsultaUam();
   const conversiones = validarFuente(consulta);
   const ofertas = crearOfertasDemo(consulta);
+  validarOperadores(ofertas);
+  const fotosPublicaciones = fotosPublicacionesDemo(consulta, ofertas);
   const archivos = archivosGenericos();
+  const fotosOperadores = archivosOperadores();
 
   console.log(`Cargando catálogo de la consulta UAM del ${consulta.survey_date}...`);
   await limpiarBase();
@@ -408,7 +506,7 @@ async function main() {
   const { paisIds, calibreIds } = await crearDatosBase(consulta);
   const { presentacionIds, categoriaIds, cantidadVariedades } =
     await crearCatalogo(consulta, conversiones, archivos);
-  const operadorIds = await crearOperadores();
+  const operadorIds = await crearOperadores(fotosOperadores);
 
   let conPrecio = 0;
   let sinPrecio = 0;
@@ -425,13 +523,17 @@ async function main() {
     const precio = oferta.price === null
       ? null
       : oferta.price.toFixed(2) as unknown as PrecioPublicacion;
+    const foto = fotosPublicaciones.get(clave(oferta.operatorUsername, oferta.speciesId, oferta.variety,
+      oferta.measureUnit, oferta.caliber, oferta.category, oferta.country));
+    if (!foto) throw new Error(`No se encontró la foto de la publicación ${oferta.speciesId} / ${oferta.variety}.`);
 
     const publicacion = await prisma.orm.public.Publicacion.create({
       fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 15) * 86_400_000),
       publicacionDisponible: oferta.available,
       publicacionActiva: oferta.active,
       precio,
-      foto: null,
+      cantidadUnidades: cantidadUnidadesDemo(indice, oferta.measureUnit),
+      foto,
       tipoPublicacion: "OPERADOR",
       presentacionId,
       categoriaId,
@@ -446,6 +548,7 @@ async function main() {
 
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "incremento_precio", valorConfiguracion: "10" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "fecha_consulta_catalogo", valorConfiguracion: consulta.survey_date });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf"});
 
   console.table({
     especies: consulta.types.reduce((total, tipo) => total + tipo.products.length, 0),

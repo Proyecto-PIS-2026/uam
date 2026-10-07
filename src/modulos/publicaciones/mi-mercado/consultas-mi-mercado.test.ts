@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => {
 
     const publicacionWhere = vi.fn();
     const publicacionUpdate = vi.fn();
+    const rawSql = vi.fn();
+    const rawReturnsRow = vi.fn();
+    const rawBuild = vi.fn();
+    const execute = vi.fn();
 
     const relationInclude = vi.fn();
 
@@ -55,6 +59,21 @@ const mocks = vi.hoisted(() => {
 
     publicacionWhere.mockReturnValue(publicacionBuilder);
 
+    rawSql.mockReturnValue({ returnsRow: rawReturnsRow });
+    rawReturnsRow.mockReturnValue({ build: rawBuild });
+    rawBuild.mockReturnValue({ tipo: "bloqueo" });
+
+    const tx = {
+        execute,
+        orm: {
+            public: {
+                PublicacionOperador: { where: publicacionOperadorWhere },
+                Publicacion: { where: publicacionWhere },
+            },
+        },
+    };
+    const transaction = vi.fn((callback: (cliente: typeof tx) => Promise<unknown>) => callback(tx));
+
     return {
         publicacionOperadorWhere,
         publicacionOperadorInclude,
@@ -62,6 +81,12 @@ const mocks = vi.hoisted(() => {
         publicacionWhere,
         publicacionUpdate,
         relationInclude,
+        rawSql,
+        rawReturnsRow,
+        rawBuild,
+        execute,
+        transaction,
+        tx,
     };
 });
 
@@ -69,6 +94,8 @@ vi.mock(
     "../../../infraestructura/persistencia/prisma/db",
     () => ({
         db: {
+            transaction: mocks.transaction,
+            raw: { sql: mocks.rawSql },
             orm: {
                 public: {
                     PublicacionOperador: {
@@ -122,9 +149,7 @@ describe("consultas-mi-mercado", () => {
             { id: 1 },
         ]);
 
-        mocks.publicacionUpdate.mockResolvedValue(
-            undefined
-        );
+        mocks.publicacionUpdate.mockResolvedValue({ id: 20 });
 
         await actualizarPrecioPublicacion(
             10,
@@ -138,6 +163,14 @@ describe("consultas-mi-mercado", () => {
             operadorId: 10,
             publicacionId: 20,
         });
+        expect(mocks.transaction).toHaveBeenCalledOnce();
+        expect(mocks.rawSql.mock.calls[0]?.[0].join("")).toContain("pg_advisory_xact_lock(1719,");
+        expect(mocks.rawSql.mock.calls[0]?.[1]).toBe(10);
+        expect(mocks.rawReturnsRow).toHaveBeenCalledWith({ locked: "pg/int4@1" });
+        expect(mocks.execute).toHaveBeenCalledWith({ tipo: "bloqueo" });
+        expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(
+            mocks.publicacionOperadorWhere.mock.invocationCallOrder[0]
+        );
 
         expect(
             mocks.publicacionWhere
@@ -150,6 +183,17 @@ describe("consultas-mi-mercado", () => {
         ).toHaveBeenCalledWith({
             precio: "125.00",
         });
+    });
+
+    it("rechaza el cambio si la publicación desaparece antes del update", async () => {
+        mocks.publicacionOperadorAll.mockResolvedValue([{ id: 1 }]);
+        mocks.publicacionUpdate.mockResolvedValue(null);
+
+        await expect(actualizarPrecioPublicacion(10, 20, 125)).rejects.toThrow(
+            "La publicación no existe o no pertenece al operador."
+        );
+
+        expect(mocks.publicacionUpdate).toHaveBeenCalledWith({ precio: "125.00" });
     });
 
     it("rechaza actualizar una publicación que no pertenece al operador", async () => {
@@ -184,6 +228,7 @@ describe("consultas-mi-mercado", () => {
         );
 
         expect(mocks.publicacionOperadorWhere).not.toHaveBeenCalled();
+        expect(mocks.transaction).not.toHaveBeenCalled();
         expect(mocks.publicacionWhere).not.toHaveBeenCalled();
         expect(mocks.publicacionUpdate).not.toHaveBeenCalled();
     });
@@ -194,6 +239,7 @@ describe("consultas-mi-mercado", () => {
         ).rejects.toThrow();
 
         expect(mocks.publicacionOperadorWhere).not.toHaveBeenCalled();
+        expect(mocks.transaction).not.toHaveBeenCalled();
         expect(mocks.publicacionWhere).not.toHaveBeenCalled();
         expect(mocks.publicacionUpdate).not.toHaveBeenCalled();
     });

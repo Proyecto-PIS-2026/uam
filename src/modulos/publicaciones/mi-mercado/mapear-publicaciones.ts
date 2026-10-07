@@ -14,6 +14,7 @@ export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion):
             precio: pub.precio === null ? null : String(pub.precio),
             publicacionActiva: pub.publicacionActiva as boolean,
             publicacionDisponible: pub.publicacionDisponible as boolean,
+            cantidadUnidades: pub.cantidadUnidades as number | null,
             presentacion: {
                 id: pub.presentacion.id,
                 nombrePresentacion: pub.presentacion.nombrePresentacion,
