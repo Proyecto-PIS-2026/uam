@@ -22,8 +22,6 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
     const [orden, setOrden] = useState("a-z");
     const [naveSeleccionada, setNaveSeleccionada] = useState("Todas");
 
-    const mostrarBotonNuevoOperador = true; //HAY QUE INTEGRAR CON AUTENTICACIÓN Y AUTORIZACIÓN
-
     const conjuntoNaves = new Set<string>();
     for (const operador of operadores) {
         for (const local of operador.locales) {
@@ -80,24 +78,6 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
                         <p className="mt-2 text-sm text-white/80 sm:text-base">
                             Consultá los operadores de la plataforma.
                         </p>
-                    </div>
-
-                    <div className="flex flex-col gap-3 sm:items-end">
-                        {mostrarBotonNuevoOperador && (
-                            <>
-                                <p className="text-sm font-semibold text-white/80">
-                                    {operadores.length}{" "}
-                                    {operadores.length === 1 ? "operador" : "operadores"}
-                                </p>
-
-                                <Link
-                                    href="/alta-usuario?rol=operador"
-                                    className="rounded-lg bg-surface px-4 py-3 text-sm font-semibold text-secondary hover:bg-primary-soft"
-                                >
-                                    Nuevo operador
-                                </Link>
-                            </>
-                        )}
                     </div>
                 </div>
             </header>
