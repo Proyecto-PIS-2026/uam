@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "./MiMercado";
 import { actualizarPrecio } from "../acciones";
+import { obtenerImporteAjusteRapido } from "../../../administracion/acciones-ajuste-precios";
 
 type Props = {
     pub: Publicacion;
@@ -30,6 +31,7 @@ export default function TarjetaPublicacion({
     const precio = precioGuardado.base === pub.precio ? precioGuardado.valor : precioInicial;
     const [guardandoPrecio, setGuardandoPrecio] = useState(false);
     const [errorPrecio, setErrorPrecio] = useState("");
+    const [importeAjuste, setImporteAjuste] = useState(incrementoPrecio);
     const guardandoPrecioRef = useRef(false);
 
     const [editandoPrecio, setEditandoPrecio] = useState(false);
@@ -37,21 +39,26 @@ export default function TarjetaPublicacion({
         String(precioInicial)
     );
 
-    async function cambiarPrecio(nuevoPrecio: number) {
+    async function cambiarPrecio(nuevoPrecio: number, direccion?: 1 | -1) {
         if (guardandoPrecioRef.current) return;
-        if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) {
-            setErrorPrecio("El precio debe ser un número mayor a cero.");
-            return;
-        }
-        if (!Number.isInteger(nuevoPrecio)) {
-            setErrorPrecio("El precio debe ser un número entero, sin decimales.");
-            return;
-        }
 
         guardandoPrecioRef.current = true;
         setGuardandoPrecio(true);
         setErrorPrecio("");
         try {
+            if (direccion !== undefined) {
+                const importe = await obtenerImporteAjusteRapido();
+                setImporteAjuste(importe);
+                nuevoPrecio = Math.max(0, precio + direccion * importe);
+            }
+            if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) {
+                setErrorPrecio("El precio debe ser un número mayor a cero.");
+                return;
+            }
+            if (!Number.isInteger(nuevoPrecio)) {
+                setErrorPrecio("El precio debe ser un número entero, sin decimales.");
+                return;
+            }
             await actualizarPrecio(pub.id, nuevoPrecio, operadorId);
             setPrecioGuardado({ base: pub.precio, valor: nuevoPrecio });
             alPrecioActualizado?.();
@@ -78,19 +85,11 @@ export default function TarjetaPublicacion({
     }
 
     function restar() {
-        const nuevoPrecio = Math.max(
-            0,
-            precio - incrementoPrecio
-        );
-
-        void cambiarPrecio(nuevoPrecio);
+        void cambiarPrecio(precio, -1);
     }
 
     function sumar() {
-        const nuevoPrecio =
-            precio + incrementoPrecio;
-
-        void cambiarPrecio(nuevoPrecio);
+        void cambiarPrecio(precio, 1);
     }
 
     function comenzarEdicionPrecio() {
@@ -291,6 +290,7 @@ export default function TarjetaPublicacion({
                                 onClick={restar}
                                 disabled={guardandoPrecio}
                                 aria-label="Disminuir precio"
+                                title={`Disminuir $${importeAjuste}`}
                             >
                                 −
                             </button>
@@ -371,6 +371,7 @@ export default function TarjetaPublicacion({
                                 onClick={sumar}
                                 disabled={guardandoPrecio}
                                 aria-label="Aumentar precio"
+                                title={`Aumentar $${importeAjuste}`}
                             >
                                 +
                             </button>

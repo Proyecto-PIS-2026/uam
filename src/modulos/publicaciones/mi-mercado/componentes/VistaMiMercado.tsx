@@ -4,24 +4,22 @@ import { mapearPublicacionesMiMercado } from "../mapear-publicaciones";
 import { obtenerOpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
 import { obtenerOperadorActual, obtenerOperadorPorNombre } from "../../../usuarios/operadores/operador-actual";
 import { notFound } from "next/navigation";
+import { consultarImporteAjuste } from "../../../administracion/configuracion-ajuste-precios";
 
 type VistaMiMercadoProps = {
     abrirAltaInicial?: boolean;
     operadorNombre?: string;
 };
 
-// TODO: reemplazar por el valor real de Configuración ("incremento_precio")
-// cuando se implemente el ítem BP-18.2
-const incrementoPrecio = 10;
-
 export default async function VistaMiMercado({ abrirAltaInicial = false, operadorNombre }: VistaMiMercadoProps) {
     const operador = operadorNombre === undefined
         ? await obtenerOperadorActual()
         : await obtenerOperadorPorNombre(operadorNombre);
     if (!operador) notFound();
-    const [publicacionesBD, opcionesEdicion] = await Promise.all([
+    const [publicacionesBD, opcionesEdicion, incrementoPrecio] = await Promise.all([
         obtenerPublicacionesDeOperador(operador.id),
         obtenerOpcionesEdicionPublicacion(),
+        consultarImporteAjuste(),
     ]);
     const publicaciones = mapearPublicacionesMiMercado(publicacionesBD);
 

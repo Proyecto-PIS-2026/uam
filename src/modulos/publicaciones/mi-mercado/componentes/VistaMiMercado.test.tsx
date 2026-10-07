@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
     obtenerOperadorPorNombre: vi.fn(),
     obtenerPublicaciones: vi.fn(),
     obtenerOpcionesEdicion: vi.fn(),
+    consultarImporteAjuste: vi.fn(),
     miMercado: vi.fn(() => null),
     notFound: vi.fn(() => { throw new Error("NEXT_HTTP_ERROR_FALLBACK;404"); }),
 }));
@@ -26,6 +27,9 @@ vi.mock("../../operadores/consultas-edicion-publicacion", () => ({
 }));
 
 vi.mock("./MiMercado", () => ({ default: mocks.miMercado }));
+vi.mock("../../../administracion/configuracion-ajuste-precios", () => ({
+    consultarImporteAjuste: mocks.consultarImporteAjuste,
+}));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 
 const opcionesEdicion = {
@@ -38,6 +42,7 @@ describe("VistaMiMercado", () => {
         mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Operador 13" });
         mocks.obtenerPublicaciones.mockResolvedValue([]);
         mocks.obtenerOpcionesEdicion.mockResolvedValue(opcionesEdicion);
+        mocks.consultarImporteAjuste.mockResolvedValue(25);
     });
 
     it("usa el operador actual cuando no llega un nombre", async () => {
@@ -49,6 +54,7 @@ describe("VistaMiMercado", () => {
         expect(vista.type).toBe(mocks.miMercado);
         expect(vista.props.operadorId).toBe(13);
         expect(vista.props.nombreOperador).toBe("Operador 13");
+        expect(vista.props.incrementoPrecio).toBe(25);
     });
 
     it("usa el operador indicado en la ruta", async () => {
@@ -62,6 +68,7 @@ describe("VistaMiMercado", () => {
         expect(vista.type).toBe(mocks.miMercado);
         expect(vista.props.operadorId).toBe(37);
         expect(vista.props.nombreOperador).toBe("Frutas & Más");
+        expect(vista.props.incrementoPrecio).toBe(25);
     });
 
     it("responde 404 si el operador indicado no existe", async () => {

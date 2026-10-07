@@ -1,4 +1,5 @@
 import TarjetaConfiguracion from "./tarjetaConfiguracion";
+import ConfiguracionAjustePrecios from "./ConfiguracionAjustePrecios";
 
 interface ContenedorConfiguracionProps {
     configuracion: Record<string, string | null>;
@@ -14,13 +15,7 @@ export default function ContenedorConfiguracion({ configuracion }: ContenedorCon
                 tipo="checkbox"
                 label="Habilitar ordenamiento"
             />
-            <TarjetaConfiguracion
-                titulo="Ajuste rápido de precios"
-                descripcion="Importe en pesos para los controles de aumento y disminución rápida de precios."
-                valorInicial={configuracion.incremento}
-                tipo="number"
-                label="Importe de ajuste ($)"
-            />
+            <ConfiguracionAjustePrecios valorInicial={configuracion.incremento_precio ?? null} />
             <TarjetaConfiguracion
                 titulo="Lista Inteligente"
                 descripcion="Enlace al recurso externo de la UAM."
