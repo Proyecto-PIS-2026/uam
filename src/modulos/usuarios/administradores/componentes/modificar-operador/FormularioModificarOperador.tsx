@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { modificarOperador } from "./modificarOperador";
+import { bajaOperador } from "@/modulos/usuarios/operadores/bajaOperador";
 import type { NaveOpcion } from "./obtenerNaves";
 import type { OperadorParaModificar } from "./obtenerOperadorParaModificar";
 
@@ -28,6 +29,8 @@ export default function FormularioModificarOperador({
 }: Props) {
     const router = useRouter();
 
+    const [mostrarPopupEliminar, setMostrarPopupEliminar] = useState(false);
+
     const [nombre, setNombre] = useState(operador.nombre);
     const [codigoPais, setCodigoPais] = useState(
         operador.codigoPais,
@@ -48,6 +51,35 @@ export default function FormularioModificarOperador({
 
     const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
+    const [eliminando, setEliminando] = useState(false);
+
+    async function eliminarOperador() {
+        if (eliminando) return;
+
+        setErrores([]);
+        setEliminando(true);
+
+        try {
+            const resultado = await bajaOperador({
+                operadorId: operador.id,
+            });
+
+            if (!resultado.esValido) {
+                setErrores(resultado.errores);
+                return;
+            }
+
+            router.push("/gestion-operadores");
+        } catch (error) {
+            console.error("Error al eliminar operador:", error);
+
+            setErrores([
+                "No se pudo eliminar el operador. Intentá de nuevo.",
+            ]);
+        } finally {
+            setEliminando(false);
+        }
+    }
 
     function actualizarLocal(
         indice: number,
@@ -91,7 +123,7 @@ export default function FormularioModificarOperador({
     }
 
     function cancelar() {
-        router.push(`/gestion-operadores/${operador.id}`);
+        router.push(`/gestion-operadores`);
     }
 
     async function guardar(
@@ -531,6 +563,15 @@ export default function FormularioModificarOperador({
                     <div className={styles.acciones}>
                         <button
                             type="button"
+                            className={`${styles.cancelar} !border-red-700 !text-red-500 hover:!bg-red-50`}
+                            onClick={() => setMostrarPopupEliminar(true)}
+                            disabled={guardando}
+                        >
+                            Eliminar operador
+                        </button>
+
+                        <button
+                            type="button"
                             className={styles.cancelar}
                             onClick={cancelar}
                             disabled={guardando}
@@ -549,6 +590,55 @@ export default function FormularioModificarOperador({
                         </button>
                     </div>
                 </form>
+                {mostrarPopupEliminar && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                        <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl">
+                            <h2 className="text-xl font-bold text-foreground">
+                                Eliminar operador
+                            </h2>
+
+                            <p className="mt-3 text-sm text-muted-foreground">
+                                ¿Está seguro de que desea eliminar al operador{" "}
+                                <strong>{operador.nombre}</strong>?
+                            </p>
+
+                            {errores.length > 0 && (
+                                <div
+                                    className={styles.error}
+                                    role="alert"
+                                >
+                                    {errores.map((error) => (
+                                        <p key={error}>{error}</p>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setMostrarPopupEliminar(false)
+                                    }
+                                    className={styles.cancelar}
+                                    disabled={eliminando}
+                                >
+                                    Cancelar
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={eliminarOperador}
+                                    className={styles.guardar}
+                                    disabled={eliminando}
+                                >
+                                    {eliminando
+                                        ? "Eliminando..."
+                                        : "Eliminar operador"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
