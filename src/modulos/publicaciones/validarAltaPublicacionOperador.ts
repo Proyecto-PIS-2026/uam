@@ -8,6 +8,7 @@ export type DatosAltaPublicacionOperador = {
 	paisId: number;
 	disponibilidad: boolean;
 	precio?: string;
+	cantidadUnidades?: number | null;
 	fotografia?: string;
 };
 
@@ -58,6 +59,12 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 	if (datos.fotografia !== undefined && (typeof datos.fotografia !== "string" || !fotografiaValida(datos.fotografia))) {
 		errores.push("La fotografía debe ser PNG, JPEG o WebP y pesar hasta 10 MB.");
 	}
+
+	if (datos.cantidadUnidades !== undefined && datos.cantidadUnidades !== null) {
+		if (typeof datos.cantidadUnidades !== "number" || !Number.isSafeInteger(datos.cantidadUnidades) || datos.cantidadUnidades < 0 || datos.cantidadUnidades > 2147483647) {
+			errores.push("La cantidad de unidades debe ser un número entero entre 0 y 2147483647.");
+		}
+	}	
 
 	if (errores.length > 0) return { esValido: false, errores };
 	return { esValido: true, datos: datos as DatosAltaPublicacionOperador };

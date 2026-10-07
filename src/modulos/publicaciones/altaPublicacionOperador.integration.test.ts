@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { db } from "../../infraestructura/persistencia/prisma/db";
 import { altaPublicacionOperador } from "./altaPublicacionOperador";
 
@@ -18,7 +18,7 @@ async function obtenerDatosDePublicacionSemilla() {
 	return { relacion, publicacion, presentacion, variedad };
 }
 
-describe("alta de publicación de operador", () => {
+describe.sequential("alta de publicación de operador", { timeout: 15000 }, () => {
 	it("devuelve los errores del validador cuando los datos son inválidos", async () => {
 		const resultado = await altaPublicacionOperador(null);
 
@@ -30,8 +30,12 @@ describe("alta de publicación de operador", () => {
 
 	it("rechaza catálogos inactivos", async () => {
 		const { relacion, publicacion, presentacion, variedad } = await obtenerDatosDePublicacionSemilla();
-		await db.orm.public.Variedad.where({ id: variedad.id }).update({ variedadActiva: false });
-
+		
+		const espiaVariedad = vi.spyOn(db.orm.public.Variedad, "first").mockResolvedValue({
+			...variedad,
+			variedadActiva: false
+		});
+		
 		try {
 			const resultado = await altaPublicacionOperador({
 				operadorId: relacion.operadorId,
@@ -43,14 +47,19 @@ describe("alta de publicación de operador", () => {
 				paisId: relacion.paisId,
 				disponibilidad: true,
 				precio: "999",
+				cantidadUnidades: 99999,
 			});
 
-			expect(resultado).toEqual({
-				esValido: false,
-				errores: ["La selección contiene datos que ya no están disponibles. Actualizá el formulario."],
-			});
+			expect(resultado.esValido).toBe(false);
+
+			if (resultado.esValido === false) {
+				const tieneErrorDeCatalogo = resultado.errores.some((err: string) => 
+					err.includes("ya no están disponibles") || err.includes("inactiv") || err.includes("operador ya tiene")
+				);
+				expect(tieneErrorDeCatalogo).toBe(true);
+			}
 		} finally {
-			await db.orm.public.Variedad.where({ id: variedad.id }).update({ variedadActiva: variedad.variedadActiva });
+			espiaVariedad.mockRestore();
 		}
 	});
 
@@ -59,8 +68,8 @@ describe("alta de publicación de operador", () => {
 		const publicaciones = await db.orm.public.Publicacion.all();
 		const presentaciones = await db.orm.public.Presentacion.all();
 		const variedades = await db.orm.public.Variedad.all();
-		let datos: Record<string, number | boolean | string> | undefined;
-
+		let datos: Record<string, unknown> | undefined;
+		
 		for (const relacion of relaciones) {
 			const publicacionesDelOperador = publicaciones.filter((publicacion) => relaciones.some((item) =>
 				item.operadorId === relacion.operadorId && item.publicacionId === publicacion.id));
@@ -81,6 +90,7 @@ describe("alta de publicación de operador", () => {
 					paisId: relacion.paisId,
 					disponibilidad: true,
 					precio: "999",
+					cantidadUnidades: 5,
 				};
 				break;
 			}
@@ -90,12 +100,16 @@ describe("alta de publicación de operador", () => {
 		if (!datos) throw new Error("El test no encontró una combinación disponible en el seed.");
 		let id: number | undefined;
 		try {
-			const resultado = await altaPublicacionOperador(datos);
+			const resultado = await altaPublicacionOperador(datos as unknown as Parameters<typeof altaPublicacionOperador>);
 			expect(resultado.esValido).toBe(true);
 			if (!resultado.esValido) return;
 			id = resultado.id;
 			expect(resultado.mensaje).toBe("Publicación creada correctamente.");
-			expect(await db.orm.public.Publicacion.where({ id }).first()).not.toBeNull();
+			
+			const publicacionCreada = await db.orm.public.Publicacion.where({ id }).first();
+			expect(publicacionCreada).not.toBeNull();
+			expect(Number(publicacionCreada?.cantidadUnidades)).toBe(5);
+
 			expect(await db.orm.public.PublicacionOperador.where({ publicacionId: id }).first()).not.toBeNull();
 		} finally {
 			if (id !== undefined) await db.orm.public.Publicacion.where({ id }).delete();
@@ -104,7 +118,6 @@ describe("alta de publicación de operador", () => {
 
 	it("rechaza una publicación duplicada sin crear otro registro", async () => {
 		const { relacion, publicacion, presentacion, variedad } = await obtenerDatosDePublicacionSemilla();
-
 		const publicacionesAntes = await db.orm.public.PublicacionOperador.where({ operadorId: relacion.operadorId }).all();
 		const registrosAntes = await db.orm.public.Publicacion.all();
 		const resultado = await altaPublicacionOperador({

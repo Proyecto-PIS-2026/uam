@@ -71,3 +71,19 @@ export async function obtenerEspeciesInicio() {
     fotoGenerica: buscarFotoGenerica(especie.nombreEspecie, archivosGenericos),
   }));
 }
+
+export async function obtenerUrlListaInteligente() {
+  const configuracion = db.sql.public.configuracion;
+  const plan = db.raw.sql`
+    SELECT c."valorConfiguracion"
+    FROM public.configuracion c
+    WHERE c."nombreConfiguracion" = 'url_lista_inteligente'
+    LIMIT 1
+  `
+    .returnsRow({
+      valorConfiguracion: configuracion.columns.valorConfiguracion,
+    })
+    .build();
+  const [resultado] = await runtime.query(plan);
+  return resultado?.valorConfiguracion ?? null;
+}

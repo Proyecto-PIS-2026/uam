@@ -9,6 +9,7 @@ export type PublicacionPerfil = {
     especie: string;
     variedad: string;
     presentacion: string;
+    cantidadUnidades?: number | null;
     categoria: string;
     calibre: string;
     pais: string;
@@ -77,6 +78,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 "id",
                 "foto",
                 "precio",
+                "cantidadUnidades",
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion"
@@ -109,6 +111,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 especie: publicacion.presentacion.variedad.especie.nombreEspecie,
                 variedad: publicacion.presentacion.variedad.nombreVariedad,
                 presentacion: publicacion.presentacion.nombrePresentacion,
+                cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
                 categoria: publicacion.categoria.nombreCategoria,
                 calibre: publicacion.calibre.codigoCalibre,
                 pais: completa.pais.nombrePais,

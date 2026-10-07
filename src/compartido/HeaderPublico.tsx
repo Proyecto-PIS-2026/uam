@@ -33,6 +33,10 @@ const opcionesMenu: OpcionMenu[] = [
         ruta: "/operadores",
     },
     {
+        nombre: "Precios de referencia",
+        ruta: "/precios-referencia",
+    },
+    {
         nombre: "Mi mercado",
         ruta: "/mi-mercado",
         rol: "OPERADOR",

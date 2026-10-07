@@ -11,9 +11,10 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest --project unit",
-    "test:integration": "vitest --project integration",
+    "test:integration": "npm run db:seed:test && vitest run --project integration --fileParallelism=false",
     "test:e2e": "playwright test",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --project unit --coverage",
+    "test:vitest": "npm run test:integration && npm run test:coverage",
     "db:contract": "prisma contract emit",
     "db:migrate": "prisma db migrate",
     "db:seed": "tsx src/infraestructura/persistencia/prisma/seed.ts",
@@ -30,7 +31,7 @@
     "@mui/material": "^9.4.0",
     "@mui/material-nextjs": "^9.4.0",
     "@prisma/client": "^7.10.0",
-    "argon2": "0.45.1",
+    "argon2": "^0.45.1",
     "csv-parse": "^7.0.2",
     "dotenv": "^17.4.2",
     "next": "16.3.4",
@@ -63,6 +64,7 @@
     "esbuild": true,
     "msgpackr-extract": true,
     "workerd": true,
-    "unrs-resolver@1.12.2": true
+    "unrs-resolver@1.12.2": true,
+    "argon2@0.45.1": true
   }
 }
