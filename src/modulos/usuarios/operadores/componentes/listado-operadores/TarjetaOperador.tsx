@@ -8,7 +8,10 @@ type TarjetaOperadorProps = {
 };
 
 export default function TarjetaOperador({ operador }: TarjetaOperadorProps) {
-    const localesTexto = operador.locales.map((local) => `Nave ${local.nombreNave} - ${local.numeroLocal}`).join(" | ");
+    const localesTexto = operador.locales.map((local) => {
+        const nombreNave = local.nombreNave === "Tinglado" ? local.nombreNave : `Nave ${local.nombreNave}`;
+        return `${nombreNave} - ${local.numeroLocal}`;
+    }).join(" | ");
     const foto = operador.fotoPerfil?.trim();
     const inicial = operador.nombreFantasia.trim().charAt(0).toLocaleUpperCase("es");
 

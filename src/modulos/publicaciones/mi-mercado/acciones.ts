@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { obtenerOperadorActual, obtenerOperadorPorId } from "../../usuarios/operadores/operador-actual";
-import { actualizarPrecioPublicacion, obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
+import { actualizarPrecioPublicacion, obtenerPublicacionesDeOperador, PublicacionNoEncontradaError } from "./consultas-mi-mercado";
 import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
 
 export async function cargarPublicacionesMiMercado(operadorId: number) {
@@ -26,11 +26,20 @@ export async function actualizarPrecio(publicacionId: number, nuevoPrecio: numbe
         throw new Error("No se encontró el operador de Mi Mercado.");
     }
 
-    await actualizarPrecioPublicacion(operador.id, publicacionId, nuevoPrecio);
+    try {
+        await actualizarPrecioPublicacion(operador.id, publicacionId, nuevoPrecio);
+    } catch (error) {
+        /* DEMO: una baja concurrente es un resultado esperado; el cliente recarga Mi Mercado. */
+        if (error instanceof PublicacionNoEncontradaError) return { publicacionEliminada: true };
+        throw error;
+    }
 
+    /*
+     * DEMO: Mi Mercado actualiza su listado con cargarPublicacionesMiMercado.
+     * Para recuperar la revalidación automática de esa vista, volver a incluir
+     * "/mi-mercado" y la ruta con el nombre del operador en este arreglo.
+     */
     const rutas = [
-        "/mi-mercado",
-        `/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`,
         "/publicaciones",
         `/operadores/${encodeURIComponent(operador.nombreFantasia)}`,
         "/operadores",
@@ -45,4 +54,6 @@ export async function actualizarPrecio(publicacionId: number, nuevoPrecio: numbe
             console.error(`No se pudo revalidar ${ruta} tras guardar el precio:`, error);
         }
     }
+
+    return { publicacionEliminada: false };
 }

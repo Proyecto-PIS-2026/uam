@@ -148,7 +148,7 @@ const operadores: OperadorDemo[] = [
     username: "sandias_de_rivera",
     nombreFantasia: "Sandias de Rivera",
     whatsApp: "+598914",
-    locales: [{ nave: "Tingado", numero: "N10", finContrato: null }],
+    locales: [{ nave: "Tinglado", numero: "N10", finContrato: null }],
   },
   {
     username: "citricola_salto_grande",
@@ -163,6 +163,16 @@ type PrecioPublicacion = Parameters<typeof prisma.orm.public.Publicacion.create>
 
 function clave(...partes: Array<string | number>): string {
   return JSON.stringify(partes);
+}
+
+function cantidadUnidadesDemo(indice: number, unidad: string): number | null {
+  if (indice % 4 !== 0) return null;
+
+  const variacion = Math.floor(indice / 4) % 5;
+  if (unidad === "KG") return 100 + variacion * 50;
+  if (unidad === "DOC") return 12 + variacion * 6;
+  if (unidad === "CAB") return 40 + variacion * 20;
+  return 20 + variacion * 10;
 }
 
 function idRequerido(mapa: Map<string, number>, llave: string, descripcion: string): number {
@@ -522,6 +532,7 @@ async function main() {
       publicacionDisponible: oferta.available,
       publicacionActiva: oferta.active,
       precio,
+      cantidadUnidades: cantidadUnidadesDemo(indice, oferta.measureUnit),
       foto,
       tipoPublicacion: "OPERADOR",
       presentacionId,
