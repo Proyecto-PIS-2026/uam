@@ -63,6 +63,11 @@ type OperadorDemo = {
   whatsApp: string;
   locales: LocalDemo[];
 };
+type ProductorDemo = {
+  username: string;
+  passwordHash: string;
+  whatsApp: string;
+};
 
 // Cuentas ficticias para la demostración. Las contraseñas se entregan junto
 // con la documentación de la seed; los números de WhatsApp son ficticios.
@@ -171,6 +176,19 @@ const operadores: OperadorDemo[] = [
     nombreFantasia: "Citricola Salto Grande",
     whatsApp: "+598915",
     locales: [{ nave: "A", numero: "025", finContrato: null }],
+  },
+];
+
+const productores: ProductorDemo[] = [
+  {
+    username: "productor_demo_norte",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$ckq4Kc750Ib5KIEnIa7Q+A$bSZqcZIXHYmeIw1bvC+nKzbCgt46Ox69fOJuCXtoYmE",
+    whatsApp: "+598916",
+  },
+  {
+    username: "productora_demo_sur",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$OaZBVkmJYX60JCnI5LE+pA$BrS2NtPChLQ8iaXYVyBFVtXBJpw39gn9b6vm47ST/oc",
+    whatsApp: "+598917",
   },
 ];
 
@@ -470,6 +488,19 @@ async function crearOperadores(archivos: Map<string, string>) {
     twoFactorEnabled: false,
   });
   await prisma.orm.public.Administrador.create({ usuarioId: usuarioAdmin.id, email: "admin@uam.com.uy" });
+
+  for (const datos of productores) {
+    const usuario = await prisma.orm.public.Usuario.create({
+      username: datos.username,
+      passwordHash: datos.passwordHash,
+      rol: "PRODUCTOR",
+      twoFactorEnabled: false,
+    });
+    await prisma.orm.public.Productor.create({
+      usuarioId: usuario.id,
+      whatsApp: datos.whatsApp,
+    });
+  }
 
   const naveIds = new Map<string, number>();
   for (const nave of await prisma.orm.public.Nave.all()) naveIds.set(nave.nombreNave, nave.id);
