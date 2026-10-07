@@ -1,72 +1,71 @@
 "use client";
 
 import { useState } from "react";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+import styles from "./RestablecerContrasena.module.css";
 
 interface RestablecerContrasenaProps {
     usuarioId: number;
 }
 
+interface Notificacion {
+    mensaje: string;
+    tipo: "error" | "success";
+    key: number;
+}
+
 export default function RestablecerContrasena({ usuarioId }: RestablecerContrasenaProps) {
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
-
     const [nuevaContrasena, setNuevaContrasena] = useState("");
-
     const [confirmarContrasena, setConfirmarContrasena] = useState("");
+    const [notificacion, setNotificacion] = useState<Notificacion | null>(null);
 
-    const [error, setError] = useState<string | null>(null);
-
-    const [mensaje, setMensaje] = useState<string | null>(null);
+    function mostrarNotificacion(mensaje: string, tipo: "error" | "success") {
+        setNotificacion({ mensaje, tipo, key: Date.now() });
+    }
 
     function abrirFormulario() {
+        setNotificacion(null);
         setMostrarFormulario(true);
-        setNuevaContrasena("");
-        setConfirmarContrasena("");
-        setError(null);
-        setMensaje(null);
     }
 
     function cancelar() {
-        setMostrarFormulario(false);
         setNuevaContrasena("");
         setConfirmarContrasena("");
-        setError(null);
-        setMensaje(null);
+        setNotificacion(null);
+        setMostrarFormulario(false);
     }
 
     function guardar(evento: React.FormEvent<HTMLFormElement>) {
         evento.preventDefault();
 
-        setError(null);
-        setMensaje(null);
-
         if (nuevaContrasena === "") {
-            setError("La nueva contraseña es obligatoria.");
+            mostrarNotificacion("La nueva contraseña es obligatoria.", "error");
             return;
         }
 
         if (confirmarContrasena === "") {
-            setError("Debe confirmar la nueva contraseña.");
+            mostrarNotificacion("Debe confirmar la nueva contraseña.", "error");
             return;
         }
 
         if (nuevaContrasena !== confirmarContrasena) {
-            setError("Las contraseñas no coinciden.");
+            mostrarNotificacion("Las contraseñas no coinciden.", "error");
             return;
         }
 
         /*
          * TODO: implementar modificación en base de datos.
-         *
          * Consulta/acción:
          * restablecerContrasena()
-         *
          * Datos:
          * {
          *     usuarioId,
          *     nuevaPassword: nuevaContrasena
          * }
-         *
-         * La contraseña debe ser hasheada en backend.
          */
 
         void usuarioId;
@@ -74,36 +73,41 @@ export default function RestablecerContrasena({ usuarioId }: RestablecerContrase
         setNuevaContrasena("");
         setConfirmarContrasena("");
         setMostrarFormulario(false);
-
-        setMensaje("La nueva contraseña fue validada.");
+        mostrarNotificacion("La nueva contraseña fue validada.", "success");
     }
 
     return (
-        <section>
-            <h3> Contraseña </h3>
-            {!mostrarFormulario ? (
-                <>
-                    <button type="button" onClick={abrirFormulario}> Restablecer contraseña </button>
-                    {mensaje && (<p> {mensaje} </p>)}
-                </>
-            ) : (
-                <form onSubmit={guardar}>
-                    <div>
-                        <label htmlFor="nueva-contrasena"> Nueva contraseña </label>
-                        <input id="nueva-contrasena" type="password" value={nuevaContrasena} onChange={(evento) =>
-                            setNuevaContrasena(evento.target.value)} required/>
-                    </div>
-                    <div>
-                        <label htmlFor="confirmar-contrasena"> Confirmar contraseña </label>
-                        <input id="confirmar-contrasena" type="password" value={ confirmarContrasena } onChange={(evento) =>
-                            setConfirmarContrasena(evento.target.value)} required/>
-                    </div>
-                    {error && (<p role="alert"> {error} </p>)}
+        <section className={styles.contenedor}>
+            <div className={styles.encabezado}>
+                <div>
+                    <h3 className={styles.titulo}>Contraseña</h3>
+                    <p className={styles.descripcion}>Cambiar la contraseña de este usuario.</p>
+                </div>
 
-                    <button type="button" onClick={cancelar}> Cancelar </button>
-                    <button type="submit"> Restablecer contraseña </button>
+                {!mostrarFormulario && (<Button variant="outlined" onClick={abrirFormulario} className={styles.boton}> Restablecer contraseña </Button>)}
+            </div>
+
+            <div className={`${styles.formularioContenedor} ${mostrarFormulario ? styles.formularioVisible : ""}`}>
+                <form className={styles.formulario} onSubmit={guardar}>
+                    <TextField fullWidth size="small" label="Nueva contraseña" type="password" value={nuevaContrasena} onChange={(evento) => 
+                        setNuevaContrasena(evento.target.value)} className={styles.campo}
+                    />
+
+                    <TextField fullWidth size="small" label="Confirmar contraseña" type="password" value={confirmarContrasena} onChange={(evento) => 
+                        setConfirmarContrasena(evento.target.value)} className={styles.campo}
+                    />
+
+                    <div className={styles.acciones}>
+                        <Button type="button" variant="outlined" onClick={cancelar} className={styles.botonCancelar}> Cancelar </Button>
+                        <Button type="submit" variant="contained" className={styles.botonGuardar}> Confirmar </Button>
+                    </div>
                 </form>
-            )}
+            </div>
+
+            <Snackbar key={notificacion?.key} open={Boolean(notificacion)} autoHideDuration={4000} onClose={() => 
+                setNotificacion(null)} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+                {notificacion ? (<Alert onClose={() => setNotificacion(null)} severity={notificacion.tipo} variant="filled" sx={{ width: "100%" }}> {notificacion.mensaje} </Alert>) : undefined}
+            </Snackbar>
         </section>
     );
 }

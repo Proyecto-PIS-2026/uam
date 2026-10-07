@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-
-import type { OperadorParaModificar } from "../../Compartidos/Tipos";
-
 import Image from "next/image";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+import type { OperadorParaModificar } from "../../Compartidos/Tipos";
+import styles from "./EditarPerfilOperador.module.css";
 
 interface EditarPerfilOperadorProps {
     usuario: OperadorParaModificar;
+}
+
+interface Notificacion {
+    mensaje: string;
+    tipo: "error" | "success";
+    key: number;
 }
 
 export default function EditarPerfilOperador({ usuario }: EditarPerfilOperadorProps) {
@@ -16,30 +25,30 @@ export default function EditarPerfilOperador({ usuario }: EditarPerfilOperadorPr
     const [whatsApp, setWhatsApp] = useState(usuario.whatsApp);
     const [foto, setFoto] = useState<string | null>(usuario.fotoPerfil);
     const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [mensaje, setMensaje] = useState<string | null>(null);
-    const inputFotoRef =  useRef<HTMLInputElement>(null);
-    const urlVistaPreviaRef =  useRef<string | null>(null);
+    const [notificacion, setNotificacion] = useState<Notificacion | null>(null);
+
+    const inputFotoRef = useRef<HTMLInputElement>(null);
+    const urlVistaPreviaRef = useRef<string | null>(null);
 
     useEffect(() => {
         return () => {
-            if (urlVistaPreviaRef.current) {
-                URL.revokeObjectURL(urlVistaPreviaRef.current);
-            }
+            if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
         };
     }, []);
 
+    function mostrarNotificacion(mensaje: string, tipo: "error" | "success") {
+        setNotificacion({ mensaje, tipo, key: Date.now() });
+    }
+
     function seleccionarFoto(evento: ChangeEvent<HTMLInputElement>) {
         if (!editando) return;
-
         const archivo = evento.target.files?.[0];
-
         if (!archivo) return;
 
         const formatosPermitidos = ["image/jpeg", "image/png", "image/webp"];
 
         if (!formatosPermitidos.includes(archivo.type) || archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
-            setError("Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB.");
+            mostrarNotificacion("Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB.", "error");
             evento.target.value = "";
             return;
         }
@@ -47,32 +56,14 @@ export default function EditarPerfilOperador({ usuario }: EditarPerfilOperadorPr
         if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
 
         const url = URL.createObjectURL(archivo);
-
         urlVistaPreviaRef.current = url;
-
         setVistaPrevia(url);
-        setError(null);
-        setMensaje(null);
-
+        setNotificacion(null);
         evento.target.value = "";
     }
 
-    function borrarFoto() {
-        if (!editando) return;
-
-        if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
-
-        urlVistaPreviaRef.current = null;
-
-        setVistaPrevia(null);
-        setFoto(null);
-        setError(null);
-        setMensaje(null);
-    }
-
     function comenzarEdicion() {
-        setError(null);
-        setMensaje(null);
+        setNotificacion(null);
         setEditando(true);
     }
 
@@ -80,13 +71,11 @@ export default function EditarPerfilOperador({ usuario }: EditarPerfilOperadorPr
         if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
 
         urlVistaPreviaRef.current = null;
-
         setNombreFantasia(usuario.nombreFantasia);
         setWhatsApp(usuario.whatsApp);
         setFoto(usuario.fotoPerfil);
         setVistaPrevia(null);
-        setError(null);
-        setMensaje(null);
+        setNotificacion(null);
         setEditando(false);
 
         if (inputFotoRef.current) inputFotoRef.current.value = "";
@@ -95,93 +84,82 @@ export default function EditarPerfilOperador({ usuario }: EditarPerfilOperadorPr
     function guardar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
 
-        setError(null);
-        setMensaje(null);
-
         const nombreFantasiaNormalizado = nombreFantasia.trim();
         const whatsAppNormalizado = whatsApp.trim();
 
         if (nombreFantasiaNormalizado === "") {
-            setError("El nombre fantasía es obligatorio.");
+            mostrarNotificacion("El nombre fantasía es obligatorio.", "error");
             return;
         }
 
         if (whatsAppNormalizado === "") {
-            setError("El número de WhatsApp es obligatorio.");
+            mostrarNotificacion("El número de WhatsApp es obligatorio.", "error");
             return;
         }
-
-        /*
-        * TODO: implementar modificación en base de datos.
-        *
-        * Consulta/acción:
-        * modificarPerfilOperador()
-        *
-        * Datos:
-        * {
-        *     operadorId: usuario.id,
-        *     nombreFantasia: nombreFantasiaNormalizado,
-        *     whatsApp: whatsAppNormalizado,
-        *     foto: foto,
-        *     fotoNueva: fotoNueva
-        * }
-        *
-        * La unicidad de nombreFantasia debe ser
-        * validada exclusivamente en backend/BD.
-        */
 
         setNombreFantasia(nombreFantasiaNormalizado);
         setWhatsApp(whatsAppNormalizado);
         setEditando(false);
-
-        setMensaje("Los cambios fueron validados");
+        mostrarNotificacion("Los cambios fueron validados.", "success");
     }
 
     const fotoVisible = vistaPrevia ?? foto;
 
     return (
-        <section>
-            <h3>Perfil del operador</h3>
+        <section className={styles.contenedor}>
             <form onSubmit={guardar}>
-                <div>
-                    <label htmlFor="nombre-fantasia-operador"> Nombre fantasía </label>
-                    <input id="nombre-fantasia-operador" type="text" value={nombreFantasia} onChange={(evento) => 
-                        setNombreFantasia(evento.target.value)} readOnly={!editando} disabled={!editando}/>
-                </div>
-                <div>
-                    <label htmlFor="whatsapp-operador"> WhatsApp </label>
-                    <input id="whatsapp-operador" type="text" value={whatsApp} onChange={(evento) => 
-                        setWhatsApp(evento.target.value)} readOnly={!editando} disabled={!editando}/>
-                </div>
-                <div>
-                    <span>Foto de perfil</span>
-                    {fotoVisible ? (
-                        <Image src={fotoVisible}  alt={`Foto de perfil de ${usuario.nombreFantasia}`} width={200} height={200}  unoptimized/>
-                    ) : (
-                        <p> Sin foto de perfil </p>
-                    )}
-                    {editando && (
-                        <>
-                            <button type="button" onClick={() => inputFotoRef.current?.click()}> Cambiar foto </button>
-                            {fotoVisible && (<button type="button" onClick={borrarFoto}> Borrar foto </button>)}
-                            <input ref={inputFotoRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={seleccionarFoto} hidden/>
-                        </>
-                    )}
+                <div className={styles.encabezado}>
+                    <h3 className={styles.titulo}>Editar perfil</h3>
+                    <span className={styles.username}>@{usuario.username}</span>
                 </div>
 
-                {error && (<p role="alert"> {error} </p>)}
+                <div className={styles.contenido}>
+                    <div className={styles.columnaFoto}>
+                        <div className={styles.seccionFoto}>
+                            <div className={styles.marcoFoto}>
+                                {fotoVisible ? (
+                                    <Image src={fotoVisible} alt={`Foto de perfil de ${usuario.username}`} fill className={styles.imagenFoto} sizes="160px" unoptimized/>
+                                ) : (
+                                    <div className={styles.sinFoto}>
+                                        <span>Sin foto</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-                {mensaje && (<p> {mensaje} </p>)}
+                        <input ref={inputFotoRef} className={styles.inputFoto} type="file" accept="image/jpeg,image/png,image/webp" onChange={seleccionarFoto}/>
+                    </div>
 
-                {editando ? (
-                    <>
-                        <button type="button" onClick={cancelarEdicion}> Cancelar </button>
-                        <button type="submit"> Guardar </button>
-                    </>
-                ) : (
-                    <button type="button" onClick={comenzarEdicion}> Editar </button>
-                )}
+                    <div className={styles.detalles}>
+                        <TextField fullWidth size="small" label="Nombre fantasía" value={nombreFantasia} disabled={!editando} onChange={(evento) => setNombreFantasia(evento.target.value)} className={styles.campo}/>
+                        <TextField fullWidth size="small" label="WhatsApp" value={whatsApp} disabled={!editando} onChange={(evento) => setWhatsApp(evento.target.value)} className={styles.campo}/>
+                    </div>
+
+                    <div className={styles.controles}>
+                        <div className={styles.controlFoto}>
+                            {editando && (
+                                <Button type="button" variant="outlined" onClick={() => inputFotoRef.current?.click()} className={styles.botonFoto}> Editar Foto </Button>
+                            )}
+                        </div>
+
+                        <div className={styles.acciones}>
+                            {!editando ? (
+                                <Button type="button" variant="outlined" onClick={comenzarEdicion} className={styles.botonEditar}> Editar </Button>
+                            ) : (
+                                <>
+                                    <Button type="button" variant="outlined" onClick={cancelarEdicion} className={styles.botonCancelar}> Cancelar </Button>
+                                    <Button type="submit" variant="contained" className={styles.botonGuardar}> Guardar </Button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </form>
+
+            <Snackbar key={notificacion?.key} open={Boolean(notificacion)} autoHideDuration={4000} onClose={() => 
+                setNotificacion(null)} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+                {notificacion ? (<Alert onClose={() => setNotificacion(null)} severity={notificacion.tipo} variant="filled" sx={{ width: "100%" }}> {notificacion.mensaje} </Alert>) : undefined}
+            </Snackbar>
         </section>
     );
 }
