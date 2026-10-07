@@ -12,6 +12,7 @@ type Props = {
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
     alPrecioActualizado?: () => void | Promise<Publicacion[] | false>;
+    alPublicacionEliminada?: () => void;
 };
 
 export default function TarjetaPublicacion({
@@ -20,6 +21,7 @@ export default function TarjetaPublicacion({
     incrementoPrecio,
     alConsultar,
     alPrecioActualizado,
+    alPublicacionEliminada,
 }: Props) {
     let precioInicial = 0;
 
@@ -60,19 +62,16 @@ export default function TarjetaPublicacion({
                 return;
             }
             await actualizarPrecio(pub.id, nuevoPrecio, operadorId);
+            const resultado = await actualizarPrecio(pub.id, nuevoPrecio, operadorId);
+            if (resultado?.publicacionEliminada) {
+                alPublicacionEliminada?.();
+                return;
+            }
             setPrecioGuardado({ base: pub.precio, valor: nuevoPrecio });
             alPrecioActualizado?.();
         } catch (error) {
-            if (error instanceof Error && error.message === "La publicación no existe o no pertenece al operador.") {
-                try {
-                    const actuales = await alPrecioActualizado?.();
-                    if (Array.isArray(actuales) && !actuales.some((publicacion) => publicacion.id === pub.id)) return;
-                } catch {
-                    setErrorPrecio(error.message);
-                    return;
-                }
-            }
-            setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
+            console.error("No se pudo guardar el precio de la publicación:", error);
+            setErrorPrecio("No se pudo guardar el precio. Intentá de nuevo.");
         } finally {
             guardandoPrecioRef.current = false;
             setGuardandoPrecio(false);
