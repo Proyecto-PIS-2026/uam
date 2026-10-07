@@ -18,7 +18,7 @@ export type PresentacionHistorica = {
 export type RegistroHistorico = {
     date: string;
     presentations: PresentacionHistorica[];
-    volume_kg: number;
+    volume_kg?: number | null;
 };
 
 export type HistoricoProducto = {
@@ -38,4 +38,9 @@ export type ProductoSeleccionado = {
     pais: string;
     calibre: string;
     categoria: string;
+};
+
+export type EspecieHistorica = {
+    id: string;
+    especie: string;
 };

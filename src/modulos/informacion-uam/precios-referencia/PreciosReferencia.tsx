@@ -5,6 +5,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
+import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import type { PrecioReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 import styles from "./PreciosReferencia.module.css";
@@ -35,21 +36,8 @@ function leerPrecio(valor: string): number | null {
     return Number.isFinite(precio) ? precio : null;
 }
 
-function abrirHistorico(fila: PrecioReferencia) {
-    const [clasificacion, especie] = JSON.parse(fila.id);
-    const parametros = new URLSearchParams({
-        classification_id: String(clasificacion),
-        species_id: String(especie),
-        producto: fila.especie,
-        variedad: fila.variedad,
-        pais: fila.pais,
-        calibre: fila.calibre,
-        categoria: fila.categoria,
-    });
-    window.location.assign(`/precios-historicos?${parametros}`);
-}
-
 export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
+    const router = useRouter();
     const [busqueda, setBusqueda] = useState("");
     const [especie, setEspecie] = useState("");
     const [variedad, setVariedad] = useState("");
@@ -134,6 +122,20 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     const desde = (paginaActual - 1) * LIMITE;
     const visibles = filtradas.slice(desde, desde + LIMITE);
     const [anio, mes, dia] = fechaRelevamiento.split("-");
+
+    function abrirHistorico(fila: PrecioReferencia) {
+        const [clasificacion, especie] = JSON.parse(fila.id);
+        const parametros = new URLSearchParams({
+            classification_id: String(clasificacion),
+            species_id: String(especie),
+            producto: fila.especie,
+            variedad: fila.variedad,
+            pais: fila.pais,
+            calibre: fila.calibre,
+            categoria: fila.categoria,
+        });
+        router.push(`/precios-historicos?${parametros}`);
+    }
 
     function cambiar(accion: () => void) {
         accion();
