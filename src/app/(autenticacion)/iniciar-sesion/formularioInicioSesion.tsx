@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { iniciarSesion, type EstadoInicioSesion } from "./acciones";
 
 const estadoInicial: EstadoInicioSesion = {};
 
 export default function FormularioInicioSesion() {
     const [estado, accion, pendiente] = useActionState(iniciarSesion, estadoInicial);
+    const [identificador, cambiarIdentificador] = useState("");
 
     return (
         <form
@@ -23,6 +24,8 @@ export default function FormularioInicioSesion() {
                     type="text"
                     required
                     autoComplete="username"
+                    value={identificador}
+                    onChange={(evento) => cambiarIdentificador(evento.target.value)}
                     className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2"
                 />
             </div>

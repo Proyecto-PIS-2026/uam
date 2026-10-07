@@ -60,6 +60,8 @@ describe("FormularioInicioSesion", () => {
 
         expect(await screen.findByRole("alert"))
             .toHaveTextContent("Las credenciales no son correctas.");
+        expect(screen.getByLabelText("Correo electrónico o nombre de usuario"))
+            .toHaveValue("huerta_productora");
         expect(screen.getByRole("button", { name: "Iniciar sesión" })).toBeEnabled();
     });
 

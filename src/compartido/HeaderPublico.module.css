@@ -227,7 +227,7 @@
 
     .menuMobile {
         display: flex;
-        margin-left: 0;
+        margin-left: auto;
     }
 
     .menuOperador {
