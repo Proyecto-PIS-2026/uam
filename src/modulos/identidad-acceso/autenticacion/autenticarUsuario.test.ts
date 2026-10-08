@@ -8,7 +8,12 @@ const consultasSimuladas = vi.hoisted(() => ({
     obtenerUsuarioProductorPorNombre: vi.fn(),
 }));
 
+const vigenciaContratoSimulada = vi.hoisted(() => ({
+    operadorTieneContratoVigente: vi.fn(),
+}));
+
 vi.mock("./consultasAutenticacion", () => consultasSimuladas);
+vi.mock("@/compartido/vigenciaContrato", () => vigenciaContratoSimulada);
 
 const hashContrasena = await argon2.hash("contrasena-de-prueba", {
     type: argon2.argon2id,
@@ -20,6 +25,7 @@ describe("autenticarUsuario", () => {
         consultasSimuladas.obtenerUsuarioAdministradorPorCorreo.mockResolvedValue(null);
         consultasSimuladas.obtenerUsuarioOperadorPorNombre.mockResolvedValue(null);
         consultasSimuladas.obtenerUsuarioProductorPorNombre.mockResolvedValue(null);
+        vigenciaContratoSimulada.operadorTieneContratoVigente.mockResolvedValue(true);
     });
 
     it("autentica al administrador por correo y toma su rol de la base", async () => {
