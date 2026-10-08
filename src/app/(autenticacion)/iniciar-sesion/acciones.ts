@@ -32,6 +32,11 @@ export async function iniciarSesion(
     if (!usuario) {
         return { error: "Las credenciales ingresadas no son correctas." };
     }
+    if ("error" in usuario) {
+        return {
+            error: "No tenés ningún contrato vigente para iniciar sesión. Comunicate con los administradores de la UAM.",
+        };
+    }
 
     await crearSesion(usuario.usuarioId, usuario.rol);
     redirect("/");

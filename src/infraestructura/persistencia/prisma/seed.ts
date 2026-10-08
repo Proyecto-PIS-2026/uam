@@ -192,6 +192,14 @@ const productores: ProductorDemo[] = [
   },
 ];
 
+const operadorInhabilitado: OperadorDemo = {
+  username: "inhabilitado",
+  passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$ZhGcSpOqe3QcvBo5fhrK6w$wNmdXW5yMPkMtRVhnQqHLSWki8NmdyTVaacdN0XOoQU",
+  nombreFantasia: "Operador Inhabilitado",
+  whatsApp: "+598918",
+  locales: [{ nave: "E", numero: "999", finContrato: "2020-12-31T23:59:59Z" }],
+};
+
 type KgPorUnidad = Parameters<typeof prisma.orm.public.Presentacion.create>[0]["kgPorUnidad"];
 type PrecioPublicacion = Parameters<typeof prisma.orm.public.Publicacion.create>[0]["precio"];
 
@@ -476,7 +484,8 @@ async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, nu
 }
 
 async function crearOperadores(archivos: Map<string, string>) {
-  const nombresNave = new Set(operadores.flatMap((operador) => operador.locales.map((local) => local.nave)));
+  const todosLosOperadores = [...operadores, operadorInhabilitado];
+  const nombresNave = new Set(todosLosOperadores.flatMap((operador) => operador.locales.map((local) => local.nave)));
   for (const nombreNave of nombresNave) {
     await prisma.orm.public.Nave.create({ nombreNave });
   }
@@ -506,7 +515,7 @@ async function crearOperadores(archivos: Map<string, string>) {
   for (const nave of await prisma.orm.public.Nave.all()) naveIds.set(nave.nombreNave, nave.id);
 
   const operadorIds = new Map<string, number>();
-  for (const datos of operadores) {
+  for (const datos of todosLosOperadores) {
     const usuario = await prisma.orm.public.Usuario.create({
       username: datos.username,
       passwordHash: datos.passwordHash,

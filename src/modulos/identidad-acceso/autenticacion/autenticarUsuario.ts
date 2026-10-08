@@ -1,4 +1,5 @@
 import argon2 from "argon2";
+import { operadorTieneContratoVigente } from "@/compartido/vigenciaContrato";
 import {
     obtenerUsuarioAdministradorPorCorreo,
     obtenerUsuarioOperadorPorNombre,
@@ -10,7 +11,14 @@ export type Credenciales = {
     contrasena: string;
 };
 
-export async function autenticarUsuario(credenciales: Credenciales) {
+export type ResultadoAutenticacion =
+    | { usuarioId: number; rol: "ADMINISTRADOR" | "OPERADOR" | "PRODUCTOR" }
+    | { error: "SIN_CONTRATO_VIGENTE" }
+    | null;
+
+export async function autenticarUsuario(
+    credenciales: Credenciales,
+): Promise<ResultadoAutenticacion> {
     const usuario =
         (await obtenerUsuarioAdministradorPorCorreo(credenciales.identificador)) ||
         (await obtenerUsuarioOperadorPorNombre(credenciales.identificador)) ||
@@ -30,6 +38,10 @@ export async function autenticarUsuario(credenciales: Credenciales) {
         credenciales.contrasena,
     );
     if (!contrasenaValida) return null;
+
+    if (usuario.rol === "OPERADOR" && !(await operadorTieneContratoVigente(usuario.id))) {
+        return { error: "SIN_CONTRATO_VIGENTE" };
+    }
 
     return { usuarioId: usuario.id, rol: usuario.rol };
 }
