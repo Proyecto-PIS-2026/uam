@@ -76,7 +76,16 @@ describe("PerfilOperadorAdmin", () => {
     it("ofrece volver al listado de operadores", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
-        expect(screen.getByRole("link", { name: /Volver al listado de operadores/ })).toHaveAttribute("href", "/gestion-operadores");
+        expect(screen.getByRole("link", { name: /Volver al listado de operadores/ })).toHaveAttribute("href", "/administracion");
+    });
+
+    it("ofrece editar el operador", () => {
+        render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
+
+        expect(screen.getByRole("link", { name: "Editar operador" })).toHaveAttribute(
+            "href",
+            `/gestion-operadores/${operadorBase.id}/editar`,
+        );
     });
 
     // Muestra la cantidad de publicaciones y le pasa los datos al catálogo

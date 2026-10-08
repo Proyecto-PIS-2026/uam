@@ -1,3 +1,5 @@
+import { Temporal } from "@js-temporal/polyfill";
+
 export type DatosModificacionOperador = {
     operadorId: number;
     nombre: string;
@@ -113,7 +115,7 @@ export function validarModificacionOperador(
         const naveId = l.naveId;
 
         if (!nombreLocal) {
-            errores.push(`Local ${i + 1}: falta el nombre.`);
+            errores.push(`Local ${i + 1}: falta su número.`);
         }
 
         if (contrato) {

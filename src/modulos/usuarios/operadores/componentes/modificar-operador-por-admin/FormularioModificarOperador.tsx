@@ -300,11 +300,11 @@ export default function FormularioModificarOperador({
                                                         indice,
                                                     )
                                                 }
-                                                disabled={
+                                                /*disabled={
                                                     guardando ||
                                                     locales.length ===
                                                         1
-                                                }
+                                                }*/
                                             >
                                                 Eliminar
                                             </button>

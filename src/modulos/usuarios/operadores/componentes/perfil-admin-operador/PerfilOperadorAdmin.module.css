@@ -169,6 +169,41 @@
     object-fit: cover;
 }
 
+.botonEditar {
+    display: flex;
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 1;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--color-surface);
+    color: var(--color-secondary);
+    transition: background-color 0.15s ease;
+    text-decoration: None;
+}
+
+.botonEditar svg {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+.botonEditar:hover {
+    background-color: var(--color-primary-soft);
+}
+
+.botonEditar:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+.textoEditar {
+    display: none;
+}
+
 @media (min-width: 768px) {
     .lista {
         grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
@@ -185,5 +220,28 @@
 
     .finContrato {
         margin-left: 0;
+    }
+
+    .botonEditar {
+        top: 1rem;
+        right: 1rem;
+        width: auto;
+        height: auto;
+        padding: 0.5rem 1.125rem 0.5rem 0.875rem;
+        gap: 0.5rem;
+        border-radius: 999px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .botonEditar svg {
+        width: 1.125rem;
+        height: 1.125rem;
+    }
+
+    .textoEditar {
+        display: inline;
     }
 }

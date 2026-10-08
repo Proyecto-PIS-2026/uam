@@ -21,7 +21,7 @@ export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperad
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <Link href="/gestion-operadores" className={styles.volver}>
+            <Link href="/administracion" className={styles.volver}>
                 ← Volver al listado de operadores
             </Link>
             <div className={styles.tarjetaPerfil}>
@@ -39,6 +39,26 @@ export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperad
                         <p className={styles.tipoPerfil}>Perfil Operador</p>
                         <h1 id="nombre-operador" className={styles.nombre}>{operador.nombreFantasia}</h1>
                     </div>
+                    <Link
+                        href={`/gestion-operadores/${operador.id}/editar`}
+                        className={styles.botonEditar}
+                        aria-label="Editar operador"
+                        title="Editar operador"
+                    >
+                        <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                        <span className={styles.textoEditar}>Editar</span>
+                    </Link>
                 </header>
 
                 <div className={styles.tarjetaInformacion}>
