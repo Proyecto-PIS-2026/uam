@@ -31,6 +31,7 @@ function crearPublicacion(): Publicacion {
     paisId: 44,
     foto: null,
     precio: "100",
+    fecha: "2026-10-03T15:00:00.000Z",
     publicacionActiva: true,
     publicacionDisponible: true,
     presentacion: {

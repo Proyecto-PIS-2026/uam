@@ -1,6 +1,6 @@
 import styles from "./ConfiguracionUsuarios.module.css";
-import ModificarUsuario from "./Componentes/ModificarUsuario";
-import consultarDatosModificarUsuarios from "./Acciones/ConsultaUsuarios";
+import ModificarUsuario from "./componentes/ModificarUsuario";
+import consultarDatosModificarUsuarios from "./acciones/ConsultaUsuarios";
 
 export default async function ConfiguracionUsuarios() {
     const datos = await consultarDatosModificarUsuarios();

@@ -33,6 +33,7 @@ export type OpcionCategoria = OpcionEdicion & {
 
 export type PublicacionParaEditar = CambiosPublicacionOperador & {
     foto: string | null;
+    fecha: string;
     publicacionOperadorId: number;
     publicacionId: number;
     especieId: number;
@@ -100,7 +101,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
     const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
     const presentacionesDisponibles = presentaciones.filter((opcion) => opcion.variedadId === variedadId);
     const categoriasDisponibles = categorias.filter((opcion) => opcion.especieId === null || opcion.especieId === especieId);
-
+    const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     useEffect(() => {
         return () => {
             if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
@@ -188,7 +189,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
             alCerrar();
             return;
         }
-
         if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
         urlVistaPreviaRef.current = null;
         if (inputFotoRef.current) inputFotoRef.current.value = "";
@@ -213,7 +213,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         evento.preventDefault();
         if (bloqueado) return;
         setError("");
-
         const precioNormalizado = precio.trim();
         if (precioNormalizado !== "" && !formatoPrecio.test(precioNormalizado)) {
             setError("El precio debe ser un número entero de hasta 10 dígitos.");
@@ -241,9 +240,32 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
 
     async function guardar() {
         if (bloqueado) return;
-
+        const precioNuevo = precio.trim() || null;
+        const precioOriginal = precioParaEdicion(publicacion.precio).trim() || null;
         const cantidadUnidadesNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
         const cantidadFinal = (cantidadUnidadesNormalizada === "" ? null : Number(cantidadUnidadesNormalizada)) as number | null;
+        const cantidadOriginal = publicacion.cantidadUnidades ?? null;
+
+        const sinCambios =
+            precioNuevo === precioOriginal &&
+            cantidadFinal === cantidadOriginal &&
+            foto === publicacion.foto &&
+            fotoNueva === null &&
+            categoriaId === publicacion.categoriaId &&
+            calibreId === publicacion.calibreId &&
+            presentacionId === publicacion.presentacionId &&
+            paisId === publicacion.paisId &&
+            disponible === publicacion.disponible
+
+        if(sinCambios) {
+            if(modoInicial === "consulta") {
+                setFotoNueva(null); 
+                setEditando(false); 
+            } else {
+                alCerrar(); 
+            }
+            return; 
+        }
 
         const cambios: CambiosPublicacionOperador = {
             precio: precio.trim() || null,
@@ -255,7 +277,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
             paisId,
             disponible,
         };
-
         setGuardando(true);
         try {
             await alGuardar(publicacion.publicacionOperadorId, cambios, fotoNueva);
@@ -271,19 +292,22 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
             setGuardando(false);
         }
     }
-
     const presentacionActual = presentaciones.find(p => p.id === presentacionId)?.nombre || publicacion.presentacion;
-
     return (
         <>
             <div className={styles.asa} aria-hidden="true" />
             <div className={styles.encabezado}>
-                <h2 className={styles.titulo} id={`${idBase}-titulo`}>{editando ? "Editar publicación" : "Consultar publicación"}</h2>
+                <div className={styles.bloqueSuperior}>
+                    <div className={styles.titulo} id={`${idBase}-titulo`}>{editando ? "Editar publicación" : "Consultar publicación"}</div>
+                    <div className={styles.informacionDetallada}>
+                        <span className={styles.nombreInformacion}>Actualización</span>
+                        <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
+                    </div>
+                </div>
                 <button className={styles.cerrar} type="button" onClick={alCerrar} disabled={ocupado} aria-label={editando ? "Cerrar edición" : "Cerrar consulta"}>
                     <CloseIcon fontSize="small" />
                 </button>
             </div>
-
             <form className={styles.formulario} onSubmit={solicitarGuardado}>
                 <div className={styles.cuerpo}>
                     <div className={styles.datosProducto} data-editando={editando}>
@@ -327,7 +351,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                             </TextField>
                         </div>
                     </div>
-
                     <div className={styles.campo}>
                         <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
                         <div className={styles.controlesPrecio} data-editando={editando}>
@@ -337,7 +360,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </div>
                         <small className={styles.ayuda}>Dejalo vacío si el producto no tiene precio.</small>
                     </div>
-
                     <div className={styles.campo}>
                         <label className={styles.etiqueta} htmlFor={`${idBase}-cantidadUnidades`}>
                             Unidades ({presentacionActual})
@@ -347,9 +369,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </div>
                         <small className={styles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>
                     </div>
-
                     {(error || errorConsulta) && <p className={styles.error} role="alert">{error || errorConsulta}</p>}
-
                     <label className={styles.disponibilidad} htmlFor={editando ? `${idBase}-disponibilidad` : undefined} data-disponible={disponible} data-guardando={ocupado} data-editando={editando}>
                         <span className={styles.textoDisponibilidad}>
                             <span className={styles.etiqueta}>Disponibilidad</span>
@@ -357,7 +377,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </span>
                         {editando && <Switch className={styles.interruptorDisponibilidad} checked={disponible} onChange={(_, seleccionado) => { if (!bloqueado) setDisponible(seleccionado); }} disabled={bloqueado} slotProps={{ input: { id: `${idBase}-disponibilidad`, role: "switch", "aria-label": "Publicación disponible" } }} />}
                     </label>
-
                     <div className={styles.seccionFoto}>
                         <div className={styles.marcoFoto}>
                             <ImagenPublicacion className={styles.imagenFoto} src={fotoVisible} alt={`Foto de ${especieSeleccionada?.nombre ?? publicacion.especie} ${variedadSeleccionada?.nombre ?? publicacion.variedad}`} fill sizes="(min-width: 768px) 480px, 100vw" unoptimized reemplazo={<div className={styles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>} />
@@ -375,7 +394,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </div>
                     </div>
                 </div>
-
                 <div className={styles.pie}>
                     {editando ? (
                         <>
@@ -390,7 +408,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                     )}
                 </div>
             </form>
-
         </>
     );
 }
@@ -400,11 +417,9 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
     const [guardando, setGuardando] = useState(false);
     const foto = publicacion?.foto;
     const identidadFoto = foto ? `${foto.length}:${foto.slice(0, 32)}:${foto.slice(-32)}` : "sin-foto";
-
     function cerrar() {
         if (!guardando && !eliminando && !actualizando) alCerrar();
     }
-
     return (
         <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {/* <HojasDecorativas variante="fondo" className={styles.hojasDrawer} /> */}

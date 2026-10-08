@@ -30,6 +30,11 @@ function ultimoRelevamientoGuardado(registros: { claveCache: string; estadoCache
     return ultimoGuardado;
 }
 
+export async function obtenerUltimoRelevamientoGuardado(): Promise<ConsultaPreciosReferencia | null> {
+    const registros = await db.orm.public.Configuracion.all();
+    return ultimoRelevamientoGuardado(registros)?.consulta ?? null;
+}
+
 const formatoFecha = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Montevideo",
     year: "numeric",
