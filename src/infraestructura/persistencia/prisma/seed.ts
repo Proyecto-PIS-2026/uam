@@ -58,111 +58,163 @@ const departamentos = [
 type LocalDemo = { nave: string; numero: string; finContrato: string | null };
 type OperadorDemo = {
   username: string;
+  passwordHash: string;
   nombreFantasia: string;
   whatsApp: string;
   locales: LocalDemo[];
 };
+type ProductorDemo = {
+  username: string;
+  passwordHash: string;
+  whatsApp: string;
+};
 
-// Cuentas de demostración: los teléfonos son ficticios y no hay login activo.
-const passwordHashDemo = "$2b$10$cQoQ65pnEH0aqvETVNLt0evxHpSvfIZ4IUHfQ/aIAb1I17CcwcYSq";
+// Cuentas ficticias para la demostración. Las contraseñas se entregan junto
+// con la documentación de la seed; los números de WhatsApp son ficticios.
 const operadores: OperadorDemo[] = [
   {
     username: "jorge_ferias",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$fDUJ3Y1DptTIBU2IPjyqxw$Q0HyF4LnyUKJ1VubZRupwxZ3BfUEgMDk2K1ut/HOPVQ",
     nombreFantasia: "Jorge Ferias",
     whatsApp: "+598901",
     locales: [{ nave: "E", numero: "141", finContrato: null }],
   },
   {
     username: "pablo_sappa",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$2iKaSnHzDhvP359veoZwGw$iaLrSa6gwc7seCwotqAcFAU4InC7UJrJHAxX8h82wD8",
     nombreFantasia: "Pablo Sappa",
     whatsApp: "+598902",
     locales: [{ nave: "E", numero: "133", finContrato: null }],
   },
   {
     username: "diego_figueroa",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$Ygr+aXrMD+nTFSzqLuUidQ$+e04s9eIV1KCoSZZKeXH4jpH2TbfUi9s9yIyrk54s74",
     nombreFantasia: "Diego Figueroa",
     whatsApp: "+598903",
     locales: [{ nave: "E", numero: "145", finContrato: null }],
   },
   {
     username: "bacigalupi",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$/SB9RgUcKNoiiq4HPplZUQ$ClK4lJPCPm59vHHd29TLa6V6CEmLQdPiQJZGeKPZzd0",
     nombreFantasia: "Bacigalupi",
     whatsApp: "+598904",
     locales: [{ nave: "E", numero: "153", finContrato: null }],
   },
   {
     username: "lucas_blanco",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$n4evH5GByMDzpGbEmuK2aA$+OVfHqeLA5N9zthMqU2H2G277MJ2zwmSyPUlYnMgmdQ",
     nombreFantasia: "Lucas Blanco",
     whatsApp: "+598905",
     locales: [{ nave: "E", numero: "155", finContrato: null }],
   },
   {
     username: "britos_hns",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$hF/AFXqrOlAQ2mC1k/1dXQ$r6vWhyIo+US0rQq53m9cl9JeH4CyowVzgWBRAVvg6YQ",
     nombreFantasia: "Britos HNS",
     whatsApp: "+598906",
     locales: [{ nave: "B", numero: "145", finContrato: null }],
   },
   {
     username: "ciro_gentile",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$7Cd96JLCSvnk7fg/Y2+8EA$lK2htJFM2CKJuibqqYWk9mUnwbQ6edhVNYJ7MgXixUs",
     nombreFantasia: "Ciro Gentile",
     whatsApp: "+598907",
     locales: [{ nave: "A", numero: "067", finContrato: null }],
   },
   {
     username: "guarino",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$8NDsUPFEKNPhG6mlelqs5A$phXmGWz+scLp0mn4WIM35s/kNuO92ZkilAa2XPRc6Jc",
     nombreFantasia: "Guarino",
     whatsApp: "+598908",
     locales: [{ nave: "D", numero: "104", finContrato: null }],
   },
   {
     username: "pizzorno",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$cKXbLw5hEujDXRL0HjCKjQ$7YHrm9Ux3OyCITod5/bwR6AyXuQVxyyq+1lXB5VeQV8",
     nombreFantasia: "Pizzorno",
     whatsApp: "+598909",
     locales: [{ nave: "B", numero: "146", finContrato: null }],
   },
   {
     username: "don_juan",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$qasEF9MSpl/4Kqh40XRtKg$vbI0lscZ7NZXwSZEK3Z8d9g8IdfZ16TdOePnztkfjZM",
     nombreFantasia: "Don Juan",
     whatsApp: "+598910",
     locales: [{ nave: "D", numero: "073", finContrato: null }],
   },
   {
     username: "caporale",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$Noa0h8guBFaFWakrLxud/Q$o7pScj68SzUoMtX5uOMr1NKZ9F+q1s4VikoRMmwvQbQ",
     nombreFantasia: "Caporale",
     whatsApp: "+598911",
     locales: [{ nave: "B", numero: "022", finContrato: null }],
   },
   {
     username: "punto_natural",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$tPD9noGDYv/08hC9PsAGGA$3sN2+Db1wHPx04DA9qi85qTOsn3qn0BPoV13idJB588",
     nombreFantasia: "Punto Natural",
     whatsApp: "+598912",
     locales: [{ nave: "A", numero: "114", finContrato: null }],
   },
   {
     username: "pepe",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$3m7FFcopb5dKatLr/9Cnyg$XEFqkUGoG4lf8afc+KZMm/X4T1NVTB9UjiYCYp5V+Kc",
     nombreFantasia: "Pepe",
     whatsApp: "+598913",
     locales: [{ nave: "B", numero: "129", finContrato: null }],
   },
   {
     username: "sandias_de_rivera",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$o5bddB5RA8QlINWQ4aijtQ$JNJW9/LSSFUYO6iueMK/rbE1PqgH9bLZbHPtHY8Nm6U",
     nombreFantasia: "Sandias de Rivera",
     whatsApp: "+598914",
-    locales: [{ nave: "Tingado", numero: "N10", finContrato: null }],
+    locales: [{ nave: "Tinglado", numero: "N10", finContrato: null }],
   },
   {
     username: "citricola_salto_grande",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$hBwC5uJalTgD+u8rhAspDw$UUi12ANxsGWAB20q1Y2FXKXahM6IV+oQ7xMdOTlqJBk",
     nombreFantasia: "Citricola Salto Grande",
     whatsApp: "+598915",
     locales: [{ nave: "A", numero: "025", finContrato: null }],
   },
 ];
 
+const productores: ProductorDemo[] = [
+  {
+    username: "productor_demo_norte",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$ckq4Kc750Ib5KIEnIa7Q+A$bSZqcZIXHYmeIw1bvC+nKzbCgt46Ox69fOJuCXtoYmE",
+    whatsApp: "+598916",
+  },
+  {
+    username: "productora_demo_sur",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$OaZBVkmJYX60JCnI5LE+pA$BrS2NtPChLQ8iaXYVyBFVtXBJpw39gn9b6vm47ST/oc",
+    whatsApp: "+598917",
+  },
+];
+
+const operadorInhabilitado: OperadorDemo = {
+  username: "inhabilitado",
+  passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$ZhGcSpOqe3QcvBo5fhrK6w$wNmdXW5yMPkMtRVhnQqHLSWki8NmdyTVaacdN0XOoQU",
+  nombreFantasia: "Operador Inhabilitado",
+  whatsApp: "+598918",
+  locales: [{ nave: "E", numero: "999", finContrato: "2020-12-31T23:59:59Z" }],
+};
+
 type KgPorUnidad = Parameters<typeof prisma.orm.public.Presentacion.create>[0]["kgPorUnidad"];
 type PrecioPublicacion = Parameters<typeof prisma.orm.public.Publicacion.create>[0]["precio"];
 
 function clave(...partes: Array<string | number>): string {
   return JSON.stringify(partes);
+}
+
+function cantidadUnidadesDemo(indice: number, unidad: string): number | null {
+  if (indice % 4 !== 0) return null;
+
+  const variacion = Math.floor(indice / 4) % 5;
+  if (unidad === "KG") return 100 + variacion * 50;
+  if (unidad === "DOC") return 12 + variacion * 6;
+  if (unidad === "CAB") return 40 + variacion * 20;
+  return 20 + variacion * 10;
 }
 
 function idRequerido(mapa: Map<string, number>, llave: string, descripcion: string): number {
@@ -432,27 +484,41 @@ async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, nu
 }
 
 async function crearOperadores(archivos: Map<string, string>) {
-  const nombresNave = new Set(operadores.flatMap((operador) => operador.locales.map((local) => local.nave)));
+  const todosLosOperadores = [...operadores, operadorInhabilitado];
+  const nombresNave = new Set(todosLosOperadores.flatMap((operador) => operador.locales.map((local) => local.nave)));
   for (const nombreNave of nombresNave) {
     await prisma.orm.public.Nave.create({ nombreNave });
   }
 
   const usuarioAdmin = await prisma.orm.public.Usuario.create({
     username: "admin",
-    passwordHash: "$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQOEg6Lruj3vjPGga31lW",
+    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$Qv57p7oX1yOvmzQUhP4E9w$VKE7w99CmdB0qBEIPya5FmH2mjehnzj8juyKMX9/rBo",
     rol: "ADMINISTRADOR",
     twoFactorEnabled: false,
   });
   await prisma.orm.public.Administrador.create({ usuarioId: usuarioAdmin.id, email: "admin@uam.com.uy" });
 
+  for (const datos of productores) {
+    const usuario = await prisma.orm.public.Usuario.create({
+      username: datos.username,
+      passwordHash: datos.passwordHash,
+      rol: "PRODUCTOR",
+      twoFactorEnabled: false,
+    });
+    await prisma.orm.public.Productor.create({
+      usuarioId: usuario.id,
+      whatsApp: datos.whatsApp,
+    });
+  }
+
   const naveIds = new Map<string, number>();
   for (const nave of await prisma.orm.public.Nave.all()) naveIds.set(nave.nombreNave, nave.id);
 
   const operadorIds = new Map<string, number>();
-  for (const datos of operadores) {
+  for (const datos of todosLosOperadores) {
     const usuario = await prisma.orm.public.Usuario.create({
       username: datos.username,
-      passwordHash: passwordHashDemo,
+      passwordHash: datos.passwordHash,
       rol: "OPERADOR",
       twoFactorEnabled: false,
     });
@@ -522,6 +588,7 @@ async function main() {
       publicacionDisponible: oferta.available,
       publicacionActiva: oferta.active,
       precio,
+      cantidadUnidades: cantidadUnidadesDemo(indice, oferta.measureUnit),
       foto,
       tipoPublicacion: "OPERADOR",
       presentacionId,

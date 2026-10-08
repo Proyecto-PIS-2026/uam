@@ -5,11 +5,15 @@ import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
+import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import type { PrecioReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 import styles from "./PreciosReferencia.module.css";
 
 type Props = { fechaRelevamiento: string; filas: PrecioReferencia[] };
+type SeleccionFiltros = Pick<PrecioReferencia, "especie" | "variedad" | "unidad" | "pais" | "categoria" | "calibre">;
+type CampoFiltro = keyof SeleccionFiltros;
+const FILTROS_VACIOS: SeleccionFiltros = { especie: "", variedad: "", unidad: "", pais: "", categoria: "", calibre: "" };
 const LIMITE = 40;
 const comparar = new Intl.Collator("es", { sensitivity: "base", numeric: true }).compare;
 const formato = new Intl.NumberFormat("es-UY", { maximumFractionDigits: 2 });
@@ -29,6 +33,41 @@ function opciones(valores: string[]) {
     return [...new Set(valores)].sort(comparar);
 }
 
+function filasCompatibles(filas: PrecioReferencia[], seleccion: SeleccionFiltros, omitir: CampoFiltro[] = []) {
+    return filas.filter((fila) => {
+        for (const campo of Object.keys(seleccion) as CampoFiltro[]) {
+            if (omitir.includes(campo)) continue;
+            if (seleccion[campo] && fila[campo] !== seleccion[campo]) return false;
+        }
+        return true;
+    });
+}
+
+function ajustarSeleccion(filas: PrecioReferencia[], seleccion: SeleccionFiltros, campoCambiado: CampoFiltro) {
+    const ajustada = { ...seleccion };
+    const orden: CampoFiltro[] = campoCambiado === "especie"
+        ? ["especie", "pais", "categoria", "calibre", "variedad", "unidad"]
+        : ["especie", "variedad", "unidad", "pais", "categoria", "calibre"];
+    let compatibles = filas;
+
+    for (const campo of orden) {
+        const valor = ajustada[campo];
+        if (!valor) continue;
+        if (!compatibles.some((fila) => fila[campo] === valor)) {
+            ajustada[campo] = "";
+            continue;
+        }
+        compatibles = compatibles.filter((fila) => fila[campo] === valor);
+    }
+
+    if (ajustada.especie && !ajustada.variedad) {
+        const variedades = opciones(compatibles.map((fila) => fila.variedad));
+        if (variedades.length === 1 && variedades[0] === "-") ajustada.variedad = "-";
+    }
+
+    return ajustada;
+}
+
 function leerPrecio(valor: string): number | null {
     if (valor === "") return null;
     const precio = Number(valor.replace(",", "."));
@@ -36,13 +75,10 @@ function leerPrecio(valor: string): number | null {
 }
 
 export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
+    const router = useRouter();
     const [busqueda, setBusqueda] = useState("");
-    const [especie, setEspecie] = useState("");
-    const [variedad, setVariedad] = useState("");
-    const [pais, setPais] = useState("");
-    const [unidad, setUnidad] = useState("");
-    const [categoria, setCategoria] = useState("");
-    const [calibre, setCalibre] = useState("");
+    const [seleccion, setSeleccion] = useState<SeleccionFiltros>(FILTROS_VACIOS);
+    const { especie, variedad, pais, unidad, categoria, calibre } = seleccion;
     const [precioPor, setPrecioPor] = useState<"unidad" | "kg">("unidad");
     const [precioMinimo, setPrecioMinimo] = useState("");
     const [precioMaximo, setPrecioMaximo] = useState("");
@@ -70,17 +106,14 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
         };
     }, []);
 
-    const disponibles = useMemo(
-        () => ({
-            especies: opciones(filas.map((fila) => fila.especie)),
-            variedades: opciones(filas.map((fila) => fila.variedad)),
-            paises: opciones(filas.map((fila) => fila.pais)),
-            unidades: opciones(filas.map((fila) => fila.unidad)),
-            categorias: opciones(filas.map((fila) => fila.categoria)),
-            calibres: opciones(filas.map((fila) => fila.calibre)),
-        }),
-        [filas],
-    );
+    const disponibles = useMemo(() => ({
+        especies: opciones(filas.map((fila) => fila.especie)),
+        variedades: especie ? opciones(filasCompatibles(filas, seleccion, ["variedad", "unidad"]).map((fila) => fila.variedad)) : [],
+        unidades: variedad ? opciones(filasCompatibles(filas, seleccion, ["unidad"]).map((fila) => fila.unidad)) : [],
+        paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)),
+        categorias: opciones(filasCompatibles(filas, seleccion, ["categoria"]).map((fila) => fila.categoria)),
+        calibres: opciones(filasCompatibles(filas, seleccion, ["calibre"]).map((fila) => fila.calibre)),
+    }), [filas, seleccion, especie, variedad]);
     const cantidadReferencias = useMemo(() => filas.filter((fila) => fila.esReferencia).length, [filas]);
     const minimo = leerPrecio(precioMinimo);
     const maximo = leerPrecio(precioMaximo);
@@ -121,9 +154,34 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     const visibles = filtradas.slice(desde, desde + LIMITE);
     const [anio, mes, dia] = fechaRelevamiento.split("-");
 
+    function abrirHistorico(fila: PrecioReferencia) {
+        const [, especie] = JSON.parse(fila.id);
+        const parametros = new URLSearchParams({
+            species_id: String(especie),
+            producto: fila.especie,
+            variedad: fila.variedad,
+            pais: fila.pais,
+            calibre: fila.calibre,
+            categoria: fila.categoria,
+        });
+        router.push(`/precios-historicos?${parametros}`);
+    }
+
     function cambiar(accion: () => void) {
         accion();
         setPagina(1);
+    }
+
+    function cambiarFiltro(campo: CampoFiltro, valor: string) {
+        cambiar(() => setSeleccion((actual) => {
+            const siguiente = { ...actual, [campo]: valor };
+            if (campo === "especie") {
+                siguiente.variedad = "";
+                siguiente.unidad = "";
+            }
+            if (campo === "variedad") siguiente.unidad = "";
+            return ajustarSeleccion(filas, siguiente, campo);
+        }));
     }
 
     function cambiarPrecio(valor: string, actualizar: (valor: string) => void) {
@@ -132,12 +190,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
 
     function limpiar() {
         setBusqueda("");
-        setEspecie("");
-        setVariedad("");
-        setPais("");
-        setUnidad("");
-        setCategoria("");
-        setCalibre("");
+        setSeleccion(FILTROS_VACIOS);
         setPrecioPor("unidad");
         setPrecioMinimo("");
         setPrecioMaximo("");
@@ -172,7 +225,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                         label="Especie"
                         size="small"
                         value={especie}
-                        onChange={(e) => cambiar(() => setEspecie(e.target.value))}
+                        onChange={(e) => cambiarFiltro("especie", e.target.value)}
                         slotProps={menu}
                     >
                         <MenuItem value="" className={styles.opcionSelect}>Todas las especies</MenuItem>
@@ -186,7 +239,8 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                         label="Variedad"
                         size="small"
                         value={variedad}
-                        onChange={(e) => cambiar(() => setVariedad(e.target.value))}
+                        disabled={!especie || (disponibles.variedades.length === 1 && disponibles.variedades[0] === "-")}
+                        onChange={(e) => cambiarFiltro("variedad", e.target.value)}
                         slotProps={menu}
                     >
                         <MenuItem value="" className={styles.opcionSelect}>Todas las variedades</MenuItem>
@@ -212,7 +266,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 label="País"
                                 size="small"
                                 value={pais}
-                                onChange={(e) => cambiar(() => setPais(e.target.value))}
+                                onChange={(e) => cambiarFiltro("pais", e.target.value)}
                                 slotProps={menu}
                             >
                                 <MenuItem value="" className={styles.opcionSelect}>Todos los países</MenuItem>
@@ -226,7 +280,8 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 label="Presentación"
                                 size="small"
                                 value={unidad}
-                                onChange={(e) => cambiar(() => setUnidad(e.target.value))}
+                                disabled={!variedad}
+                                onChange={(e) => cambiarFiltro("unidad", e.target.value)}
                                 slotProps={menu}
                             >
                                 <MenuItem value="" className={styles.opcionSelect}>Todas las presentaciones</MenuItem>
@@ -240,7 +295,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 label="Categoría"
                                 size="small"
                                 value={categoria}
-                                onChange={(e) => cambiar(() => setCategoria(e.target.value))}
+                                onChange={(e) => cambiarFiltro("categoria", e.target.value)}
                                 slotProps={menu}
                             >
                                 <MenuItem value="" className={styles.opcionSelect}>Todas las categorías</MenuItem>
@@ -254,7 +309,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 label="Calibre"
                                 size="small"
                                 value={calibre}
-                                onChange={(e) => cambiar(() => setCalibre(e.target.value))}
+                                onChange={(e) => cambiarFiltro("calibre", e.target.value)}
                                 slotProps={menu}
                             >
                                 <MenuItem value="" className={styles.opcionSelect}>Todos los calibres</MenuItem>
@@ -338,7 +393,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 </thead>
                                 <tbody>
                                     {visibles.map((fila) => (
-                                        <tr key={fila.id} className={fila.esReferencia ? styles.filaReferencia : undefined}>
+                                        <tr key={fila.id} className={fila.esReferencia ? styles.filaReferencia : undefined} onClick={() => abrirHistorico(fila)} style={{ cursor: "pointer" }}>
                                             <td className={styles.producto}><strong>{fila.especie}</strong></td>
                                             <td className={styles.variedad}>{fila.variedad}</td>
                                             <td className={styles.referencia}>
@@ -372,6 +427,8 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                     key={fila.id}
                                     className={`${styles.filaMobile} ${fila.esReferencia ? styles.filaMobileReferencia : ""}`}
                                     role="listitem"
+                                    onClick={() => abrirHistorico(fila)}
+                                    style={{ cursor: "pointer" }}
                                 >
                                     <div className={styles.filaMobileCabecera}>
                                         <div className={styles.filaMobileProducto}>

@@ -297,7 +297,7 @@ describe("MiMercado", () => {
     expect(cuerpo.get("cambios")).toBe(JSON.stringify(cambios));
     expect(cuerpo.get("fotografia")).toMatchObject({ name: "pera.webp", type: "image/webp" });
     expect(mocks.cargarPublicaciones).toHaveBeenCalledExactlyOnceWith(9);
-    expect(mocks.refrescar).toHaveBeenCalledOnce();
+    expect(mocks.refrescar).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-modo", "consulta");
     expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-actualizando", "false");
     expect(screen.getByTestId("publicacion-52")).toHaveTextContent("Williams");
@@ -406,7 +406,7 @@ describe("MiMercado", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-actualizando", "false");
-    expect(mocks.refrescar).toHaveBeenCalledOnce();
+    expect(mocks.refrescar).not.toHaveBeenCalled();
   });
 
   it("borra la publicación seleccionada y cierra la consulta después del éxito", async () => {
@@ -434,7 +434,7 @@ describe("MiMercado", () => {
     expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-53")).toBeInTheDocument();
     expect(screen.getAllByText("1 publicación").length).toBeGreaterThan(0);
-    expect(mocks.refrescar).toHaveBeenCalledOnce();
+    expect(mocks.refrescar).not.toHaveBeenCalled();
   });
 
   it("actualiza el listado sin mostrar un error si otra persona ya eliminó la publicación", async () => {
@@ -519,7 +519,7 @@ describe("MiMercado", () => {
     expect(screen.getByRole("searchbox", { name: "Buscar publicaciones" })).toHaveValue("Pera");
     expect(screen.queryByRole("dialog", { name: "Nueva publicación" })).not.toBeInTheDocument();
     expect(mocks.cargarPublicaciones).toHaveBeenCalledExactlyOnceWith(9);
-    expect(mocks.refrescar).toHaveBeenCalledOnce();
+    expect(mocks.refrescar).not.toHaveBeenCalled();
   });
 
   it("muestra el listado de publicaciones del operador", () => {
