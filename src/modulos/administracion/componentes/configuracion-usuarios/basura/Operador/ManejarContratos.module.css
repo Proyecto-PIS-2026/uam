@@ -1,0 +1,268 @@
+.contenedor {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background-color: white;
+}
+
+.encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.titulo {
+    margin: 0;
+    color: var(--color-secondary);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.descripcion {
+    margin: 0.25rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.85rem;
+}
+
+.sinLocales {
+    padding: 2rem;
+    text-align: center;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    background: var(--color-surface);
+    border-radius: 0.5rem;
+    border: 1px dashed var(--color-border);
+}
+
+.tablaContenedor {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.tabla th {
+    padding: 0.75rem 1rem;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.tabla td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.columnaAcciones {
+    text-align: right;
+}
+
+.localCodigo {
+    color: var(--color-secondary);
+    font-size: 0.95rem;
+}
+
+.inputFecha {
+    max-width: 10.5rem;
+}
+
+/* Reglas globales de bordes y enfoque verde para MUI */
+.campo :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.campo :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.campo :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.campo :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
+/* Badges de Estado */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.vigente {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.expirado {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Acciones y Botones */
+.acciones {
+    text-align: right;
+}
+
+.grupoBotones,
+.grupoBotonesEdit {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+}
+
+.botonEditar {
+    color: var(--color-primary) !important;
+}
+
+.botonEliminar {
+    color: #d32f2f !important;
+}
+
+.botonGuardarFecha {
+    color: #2e7d32 !important;
+}
+
+.botonCancelarFecha {
+    color: #d32f2f !important;
+}
+
+/* Botón Agregar */
+.contenedorAgregar {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+}
+
+.botonAgregar {
+    background-color: var(--color-primary) !important;
+    text-transform: none !important;
+    font-weight: 600 !important;
+}
+
+.botonAgregar:hover {
+    background-color: var(--color-primary-hover) !important;
+}
+
+/* Modal Estilos */
+.modalTitulo {
+    color: var(--color-secondary);
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+}
+
+.modalContenido {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding-top: 0.5rem !important;
+}
+
+.campoModal {
+    margin-top: 0.25rem !important;
+}
+
+.modalAcciones {
+    padding: 1rem 1.5rem !important;
+}
+
+.botonCancelarModal {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+    text-transform: none !important;
+    font-weight: 600 !important;
+}
+
+.botonGuardarModal {
+    background-color: var(--color-primary) !important;
+    text-transform: none !important;
+    font-weight: 600 !important;
+}
+
+.botonGuardarModal:hover {
+    background-color: var(--color-primary-hover) !important;
+}
+
+.botonEliminarModal {
+    text-transform: none !important;
+    font-weight: 600 !important;
+}
+
+.textoConfirmacion {
+    margin: 0;
+    color: var(--color-foreground);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+    .tabla,
+    .tabla thead,
+    .tabla tbody,
+    .tabla th,
+    .tabla td,
+    .tabla tr {
+        display: block;
+    }
+
+    .tabla thead {
+        display: none;
+    }
+
+    .tabla tr {
+        margin-bottom: 1rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.5rem;
+        background-color: var(--color-surface);
+        padding: 0.5rem;
+    }
+
+    .tabla td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .tabla td:last-child {
+        border-bottom: none;
+    }
+
+    .tabla td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: var(--color-muted);
+    }
+
+    .inputFecha {
+        max-width: 100%;
+    }
+
+    .contenedorAgregar {
+        justify-content: stretch;
+    }
+
+    .botonAgregar {
+        width: 100%;
+    }
+}

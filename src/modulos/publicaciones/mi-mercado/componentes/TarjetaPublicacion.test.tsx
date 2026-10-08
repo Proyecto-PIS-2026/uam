@@ -14,6 +14,11 @@ import {
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import type { Publicacion } from "./MiMercado";
 import { actualizarPrecio } from "../acciones";
+import { obtenerImporteAjusteRapido } from "../../../administracion/acciones-ajuste-precios";
+
+vi.mock("../../../administracion/acciones-ajuste-precios", () => ({
+  obtenerImporteAjusteRapido: vi.fn(),
+}));
 
 vi.mock("../acciones", () => ({
   actualizarPrecio: vi.fn(),
@@ -56,6 +61,30 @@ function crearPublicacion(): Publicacion {
 describe("TarjetaPublicacion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(obtenerImporteAjusteRapido).mockResolvedValue(10);
+  });
+
+  it("consulta el importe vigente en cada ajuste aunque la página siga abierta", async () => {
+    vi.mocked(obtenerImporteAjusteRapido).mockResolvedValueOnce(25).mockResolvedValueOnce(15);
+    render(<TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+    await waitFor(() => expect(screen.getByText("$125")).toBeInTheDocument());
+    expect(actualizarPrecio).toHaveBeenLastCalledWith(1, 125, 37);
+
+    fireEvent.click(screen.getByRole("button", { name: "Disminuir precio" }));
+    await waitFor(() => expect(screen.getByText("$110")).toBeInTheDocument());
+    expect(actualizarPrecio).toHaveBeenLastCalledWith(1, 110, 37);
+    expect(obtenerImporteAjusteRapido).toHaveBeenCalledTimes(2);
+  });
+
+  it("mantiene el precio si falla la consulta de configuración", async () => {
+    vi.mocked(obtenerImporteAjusteRapido).mockRejectedValueOnce(new Error("Configuración no disponible"));
+    render(<TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />);
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Configuración no disponible");
+    expect(screen.getByText("$100")).toBeInTheDocument();
+    expect(actualizarPrecio).not.toHaveBeenCalled();
   });
 
   it("muestra los datos principales de la publicación", () => {
@@ -246,15 +275,29 @@ describe("TarjetaPublicacion", () => {
     expect(alPrecioActualizado).toHaveBeenCalledOnce();
   });
 
-  it("actualiza el listado sin mostrar error si otra persona eliminó la publicación", async () => {
-    vi.mocked(actualizarPrecio).mockRejectedValueOnce(new Error("La publicación no existe o no pertenece al operador."));
-    const alPrecioActualizado = vi.fn().mockResolvedValue([]);
-    render(<TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} alPrecioActualizado={alPrecioActualizado} />);
+  it("recarga la página sin mostrar error si otra persona eliminó la publicación", async () => {
+    vi.mocked(actualizarPrecio).mockResolvedValueOnce({ publicacionEliminada: true });
+    const alPublicacionEliminada = vi.fn();
+    render(<TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} alPublicacionEliminada={alPublicacionEliminada} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
 
-    await waitFor(() => expect(alPrecioActualizado).toHaveBeenCalledOnce());
+    await waitFor(() => expect(alPublicacionEliminada).toHaveBeenCalledOnce());
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("muestra un mensaje breve si falla el servidor al guardar el precio", async () => {
+    vi.mocked(actualizarPrecio).mockRejectedValueOnce(new Error("Minified React error #441"));
+    const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      render(<TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />);
+      fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+
+      await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo guardar el precio. Intentá de nuevo."));
+      expect(screen.queryByText(/Minified React error/)).not.toBeInTheDocument();
+    } finally {
+      registrarError.mockRestore();
+    }
   });
 
   it("disminuye el precio con el botón", async () => {
@@ -281,7 +324,7 @@ describe("TarjetaPublicacion", () => {
     );
   });
 
-  it("no permite disminuir el precio hasta cero", () => {
+  it("no permite disminuir el precio hasta cero", async () => {
     const pub = crearPublicacion();
     pub.precio = "5";
 
@@ -295,6 +338,7 @@ describe("TarjetaPublicacion", () => {
       }),
     );
 
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("mayor a cero"));
     expect(screen.getByText("$5")).toBeInTheDocument();
     expect(actualizarPrecio).not.toHaveBeenCalled();
   });
@@ -614,8 +658,8 @@ describe("TarjetaPublicacion", () => {
 
   it("no consulta mientras se está guardando el precio", async () => {
     let finalizarGuardado: () => void = () => undefined;
-    vi.mocked(actualizarPrecio).mockImplementationOnce(() => new Promise<void>((resolve) => {
-      finalizarGuardado = resolve;
+    vi.mocked(actualizarPrecio).mockImplementationOnce(() => new Promise<{ publicacionEliminada: boolean }>((resolve) => {
+      finalizarGuardado = () => resolve({ publicacionEliminada: false });
     }));
     const alConsultar = vi.fn();
 
@@ -628,6 +672,7 @@ describe("TarjetaPublicacion", () => {
 
     expect(alConsultar).not.toHaveBeenCalled();
 
+    await waitFor(() => expect(actualizarPrecio).toHaveBeenCalledOnce());
     finalizarGuardado();
     await waitFor(() => expect(screen.getByText("$110")).toBeInTheDocument());
 

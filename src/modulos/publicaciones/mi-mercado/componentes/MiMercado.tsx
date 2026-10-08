@@ -137,6 +137,11 @@ export default function MiMercado({
         if (abrirAltaInicial) router.replace("/mi-mercado", { scroll: false });
     }
 
+    /*
+     * DEMO: la respuesta de esta acción actualiza las tarjetas directamente.
+     * Para recuperar el refresco automático de la ruta, restaurar router.refresh()
+     * en las ramas de éxito y error de esta función.
+     */
     async function sincronizarPublicaciones() {
         const recarga = ++ultimaRecarga.current;
         setSincronizando(true);
@@ -148,13 +153,11 @@ export default function MiMercado({
             setIdsEliminados((actuales) => actuales.filter((id) => datos.some((publicacion) => publicacion.id === id)));
             setSeleccion((actual) => actual && datos.some((publicacion) => publicacion.id === actual.publicacion.id) ? actual : null);
             setPublicacionPendiente((actual) => actual && datos.some((publicacion) => publicacion.id === actual.id) ? actual : null);
-            router.refresh();
             return datos;
         } catch {
             if (recarga !== ultimaRecarga.current) return false;
             setMensaje("");
             setError("Los cambios se guardaron, pero no se pudo actualizar el listado. Recargá la página.");
-            router.refresh();
             return false;
         } finally {
             if (recarga === ultimaRecarga.current) setSincronizando(false);
@@ -391,6 +394,7 @@ export default function MiMercado({
                                                     }
                                                     alConsultar={consultarPublicacion}
                                                     alPrecioActualizado={actualizarPrecioLocal}
+                                                    alPublicacionEliminada={() => window.location.reload()}
                                                 />
                                             ))}
                                         </div>
@@ -407,6 +411,7 @@ export default function MiMercado({
                                         incrementoPrecio={incrementoPrecio}
                                         alConsultar={consultarPublicacion}
                                         alPrecioActualizado={actualizarPrecioLocal}
+                                        alPublicacionEliminada={() => window.location.reload()}
                                     />
                                 ))}
                             </div>
