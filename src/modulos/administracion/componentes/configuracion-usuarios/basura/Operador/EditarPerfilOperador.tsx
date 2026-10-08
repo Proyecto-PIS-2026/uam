@@ -6,7 +6,7 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import type { OperadorParaModificar } from "../../Compartidos/Tipos";
+import type { OperadorParaModificar } from "../../Tipos";
 import styles from "./EditarPerfilOperador.module.css";
 
 interface EditarPerfilOperadorProps {

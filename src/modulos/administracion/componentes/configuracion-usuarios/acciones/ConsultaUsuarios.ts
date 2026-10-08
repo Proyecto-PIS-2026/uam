@@ -1,22 +1,18 @@
-import { db } from "../../../infraestructura/persistencia/prisma/db";
-import type { DatosModificarUsuarios, TipoNave, UsuarioParaModificar } from "../componentes/Compartidos/Tipos";
+import { db } from "../../../../../infraestructura/persistencia/prisma/db";
+import type { DatosModificarUsuarios, UsuarioParaModificar } from "../Tipos";
 
 export default async function consultarDatosModificarUsuarios(): Promise<DatosModificarUsuarios> {
     const [administradores, operadores, productores] = await Promise.all([
         db.orm.public.Administrador
-            .select("id", "usuarioId", "email")
+            .select("id", "email")
             .include("usuario", (usuario) => usuario.select("id", "username", "rol"))
             .all(),
         db.orm.public.Operador
-            .select("id", "usuarioId", "nombreFantasia", "whatsApp", "fotoPerfil", "comentario")
+            .select("id", "nombreFantasia")
             .include("usuario", (usuario) => usuario.select("id", "username", "rol"))
-            .include("locales", (local) =>
-                local.select("id", "numeroLocal", "finContrato")
-                    .include("nave", (nave) => nave.select("nombreNave"))
-            )
             .all(),
         db.orm.public.Productor
-            .select("id", "usuarioId", "whatsApp")
+            .select("id")
             .include("usuario", (usuario) => usuario.select("id", "username", "rol"))
             .all(),
     ]);
@@ -35,22 +31,12 @@ export default async function consultarDatosModificarUsuarios(): Promise<DatosMo
             rol: "OPERADOR" as const,
             operadorId: operador.id,
             nombreFantasia: operador.nombreFantasia,
-            whatsApp: operador.whatsApp,
-            fotoPerfil: operador.fotoPerfil,
-            comentario: operador.comentario,
-            locales: operador.locales.map((local) => ({
-                id: local.id,
-                numeroLocal: Number(local.numeroLocal),
-                finContrato: local.finContrato ? local.finContrato.toString() : null,
-                nave: local.nave.nombreNave as TipoNave,
-            })),
         })),
         ...productores.map((productor) => ({
             id: productor.usuario.id,
             username: productor.usuario.username,
             rol: "PRODUCTOR" as const,
             productorId: productor.id,
-            whatsApp: productor.whatsApp,
         })),
     ];
 

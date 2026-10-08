@@ -21,7 +21,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 
-import type { LocalParaModificar, TipoNave } from "../../Compartidos/Tipos";
+import type { LocalParaModificar, TipoNave } from "../../Tipos";
 import styles from "./ManejarContratos.module.css";
 
 interface ManejarContratosProps {
@@ -79,10 +79,6 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
             ),
         );
 
-        /*
-         * TODO: implementar actualización en BD.
-         */
-
         setIdEditando(null);
         mostrarNotificacion(`La fecha del local ${local.nave}-${local.numeroLocal} fue actualizada.`, "success");
     }
@@ -92,10 +88,6 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
 
         const local = localAEliminar;
         setLocalesActuales((actuales) => actuales.filter((item) => item.id !== local.id));
-
-        /*
-         * TODO: implementar eliminación en BD.
-         */
 
         setLocalAEliminar(null);
         mostrarNotificacion(`El local ${local.nave}-${local.numeroLocal} fue eliminado.`, "success");
@@ -114,10 +106,6 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
             mostrarNotificacion("El número de local debe ser un entero entre 1 y 300.", "error");
             return;
         }
-
-        /*
-         * TODO: implementar creación en BD.
-         */
 
         contadorLocal.current += 1;
 
@@ -178,8 +166,7 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
                                                     size="small"
                                                     value={fechaEdicion}
                                                     onChange={(e) => setFechaEdicion(e.target.value)}
-                                                    className={styles.inputFecha}
-                                                    slotProps={{ inputLabel: { shrink: true } }}
+                                                    className={`${styles.inputFecha} ${styles.campo}`}
                                                 />
                                             ) : (
                                                 <span>
@@ -200,18 +187,18 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
                                             {estaEditando ? (
                                                 <div className={styles.grupoBotonesEdit}>
                                                     <IconButton
-                                                        color="primary"
                                                         size="small"
                                                         onClick={() => guardarFecha(local)}
                                                         title="Guardar"
+                                                        className={styles.botonGuardarFecha}
                                                     >
                                                         <CheckIcon fontSize="small" />
                                                     </IconButton>
                                                     <IconButton
-                                                        color="inherit"
                                                         size="small"
                                                         onClick={cancelarEdicion}
                                                         title="Cancelar"
+                                                        className={styles.botonCancelarFecha}
                                                     >
                                                         <CloseIcon fontSize="small" />
                                                     </IconButton>
@@ -245,7 +232,6 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
                 </div>
             )}
 
-            {/* Botón flotante para Agregar Contrato */}
             <div className={styles.contenedorAgregar}>
                 <Button
                     variant="contained"
@@ -257,12 +243,11 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
                 </Button>
             </div>
 
-            {/* Modal para Crear Contrato */}
             <Dialog open={modalCrearAbierto} onClose={() => setModalCrearAbierto(false)} fullWidth maxWidth="xs">
                 <form onSubmit={agregarContrato}>
                     <DialogTitle className={styles.modalTitulo}>Agregar contrato</DialogTitle>
                     <DialogContent className={styles.modalContenido}>
-                        <FormControl fullWidth size="small" className={styles.campoModal}>
+                        <FormControl fullWidth size="small" className={`${styles.campoModal} ${styles.campo}`}>
                             <InputLabel id="label-nave">Nave</InputLabel>
                             <Select
                                 labelId="label-nave"
@@ -288,7 +273,7 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
                             slotProps={{ htmlInput: { min: 1, max: 300, step: 1 } }}
                             value={nuevoContrato.numeroLocal}
                             onChange={(e) => setNuevoContrato((actual) => ({ ...actual, numeroLocal: e.target.value }))}
-                            className={styles.campoModal}
+                            className={`${styles.campoModal} ${styles.campo}`}
                         />
 
                         <TextField
@@ -296,10 +281,9 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
                             size="small"
                             label="Fin de contrato (opcional)"
                             type="date"
-                            slotProps={{ inputLabel: { shrink: true } }}
                             value={nuevoContrato.finContrato}
                             onChange={(e) => setNuevoContrato((actual) => ({ ...actual, finContrato: e.target.value }))}
-                            className={styles.campoModal}
+                            className={`${styles.campoModal} ${styles.campo}`}
                         />
                     </DialogContent>
                     <DialogActions className={styles.modalAcciones}>
@@ -318,7 +302,6 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
                 </form>
             </Dialog>
 
-            {/* Modal de Confirmación de Eliminación */}
             <Dialog open={Boolean(localAEliminar)} onClose={() => setLocalAEliminar(null)} maxWidth="xs">
                 <DialogTitle className={styles.modalTitulo}>¿Eliminar contrato?</DialogTitle>
                 <DialogContent>
@@ -351,7 +334,6 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
                 </DialogActions>
             </Dialog>
 
-            {/* Notificación única flotante en la esquina */}
             <Snackbar
                 key={notificacion?.key}
                 open={Boolean(notificacion)}
@@ -366,7 +348,6 @@ export default function ManejarContratos({ operadorId, locales }: ManejarContrat
                 ) : undefined}
             </Snackbar>
 
-            {/* Anti warnings */}
             {void operadorId}
         </section>
     );

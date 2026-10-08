@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { ProductorParaModificar } from "../../Compartidos/Tipos";
-import RestablecerContrasena from "../Compartido/RestablecerContrasena";
+import type { ProductorParaModificar } from "../../Tipos";
+import RestablecerContrasena from "../RestablecerContrasena";
 
 interface ModificarProductorProps {
     usuario: ProductorParaModificar;

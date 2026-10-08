@@ -4,7 +4,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import TextField from "@mui/material/TextField";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import type { TipoUsuario } from "../../Compartidos/Tipos";
+import type { TipoUsuario } from "../Tipos";
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
@@ -19,7 +19,7 @@ const rolesDisponibles: { value: TipoUsuario | "TODOS"; label: string }[] = [
     { value: "TODOS", label: "Todos" },
     { value: "ADMINISTRADOR", label: "Administrador" },
     { value: "OPERADOR", label: "Operador" },
-    { value: "PRODUCTOR", label: "Productor" },
+    { value: "PRODUCTOR", label: "Productor" }
 ];
 
 export default function BuscadorUsuario({ busqueda, onBusquedaChange, tipoUsuario, onTipoUsuarioChange }: BuscadorUsuarioProps) {

@@ -2,7 +2,7 @@
 
 import { useState, type MouseEvent } from "react";
 import { MenuItem, Select, ToggleButton, ToggleButtonGroup } from "@mui/material";
-import type { TipoUsuario } from "../Compartidos/Tipos";
+import type { TipoUsuario } from "../ConfiguracionUsuarios/Tipos";
 import AltaAdministrador from "./AltaAdministrador";
 import AltaProductor from "./AltaProductor";
 import AltaOperador from "./AltaOperador";

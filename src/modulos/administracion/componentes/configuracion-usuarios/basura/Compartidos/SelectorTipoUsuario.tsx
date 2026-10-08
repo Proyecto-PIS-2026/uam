@@ -1,4 +1,4 @@
-import type { TipoUsuario } from "./Tipos";
+import type { TipoUsuario } from "../../Tipos";
 
 interface SelectorSinTodosProps {
     value: TipoUsuario;

@@ -1,7 +1,7 @@
-import type { OperadorParaModificar } from "../../Compartidos/Tipos";
+import type { OperadorParaModificar } from "../../Tipos";
 
 import EditarPerfilOperador from "./EditarPerfilOperador";
-import RestablecerContrasena from "../Compartido/RestablecerContrasena";
+import RestablecerContrasena from "../RestablecerContrasena";
 import ManejarContratos from "./ManejarContratos";
 
 import styles from "./ModificarOperador.module.css"

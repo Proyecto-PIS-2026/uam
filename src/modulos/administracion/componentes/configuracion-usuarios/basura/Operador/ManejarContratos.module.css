@@ -79,6 +79,23 @@
     max-width: 10.5rem;
 }
 
+/* Reglas globales de bordes y enfoque verde para MUI */
+.campo :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.campo :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.campo :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.campo :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
 /* Badges de Estado */
 .badge {
     display: inline-flex;
@@ -120,7 +137,15 @@
     color: #d32f2f !important;
 }
 
-/* Botón Agregar abajo a la derecha */
+.botonGuardarFecha {
+    color: #2e7d32 !important;
+}
+
+.botonCancelarFecha {
+    color: #d32f2f !important;
+}
+
+/* Botón Agregar */
 .contenedorAgregar {
     display: flex;
     justify-content: flex-end;
@@ -188,7 +213,6 @@
     line-height: 1.4;
 }
 
-/* Adaptación Responsive (Mobile) */
 @media (max-width: 600px) {
     .tabla,
     .tabla thead,
@@ -200,7 +224,7 @@
     }
 
     .tabla thead {
-        display: none; /* Oculta cabezales de tabla tradicional */
+        display: none;
     }
 
     .tabla tr {

@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { DatosModificarUsuarios, TipoUsuario, UsuarioParaModificar } from "../Compartidos/Tipos";
-import BuscadorUsuarios from "./Compartido/BuscadorUsuario";
-import ListaUsuarios from "./Compartido/ListaUsuarios";
-import RestablecerContrasena from "./Compartido/RestablecerContrasena";
-import ModificarOperador from "./Operador/ModificarOperador";
-import ModificarProductor from "./Productor/ModificarProductor";
+import Link from "next/link";
+import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
+import type { DatosModificarUsuarios, TipoUsuario, UsuarioParaModificar } from "../Tipos";
+import BuscadorUsuarios from "./BuscadorUsuario";
+import ListaUsuarios from "./ListaUsuarios";
 import styles from "./ModificarUsuario.module.css";
 
 interface ModificarUsuarioProps {
@@ -42,15 +42,20 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         setUsuarioSeleccionado(null);
     }
 
+    const rolParam = tipoUsuario !== "TODOS" ? tipoUsuario.toLowerCase() : "operador";
+    const linkAlta = `/alta-usuario?rol=${rolParam}`;
+
     return (
         <section className={styles.tarjeta}>
-            <h2 className={styles.titulo}>Modificar usuario</h2>
+            <div className={styles.encabezado}>
+                <h2 className={styles.titulo}>Gestión de Usuarios</h2>
+                <Button component={Link} href={linkAlta} variant="contained" startIcon={<AddIcon className={styles.iconoBoton}/>} title="Alta de usuario" className={styles.botonAlta}>
+                    <span className={styles.textoBoton}>Nuevo Usuario</span>
+                </Button>
+            </div>
             <div className={styles.contenido}>
                 <BuscadorUsuarios busqueda={busqueda} tipoUsuario={tipoUsuario} onBusquedaChange={cambiarBusqueda} onTipoUsuarioChange={cambiarTipoUsuario}/>
                 <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} onSeleccionar={setUsuarioSeleccionado}/>
-                {usuarioSeleccionado?.rol === "ADMINISTRADOR" && <RestablecerContrasena key={usuarioSeleccionado.id} usuarioId={usuarioSeleccionado.id}/>}
-                {usuarioSeleccionado?.rol === "OPERADOR" && <ModificarOperador key={usuarioSeleccionado.id} usuario={usuarioSeleccionado}/>}
-                {usuarioSeleccionado?.rol === "PRODUCTOR" && <ModificarProductor key={usuarioSeleccionado.id} usuario={usuarioSeleccionado}/>}
             </div>
         </section>
     );
