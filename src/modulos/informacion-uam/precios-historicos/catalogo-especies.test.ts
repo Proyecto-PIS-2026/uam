@@ -111,7 +111,7 @@ describe("obtenerUltimoRelevamientoGuardado", () => {
 });
 
 describe("obtenerCatalogoEspeciesHistoricas", () => {
-    it("extrae y ordena especies de la caché y deduplica por clasificación y especie", async () => {
+    it("extrae y ordena especies de la caché y deduplica por especie aunque aparezca en distintas clasificaciones", async () => {
         const consulta = dato();
         consulta.types[0].products.push(producto(60, "Banana"));
         consulta.types.push({
@@ -124,10 +124,9 @@ describe("obtenerCatalogoEspeciesHistoricas", () => {
         listar.mockResolvedValue([registro("guardada", consulta)]);
 
         await expect(obtenerCatalogoEspeciesHistoricas()).resolves.toEqual([
-            { id: "[1,2]", especie: "Ácelga" },
-            { id: "[2,60]", especie: "Banana" },
-            { id: "[3,60]", especie: "Banana" },
-            { id: "[1,1]", especie: "Zapallo" },
+            { id: "2", especie: "Ácelga" },
+            { id: "60", especie: "Banana" },
+            { id: "1", especie: "Zapallo" },
         ]);
 
         expect(listar).toHaveBeenCalledOnce();
@@ -140,7 +139,7 @@ describe("obtenerCatalogoEspeciesHistoricas", () => {
         const especies = await obtenerCatalogoEspeciesHistoricas();
 
         expect(especies.length).toBeGreaterThan(1);
-        expect(especies).toContainEqual({ id: "[2,60]", especie: "Banana" });
+        expect(especies).toContainEqual({ id: "60", especie: "Banana" });
         expect(listar).not.toHaveBeenCalled();
         esperarSoloLectura();
     });
@@ -149,7 +148,7 @@ describe("obtenerCatalogoEspeciesHistoricas", () => {
         const especies = await obtenerCatalogoEspeciesHistoricas();
 
         expect(especies.length).toBeGreaterThan(1);
-        expect(especies).toContainEqual({ id: "[2,60]", especie: "Banana" });
+        expect(especies).toContainEqual({ id: "60", especie: "Banana" });
         expect(listar).toHaveBeenCalledOnce();
         esperarSoloLectura();
     });
@@ -160,7 +159,7 @@ describe("obtenerCatalogoEspeciesHistoricas", () => {
         const especies = await obtenerCatalogoEspeciesHistoricas();
 
         expect(especies.length).toBeGreaterThan(1);
-        expect(especies).toContainEqual({ id: "[2,60]", especie: "Banana" });
+        expect(especies).toContainEqual({ id: "60", especie: "Banana" });
         expect(listar).toHaveBeenCalledOnce();
         esperarSoloLectura();
     });

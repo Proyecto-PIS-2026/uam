@@ -10,7 +10,7 @@ const urlInicial = window.location.href;
 const estadoInicial = window.history.state;
 
 const producto: ProductoSeleccionado = {
-    id: JSON.stringify(["2", "60"]),
+    id: "60",
     especie: "Banana",
     variedad: "Cavendish",
     pais: "ECUADOR",
@@ -40,7 +40,7 @@ const historico: HistoricoProducto = {
 const fechas = { desde: "2025-11-01", hasta: "2025-11-08" };
 
 const productoSinFiltros: ProductoSeleccionado = {
-    ...producto, variedad: "-", pais: "-", calibre: "-", categoria: "-",
+    ...producto, variedad: "", pais: "", calibre: "", categoria: "",
 };
 
 const historicoConFiltros: HistoricoProducto = {
@@ -123,20 +123,20 @@ describe("PreciosHistoricos", () => {
     afterEach(() => window.history.replaceState(estadoInicial, "", urlInicial));
 
     it.each([
-        ["País", "BRASIL", 1],
-        ["Calibre", "G", 2],
-        ["Categoría", "II", 2],
-        ["Variedad", "Orgánica", 2],
-        ["Especie", "Manzana", 5],
-        ["Desde", "2025-11-04", 5],
-        ["Hasta", "2025-11-02", 5],
-        ["Limpiar", "", 5],
-    ] as const)("borra los parámetros al cambiar %s y conserva el histórico sin navegar", (campo, valor, cantidad) => {
+        ["País", "BRASIL", 1, "pais"],
+        ["Calibre", "G", 2, "calibre"],
+        ["Categoría", "II", 2, "categoria"],
+        ["Variedad", "Orgánica", 2, "variedad"],
+        ["Especie", "Manzana", 5, null],
+        ["Desde", "2025-11-04", 5, null],
+        ["Hasta", "2025-11-02", 5, null],
+        ["Limpiar", "", 5, null],
+    ] as const)("conserva la consulta aplicada y los parámetros ajenos al cambiar %s sin navegar", (campo, valor, cantidad, parametro) => {
         const estadoRuta = { __NA: true, arbol: { producto: "Banana", datosCargados: true } };
         window.history.replaceState(
             estadoRuta,
             "",
-            "/precios-historicos?classification_id=2&species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&variedad=&pais=&calibre=&categoria=&extra=anterior#tabla",
+            "/precios-historicos?species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&variedad=&pais=&calibre=&categoria=&extra=anterior#tabla",
         );
         render(
             <PreciosHistoricos
@@ -144,8 +144,8 @@ describe("PreciosHistoricos", () => {
                 historico={historicoConFiltros}
                 {...fechas}
                 especies={[
-                    { id: JSON.stringify([2, 60]), especie: "Banana" },
-                    { id: JSON.stringify([2, 61]), especie: "Manzana" },
+                    { id: "60", especie: "Banana" },
+                    { id: "61", especie: "Manzana" },
                 ]}
             />,
         );
@@ -159,11 +159,160 @@ describe("PreciosHistoricos", () => {
         }
 
         expect(window.location.pathname).toBe("/precios-historicos");
-        expect(window.location.search).toBe("");
-        expect(window.location.hash).toBe("");
-        expect(window.history.state).toEqual(estadoRuta);
+        const parametros = new URL(window.location.href).searchParams;
+        expect(Object.fromEntries(parametros)).toMatchObject({
+            species_id: "60", producto: "Banana",
+            from: fechas.desde, to: fechas.hasta, extra: "anterior",
+        });
+        expect(parametros.has("classification_id")).toBe(false);
+        if (parametro) expect(parametros.get(parametro)).toBe(valor);
+        expect(window.location.hash).toBe("#tabla");
         expect(firmasFilasVisibles()).toHaveLength(cantidad);
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it("elimina la clasificación de una URL antigua al montar y conserva especie, filtros y parámetros ajenos", () => {
+        window.history.replaceState(
+            estadoInicial,
+            "",
+            "/precios-historicos?classification_id=invalida&classification_id=otra&species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&variedad=Cavendish&pais=ECUADOR&calibre=M&categoria=I&extra=anterior&extra=segundo#tabla",
+        );
+        render(
+            <PreciosHistoricos
+                producto={{ ...producto, id: JSON.stringify(["invalida", "60"]) }}
+                historico={historicoConFiltros}
+                {...fechas}
+            />,
+        );
+
+        const parametros = new URL(window.location.href).searchParams;
+        expect(parametros.has("classification_id")).toBe(false);
+        expect(Object.fromEntries(parametros)).toMatchObject({
+            species_id: "60", producto: "Banana",
+            variedad: "Cavendish", pais: "ECUADOR", calibre: "M", categoria: "I",
+            from: fechas.desde, to: fechas.hasta,
+        });
+        expect(parametros.getAll("extra")).toEqual(["anterior", "segundo"]);
+        expect(window.location.hash).toBe("#tabla");
+        expect(firmasFilasVisibles()).toEqual(["Cavendish|ECUADOR|M|I"]);
+        expect(navegar).not.toHaveBeenCalled();
+
+        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
+        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+        expect(navegar).toHaveBeenCalledOnce();
+        const destino = new URL(navegar.mock.calls[0][0], "https://app.example.test");
+        expect(destino.searchParams.has("classification_id")).toBe(false);
+        expect(destino.searchParams.get("species_id")).toBe("60");
+        expect(destino.searchParams.getAll("extra")).toEqual(["anterior", "segundo"]);
+        expect(destino.hash).toBe("#tabla");
+    });
+
+    it("restaura los filtros y las mismas filas al recargar la URL actualizada", () => {
+        window.history.replaceState(
+            estadoInicial,
+            "",
+            "/precios-historicos?species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&extra=anterior&extra=segundo#tabla",
+        );
+        const { unmount } = render(
+            <PreciosHistoricos producto={productoSinFiltros} historico={historicoConFiltros} {...fechas} />,
+        );
+        abrirFiltrosAdicionales();
+        seleccionarFiltro("Variedad", "Orgánica");
+        seleccionarFiltro("País", "ECUADOR");
+        seleccionarFiltro("Calibre", "G");
+        seleccionarFiltro("Categoría", "II");
+        const filasAntesDeRecargar = firmasFilasVisibles();
+        expect(filasAntesDeRecargar).toEqual(["Orgánica|ECUADOR|G|II"]);
+        const parametros = new URL(window.location.href).searchParams;
+        expect(Object.fromEntries(parametros)).toMatchObject({
+            species_id: "60", producto: "Banana",
+            variedad: "Orgánica", pais: "ECUADOR", calibre: "G", categoria: "II",
+            from: fechas.desde, to: fechas.hasta,
+        });
+        expect(parametros.getAll("extra")).toEqual(["anterior", "segundo"]);
+        expect(window.location.hash).toBe("#tabla");
+        expect(navegar).not.toHaveBeenCalled();
+        unmount();
+
+        const productoRecargado: ProductoSeleccionado = {
+            id: parametros.get("species_id")!,
+            especie: parametros.get("producto")!,
+            variedad: parametros.get("variedad")!,
+            pais: parametros.get("pais")!,
+            calibre: parametros.get("calibre")!,
+            categoria: parametros.get("categoria")!,
+        };
+        render(
+            <PreciosHistoricos
+                producto={productoRecargado}
+                historico={historicoConFiltros}
+                desde={parametros.get("from")!}
+                hasta={parametros.get("to")!}
+            />,
+        );
+        abrirFiltrosAdicionales();
+        expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Orgánica");
+        expect(screen.getByRole("combobox", { name: "País" })).toHaveTextContent("ECUADOR");
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("G");
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("II");
+        expect(screen.getByLabelText(/^Desde/)).toHaveValue(fechas.desde);
+        expect(screen.getByLabelText(/^Hasta/)).toHaveValue(fechas.hasta);
+        expect(firmasFilasVisibles()).toEqual(filasAntesDeRecargar);
+        expect(document.querySelectorAll("article")).toHaveLength(filasAntesDeRecargar.length);
+        expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it("conserva filtros literales con guion y la presentación seleccionada al recargar", () => {
+        const presentacion = historicoConFiltros.series[0].presentations[0];
+        const datos: HistoricoProducto = {
+            ...historicoConFiltros,
+            series: [{
+                ...historicoConFiltros.series[0],
+                presentations: [
+                    ...historicoConFiltros.series[0].presentations,
+                    {
+                        ...presentacion, variety: "-", country: "-", caliber: "-",
+                        prices: [{ ...presentacion.prices[0], category: "-" }],
+                    },
+                ],
+            }],
+        };
+        const sinFiltros: ProductoSeleccionado = {
+            ...producto, variedad: "", pais: "", calibre: "", categoria: "",
+        };
+        const { unmount } = render(<PreciosHistoricos producto={sinFiltros} historico={datos} {...fechas} />);
+        expect(firmasFilasVisibles()).toHaveLength(6);
+        abrirFiltrosAdicionales();
+        for (const nombre of ["Variedad", "País", "Calibre", "Categoría"]) {
+            seleccionarFiltro(nombre, "-");
+        }
+        expect(firmasFilasVisibles()).toEqual(["-|-|-|-"]);
+        const parametros = new URL(window.location.href).searchParams;
+        expect(Object.fromEntries(parametros)).toMatchObject({
+            species_id: "60", producto: "Banana",
+            variedad: "-", pais: "-", calibre: "-", categoria: "-",
+            from: fechas.desde, to: fechas.hasta,
+        });
+        unmount();
+
+        render(
+            <PreciosHistoricos
+                producto={{
+                    ...producto,
+                    variedad: parametros.get("variedad")!, pais: parametros.get("pais")!,
+                    calibre: parametros.get("calibre")!, categoria: parametros.get("categoria")!,
+                }}
+                historico={datos}
+                desde={parametros.get("from")!}
+                hasta={parametros.get("to")!}
+            />,
+        );
+        abrirFiltrosAdicionales();
+        expect(firmasFilasVisibles()).toEqual(["-|-|-|-"]);
+        expect(Object.fromEntries(new FormData(screen.getByRole("form") as HTMLFormElement))).toMatchObject({
+            variedad: "-", pais: "-", calibre: "-", categoria: "-",
+        });
         expect(navegar).not.toHaveBeenCalled();
     });
 
@@ -230,7 +379,7 @@ describe("PreciosHistoricos", () => {
     });
 
     it("limita a 40 registros por página en tabla y móvil y permite recorrer todos sin nuevas consultas", () => {
-        render(<PreciosHistoricos producto={{ ...producto, variedad: "-" }} historico={historicoConRegistros(83)} {...fechas} />);
+        render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={historicoConRegistros(83)} {...fechas} />);
         const tabla = screen.getByRole("table");
         const paginacion = within(screen.getByRole("navigation", { name: "Páginas de precios históricos" }));
 
@@ -262,14 +411,14 @@ describe("PreciosHistoricos", () => {
     });
 
     it("oculta los controles cuando los resultados no superan los 40 registros", () => {
-        render(<PreciosHistoricos producto={{ ...producto, variedad: "-" }} historico={historicoConRegistros(40)} {...fechas} />);
+        render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={historicoConRegistros(40)} {...fechas} />);
         expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(41);
         expect(screen.queryByRole("navigation", { name: "Páginas de precios históricos" })).not.toBeInTheDocument();
     });
 
     it("aplica el filtro local antes de paginar y vuelve al inicio cuando los resultados se reducen", () => {
         const datos = historicoConRegistros(83);
-        render(<PreciosHistoricos producto={{ ...producto, variedad: "-" }} historico={datos} {...fechas} />);
+        render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={datos} {...fechas} />);
         fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
         fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
 
@@ -281,7 +430,7 @@ describe("PreciosHistoricos", () => {
     });
 
     it("vuelve a la primera página al consultar otro período", () => {
-        render(<PreciosHistoricos producto={{ ...producto, variedad: "-" }} historico={historicoConRegistros(83)} {...fechas} />);
+        render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={historicoConRegistros(83)} {...fechas} />);
         fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
         fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
@@ -432,7 +581,7 @@ describe("PreciosHistoricos", () => {
         expect(navegar).not.toHaveBeenCalled();
     });
 
-    it("ignora filtros iniciales que no existen en la respuesta sin agregarlos a sus opciones", () => {
+    it("conserva filtros iniciales ausentes en la respuesta y muestra cero resultados", () => {
         render(
             <PreciosHistoricos
                 producto={{ ...producto, variedad: "Inexistente", pais: "ARGENTINA", calibre: "XXL", categoria: "Premium" }}
@@ -442,15 +591,67 @@ describe("PreciosHistoricos", () => {
         );
         abrirFiltrosAdicionales();
 
-        expect(firmasFilasVisibles()).toHaveLength(5);
-        expect(leerOpcionesFiltro("Variedad")).toEqual(["Cavendish", "Orgánica"]);
-        expect(leerOpcionesFiltro("País")).toEqual(["BRASIL", "ECUADOR", "URUGUAY"]);
-        expect(leerOpcionesFiltro("Calibre")).toEqual(["G", "M", "P"]);
-        expect(leerOpcionesFiltro("Categoría")).toEqual(["I", "II", "III"]);
+        expect(firmasFilasVisibles()).toHaveLength(0);
+        expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Inexistente");
+        expect(screen.getByRole("combobox", { name: "País" })).toHaveTextContent("ARGENTINA");
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("XXL");
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Premium");
+        expect(leerOpcionesFiltro("Variedad")).toEqual(expect.arrayContaining(["Cavendish", "Orgánica", "Inexistente"]));
+        expect(leerOpcionesFiltro("País")).toEqual(expect.arrayContaining(["BRASIL", "ECUADOR", "URUGUAY", "ARGENTINA"]));
+        expect(leerOpcionesFiltro("Calibre")).toEqual(expect.arrayContaining(["G", "M", "P", "XXL"]));
+        expect(leerOpcionesFiltro("Categoría")).toEqual(expect.arrayContaining(["I", "II", "III", "Premium"]));
         const formulario = screen.getByRole("form", { name: "Consultar período histórico" });
         expect(Object.fromEntries(new FormData(formulario as HTMLFormElement))).toMatchObject({
-            variedad: "", pais: "", calibre: "", categoria: "",
+            variedad: "Inexistente", pais: "ARGENTINA", calibre: "XXL", categoria: "Premium",
         });
+        expect(screen.getByRole("status")).toHaveTextContent("No hay registros históricos");
+        expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it("mantiene un filtro sin coincidencias después de recargar un período reducido localmente", () => {
+        window.history.replaceState(
+            estadoInicial,
+            "",
+            "/precios-historicos?species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&extra=anterior#tabla",
+        );
+        const registro = historicoConFiltros.series[0];
+        const datos: HistoricoProducto = {
+            ...historicoConFiltros,
+            series: [
+                { ...registro, date: "2025-11-02", presentations: registro.presentations.slice(0, 1) },
+                { ...registro, date: "2025-11-07", presentations: registro.presentations.slice(1, 2) },
+            ],
+        };
+        const { unmount } = render(<PreciosHistoricos producto={productoSinFiltros} historico={datos} {...fechas} />);
+        abrirFiltrosAdicionales();
+        seleccionarFiltro("Calibre", "G");
+        expect(firmasFilasVisibles()).toEqual(["Cavendish|BRASIL|G|I"]);
+        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: "2025-11-03" } });
+        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+
+        expect(firmasFilasVisibles()).toHaveLength(0);
+        const parametros = new URL(window.location.href).searchParams;
+        expect(Object.fromEntries(parametros)).toMatchObject({
+            species_id: "60", calibre: "G",
+            from: fechas.desde, to: "2025-11-03", extra: "anterior",
+        });
+        expect(navegar).not.toHaveBeenCalled();
+        unmount();
+
+        render(
+            <PreciosHistoricos
+                producto={{ ...productoSinFiltros, calibre: parametros.get("calibre")! }}
+                historico={{ ...datos, to: parametros.get("to")!, series: datos.series.slice(0, 1) }}
+                desde={parametros.get("from")!}
+                hasta={parametros.get("to")!}
+            />,
+        );
+        abrirFiltrosAdicionales();
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("G");
+        expect(leerOpcionesFiltro("Calibre")).toEqual(expect.arrayContaining(["G", "M"]));
+        expect(firmasFilasVisibles()).toHaveLength(0);
+        expect(document.querySelectorAll("article")).toHaveLength(0);
+        expect(screen.getByRole("status")).toHaveTextContent("No hay registros históricos");
         expect(navegar).not.toHaveBeenCalled();
     });
 
@@ -490,13 +691,26 @@ describe("PreciosHistoricos", () => {
     });
 
     it("limpia los filtros locales y vuelve a mostrar todas las presentaciones del histórico", () => {
+        window.history.replaceState(
+            estadoInicial,
+            "",
+            "/precios-historicos?species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&variedad=Cavendish&pais=ECUADOR&calibre=M&categoria=I&extra=anterior#tabla",
+        );
         render(<PreciosHistoricos producto={producto} historico={historicoConFiltros} {...fechas} />);
         expect(firmasFilasVisibles()).toHaveLength(1);
+        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-04" } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: "2025-11-07" } });
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
 
         expect(firmasFilasVisibles()).toHaveLength(5);
         expect(screen.getByLabelText(/^Desde/)).toHaveValue(fechas.desde);
         expect(screen.getByLabelText(/^Hasta/)).toHaveValue(fechas.hasta);
+        const parametros = new URL(window.location.href).searchParams;
+        expect(Object.fromEntries(parametros)).toEqual({
+            species_id: "60", producto: "Banana",
+            from: fechas.desde, to: fechas.hasta, extra: "anterior",
+        });
+        expect(window.location.hash).toBe("#tabla");
         expect(navegar).not.toHaveBeenCalled();
     });
 
@@ -535,7 +749,7 @@ describe("PreciosHistoricos", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
-    it("envía los filtros actuales con las fechas únicamente al presionar Consultar", () => {
+    it("navega con los filtros actuales y las fechas únicamente al presionar Consultar", () => {
         render(<PreciosHistoricos producto={productoSinFiltros} historico={historicoConFiltros} {...fechas} />);
         seleccionarFiltro("Variedad", "Orgánica");
         abrirFiltrosAdicionales();
@@ -550,7 +764,7 @@ describe("PreciosHistoricos", () => {
         const [destino, opciones] = navegar.mock.calls[0];
         const parametros = new URL(destino, "https://app.example.test").searchParams;
         expect(Object.fromEntries(parametros)).toMatchObject({
-            classification_id: "2", species_id: "60", producto: "Banana",
+            species_id: "60", producto: "Banana",
             variedad: "Orgánica", pais: "URUGUAY", calibre: "P", categoria: "III",
             from: "2024-11-01", to: "2025-11-08",
         });
@@ -579,19 +793,24 @@ describe("PreciosHistoricos", () => {
         expect(navegar).toHaveBeenCalledOnce();
         const parametros = new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams;
         expect(Object.fromEntries(parametros)).toMatchObject({
-            classification_id: "2", species_id: "60", from: fechas.desde, to: fechas.hasta,
+            species_id: "60", from: fechas.desde, to: fechas.hasta,
         });
     });
 
     it("permite elegir otra especie y consulta sus identificadores sólo al confirmar el período", () => {
+        window.history.replaceState(
+            estadoInicial,
+            "",
+            "/precios-historicos?species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&extra=anterior#tabla",
+        );
         render(
             <PreciosHistoricos
                 producto={productoSinFiltros}
                 historico={historicoConFiltros}
                 {...fechas}
                 especies={[
-                    { id: JSON.stringify([2, 60]), especie: "Banana" },
-                    { id: JSON.stringify([2, 61]), especie: "Manzana" },
+                    { id: "60", especie: "Banana" },
+                    { id: "61", especie: "Manzana" },
                 ]}
             />,
         );
@@ -599,14 +818,65 @@ describe("PreciosHistoricos", () => {
 
         expect(firmasFilasVisibles()).toHaveLength(5);
         expect(navegar).not.toHaveBeenCalled();
+        expect(Object.fromEntries(new URL(window.location.href).searchParams)).toMatchObject({
+            species_id: "60", producto: "Banana",
+            from: fechas.desde, to: fechas.hasta, extra: "anterior",
+        });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
         expect(navegar).toHaveBeenCalledOnce();
-        const parametros = new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams;
+        const destino = new URL(navegar.mock.calls[0][0], "https://app.example.test");
+        const parametros = destino.searchParams;
         expect(Object.fromEntries(parametros)).toMatchObject({
-            classification_id: "2", species_id: "61", producto: "Manzana",
-            from: fechas.desde, to: fechas.hasta,
+            species_id: "61", producto: "Manzana",
+            from: fechas.desde, to: fechas.hasta, extra: "anterior",
         });
+        expect(destino.hash).toBe("#tabla");
+    });
+
+    it("guarda el período aplicado localmente para restaurarlo al recargar sin nuevas consultas", () => {
+        window.history.replaceState(
+            estadoInicial,
+            "",
+            "/precios-historicos?species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&variedad=Cavendish&pais=ECUADOR&calibre=M&categoria=I&extra=anterior#tabla",
+        );
+        const registro = historico.series[0];
+        const datos: HistoricoProducto = {
+            ...historico,
+            series: ["2025-11-02", "2025-11-07"].map((date) => ({ ...registro, date })),
+        };
+        const { unmount } = render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
+        const urlAplicada = window.location.href;
+        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-05" } });
+        expect(window.location.href).toBe(urlAplicada);
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: "02/11/2025" })).toBeInTheDocument();
+        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+
+        const parametros = new URL(window.location.href).searchParams;
+        expect(Object.fromEntries(parametros)).toMatchObject({
+            species_id: "60", producto: "Banana",
+            variedad: "Cavendish", pais: "ECUADOR", calibre: "M", categoria: "I",
+            from: "2025-11-05", to: fechas.hasta, extra: "anterior",
+        });
+        expect(window.location.hash).toBe("#tabla");
+        expect(within(screen.getByRole("table")).queryByRole("cell", { name: "02/11/2025" })).not.toBeInTheDocument();
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: "07/11/2025" })).toBeInTheDocument();
+        expect(navegar).not.toHaveBeenCalled();
+        unmount();
+
+        render(
+            <PreciosHistoricos
+                producto={producto}
+                historico={{ ...datos, from: parametros.get("from")!, series: datos.series.slice(1) }}
+                desde={parametros.get("from")!}
+                hasta={parametros.get("to")!}
+            />,
+        );
+        expect(screen.getByLabelText(/^Desde/)).toHaveValue("2025-11-05");
+        expect(screen.getByLabelText(/^Hasta/)).toHaveValue(fechas.hasta);
+        expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: "07/11/2025" })).toBeInTheDocument();
+        expect(navegar).not.toHaveBeenCalled();
     });
 
     it("limpia los filtros específicos de la especie anterior antes de consultar otro producto", () => {
@@ -616,8 +886,8 @@ describe("PreciosHistoricos", () => {
                 historico={historicoConFiltros}
                 {...fechas}
                 especies={[
-                    { id: JSON.stringify([2, 60]), especie: "Banana" },
-                    { id: JSON.stringify([2, 61]), especie: "Manzana" },
+                    { id: "60", especie: "Banana" },
+                    { id: "61", especie: "Manzana" },
                 ]}
             />,
         );
@@ -631,10 +901,12 @@ describe("PreciosHistoricos", () => {
         expect(navegar).toHaveBeenCalledOnce();
         const parametros = new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams;
         expect(Object.fromEntries(parametros)).toMatchObject({
-            classification_id: "2", species_id: "61", producto: "Manzana",
-            variedad: "", pais: "", calibre: "", categoria: "",
+            species_id: "61", producto: "Manzana",
             from: "2024-11-01", to: fechas.hasta,
         });
+        for (const filtro of ["variedad", "pais", "calibre", "categoria"]) {
+            expect(parametros.has(filtro)).toBe(false);
+        }
     });
 
     it("aplica un período dentro del histórico cargado al consultar y sólo navega si se amplía más allá", () => {
@@ -671,15 +943,16 @@ describe("PreciosHistoricos", () => {
         expect(parametros.get("to")).toBe(fechas.hasta);
     });
 
-    it("identifica la especie del catálogo por IDs sin duplicarla por diferencias de serialización", () => {
+    it.each(["60", "060", JSON.stringify(["2", "60"]), JSON.stringify(["999", 60])])(
+        "identifica la especie del catálogo sin duplicarla cuando el producto usa el ID %s", (id) => {
         render(
             <PreciosHistoricos
-                producto={producto}
+                producto={{ ...producto, id }}
                 historico={historicoConFiltros}
                 {...fechas}
                 especies={[
-                    { id: JSON.stringify([2, 60]), especie: "Banana" },
-                    { id: JSON.stringify([2, 61]), especie: "Manzana" },
+                    { id: "60", especie: "Banana" },
+                    { id: "61", especie: "Manzana" },
                 ]}
             />,
         );
@@ -703,9 +976,10 @@ describe("PreciosHistoricos", () => {
         const consulta = new FormData(formulario as HTMLFormElement);
 
         expect(Object.fromEntries(consulta)).toMatchObject({
-            classification_id: "2", species_id: "60", producto: "Banana", variedad: "Cavendish",
+            species_id: "60", producto: "Banana", variedad: "Cavendish",
             pais: "ECUADOR", calibre: "M", categoria: "I", from: "2024-11-01", to: "2025-11-08",
         });
+        expect(consulta.has("classification_id")).toBe(false);
         expect(screen.getByRole("button", { name: "Consultar" })).toHaveAttribute("type", "submit");
         expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
     });
@@ -727,9 +1001,10 @@ describe("PreciosHistoricos", () => {
         const [destino, opciones] = navegar.mock.calls[0];
         const parametros = new URL(destino, "https://app.example.test").searchParams;
         expect(Object.fromEntries(parametros)).toMatchObject({
-            classification_id: "2", species_id: "60", producto: "Banana", variedad: "Cavendish",
+            species_id: "60", producto: "Banana", variedad: "Cavendish",
             pais: "ECUADOR", calibre: "M", categoria: "I", from: "2024-11-01", to: "2025-11-08",
         });
+        expect(parametros.has("classification_id")).toBe(false);
         expect(opciones).toEqual({ scroll: false });
     });
 
@@ -744,8 +1019,53 @@ describe("PreciosHistoricos", () => {
     it("distingue el fallo de consulta de un período sin registros", () => {
         render(<PreciosHistoricos producto={producto} historico={null} {...fechas} error="No pudimos cargar los precios históricos." />);
 
-        expect(screen.getByRole("alert")).toHaveTextContent("No pudimos cargar los precios históricos.");
+        expect(screen.getAllByRole("alert")).toHaveLength(2);
+        for (const aviso of screen.getAllByRole("alert")) {
+            expect(aviso).toHaveTextContent("No pudimos cargar los precios históricos.");
+        }
         expect(screen.queryByText(/No hay registros históricos/)).not.toBeInTheDocument();
+    });
+
+    it.each([
+        "No pudimos cargar los precios históricos.",
+        "SyntaxError: Unexpected token al leer el JSON del histórico.",
+    ])("muestra un aviso con icono en tabla y móvil cuando falla la carga: %s", (error) => {
+        render(<PreciosHistoricos producto={producto} historico={historico} {...fechas} error={error} />);
+
+        const tabla = screen.getByRole("table");
+        expect(tabla).toHaveAttribute("aria-busy", "false");
+        expect(within(tabla).getAllByRole("columnheader")).toHaveLength(8);
+        const avisoTabla = within(tabla).getByRole("alert");
+        expect(avisoTabla).toHaveTextContent(error);
+        expect(within(avisoTabla).getByTestId("WarningAmberIcon")).toBeInTheDocument();
+        expect(avisoTabla.closest("td")).toHaveAttribute("colspan", "8");
+        const avisos = screen.getAllByRole("alert");
+        expect(avisos).toHaveLength(2);
+        const avisoMobile = avisos.find((aviso) => !tabla.contains(aviso));
+        expect(avisoMobile).toBeDefined();
+        expect(avisoMobile!).toHaveTextContent(error);
+        expect(within(avisoMobile!).getByTestId("WarningAmberIcon")).toBeInTheDocument();
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        expect(within(tabla).queryByRole("cell", { name: "ECUADOR" })).not.toBeInTheDocument();
+        expect(document.querySelectorAll("article")).toHaveLength(0);
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
+    });
+
+    it("mantiene el indicador durante un reintento y muestra el aviso sólo cuando termina la carga", () => {
+        const error = "No pudimos cargar los precios históricos.";
+        const { rerender } = render(
+            <PreciosHistoricos producto={producto} historico={null} {...fechas} error={error} cargando />,
+        );
+        expect(screen.getAllByRole("progressbar", { name: "Cargando precios históricos" })).toHaveLength(2);
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeDisabled();
+
+        rerender(<PreciosHistoricos producto={producto} historico={null} {...fechas} error={error} />);
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        expect(screen.getAllByRole("alert")).toHaveLength(2);
+        expect(screen.getAllByTestId("WarningAmberIcon")).toHaveLength(2);
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
     });
 
     it("muestra un estado vacío para una respuesta exitosa sin registros", () => {

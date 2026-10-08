@@ -8,19 +8,19 @@ import {
 } from "./parametros-consulta";
 
 function consultaValida(): ConsultaHistorica {
-    return { classificationId: 1, speciesId: 2, desde: "2025-10-06", hasta: "2026-10-06" };
+    return { speciesId: 2, desde: "2025-10-06", hasta: "2026-10-06" };
 }
 
 describe("validarParametrosConsulta", () => {
-    it("acepta identificadores positivos y rangos de un solo día", () => {
+    it("acepta una especie con identificador positivo y rangos de un solo día", () => {
         expect(() => validarParametrosConsulta(consultaValida())).not.toThrow();
         expect(() => validarParametrosConsulta({ ...consultaValida(), desde: "2026-10-06" })).not.toThrow();
     });
 
-    it.each(["classificationId", "speciesId"] as const)("rechaza %s inválido", (campo) => {
+    it("rechaza una especie con identificador inválido", () => {
         for (const valor of [0, -1, 1.5, Infinity, NaN, Number.MAX_SAFE_INTEGER + 1, "2", undefined]) {
-            const consulta = Object.assign(consultaValida(), { [campo]: valor });
-            expect(() => validarParametrosConsulta(consulta)).toThrow(campo);
+            const consulta = Object.assign(consultaValida(), { speciesId: valor });
+            expect(() => validarParametrosConsulta(consulta)).toThrow("speciesId");
         }
     });
 

@@ -54,50 +54,85 @@ describe("Página de precios históricos", () => {
         obtenerHistoricoPreciosMock.mockReset();
         obtenerHistoricoPreciosMock.mockResolvedValue(historico);
         obtenerCatalogoMock.mockReset();
-        obtenerCatalogoMock.mockResolvedValue([{ id: JSON.stringify([2, 60]), especie: "Banana" }]);
+        obtenerCatalogoMock.mockResolvedValue([{ id: "60", especie: "Banana" }]);
     });
 
     afterEach(() => vi.useRealTimers());
 
-    it("consulta por identificadores con tres años por defecto hasta hoy según la fecha de Montevideo", async () => {
-        const { suspense, componente } = await resolverHistorico({ classification_id: "2", species_id: "60", producto: "Otra fruta" });
+    it("consulta por especie sin clasificación con tres años por defecto hasta hoy en Montevideo", async () => {
+        const { suspense, componente } = await resolverHistorico({ species_id: "60", producto: "Otra fruta" });
 
         expect(dynamic).toBe("force-dynamic");
         expect(suspense.type).toBe(Suspense);
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
-            classificationId: 2, speciesId: 60, desde: "2023-10-05", hasta: "2026-10-05",
+            speciesId: 60, desde: "2023-10-05", hasta: "2026-10-05",
         });
         expect(componente.type).toBe(preciosHistoricosMock);
         expect(componente.props.historico).toBe(historico);
+        expect(componente.props.producto.id).toBe("60");
         expect(componente.props.producto.especie).toBe("Banana");
         expect(componente.props.desde).toBe("2023-10-05");
         expect(componente.props.hasta).toBe("2026-10-05");
         expect(componente.props.error).toBeUndefined();
     });
 
+    it.each(["0x2", "", ["2", "3"]])("ignora la clasificación legada sin condicionar la consulta: %j", async (classification_id) => {
+        const parametros = { species_id: "60", classification_id };
+        const { suspense, componente } = await resolverHistorico(parametros);
+
+        expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
+            speciesId: 60, desde: "2023-10-05", hasta: "2026-10-05",
+        });
+        expect(componente.props.producto.id).toBe("60");
+        expect(suspense.props.fallback.props.producto.id).toBe("60");
+        expect(componente.props.error).toBeUndefined();
+    });
+
     it("conserva los filtros vigentes e ignora los controles retirados de enlaces anteriores", async () => {
         const parametros = {
-            classification_id: "2", species_id: "60", variedad: "Orgánica", pais: "ECUADOR",
+            species_id: "60", variedad: "Orgánica", pais: "ECUADOR",
             calibre: "G", categoria: "II", busqueda: "organica", unidad: "CAJÓN",
             precio_por: "unidad", solo_referencias: "1", from: "2024-11-01", to: "2025-11-08",
         };
         const { suspense, componente } = await resolverHistorico(parametros);
         expect(componente.props.filtros).toBeUndefined();
         expect(suspense.props.fallback.props.filtros).toBeUndefined();
-        expect(componente.props.especies).toEqual([{ id: JSON.stringify([2, 60]), especie: "Banana" }]);
+        expect(componente.props.especies).toEqual([{ id: "60", especie: "Banana" }]);
         expect(componente.props.producto).toMatchObject({ variedad: "Orgánica", pais: "ECUADOR", calibre: "G", categoria: "II" });
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
-            classificationId: 2, speciesId: 60, desde: "2024-11-01", hasta: "2025-11-08",
+            speciesId: 60, desde: "2024-11-01", hasta: "2025-11-08",
+        });
+    });
+
+    it.each([
+        { descripcion: "ausentes", filtros: {}, esperado: "" },
+        {
+            descripcion: "con un guion explícito",
+            filtros: { variedad: "-", pais: "-", calibre: "-", categoria: "-" },
+            esperado: "-",
+        },
+    ])("distingue los filtros $descripcion para restaurar la selección de la URL", async ({ filtros, esperado }) => {
+        const { suspense, componente } = await resolverHistorico({
+            species_id: "60", producto: "Banana", ...filtros,
+        });
+        const seleccion = {
+            variedad: esperado, pais: esperado, calibre: esperado, categoria: esperado,
+        };
+
+        expect(componente.props.producto).toMatchObject(seleccion);
+        expect(suspense.props.fallback.props.producto).toMatchObject(seleccion);
+        expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
+            speciesId: 60, desde: "2023-10-05", hasta: "2026-10-05",
         });
     });
 
     it("calcula el inicio desde hoy menos tres años aunque se solicite otra fecha de fin", async () => {
         const { componente } = await resolverHistorico({
-            classification_id: "2", species_id: "60", to: "2025-11-08",
+            species_id: "60", to: "2025-11-08",
         });
 
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
-            classificationId: 2, speciesId: 60, desde: "2023-10-05", hasta: "2025-11-08",
+            speciesId: 60, desde: "2023-10-05", hasta: "2025-11-08",
         });
         expect(componente.props.desde).toBe("2023-10-05");
         expect(componente.props.hasta).toBe("2025-11-08");
@@ -105,11 +140,11 @@ describe("Página de precios históricos", () => {
 
     it("conserva un inicio explícito y usa hoy por defecto como fecha de fin", async () => {
         const { componente } = await resolverHistorico({
-            classification_id: "2", species_id: "60", from: "2024-07-01",
+            species_id: "60", from: "2024-07-01",
         });
 
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
-            classificationId: 2, speciesId: 60, desde: "2024-07-01", hasta: "2026-10-05",
+            speciesId: 60, desde: "2024-07-01", hasta: "2026-10-05",
         });
         expect(componente.props.desde).toBe("2024-07-01");
         expect(componente.props.hasta).toBe("2026-10-05");
@@ -117,10 +152,10 @@ describe("Página de precios históricos", () => {
 
     it("ajusta el 29 de febrero al restar tres años a la fecha local de Montevideo", async () => {
         vi.setSystemTime(new Date("2024-03-01T01:00:00Z"));
-        const { componente } = await resolverHistorico({ classification_id: "2", species_id: "60" });
+        const { componente } = await resolverHistorico({ species_id: "60" });
 
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
-            classificationId: 2, speciesId: 60, desde: "2021-02-28", hasta: "2024-02-29",
+            speciesId: 60, desde: "2021-02-28", hasta: "2024-02-29",
         });
         expect(componente.props.desde).toBe("2021-02-28");
         expect(componente.props.hasta).toBe("2024-02-29");
@@ -128,12 +163,12 @@ describe("Página de precios históricos", () => {
 
     it("consulta el intervalo solicitado y conserva los filtros de presentación", async () => {
         const { suspense, componente } = await resolverHistorico({
-            classification_id: "2", species_id: "60", from: "2025-11-01", to: "2025-11-08",
+            species_id: "60", from: "2025-11-01", to: "2025-11-08",
             variedad: "Cavendish", pais: "ECUADOR", calibre: "M", categoria: "I",
         });
 
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
-            classificationId: 2, speciesId: 60, desde: "2025-11-01", hasta: "2025-11-08",
+            speciesId: 60, desde: "2025-11-01", hasta: "2025-11-08",
         });
         expect(componente.props.producto).toMatchObject({
             variedad: "Cavendish", pais: "ECUADOR", calibre: "M", categoria: "I",
@@ -147,7 +182,7 @@ describe("Página de precios históricos", () => {
         const consultaPendiente = new Promise<HistoricoProducto>((resolve) => { resolverConsulta = resolve; });
         obtenerHistoricoPreciosMock.mockReturnValue(consultaPendiente);
         const suspense = await cargarPagina({
-            classification_id: "2", species_id: "60", from: "2025-11-01", to: "2025-11-08",
+            species_id: "60", from: "2025-11-01", to: "2025-11-08",
             producto: "Banana", variedad: "Cavendish", pais: "ECUADOR", calibre: "M", categoria: "I",
         });
 
@@ -161,7 +196,7 @@ describe("Página de precios históricos", () => {
             desde: "2025-11-01",
             hasta: "2025-11-08",
             producto: {
-                id: JSON.stringify(["2", "60"]), especie: "Banana", variedad: "Cavendish",
+                id: "60", especie: "Banana", variedad: "Cavendish",
                 pais: "ECUADOR", calibre: "M", categoria: "I",
             },
         });
@@ -177,7 +212,7 @@ describe("Página de precios históricos", () => {
     });
 
     it("reinicia la carga al cambiar el período o los filtros de la selección", async () => {
-        const parametros = { classification_id: "2", species_id: "60", from: "2025-11-01", to: "2025-11-08", pais: "ECUADOR" };
+        const parametros = { species_id: "60", from: "2025-11-01", to: "2025-11-08", pais: "ECUADOR" };
         const inicial = await cargarPagina(parametros);
         const otroPeriodo = await cargarPagina({ ...parametros, from: "2025-10-01" });
         const otroFiltro = await cargarPagina({ ...parametros, pais: "BRASIL" });
@@ -189,9 +224,10 @@ describe("Página de precios históricos", () => {
 
     it.each([
         {},
-        { classification_id: "2", species_id: "-60" },
-        { classification_id: "0x2", species_id: "60" },
-        { classification_id: ["2", "3"], species_id: "60" },
+        { species_id: "-60" },
+        { species_id: "0" },
+        { species_id: "0x60" },
+        { species_id: ["60", "61"] },
     ])("no consulta con una selección inválida: %j", async (parametros) => {
         const componente = await cargarPagina(parametros);
 
@@ -208,7 +244,7 @@ describe("Página de precios históricos", () => {
         { from: ["2025-11-01", "2025-11-02"], to: "2025-11-08" },
         { to: "0000-01-01" },
     ])("no consulta con un período inválido: %j", async (fechas) => {
-        const componente = await cargarPagina({ classification_id: "2", species_id: "60", ...fechas });
+        const componente = await cargarPagina({ species_id: "60", ...fechas });
 
         expect(obtenerHistoricoPreciosMock).not.toHaveBeenCalled();
         expect(componente.props.historico).toBeNull();
@@ -220,7 +256,7 @@ describe("Página de precios históricos", () => {
         const error = new Error("El webservice respondió con HTTP 401.");
         error.name = "ErrorWebservice";
         obtenerHistoricoPreciosMock.mockRejectedValue(error);
-        const { componente } = await resolverHistorico({ classification_id: "2", species_id: "60" });
+        const { componente } = await resolverHistorico({ species_id: "60" });
 
         expect(componente.props.historico).toBeNull();
         expect(componente.props.error).toContain(error.name);
@@ -232,7 +268,7 @@ describe("Página de precios históricos", () => {
         ["", "Error de carga sin detalle."],
     ])("muestra el rechazo de texto y usa un mensaje de respaldo cuando está vacío: %j", async (rechazo, mensaje) => {
         obtenerHistoricoPreciosMock.mockRejectedValue(rechazo);
-        const { componente } = await resolverHistorico({ classification_id: "2", species_id: "60" });
+        const { componente } = await resolverHistorico({ species_id: "60" });
 
         expect(componente.props.historico).toBeNull();
         expect(componente.props.error).toContain(mensaje);

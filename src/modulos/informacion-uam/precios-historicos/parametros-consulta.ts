@@ -1,5 +1,4 @@
 export type ConsultaHistorica = {
-    classificationId: number;
     speciesId: number;
     desde: string;
     hasta: string;
@@ -43,10 +42,8 @@ export function fechaHaceTresAnios(fecha: string): string {
 }
 
 export function validarParametrosConsulta(consulta: ConsultaHistorica): void {
-    for (const campo of ["classificationId", "speciesId"] as const) {
-        if (!Number.isSafeInteger(consulta[campo]) || consulta[campo] <= 0) {
-            throw new Error(`El parámetro ${campo} debe ser un identificador entero positivo.`);
-        }
+    if (!Number.isSafeInteger(consulta.speciesId) || consulta.speciesId <= 0) {
+        throw new Error("El parámetro speciesId debe ser un identificador entero positivo.");
     }
 
     for (const campo of ["desde", "hasta"] as const) {

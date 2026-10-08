@@ -105,7 +105,7 @@ function esperarSelectVacio(nombre: string) {
 }
 
 describe("PreciosReferencia", () => {
-    it.each(["tabla", "móvil"] as const)("abre el histórico desde %s con los identificadores y filtros de la fila", (vista) => {
+    it.each(["tabla", "móvil"] as const)("abre el histórico desde %s con la especie y filtros de la fila sin clasificación", (vista) => {
         const fila: PrecioReferencia = {
             ...filasConPreciosDistintos[1],
             id: JSON.stringify([2, 60, "Cavendish", "M", "URUGUAY", "UN", "I"]),
@@ -119,7 +119,7 @@ describe("PreciosReferencia", () => {
 
         expect(navegar).toHaveBeenCalledOnce();
         expect(navegar).toHaveBeenCalledWith(
-            "/precios-historicos?classification_id=2&species_id=60&producto=Banana&variedad=Cavendish&pais=URUGUAY&calibre=M&categoria=I",
+            "/precios-historicos?species_id=60&producto=Banana&variedad=Cavendish&pais=URUGUAY&calibre=M&categoria=I",
         );
     });
 

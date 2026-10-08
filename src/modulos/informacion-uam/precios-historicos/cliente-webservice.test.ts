@@ -5,9 +5,9 @@ import type { HistoricoProducto } from "./tipos";
 
 const opciones = { baseUrl: "https://datos.uam.test/servicio/", token: "jwt-de-prueba" };
 const consulta: ConsultaHistorica = {
-    classificationId: 2, speciesId: 60, desde: "2025-10-01", hasta: "2025-10-31",
+    speciesId: 60, desde: "2025-10-01", hasta: "2025-10-31",
 };
-const plantilla = "api/prices/prueba/{classification_id}/{species_id}?from={from}&to={to}";
+const plantilla = "api/prices/prueba/{species_id}?from={from}&to={to}";
 const consultaValida: HistoricoProducto = {
     classification_id: 2,
     classification: "Exóticos/Importados",
@@ -61,7 +61,7 @@ describe("cliente del webservice de precios históricos", () => {
 
         expect(fetcher).toHaveBeenCalledOnce();
         expect(fetcher).toHaveBeenCalledWith(
-            "https://datos.uam.test/servicio/api/prices/prueba/2/60?from=2025-10-01&to=2025-10-31",
+            "https://datos.uam.test/servicio/api/prices/prueba/60?from=2025-10-01&to=2025-10-31",
             expect.objectContaining({
                 method: "GET",
                 headers: { Authorization: "Bearer jwt-de-prueba", Accept: "application/json" },
@@ -76,21 +76,21 @@ describe("cliente del webservice de precios históricos", () => {
     });
 
     it("resuelve una ruta desde la raíz aunque la URL base incluya un prefijo", async () => {
-        vi.stubEnv("PRECIOS_HISTORICOS_ENDPOINT", "/consulta?classification_id={classification_id}&species_id={species_id}&from={from}&to={to}");
+        vi.stubEnv("PRECIOS_HISTORICOS_ENDPOINT", "/consulta?species_id={species_id}&from={from}&to={to}");
         const fetcher = vi.fn<typeof fetch>().mockResolvedValue(respuestaValida());
 
         await consultarHistorico(opciones, consulta, fetcher);
 
-        expect(fetcher.mock.calls[0][0]).toBe("https://datos.uam.test/consulta?classification_id=2&species_id=60&from=2025-10-01&to=2025-10-31");
+        expect(fetcher.mock.calls[0][0]).toBe("https://datos.uam.test/consulta?species_id=60&from=2025-10-01&to=2025-10-31");
     });
 
     it("acepta una plantilla absoluta HTTPS del mismo origen", async () => {
-        vi.stubEnv("PRECIOS_HISTORICOS_ENDPOINT", "https://datos.uam.test/consulta/{classification_id}/{species_id}/{from}/{to}");
+        vi.stubEnv("PRECIOS_HISTORICOS_ENDPOINT", "https://datos.uam.test/consulta/{species_id}/{from}/{to}");
         const fetcher = vi.fn<typeof fetch>().mockResolvedValue(respuestaValida());
 
         await consultarHistorico(opciones, consulta, fetcher);
 
-        expect(fetcher.mock.calls[0][0]).toBe("https://datos.uam.test/consulta/2/60/2025-10-01/2025-10-31");
+        expect(fetcher.mock.calls[0][0]).toBe("https://datos.uam.test/consulta/60/2025-10-01/2025-10-31");
     });
 
     it.each([undefined, "", "   "])("rechaza un endpoint sin configurar antes de hacer fetch: %s", async (endpoint) => {
@@ -111,7 +111,7 @@ describe("cliente del webservice de precios históricos", () => {
         },
     );
 
-    it.each(["desconocido", "constructor", "toString"])("rechaza el marcador desconocido {%s}", async (campo) => {
+    it.each(["classification_id", "desconocido", "constructor", "toString"])("rechaza el marcador desconocido {%s}", async (campo) => {
         vi.stubEnv("PRECIOS_HISTORICOS_ENDPOINT", plantilla + `&extra={${campo}}`);
         const fetcher = vi.fn<typeof fetch>();
 
@@ -187,14 +187,48 @@ describe("cliente del webservice de precios históricos", () => {
     it("rechaza un cuerpo que no sea JSON válido", async () => {
         const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("{", { status: 200 }));
 
-        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toBeInstanceOf(SyntaxError);
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow(
+            "El webservice de precios históricos devolvió un JSON inválido.",
+        );
     });
 
-    it("devuelve el JSON recibido sin validar la estructura de su contenido", async () => {
+    it("rechaza un JSON que no tiene la estructura del histórico", async () => {
         const recibido = { series: [] };
         const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
 
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("Respuesta de precios históricos inválida");
+    });
+
+    it("rechaza una fecha inválida anidada antes de devolver el histórico", async () => {
+        const recibido = JSON.parse(JSON.stringify(consultaValida)) as HistoricoProducto;
+        recibido.series[0].date = "2025-02-30";
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("inválida en series[0].date");
+    });
+
+    it("rechaza la respuesta de otra especie", async () => {
+        const recibido = { ...consultaValida, species_id: 61 };
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("inválida en species_id:");
+    });
+
+    it("conserva la clasificación informada por el servicio como metadato de la respuesta", async () => {
+        const recibido = { ...consultaValida, classification_id: 3, classification: "Otra clasificación" };
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
         await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(recibido);
+    });
+
+    it("conserva una cancelación durante la lectura del cuerpo", async () => {
+        const error = new DOMException("Solicitud cancelada", "AbortError");
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockRejectedValue(error),
+        } as unknown as Response);
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toBe(error);
     });
 
     it("conserva los precios del servicio aunque el mínimo supere al máximo por kg y por unidad", async () => {

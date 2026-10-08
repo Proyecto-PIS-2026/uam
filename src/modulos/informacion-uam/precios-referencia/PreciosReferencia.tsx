@@ -155,9 +155,8 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     const [anio, mes, dia] = fechaRelevamiento.split("-");
 
     function abrirHistorico(fila: PrecioReferencia) {
-        const [clasificacion, especie] = JSON.parse(fila.id);
+        const [, especie] = JSON.parse(fila.id);
         const parametros = new URLSearchParams({
-            classification_id: String(clasificacion),
             species_id: String(especie),
             producto: fila.especie,
             variedad: fila.variedad,

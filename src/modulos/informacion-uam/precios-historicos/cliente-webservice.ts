@@ -1,6 +1,7 @@
 import type { OpcionesWebservicePrecios } from "../precios-referencia/cliente-webservice";
 import { validarParametrosConsulta, type ConsultaHistorica } from "./parametros-consulta";
 import type { HistoricoProducto } from "./tipos";
+import { validarHistoricoProducto } from "./validar-historico";
 
 const TIEMPO_MAXIMO_MS = 60_000;
 
@@ -9,7 +10,6 @@ function construirUrl(baseUrl: string, consulta: ConsultaHistorica): string {
     if (!plantilla) throw new Error("Falta configurar el endpoint del webservice de precios históricos.");
 
     const valores = {
-        classification_id: String(consulta.classificationId),
         species_id: String(consulta.speciesId),
         from: consulta.desde,
         to: consulta.hasta,
@@ -62,7 +62,16 @@ export async function consultarHistorico(
         if (!respuesta.ok) {
             throw new Error("El webservice de precios históricos respondió con estado " + respuesta.status + ".");
         }
-        return await respuesta.json() as HistoricoProducto;
+        let contenido: unknown;
+        try {
+            contenido = await respuesta.json();
+        } catch (error) {
+            if (error instanceof SyntaxError) {
+                throw new Error("El webservice de precios históricos devolvió un JSON inválido.");
+            }
+            throw error;
+        }
+        return validarHistoricoProducto(contenido, consulta);
     } finally {
         clearTimeout(temporizador);
     }

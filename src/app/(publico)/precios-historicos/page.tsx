@@ -19,7 +19,6 @@ export const metadata: Metadata = {
 };
 
 type Parametros = {
-    classification_id?: string | string[];
     species_id?: string | string[];
     producto?: string | string[];
     variedad?: string | string[];
@@ -74,22 +73,21 @@ export default async function PaginaPreciosHistoricos({
     const hasta = textoParametro(parametros.to, hoy);
     const desde = parametros.from === undefined ? fechaHaceTresAnios(hoy) : textoParametro(parametros.from);
     const producto: ProductoSeleccionado = {
-        id: JSON.stringify([textoParametro(parametros.classification_id), textoParametro(parametros.species_id)]),
+        id: identificadorValido(parametros.species_id) ? String(Number(parametros.species_id)) : "",
         especie: textoParametro(parametros.producto, "Producto"),
-        variedad: textoParametro(parametros.variedad, "-"),
-        pais: textoParametro(parametros.pais, "-"),
-        calibre: textoParametro(parametros.calibre, "-"),
-        categoria: textoParametro(parametros.categoria, "-"),
+        variedad: textoParametro(parametros.variedad),
+        pais: textoParametro(parametros.pais),
+        calibre: textoParametro(parametros.calibre),
+        categoria: textoParametro(parametros.categoria),
     };
     let error: string | undefined;
     const consulta: ConsultaHistorica = {
-        classificationId: Number(parametros.classification_id),
         speciesId: Number(parametros.species_id),
         desde,
         hasta,
     };
 
-    if (!identificadorValido(parametros.classification_id) || !identificadorValido(parametros.species_id)) {
+    if (!identificadorValido(parametros.species_id)) {
         error = "Seleccioná un producto válido desde precios de referencia para consultar su histórico.";
     } else {
         try {

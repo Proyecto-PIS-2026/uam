@@ -18,7 +18,7 @@ export async function obtenerCatalogoEspeciesHistoricas(): Promise<EspecieHistor
     const especies = new Map<string, EspecieHistorica>();
     for (const tipo of consulta.types) {
         for (const producto of tipo.products) {
-            const id = JSON.stringify([tipo.classification_id, producto.species_id]);
+            const id = String(producto.species_id);
             if (!especies.has(id)) especies.set(id, { id, especie: producto.species });
         }
     }

@@ -38,6 +38,8 @@
 .tablaCabecera { padding: 1rem; }
 .tablaContenedor { width: 100%; overflow-x: auto; }
 .carga { display: flex; min-height: 12rem; align-items: center; justify-content: center; color: var(--color-primary); }
+.errorCarga { flex-direction: column; gap: .75rem; padding: 1rem; color: #946200; text-align: center; }
+.errorCarga p { margin: 0; max-width: 36rem; overflow-wrap: anywhere; }
 .tabla { width: 100%; min-width: 58rem; border-collapse: collapse; text-align: left; font-size: .875rem; font-variant-numeric: tabular-nums; }
 .tabla th { padding: .75rem; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-primary-soft); color: var(--color-secondary); font-size: .75rem; font-weight: 700; white-space: nowrap; }
 .tabla td { height: 3rem; padding: .75rem; border-bottom: 1px solid #e9e9e9; vertical-align: middle; }

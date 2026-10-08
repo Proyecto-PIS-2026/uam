@@ -83,20 +83,20 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: base }));
 vi.mock("./cliente-webservice", () => ({ consultarHistorico: consultar }));
 
 const baseUrl = "https://precios.example.test/servicio";
-const endpoint = "/historicos/{classification_id}/{species_id}?inicio={from}&fin={to}";
+const endpoint = "/historicos/{species_id}?inicio={from}&fin={to}";
 const consulta: ConsultaHistorica = {
-    classificationId: 2, speciesId: 60, desde: "2025-10-01", hasta: "2025-10-31",
+    speciesId: 60, desde: "2025-10-01", hasta: "2025-10-31",
 };
 
 function clave(parametros = consulta, fuente = baseUrl): string {
     return "precios-historicos:v1:" + createHash("sha256").update(JSON.stringify([
-        fuente, process.env.PRECIOS_HISTORICOS_ENDPOINT?.trim() ?? "", parametros.classificationId, parametros.speciesId, parametros.desde, parametros.hasta,
+        fuente, process.env.PRECIOS_HISTORICOS_ENDPOINT?.trim() ?? "", parametros.speciesId, parametros.desde, parametros.hasta,
     ])).digest("hex");
 }
 
 function dato(parametros = consulta): HistoricoProducto {
     return {
-        classification_id: parametros.classificationId,
+        classification_id: 2,
         classification: "Exóticos/Importados",
         species_id: parametros.speciesId,
         species: "Banana",
@@ -113,7 +113,7 @@ function dato(parametros = consulta): HistoricoProducto {
     };
 }
 
-function serializar(historico: HistoricoProducto): string {
+function serializar(historico: unknown): string {
     return JSON.stringify({ version: 1, historico });
 }
 
@@ -175,8 +175,38 @@ describe("obtenerHistoricoPrecios", () => {
         expect(guardado.series[0].presentations).toEqual(sinVolumen.series[0].presentations);
     });
 
+    it("consulta nuevamente cuando sólo existe una caché cuya clave incluía clasificación", async () => {
+        const claveAnterior = "precios-historicos:v1:" + createHash("sha256").update(JSON.stringify([
+            baseUrl, endpoint, 2, consulta.speciesId, consulta.desde, consulta.hasta,
+        ])).digest("hex");
+        const anterior = dato();
+        anterior.series[0].volume_kg = 500;
+        sembrar(claveAnterior, serializar(anterior));
+        consultar.mockResolvedValue(dato());
+
+        await expect(obtenerHistoricoPrecios(consulta)).resolves.toEqual(dato());
+        await expect(obtenerHistoricoPrecios(consulta)).resolves.toEqual(dato());
+
+        expect(consultar).toHaveBeenCalledOnce();
+        expect(creaciones).toHaveBeenCalledOnce();
+        expect(actualizaciones).not.toHaveBeenCalled();
+    });
+
+    it("guarda y reutiliza la clasificación devuelta por el servicio como metadato", async () => {
+        const recibido = dato();
+        recibido.classification_id = 3;
+        recibido.classification = "Otra clasificación";
+        consultar.mockResolvedValue(recibido);
+
+        await expect(obtenerHistoricoPrecios(consulta)).resolves.toBe(recibido);
+        await expect(obtenerHistoricoPrecios(consulta)).resolves.toStrictEqual(recibido);
+
+        expect(consultar).toHaveBeenCalledOnce();
+        expect(creaciones).toHaveBeenCalledOnce();
+        expect(JSON.parse(leer(clave())!)).toEqual({ version: 1, historico: recibido });
+    });
+
     it.each([
-        ["clasificación", { ...consulta, classificationId: 3 }],
         ["producto", { ...consulta, speciesId: 61 }],
         ["fecha desde", { ...consulta, desde: "2025-10-02" }],
         ["fecha hasta", { ...consulta, hasta: "2025-11-01" }],
@@ -238,6 +268,15 @@ describe("obtenerHistoricoPrecios", () => {
         ["JSON malformado", "{"],
         ["versión desconocida", JSON.stringify({ version: 2, historico: dato() })],
         ["histórico ausente", JSON.stringify({ version: 1 })],
+        ["histórico nulo", serializar(null)],
+        ["histórico incompleto", serializar({ series: [] })],
+        ["especie diferente", serializar(dato({ ...consulta, speciesId: 61 }))],
+        ["serie inválida", serializar({ ...dato(), series: {} })],
+        ["fecha inexistente", serializar({ ...dato(), series: [{ date: "2025-02-30", presentations: [] }] })],
+        ["presentaciones inválidas", serializar({ ...dato(), series: [{ date: consulta.desde, presentations: null }] })],
+        ["precios inválidos", serializar({ ...dato(), series: [{ date: consulta.desde, presentations: [{
+            variety: "Cavendish", caliber: "G", country: "ECUADOR", measure_unit: "KG", prices: null,
+        }] }] })],
     ])("reemplaza una caché con %s por la respuesta del servicio", async (_motivo, guardado) => {
         sembrar(clave(), guardado);
         const historico = dato();
@@ -253,8 +292,6 @@ describe("obtenerHistoricoPrecios", () => {
     });
 
     it.each([
-        ["producto", { ...consulta, speciesId: 61 }],
-        ["clasificación", { ...consulta, classificationId: 3 }],
         ["fecha desde", { ...consulta, desde: "2025-09-30" }],
         ["fecha hasta", { ...consulta, hasta: "2025-11-01" }],
     ])("guarda y reutiliza los datos recibidos aunque difiera %s de la consulta", async (_campo, parametros) => {
@@ -269,6 +306,22 @@ describe("obtenerHistoricoPrecios", () => {
         expect(consultar).toHaveBeenCalledOnce();
         expect(creaciones).toHaveBeenCalledOnce();
         expect(actualizaciones).not.toHaveBeenCalled();
+    });
+
+    it("rechaza una respuesta remota de otra especie sin guardarla", async () => {
+        consultar.mockResolvedValueOnce(dato({ ...consulta, speciesId: 61 })).mockResolvedValueOnce(dato());
+
+        await expect(obtenerHistoricoPrecios(consulta)).rejects.toThrow("inválida en species_id:");
+        expect(leer(clave())).toBeNull();
+        expect(creaciones).not.toHaveBeenCalled();
+        expect(actualizaciones).not.toHaveBeenCalled();
+
+        await expect(obtenerHistoricoPrecios(consulta)).resolves.toEqual(dato());
+        await expect(obtenerHistoricoPrecios(consulta)).resolves.toEqual(dato());
+
+        expect(consultar).toHaveBeenCalledTimes(2);
+        expect(creaciones).toHaveBeenCalledOnce();
+        expect(JSON.parse(leer(clave())!)).toEqual({ version: 1, historico: dato() });
     });
 
     it("guarda sin modificar y reutiliza los precios cuyo mínimo supera al máximo por kg y unidad", async () => {
@@ -302,6 +355,24 @@ describe("obtenerHistoricoPrecios", () => {
         expect(consultar).toHaveBeenCalledTimes(2);
         expect(transacciones).toHaveBeenCalledTimes(2);
         expect(creaciones).toHaveBeenCalledOnce();
+    });
+
+    it("permite recuperar una caché corrupta cuando el servicio vuelve a responder", async () => {
+        const corrupta = serializar({ ...dato(), series: null });
+        sembrar(clave(), corrupta);
+        consultar.mockRejectedValueOnce(new Error("Servicio no disponible")).mockResolvedValueOnce(dato());
+
+        await expect(obtenerHistoricoPrecios(consulta)).rejects.toThrow("Servicio no disponible");
+        expect(leer(clave())).toBe(corrupta);
+        expect(actualizaciones).not.toHaveBeenCalled();
+
+        await expect(obtenerHistoricoPrecios(consulta)).resolves.toEqual(dato());
+        await expect(obtenerHistoricoPrecios(consulta)).resolves.toEqual(dato());
+
+        expect(consultar).toHaveBeenCalledTimes(2);
+        expect(actualizaciones).toHaveBeenCalledOnce();
+        expect(creaciones).not.toHaveBeenCalled();
+        expect(JSON.parse(leer(clave())!)).toEqual({ version: 1, historico: dato() });
     });
 
     it.each(["sin días", "sin presentaciones"])("guarda y reutiliza un histórico válido %s", async (caso) => {
@@ -342,7 +413,6 @@ describe("obtenerHistoricoPrecios", () => {
     });
 
     it.each([
-        ["clasificación inválida", { ...consulta, classificationId: 0 }],
         ["producto no entero", { ...consulta, speciesId: 1.5 }],
         ["fecha inexistente", { ...consulta, desde: "2025-02-30" }],
         ["fecha sin formato ISO", { ...consulta, hasta: "31/10/2025" }],

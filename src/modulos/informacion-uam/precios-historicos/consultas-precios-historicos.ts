@@ -3,6 +3,7 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import { consultarHistorico } from "./cliente-webservice";
 import { validarParametrosConsulta, type ConsultaHistorica } from "./parametros-consulta";
 import type { HistoricoProducto } from "./tipos";
+import { validarHistoricoProducto } from "./validar-historico";
 
 function baseUrlWebservice(): string {
     const baseUrl = process.env.PRECIOS_REFERENCIA_WEBSERVICE_BASE_URL?.trim();
@@ -20,12 +21,12 @@ function baseUrlWebservice(): string {
     return url.toString().replace(/\/+$/, "");
 }
 
-function leerCache(serializado: string | undefined): HistoricoProducto | null {
+function leerCache(serializado: string | undefined, consulta: ConsultaHistorica): HistoricoProducto | null {
     if (!serializado) return null;
     try {
         const estado: unknown = JSON.parse(serializado);
         if (estado === null || typeof estado !== "object" || !("version" in estado) || estado.version !== 1 || !("historico" in estado)) return null;
-        return estado.historico as HistoricoProducto;
+        return validarHistoricoProducto(estado.historico, consulta);
     } catch {
         return null;
     }
@@ -36,11 +37,11 @@ export async function obtenerHistoricoPrecios(consulta: ConsultaHistorica): Prom
     const baseUrl = baseUrlWebservice();
     const endpoint = process.env.PRECIOS_HISTORICOS_ENDPOINT?.trim() ?? "";
     const hash = createHash("sha256").update(JSON.stringify([
-        baseUrl, endpoint, consulta.classificationId, consulta.speciesId, consulta.desde, consulta.hasta,
+        baseUrl, endpoint, consulta.speciesId, consulta.desde, consulta.hasta,
     ])).digest();
     const nombreConfiguracion = `precios-historicos:v1:${hash.toString("hex")}`;
     const registroInicial = await db.orm.public.Configuracion.where({ nombreConfiguracion }).first();
-    const guardado = leerCache(registroInicial?.valorConfiguracion);
+    const guardado = leerCache(registroInicial?.valorConfiguracion, consulta);
     if (guardado) return guardado;
 
     return db.transaction(async (tx) => {
@@ -50,11 +51,11 @@ export async function obtenerHistoricoPrecios(consulta: ConsultaHistorica): Prom
                 .build(),
         );
         const registro = await tx.orm.public.Configuracion.where({ nombreConfiguracion }).first();
-        const cache = leerCache(registro?.valorConfiguracion);
+        const cache = leerCache(registro?.valorConfiguracion, consulta);
         if (cache) return cache;
 
         const token = process.env.PRECIOS_REFERENCIA_JWT_TOKEN?.trim() ?? "";
-        const historico = await consultarHistorico({ baseUrl, token }, consulta);
+        const historico = validarHistoricoProducto(await consultarHistorico({ baseUrl, token }, consulta), consulta);
         const valorConfiguracion = JSON.stringify({ version: 1, historico });
         if (registro) {
             await tx.orm.public.Configuracion.where({ id: registro.id }).update({ valorConfiguracion });
