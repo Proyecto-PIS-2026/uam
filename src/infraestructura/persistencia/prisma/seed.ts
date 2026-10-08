@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 import "temporal-polyfill/full/global";
 import "temporal-polyfill/types/global";
@@ -211,8 +211,9 @@ function archivosGenericos(): Set<string> {
   }
 }
 
-function fotoGenerica(nombreEspecie: string, archivos: Set<string>): string | null {
-  const base = nombreEspecie.toLocaleLowerCase("es")
+function fotoEspecie(nombreEspecie: string,archivos: Set<string>): string | null {
+  const base = nombreEspecie
+    .toLocaleLowerCase("es")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
@@ -220,7 +221,12 @@ function fotoGenerica(nombreEspecie: string, archivos: Set<string>): string | nu
 
   for (const extension of [".webp", ".png", ".jpg"]) {
     const archivo = `${base}${extension}`;
-    if (archivos.has(archivo)) return `/generico/${archivo}`;
+    if (!archivos.has(archivo)) {
+      continue;
+    }
+    const contenido = readFileSync(new URL(`../../../../public/generico/${archivo}`, import.meta.url));
+    const tipo = extension === ".jpg" ? "jpeg" : extension.slice(1);
+    return `data:image/${tipo};base64,${contenido.toString("base64")}`;
   }
   return null;
 }
@@ -380,7 +386,7 @@ async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, nu
 
   for (const tipo of consulta.types) {
     for (const producto of tipo.products) {
-      const foto = fotoGenerica(producto.species, archivos);
+      const foto = fotoEspecie(producto.species, archivos);
       const especie = await prisma.orm.public.Especie.create({
         uamId: producto.species_id,
         nombreEspecie: producto.species,
@@ -535,9 +541,10 @@ async function main() {
     if (!oferta.active) inactivas++;
   }
 
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "incremento_precio", valorConfiguracion: "10" });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "fecha_consulta_catalogo", valorConfiguracion: consulta.survey_date });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf"});
+  await prisma.orm.public.Configuracion.create({nombreConfiguracion: "incremento_precio", valorConfiguracion: "10"});
+  await prisma.orm.public.Configuracion.create({nombreConfiguracion: "vigencia_fotografias", valorConfiguracion: "30"});
+  await prisma.orm.public.Configuracion.create({nombreConfiguracion: "fecha_consulta_catalogo", valorConfiguracion: consulta.survey_date});
+  await prisma.orm.public.Configuracion.create({nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf",});
 
   console.table({
     especies: consulta.types.reduce((total, tipo) => total + tipo.products.length, 0),

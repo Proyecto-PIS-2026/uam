@@ -10,7 +10,7 @@
     padding: var(--padding-titulo-pagina);
     border: 1px solid var(--color-border);
     border-radius: 0.75rem;
-    background-color: var(--background);
+    background-color: var(--color-surface);
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
 }
 
@@ -34,9 +34,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-
     width: 100%;
-
     color: var(--color-foreground);
     font-size: 0.85rem;
     font-weight: 500;
@@ -46,17 +44,12 @@
     width: 100%;
     min-width: 0;
     height: 2.5rem;
-
     padding: 0 0.75rem;
-
     box-sizing: border-box;
-
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
-
     background-color: var(--color-surface);
     color: var(--color-foreground);
-
     font-size: 0.85rem;
 }
 
@@ -73,18 +66,15 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-
     color: var(--color-foreground);
     font-size: 0.85rem;
     font-weight: 500;
-
     cursor: pointer;
 }
 
 .checkbox input {
     width: 1rem;
     height: 1rem;
-
     accent-color: var(--color-primary);
     cursor: pointer;
 }
@@ -100,10 +90,73 @@
 
 .mensajeError {
     margin: 0;
-
     color: #d32f2f;
-
     font-size: 0.75rem;
     font-weight: 500;
     line-height: 1.2;
+}
+
+.selectMui {
+    width: 100%;
+    min-width: 0;
+}
+
+.selectMui :global(.MuiOutlinedInput-root) {
+    background-color: var(--color-surface);
+}
+
+.selectMui :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.selectMui :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputBase-input) {
+    color: var(--color-foreground);
+}
+
+.opcionSelect:global(.Mui-selected) {
+    background-color: var(--color-primary-soft) !important;
+}
+
+.contenedorEdicion {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.accionesEdicion {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.botonAccion,
+.botonGuardar,
+.botonDescartar {
+    flex-shrink: 0;
+}
+
+.botonAccion {
+    color: var(--color-primary) !important;
+}
+
+.botonGuardar {
+    color: var(--color-primary) !important;
+}
+
+.botonDescartar {
+    color: #d32f2f !important;
 }

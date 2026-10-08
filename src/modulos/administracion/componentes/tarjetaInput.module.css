@@ -1,0 +1,146 @@
+.tarjeta {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    padding: var(--padding-titulo-pagina);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background-color: var(--color-surface);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+}
+
+.titulo {
+    margin: 0;
+    color: var(--color-secondary);
+    font-family: inherit;
+    font-size: 1.5rem;
+    line-height: var(--interlineado-titulo-pagina);
+    font-weight: 700;
+}
+
+.descripcion {
+    margin: 0;
+    color: #4b5563;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.contenedorEdicion {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.selectMui {
+    flex: 1;
+    min-width: 0;
+}
+
+.selectMui :global(.MuiOutlinedInput-root) {
+    background-color: var(--color-surface);
+}
+
+.selectMui :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.selectMui
+    :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectMui
+    :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputBase-input) {
+    color: var(--color-foreground);
+}
+
+.selectMui :global(.MuiInputBase-root.Mui-disabled) {
+    background-color: var(--color-surface);
+}
+
+.selectMui :global(.MuiInputBase-input.Mui-disabled) {
+    -webkit-text-fill-color: var(--color-foreground);
+    color: var(--color-foreground);
+    opacity: 1;
+}
+
+.selectMui
+    :global(.MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.selectMui :global(.MuiInputLabel-root.Mui-disabled) {
+    color: var(--color-muted);
+}
+
+.accionesEdicion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.botonAccion,
+.botonGuardar,
+.botonDescartar {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    transition:
+        transform 0.35s ease,
+        background-color 0.35s ease !important;
+}
+
+.botonAccion {
+    background-color: var(--color-primary-soft) !important;
+    color: var(--color-primary) !important;
+}
+
+.botonGuardar {
+    background-color: var(--color-primary-soft) !important;
+    color: var(--color-primary) !important;
+}
+
+.botonDescartar {
+    background-color: rgb(239 68 68 / 10%) !important;
+    color: #dc2626 !important;
+}
+
+.botonAccion:hover,
+.botonGuardar:hover,
+.botonDescartar:hover {
+    transform: scale(1.06);
+}
+
+.botonAccion:hover,
+.botonGuardar:hover {
+    background-color: var(--color-primary-soft) !important;
+}
+
+.botonDescartar:hover {
+    background-color: rgb(239 68 68 / 18%) !important;
+}
+
+@media (max-width: 700px) {
+    .contenedorEdicion {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .accionesEdicion {
+        align-self: flex-end;
+    }
+}

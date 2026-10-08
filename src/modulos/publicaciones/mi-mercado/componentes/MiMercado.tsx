@@ -275,6 +275,16 @@ export default function MiMercado({
         return ordenActual === "alfabeticoDesc" ? -comparacion : comparacion;
     });
 
+    function actualizarPrecioLocal(publicacionId: number, nuevoPrecio: number) {
+        setListadoRecargado((actual) => {
+            const datosActuales = actual?.origen === publicaciones ? actual.datos : publicaciones;
+            return {
+                origen: publicaciones,
+                datos: datosActuales.map((publicacion) => publicacion.id === publicacionId ? { ...publicacion, precio: String(nuevoPrecio)} : publicacion),
+            };
+        });
+    }
+
     return (
         <main className="relative isolate min-h-screen bg-background">
             {/* <HojasDecorativas variante="fondo" /> */}
@@ -380,7 +390,7 @@ export default function MiMercado({
                                                         incrementoPrecio
                                                     }
                                                     alConsultar={consultarPublicacion}
-                                                    alPrecioActualizado={sincronizarPublicaciones}
+                                                    alPrecioActualizado={actualizarPrecioLocal}
                                                 />
                                             ))}
                                         </div>
@@ -396,7 +406,7 @@ export default function MiMercado({
                                         operadorId={operadorId}
                                         incrementoPrecio={incrementoPrecio}
                                         alConsultar={consultarPublicacion}
-                                        alPrecioActualizado={sincronizarPublicaciones}
+                                        alPrecioActualizado={actualizarPrecioLocal}
                                     />
                                 ))}
                             </div>

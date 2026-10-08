@@ -4,41 +4,63 @@ import { useRef, useState } from "react";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "./MiMercado";
 import { actualizarPrecio } from "../acciones";
+import styles from "./TarjetaPublicacion.module.css";
 
 type Props = {
     pub: Publicacion;
     operadorId: number;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
-    alPrecioActualizado?: () => void | Promise<Publicacion[] | false>;
+    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number) => void;
 };
 
-export default function TarjetaPublicacion({
-    pub,
-    operadorId,
-    incrementoPrecio,
-    alConsultar,
-    alPrecioActualizado,
-}: Props) {
+export default function TarjetaPublicacion({pub, operadorId, incrementoPrecio, alConsultar, alPrecioActualizado}: Props) {
     let precioInicial = 0;
-
     if (Number(pub.precio)) {
         precioInicial = Number(pub.precio);
     }
-
     const [precioGuardado, setPrecioGuardado] = useState({ base: pub.precio, valor: precioInicial });
     const precio = precioGuardado.base === pub.precio ? precioGuardado.valor : precioInicial;
     const [guardandoPrecio, setGuardandoPrecio] = useState(false);
     const [errorPrecio, setErrorPrecio] = useState("");
+    const precioPendienteRef = useRef(precioInicial);
+    const precioConfirmadoRef = useRef(precioInicial);
     const guardandoPrecioRef = useRef(false);
-
     const [editandoPrecio, setEditandoPrecio] = useState(false);
-    const [precioTemporal, setPrecioTemporal] = useState(
-        String(precioInicial)
-    );
+    const [precioTemporal, setPrecioTemporal] = useState(String(precioInicial));
 
-    async function cambiarPrecio(nuevoPrecio: number) {
-        if (guardandoPrecioRef.current) return;
+    async function guardarPrecioPendiente() {
+        if (guardandoPrecioRef.current) {
+            return;
+        }
+        guardandoPrecioRef.current = true;
+        setGuardandoPrecio(true);
+        try {
+            while (precioPendienteRef.current !== precioConfirmadoRef.current) {
+                const precioAGuardar =precioPendienteRef.current;
+                try {
+                    await actualizarPrecio(pub.id, precioAGuardar, operadorId);
+                    precioConfirmadoRef.current = precioAGuardar;
+                    if (precioPendienteRef.current === precioAGuardar) {
+                        alPrecioActualizado?.(pub.id, precioAGuardar);
+                    }
+                    setErrorPrecio("");
+                } catch (error) {
+                    const precioAnterior = precioConfirmadoRef.current;
+                    precioPendienteRef.current = precioAnterior;
+                    setPrecioGuardado({ base: pub.precio, valor: precioAnterior });
+                    alPrecioActualizado?.(pub.id, precioAnterior);
+                    setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
+                    break;
+                }
+            }
+        } finally {
+            guardandoPrecioRef.current = false;
+            setGuardandoPrecio(false);
+        }
+    }
+
+    function cambiarPrecio(nuevoPrecio: number) {
         if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) {
             setErrorPrecio("El precio debe ser un número mayor a cero.");
             return;
@@ -47,50 +69,27 @@ export default function TarjetaPublicacion({
             setErrorPrecio("El precio debe ser un número entero, sin decimales.");
             return;
         }
-
-        guardandoPrecioRef.current = true;
-        setGuardandoPrecio(true);
         setErrorPrecio("");
-        try {
-            await actualizarPrecio(pub.id, nuevoPrecio, operadorId);
-            setPrecioGuardado({ base: pub.precio, valor: nuevoPrecio });
-            alPrecioActualizado?.();
-        } catch (error) {
-            if (error instanceof Error && error.message === "La publicación no existe o no pertenece al operador.") {
-                try {
-                    const actuales = await alPrecioActualizado?.();
-                    if (Array.isArray(actuales) && !actuales.some((publicacion) => publicacion.id === pub.id)) return;
-                } catch {
-                    setErrorPrecio(error.message);
-                    return;
-                }
-            }
-            setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
-        } finally {
-            guardandoPrecioRef.current = false;
-            setGuardandoPrecio(false);
-        }
+        precioPendienteRef.current = nuevoPrecio;
+        setPrecioGuardado({  base: pub.precio, valor: nuevoPrecio });
+        void guardarPrecioPendiente();
     }
 
     function consultarPublicacion() {
-        if (guardandoPrecioRef.current) return;
-        alConsultar?.({ ...pub, precio: pub.precio === null && precio === 0 ? null : String(precio) });
+        alConsultar?.({ ...pub, precio: pub.precio === null && precio === 0 ? null : String(precio)});
     }
 
     function restar() {
-        const nuevoPrecio = Math.max(
-            0,
-            precio - incrementoPrecio
-        );
-
-        void cambiarPrecio(nuevoPrecio);
+        const nuevoPrecio = precio - incrementoPrecio;
+        if (nuevoPrecio <= 0) {
+            return;
+        }
+        cambiarPrecio(nuevoPrecio);
     }
 
     function sumar() {
-        const nuevoPrecio =
-            precio + incrementoPrecio;
-
-        void cambiarPrecio(nuevoPrecio);
+        const nuevoPrecio = precio + incrementoPrecio;
+        cambiarPrecio(nuevoPrecio);
     }
 
     function comenzarEdicionPrecio() {
@@ -100,26 +99,18 @@ export default function TarjetaPublicacion({
 
     function guardarPrecioManual() {
         const texto = precioTemporal.trim();
-
         if (texto === "") {
             setPrecioTemporal(String(precio));
             setEditandoPrecio(false);
             return;
         }
-
         const nuevoPrecio = Number(texto);
-
-        if (
-            !Number.isInteger(nuevoPrecio) ||
-            nuevoPrecio <= 0 ||
-            nuevoPrecio === precio
-        ) {
+        if (!Number.isInteger(nuevoPrecio) || nuevoPrecio <= 0 || nuevoPrecio === precio) {
             setPrecioTemporal(String(precio));
             setEditandoPrecio(false);
             return;
         }
-
-        void cambiarPrecio(nuevoPrecio);
+        cambiarPrecio(nuevoPrecio);
         setEditandoPrecio(false);
     }
 
@@ -128,270 +119,89 @@ export default function TarjetaPublicacion({
         setEditandoPrecio(false);
     }
 
-    const variedad =
-        pub.presentacion.variedad.nombreVariedad;
+    const variedad = pub.presentacion.variedad.nombreVariedad;
+    const especie = pub.presentacion.variedad.especie.nombreEspecie;
+    const presentacion = pub.presentacion.nombrePresentacion;
+    const categoria = pub.categoria.nombreCategoria;
+    const calibre = pub.calibre.nombreCalibre;
+    const tieneVariedad = variedad && variedad.trim() !== "" && variedad.trim() !== "-";
+    const nombreProducto = tieneVariedad ? `${especie} · ${variedad}` : especie;
 
-    const especie =
-        pub.presentacion.variedad.especie.nombreEspecie;
-
-    const presentacion =
-        pub.presentacion.nombrePresentacion;
-
-    const categoria =
-        pub.categoria.nombreCategoria;
-
-    const calibre =
-        pub.calibre.nombreCalibre;
-
-    const tieneVariedad =
-        variedad &&
-        variedad.trim() !== "" &&
-        variedad.trim() !== "-";
-
-    const nombreProducto = tieneVariedad
-        ? `${especie} · ${variedad}`
-        : especie;
-
-    return (
-            <div
-                className="
-                    flex min-h-28 overflow-hidden
-                    rounded-2xl border border-border
-                    bg-surface shadow-sm
-
-                    md:min-h-0
-                    md:flex-col
-                    md:transition-all
-                    md:duration-150
-                    md:hover:-translate-y-0.5
-                    md:hover:border-primary
-                    md:hover:shadow-md
-                "
-            >
-                {/* Foto */}
-                <button
-                    type="button"
-                    onClick={consultarPublicacion}
-                    className="
-                        relative w-28 shrink-0
-                        overflow-hidden
-                        bg-primary-soft
-                        text-left
-                        sm:w-32
-                        md:aspect-[8/5]
-                        md:w-full
-                    "
-                    aria-label={`Ver detalle de ${nombreProducto}`}
-                >
-                    <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(min-width: 768px) 320px, 128px" unoptimized className="h-full w-full object-cover" reemplazo={
-                        <div
-                            className="
-                                flex h-full min-h-28
-                                items-center justify-center
-                                bg-primary-soft
-                                px-2 text-center
-                                text-xs font-medium
-                                text-secondary
-                            "
-                        >
-                            Sin fotografía
-                        </div>
-                    } />
-                </button>
-
-                {/* Contenido */}
-                <div className="flex min-w-0 flex-1 flex-col">
-
-                    {/* Información clickeable */}
-                    <button
-                        type="button"
-                        onClick={consultarPublicacion}
-                        className="
-                            flex min-w-0 flex-1
-                            text-left
-                            hover:bg-primary-soft/30
-                        "
-                    >
-                        <div
-                            className="
-                                flex min-w-0 flex-1
-                                flex-col p-3
-                                sm:p-4
-                                md:p-3
-                            "
-                        >
-                            {/* Nombre + estado */}
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-
-                                <h3
-                                    className="
-                                        min-w-0 flex-1
-                                        text-base font-bold
-                                        leading-tight
-                                        text-foreground
-                                        md:text-[1rem]
-                                    "
-                                    title={nombreProducto}
-                                >
-                                    {nombreProducto}
-                                </h3>
-
-                                <span
-                                    className={`
-                                        w-fit shrink-0 rounded-full
-                                        px-2 py-1
-                                        text-[10px] font-bold
-                                        ${
-                                            pub.publicacionDisponible
-                                                ? "bg-primary-soft text-secondary"
-                                                : "bg-gray-100 text-muted"
-                                        }
-                                    `}
-                                >
-                                    {pub.publicacionDisponible
-                                        ? "Disponible"
-                                        : "No disponible"}
-                                </span>
+    const contenido = (
+        <div className={styles.tarjeta}>
+            {/* Foto */}
+            <button type="button" onClick={consultarPublicacion} className={styles.botonFoto} aria-label={`Ver detalle de ${nombreProducto}`}>
+                <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(min-width: 768px) 320px, 128px" unoptimized className={styles.foto} reemplazo={<div className={styles.sinFoto}>Sin fotografía</div>}/>
+            </button>
+            {/* Contenido */}
+            <div className={styles.contenido}>
+                {/* Información clickeable */}
+                <button type="button" onClick={consultarPublicacion} className={styles.botonInformacion}>
+                    <div className={styles.informacion}>
+                        {/* Nombre + estado */}
+                        <div className={styles.encabezadoProducto}>
+                            <div className={styles.nombreProducto} title={nombreProducto}>
+                                {nombreProducto}
                             </div>
-
-                            {/* Datos */}
-                            <p className="mt-2 text-xs leading-5 text-muted">
-                                {calibre || "-"}
-                                {" · "}
-                                Cat. {categoria || "-"}
-                                {" · "}
-                                {presentacion || "-"}
-                            </p>
+                            <span className={`${styles.estado} ${pub.publicacionDisponible ? styles.disponible : styles.noDisponible}`}>
+                                {pub.publicacionDisponible ? "Disponible" : "No disponible"}
+                            </span>
                         </div>
-                    </button>
-
-                    {/* Precio */}
-                    <div
-                        className="
-                            flex items-center
-                            justify-between
-                            border-t border-border
-                            px-3 py-2.5
-                        "
-                    >
-                        <div className="flex items-center gap-2">
-
-                            <button
-                                type="button"
-                                className="
-                                    flex h-8 w-8
-                                    items-center justify-center
-                                    rounded-lg
-                                    bg-secondary
-                                    text-xl font-bold
-                                    text-white
-                                    transition
-                                    hover:bg-primary-hover
-                                "
-                                onClick={restar}
-                                disabled={guardandoPrecio}
-                                aria-label="Disminuir precio"
-                            >
-                                −
-                            </button>
-
-                            {editandoPrecio ? (
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={10}
-                                    value={precioTemporal}
-                                    onChange={(e) => {
-                                        if (/^\d{0,10}$/.test(e.target.value)) setPrecioTemporal(e.target.value);
-                                    }}
-                                    onBlur={
-                                        guardarPrecioManual
-                                    }
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                            e.preventDefault();
-                                            guardarPrecioManual();
-                                        }
-
-                                        if (e.key === "Escape") {
-                                            e.preventDefault();
-                                            cancelarEdicionPrecio();
-                                        }
-                                    }}
-                                    className="
-                                        box-border h-8 w-20 rounded-lg
-                                        border border-primary
-                                        bg-surface
-                                        px-2 py-0
-                                        text-center
-                                        text-lg font-extrabold
-                                        text-foreground
-                                        outline-none
-                                        focus:ring-2
-                                        focus:ring-primary/20
-                                    "
-                                    aria-label="Editar precio"
-                                />
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={
-                                        comenzarEdicionPrecio
-                                    }
-                                    disabled={guardandoPrecio}
-                                    className="
-                                        min-w-16
-                                        cursor-text
-                                        text-center
-                                        text-xl font-extrabold
-                                        text-foreground
-                                        hover:underline
-                                    "
-                                    title="Editar precio"
-                                >
-                                    {precio === 0
-                                        ? "Sin precio"
-                                        : `$${precio}`}
-                                </button>
-                            )}
-
-                            <button
-                                type="button"
-                                className="
-                                    flex h-8 w-8
-                                    items-center justify-center
-                                    rounded-lg
-                                    bg-secondary
-                                    text-xl font-bold
-                                    text-white
-                                    transition
-                                    hover:bg-primary-hover
-                                "
-                                onClick={sumar}
-                                disabled={guardandoPrecio}
-                                aria-label="Aumentar precio"
-                            >
-                                +
-                            </button>
+                        {/* Datos */}
+                        <div className={styles.datos}>
+                            {calibre || "-"}
+                            {" · "}
+                            Cat. {categoria || "-"}
+                            {" · "}
+                            {presentacion || "-"}
                         </div>
-
-                        <button
-                            type="button"
-                            onClick={consultarPublicacion}
-                            className="
-                                text-xl font-bold
-                                text-secondary
-                                hover:text-primary
-                            "
-                            aria-label={`Ver detalle de ${nombreProducto}`}
-                        >
-                            ›
+                    </div>
+                </button>
+                {/* Precio */}
+                <div className={styles.contenedorPrecio}>
+                    <div className={styles.controlesPrecio}>
+                        <button type="button" className={styles.botonPrecio} onClick={restar} aria-label="Disminuir precio">
+                            −
+                        </button>
+                        {editandoPrecio ? (
+                            <input autoFocus type="text" inputMode="numeric" maxLength={10} value={precioTemporal} className={styles.inputPrecio} aria-label="Editar precio"
+                                onChange={(e) => {
+                                    if (/^\d{0,10}$/.test(e.target.value)) {
+                                        setPrecioTemporal(e.target.value);
+                                    }
+                                }}
+                                onBlur={guardarPrecioManual}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        guardarPrecioManual();
+                                    }
+                                    if (e.key === "Escape") {
+                                        e.preventDefault();
+                                        cancelarEdicionPrecio();
+                                    }
+                                }}
+                            />
+                        ) : (
+                            <button type="button" onClick={comenzarEdicionPrecio} disabled={guardandoPrecio} className={styles.precio} title="Editar precio">
+                                {precio === 0 ? "Sin precio" : `$${precio}`}
+                            </button>
+                        )}
+                        <button type="button" className={styles.botonPrecio} onClick={sumar} aria-label="Aumentar precio">
+                            +
                         </button>
                     </div>
-                    {errorPrecio && <p role="alert" className="px-3 pb-3 text-sm text-red-800">{errorPrecio}</p>}
+                    <button type="button" onClick={consultarPublicacion} className={styles.botonDetalle} aria-label={`Ver detalle de ${nombreProducto}`}>
+                        ›
+                    </button>
                 </div>
+                {errorPrecio && (
+                    <div role="alert" className={styles.errorPrecio}>
+                        {errorPrecio}
+                    </div>
+                )}
             </div>
-
+        </div>
     );
+    return contenido; 
 }
