@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
+import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
+import type { PublicacionListado } from "../../../../consulta-mercado/acciones/Publicaciones";
 import { compararEspeciesPorPrioridad } from "../../../../../compartido/prioridad-especies";
-import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones, type PublicacionListado } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
 import DrawerPublicacionPerfil from "./DrawerPublicacionPerfil";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import styles from "./CatalogoOperador.module.css";
