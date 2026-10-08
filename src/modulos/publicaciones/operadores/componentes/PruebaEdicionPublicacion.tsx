@@ -39,6 +39,7 @@ function crearPublicacionInicial(opciones: OpcionesEdicionPublicacion): Publicac
             especie: especie.nombre,
             variedad: variedad.nombre,
             precio: "180",
+            fecha: "2026-10-03T15:00:00.000Z",
             foto: null,
             categoriaId: categoria.id,
             calibreId: calibre.id,

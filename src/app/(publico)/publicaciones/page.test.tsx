@@ -32,6 +32,7 @@ function crearPublicacion(id: number): PublicacionListado {
 		id,
 		precio: 150,
 		foto: null,
+		fecha: "2026-10-03T15:00:00.000Z",
 		especie: `Producto ${id}`,
 		variedad: "-",
 		presentacion: "Cajón",

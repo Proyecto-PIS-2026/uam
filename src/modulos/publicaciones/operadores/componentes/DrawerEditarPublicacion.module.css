@@ -39,12 +39,33 @@
     border-bottom: 1px solid var(--color-border);
 }
 
+.bloqueSuperior {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem; 
+}
+
 .titulo {
-    margin: 0;
     font-size: 1.375rem;
     font-weight: 700;
     line-height: 1.3;
 }
+
+.informacionDetallada {
+    display: flex;
+    gap: 0.5rem; 
+}
+
+.nombreInformacion,
+.valorInformacion {
+    overflow: hidden;
+    font-size: 1rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-muted);
+}
+
 
 .cerrar {
     display: inline-flex;
