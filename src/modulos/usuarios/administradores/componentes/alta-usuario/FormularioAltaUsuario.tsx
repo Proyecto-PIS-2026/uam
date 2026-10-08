@@ -6,12 +6,12 @@ import { useSearchParams } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 import type { NaveOpcion } from "./obtenerNaves";
+const ROLES_VALIDOS = ["operador", "productor", "administrador"];
 
 export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }) {
-    const searchParams = useSearchParams();
-    const rolInicial = searchParams.get("rol");
-
-    const [rol, setRol] = useState(rolInicial === "operador" ? "operador" : "");
+    const searchParams = useSearchParams();    
+    const rolInicial = searchParams.get("rol") ?? "";
+    const [rol, setRol] = useState(ROLES_VALIDOS.includes(rolInicial) ? rolInicial : "");
     const [nombreUsuario, setNombreUsuario] = useState("");
     const [contraseña, setContraseña] = useState("");
     const [confirmacioncontraseña, setConfirmacionContraseña] = useState("");
@@ -26,14 +26,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const [enviando, setEnviando] = useState(false);
     const [mensajeVisible, setMensajeVisible] = useState(false);
     const [mostrarPopup, setMostrarPopup] = useState(false);
-
-    useEffect(() => {
-        const rolInicial = searchParams.get("rol");
-
-        if (rolInicial === "operador") {
-            setRol("operador");
-        }
-    }, [searchParams]);
 
     useEffect(() => {
     if (!mensajeExito) return;
