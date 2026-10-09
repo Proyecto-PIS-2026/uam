@@ -12,6 +12,15 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
         .where({ operadorId })
         .include("publicacion", (pub) =>
             pub
+                .select(
+                    "id",
+                    "foto",
+                    "precio",
+                    "cantidadUnidades",
+                    "fecha",
+                    "publicacionActiva",
+                    "publicacionDisponible",
+                )
                 .include("presentacion", (pres) =>
                     pres.include("variedad", (variedad) =>
                         variedad.include("especie"))
