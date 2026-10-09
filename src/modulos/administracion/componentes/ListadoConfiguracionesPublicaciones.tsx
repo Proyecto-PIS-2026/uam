@@ -3,21 +3,15 @@
 import { useState } from "react";
 
 import TarjetaInput from "./tarjetaInput";
-import TarjetaUploadFotoEspecie from "./tarjetaUploadFotoEspecie";
-import type { Especie } from "./tarjetaUploadFotoEspecie";
 
 interface ListadoConfiguracionesProps {
     configuracion: Record<string, string | null>;
-    especies: Especie[];
 }
 
 const IMPORTE_POR_DEFECTO = "10";
 
-export default function ListadoConfiguraciones({ configuracion, especies }: ListadoConfiguracionesProps) {
+export default function ListadoConfiguraciones({ configuracion }: ListadoConfiguracionesProps) {
     const [importe, setImporte] = useState(configuracion.incremento_precio ?? "");
-    const [vigencia, setVigencia] = useState(configuracion.vigencia_fotografias ?? "");
-    const [especieId, setEspecieId] = useState("");
-    const [especiesLocales, setEspeciesLocales] = useState(especies);
 
     async function guardarConfiguracion(nombre: string, valor: string,): Promise<string> {
         const respuesta = await fetch(
@@ -51,51 +45,8 @@ export default function ListadoConfiguraciones({ configuracion, especies }: List
         setImporte(valorGuardado);
     }
 
-    async function guardarFotoEspecie(especieId: number, archivo: File) {
-        const formulario = new FormData();
-        formulario.append("fotografia", archivo);
-        const respuesta = await fetch(
-            `/api/especies/${especieId}/foto`,
-            {
-                method: "PATCH",
-                body: formulario,
-            },
-        );
-        const datos = await respuesta.json();
-        if (!respuesta.ok) {
-            throw new Error(
-                datos.errores?.[0] ?? "No se pudo guardar la fotografía.",
-            );
-        }
-        setEspeciesLocales((anteriores) => anteriores.map((especie) => especie.id === especieId ? { ...especie, fotoEspecie: datos.fotoEspecie } : especie));
-    }
-
-    async function eliminarFotoEspecie(especieId: number) {
-        const respuesta = await fetch(
-            `/api/especies/${especieId}/foto`,
-            {
-                method: "DELETE",
-            },
-        );
-        const datos = await respuesta.json();
-        if (!respuesta.ok) {
-            throw new Error(
-                datos.errores?.[0] ?? "No se pudo eliminar la fotografía.",
-            );
-        }
-        setEspeciesLocales((anteriores) => anteriores.map((especie) => especie.id === especieId ? { ...especie, fotoEspecie: null } : especie));
-    }
     const contenido = (
         <div className="flex flex-col gap-6">
-            <TarjetaUploadFotoEspecie
-                titulo="Foto predeterminada por especie"
-                descripcion="Configurá la fotografía predeterminada para cada especie."
-                especies={especiesLocales}
-                especieSeleccionada={especieId}
-                onChangeEspecie={setEspecieId}
-                onGuardarFoto={guardarFotoEspecie}
-                onEliminarFoto={eliminarFotoEspecie}
-            />
             <TarjetaInput
                 titulo="Importe de ajuste rápido de precios"
                 descripcion="Configurá el importe utilizado para aumentar o disminuir rápidamente el precio de una publicación."

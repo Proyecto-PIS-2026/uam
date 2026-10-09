@@ -19,7 +19,7 @@ import styles from "./inicio.module.css";
 
 type EspecieInicio = {
     nombreEspecie: string;
-    fotoEspecie: string | null;
+    fotoGenerica: string | null;
     cantidadOperadores: number;
 };
 
@@ -111,7 +111,7 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                         <>
                             <div className={styles.lista}>
                                 {especiesPagina.map((especie) => (
-                                    <ProductoCard key={especie.nombreEspecie} nombre={especie.nombreEspecie} operadores={especie.cantidadOperadores} imagen={especie.fotoEspecie} />
+                                    <ProductoCard key={especie.nombreEspecie} nombre={especie.nombreEspecie} operadores={especie.cantidadOperadores} imagen={especie.fotoGenerica} />
                                 ))}
                             </div>
 

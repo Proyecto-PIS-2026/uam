@@ -18,8 +18,8 @@ describe("Page (mercado de hoy)", () => {
 
     it("obtiene las especies y se las pasa al componente Inicio", async () => {
         const especiesMock = [
-            { nombreEspecie: "Banana", cantidadOperadores: 3, fotoEspecie: null },
-            { nombreEspecie: "Manzana", cantidadOperadores: 5, fotoEspecie: null },
+            { nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: null },
+            { nombreEspecie: "Manzana", cantidadOperadores: 5, fotoGenerica: null },
         ];
         const urlMock = "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf";
         mockObtenerEspeciesInicio.mockResolvedValue(especiesMock);
