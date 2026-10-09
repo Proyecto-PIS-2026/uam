@@ -1,4 +1,5 @@
 import { test, expect, type Locator } from "@playwright/test";
+import { iniciarSesionOperador } from "./autenticacion";
 
 test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
   test.slow();
@@ -74,6 +75,7 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     await expect(tarjeta(precio)).toHaveCount(0);
   }
 
+  await iniciarSesionOperador(page);
   await page.goto(rutaMercado);
   await expect(
     page.getByRole("heading", { name: "Mi Mercado" }),

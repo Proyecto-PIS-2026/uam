@@ -54,12 +54,14 @@ type Props = {
     nombreOperador?: string;
     abrirAltaInicial?: boolean;
     puedeCrear: boolean;
+    puedeModificar: boolean;
+    puedeEliminar: boolean;
     publicaciones: Publicacion[];
     incrementoPrecio: number;
     opcionesEdicion: OpcionesEdicionPublicacion;
 };
 
-export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaInicial = false, puedeCrear, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
+export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaInicial = false, puedeCrear, puedeModificar, puedeEliminar, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(abrirAltaInicial && puedeCrear);
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(true);
@@ -377,6 +379,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                                     key={pub.id}
                                                     pub={pub}
                                                     operadorId={operadorId}
+                                                    puedeModificar={puedeModificar}
                                                     incrementoPrecio={
                                                         incrementoPrecio
                                                     }
@@ -396,6 +399,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                         key={pub.id}
                                         pub={pub}
                                         operadorId={operadorId}
+                                        puedeModificar={puedeModificar}
                                         incrementoPrecio={incrementoPrecio}
                                         alConsultar={consultarPublicacion}
                                         alPrecioActualizado={sincronizarPublicaciones}
@@ -408,7 +412,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                 )}
             </div>
             {puedeCrear && altaAbierta && <NuevaPublicacion operadorId={operadorId} abierto={altaAbierta} alCerrar={cerrarAlta} alCrear={publicacionCreada} />}
-            <DrawerEditarPublicacion abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }} eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
+            <DrawerEditarPublicacion abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }} eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
                 <ConfirmModal abierto={publicacionPendiente !== null} titulo="Eliminar publicación" descripcion={publicacionPendiente ? `¿Querés eliminar la publicación de ${publicacionPendiente.presentacion.variedad.especie.nombreEspecie}? Esta acción no se puede deshacer.` : ""} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setPublicacionPendiente(null); }} alConfirmar={() => void eliminarPublicacion()} />
             </DrawerEditarPublicacion>
         </main>

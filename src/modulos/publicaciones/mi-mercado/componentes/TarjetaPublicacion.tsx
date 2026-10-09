@@ -8,6 +8,7 @@ import { actualizarPrecio } from "../acciones";
 type Props = {
     pub: Publicacion;
     operadorId: number;
+    puedeModificar: boolean;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
     alPrecioActualizado?: () => void | Promise<Publicacion[] | false>;
@@ -17,6 +18,7 @@ type Props = {
 export default function TarjetaPublicacion({
     pub,
     operadorId,
+    puedeModificar,
     incrementoPrecio,
     alConsultar,
     alPrecioActualizado,
@@ -287,13 +289,13 @@ export default function TarjetaPublicacion({
                                     hover:bg-primary-hover
                                 "
                                 onClick={restar}
-                                disabled={guardandoPrecio}
+                                disabled={guardandoPrecio || !puedeModificar}
                                 aria-label="Disminuir precio"
                             >
                                 −
                             </button>
 
-                            {editandoPrecio ? (
+                            {editandoPrecio && puedeModificar ? (
                                 <input
                                     autoFocus
                                     type="text"
@@ -337,7 +339,7 @@ export default function TarjetaPublicacion({
                                     onClick={
                                         comenzarEdicionPrecio
                                     }
-                                    disabled={guardandoPrecio}
+                                    disabled={guardandoPrecio || !puedeModificar}
                                     className="
                                         min-w-16
                                         cursor-text
@@ -367,7 +369,7 @@ export default function TarjetaPublicacion({
                                     hover:bg-primary-hover
                                 "
                                 onClick={sumar}
-                                disabled={guardandoPrecio}
+                                disabled={guardandoPrecio || !puedeModificar}
                                 aria-label="Aumentar precio"
                             >
                                 +

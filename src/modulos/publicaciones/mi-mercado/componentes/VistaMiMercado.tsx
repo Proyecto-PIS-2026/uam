@@ -26,6 +26,8 @@ export default async function VistaMiMercado({ abrirAltaInicial = false, operado
     if (!operador) notFound();
     if (!autorizado("operador.publicacion.consultarPropias", sesion, operador)) redirect("/inicio");
     const puedeCrear = autorizado("operador.publicacion.crear", sesion, operador);
+    const puedeModificar = autorizado("operador.publicacion.modificar", sesion, operador);
+    const puedeEliminar = autorizado("operador.publicacion.eliminar", sesion, operador);
     if (abrirAltaInicial && !puedeCrear) redirect("/inicio");
     const [publicacionesBD, opcionesEdicion] = await Promise.all([
         obtenerPublicacionesDeOperador(operador.id),
@@ -33,5 +35,5 @@ export default async function VistaMiMercado({ abrirAltaInicial = false, operado
     ]);
     const publicaciones = mapearPublicacionesMiMercado(publicacionesBD);
 
-    return <MiMercado key={operador.id} publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} nombreOperador={operador.nombreFantasia} abrirAltaInicial={abrirAltaInicial} puedeCrear={puedeCrear} />;
+    return <MiMercado key={operador.id} publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} nombreOperador={operador.nombreFantasia} abrirAltaInicial={abrirAltaInicial} puedeCrear={puedeCrear} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} />;
 }

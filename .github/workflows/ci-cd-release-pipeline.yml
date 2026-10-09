@@ -61,7 +61,11 @@ jobs:
         run: npm run build
 
       - name: Iniciar servidor y ejecutar Tests E2E (Playwright)
+        env:
+          E2E_OPERADOR_USU: ${{ secrets.E2E_OPERADOR_USU }}
+          E2E_OPERADOR_PASS: ${{ secrets.E2E_OPERADOR_PASS }}
         run: |
+          export SESSION_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
           npm run start &
           npx wait-on http://localhost:3000 --timeout 60000
           npx playwright test --pass-with-no-tests

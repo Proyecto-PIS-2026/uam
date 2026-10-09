@@ -1,6 +1,5 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-
-// TODO: reemplazar la selección predeterminada por el operador de la sesión.
+import { obtenerSesion } from "../../identidad-acceso/autenticacion/sesiones";
 
 export async function obtenerOperadorPorId(operadorId: number) {
     if (!Number.isSafeInteger(operadorId) || operadorId <= 0) return null;
@@ -21,9 +20,12 @@ export async function obtenerOperadorPorNombre(nombreFantasia: string) {
 }
 
 export async function obtenerOperadorActual() {
+    const sesion = await obtenerSesion();
+    if (!sesion) throw new Error("Debe iniciar sesión.");
+
     const operador = await db.orm.public.Operador
         .select("id", "usuarioId", "nombreFantasia")
-        .orderBy((operador) => operador.id.asc())
+        .where({ usuarioId: sesion.usuarioId })
         .first();
 
     if (!operador) {

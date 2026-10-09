@@ -4,6 +4,7 @@ import type { DatosSesion } from "../autenticacion/sesiones";
 import { POST } from "../../../app/api/publicaciones/route";
 import { DELETE, PATCH } from "../../../app/api/publicaciones/[id]/route";
 import { actualizarPrecio, cargarPublicacionesMiMercado } from "../../publicaciones/mi-mercado/acciones";
+import { obtenerOperadorActual } from "../../usuarios/operadores/operador-actual";
 
 const sesionMock = vi.hoisted(() => vi.fn());
 vi.mock("../autenticacion/sesiones", () => ({ obtenerSesion: sesionMock }));
@@ -44,6 +45,17 @@ describe.sequential("autorización contra datos reales", () => {
         .where({ id: publicacionAjena.id })
         .select("id", "precio", "publicacionDisponible", "cantidadUnidades")
         .first();
+
+    it("obtiene el operador que inició sesión", async () => {
+        const operadores = await db.orm.public.Operador.select("id", "usuarioId").all();
+        const primero = Math.min(...operadores.map((operador) => operador.id));
+        const segundo = operadores.find((operador) => operador.id !== primero)!;
+        sesionMock.mockResolvedValue({ ...sesion, usuarioId: segundo.usuarioId });
+
+        const operador = await obtenerOperadorActual();
+        expect(operador.id).toBe(segundo.id);
+        expect(operador.usuarioId).toBe(segundo.usuarioId);
+    });
 
     it("no crea publicaciones para un Operador ajeno ni acepta su usuarioId enviado por el cliente", async () => {
         const antes = await db.orm.public.PublicacionOperador.where({ operadorId: ajeno.id }).all();

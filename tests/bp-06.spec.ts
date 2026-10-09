@@ -1,8 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { iniciarSesionOperador } from "./autenticacion";
 
 test("BP-06: modificación rápida del precio", async ({ page }) => {
   const rutaMercado = "/mi-mercado";
 
+  await iniciarSesionOperador(page);
   await page.goto(rutaMercado);
 
   await expect(

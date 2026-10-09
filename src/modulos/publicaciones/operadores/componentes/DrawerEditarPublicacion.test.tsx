@@ -89,6 +89,18 @@ function seleccionarFoto(foto: File) {
 }
 
 describe("DrawerEditarPublicacion", () => {
+    it.each(["modificar", "eliminar"] as const)("deshabilita únicamente la acción %s denegada", (accion) => {
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" alEliminar={mocks.eliminar} puedeModificar={accion !== "modificar"} puedeEliminar={accion !== "eliminar"} />);
+
+        const editar = screen.getByRole("button", { name: "Editar" });
+        const eliminar = screen.getByRole("button", { name: "Eliminar" });
+        expect(editar).toHaveProperty("disabled", accion === "modificar");
+        expect(eliminar).toHaveProperty("disabled", accion === "eliminar");
+        fireEvent.click(accion === "modificar" ? editar : eliminar);
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        expect(mocks.eliminar).not.toHaveBeenCalled();
+        expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
+    });
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.mediaQuery.mockReturnValue(false);

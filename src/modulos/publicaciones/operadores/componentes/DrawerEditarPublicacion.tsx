@@ -50,6 +50,8 @@ type DrawerEditarPublicacionProps = {
     abierto: boolean;
     alCerrar: () => void;
     modoInicial?: "consulta" | "edicion";
+    puedeModificar?: boolean;
+    puedeEliminar?: boolean;
     alEliminar?: () => void;
     eliminando?: boolean;
     actualizando?: boolean;
@@ -74,8 +76,8 @@ function precioParaEdicion(precio: string | null) {
     return Number.isInteger(valor) ? String(valor) : precio;
 }
 
-function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
-    const [editando, setEditando] = useState(modoInicial === "edicion");
+function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
+    const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
     const [precio, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
     const [cantidadUnidades, setCantidadUnidades] = useState(() => publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
     const [foto, setFoto] = useState(publicacion.foto);
@@ -402,8 +404,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </>
                     ) : (
                         <>
-                            <button className={`${styles.cancelar} ${styles.eliminar}`} type="button" onClick={alEliminar} disabled={ocupado || !alEliminar}>{eliminando ? "Eliminando..." : "Eliminar"}</button>
-                            <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); setError(""); setEditando(true); }} disabled={ocupado}>Editar</button>
+                            <button className={`${styles.cancelar} ${styles.eliminar}`} type="button" onClick={alEliminar} disabled={ocupado || !alEliminar || !puedeEliminar}>{eliminando ? "Eliminando..." : "Eliminar"}</button>
+                            <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); setError(""); setEditando(true); }} disabled={ocupado || !puedeModificar}>Editar</button>
                         </>
                     )}
                 </div>
@@ -412,7 +414,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
     );
 }
 
-export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
+export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
     const foto = publicacion?.foto;
@@ -424,7 +426,7 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
         <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {/* <HojasDecorativas variante="fondo" className={styles.hojasDrawer} /> */}
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}-${publicacion.precio}-${identidadFoto}-${publicacion.presentacionId}-${publicacion.categoriaId}-${publicacion.calibreId}-${publicacion.paisId}-${publicacion.disponible}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} modoInicial={modoInicial} alEliminar={alEliminar} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}-${publicacion.precio}-${identidadFoto}-${publicacion.presentacionId}-${publicacion.categoriaId}-${publicacion.calibreId}-${publicacion.paisId}-${publicacion.disponible}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
             )}
             {publicacion && children}
         </Drawer>

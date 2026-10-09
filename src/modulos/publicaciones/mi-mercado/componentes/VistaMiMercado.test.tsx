@@ -88,6 +88,16 @@ describe("VistaMiMercado", () => {
         expect(vista.props.nombreOperador).toBe("Frutas & Más");
     });
 
+    it.each(["modificar", "eliminar"] as const)("propaga la denegación de %s sin impedir la consulta", async (accion) => {
+        vi.spyOn(autorizacion, "autorizado").mockImplementation((...argumentos) => argumentos[0] !== `operador.publicacion.${accion}`);
+
+        const vista = await VistaMiMercado({});
+
+        expect(vista.props.puedeModificar).toBe(accion !== "modificar");
+        expect(vista.props.puedeEliminar).toBe(accion !== "eliminar");
+        expect(mocks.obtenerPublicaciones).toHaveBeenCalledOnce();
+    });
+
     it("responde 404 si el operador indicado no existe", async () => {
         mocks.obtenerOperadorPorNombre.mockResolvedValue(null);
 
