@@ -16,6 +16,21 @@ function armarDatos(naveId: number, sobrescribir: Record<string, unknown> = {}) 
 	};
 }
 
+async function buscarNumeroLocalLibre(naveId: number): Promise<string> {
+    let numero = 9000;
+
+    while (
+        await db.orm.public.Local.where({
+            naveId,
+            numeroLocal: String(numero),
+        }).first()
+    ) {
+        numero++;
+    }
+
+    return String(numero);
+}
+
 async function borrarAlta(operadorId: number) {
 	const operador = await db.orm.public.Operador.where({ id: operadorId }).first();
 	await db.orm.public.Local.where({ operadorId }).delete();
@@ -43,28 +58,45 @@ describe("alta de operador", () => {
 
     it("crea el usuario, operador y local correctamente", async () => {
         const nave = await db.orm.public.Nave.all().then((naves) => naves[0]);
-        expect(nave).toBeDefined(); 
+        expect(nave).toBeDefined();
         if (!nave) return;
 
-        const resultado = await altaOperador(armarDatos(nave.id));
+        const numeroLocal = await buscarNumeroLocalLibre(nave.id);
+
+        const resultado = await altaOperador(
+            armarDatos(nave.id, {
+                locales: [{
+                    numeroLocal,
+                    naveId: nave.id,
+                    contrato: "2029-02-28",
+                }],
+            }),
+        );
+
         expect(resultado.esValido).toBe(true);
         if (!resultado.esValido) return;
 
         const operador = await db.orm.public.Operador.where({ id: resultado.id }).first();
-        expect(operador).toBeDefined(); 
+        expect(operador).toBeDefined();
         if (!operador) return;
 
         const usuario = await db.orm.public.Usuario.where({ id: operador.usuarioId }).first();
         expect(usuario).toBeDefined();
         expect(usuario?.username).toBe("probandotest");
         expect(usuario?.rol).toBe("OPERADOR");
-        const local = await db.orm.public.Local.where({ operadorId: operador.id, naveId: nave.id, numeroLocal: "999", }).first();
-        expect(local).toBeDefined(); 
-        expect(local?.numeroLocal).toBe("999"); 
-        expect(local?.naveId).toBe(nave.id);
-        await borrarAlta(resultado.id);
 
-    })
+        const local = await db.orm.public.Local.where({
+            operadorId: operador.id,
+            naveId: nave.id,
+            numeroLocal,
+        }).first();
+
+        expect(local).toBeDefined();
+        expect(local?.numeroLocal).toBe(numeroLocal);
+        expect(local?.naveId).toBe(nave.id);
+
+        await borrarAlta(resultado.id);
+    });
 
     it("rechaza el alta cuando la nave no existe", async () => {
        const resultado = await altaOperador(armarDatos(999999999)); 
@@ -75,7 +107,17 @@ describe("alta de operador", () => {
         const nave = await db.orm.public.Nave.all().then((naves) => naves[0]); 
         expect(nave).toBeDefined(); if (!nave) return; 
 
-        const primerResultado = await altaOperador(armarDatos(nave.id)); 
+        const numeroLocal = await buscarNumeroLocalLibre(nave.id);
+
+        const primerResultado = await altaOperador(
+            armarDatos(nave.id, {
+                locales: [{
+                    numeroLocal,
+                    naveId: nave.id,
+                    contrato: "2029-02-28",
+                }],
+            }),
+        );
         expect(primerResultado.esValido).toBe(true); 
         if (!primerResultado.esValido) return; 
 
@@ -88,7 +130,17 @@ describe("alta de operador", () => {
         const nave = await db.orm.public.Nave.all().then((naves) => naves[0]); 
         expect(nave).toBeDefined(); if (!nave) return; 
 
-        const primerResultado = await altaOperador(armarDatos(nave.id)); 
+        const numeroLocal = await buscarNumeroLocalLibre(nave.id);
+
+        const primerResultado = await altaOperador(
+            armarDatos(nave.id, {
+                locales: [{
+                    numeroLocal,
+                    naveId: nave.id,
+                    contrato: "2029-02-28",
+                }],
+            }),
+        );
         expect(primerResultado.esValido).toBe(true); 
         if (!primerResultado.esValido) return; 
 
@@ -98,24 +150,43 @@ describe("alta de operador", () => {
         await borrarAlta(primerResultado.id); 
     })
 
-    it("rechaza el alta cuando el local ya existe en la nave", async () => { 
-        const nave = await db.orm.public.Nave.all().then((naves) => naves[0]); 
-        expect(nave).toBeDefined(); 
-        if (!nave) return; 
+    it("rechaza el alta cuando el local ya existe en la nave", async () => {
+        const nave = await db.orm.public.Nave.all().then((naves) => naves[0]);
+        expect(nave).toBeDefined();
+        if (!nave) return;
 
-        const localExistente = await db.orm.public.Local .where({ naveId: nave.id, numeroLocal: "999", }) .first(); 
-        if (localExistente) { 
-            return; 
-        } 
+        const numeroLocal = await buscarNumeroLocalLibre(nave.id);
 
-        const primerResultado = await altaOperador(armarDatos(nave.id)); 
-        expect(primerResultado.esValido).toBe(true); 
-        if (!primerResultado.esValido) 
-            return; 
+        const primerResultado = await altaOperador(
+            armarDatos(nave.id, {
+                locales: [{
+                    numeroLocal,
+                    naveId: nave.id,
+                    contrato: "2029-02-28",
+                }],
+            }),
+        );
 
-        const segundoResultado = await altaOperador( armarDatos(nave.id, { nombreUsuario: "otro_usuario_test", nombre: "otro operador", }), ); 
-        expect(segundoResultado).toEqual({ esValido: false, errores: [ "El local 999 ya existe en la nave seleccionada.", ], }); 
+        expect(primerResultado.esValido).toBe(true);
+        if (!primerResultado.esValido) return;
 
-        await borrarAlta(primerResultado.id); 
-    });    
+        const segundoResultado = await altaOperador(
+            armarDatos(nave.id, {
+                nombreUsuario: "otro_usuario_test",
+                nombre: "otro operador",
+                locales: [{
+                    numeroLocal,
+                    naveId: nave.id,
+                    contrato: "2029-02-28",
+                }],
+            }),
+        );
+
+        expect(segundoResultado).toEqual({
+            esValido: false,
+            errores: ["El local " + numeroLocal + " ya existe en la nave seleccionada."],
+        });
+
+        await borrarAlta(primerResultado.id);
+    });
 });
