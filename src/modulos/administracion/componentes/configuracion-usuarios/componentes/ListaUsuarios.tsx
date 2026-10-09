@@ -34,13 +34,13 @@ interface Notificacion {
 
 function subscribeMediaQuery(callback: () => void) {
     if (typeof window === "undefined") return () => {};
-    const matchMedia = window.matchMedia("(max-width: 600px)");
+    const matchMedia = window.matchMedia("(max-width: 500px)");
     matchMedia.addEventListener("change", callback);
     return () => matchMedia.removeEventListener("change", callback);
 }
 
 function getSnapshotMediaQuery() {
-    return window.matchMedia("(max-width: 600px)").matches;
+    return window.matchMedia("(max-width: 500px)").matches;
 }
 
 function getServerSnapshotMediaQuery() {

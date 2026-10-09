@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import TarjetaInput from "../TarjetaInput";
 
@@ -8,10 +9,16 @@ interface ListadoConfiguracionesGeneralesProps {
     configuracion: Record<string, string | null>;
 }
 
-const LISTA_INTELIGENTE_POR_DEFECTO = "";
+export default function ListadoConfiguracionesGenerales({ configuracion }: ListadoConfiguracionesGeneralesProps) {
+    const router = useRouter();
+    const valorServer = configuracion.url_lista_inteligente ?? "";
+    const [listaInteligente, setListaInteligente] = useState(valorServer);
 
-export default function ListadoConfiguracionesGenerales({configuracion}: ListadoConfiguracionesGeneralesProps) {
-    const [listaInteligente, setListaInteligente] = useState(configuracion.url_lista_inteligente ?? "");
+    const [valorPropAnterior, setValorPropAnterior] = useState(valorServer);
+    if (valorPropAnterior !== valorServer) {
+        setValorPropAnterior(valorServer);
+        setListaInteligente(valorServer);
+    }
     
     async function guardarConfiguracion(nombre: string, valor: string): Promise<string> {
         const respuesta = await fetch(
@@ -36,14 +43,10 @@ export default function ListadoConfiguracionesGenerales({configuracion}: Listado
     async function guardarListaInteligente(valor: string) {
         const valorGuardado = await guardarConfiguracion("url_lista_inteligente", valor);
         setListaInteligente(valorGuardado);
+        router.refresh();
     }
 
-    async function eliminarListaInteligente() {
-        const valorGuardado = await guardarConfiguracion( "url_lista_inteligente", LISTA_INTELIGENTE_POR_DEFECTO);
-        setListaInteligente(valorGuardado);
-    }
-
-    const contenido = (
+    return (
         <div className="flex flex-col gap-6">
             <TarjetaInput
                 titulo="Lista Inteligente"
@@ -52,10 +55,7 @@ export default function ListadoConfiguracionesGenerales({configuracion}: Listado
                 valor={listaInteligente}
                 onChangeValor={setListaInteligente}
                 onGuardarValor={guardarListaInteligente}
-                onEliminarValor={eliminarListaInteligente}
             />
         </div>
     );
-
-    return contenido;
 }

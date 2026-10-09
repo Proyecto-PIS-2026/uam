@@ -1,5 +1,6 @@
 .tarjeta {
     display: flex;
+    margin-top: 0.45rem;
     flex-direction: column;
     gap: 1rem;
     position: relative;
@@ -57,32 +58,6 @@
     border-color: var(--color-primary);
 }
 
-.selectMui :global(.MuiInputLabel-root.Mui-focused) {
-    color: var(--color-primary);
-}
-
-.selectMui :global(.MuiInputBase-input) {
-    color: var(--color-foreground);
-}
-
-.selectMui :global(.MuiInputBase-root.Mui-disabled) {
-    background-color: var(--color-surface);
-}
-
-.selectMui :global(.MuiInputBase-input.Mui-disabled) {
-    -webkit-text-fill-color: var(--color-foreground);
-    color: var(--color-foreground);
-    opacity: 1;
-}
-
-.selectMui :global(.MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline) {
-    border-color: var(--color-border);
-}
-
-.selectMui :global(.MuiInputLabel-root.Mui-disabled) {
-    color: var(--color-muted);
-}
-
 .accionesEdicion {
     display: flex;
     align-items: center;
@@ -91,9 +66,7 @@
     flex-shrink: 0;
 }
 
-.botonAccion,
-.botonGuardar,
-.botonDescartar {
+.botonGuardar {
     width: 2.5rem !important;
     height: 2.5rem !important;
     transition:
@@ -101,45 +74,15 @@
         background-color 0.35s ease !important;
 }
 
-.botonAccion {
+/* Estado activo cuando hay cambios pendientes */
+.botonGuardarActivo {
     background-color: var(--color-primary-soft) !important;
     color: var(--color-primary) !important;
 }
 
-.botonGuardar {
-    background-color: var(--color-primary-soft) !important;
-    color: var(--color-primary) !important;
-}
-
-.botonDescartar {
-    background-color: rgb(239 68 68 / 10%) !important;
-    color: #dc2626 !important;
-}
-
-.botonAccion:hover,
-.botonGuardar:hover,
-.botonDescartar:hover {
+.botonGuardarActivo:hover {
     transform: scale(1.06);
-}
-
-.botonAccion:hover,
-.botonGuardar:hover {
     background-color: var(--color-primary-soft) !important;
-}
-
-.botonDescartar:hover {
-    background-color: rgb(239 68 68 / 18%) !important;
-}
-
-@media (max-width: 700px) {
-    .contenedorEdicion {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .accionesEdicion {
-        align-self: flex-end;
-    }
 }
 
 .avisoSnackbar {

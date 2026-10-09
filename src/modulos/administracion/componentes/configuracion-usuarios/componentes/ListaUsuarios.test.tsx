@@ -10,7 +10,6 @@ const estadoTest = vi.hoisted(() => ({
     routerPush: vi.fn(),
 }));
 
-// Permite ejercitar tanto la suscripción del navegador como la rama SSR.
 vi.mock("react", async (importOriginal) => {
     const actual = await importOriginal<typeof import("react")>();
 
@@ -378,7 +377,6 @@ describe("ListaUsuarios", () => {
             "/gestion-de-productores/301/editar",
         );
 
-        // Sin onSeleccionar, la selección usa la navegación predeterminada.
         fireEvent.click(obtenerFila("ana.admin"));
 
         expect(estadoTest.routerPush).toHaveBeenNthCalledWith(

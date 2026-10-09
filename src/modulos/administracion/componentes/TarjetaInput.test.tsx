@@ -8,10 +8,13 @@ interface PropsPrueba {
     valorInicial?: string;
     tipo?: "numero" | "url";
     onGuardarValor?: (valor: string) => Promise<void>;
-    onEliminarValor?: () => Promise<void>;
 }
 
-function ComponentePrueba({valorInicial = "10", tipo = "numero", onGuardarValor = vi.fn().mockResolvedValue(undefined), onEliminarValor = vi.fn().mockResolvedValue(undefined)}: PropsPrueba) {
+function ComponentePrueba({
+    valorInicial = "10",
+    tipo = "numero",
+    onGuardarValor = vi.fn().mockResolvedValue(undefined)
+}: PropsPrueba) {
     const [valor, setValor] = useState(valorInicial);
     return (
         <TarjetaInput
@@ -21,155 +24,72 @@ function ComponentePrueba({valorInicial = "10", tipo = "numero", onGuardarValor 
             valor={valor}
             onChangeValor={setValor}
             onGuardarValor={onGuardarValor}
-            onEliminarValor={onEliminarValor}
         />
     );
 }
 
 describe("TarjetaInput", () => {
-    it("muestra el título, la descripción y el valor inicial", () => {
+    it("muestra el título, la descripción y el valor inicial habilitado", () => {
         render(<ComponentePrueba />);
         expect(screen.getByText("Configuración de prueba")).toBeInTheDocument();
         expect(screen.getByText("Descripción de prueba")).toBeInTheDocument();
-        expect(screen.getByRole("textbox")).toHaveValue("10");
-    });
-
-    it("mantiene el campo deshabilitado inicialmente", () => {
-        render(<ComponentePrueba />);
-        expect(screen.getByRole("textbox")).toBeDisabled();
-        expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument();
-    });
-
-    it("habilita el campo al presionar editar", () => {
-        render(<ComponentePrueba />);
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
         expect(screen.getByRole("textbox")).toBeEnabled();
-        expect(screen.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
-    });
-
-    it("permite modificar un valor numérico", () => {
-        render(<ComponentePrueba />);
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        fireEvent.change(screen.getByRole("textbox"), {target: { value: "25" }});
-        expect(screen.getByRole("textbox")).toHaveValue("25");
-    });
-
-    it("impide introducir caracteres no numéricos cuando el tipo es numero", () => {
-        render(<ComponentePrueba />);
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        fireEvent.change(screen.getByRole("textbox"), {target: { value: "abc" }});
-        expect(screen.getByRole("textbox")).toHaveValue("10");
-        fireEvent.change(screen.getByRole("textbox"), {target: { value: "12.5" }});
         expect(screen.getByRole("textbox")).toHaveValue("10");
     });
 
-    it("permite ingresar una URL cuando el tipo es url", () => {
-        render(<ComponentePrueba valorInicial="" tipo="url" />);
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        const campo = screen.getByRole("textbox");
-        fireEvent.change(campo, {target: { value: "https://uam.com.uy/lista.pdf" }});
-        expect(campo).toHaveValue("https://uam.com.uy/lista.pdf");
-        expect(campo).toHaveAttribute("type", "url");
+    it("mantiene el botón de guardar deshabilitado cuando no hay cambios", () => {
+        render(<ComponentePrueba />);
+        expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
     });
 
-    it("guarda el nuevo valor al confirmar la edición", async () => {
+    it("habilita el botón de guardar cuando se modifica el texto", () => {
+        render(<ComponentePrueba />);
+        fireEvent.change(screen.getByRole("textbox"), { target: { value: "25" } });
+        expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+    });
+
+    it("guarda el nuevo valor al hacer clic en el tick, muestra alerta de éxito y luego lo deshabilita", async () => {
         const onGuardarValor = vi.fn().mockResolvedValue(undefined);
         render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        fireEvent.change(screen.getByRole("textbox"), {target: { value: "20" }});
-        fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+        
+        fireEvent.change(screen.getByRole("textbox"), { target: { value: "20" } });
+        const botonGuardar = screen.getByRole("button", { name: "Guardar cambios" });
+        
+        fireEvent.click(botonGuardar);
+
         await waitFor(() => {
             expect(onGuardarValor).toHaveBeenCalledExactlyOnceWith("20");
-            expect(screen.getByRole("textbox")).toBeDisabled();
+            expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+            expect(screen.getByText("La configuración se guardó correctamente.")).toBeInTheDocument();
         });
     });
 
-    it("recupera el valor anterior al cancelar la edición", () => {
-        render(<ComponentePrueba />);
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        fireEvent.change(screen.getByRole("textbox"), {target: { value: "50" }});
-        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
-        expect(screen.getByRole("textbox")).toHaveValue("10");
-        expect(screen.getByRole("textbox")).toBeDisabled();
-    });
-
-    it("ejecuta la eliminación cuando se confirma", async () => {
-        const onEliminarValor = vi.fn().mockResolvedValue(undefined);
-        render(<ComponentePrueba onEliminarValor={onEliminarValor} />);
-        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
-        expect(
-            screen.getByRole("button", { name: "Confirmar eliminación" })
-        ).toBeInTheDocument();
-
-        fireEvent.click(screen.getByRole("button", { name: "Confirmar eliminación" }));
-        await waitFor(() => {
-            expect(onEliminarValor).toHaveBeenCalledOnce();
-            expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument();
-        });
-    });
-
-    it("permite cancelar la eliminación sin modificar el valor", () => {
-        const onEliminarValor = vi.fn();
-        render(<ComponentePrueba onEliminarValor={onEliminarValor} />);
-        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
-        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
-        expect(onEliminarValor).not.toHaveBeenCalled();
-        expect(screen.getByRole("textbox")).toHaveValue("10");
-    });
-
-    it("descarta los cambios al hacer clic fuera del componente", async () => {
-        render(
-            <div>
-                <ComponentePrueba />
-                <button type="button">Fuera</button>
-            </div>
-        );
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        fireEvent.change(screen.getByRole("textbox"), { target: { value: "50" } });
-        fireEvent.mouseDown(screen.getByRole("button", { name: "Fuera" }));
-        await waitFor(() => {
-            expect(screen.getByRole("textbox")).toHaveValue("10");
-            expect(screen.getByRole("textbox")).toBeDisabled();
-        });
-    });
-
-    it("deshabilita las acciones mientras se guarda", async () => {
-        let resolverGuardado!: () => void;
-        const onGuardarValor = vi.fn(() => new Promise<void>((resolve) => {resolverGuardado = resolve;}));
+    it("muestra alerta de error cuando ocurre un fallo al guardar", async () => {
+        const onGuardarValor = vi.fn().mockRejectedValue(new Error("Error al guardar en BD"));
         render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        fireEvent.change(screen.getByRole("textbox"), {target: { value: "30" }});
-        fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+        
+        fireEvent.change(screen.getByRole("textbox"), { target: { value: "20" } });
+        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+        await waitFor(() => {
+            expect(screen.getByText("Error al guardar en BD")).toBeInTheDocument();
+        });
+    });
+
+    it("deshabilita los controles mientras se guardan los cambios", async () => {
+        let resolverGuardado!: () => void;
+        const onGuardarValor = vi.fn(() => new Promise<void>((resolve) => { resolverGuardado = resolve; }));
+        render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
+        
+        fireEvent.change(screen.getByRole("textbox"), { target: { value: "30" } });
+        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        
         expect(screen.getByRole("textbox")).toBeDisabled();
-        expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
-        expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+        
         resolverGuardado();
         await waitFor(() => {
-            expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument()
+            expect(screen.getByRole("textbox")).toBeEnabled();
         });
-    });
-
-    it("cancela la eliminación al hacer clic fuera del componente", async () => {
-        const onEliminarValor = vi.fn();
-        render(
-            <div>
-                <ComponentePrueba onEliminarValor={onEliminarValor} />
-                <button type="button">Fuera</button>
-            </div>
-        );
-        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
-        fireEvent.mouseDown(screen.getByRole("button", { name: "Fuera" }));
-        await waitFor(() => {
-            expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument();
-            expect(onEliminarValor).not.toHaveBeenCalled();
-        });
-    });
-
-    it("permite vaciar completamente un campo numérico", () => {
-        render(<ComponentePrueba />);
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        fireEvent.change(screen.getByRole("textbox"), {target: { value: "" }});
-        expect(screen.getByRole("textbox")).toHaveValue("");
     });
 });

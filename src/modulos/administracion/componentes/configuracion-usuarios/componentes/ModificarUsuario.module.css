@@ -33,7 +33,7 @@
 }
 
 .botonAlta {
-    background-color: var(--color-primary) !important;
+    background-color: var(--color-secondary) !important;
     color: white !important;
     border-radius: 0.5rem !important;
     padding: 0.5rem 1rem !important;
@@ -54,7 +54,7 @@
     width: 100%;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 500px) {
     .encabezado {
         flex-direction: row;
         justify-content: space-between;
@@ -67,7 +67,6 @@
         height: 2.25rem !important;
         padding: 0 !important;
     }
-
 
     .botonAlta :global(.MuiButton-startIcon) {
         margin: 0 !important;

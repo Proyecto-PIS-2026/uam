@@ -56,7 +56,11 @@ vi.mock("@/modulos/administracion/componentes/ContenedorConfiguracionGeneral", (
 }));
 
 vi.mock("@/modulos/administracion/componentes/configuracion-publicaciones/ContenedorConfiguracionPublicaciones", () => ({
-    default: () => <div data-testid="vista-publicaciones">Contenedor de publicaciones</div>,
+    default: ({ configuracion }: { configuracion: Record<string, string | null> }) => (
+        <div data-testid="vista-publicaciones">
+            Contenedor de publicaciones - Incremento: {configuracion.incremento_precio}
+        </div>
+    ),
 }));
 
 vi.mock("@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios", () => ({
@@ -102,5 +106,16 @@ describe("PaginaAdministracion", () => {
         expect(screen.getByTestId("panel-publica")).toContainElement(
             screen.getByTestId("vista-configuracion-publica"),
         );
+    });
+
+    it("procesa y transforma las filas de configuración a un objeto correctamente", async () => {
+        obtenerConfiguracionesMock.mockResolvedValue([
+            { nombreConfiguracion: "incremento_precio", valorConfiguracion: "15" },
+            { nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy" },
+        ]);
+
+        render(await PaginaAdministracion());
+
+        expect(screen.getByTestId("vista-publicaciones")).toHaveTextContent("Contenedor de publicaciones - Incremento: 15");
     });
 });

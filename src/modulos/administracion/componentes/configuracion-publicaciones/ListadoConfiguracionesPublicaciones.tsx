@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import TarjetaInput from "../TarjetaInput";
 
@@ -8,12 +9,18 @@ interface ListadoConfiguracionesProps {
     configuracion: Record<string, string | null>;
 }
 
-const IMPORTE_POR_DEFECTO = "10";
-
 export default function ListadoConfiguraciones({ configuracion }: ListadoConfiguracionesProps) {
-    const [importe, setImporte] = useState(configuracion.incremento_precio ?? "");
+    const router = useRouter();
+    const valorServer = configuracion.incremento_precio ?? "";
+    const [importe, setImporte] = useState(valorServer);
 
-    async function guardarConfiguracion(nombre: string, valor: string,): Promise<string> {
+    const [valorPropAnterior, setValorPropAnterior] = useState(valorServer);
+    if (valorPropAnterior !== valorServer) {
+        setValorPropAnterior(valorServer);
+        setImporte(valorServer);
+    }
+
+    async function guardarConfiguracion(nombre: string, valor: string): Promise<string> {
         const respuesta = await fetch(
             `/api/configuracion/${encodeURIComponent(nombre)}`,
             {
@@ -38,14 +45,10 @@ export default function ListadoConfiguraciones({ configuracion }: ListadoConfigu
     async function guardarImporte(valor: string) {
         const valorGuardado = await guardarConfiguracion("incremento_precio", valor);
         setImporte(valorGuardado);
+        router.refresh();
     }
 
-    async function eliminarImporte() {
-        const valorGuardado = await guardarConfiguracion("incremento_precio", IMPORTE_POR_DEFECTO);
-        setImporte(valorGuardado);
-    }
-
-    const contenido = (
+    return (
         <div className="flex flex-col gap-6">
             <TarjetaInput
                 titulo="Importe de ajuste rápido de precios"
@@ -54,9 +57,7 @@ export default function ListadoConfiguraciones({ configuracion }: ListadoConfigu
                 valor={importe}
                 onChangeValor={setImporte}
                 onGuardarValor={guardarImporte}
-                onEliminarValor={eliminarImporte}
             />
         </div>
     );
-    return contenido; 
 }

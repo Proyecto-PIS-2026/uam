@@ -38,12 +38,11 @@
     border-color: var(--color-primary, #00852b);
 }
 
-
 .boton[aria-pressed="true"] {
     position: relative;
     z-index: 1;
     border-color: var(--color-primary, #2563eb);
-    background-color: var(--color-primary, #2563eb);
+    background-color: var(--color-secondary, #2563eb);
     color: #fff;
     font-weight: 600;
 }
@@ -65,6 +64,15 @@
         padding: 0.65rem 0.35rem;
         font-size: 0.875rem;
         overflow-wrap: anywhere;
+    }
+
+    .boton[aria-pressed="true"] {
+        position: relative;
+        z-index: 1;
+        border-color: var(--color-primary, #00852b);
+        background-color: var(--color-secondary, #00852b);
+        color: #fff;
+        font-weight: 600;
     }
 }
 
@@ -110,7 +118,7 @@
         position: relative;
         z-index: 1;
         border-color: var(--color-primary, #00852b);
-        background-color: var(--color-primary, #00852b);
+        background-color: var(--color-secondary, #00852b);
         color: #fff;
         font-weight: 600;
     }
