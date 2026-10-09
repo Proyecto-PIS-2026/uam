@@ -12,7 +12,6 @@ interface ListadoConfiguracionesProps {
 }
 
 const IMPORTE_POR_DEFECTO = "10";
-const VIGENCIA_POR_DEFECTO = "30";
 
 export default function ListadoConfiguraciones({ configuracion, especies }: ListadoConfiguracionesProps) {
     const [importe, setImporte] = useState(configuracion.incremento_precio ?? "");
@@ -50,16 +49,6 @@ export default function ListadoConfiguraciones({ configuracion, especies }: List
     async function eliminarImporte() {
         const valorGuardado = await guardarConfiguracion("incremento_precio", IMPORTE_POR_DEFECTO);
         setImporte(valorGuardado);
-    }
-
-    async function guardarVigencia(valor: string) {
-        const valorGuardado = await guardarConfiguracion("vigencia_fotografias", valor);
-        setVigencia(valorGuardado);
-    }
-
-    async function eliminarVigencia() {
-        const valorGuardado = await guardarConfiguracion("vigencia_fotografias", VIGENCIA_POR_DEFECTO);
-        setVigencia(valorGuardado);
     }
 
     async function guardarFotoEspecie(especieId: number, archivo: File) {
@@ -115,15 +104,6 @@ export default function ListadoConfiguraciones({ configuracion, especies }: List
                 onChangeValor={setImporte}
                 onGuardarValor={guardarImporte}
                 onEliminarValor={eliminarImporte}
-            />
-            <TarjetaInput
-                titulo="Vigencia de fotografías"
-                descripcion="Configurá durante cuántos días se considera vigente la fotografía de una publicación."
-                tipo="numero"
-                valor={vigencia}
-                onChangeValor={setVigencia}
-                onGuardarValor={guardarVigencia}
-                onEliminarValor={eliminarVigencia}
             />
         </div>
     );

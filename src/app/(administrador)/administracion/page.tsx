@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 
 // import HojasDecorativas from "@/compartido/HojasDecorativas";
-import PaginaAdministracionGeneral from "@/modulos/administracion/componentes/ContenedorConfiguracionGenerales";
+import PaginaAdministracionPublicaciones from "@/modulos/administracion/componentes/ContenedorConfiguracionPublicaciones";
 
 export default function Page() {
-    return <PaginaAdministracionGeneral  />;
+    return <PaginaAdministracionPublicaciones  />;
 }
 

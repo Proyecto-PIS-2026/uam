@@ -4,7 +4,6 @@
 import { useState } from "react";
 
 import TarjetaInput from "./tarjetaInput";
-import TarjetaCheckBox from "./tarjetaCheckBox";
 
 interface ListadoConfiguracionesGeneralesProps {
     configuracion: Record<string, string | null>;
@@ -85,12 +84,6 @@ export default function ListadoConfiguracionesGenerales({
 
     const contenido = (
         <div className="flex flex-col gap-6">
-<TarjetaCheckBox
-    titulo="Ordenamiento de publicaciones"
-    descripcion="Configurá si los usuarios pueden ordenar las publicaciones."
-    checked={ordenamiento}
-    onChangeChecked={guardarOrdenamiento}
-/>
             <TarjetaInput
                 titulo="Lista Inteligente"
                 descripcion="Configurá la URL de acceso a la Lista Inteligente."

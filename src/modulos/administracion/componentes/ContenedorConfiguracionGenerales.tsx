@@ -18,15 +18,8 @@ export default async function PaginaAdministracionGeneral() {
         <div className="relative isolate flex-1 bg-background text-foreground">
             <main className="contenedor-pagina relative z-10 flex-1">
                 <div className="relative z-10 flex flex-col gap-6">
-                    <EncabezadoPagina
-                        titulo="Panel Administrativo"
-                        cantidad={null}
-                        subtitulo="Publicaciones"
-                    />
-
-                    <ListadoConfiguracionesGenerales
-                        configuracion={configuracion}
-                    />
+                    <EncabezadoPagina titulo="Panel Administrativo" cantidad={null} subtitulo="Publicaciones"/>
+                    <ListadoConfiguracionesGenerales configuracion={configuracion}/>
                 </div>
             </main>
         </div>
