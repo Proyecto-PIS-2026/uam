@@ -77,3 +77,14 @@
         display: none;
     }
 }
+
+@media (min-width: 768px) {
+    .tarjeta {
+        padding: var(--padding-titulo-pagina);
+        border: none;
+        border-radius: 0;
+        background-color: transparent;
+        box-shadow: none;
+        overflow: visible;
+    }
+}

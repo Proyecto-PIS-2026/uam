@@ -1,0 +1,129 @@
+.botones {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: 0 auto;
+    gap: 0;
+}
+
+.boton {
+    flex: 1;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border, #ddd);
+    border-radius: 0;
+    background-color: #fff;
+    color: var(--color-foreground, #222);
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.boton + .boton {
+    margin-left: -1px;
+}
+
+.boton:first-child {
+    border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.boton:last-child {
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.boton:hover {
+    position: relative;
+    z-index: 2;
+    border-color: var(--color-primary, #00852b);
+}
+
+
+.boton[aria-pressed="true"] {
+    position: relative;
+    z-index: 1;
+    border-color: var(--color-primary, #2563eb);
+    background-color: var(--color-primary, #2563eb);
+    color: #fff;
+    font-weight: 600;
+}
+
+.boton:focus-visible {
+    z-index: 2;
+    outline: 2px solid var(--color-primary, #2563eb);
+    outline-offset: 2px;
+}
+
+.panel {
+    width: 100%;
+    min-width: 0;
+    padding: 1.25rem 0;
+}
+
+@media (max-width: 480px) {
+    .boton {
+        padding: 0.65rem 0.35rem;
+        font-size: 0.875rem;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (min-width: 768px) {
+    .contenedor {
+        background-color: transparent;
+    }
+
+    .botones {
+        display: flex;
+        justify-content: flex-start;
+        width: fit-content;
+        max-width: 100%;
+        margin: 0;
+        gap: 0;
+        background-color: transparent;
+    }
+
+    .boton {
+        flex: 0 0 10rem;
+        min-width: 0;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--color-border, #ddd);
+        border-radius: 0;
+        background-color: #fff;
+        color: var(--color-foreground, #222);
+        text-align: center;
+    }
+
+    .boton + .boton {
+        margin-left: -1px;
+    }
+
+    .boton:first-child {
+        border-radius: 0.5rem 0 0 0;
+    }
+
+    .boton:last-child {
+        border-radius: 0 0.5rem 0 0;
+    }
+
+    .boton[aria-pressed="true"] {
+        position: relative;
+        z-index: 1;
+        border-color: var(--color-primary, #00852b);
+        background-color: var(--color-primary, #00852b);
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .panel {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        margin-top: -1px;
+        padding: 0rem;
+        border: 1px solid var(--color-border, #ddd);
+        border-radius: 0 0.5rem 0.5rem 0.5rem;
+        background-color: #fff;
+    }
+}
