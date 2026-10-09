@@ -1,4 +1,3 @@
-
 import { db } from "../../infraestructura/persistencia/prisma/db";
 
 export default async function obtenerConfiguraciones() {
