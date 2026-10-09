@@ -2,11 +2,12 @@
 
 import { createHmac as crearFirmaHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { crearSesion, obtenerSesion } from "./sesiones";
+import { cerrarSesion, crearSesion, obtenerSesion } from "./sesiones";
 
 const cookiesSimuladas = vi.hoisted(() => ({
     get: vi.fn(),
     set: vi.fn(),
+    delete: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -177,6 +178,47 @@ describe("obtenerSesion", () => {
 
     it("rechaza un contenido JSON nulo", async () => {
         configurarCookie(null);
+
+        expect(await obtenerSesion()).toBeNull();
+    });
+});
+
+
+describe("cerrarSesion", () => {
+
+    it("borra la cookie de sesión", async () => {
+        await cerrarSesion();
+
+        expect(cookiesSimuladas.delete).toHaveBeenCalledOnce();
+        expect(cookiesSimuladas.delete).toHaveBeenCalledWith("uam_sesion");
+    });
+
+    it("no escribe ninguna cookie", async () => {
+        await cerrarSesion();
+
+        expect(cookiesSimuladas.set).not.toHaveBeenCalled();
+    });
+
+    // Recorrido completo: se inicia sesión, hay sesión, se cierra, ya no hay sesión
+    it("deja al usuario sin sesión después de cerrarla", async () => {
+        // Cookies falsas que se comportan como las del navegador: guardan, devuelven y borran por nombre
+        const cookiesGuardadas = new Map<string, { value: string }>();
+        cookiesSimuladas.set.mockImplementation((nombre: string, valor: string) => {
+            cookiesGuardadas.set(nombre, { value: valor });
+        });
+        cookiesSimuladas.get.mockImplementation((nombre: string) => cookiesGuardadas.get(nombre));
+        cookiesSimuladas.delete.mockImplementation((nombre: string) => {
+            cookiesGuardadas.delete(nombre);
+        });
+
+        await crearSesion(4, "OPERADOR");
+        expect(await obtenerSesion()).toEqual({
+            usuarioId: 4,
+            rol: "OPERADOR",
+            expiraEn: segundosActuales + 28800,
+        });
+
+        await cerrarSesion();
 
         expect(await obtenerSesion()).toBeNull();
     });

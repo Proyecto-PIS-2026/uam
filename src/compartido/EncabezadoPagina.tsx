@@ -3,7 +3,7 @@ import styles from "./EncabezadoPagina.module.css";
 
 type EncabezadoPaginaProps = {
     titulo: string;
-    cantidad: number | null;
+    cantidad?: number | null;
     subtitulo: string;
     className?: string;
 };
