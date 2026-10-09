@@ -12,6 +12,7 @@ const LISTA_INTELIGENTE_POR_DEFECTO = "";
 
 export default function ListadoConfiguracionesGenerales({configuracion}: ListadoConfiguracionesGeneralesProps) {
     const [listaInteligente, setListaInteligente] = useState(configuracion.url_lista_inteligente ?? "");
+    
     async function guardarConfiguracion(nombre: string, valor: string): Promise<string> {
         const respuesta = await fetch(
             `/api/configuracion/${encodeURIComponent(nombre)}`,
