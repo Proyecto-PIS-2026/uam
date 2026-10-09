@@ -5,10 +5,10 @@
     position: relative;
     box-sizing: border-box;
     width: 100%;
-    padding: var(--padding-titulo-pagina);
+    padding: 1.25rem;
     border: 1px solid var(--color-border);
     border-radius: 0.75rem;
-    background-color: var(--color-surface);
+    background-color: #fff;
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
 }
 
@@ -49,13 +49,11 @@
     border-color: var(--color-border);
 }
 
-.selectMui
-    :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+.selectMui :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-primary);
 }
 
-.selectMui
-    :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-primary);
 }
 
@@ -77,8 +75,7 @@
     opacity: 1;
 }
 
-.selectMui
-    :global(.MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline) {
+.selectMui :global(.MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-border);
 }
 
@@ -142,5 +139,15 @@
 
     .accionesEdicion {
         align-self: flex-end;
+    }
+}
+
+@media (min-width: 768px) {
+    .tarjeta {
+        padding: var(--padding-titulo-pagina);
+        border: none;
+        border-radius: 0 0.5rem 0.5rem 0.5rem;
+        background-color: #fff;
+        box-shadow: none;
     }
 }
