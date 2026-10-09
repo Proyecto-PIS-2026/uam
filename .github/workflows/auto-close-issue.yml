@@ -1,0 +1,78 @@
+name: Auto Close Issue on Project Closed Status
+
+on:
+  projects_v2_item:
+    types: [edited, reordered]
+
+permissions:
+  issues: write
+  repository-projects: read
+
+jobs:
+  close-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cerrar Issue si la tarjeta pasa a Closed
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.SEGUIMIENTO_TOKEN || github.token }}
+          script: |
+            const item = context.payload.projects_v2_item;
+
+            const query = `
+              query($nodeId: ID!) {
+                node(id: $nodeId) {
+                  ... on ProjectV2Item {
+                    fieldValueByName(name: "Status") {
+                      ... on ProjectV2ItemFieldSingleSelectValue {
+                        name
+                      }
+                    }
+                    content {
+                      ... on Issue {
+                        id
+                        number
+                        state
+                        repository {
+                          name
+                          owner {
+                            login
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            try {
+              const res = await github.graphql(query, { nodeId: item.node_id });
+              const statusName = res.node?.fieldValueByName?.name;
+              const issue = res.node?.content;
+
+              if (!issue || !issue.id) {
+                console.log("El ítem no es un Issue válido.");
+                return;
+              }
+
+              if (statusName === "Closed" && issue.state === "OPEN") {
+                console.log(`Cerrando Issue #${issue.number} en ${issue.repository.owner.login}/${issue.repository.name}...`);
+                
+                const mutation = `
+                  mutation($issueId: ID!) {
+                    closeIssue(input: { issueId: $issueId }) {
+                      issue {
+                        number
+                        state
+                      }
+                    }
+                  }
+                `;
+
+                await github.graphql(mutation, { issueId: issue.id });
+                console.log(`¡Éxito! Issue #${issue.number} de ${issue.repository.name} fue cerrado.`);
+              }
+            } catch (error) {
+              console.error("Error al procesar:", error.message);
+            }
