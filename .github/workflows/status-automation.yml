@@ -1,0 +1,169 @@
+name: Project Status Automator
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - closed
+
+permissions:
+  contents: read
+
+env:
+  ORGANIZATION: Proyecto-PIS-2026
+  PROJECT_NUMBER: 1
+
+jobs:
+  update-project-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Actualizar Estado en GitHub Project
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.SEGUIMIENTO_TOKEN || github.token }}
+          script: |
+            const pr = context.payload.pull_request;
+            const action = context.payload.action;
+            const body = pr.body || "";
+
+            // 1. Extraer la sección "Issue asociado"
+            function obtenerContenidoSeccion(nombre, texto) {
+              const inicioRegex = new RegExp(`^##[\\t ]+${nombre}[\\t ]*\\r?$`, "im");
+              const match = inicioRegex.exec(texto);
+              if (!match) return null;
+
+              const inicioContenido = match.index + match[0].length;
+              const resto = texto.substring(inicioContenido);
+              const siguienteEncabezado = /^##[\t ]+/m.exec(resto);
+
+              let contenido = siguienteEncabezado ? resto.substring(0, siguienteEncabezado.index) : resto;
+              contenido = contenido.replace(/<!--[\s\S]*?-->/g, "");
+              return contenido.trim();
+            }
+
+            const contenidoIssue = obtenerContenidoSeccion("Issue asociado", body);
+            if (!contenidoIssue) {
+              console.log("No se encontró la sección 'Issue asociado'.");
+              return;
+            }
+
+            // Capturar TODOS los números que empiecen por #
+            const issueMatches = [...contenidoIssue.matchAll(/#(\d+)/g)];
+            if (issueMatches.length === 0) {
+              console.log("No se encontraron números de Issue con formato #NUMERO.");
+              return;
+            }
+
+            // Convertir a un arreglo de números únicos
+            const issueNumbers = [...new Set(issueMatches.map(m => parseInt(m[1], 10)))];
+            console.log(`Issues asociados detectados: ${issueNumbers.join(", ")}`);
+
+            // Determinamos estado de destino
+            let targetStatus = "";
+            if (action === "opened" || action === "reopened") {
+              targetStatus = "In review - PR";
+            } else if (action === "closed" && pr.merged) {
+              targetStatus = "In review - QA";
+            } else {
+              console.log(`Acción '${action}' (merged: ${pr.merged}) no requiere actualización.`);
+              return;
+            }
+
+            const org = process.env.ORGANIZATION;
+            const projectNumber = parseInt(process.env.PROJECT_NUMBER, 10);
+
+            // 2. Procesar cada Issue de forma individual
+            for (const issueNumber of issueNumbers) {
+              console.log(`\nProcesando Issue #${issueNumber}...`);
+
+              const queryData = `
+                query($org: String!, $number: Int!, $issueNumber: Int!) {
+                  organization(login: $org) {
+                    projectV2(number: $number) {
+                      id
+                      fields(first: 50) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options {
+                              id
+                              name
+                            }
+                          }
+                        }
+                      }
+                    }
+                    repository(name: "seguimiento") {
+                      issue(number: $issueNumber) {
+                        projectItems(first: 10) {
+                          nodes {
+                            id
+                            project {
+                              id
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+
+              try {
+                const res = await github.graphql(queryData, {
+                  org: org,
+                  number: projectNumber,
+                  issueNumber: issueNumber
+                });
+
+                const project = res.organization?.projectV2;
+                if (!project) throw new Error(`ProjectV2 #${projectNumber} no encontrado.`);
+
+                const statusField = project.fields.nodes.find(f => f.name === "Status");
+                if (!statusField) throw new Error("Campo 'Status' no encontrado.");
+
+                const targetOption = statusField.options.find(opt => opt.name === targetStatus);
+                if (!targetOption) throw new Error(`Opción '${targetStatus}' no encontrada.`);
+
+                const issueItems = res.organization?.repository?.issue?.projectItems?.nodes || [];
+                const projectItem = issueItems.find(item => item.project.id === project.id);
+
+                if (!projectItem) {
+                  console.log(`La issue #${issueNumber} no está agregada en el Project V2.`);
+                  continue;
+                }
+
+                const mutation = `
+                  mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                    updateProjectV2ItemFieldValue(
+                      input: {
+                        projectId: $projectId
+                        itemId: $itemId
+                        fieldId: $fieldId
+                        value: {
+                          singleSelectOptionId: $optionId
+                        }
+                      }
+                    ) {
+                      projectV2Item {
+                        id
+                      }
+                    }
+                  }
+                `;
+
+                await github.graphql(mutation, {
+                  projectId: project.id,
+                  itemId: projectItem.id,
+                  fieldId: statusField.id,
+                  optionId: targetOption.id
+                });
+
+                console.log(`¡Éxito! Issue #${issueNumber} movida a '${targetStatus}'.`);
+
+              } catch (error) {
+                console.error(`Error procesando la Issue #${issueNumber}:`, error.message);
+              }
+            }
