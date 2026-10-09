@@ -6,6 +6,8 @@
 }
 
 .lista {
+    --columnas-usuarios: 12rem minmax(0, 1fr) 8rem 5rem;
+
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -17,7 +19,7 @@
 
 .encabezado {
     display: grid;
-    grid-template-columns: 1fr 1.5fr 8rem 5rem;
+    grid-template-columns: var(--columnas-usuarios);
     gap: 1rem;
     align-items: center;
     padding: 0.8rem 1rem;
@@ -26,6 +28,7 @@
     color: var(--color-secondary);
     font-size: 0.8rem;
     font-weight: 700;
+    box-sizing: border-box;
 }
 
 .columnaAccionesHeader {
@@ -34,7 +37,7 @@
 
 .fila {
     display: grid;
-    grid-template-columns: 1fr 1.5fr 8rem 5rem;
+    grid-template-columns: var(--columnas-usuarios);
     align-items: center;
     gap: 1rem;
     width: 100%;
@@ -66,15 +69,28 @@
 
 .username {
     min-width: 0;
-    overflow: hidden;
     color: var(--color-secondary);
     font-weight: 600;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.encabezado span:nth-child(2),
+.informacion {
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    justify-self: stretch;
+    box-sizing: border-box;
+}
+
+.encabezado span:nth-child(2) {
     white-space: nowrap;
 }
 
 .informacion {
-    min-width: 0;
     overflow: hidden;
     color: var(--color-foreground);
     text-overflow: ellipsis;
@@ -82,8 +98,15 @@
 }
 
 .rol {
+    min-width: 0;
     color: var(--color-foreground);
     font-weight: 500;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.encabezado span:nth-child(3) {
+    text-align: right;
 }
 
 .acciones {
@@ -163,8 +186,11 @@
 }
 
 @media (max-width: 600px) {
+    .lista {
+        --columnas-usuarios: minmax(0, 1fr) max-content 5rem;
+    }
+
     .encabezado {
-        grid-template-columns: 1fr auto 5rem;
         gap: 0.5rem;
         padding: 0.65rem 0.75rem;
         font-size: 0.75rem;
@@ -174,15 +200,29 @@
         display: none;
     }
 
+    .encabezado span:nth-child(3) {
+        text-align: left;
+    }
+
     .fila {
-        grid-template-columns: 1fr auto 5rem;
         gap: 0.5rem;
         min-height: 3rem;
         padding: 0.65rem 0.75rem;
         font-size: 0.8rem;
     }
 
+    .username {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
     .informacion {
         display: none;
+    }
+
+    .rol {
+        text-align: left;
+        white-space: nowrap;
     }
 }
