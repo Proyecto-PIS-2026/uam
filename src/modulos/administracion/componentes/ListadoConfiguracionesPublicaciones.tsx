@@ -96,8 +96,7 @@ export default function ListadoConfiguraciones({ configuracion, especies }: List
         }
         setEspeciesLocales((anteriores) => anteriores.map((especie) => especie.id === especieId ? { ...especie, fotoEspecie: null } : especie));
     }
-
-    return (
+    const contenido = (
         <div className="flex flex-col gap-6">
             <TarjetaUploadFotoEspecie
                 titulo="Foto predeterminada por especie"
@@ -111,6 +110,7 @@ export default function ListadoConfiguraciones({ configuracion, especies }: List
             <TarjetaInput
                 titulo="Importe de ajuste rápido de precios"
                 descripcion="Configurá el importe utilizado para aumentar o disminuir rápidamente el precio de una publicación."
+                tipo="numero"
                 valor={importe}
                 onChangeValor={setImporte}
                 onGuardarValor={guardarImporte}
@@ -119,6 +119,7 @@ export default function ListadoConfiguraciones({ configuracion, especies }: List
             <TarjetaInput
                 titulo="Vigencia de fotografías"
                 descripcion="Configurá durante cuántos días se considera vigente la fotografía de una publicación."
+                tipo="numero"
                 valor={vigencia}
                 onChangeValor={setVigencia}
                 onGuardarValor={guardarVigencia}
@@ -126,4 +127,5 @@ export default function ListadoConfiguraciones({ configuracion, especies }: List
             />
         </div>
     );
+    return contenido; 
 }

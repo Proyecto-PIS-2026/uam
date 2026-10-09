@@ -93,7 +93,7 @@ describe("consultas-inicio", () => {
             const resultado = await obtenerEspeciesInicio();
 
             expect(resultado).toEqual([
-                { nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: null },
+                { nombreEspecie: "Banana", cantidadOperadores: 3, fotoEspecie: null },
             ]);
         });
 
@@ -105,7 +105,7 @@ describe("consultas-inicio", () => {
 
             const resultado = await obtenerEspeciesInicio();
 
-            expect(resultado[0].fotoGenerica).toBe("/generico/manzana.png");
+            expect(resultado[0].fotoEspecie).toBe("/generico/manzana.png");
         });
 
         it("usa una foto JPG cuando no existe WEBP ni PNG", async () => {
@@ -116,7 +116,7 @@ describe("consultas-inicio", () => {
 
             const resultado = await obtenerEspeciesInicio();
 
-            expect(resultado[0].fotoGenerica).toBe("/generico/sandia.jpg");
+            expect(resultado[0].fotoEspecie).toBe("/generico/sandia.jpg");
         });
 
         it("ignora tildes y mayúsculas al buscar el archivo genérico", async () => {
@@ -127,7 +127,7 @@ describe("consultas-inicio", () => {
 
             const resultado = await obtenerEspeciesInicio();
 
-            expect(resultado[0].fotoGenerica).toBe("/generico/sandia.webp");
+            expect(resultado[0].fotoEspecie).toBe("/generico/sandia.webp");
         });
 
         it("devuelve fotoGenerica null si la carpeta /public/generico no existe (ENOENT)", async () => {
@@ -140,7 +140,7 @@ describe("consultas-inicio", () => {
 
             const resultado = await obtenerEspeciesInicio();
 
-            expect(resultado[0].fotoGenerica).toBeNull();
+            expect(resultado[0].fotoEspecie).toBeNull();
         });
 
         it("propaga otros errores de filesystem distintos de ENOENT", async () => {

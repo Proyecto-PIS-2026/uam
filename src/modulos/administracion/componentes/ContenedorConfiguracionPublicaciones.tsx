@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import obtenerConfiguraciones from "@/modulos/administracion/consulta-configuracion";
 import obtenerEspecies from "@/modulos/administracion/consulta-especies";
-import ContenedorConfiguracion from "@/modulos/administracion/componentes/ListadoConfiguracionesPublicaci";
+import ContenedorConfiguracion from "@/modulos/administracion/componentes/ListadoConfiguracionesPublicaciones";
 
 export default async function PaginaAdministracionPublicaciones() {
     const [filas, especies] = await Promise.all([

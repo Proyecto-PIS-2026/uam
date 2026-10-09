@@ -2,14 +2,14 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import Inicio from "./inicio";
 
 const especiesMock = [
-  { nombreEspecie: "Banana", fotoGenerica: null, cantidadOperadores: 3 },
-  { nombreEspecie: "Manzana", fotoGenerica: null, cantidadOperadores: 5 },
-  { nombreEspecie: "Sandía", fotoGenerica: null, cantidadOperadores: 1 },
+  { nombreEspecie: "Banana", fotoEspecie: null, cantidadOperadores: 3 },
+  { nombreEspecie: "Manzana", fotoEspecie: null, cantidadOperadores: 5 },
+  { nombreEspecie: "Sandía", fotoEspecie: null, cantidadOperadores: 1 },
 ];
 
 const especiesOrdenMock = ["Berro", "Manzana", "Papa", "Acelga", "Banana"].map((nombreEspecie) => ({
     nombreEspecie,
-    fotoGenerica: null,
+    fotoEspecie: null,
     cantidadOperadores: 1,
 }));
 
@@ -104,7 +104,7 @@ describe("inicio", () => {
     it("cambia a la siguiente página al presionar Siguiente y a la anterior al presionar anterior", () => {
         const especies = Array.from({ length: 21 }, (_, i) => ({
             nombreEspecie: `Especie ${String(i + 1).padStart(2, "0")}`,
-            fotoGenerica: null,
+            fotoEspecie: null,
             cantidadOperadores: 1,
         }));
         render(<Inicio especies={especies} urlListaInteligente={null} />);

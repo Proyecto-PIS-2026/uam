@@ -5,7 +5,6 @@ import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "./MiMercado";
 import { actualizarPrecio } from "../acciones";
 import styles from "./TarjetaPublicacion.module.css";
-import { obtenerImporteAjusteRapido } from "../../../administracion/acciones-ajuste-precios";
 
 type Props = {
     pub: Publicacion;
@@ -16,7 +15,7 @@ type Props = {
     alPublicacionEliminada?: () => void;
 };
 
-export default function TarjetaPublicacion({pub, operadorId, incrementoPrecio, alConsultar, alPrecioActualizado, alPublicacionEliminada}: Props) {
+export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, alConsultar, alPrecioActualizado, alPublicacionEliminada }: Props) {
     let precioInicial = 0;
     if (Number(pub.precio)) {
         precioInicial = Number(pub.precio);
@@ -27,7 +26,6 @@ export default function TarjetaPublicacion({pub, operadorId, incrementoPrecio, a
     const [errorPrecio, setErrorPrecio] = useState("");
     const precioPendienteRef = useRef(precioInicial);
     const precioConfirmadoRef = useRef(precioInicial);
-    const [importeAjuste, setImporteAjuste] = useState(incrementoPrecio);
     const guardandoPrecioRef = useRef(false);
     const [editandoPrecio, setEditandoPrecio] = useState(false);
     const [precioTemporal, setPrecioTemporal] = useState(String(precioInicial));
@@ -86,26 +84,17 @@ export default function TarjetaPublicacion({pub, operadorId, incrementoPrecio, a
         alConsultar?.({ ...pub, precio: pub.precio === null && precio === 0 ? null : String(precio)});
     }
 
-    async function ajustarPrecio(direccion: 1 | -1) {
-        try {
-            const importe = await obtenerImporteAjusteRapido();
-            setImporteAjuste(importe);
-            const nuevoPrecio = precioPendienteRef.current + direccion * importe;
-            if (nuevoPrecio <= 0) {
-                return;
-            }
-            cambiarPrecio(nuevoPrecio);
-        } catch (error) {
-            setErrorPrecio(error instanceof Error ? error.message : "No se pudo obtener el importe de ajuste rápido.");
-        }
-    }
-
     function restar() {
-        void ajustarPrecio(-1);
+        const nuevoPrecio = precioPendienteRef.current - incrementoPrecio;
+        if (nuevoPrecio <= 0) {
+            return;
+        }
+        cambiarPrecio(nuevoPrecio);
     }
 
     function sumar() {
-        void ajustarPrecio(1);
+        const nuevoPrecio = precioPendienteRef.current + incrementoPrecio;
+        cambiarPrecio(nuevoPrecio);
     }
 
     function comenzarEdicionPrecio() {
@@ -151,8 +140,10 @@ export default function TarjetaPublicacion({pub, operadorId, incrementoPrecio, a
             </button>
             {/* Contenido */}
             <div className={styles.contenido}>
+                {/* Información clickeable */}
                 <button type="button" onClick={consultarPublicacion} className={styles.botonInformacion}>
                     <div className={styles.informacion}>
+                        {/* Nombre + estado */}
                         <div className={styles.encabezadoProducto}>
                             <div className={styles.nombreProducto} title={nombreProducto}>
                                 {nombreProducto}
@@ -161,6 +152,7 @@ export default function TarjetaPublicacion({pub, operadorId, incrementoPrecio, a
                                 {pub.publicacionDisponible ? "Disponible" : "No disponible"}
                             </span>
                         </div>
+                        {/* Datos */}
                         <div className={styles.datos}>
                             {calibre || "-"}
                             {" · "}
@@ -173,7 +165,7 @@ export default function TarjetaPublicacion({pub, operadorId, incrementoPrecio, a
                 {/* Precio */}
                 <div className={styles.contenedorPrecio}>
                     <div className={styles.controlesPrecio}>
-                        <button type="button" className={styles.botonPrecio} onClick={restar} aria-label="Disminuir precio" title={`Disminuir $${importeAjuste}`}>
+                        <button type="button" className={styles.botonPrecio} onClick={restar} aria-label="Disminuir precio">
                             −
                         </button>
                         {editandoPrecio ? (
@@ -196,11 +188,11 @@ export default function TarjetaPublicacion({pub, operadorId, incrementoPrecio, a
                                 }}
                             />
                         ) : (
-                            <button type="button" onClick={comenzarEdicionPrecio} disabled={guardandoPrecio} className={styles.precio} title="Editar precio">
+                            <button type="button" onClick={comenzarEdicionPrecio} className={styles.precio} title="Editar precio">
                                 {precio === 0 ? "Sin precio" : `$${precio}`}
                             </button>
                         )}
-                        <button type="button" className={styles.botonPrecio} onClick={sumar} aria-label="Aumentar precio" title={`Aumentar $${importeAjuste}`}>
+                        <button type="button" className={styles.botonPrecio} onClick={sumar} aria-label="Aumentar precio">
                             +
                         </button>
                     </div>

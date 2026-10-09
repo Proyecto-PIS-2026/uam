@@ -1,3 +1,4 @@
+
 .tarjeta {
     display: flex;
     flex-direction: column;
@@ -29,6 +30,8 @@
     line-height: 1.5;
     color: #4b5563;
 }
+
+/* Campos generales */
 
 .campo {
     display: flex;
@@ -79,6 +82,8 @@
     cursor: pointer;
 }
 
+/* Validaciones */
+
 .inputError {
     border-color: #d32f2f;
 }
@@ -96,9 +101,12 @@
     line-height: 1.2;
 }
 
+/* Inputs de Material UI */
+
 .selectMui {
     width: 100%;
     min-width: 0;
+    flex: 1;
 }
 
 .selectMui :global(.MuiOutlinedInput-root) {
@@ -129,11 +137,14 @@
     background-color: var(--color-primary-soft) !important;
 }
 
+/* Edición de configuraciones */
+
 .contenedorEdicion {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     width: 100%;
+    min-width: 0;
 }
 
 .accionesEdicion {
@@ -159,4 +170,89 @@
 
 .botonDescartar {
     color: #d32f2f !important;
+}
+
+/* Contenedor del switch: mismo tamaño que el input */
+
+.contenedorSwitch {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-width: 0;
+    height: 40px;
+    padding: 0 0.5rem;
+    box-sizing: border-box;
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+/* Recuadro verde cuando está activado */
+
+.contenedorSwitchActivo {
+    background-color: #e3eee7;
+    border-color: #08743d;
+}
+
+/* Recuadro gris cuando está desactivado */
+
+.contenedorSwitchInactivo {
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+/* Estilos del switch de Material UI */
+
+.contenedorSwitch :global(.MuiSwitch-root) {
+    flex-shrink: 0;
+}
+
+.contenedorSwitch :global(.MuiSwitch-switchBase.Mui-checked) {
+    color: #08743d;
+}
+
+.contenedorSwitch :global(.MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track) {
+    background-color: #08743d;
+    opacity: 0.6;
+}
+
+.contenedorSwitch :global(.MuiSwitch-switchBase:not(.Mui-checked)) {
+    color: #757575;
+}
+
+.contenedorSwitch :global(.MuiSwitch-track) {
+    background-color: #9ca3af;
+}
+
+.contenedorSwitch :global(.MuiSwitch-switchBase.Mui-disabled) {
+    opacity: 0.65;
+}
+
+.contenedorSwitch :global(.MuiSwitch-switchBase.Mui-disabled + .MuiSwitch-track) {
+    opacity: 0.3;
+}
+
+.contenedorSwitch:focus-within {
+    outline: none;
+}
+
+@media (max-width: 480px) {
+    .tarjeta {
+        gap: 0.75rem;
+    }
+
+    .contenedorEdicion {
+        gap: 0.25rem;
+    }
+
+    .contenedorSwitch {
+        padding: 0 0.25rem;
+    }
+
+    .accionesEdicion {
+        gap: 0;
+    }
 }

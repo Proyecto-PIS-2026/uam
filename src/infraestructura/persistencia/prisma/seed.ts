@@ -612,6 +612,7 @@ async function main() {
   await prisma.orm.public.Configuracion.create({nombreConfiguracion: "vigencia_fotografias", valorConfiguracion: "30"});
   await prisma.orm.public.Configuracion.create({nombreConfiguracion: "fecha_consulta_catalogo", valorConfiguracion: consulta.survey_date});
   await prisma.orm.public.Configuracion.create({nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf",});
+  await prisma.orm.public.Configuracion.create({nombreConfiguracion: "ordenamiento_habilitado", valorConfiguracion: "true"});
 
   console.table({
     especies: consulta.types.reduce((total, tipo) => total + tipo.products.length, 0),
