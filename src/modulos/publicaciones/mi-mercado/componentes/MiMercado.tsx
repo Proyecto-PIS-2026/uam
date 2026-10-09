@@ -9,7 +9,8 @@ import DrawerEditarPublicacion, { type PublicacionParaEditar } from "../../opera
 import NuevaPublicacion from "../../operadores/componentes/NuevaPublicacion";
 import type { OpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
 import type { CambiosPublicacionOperador } from "../../operadores/modificar-publicacion";
-import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones, type PublicacionListado } from "../../filtros/FiltrosPublicaciones";
+import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../filtros/FiltrosPublicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
 import styles from "./MiMercado.module.css";
@@ -20,6 +21,7 @@ export type Publicacion = {
     paisId: number;
     foto: string | null;
     precio: string | null;
+    fecha: string; 
     publicacionActiva: boolean;
     publicacionDisponible: boolean;
     presentacion: {
@@ -56,14 +58,7 @@ type Props = {
     opcionesEdicion: OpcionesEdicionPublicacion;
 };
 
-export default function MiMercado({
-    operadorId,
-    nombreOperador = "",
-    abrirAltaInicial = false,
-    publicaciones,
-    incrementoPrecio,
-    opcionesEdicion,
-}: Props) {
+export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaInicial = false, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(abrirAltaInicial);
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(true);
@@ -82,6 +77,7 @@ export default function MiMercado({
     const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicacionesVigentes.map((publicacion) => ({
         id: publicacion.id,
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
+        fecha: publicacion.fecha,
         foto: publicacion.foto,
         especie: publicacion.presentacion.variedad.especie.nombreEspecie,
         variedad: publicacion.presentacion.variedad.nombreVariedad,
@@ -119,6 +115,7 @@ export default function MiMercado({
         calibre: publicacionSeleccionada.calibre.nombreCalibre,
         precio: publicacionSeleccionada.precio,
         foto: publicacionSeleccionada.foto,
+        fecha: publicacionSeleccionada.fecha,
         categoriaId: publicacionSeleccionada.categoria.id,
         calibreId: publicacionSeleccionada.calibre.id,
         presentacionId: publicacionSeleccionada.presentacion.id,
