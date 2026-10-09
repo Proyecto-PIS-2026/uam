@@ -207,6 +207,7 @@ jobs:
                           fieldValueByName(name: "Status") {
                             ... on ProjectV2ItemFieldSingleSelectValue {
                               name
+                              updatedAt
                             }
                           }
 
@@ -229,6 +230,13 @@ jobs:
                                   state
                                   merged
                                   mergedAt
+                                  commits(last: 1) {
+                                    nodes {
+                                      commit {
+                                        committedDate
+                                      }
+                                    }
+                                  }
                                 }
                               }
                             }
@@ -265,8 +273,11 @@ jobs:
             ISSUE_STATE=$(echo "$item" | jq -r '.content.state')
             REPOSITORY=$(echo "$item" | jq -r '.content.repository.nameWithOwner // empty')
             STATUS=$(echo "$item" | jq -r '.fieldValueByName.name // ""')
+            STATUS_UPDATED_AT=$(echo "$item" | jq -r '.fieldValueByName.updatedAt // ""')
             LINKED_PRS=$(echo "$item" | jq -r '.content.closedByPullRequestsReferences.totalCount // 0')
             MERGED_PR=$(echo "$item" | jq -r '.content.closedByPullRequestsReferences.nodes[]? | select(.merged == true) | .number' | head -n 1)
+            OPEN_PRS=$(echo "$item" | jq -r '[.content.closedByPullRequestsReferences.nodes[]? | select(.merged != true and .state == "OPEN" and (.commits.nodes[0].commit.committedDate // "") > "'"$STATUS_UPDATED_AT"'")] | length')
+            RECENT_MERGED_PR=$(echo "$item" | jq -r '.content.closedByPullRequestsReferences.nodes[]? | select(.merged == true and (.mergedAt // "") > "'"$STATUS_UPDATED_AT"'") | .number' | head -n 1)
 
             if [[ -z "$REPOSITORY" || -z "$ISSUE_NUMBER" || "$ISSUE_NUMBER" == "null" ]]; then
               continue
@@ -287,19 +298,13 @@ jobs:
               continue
             fi
 
-            if [[ -n "$MERGED_PR" && "$STATUS" == "In review - PR" ]]; then
+            if [[ -n "$RECENT_MERGED_PR" && "$STATUS" == "In review - PR" ]]; then
               echo "Issue #$ISSUE_NUMBER tiene PR mergeado → In review - QA"
               update_status "$ITEM_ID" "$IN_REVIEW_QA_OPTION_ID"
               continue
             fi
 
-            if [[ -n "$MERGED_PR" && "$STATUS" != "In review - QA" && "$STATUS" != "Done" && "$STATUS" != "Closed" ]]; then
-              echo "Issue #$ISSUE_NUMBER tiene PR mergeado → In review - QA"
-              update_status "$ITEM_ID" "$IN_REVIEW_QA_OPTION_ID"
-              continue
-            fi
-
-            if [[ "$LINKED_PRS" =~ ^[0-9]+$ && "$LINKED_PRS" -gt 0 && "$STATUS" != "In review - PR" && "$STATUS" != "In review - QA" && "$STATUS" != "Done" && "$STATUS" != "Closed" ]]; then
+            if [[ "$OPEN_PRS" =~ ^[0-9]+$ && "$OPEN_PRS" -gt 0 && "$STATUS" != "In review - PR" && "$STATUS" != "In review - QA" && "$STATUS" != "Done" && "$STATUS" != "Closed" ]]; then
               echo "Issue #$ISSUE_NUMBER tiene PR vinculado → In review - PR"
               update_status "$ITEM_ID" "$IN_REVIEW_PR_OPTION_ID"
             fi
