@@ -105,9 +105,15 @@
 
 .opcionDesplegable {
     display: block;
+    width: 100%;
     padding: 0.6rem 0.75rem;
+    border: none;
+    background: none;
     color: var(--color-muted);
+    font: inherit;
+    text-align: left;
     white-space: nowrap;
+    cursor: pointer;
 }
 
 .desplegableOperador a:hover,

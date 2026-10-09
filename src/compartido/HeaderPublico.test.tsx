@@ -1,8 +1,9 @@
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { usePathname } from "next/navigation";
 import estilos from "./HeaderPublico.module.css";
 import HeaderPublico from "./HeaderPublico";
+import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
 
 vi.mock("next/navigation", () => ({ usePathname: vi.fn() }));
 vi.mock("next/image", () => ({
@@ -21,8 +22,12 @@ vi.mock("next/image", () => ({
 vi.mock("next/link", () => ({ default: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (<a {...props}>{children}</a>) }));
 vi.mock("@mui/icons-material/Menu", () => ({ default: () => <span data-testid="menu-icon"/> }));
 vi.mock("@mui/icons-material/Close", () => ({ default: () => <span data-testid="close-icon"/> }));
+vi.mock("@/modulos/identidad-acceso/autenticacion/accionCerrarSesion", () => ({
+    cerrarSesionYVolverAlInicio: vi.fn(),
+}));
 
 const consultarRutaSimulada = vi.mocked(usePathname);
+const cerrarSesionSimulada = vi.mocked(cerrarSesionYVolverAlInicio);
 
 describe("HeaderPublico", () => {
     beforeEach(() => {
@@ -206,5 +211,16 @@ describe("HeaderPublico", () => {
         fireEvent.mouseDown(overlay!);
         expect(screen.getByRole("button", { name: "Abrir menú" })).toBeInTheDocument();
         expect(boton).toHaveAttribute("aria-expanded", "false");
+    });
+
+    it("cierra la sesión al elegir la opción del menú de usuario", async () => {
+        render(<HeaderPublico rolUsuario="OPERADOR" />);
+        fireEvent.click(screen.getByRole("button", { name: "Abrir menú de usuario" }));
+
+        fireEvent.click(screen.getByRole("menuitem", { name: "Cerrar sesión" }));
+
+        await waitFor(() => {
+            expect(cerrarSesionSimulada).toHaveBeenCalledOnce();
+        });
     });
 });
