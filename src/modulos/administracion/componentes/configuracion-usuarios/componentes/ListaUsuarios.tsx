@@ -77,7 +77,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
     const contadorNotificacion = useRef(0);
     const esMobile = useEsMobileSSR();
 
-    const usuariosPorPagina = esMobile ? 7 : 10;
+    const usuariosPorPagina = esMobile ? 7 : 8;
 
     const usuariosVisibles = usuarios.filter((u) => !idsEliminados.includes(u.id));
 
