@@ -13,6 +13,7 @@ describe("obtenerPublicaciones", () => {
                     id: 1,
                     precio: 150,
                     foto: "/tomate.jpg",
+                    fecha: "2026-10-03T15:00:00.000Z",
                     especie: "Tomate",
                     variedad: "Perita",
                     presentacion: "Cajón",
