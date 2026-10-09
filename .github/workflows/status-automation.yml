@@ -1,0 +1,308 @@
+name: Project automation
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  organization-projects: write
+  repository-projects: write
+
+jobs:
+  update-project:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Update project issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+          ORGANIZATION: Proyecto-PIS-2026
+          PROJECT_NUMBER: 1
+
+        shell: bash
+
+        run: |
+          set -euo pipefail
+
+          echo "Obteniendo configuración del Project..."
+
+          gh api graphql \
+            -f query='
+              query($org: String!, $number: Int!) {
+                organization(login: $org) {
+                  projectV2(number: $number) {
+                    id
+
+                    fields(first: 50) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ' \
+            -f org="$ORGANIZATION" \
+            -F number="$PROJECT_NUMBER" \
+            > project.json
+
+          PROJECT_ID=$(jq -r -e '.data.organization.projectV2.id // empty' project.json)
+
+          if [[ -z "$PROJECT_ID" ]]; then
+            echo "No se encontró el Project V2 para $ORGANIZATION #$PROJECT_NUMBER"
+            exit 1
+          fi
+
+          STATUS_FIELD_ID=$(jq -r \
+            '.data.organization.projectV2.fields.nodes[]
+             | select(.name == "Status")
+             | .id' \
+            project.json | head -n 1)
+
+          BACKLOG_OPTION_ID=$(jq -r \
+            '.data.organization.projectV2.fields.nodes[]
+             | select(.name == "Status")
+             | .options[]
+             | select(.name == "Backlog")
+             | .id' \
+            project.json | head -n 1)
+
+          BACKLOG_READY_OPTION_ID=$(jq -r \
+            '.data.organization.projectV2.fields.nodes[]
+             | select(.name == "Status")
+             | .options[]
+             | select(.name == "Backlog-ready")
+             | .id' \
+            project.json | head -n 1)
+
+          READY_OPTION_ID=$(jq -r \
+            '.data.organization.projectV2.fields.nodes[]
+             | select(.name == "Status")
+             | .options[]
+             | select(.name == "Ready")
+             | .id' \
+            project.json | head -n 1)
+
+          IN_PROGRESS_OPTION_ID=$(jq -r \
+            '.data.organization.projectV2.fields.nodes[]
+             | select(.name == "Status")
+             | .options[]
+             | select(.name == "In progress")
+             | .id' \
+            project.json | head -n 1)
+
+          IN_REVIEW_PR_OPTION_ID=$(jq -r \
+            '.data.organization.projectV2.fields.nodes[]
+             | select(.name == "Status")
+             | .options[]
+             | select(.name == "In review - PR")
+             | .id' \
+            project.json | head -n 1)
+
+          IN_REVIEW_QA_OPTION_ID=$(jq -r \
+            '.data.organization.projectV2.fields.nodes[]
+             | select(.name == "Status")
+             | .options[]
+             | select(.name == "In review - QA")
+             | .id' \
+            project.json | head -n 1)
+
+          DONE_OPTION_ID=$(jq -r \
+            '.data.organization.projectV2.fields.nodes[]
+             | select(.name == "Status")
+             | .options[]
+             | select(.name == "Done")
+             | .id' \
+            project.json | head -n 1)
+
+          CLOSED_OPTION_ID=$(jq -r \
+            '.data.organization.projectV2.fields.nodes[]
+             | select(.name == "Status")
+             | .options[]
+             | select(.name == "Closed")
+             | .id' \
+            project.json | head -n 1)
+
+          if [[ -z "$STATUS_FIELD_ID" ]]; then
+            echo "No se encontró el campo 'Status' en el Project V2"
+            exit 1
+          fi
+
+          if [[ -z "$BACKLOG_OPTION_ID" || -z "$BACKLOG_READY_OPTION_ID" || -z "$READY_OPTION_ID" || -z "$IN_PROGRESS_OPTION_ID" || -z "$IN_REVIEW_PR_OPTION_ID" || -z "$IN_REVIEW_QA_OPTION_ID" || -z "$DONE_OPTION_ID" || -z "$CLOSED_OPTION_ID" ]]; then
+            echo "Faltan algunas opciones del campo 'Status' en el Project V2"
+            exit 1
+          fi
+
+          update_status() {
+            local item_id="$1"
+            local option_id="$2"
+
+            gh api graphql \
+              -f query='
+                mutation(
+                  $project: ID!,
+                  $item: ID!,
+                  $field: ID!,
+                  $option: String!
+                ) {
+                  updateProjectV2ItemFieldValue(
+                    input: {
+                      projectId: $project
+                      itemId: $item
+                      fieldId: $field
+                      value: {
+                        singleSelectOptionId: $option
+                      }
+                    }
+                  ) {
+                    projectV2Item {
+                      id
+                    }
+                  }
+                }
+              ' \
+              -f project="$PROJECT_ID" \
+              -f item="$item_id" \
+              -f field="$STATUS_FIELD_ID" \
+              -f option="$option_id"
+          }
+
+          echo "Procesando issues..."
+
+          PROJECT_ITEMS_FILE=$(mktemp)
+          : > "$PROJECT_ITEMS_FILE"
+          END_CURSOR=""
+
+          while :; do
+            PAGE_FILE=$(mktemp)
+
+            gh api graphql \
+              -f query='
+                query($org: String!, $number: Int!, $after: String) {
+                  organization(login: $org) {
+                    projectV2(number: $number) {
+                      items(first: 100, after: $after) {
+                        pageInfo {
+                          hasNextPage
+                          endCursor
+                        }
+
+                        nodes {
+                          id
+
+                          fieldValueByName(name: "Status") {
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              name
+                            }
+                          }
+
+                          content {
+                            ... on Issue {
+                              number
+                              state
+
+                              repository {
+                                nameWithOwner
+                              }
+
+                              closedByPullRequestsReferences(
+                                first: 10
+                                includeClosedPrs: true
+                              ) {
+                                totalCount
+                                nodes {
+                                  number
+                                  state
+                                  merged
+                                  mergedAt
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ' \
+              -f org="$ORGANIZATION" \
+              -F number="$PROJECT_NUMBER" \
+              -f after="$END_CURSOR" \
+              > "$PAGE_FILE"
+
+            jq -c '.data.organization.projectV2.items.nodes[]? | select(.content.number != null)' "$PAGE_FILE" >> "$PROJECT_ITEMS_FILE"
+
+            HAS_NEXT=$(jq -r '.data.organization.projectV2.items.pageInfo.hasNextPage // false' "$PAGE_FILE")
+            END_CURSOR=$(jq -r '.data.organization.projectV2.items.pageInfo.endCursor // ""' "$PAGE_FILE")
+
+            rm -f "$PAGE_FILE"
+
+            if [[ "$HAS_NEXT" != "true" ]] || [[ -z "$END_CURSOR" ]]; then
+              break
+            fi
+          done
+
+          jq -s '.[]' "$PROJECT_ITEMS_FILE" > project-items.json
+
+          jq -c '.[]' project-items.json |
+          while read -r item; do
+            ITEM_ID=$(echo "$item" | jq -r '.id')
+            ISSUE_NUMBER=$(echo "$item" | jq -r '.content.number')
+            ISSUE_STATE=$(echo "$item" | jq -r '.content.state')
+            REPOSITORY=$(echo "$item" | jq -r '.content.repository.nameWithOwner // empty')
+            STATUS=$(echo "$item" | jq -r '.fieldValueByName.name // ""')
+            LINKED_PRS=$(echo "$item" | jq -r '.content.closedByPullRequestsReferences.totalCount // 0')
+            MERGED_PR=$(echo "$item" | jq -r '.content.closedByPullRequestsReferences.nodes[]? | select(.merged == true) | .number' | head -n 1)
+
+            if [[ -z "$REPOSITORY" || -z "$ISSUE_NUMBER" || "$ISSUE_NUMBER" == "null" ]]; then
+              continue
+            fi
+
+            echo "$REPOSITORY#$ISSUE_NUMBER - Status: $STATUS - PRs: $LINKED_PRS - Merged: ${MERGED_PR:-none}"
+
+            if [[ "$ISSUE_STATE" == "CLOSED" && "$STATUS" != "Done" && "$STATUS" != "Closed" ]]; then
+              echo "Reabriendo issue #$ISSUE_NUMBER porque salió de Done o Closed"
+              gh issue reopen "$ISSUE_NUMBER" --repo "$REPOSITORY"
+            fi
+
+            if [[ "$STATUS" == "Done" || "$STATUS" == "Closed" ]]; then
+              if [[ "$ISSUE_STATE" == "OPEN" ]]; then
+                echo "Cerrando issue #$ISSUE_NUMBER"
+                gh issue close "$ISSUE_NUMBER" --repo "$REPOSITORY"
+              fi
+              continue
+            fi
+
+            if [[ -n "$MERGED_PR" && "$STATUS" == "In review - PR" ]]; then
+              echo "Issue #$ISSUE_NUMBER tiene PR mergeado → In review - QA"
+              update_status "$ITEM_ID" "$IN_REVIEW_QA_OPTION_ID"
+              continue
+            fi
+
+            if [[ -n "$MERGED_PR" && "$STATUS" != "In review - QA" && "$STATUS" != "Done" && "$STATUS" != "Closed" ]]; then
+              echo "Issue #$ISSUE_NUMBER tiene PR mergeado → In review - QA"
+              update_status "$ITEM_ID" "$IN_REVIEW_QA_OPTION_ID"
+              continue
+            fi
+
+            if [[ "$LINKED_PRS" =~ ^[0-9]+$ && "$LINKED_PRS" -gt 0 && "$STATUS" != "In review - PR" && "$STATUS" != "In review - QA" && "$STATUS" != "Done" && "$STATUS" != "Closed" ]]; then
+              echo "Issue #$ISSUE_NUMBER tiene PR vinculado → In review - PR"
+              update_status "$ITEM_ID" "$IN_REVIEW_PR_OPTION_ID"
+            fi
+          done
+
+          rm -f "$PROJECT_ITEMS_FILE" project-items.json project.json
