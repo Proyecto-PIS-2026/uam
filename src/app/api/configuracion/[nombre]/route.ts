@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { actualizarConfiguracion, obtenerConfiguracion } from "@/modulos/administracion/consulta-configuracion";
+import { actualizarConfiguracion, obtenerConfiguracion } from "@/modulos/administracion/Consulta-Configuracion";
 
 export const runtime = "nodejs";
 

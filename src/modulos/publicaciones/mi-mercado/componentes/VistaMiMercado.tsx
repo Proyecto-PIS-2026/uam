@@ -3,7 +3,7 @@ import { obtenerPublicacionesDeOperador } from "../consultas-mi-mercado";
 import { mapearPublicacionesMiMercado } from "../mapear-publicaciones";
 import { obtenerOpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
 import { obtenerOperadorActual, obtenerOperadorPorNombre } from "../../../usuarios/operadores/operador-actual";
-import { obtenerConfiguracion } from "@/modulos/administracion/consulta-configuracion";
+import { obtenerConfiguracion } from "@/modulos/administracion/Consulta-Configuracion";
 import { notFound } from "next/navigation";
 
 type VistaMiMercadoProps = {
