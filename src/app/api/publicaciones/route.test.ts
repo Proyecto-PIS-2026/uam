@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 
+const sesionMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: sesionMock }));
+
 const mocks = vi.hoisted(() => ({
   operadores: vi.fn(),
   especies: vi.fn(),
@@ -95,6 +98,7 @@ describe("GET /api/publicaciones", () => {
 describe("POST /api/publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorPorId.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" });
     });
 
@@ -199,6 +203,7 @@ describe("POST /api/publicaciones", () => {
     });
 
     it("usa el operador indicado para la publicacion", async () => {
+        sesionMock.mockResolvedValue({ usuarioId: 70, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorPorId.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
         mocks.altaPublicacionOperador.mockResolvedValue({ esValido: true, id: 15, mensaje: "Creada" });
         const solicitud = new Request("http://localhost/api/publicaciones", {
@@ -310,5 +315,35 @@ describe("POST /api/publicaciones", () => {
         expect(cuerpo).toEqual({
             errores: ["No se pudo guardar la publicación."],
         });
+    });
+});
+
+describe("autorización de alta de publicaciones", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)(
+        "rechaza el alta con sesión %s antes de escribir",
+        async (rol) => {
+            sesionMock.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
+            mocks.obtenerOperadorPorId.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Propio" });
+            const respuesta = await POST(new Request("http://localhost/api/publicaciones", {
+                method: "POST", body: JSON.stringify({ operadorId: 1 }),
+            }));
+            expect(respuesta.status).toBe(rol ? 403 : 401);
+            expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+            if (rol) expect(mocks.obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(1);
+            else expect(mocks.obtenerOperadorPorId).not.toHaveBeenCalled();
+        },
+    );
+
+    it("rechaza un operador ajeno aunque su ID sea válido", async () => {
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+        mocks.obtenerOperadorPorId.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Otro" });
+        const respuesta = await POST(new Request("http://localhost/api/publicaciones", {
+            method: "POST", body: JSON.stringify({ operadorId: 7 }),
+        }));
+        expect(respuesta.status).toBe(403);
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
     });
 });

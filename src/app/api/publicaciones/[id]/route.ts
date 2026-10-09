@@ -1,3 +1,5 @@
+import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { NextResponse } from "next/server";
 import { bajaPublicacionOperador } from "@/modulos/publicaciones/bajaPublicacionOperador";
 import { db } from "@/infraestructura/persistencia/prisma/db";
@@ -36,6 +38,9 @@ function actualizarVistas(operador: { nombreFantasia: string }) {
 }
 
 export async function DELETE(solicitud: Request, contexto: Contexto) {
+	const sesion = await obtenerSesion();
+	if (!sesion) return NextResponse.json({ errores: ["Debe iniciar sesión."] }, { status: 401 });
+
 	const { id: identificador } = await contexto.params;
 	const publicacionId = Number(identificador);
 	if (!Number.isSafeInteger(publicacionId) || publicacionId <= 0) {
@@ -53,6 +58,9 @@ export async function DELETE(solicitud: Request, contexto: Contexto) {
 		if (!operador) {
 			return NextResponse.json({ errores: ["No se encontró el operador seleccionado."] }, { status: 404 });
 		}
+		if (!autorizado("operador.publicacion.eliminar", sesion, operador)) {
+			return NextResponse.json({ errores: ["No tiene permisos para gestionar publicaciones de este Operador."] }, { status: 403 });
+		}
 		const eliminada = await bajaPublicacionOperador(publicacionId, operador.id);
 		if (!eliminada) return NextResponse.json({ errores: ["La publicación no pertenece al operador seleccionado."] }, { status: 404 });
 		actualizarVistas(operador);
@@ -64,6 +72,9 @@ export async function DELETE(solicitud: Request, contexto: Contexto) {
 }
 
 export async function PATCH(solicitud: Request, contexto: Contexto) {
+	const sesion = await obtenerSesion();
+	if (!sesion) return NextResponse.json({ errores: ["Debe iniciar sesión."] }, { status: 401 });
+
 	const { id: identificador } = await contexto.params;
 	const publicacionId = Number(identificador);
 	if (!Number.isSafeInteger(publicacionId) || publicacionId <= 0) {
@@ -108,6 +119,9 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 			: await obtenerOperadorPorId(operadorId);
 		if (!operador) {
 			return NextResponse.json({ errores: ["No se encontró el operador seleccionado."] }, { status: 404 });
+		}
+		if (!autorizado("operador.publicacion.modificar", sesion, operador)) {
+			return NextResponse.json({ errores: ["No tiene permisos para gestionar publicaciones de este Operador."] }, { status: 403 });
 		}
 		const vinculo = await db.orm.public.PublicacionOperador
 			.select("id")

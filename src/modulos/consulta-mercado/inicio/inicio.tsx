@@ -1,5 +1,6 @@
 "use client";
 
+import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -76,14 +77,14 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
 
             <div className={styles.contenedor}>
                 <nav className={styles.accesos} aria-label="Accesos principales">
-                    <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver publicaciones</span></Link>
-                    <Link href="/operadores" className={styles.acceso}><StorefrontOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver operadores</span></Link>
-                    {urlListaInteligente ? (
+                    {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver publicaciones</span></Link>}
+                    {autorizado("operador.catalogo.consultar") && <Link href="/operadores" className={styles.acceso}><StorefrontOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver operadores</span></Link>}
+                    {autorizado("listaInteligente.consultar") && (urlListaInteligente ? (
                         <a href={urlListaInteligente} target="_blank" rel="noopener noreferrer" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></a>
                     ) : (
                         <button type="button" className={styles.acceso} onClick={() => {setMostrarAvisoLista(true)}}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
-                    )}
-                    <Link href="/precios-referencia" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></Link>
+                    ))}
+                    {autorizado("preciosReferencia.consultar") && <Link href="/precios-referencia" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></Link>}
                 </nav>
                 <Snackbar className={styles.avisoSnackbar}open={mostrarAvisoLista} autoHideDuration={700} transitionDuration={{ enter: 250, exit: 900 }} onClose={() => setMostrarAvisoLista(false)}anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
                     <Alert className={styles.avisoAlerta} severity="warning" variant="filled" onClose={() => setMostrarAvisoLista(false)}><span>La Lista Inteligente no está disponible</span></Alert>

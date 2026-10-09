@@ -1,3 +1,4 @@
+import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import consultaLocal from "./consulta-referencia.json";
 
 export type ConsultaPreciosReferencia = {
@@ -39,6 +40,10 @@ export type PrecioReferencia = {
 export type ResultadoPreciosReferencia = { fechaRelevamiento: string; filas: PrecioReferencia[] };
 
 export async function obtenerConsultaPreciosReferencia(): Promise<ConsultaPreciosReferencia> {
+    if (!autorizado("preciosReferencia.consultar")) {
+        throw new Error("No tiene permisos para consultar precios de referencia.");
+    }
+
     const fuente = process.env.PRECIOS_REFERENCIA_FUENTE || "local";
 
     if (fuente === "local") return consultaLocal;

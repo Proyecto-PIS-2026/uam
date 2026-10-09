@@ -4,5 +4,5 @@ import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones
 export default async function EncabezadoOperador() {
     const sesion = await obtenerSesion();
 
-    return <HeaderPublico rolUsuario={sesion?.rol ?? null} />;
+    return <HeaderPublico sesion={sesion} />;
 }

@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { OpcionesEdicionPublicacion } from "../../../modulos/publicaciones/operadores/consultas-edicion-publicacion";
 import Page from "./page";
 
+const sesionMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: sesionMock }));
+
 const mocks = vi.hoisted(() => ({
     obtenerOpciones: vi.fn<() => Promise<OpcionesEdicionPublicacion>>(),
     demo: vi.fn(),
@@ -18,6 +21,7 @@ vi.mock("../../../modulos/publicaciones/operadores/componentes/PruebaEdicionPubl
 describe("Page de prueba de edición de publicaciones", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
     });
 
     it("consulta las opciones y se las entrega a la vista de prueba", async () => {

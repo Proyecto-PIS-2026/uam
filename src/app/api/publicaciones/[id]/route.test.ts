@@ -1,6 +1,9 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const sesionMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: sesionMock }));
+
 const bajaPublicacionOperadorMock = vi.hoisted(() => vi.fn());
 const obtenerOperadorPorIdMock = vi.hoisted(() => vi.fn());
 const vinculoPublicacionMock = vi.hoisted(() => ({
@@ -60,6 +63,7 @@ describe("DELETE /api/publicaciones/[id]", () => {
     
 	beforeEach(() => {
 		vi.clearAllMocks();
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
 		obtenerOperadorPorIdMock.mockResolvedValue({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" });
 	});
 
@@ -139,6 +143,7 @@ describe("DELETE /api/publicaciones/[id]", () => {
     });
 
     it("elimina usando el operador indicado", async () => {
+        sesionMock.mockResolvedValue({ usuarioId: 70, rol: "OPERADOR", expiraEn: 2000000000 });
         obtenerOperadorPorIdMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
         bajaPublicacionOperadorMock.mockResolvedValue(true);
         const solicitud = new Request("http://localhost/api/publicaciones/15?operadorId=7");
@@ -226,6 +231,7 @@ const contextoEdicion = { params: Promise.resolve({ id: "20" }) };
 describe("PATCH /api/publicaciones/[id]", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
 		obtenerOperadorPorIdMock.mockResolvedValue({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" });
 		vinculoPublicacionMock.select.mockReturnThis();
 		vinculoPublicacionMock.where.mockReturnThis();
@@ -284,6 +290,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 	});
 
 	it("modifica la publicación usando el operador indicado", async () => {
+        sesionMock.mockResolvedValue({ usuarioId: 70, rol: "OPERADOR", expiraEn: 2000000000 });
 		obtenerOperadorPorIdMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
 
 		const respuesta = await PATCH(solicitudEdicion(cambiosEdicion, undefined, "7"), contextoEdicion);
@@ -373,4 +380,46 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		expect(modificarPublicacionOperador).not.toHaveBeenCalled();
 		expect(revalidatePath).not.toHaveBeenCalled();
 	});
+});
+
+describe("autorización de cambios de publicaciones", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it.each(["DELETE", "PATCH"] as const)("%s rechaza solicitudes sin sesión", async (metodo) => {
+        sesionMock.mockResolvedValue(null);
+        const handler = metodo === "DELETE" ? DELETE : PATCH;
+        const respuesta = await handler(new Request("http://localhost/api/publicaciones/15", { method: metodo }), {
+            params: Promise.resolve({ id: "15" }),
+        });
+        expect(respuesta.status).toBe(401);
+        expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+        expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+    });
+
+    it.each(["PRODUCTOR", "ADMINISTRADOR"] as const)("rechaza ambos cambios para %s", async (rol) => {
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
+        for (const handler of [DELETE, PATCH]) {
+            const respuesta = await handler(handler === PATCH ? solicitudEdicion() : new Request("http://localhost/api/publicaciones/15"), {
+                params: Promise.resolve({ id: "15" }),
+            });
+            expect(respuesta.status).toBe(403);
+        }
+        expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+        expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+    });
+
+    it.each(["DELETE", "PATCH"] as const)("%s rechaza el ID de un operador ajeno", async (metodo) => {
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+        obtenerOperadorPorIdMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Otro" });
+        const formulario = new FormData();
+        formulario.set("cambios", JSON.stringify({ presentacionId: 1, categoriaId: 1, calibreId: 1, paisId: 1 }));
+        const handler = metodo === "DELETE" ? DELETE : PATCH;
+        const respuesta = await handler(new Request("http://localhost/api/publicaciones/15?operadorId=7", {
+            method: metodo, ...(metodo === "PATCH" ? { body: formulario } : {}),
+        }), { params: Promise.resolve({ id: "15" }) });
+        expect(respuesta.status).toBe(403);
+        expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+        expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+        expect(vinculoPublicacionMock.first).not.toHaveBeenCalled();
+    });
 });
