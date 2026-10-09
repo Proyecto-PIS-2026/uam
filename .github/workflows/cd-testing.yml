@@ -1,3 +1,4 @@
+
 name: CD - Deploy Testing
 
 on:
@@ -49,6 +50,17 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
+      - name: Verificar SESSION_SECRET
+        env:
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+        run: |
+          if [ -z "$SESSION_SECRET" ]; then
+            echo "ERROR: SESSION_SECRET está vacío en GitHub Actions"
+            exit 1
+          fi
+
+          echo "OK: SESSION_SECRET está disponible en GitHub Actions"
+
       - name: Desplegar en Testing
         uses: azure/container-apps-deploy-action@v2
         with:
@@ -59,6 +71,6 @@ jobs:
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
           containerAppName: uam-testing
           resourceGroup: Proyecto-PIS-2026
-          environmentVariables: |
+          environmentVariables: >-
             DATABASE_URL=${{ secrets.TESTING_DATABASE_URL }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
