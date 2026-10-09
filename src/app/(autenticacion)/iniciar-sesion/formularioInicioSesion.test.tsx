@@ -1,11 +1,19 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { iniciarSesion, type EstadoInicioSesion } from "./acciones";
+import {
+    iniciarSesion,
+    solicitarRecuperacion,
+    type EstadoInicioSesion,
+} from "./acciones";
 import FormularioInicioSesion from "./formularioInicioSesion";
 
-vi.mock("./acciones", () => ({ iniciarSesion: vi.fn() }));
+vi.mock("./acciones", () => ({
+    iniciarSesion: vi.fn(),
+    solicitarRecuperacion: vi.fn(),
+}));
 
 const iniciarSesionSimulado = vi.mocked(iniciarSesion);
+const solicitarRecuperacionSimulada = vi.mocked(solicitarRecuperacion);
 
 function completarYEnviarFormulario() {
     fireEvent.change(screen.getByLabelText("Correo electrónico o nombre de usuario"), {
@@ -22,6 +30,7 @@ describe("FormularioInicioSesion", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         iniciarSesionSimulado.mockResolvedValue({});
+        solicitarRecuperacionSimulada.mockResolvedValue({});
     });
 
     afterEach(cleanup);
@@ -78,5 +87,59 @@ describe("FormularioInicioSesion", () => {
         await act(async () => resolverRespuesta({}));
 
         expect(screen.getByRole("button", { name: "Iniciar sesión" })).toBeEnabled();
+    });
+
+    it("abre el aviso para solicitar la recuperación de contraseña", () => {
+        render(<FormularioInicioSesion />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Solicitar recuperación de contraseña" }));
+
+        expect(screen.getByRole("dialog", { name: "Solicitar recuperación de contraseña" }))
+            .toBeInTheDocument();
+        expect(screen.getByLabelText("Nombre de usuario")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Aceptar" })).toBeInTheDocument();
+    });
+
+    it("muestra un error si se acepta la recuperación sin nombre de usuario", () => {
+        render(<FormularioInicioSesion />);
+        fireEvent.click(screen.getByRole("button", { name: "Solicitar recuperación de contraseña" }));
+        fireEvent.click(screen.getByRole("button", { name: "Aceptar" }));
+
+        expect(screen.getByRole("alert"))
+            .toHaveTextContent("Ingresá tu nombre de usuario para solicitar la recuperación.");
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("muestra un error si el nombre de usuario no existe", async () => {
+        render(<FormularioInicioSesion />);
+        fireEvent.click(screen.getByRole("button", { name: "Solicitar recuperación de contraseña" }));
+        fireEvent.change(screen.getByLabelText("Nombre de usuario"), {
+            target: { value: "usuario_inexistente" },
+        });
+        solicitarRecuperacionSimulada.mockResolvedValue({
+            error: "No existe ningún usuario con ese nombre.",
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Aceptar" }));
+
+        expect(await screen.findByRole("alert"))
+            .toHaveTextContent("No existe ningún usuario con ese nombre.");
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("muestra confirmacion cuando el nombre de usuario existe", async () => {
+        render(<FormularioInicioSesion />);
+        fireEvent.click(screen.getByRole("button", { name: "Solicitar recuperación de contraseña" }));
+        fireEvent.change(screen.getByLabelText("Nombre de usuario"), {
+            target: { value: "mercado_verde" },
+        });
+        solicitarRecuperacionSimulada.mockResolvedValue({
+            exito: "La solicitud de recuperación fue realizada correctamente.",
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Aceptar" }));
+
+        expect(await screen.findByRole("status"))
+            .toHaveTextContent("La solicitud de recuperación fue realizada correctamente.");
+        expect(solicitarRecuperacionSimulada).toHaveBeenCalledWith("mercado_verde");
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
 });
