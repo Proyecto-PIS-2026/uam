@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { IconButton, TextField } from "@mui/material";
+import { Alert, IconButton, Snackbar, TextField } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
@@ -25,6 +25,7 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
     const [eliminando, setEliminando] = useState(false);
     const [guardando, setGuardando] = useState(false);
     const [valorAnterior, setValorAnterior] = useState(valor);
+    const [mensajeError, setMensajeError] = useState("");
     const referenciaTarjeta = useRef<HTMLDivElement>(null);
     useEffect(() => {
         function manejarClickFuera(evento: MouseEvent) {
@@ -45,6 +46,7 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
             return;
         }
         setGuardando(true);
+        setMensajeError("");
         try {
             if (eliminando) {
                 await onEliminarValor?.();
@@ -54,6 +56,8 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
                 setValorAnterior(valor);
                 setEditando(false);
             }
+        } catch (error) {
+            setMensajeError( error instanceof Error ? error.message : "Ocurrió un error al guardar la configuración.");
         } finally {
             setGuardando(false);
         }
@@ -111,6 +115,9 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
                     </div>
                 )}
             </div>
+            <Snackbar open={Boolean(mensajeError)} autoHideDuration={4000} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}onClose={() => setMensajeError("")}>
+                <Alert severity="error" variant="filled" onClose={() => setMensajeError("")}>{mensajeError}</Alert>
+            </Snackbar>
         </div>
     );
     return contenido; 

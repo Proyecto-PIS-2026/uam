@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import obtenerConfiguraciones from "@/modulos/administracion/consulta-configuracion";
 import ContenedorConfiguracion from "@/modulos/administracion/componentes/ListadoConfiguracionesPublicaciones";
 

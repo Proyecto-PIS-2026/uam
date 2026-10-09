@@ -144,3 +144,26 @@
         align-self: flex-end;
     }
 }
+
+.avisoSnackbar {
+    width: fit-content;
+    max-width: calc(100vw - 2rem);
+    margin-inline: auto;
+}
+
+.avisoSnackbar :global(.MuiAlert-root) {
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.avisoAlerta {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.avisoSnackbar :global(.MuiAlert-action) {
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 0.1rem;
+}

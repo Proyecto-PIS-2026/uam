@@ -150,4 +150,27 @@ describe("TarjetaInput", () => {
             expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument()
         });
     });
+
+    it("cancela la eliminación al hacer clic fuera del componente", async () => {
+        const onEliminarValor = vi.fn();
+        render(
+            <div>
+                <ComponentePrueba onEliminarValor={onEliminarValor} />
+                <button type="button">Fuera</button>
+            </div>
+        );
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+        fireEvent.mouseDown(screen.getByRole("button", { name: "Fuera" }));
+        await waitFor(() => {
+            expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument();
+            expect(onEliminarValor).not.toHaveBeenCalled();
+        });
+    });
+
+    it("permite vaciar completamente un campo numérico", () => {
+        render(<ComponentePrueba />);
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.change(screen.getByRole("textbox"), {target: { value: "" }});
+        expect(screen.getByRole("textbox")).toHaveValue("");
+    });
 });
