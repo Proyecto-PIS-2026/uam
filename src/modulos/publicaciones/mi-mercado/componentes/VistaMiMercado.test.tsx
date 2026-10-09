@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
     obtenerOperadorPorNombre: vi.fn(),
     obtenerPublicaciones: vi.fn(),
     obtenerOpcionesEdicion: vi.fn(),
-    consultarImporteAjuste: vi.fn(),
+    obtenerConfiguracion: vi.fn(),
     miMercado: vi.fn(() => null),
     notFound: vi.fn(() => { throw new Error("NEXT_HTTP_ERROR_FALLBACK;404"); }),
 }));
@@ -27,8 +27,8 @@ vi.mock("../../operadores/consultas-edicion-publicacion", () => ({
 }));
 
 vi.mock("./MiMercado", () => ({ default: mocks.miMercado }));
-vi.mock("../../../administracion/configuracion-ajuste-precios", () => ({
-    consultarImporteAjuste: mocks.consultarImporteAjuste,
+vi.mock("@/modulos/administracion/consulta-configuracion", () => ({
+    obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 
@@ -42,7 +42,7 @@ describe("VistaMiMercado", () => {
         mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Operador 13" });
         mocks.obtenerPublicaciones.mockResolvedValue([]);
         mocks.obtenerOpcionesEdicion.mockResolvedValue(opcionesEdicion);
-        mocks.consultarImporteAjuste.mockResolvedValue(25);
+        mocks.obtenerConfiguracion.mockResolvedValue("25");
     });
 
     it("usa el operador actual cuando no llega un nombre", async () => {
