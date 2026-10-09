@@ -5,7 +5,7 @@
 
 ## Issue asociado
 
-<!-- Indique el Issue asociado. Ejemplo: #25 -->
+<!-- Indique el Issue asociado. Ejemplo: Resolves #25, resolves #27, .... (Tiene que decir Resolves) -->
 
 
 ## Cambios realizados
