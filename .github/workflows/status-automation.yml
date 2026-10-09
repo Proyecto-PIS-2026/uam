@@ -6,6 +6,7 @@ on:
       - opened
       - reopened
       - closed
+      - synchronize
 
 permissions:
   contents: read
@@ -61,7 +62,7 @@ jobs:
 
             // Determinamos estado de destino
             let targetStatus = "";
-            if (action === "opened" || action === "reopened") {
+            if (action === "opened" || action === "reopened" || action === "synchronize") {
               targetStatus = "In review - PR";
             } else if (action === "closed" && pr.merged) {
               targetStatus = "In review - QA";
