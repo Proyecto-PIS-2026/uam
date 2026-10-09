@@ -104,16 +104,16 @@ describe("HeaderPublico", () => {
     );
 
     it.each(["OPERADOR", "PRODUCTOR", "ADMINISTRADOR"] as RolUsuario[])(
-        "deja solo Cerrar sesion en el desplegable de %s",
+        "muestra Mi perfil y Cerrar sesion en el desplegable de %s",
         (rolUsuario) => {
             render(<HeaderPublico rolUsuario={rolUsuario} />);
             fireEvent.click(screen.getByRole("button", { name: "Abrir menú de usuario" }));
 
             const menuUsuario = within(screen.getByRole("menu"));
-            expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(1);
+            expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(2);
+            expect(menuUsuario.getByRole("menuitem", { name: "Mi perfil" })).toBeInTheDocument();
             expect(menuUsuario.getByRole("menuitem", { name: "Cerrar sesión" })).toBeInTheDocument();
             expect(menuUsuario.queryByRole("link")).not.toBeInTheDocument();
-            expect(menuUsuario.queryByText("Mi perfil")).not.toBeInTheDocument();
             expect(screen.queryByRole("link", { name: "Iniciar sesión" })).not.toBeInTheDocument();
         },
     );

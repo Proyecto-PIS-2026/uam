@@ -55,11 +55,13 @@ const opcionesMenu: OpcionMenu[] = [
 
 type PropiedadesEncabezado = {
     rolUsuario: RolUsuario | null;
+    fotoPerfil?: string | null;
 };
 
-export default function HeaderPublico({ rolUsuario }: PropiedadesEncabezado) {
+export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: PropiedadesEncabezado) {
     const [menuAbierto, cambiarMenuAbierto] = useState(false);
     const [menuUsuarioAbierto, cambiarMenuUsuarioAbierto] = useState(false);
+    const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
     const referenciaMenuUsuario = useRef<HTMLDivElement>(null);
     const rutaActual = usePathname() ?? "";
     const opcionesVisibles = opcionesMenu.filter(
@@ -110,16 +112,54 @@ export default function HeaderPublico({ rolUsuario }: PropiedadesEncabezado) {
                 aria-expanded={menuUsuarioAbierto}
                 onClick={() => cambiarMenuUsuarioAbierto((abierto) => !abierto)}
             >
-                <AccountCircleIcon className={estilos.iconoOperador} />
+                {fotoPerfil && !fotoPerfilFallida ? (
+                    <Image
+                        src={fotoPerfil}
+                        alt="Foto de perfil"
+                        width={40}
+                        height={40}
+                        className={estilos.fotoPerfil}
+                        onError={() => cambiarFotoPerfilFallida(true)}
+                    />
+                ) : (
+                    <AccountCircleIcon className={estilos.iconoOperador} />
+                )}
             </button>
             {menuUsuarioAbierto && (
                 <div className={estilos.desplegableOperador} role="menu">
+                    <span className={estilos.opcionDesplegable} role="menuitem">
+                        Mi perfil
+                    </span>
                     <span className={estilos.opcionDesplegable} role="menuitem">
                         Cerrar sesión
                     </span>
                 </div>
             )}
         </div>
+    );
+
+    const menuPerfilMobile = rolUsuario && (
+        <button type="button" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`}>
+            <span>Mi perfil</span>
+            {fotoPerfil && !fotoPerfilFallida ? (
+                <Image
+                    src={fotoPerfil}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className={estilos.fotoPerfilMobile}
+                    onError={() => cambiarFotoPerfilFallida(true)}
+                />
+            ) : (
+                <AccountCircleIcon className={estilos.iconoPerfilMobile} />
+            )}
+        </button>
+    );
+
+    const menuCerrarSesionMobile = rolUsuario && (
+            <span className={`${estilos.enlaceMobile} ${estilos.cerrarSesionMobile}`}>
+                Cerrar sesión
+            </span>
     );
 
     const contenido = (
@@ -175,6 +215,7 @@ export default function HeaderPublico({ rolUsuario }: PropiedadesEncabezado) {
                     className={`${estilos.navegacionMobile} ${menuAbierto ? estilos.navegacionMobileAbierta : ""}`}
                     aria-label="Navegación móvil"
                 >
+                    {menuPerfilMobile}
                     {opcionesVisibles.map((opcion) => (
                         <Link
                             key={opcion.ruta}
@@ -186,6 +227,7 @@ export default function HeaderPublico({ rolUsuario }: PropiedadesEncabezado) {
                             {opcion.nombre}
                         </Link>
                     ))}
+                    {menuCerrarSesionMobile}
                 </nav>
             </header>
             {menuAbierto && (
