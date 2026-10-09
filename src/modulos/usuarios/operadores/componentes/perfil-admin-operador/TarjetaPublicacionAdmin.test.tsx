@@ -14,6 +14,7 @@ const publicacionBase: PublicacionPerfilAdmin = {
     paisId: 44,
     foto: null,
     precio: "120.00",
+    fecha: "2026-10-01T12:00:00Z",
     disponible: true,
     especie: "Tomate",
     variedad: "Perita",

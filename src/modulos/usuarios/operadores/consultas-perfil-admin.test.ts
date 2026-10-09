@@ -49,6 +49,7 @@ const publicacionBase = {
     id: 101,
     foto: null,
     precio: "120.00",
+    fecha: Temporal.Instant.from("2026-10-01T12:00:00Z"),
     publicacionActiva: true,
     publicacionDisponible: true,
     tipoPublicacion: "OPERADOR",

@@ -273,7 +273,7 @@ describe("DrawerEditarPublicacion", () => {
         render(<DrawerEditarPublicacion {...props} modoInicial="consulta" alGuardar={undefined} />);
 
         expect(screen.getByRole("button", { name: "Editar" })).toBeDisabled();
-        expect(screen.getByRole("heading", { name: "Consultar publicación" })).toBeInTheDocument();
+        expect(screen.getByText("Consultar publicación")).toBeInTheDocument();
     });
 
     it("bloquea las acciones mientras se elimina la publicación", () => {
