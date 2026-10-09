@@ -45,6 +45,11 @@ export async function crearSesion(usuarioId: number, rol: DatosSesion["rol"]) {
     });
 }
 
+export async function cerrarSesion() {
+    const cookiesSesion = await cookies();
+    cookiesSesion.delete(nombreCookieSesion)
+}
+
 export async function obtenerSesion(): Promise<DatosSesion | null> {
     const valor = (await cookies()).get(nombreCookieSesion)?.value;
     if (!valor) return null;
