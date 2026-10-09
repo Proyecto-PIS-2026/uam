@@ -74,6 +74,12 @@
     font-size: 1.85rem !important;
 }
 
+.fotoPerfil,
+.fotoPerfilMobile {
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .desplegableOperador {
     display: flex;
     position: absolute;
@@ -231,7 +237,7 @@
     }
 
     .menuOperador {
-        margin-left: auto;
+        display: none;
     }
 
     .navegacionMobile {
@@ -289,7 +295,31 @@
         background-color: var(--color-primary-soft);
         color: var(--color-primary);
     }
-}
+
+        .perfilMobile {
+            justify-content: space-between;
+            background: transparent;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .iconoPerfilMobile {
+            color: var(--color-primary);
+            font-size: 1.5rem !important;
+        }
+
+        .fotoPerfilMobile {
+            width: 1.75rem;
+            height: 1.75rem;
+        }
+
+        .cerrarSesionMobile {
+            color: var(--color-foreground);
+        }
+    }
 
 @media (max-width: 380px) {
     .logo {
