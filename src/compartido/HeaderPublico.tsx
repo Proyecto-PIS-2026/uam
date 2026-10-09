@@ -9,6 +9,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { usePathname } from "next/navigation";
 import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
 
 import estilos from "./HeaderPublico.module.css";
 
@@ -130,9 +131,11 @@ export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: Propied
                     <span className={estilos.opcionDesplegable} role="menuitem">
                         Mi perfil
                     </span>
-                    <span className={estilos.opcionDesplegable} role="menuitem">
-                        Cerrar sesión
-                    </span>
+                    <form action={cerrarSesionYVolverAlInicio}>
+                        <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
+                            Cerrar sesión
+                        </button>
+                    </form>
                 </div>
             )}
         </div>
