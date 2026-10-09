@@ -4,7 +4,7 @@ import ContenedorConfiguracionPublicaciones from "@/modulos/administracion/compo
 import ContenedorConfiguracionGenerales from "@/modulos/administracion/componentes/configuracion-general/ContenedorConfiguracionGenerales";
 import ConfiguracionUsuarios from "@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios";
 
-import obtenerConfiguraciones from "@/modulos/administracion/Consulta-Configuracion";
+import obtenerConfiguraciones from "@/modulos/administracion/ConsultaConfiguracion";
 import consultarDatosModificarUsuarios from "@/modulos/administracion/componentes/configuracion-usuarios/acciones/ConsultaUsuarios";
 
 export const dynamic = "force-dynamic";

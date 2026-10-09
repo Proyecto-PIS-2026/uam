@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 import PaginaAdministracionGeneral from "./ContenedorConfiguracionGenerales";
-import obtenerConfiguraciones from "@/modulos/administracion/Consulta-Configuracion";
+import obtenerConfiguraciones from "@/modulos/administracion/ConsultaConfiguracion";
 
 vi.mock("@/modulos/administracion/consulta-configuracion", () => ({
     default: vi.fn(),
