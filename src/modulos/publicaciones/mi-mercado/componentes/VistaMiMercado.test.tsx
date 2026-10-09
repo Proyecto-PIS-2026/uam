@@ -27,13 +27,20 @@ vi.mock("../../operadores/consultas-edicion-publicacion", () => ({
 }));
 
 vi.mock("./MiMercado", () => ({ default: mocks.miMercado }));
-vi.mock("@/modulos/administracion/consulta-configuracion", () => ({
+
+vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
     obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
+
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 
 const opcionesEdicion = {
-    especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [],
+    especies: [],
+    variedades: [],
+    presentaciones: [],
+    categorias: [],
+    calibres: [],
+    paises: [],
 };
 
 describe("VistaMiMercado", () => {
