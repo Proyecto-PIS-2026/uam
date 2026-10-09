@@ -1,4 +1,4 @@
-FROM node:24-alpine AS builder
+FROM uamgrupo10acr.azurecr.io/node:24-alpine AS builder
 
 WORKDIR /app
 
