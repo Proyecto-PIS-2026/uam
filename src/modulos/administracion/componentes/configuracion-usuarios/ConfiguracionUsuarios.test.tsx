@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import ConfiguracionUsuarios from "./ConfiguracionUsuarios";
 import ModificarUsuario from "./componentes/ModificarUsuario";
-import consultarDatosModificarUsuarios from "./acciones/ConsultaUsuarios";
+import type consultarDatosModificarUsuarios from "./acciones/ConsultaUsuarios";
 
 vi.mock("./componentes/ModificarUsuario", () => ({
     default: vi.fn(() => (
@@ -12,28 +13,14 @@ vi.mock("./componentes/ModificarUsuario", () => ({
     )),
 }));
 
-vi.mock("./acciones/ConsultaUsuarios", () => ({
-    default: vi.fn(),
-}));
-
 describe("ConfiguracionUsuarios", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
+    beforeEach(() => {vi.clearAllMocks()});
 
-    it("consulta los datos y renderiza ModificarUsuario con ellos", async () => {
-        const datos = {} as Awaited<
-            ReturnType<typeof consultarDatosModificarUsuarios>
-        >;
-
-        vi.mocked(consultarDatosModificarUsuarios).mockResolvedValue(datos);
-
-        const componente = await ConfiguracionUsuarios();
-
-        render(componente);
-
-        expect(consultarDatosModificarUsuarios).toHaveBeenCalledTimes(1);
-        expect(vi.mocked(ModificarUsuario).mock.calls[0][0]).toEqual({ datos });
+    it("renderiza ModificarUsuario con los datos recibidos", () => {
+        const datos = {} as Awaited<ReturnType<typeof consultarDatosModificarUsuarios>>;
+        render(<ConfiguracionUsuarios datos={datos} />);
+        expect(vi.mocked(ModificarUsuario)).toHaveBeenCalled();
+        expect(vi.mocked(ModificarUsuario).mock.calls[0][0]).toEqual({datos});
         expect(screen.getByTestId("modificar-usuario")).toBeInTheDocument();
     });
 });

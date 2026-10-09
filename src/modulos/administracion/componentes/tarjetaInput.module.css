@@ -149,13 +149,12 @@
 }
 
 .avisoSnackbar :global(.MuiAlert-root) {
-    width: fit-content;
+    width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 }
 
 .avisoAlerta {
-    width: 100%;
     box-sizing: border-box;
 }
 

@@ -1,4 +1,4 @@
-import ListadoConfiguracionesGenerales from "@/modulos/administracion/componentes/ListadoConfiguracionesGenerales";
+import ListadoConfiguracionesGenerales from "@/modulos/administracion/componentes/configuracion-general/ListadoConfiguracionesGenerales";
 import obtenerConfiguraciones from "@/modulos/administracion/consulta-configuracion";
 
 export default async function PaginaAdministracionGeneral() {

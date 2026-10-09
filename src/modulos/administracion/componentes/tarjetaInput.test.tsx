@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useState } from "react";
 
-import TarjetaInput from "./tarjetaInput";
+import TarjetaInput from "./TarjetaInput";
 
 interface PropsPrueba {
     valorInicial?: string;

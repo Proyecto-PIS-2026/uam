@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import TarjetaInput from "./tarjetaInput";
+import TarjetaInput from "../TarjetaInput";
 
 interface ListadoConfiguracionesProps {
     configuracion: Record<string, string | null>;

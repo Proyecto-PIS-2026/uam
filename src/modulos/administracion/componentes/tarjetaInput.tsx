@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Alert, IconButton, Snackbar, TextField } from "@mui/material";
+import { Alert, Fade, IconButton, Snackbar, TextField } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 
-import styles from "./tarjetaInput.module.css";
+import styles from "./TarjetaInput.module.css";
 
 interface TarjetaInputProps { 
     titulo: string; 
@@ -26,7 +26,9 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
     const [guardando, setGuardando] = useState(false);
     const [valorAnterior, setValorAnterior] = useState(valor);
     const [mensajeError, setMensajeError] = useState("");
+    const [mostrarSnackbar, setMostrarSnackbar] = useState(false);
     const referenciaTarjeta = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
         function manejarClickFuera(evento: MouseEvent) {
             if ((editando || eliminando) && referenciaTarjeta.current && !referenciaTarjeta.current.contains(evento.target as Node)) {
@@ -46,7 +48,6 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
             return;
         }
         setGuardando(true);
-        setMensajeError("");
         try {
             if (eliminando) {
                 await onEliminarValor?.();
@@ -58,6 +59,7 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
             }
         } catch (error) {
             setMensajeError( error instanceof Error ? error.message : "Ocurrió un error al guardar la configuración.");
+            setMostrarSnackbar(true);
         } finally {
             setGuardando(false);
         }
@@ -115,8 +117,15 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
                     </div>
                 )}
             </div>
-            <Snackbar open={Boolean(mensajeError)} autoHideDuration={4000} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}onClose={() => setMensajeError("")}>
-                <Alert severity="error" variant="filled" onClose={() => setMensajeError("")}>{mensajeError}</Alert>
+            <Snackbar className={styles.avisoSnackbar} open={mostrarSnackbar} autoHideDuration={4000} slots={{ transition: Fade }} transitionDuration={{ enter: 350, exit: 600 }} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                onClose={(_, reason) => {
+                    if (reason === "clickaway") {
+                        return;
+                    }
+                    setMostrarSnackbar(false);
+                }}
+            >
+                <Alert className={styles.avisoAlerta} severity="error" variant="filled" onClose={() => setMostrarSnackbar(false)}>{mensajeError}</Alert>
             </Snackbar>
         </div>
     );

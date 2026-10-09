@@ -22,7 +22,6 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
     }
     const [precioGuardado, setPrecioGuardado] = useState({ base: pub.precio, valor: precioInicial });
     const precio = precioGuardado.base === pub.precio ? precioGuardado.valor : precioInicial;
-    const [guardandoPrecio, setGuardandoPrecio] = useState(false);
     const [errorPrecio, setErrorPrecio] = useState("");
     const precioPendienteRef = useRef(precioInicial);
     const precioConfirmadoRef = useRef(precioInicial);
@@ -35,7 +34,6 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
             return;
         }
         guardandoPrecioRef.current = true;
-        setGuardandoPrecio(true);
         try {
             while (precioPendienteRef.current !== precioConfirmadoRef.current) {
                 const precioAGuardar =precioPendienteRef.current;
@@ -61,7 +59,6 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
             }
         } finally {
             guardandoPrecioRef.current = false;
-            setGuardandoPrecio(false);
         }
     }
 

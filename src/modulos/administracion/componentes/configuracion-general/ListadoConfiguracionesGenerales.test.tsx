@@ -105,4 +105,49 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(fetchMock).not.toHaveBeenCalled();
         expect(screen.getByRole("textbox")).toHaveValue("https://uam.com.uy/lista.pdf");
     });
+
+    it("muestra el error devuelto por la API al guardar la URL", async () => {
+        const fetchMock = vi.mocked(fetch);
+        fetchMock.mockResolvedValue({
+            ok: false,
+            json: async () => ({errores: ["La URL de la Lista Inteligente no es válida."]}),
+        } as Response);
+        render(<ListadoConfiguracionesGenerales configuracion={{ url_lista_inteligente: "https://uam.com.uy/anterior",}}/>);
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.change(screen.getByRole("textbox"), {target: { value: "url-invalida" }});
+        fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent("La URL de la Lista Inteligente no es válida.");
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(screen.getByRole("textbox")).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
+    });
+
+    it("muestra un error por defecto cuando la API no devuelve un mensaje", async () => {
+        const fetchMock = vi.mocked(fetch);
+        fetchMock.mockResolvedValue({
+            ok: false,
+            json: async () => ({}),
+        } as Response);
+        render(<ListadoConfiguracionesGenerales configuracion={{ url_lista_inteligente: "https://uam.com.uy/anterior"}}/>);
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar la configuración.");
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(screen.getByRole("textbox")).toBeEnabled();
+    });
+
+    it("muestra un error cuando falla la eliminación de la Lista Inteligente", async () => {
+        const fetchMock = vi.mocked(fetch);
+        fetchMock.mockResolvedValue({
+            ok: false,
+            json: async () => ({errores: ["No se pudo modificar la configuración."]}),
+        } as Response);
+        render(<ListadoConfiguracionesGenerales configuracion={{url_lista_inteligente: "https://uam.com.uy/lista.pdf",}}/>);
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar eliminación" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo modificar la configuración.");
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(screen.getByRole("textbox")).toHaveValue("https://uam.com.uy/lista.pdf");
+        expect(screen.getByRole("button", { name: "Confirmar eliminación" })).toBeEnabled();
+    });
 });

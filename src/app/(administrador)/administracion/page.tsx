@@ -1,7 +1,7 @@
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import ContenedorConfiguracionGeneral from "@/modulos/administracion/componentes/ContenedorConfiguracionGeneral";
 import ContenedorConfiguracionPublicaciones from "@/modulos/administracion/componentes/ContenedorConfiguracionPublicaciones";
-import ContenedorConfiguracionGenerales from "@/modulos/administracion/componentes/ContenedorConfiguracionGenerales";
+import ContenedorConfiguracionGenerales from "@/modulos/administracion/componentes/configuracion-general/ContenedorConfiguracionGenerales";
 import ConfiguracionUsuarios from "@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios";
 
 import obtenerConfiguraciones from "@/modulos/administracion/consulta-configuracion";
