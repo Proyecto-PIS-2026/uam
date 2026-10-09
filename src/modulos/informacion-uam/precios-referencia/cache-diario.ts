@@ -31,7 +31,7 @@ function ultimoRelevamientoGuardado(registros: { claveCache: string; estadoCache
 }
 
 export async function obtenerUltimoRelevamientoGuardado(): Promise<ConsultaPreciosReferencia | null> {
-    const registros = await db.orm.public.Configuracion.all();
+    const registros = await db.orm.public.CachePreciosReferencia.all();
     return ultimoRelevamientoGuardado(registros)?.consulta ?? null;
 }
 
