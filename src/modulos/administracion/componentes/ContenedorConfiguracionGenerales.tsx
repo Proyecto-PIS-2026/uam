@@ -10,8 +10,5 @@ export default async function PaginaAdministracionGeneral() {
             valorConfiguracion,
         ]),
     );
-
-    return (
-        <ListadoConfiguracionesGenerales configuracion={configuracion} />
-    );
+    return (<ListadoConfiguracionesGenerales configuracion={configuracion}/>);
 }
