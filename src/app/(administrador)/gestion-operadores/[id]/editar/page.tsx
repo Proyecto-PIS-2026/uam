@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 
-import FormularioModificarOperador from "@/modulos/usuarios/administradores/componentes/modificar-operador/FormularioModificarOperador";
-import { obtenerNaves } from "@/modulos/usuarios/administradores/componentes/modificar-operador/obtenerNaves";
-import { obtenerOperadorParaModificar } from "@/modulos/usuarios/administradores/componentes/modificar-operador/obtenerOperadorParaModificar";
+import FormularioModificarOperador from "@/modulos/usuarios/operadores/componentes/modificar-operador-por-admin/FormularioModificarOperador";
+import { obtenerNaves } from "@/modulos/usuarios/operadores/componentes/modificar-operador-por-admin/obtenerNaves";
+import { obtenerOperadorParaModificar } from "@/modulos/usuarios/operadores/componentes/modificar-operador-por-admin/obtenerOperadorParaModificar";
 
 export const dynamic = "force-dynamic";
 

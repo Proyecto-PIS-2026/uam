@@ -55,7 +55,7 @@ type DrawerEditarPublicacionProps = {
     actualizando?: boolean;
     errorConsulta?: string;
     children?: ReactNode;
-    alGuardar: (publicacionOperadorId: number, cambios: CambiosPublicacionOperador, fotoNueva: File | null) => void | Promise<void>;
+    alGuardar?: (publicacionOperadorId: number, cambios: CambiosPublicacionOperador, fotoNueva: File | null) => void | Promise<void>;
     publicacion: PublicacionParaEditar | null;
     especies: OpcionEdicion[];
     variedades: OpcionVariedad[];
@@ -239,7 +239,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
     }
 
     async function guardar() {
-        if (bloqueado) return;
+        if (bloqueado || !alGuardar) return;
         const precioNuevo = precio.trim() || null;
         const precioOriginal = precioParaEdicion(publicacion.precio).trim() || null;
         const cantidadUnidadesNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
@@ -403,7 +403,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                     ) : (
                         <>
                             <button className={`${styles.cancelar} ${styles.eliminar}`} type="button" onClick={alEliminar} disabled={ocupado || !alEliminar}>{eliminando ? "Eliminando..." : "Eliminar"}</button>
-                            <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); setError(""); setEditando(true); }} disabled={ocupado}>Editar</button>
+                            <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); setError(""); setEditando(true); }} disabled={ocupado || !alGuardar}>Editar</button>
                         </>
                     )}
                 </div>
