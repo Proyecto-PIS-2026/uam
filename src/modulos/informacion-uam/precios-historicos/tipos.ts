@@ -44,3 +44,10 @@ export type EspecieHistorica = {
     id: string;
     especie: string;
 };
+
+export type OpcionesFiltrosHistoricos = {
+    variedades: string[];
+    paises: string[];
+    calibres: string[];
+    categorias: string[];
+};

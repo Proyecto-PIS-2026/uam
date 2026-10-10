@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import PreciosHistoricos from "@/modulos/informacion-uam/precios-historicos/PreciosHistoricos";
-import { obtenerHistoricoPrecios } from "@/modulos/informacion-uam/precios-historicos/consultas-precios-historicos";
+import { obtenerHistoricoPreciosConFiltros } from "@/modulos/informacion-uam/precios-historicos/consultas-precios-historicos";
 import { obtenerCatalogoEspeciesHistoricas } from "@/modulos/informacion-uam/precios-historicos/catalogo-especies";
 import {
     fechaActualMontevideo,
@@ -9,7 +9,7 @@ import {
     validarParametrosConsulta,
     type ConsultaHistorica,
 } from "@/modulos/informacion-uam/precios-historicos/parametros-consulta";
-import type { HistoricoProducto, ProductoSeleccionado } from "@/modulos/informacion-uam/precios-historicos/tipos";
+import type { HistoricoProducto, OpcionesFiltrosHistoricos, ProductoSeleccionado } from "@/modulos/informacion-uam/precios-historicos/tipos";
 
 export const dynamic = "force-dynamic";
 
@@ -44,9 +44,17 @@ async function ContenidoPreciosHistoricos({ producto, consulta }: {
 }) {
     const catalogo = obtenerCatalogoEspeciesHistoricas();
     let historico: HistoricoProducto | null = null;
+    let opcionesFiltros: OpcionesFiltrosHistoricos | undefined;
     let error: string | undefined;
     try {
-        historico = await obtenerHistoricoPrecios(consulta);
+        const respuesta = await obtenerHistoricoPreciosConFiltros(consulta, {
+            variedad: producto.variedad || undefined,
+            pais: producto.pais || undefined,
+            calibre: producto.calibre || undefined,
+            categoria: producto.categoria || undefined,
+        });
+        historico = respuesta.historico;
+        opcionesFiltros = respuesta.opcionesFiltros;
     } catch (causa) {
         const detalle = causa instanceof Error ? `${causa.name}: ${causa.message}` : String(causa);
         error = detalle.trim() || "Error de carga sin detalle.";
@@ -59,6 +67,7 @@ async function ContenidoPreciosHistoricos({ producto, consulta }: {
             hasta={consulta.hasta}
             error={error}
             especies={await catalogo}
+            opcionesFiltros={opcionesFiltros}
         />
     );
 }

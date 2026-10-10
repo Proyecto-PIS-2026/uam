@@ -31,7 +31,8 @@ function ultimoRelevamientoGuardado(registros: { nombreConfiguracion: string; va
 }
 
 export async function obtenerUltimoRelevamientoGuardado(): Promise<ConsultaPreciosReferencia | null> {
-    const registros = await db.orm.public.Configuracion.all();
+    const registros = await db.orm.public.Configuracion
+        .where((configuracion) => configuracion.nombreConfiguracion.like(`${PREFIJO_CACHE}%`)).all();
     return ultimoRelevamientoGuardado(registros)?.consulta ?? null;
 }
 
@@ -82,7 +83,8 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
     const estadoInicial = leerEstadoCacheDiaria(registroInicial?.valorConfiguracion ?? null);
     if (estadoInicial?.ultimoIntento === fechaActualMontevideo()) {
         if (estadoInicial.consulta) return estadoInicial.consulta;
-        const respaldo = ultimoRelevamientoGuardado(await db.orm.public.Configuracion.all());
+        const respaldo = ultimoRelevamientoGuardado(await db.orm.public.Configuracion
+            .where((configuracion) => configuracion.nombreConfiguracion.like(`${PREFIJO_CACHE}%`)).all());
         if (!respaldo) throw new Error("Todavía no hay un relevamiento de precios disponible en la caché.");
     }
 
@@ -97,7 +99,8 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
         const registro = await tx.orm.public.Configuracion.where({ nombreConfiguracion }).first();
         const estado = leerEstadoCacheDiaria(registro?.valorConfiguracion ?? null);
         const hoyBajoBloqueo = fechaActualMontevideo();
-        const ultimoGuardado = ultimoRelevamientoGuardado(await tx.orm.public.Configuracion.all());
+        const ultimoGuardado = ultimoRelevamientoGuardado(await tx.orm.public.Configuracion
+            .where((configuracion) => configuracion.nombreConfiguracion.like(`${PREFIJO_CACHE}%`)).all());
 
         let estadoConRespaldo = estado;
         const datoActual = estado?.consulta && estado.ultimoExito ? { consulta: estado.consulta, ultimoExito: estado.ultimoExito } : null;

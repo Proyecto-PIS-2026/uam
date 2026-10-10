@@ -10,7 +10,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
-import type { ProductoSeleccionado, HistoricoProducto, EspecieHistorica } from "./tipos";
+import type { ProductoSeleccionado, HistoricoProducto, EspecieHistorica, OpcionesFiltrosHistoricos } from "./tipos";
 import { fechaActualMontevideo } from "./parametros-consulta";
 import styles from "./PreciosHistoricos.module.css";
 
@@ -22,6 +22,7 @@ type Props = {
     error?: string;
     cargando?: boolean;
     especies?: EspecieHistorica[];
+    opcionesFiltros?: OpcionesFiltrosHistoricos;
 };
 const LIMITE = 40;
 const comparar = new Intl.Collator("es", { sensitivity: "base", numeric: true }).compare;
@@ -58,7 +59,7 @@ function identificadorEspecie(producto: Pick<ProductoSeleccionado, "id">): strin
     return "";
 }
 
-export default function PreciosHistoricos({ producto, historico, desde, hasta, error, cargando = false, especies = [] }: Props) {
+export default function PreciosHistoricos({ producto, historico, desde, hasta, error, cargando = false, especies = [], opcionesFiltros }: Props) {
     const router = useRouter();
     const idProducto = identificadorEspecie(producto);
     const [pendiente, iniciarConsulta] = useTransition();
@@ -121,12 +122,12 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     const disponibles = useMemo(() => {
         const presentaciones = historico && !error ? historico.series.flatMap((dia) => dia.presentations) : [];
         return {
-            variedades: opciones(presentaciones.map((presentacion) => presentacion.variety), variedad),
-            paises: opciones(presentaciones.map((presentacion) => presentacion.country), pais),
-            categorias: opciones(presentaciones.flatMap((presentacion) => presentacion.prices.map((precio) => precio.category)), categoria),
-            calibres: opciones(presentaciones.map((presentacion) => presentacion.caliber), calibre),
+            variedades: opciones(opcionesFiltros?.variedades ?? presentaciones.map((presentacion) => presentacion.variety), variedad),
+            paises: opciones(opcionesFiltros?.paises ?? presentaciones.map((presentacion) => presentacion.country), pais),
+            categorias: opciones(opcionesFiltros?.categorias ?? presentaciones.flatMap((presentacion) => presentacion.prices.map((precio) => precio.category)), categoria),
+            calibres: opciones(opcionesFiltros?.calibres ?? presentaciones.map((presentacion) => presentacion.caliber), calibre),
         };
-    }, [historico, error, variedad, pais, categoria, calibre]);
+    }, [historico, opcionesFiltros, error, variedad, pais, categoria, calibre]);
     const variedadSeleccionada = variedad;
     const paisSeleccionado = pais;
     const categoriaSeleccionada = categoria;
@@ -176,7 +177,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     function cambiar(accion: () => void, cambios: Record<string, string>) {
         accion();
         setPagina(1);
-        actualizarUrl(cambios);
+        if (cambioEspecie) return;
+        iniciarConsulta(() => router.push(urlConsulta(cambios), { scroll: false }));
     }
 
     function cambiarEspecie(id: string) {
@@ -200,13 +202,21 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         setFechaHasta(hasta);
         setPeriodoVisible({ desde, hasta });
         setPagina(1);
-        actualizarUrl({ from: desde, to: hasta, variedad: "", pais: "", calibre: "", categoria: "" });
+        const cambios = { from: desde, to: hasta, variedad: "", pais: "", calibre: "", categoria: "" };
+        if (producto.variedad || producto.pais || producto.calibre || producto.categoria
+            || variedad || pais || calibre || categoria) {
+            iniciarConsulta(() => router.push(urlConsulta(cambios), { scroll: false }));
+        } else {
+            actualizarUrl(cambios);
+        }
     }
 
     function consultar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (cargandoTabla || rangoInvalido || !fechaDesde || !fechaHasta) return;
-        if (!cambioEspecie && fechaDesde >= desde && fechaHasta <= hasta && historico && !error) {
+        const mismosFiltros = variedad === producto.variedad && pais === producto.pais
+            && calibre === producto.calibre && categoria === producto.categoria;
+        if (!cambioEspecie && mismosFiltros && fechaDesde >= desde && fechaHasta <= hasta && historico && !error) {
             setPeriodoVisible({ desde: fechaDesde, hasta: fechaHasta });
             setPagina(1);
             actualizarUrl({ from: fechaDesde, to: fechaHasta });

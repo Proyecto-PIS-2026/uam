@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { consultarHistorico } from "./cliente-webservice";
+import { consultarHistorico, ErrorWebserviceHistorico } from "./cliente-webservice";
 import type { ConsultaHistorica } from "./parametros-consulta";
 import type { HistoricoProducto } from "./tipos";
 
@@ -29,7 +29,10 @@ function respuestaValida(): Response {
     return new Response(JSON.stringify(consultaValida), { status: 200 });
 }
 
-beforeEach(() => vi.stubEnv("PRECIOS_HISTORICOS_ENDPOINT", plantilla));
+beforeEach(() => {
+    vi.stubEnv("PRECIOS_HISTORICOS_ENDPOINT", plantilla);
+    vi.stubEnv("PRECIOS_HISTORICOS_TIMEOUT_MS", undefined);
+});
 
 afterEach(() => {
     vi.useRealTimers();
@@ -176,12 +179,21 @@ describe("cliente del webservice de precios históricos", () => {
         expect(fetcher).not.toHaveBeenCalled();
     });
 
-    it("propaga solamente el estado HTTP sin mostrar el cuerpo ni el JWT", async () => {
+    it("informa estado HTTP, duración, especie y período sin mostrar cuerpo, URL ni JWT", async () => {
+        vi.useFakeTimers();
         const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("credencial inválida jwt-de-prueba", { status: 401 }));
 
-        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toEqual(
-            new Error("El webservice de precios históricos respondió con estado 401."),
+        const error = await consultarHistorico(opciones, consulta, fetcher).catch((causa) => causa as Error);
+
+        expect(error).toBeInstanceOf(ErrorWebserviceHistorico);
+        expect(error).toMatchObject({ estadoHTTP: 401, duracionMs: 0, reintentarEnMs: null });
+        expect((error as Error).message).toBe(
+            "El webservice de precios históricos respondió con estado 401. Duración: 0 ms. Especie: 60. Período: 2025-10-01 a 2025-10-31.",
         );
+        expect((error as Error).message).not.toContain(opciones.token);
+        expect((error as Error).message).not.toContain(opciones.baseUrl);
+        expect((error as Error).message).not.toContain("credencial inválida");
+        expect(vi.getTimerCount()).toBe(0);
     });
 
     it("rechaza un cuerpo que no sea JSON válido", async () => {
@@ -241,22 +253,187 @@ describe("cliente del webservice de precios históricos", () => {
         await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(recibido);
     });
 
-    it("aborta una solicitud al alcanzar los 60 segundos", async () => {
+    it("permite superar 60 segundos y aborta al alcanzar el límite predeterminado de cinco minutos", async () => {
         vi.useFakeTimers();
         let signal!: AbortSignal;
         const fetcher = vi.fn<typeof fetch>((_url, init) => new Promise<Response>((_resolve, reject) => {
             signal = init!.signal!;
             signal.addEventListener("abort", () => reject(new DOMException("Timeout", "AbortError")));
         }));
-        const resultado = expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toMatchObject({ name: "AbortError" });
+        const resultado = expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow(
+            "El webservice de precios históricos superó el tiempo máximo de 300000 ms.",
+        );
 
-        await vi.advanceTimersByTimeAsync(59_999);
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(signal.aborted).toBe(false);
+        await vi.advanceTimersByTimeAsync(239_999);
         expect(signal.aborted).toBe(false);
         await vi.advanceTimersByTimeAsync(1);
         await resultado;
 
         expect(signal.aborted).toBe(true);
         expect(fetcher).toHaveBeenCalledOnce();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it.each([1000, 180_000])("aplica el timeout configurable de %s ms con diagnóstico de la consulta", async (limiteMs) => {
+        vi.useFakeTimers();
+        vi.stubEnv("PRECIOS_HISTORICOS_TIMEOUT_MS", String(limiteMs));
+        let signal!: AbortSignal;
+        const fetcher = vi.fn<typeof fetch>((_url, init) => new Promise<Response>((_resolve, reject) => {
+            signal = init!.signal!;
+            signal.addEventListener("abort", () => reject(new DOMException("Abortado", "AbortError")));
+        }));
+        const resultado = consultarHistorico(opciones, consulta, fetcher).catch((causa) => causa as Error);
+
+        await vi.advanceTimersByTimeAsync(limiteMs - 1);
+        expect(signal.aborted).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        const error = await resultado;
+
+        expect((error as Error).message).toBe(
+            `El webservice de precios históricos superó el tiempo máximo de ${limiteMs} ms. Duración: ${limiteMs} ms. Especie: 60. Período: 2025-10-01 a 2025-10-31.`,
+        );
+        expect(signal.aborted).toBe(true);
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it.each(["", " ", "0", "-1", "1.5", "NaN", "Infinity", "2147483648"])
+        ("rechaza el timeout inválido %j antes de hacer fetch", async (limite) => {
+            vi.stubEnv("PRECIOS_HISTORICOS_TIMEOUT_MS", limite);
+            const fetcher = vi.fn<typeof fetch>();
+
+            await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("PRECIOS_HISTORICOS_TIMEOUT_MS");
+            expect(fetcher).not.toHaveBeenCalled();
+        });
+
+    it("el timeout cubre la lectura del JSON aunque ya se hayan recibido las cabeceras", async () => {
+        vi.useFakeTimers();
+        vi.stubEnv("PRECIOS_HISTORICOS_TIMEOUT_MS", "1000");
+        const fetcher = vi.fn<typeof fetch>(async (_url, init) => ({
+            ok: true,
+            json: () => new Promise((_resolve, reject) => {
+                init!.signal!.addEventListener("abort", () => reject(new DOMException("Abortado al leer cuerpo", "AbortError")));
+            }),
+        } as unknown as Response));
+        const resultado = expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow(
+            "El webservice de precios históricos superó el tiempo máximo de 1000 ms.",
+        );
+
+        await vi.advanceTimersByTimeAsync(1000);
+        await resultado;
+
+        expect(fetcher).toHaveBeenCalledOnce();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("distingue un HTTP 500 rápido de un timeout y registra su duración sin leer el cuerpo", async () => {
+        vi.useFakeTimers();
+        const json = vi.fn();
+        const fetcher = vi.fn<typeof fetch>(() => new Promise((resolve) => {
+            setTimeout(() => resolve({ ok: false, status: 500, json } as unknown as Response), 120);
+        }));
+        const resultado = consultarHistorico(opciones, consulta, fetcher).catch((causa) => causa as Error);
+
+        await vi.advanceTimersByTimeAsync(120);
+        const error = await resultado;
+
+        expect(error).toBeInstanceOf(ErrorWebserviceHistorico);
+        expect(error).toMatchObject({ estadoHTTP: 500, duracionMs: 120, reintentarEnMs: null });
+        expect((error as Error).message).toContain("respondió con estado 500.");
+        expect((error as Error).message).not.toContain("superó");
+        expect(json).not.toHaveBeenCalled();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it.each([
+        ["30", 30_000],
+        ["0", 0],
+        ["Fri, 09 Oct 2026 12:00:45 GMT", 45_000],
+        ["Fri, 09 Oct 2026 11:59:00 GMT", 0],
+        ["invalid-date", null],
+        ["-1", null],
+        ["1.5", null],
+        ["999999999999999999999999", null],
+    ])("expone Retry-After de HTTP 429 (%s) sin realizar reintentos ni esperas", async (retryAfter, esperado) => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-10-09T12:00:00.000Z"));
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("cuerpo privado", {
+            status: 429, headers: { "Retry-After": retryAfter },
+        }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toMatchObject({
+            estadoHTTP: 429, reintentarEnMs: esperado, duracionMs: 0,
+        });
+
+        expect(fetcher).toHaveBeenCalledOnce();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("un 429 sin cabecera Retry-After informa una espera desconocida", async () => {
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue({ ok: false, status: 429 } as Response);
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toMatchObject({
+            estadoHTTP: 429, reintentarEnMs: null,
+        });
+    });
+
+    it("no usa Retry-After de otros estados HTTP", async () => {
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("", {
+            status: 500, headers: { "Retry-After": "30" },
+        }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toMatchObject({
+            estadoHTTP: 500, reintentarEnMs: null,
+        });
+    });
+
+    it("informa el código seguro de un fallo de red sin copiar mensajes, URL, token ni causa", async () => {
+        vi.useFakeTimers();
+        const causa = Object.assign(new Error(`${opciones.baseUrl} ${opciones.token}`), { code: "UND_ERR_CONNECT_TIMEOUT" });
+        const original = new TypeError(`fetch failed ${opciones.baseUrl} ${opciones.token}`, { cause: causa });
+        const fetcher = vi.fn<typeof fetch>().mockRejectedValue(original);
+
+        const error = await consultarHistorico(opciones, consulta, fetcher).catch((fallo) => fallo as Error);
+
+        expect((error as Error).message).toContain("TypeError, código UND_ERR_CONNECT_TIMEOUT");
+        expect((error as Error).message).toContain("Duración: 0 ms. Especie: 60.");
+        expect((error as Error).message).not.toContain(opciones.baseUrl);
+        expect((error as Error).message).not.toContain(opciones.token);
+        expect((error as Error).cause).toBeUndefined();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it.each([`${opciones.baseUrl} ${opciones.token}`, "BAD\nCODE", 123, undefined])
+        ("omite códigos de red no seguros: %j", async (code) => {
+            const fetcher = vi.fn<typeof fetch>().mockRejectedValue(new TypeError("mensaje privado", { cause: { code } }));
+
+            const error = await consultarHistorico(opciones, consulta, fetcher).catch((causa) => causa as Error);
+
+            expect((error as Error).message).toContain("error de red (TypeError)");
+            expect((error as Error).message).not.toContain("mensaje privado");
+            expect((error as Error).message).not.toContain(opciones.token);
+            expect((error as Error).message).not.toContain(opciones.baseUrl);
+        });
+
+    it("conserva un AbortError ajeno al timeout y cancela el temporizador", async () => {
+        vi.useFakeTimers();
+        const error = new DOMException("Cancelación externa", "AbortError");
+        const fetcher = vi.fn<typeof fetch>().mockRejectedValue(error);
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toBe(error);
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("libera el temporizador después de una respuesta exitosa o un JSON inválido", async () => {
+        vi.useFakeTimers();
+        const fetcher = vi.fn<typeof fetch>()
+            .mockResolvedValueOnce(respuestaValida())
+            .mockResolvedValueOnce(new Response("{", { status: 200 }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toEqual(consultaValida);
+        expect(vi.getTimerCount()).toBe(0);
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("JSON inválido");
         expect(vi.getTimerCount()).toBe(0);
     });
 });
