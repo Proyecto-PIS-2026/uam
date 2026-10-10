@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import * as autorizacion from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { usePathname } from "next/navigation";
 import estilos from "./HeaderPublico.module.css";
 import HeaderPublico from "./HeaderPublico";
@@ -214,7 +215,7 @@ describe("HeaderPublico", () => {
     });
 
     it("cierra la sesión al elegir la opción del menú de usuario", async () => {
-        render(<HeaderPublico rolUsuario="OPERADOR" />);
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 }} />);
         fireEvent.click(screen.getByRole("button", { name: "Abrir menú de usuario" }));
 
         fireEvent.click(screen.getByRole("menuitem", { name: "Cerrar sesión" }));
