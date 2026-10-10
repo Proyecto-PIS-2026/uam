@@ -10,7 +10,6 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { usePathname } from "next/navigation";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
-import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
 
 import estilos from "./HeaderPublico.module.css";

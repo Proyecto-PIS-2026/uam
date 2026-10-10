@@ -38,8 +38,6 @@ vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
     obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 
-vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
-
 const opcionesEdicion = {
     especies: [],
     variedades: [],
