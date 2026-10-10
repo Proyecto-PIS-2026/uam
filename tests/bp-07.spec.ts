@@ -20,7 +20,9 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
   function tarjeta(precio: string) {
     return page
       .getByRole("button", { name: `$${precio}`, exact: true })
-      .locator('xpath=ancestor::div[contains(@class,"rounded-2xl")][1]');
+      .locator(
+        'xpath=ancestor::div[.//button[@aria-label="Aumentar precio"] and .//button[@aria-label="Disminuir precio"] and .//button[contains(@aria-label, "Ver detalle de")]][1]',
+      );
   }
 
   async function crear(calibre: string, precio: string) {

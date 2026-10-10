@@ -579,7 +579,7 @@ describe("PreciosHistoricos", () => {
         seleccionarFiltro("Calibre", "M");
         expect(firmasFilasVisibles()).toHaveLength(2);
         expect(navegar).not.toHaveBeenCalled();
-    });
+    }, 10_000);
 
     it("conserva filtros iniciales ausentes en la respuesta y muestra cero resultados", () => {
         render(

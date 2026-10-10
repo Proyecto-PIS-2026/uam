@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
     obtenerOperadorPorNombre: vi.fn(),
     obtenerPublicaciones: vi.fn(),
     obtenerOpcionesEdicion: vi.fn(),
+    obtenerConfiguracion: vi.fn(),
     miMercado: vi.fn(() => null),
     notFound: vi.fn(() => { throw new Error("NEXT_HTTP_ERROR_FALLBACK;404"); }),
 }));
@@ -31,10 +32,24 @@ vi.mock("../../operadores/consultas-edicion-publicacion", () => ({
 }));
 
 vi.mock("./MiMercado", () => ({ default: mocks.miMercado }));
+<<<<<<< HEAD
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound, redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }) }));
+=======
+
+vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
+    obtenerConfiguracion: mocks.obtenerConfiguracion,
+}));
+
+vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
+>>>>>>> develop
 
 const opcionesEdicion = {
-    especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [],
+    especies: [],
+    variedades: [],
+    presentaciones: [],
+    categorias: [],
+    calibres: [],
+    paises: [],
 };
 
 describe("VistaMiMercado", () => {
@@ -45,6 +60,7 @@ describe("VistaMiMercado", () => {
         mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Operador 13" });
         mocks.obtenerPublicaciones.mockResolvedValue([]);
         mocks.obtenerOpcionesEdicion.mockResolvedValue(opcionesEdicion);
+        mocks.obtenerConfiguracion.mockResolvedValue("25");
     });
 
     it("usa el operador actual cuando no llega un nombre", async () => {
@@ -56,6 +72,7 @@ describe("VistaMiMercado", () => {
         expect(vista.type).toBe(mocks.miMercado);
         expect(vista.props.operadorId).toBe(13);
         expect(vista.props.nombreOperador).toBe("Operador 13");
+        expect(vista.props.incrementoPrecio).toBe(25);
     });
 
     it("exige consultar publicaciones propias aunque se solicite abrir el alta", async () => {
@@ -86,6 +103,7 @@ describe("VistaMiMercado", () => {
         expect(vista.type).toBe(mocks.miMercado);
         expect(vista.props.operadorId).toBe(37);
         expect(vista.props.nombreOperador).toBe("Frutas & Más");
+        expect(vista.props.incrementoPrecio).toBe(25);
     });
 
     it.each(["modificar", "eliminar"] as const)("propaga la denegación de %s sin impedir la consulta", async (accion) => {
@@ -107,6 +125,7 @@ describe("VistaMiMercado", () => {
         expect(mocks.obtenerPublicaciones).not.toHaveBeenCalled();
         expect(mocks.obtenerOpcionesEdicion).not.toHaveBeenCalled();
     });
+<<<<<<< HEAD
 });
 
 describe("propiedad de Mi Mercado", () => {
@@ -120,3 +139,6 @@ describe("propiedad de Mi Mercado", () => {
         expect(mocks.obtenerOpcionesEdicion).not.toHaveBeenCalled();
     });
 });
+=======
+});
+>>>>>>> develop
