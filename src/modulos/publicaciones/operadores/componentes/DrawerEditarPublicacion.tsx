@@ -404,13 +404,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                         </>
                     ) : (
                         <>
-<<<<<<< HEAD
-                            <button className={`${styles.cancelar} ${styles.eliminar}`} type="button" onClick={alEliminar} disabled={ocupado || !alEliminar || !puedeEliminar}>{eliminando ? "Eliminando..." : "Eliminar"}</button>
-                            <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); setError(""); setEditando(true); }} disabled={ocupado || !puedeModificar}>Editar</button>
-=======
                             <button className={`${styles.cancelar} ${styles.eliminar}`} type="button" onClick={alEliminar} disabled={ocupado || !alEliminar}>{eliminando ? "Eliminando..." : "Eliminar"}</button>
                             <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); setError(""); setEditando(true); }} disabled={ocupado || !alGuardar}>Editar</button>
->>>>>>> develop
                         </>
                     )}
                 </div>
