@@ -10,6 +10,8 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { usePathname } from "next/navigation";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
 
 import estilos from "./HeaderPublico.module.css";
 
@@ -134,9 +136,11 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     <span className={estilos.opcionDesplegable} role="menuitem">
                         Mi perfil
                     </span>
-                    <span className={estilos.opcionDesplegable} role="menuitem">
-                        Cerrar sesión
-                    </span>
+                    <form action={cerrarSesionYVolverAlInicio}>
+                        <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
+                            Cerrar sesión
+                        </button>
+                    </form>
                 </div>
             )}
         </div>

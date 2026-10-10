@@ -66,7 +66,10 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: uamgrupo10acr.azurecr.io/postgres:16-alpine
+        credentials:
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
         env:
           POSTGRES_USER: uam
           POSTGRES_PASSWORD: uam_local

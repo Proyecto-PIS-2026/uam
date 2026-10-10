@@ -1,3 +1,4 @@
+
 name: CD - Deploy Testing
 
 on:
@@ -42,30 +43,23 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Autenticarse en Docker Hub
+      - name: Autenticarse en Azure Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: uamgrupo10acr.azurecr.io
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Descargar imagen base de Node
+      - name: Verificar SESSION_SECRET
+        env:
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
         run: |
-          for intento in 1 2 3; do
-            echo "Intento $intento de descargar Node.js"
+          if [ -z "$SESSION_SECRET" ]; then
+            echo "ERROR: SESSION_SECRET está vacío en GitHub Actions"
+            exit 1
+          fi
 
-            if docker pull node:24-alpine; then
-              echo "Imagen descargada correctamente"
-              exit 0
-            fi
-
-            if [ "$intento" -lt 3 ]; then
-              echo "Reintentando en 15 segundos..."
-              sleep 15
-            fi
-          done
-
-          echo "No fue posible descargar la imagen"
-          exit 1
+          echo "OK: SESSION_SECRET está disponible en GitHub Actions"
 
       - name: Desplegar en Testing
         uses: azure/container-apps-deploy-action@v2
@@ -77,6 +71,6 @@ jobs:
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
           containerAppName: uam-testing
           resourceGroup: Proyecto-PIS-2026
-          environmentVariables: |
+          environmentVariables: >-
             DATABASE_URL=${{ secrets.TESTING_DATABASE_URL }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
