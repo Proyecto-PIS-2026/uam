@@ -8,7 +8,8 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { usePathname } from "next/navigation";
-import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
+import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
 
 import estilos from "./HeaderPublico.module.css";
@@ -16,7 +17,7 @@ import estilos from "./HeaderPublico.module.css";
 type OpcionMenu = {
     nombre: string;
     ruta: string;
-    rol?: RolUsuario;
+    permitido?: (sesion: DatosSesion | null) => boolean;
     soloSinSesion?: boolean;
 };
 
@@ -28,42 +29,45 @@ const opcionesMenu: OpcionMenu[] = [
     {
         nombre: "Publicaciones",
         ruta: "/publicaciones",
+        permitido: () => autorizado("operador.publicacion.consultar"),
     },
     {
         nombre: "Operadores",
         ruta: "/operadores",
+        permitido: () => autorizado("operador.catalogo.consultar"),
     },
     {
         nombre: "Precios de referencia",
         ruta: "/precios-referencia",
+        permitido: () => autorizado("preciosReferencia.consultar"),
     },
     {
         nombre: "Mi mercado",
         ruta: "/mi-mercado",
-        rol: "OPERADOR",
+        permitido: (sesion) => autorizado("operador.mercado.acceder", sesion),
     },
     {
         nombre: "Mi mercado",
         ruta: "/mi-mercado/productor",
-        rol: "PRODUCTOR",
+        permitido: (sesion) => autorizado("productor.mercado.acceder", sesion),
+    },
+    { 
+        nombre: "Administración", 
+        ruta: "/administracion" 
     },
     {
         nombre: "Iniciar sesión",
         ruta: "/iniciar-sesion",
         soloSinSesion: true,
     },
-    { 
-        nombre: "Administración", 
-        ruta: "/administracion" 
-    }
 ];
 
 type PropiedadesEncabezado = {
-    rolUsuario: RolUsuario | null;
+    sesion: DatosSesion | null;
     fotoPerfil?: string | null;
 };
 
-export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: PropiedadesEncabezado) {
+export default function HeaderPublico({ sesion, fotoPerfil = null }: PropiedadesEncabezado) {
     const [menuAbierto, cambiarMenuAbierto] = useState(false);
     const [menuUsuarioAbierto, cambiarMenuUsuarioAbierto] = useState(false);
     const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
@@ -71,8 +75,8 @@ export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: Propied
     const rutaActual = usePathname() ?? "";
     const opcionesVisibles = opcionesMenu.filter(
         (opcion) =>
-            (!opcion.rol || opcion.rol === rolUsuario) &&
-            (!opcion.soloSinSesion || rolUsuario === null),
+            (!opcion.permitido || opcion.permitido(sesion)) &&
+            (!opcion.soloSinSesion || sesion === null),
     );
 
     useEffect(() => {
@@ -108,7 +112,7 @@ export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: Propied
         return rutaActual === ruta || rutaActual.startsWith(`${ruta}/`);
     }
 
-    const menuUsuario = rolUsuario && (
+    const menuUsuario = sesion && (
         <div ref={referenciaMenuUsuario} className={estilos.menuOperador}>
             <button
                 type="button"
@@ -145,7 +149,7 @@ export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: Propied
         </div>
     );
 
-    const menuPerfilMobile = rolUsuario && (
+    const menuPerfilMobile = sesion && (
         <button type="button" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`}>
             <span>Mi perfil</span>
             {fotoPerfil && !fotoPerfilFallida ? (
@@ -163,7 +167,7 @@ export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: Propied
         </button>
     );
 
-    const menuCerrarSesionMobile = rolUsuario && (
+    const menuCerrarSesionMobile = sesion && (
             <span className={`${estilos.enlaceMobile} ${estilos.cerrarSesionMobile}`}>
                 Cerrar sesión
             </span>

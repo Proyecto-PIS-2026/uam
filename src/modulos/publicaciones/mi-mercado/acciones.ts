@@ -1,19 +1,31 @@
 "use server";
 
+import { obtenerSesion } from "../../identidad-acceso/autenticacion/sesiones";
+import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { revalidatePath } from "next/cache";
 import { obtenerOperadorActual, obtenerOperadorPorId } from "../../usuarios/operadores/operador-actual";
 import { actualizarPrecioPublicacion, obtenerPublicacionesDeOperador, PublicacionNoEncontradaError } from "./consultas-mi-mercado";
 import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
 
 export async function cargarPublicacionesMiMercado(operadorId: number) {
+    const sesion = await obtenerSesion();
+    if (!sesion) throw new Error("Debe iniciar sesión.");
+
     const operador = await obtenerOperadorPorId(operadorId);
     if (!operador) throw new Error("No se encontró el operador de Mi Mercado.");
+
+    if (!autorizado("operador.publicacion.consultarPropias", sesion, operador)) {
+        throw new Error("No tiene permisos para gestionar las publicaciones de este Operador.");
+    }
 
     const relaciones = await obtenerPublicacionesDeOperador(operador.id);
     return mapearPublicacionesMiMercado(relaciones);
 }
 
 export async function actualizarPrecio(publicacionId: number, nuevoPrecio: number, operadorId?: number) {
+    const sesion = await obtenerSesion();
+    if (!sesion) throw new Error("Debe iniciar sesión.");
+
     if (operadorId !== undefined && (!Number.isSafeInteger(operadorId) || operadorId <= 0)) {
         throw new Error("El ID del operador debe ser un número entero positivo.");
     }
@@ -24,6 +36,10 @@ export async function actualizarPrecio(publicacionId: number, nuevoPrecio: numbe
 
     if (!operador) {
         throw new Error("No se encontró el operador de Mi Mercado.");
+    }
+
+    if (!autorizado("operador.publicacion.modificar", sesion, operador)) {
+        throw new Error("No tiene permisos para modificar las publicaciones de este Operador.");
     }
 
     try {

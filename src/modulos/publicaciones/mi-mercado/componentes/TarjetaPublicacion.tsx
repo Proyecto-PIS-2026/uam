@@ -9,13 +9,22 @@ import styles from "./TarjetaPublicacion.module.css";
 type Props = {
     pub: Publicacion;
     operadorId: number;
+    puedeModificar: boolean;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
     alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number) => void;
     alPublicacionEliminada?: () => void;
 };
 
-export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, alConsultar, alPrecioActualizado, alPublicacionEliminada }: Props) {
+export default function TarjetaPublicacion({
+    pub,
+    operadorId,
+    puedeModificar,
+    incrementoPrecio,
+    alConsultar,
+    alPrecioActualizado,
+    alPublicacionEliminada,
+}: Props) {
     let precioInicial = 0;
     if (Number(pub.precio)) {
         precioInicial = Number(pub.precio);
@@ -26,6 +35,7 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
     const precioPendienteRef = useRef(precioInicial);
     const precioConfirmadoRef = useRef(precioInicial);
     const guardandoPrecioRef = useRef(false);
+    const [guardandoPrecio, setGuardandoPrecio] = useState(false);
     const [editandoPrecio, setEditandoPrecio] = useState(false);
     const [precioTemporal, setPrecioTemporal] = useState(String(precioInicial));
 
@@ -34,6 +44,7 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
             return;
         }
         guardandoPrecioRef.current = true;
+        setGuardandoPrecio(true);
         try {
             while (precioPendienteRef.current !== precioConfirmadoRef.current) {
                 const precioAGuardar =precioPendienteRef.current;
@@ -59,6 +70,7 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
             }
         } finally {
             guardandoPrecioRef.current = false;
+            setGuardandoPrecio(false);
         }
     }
 
@@ -131,16 +143,12 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
 
     const contenido = (
         <div className={styles.tarjeta}>
-            {/* Foto */}
             <button type="button" onClick={consultarPublicacion} className={styles.botonFoto} aria-label={`Ver detalle de ${nombreProducto}`}>
-                <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(min-width: 768px) 320px, 128px" unoptimized className={styles.foto} reemplazo={<div className={styles.sinFoto}>Sin fotografía</div>}/>
+                <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(min-width: 768px) 320px, 128px" unoptimized className={styles.foto} reemplazo={<div className={styles.sinFoto}>Sin fotografía</div>} />
             </button>
-            {/* Contenido */}
             <div className={styles.contenido}>
-                {/* Información clickeable */}
                 <button type="button" onClick={consultarPublicacion} className={styles.botonInformacion}>
                     <div className={styles.informacion}>
-                        {/* Nombre + estado */}
                         <div className={styles.encabezadoProducto}>
                             <div className={styles.nombreProducto} title={nombreProducto}>
                                 {nombreProducto}
@@ -149,7 +157,6 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
                                 {pub.publicacionDisponible ? "Disponible" : "No disponible"}
                             </span>
                         </div>
-                        {/* Datos */}
                         <div className={styles.datos}>
                             {calibre || "-"}
                             {" · "}
@@ -159,18 +166,22 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
                         </div>
                     </div>
                 </button>
-                {/* Precio */}
                 <div className={styles.contenedorPrecio}>
                     <div className={styles.controlesPrecio}>
-                        <button type="button" className={styles.botonPrecio} onClick={restar} aria-label="Disminuir precio">
+                        <button type="button" className={styles.botonPrecio} onClick={restar} disabled={guardandoPrecio || !puedeModificar} aria-label="Disminuir precio">
                             −
                         </button>
-                        {editandoPrecio ? (
-                            <input autoFocus type="text" inputMode="numeric" maxLength={10} value={precioTemporal} className={styles.inputPrecio} aria-label="Editar precio"
+                        {editandoPrecio && puedeModificar ? (
+                            <input
+                                autoFocus
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={10}
+                                value={precioTemporal}
+                                className={styles.inputPrecio}
+                                aria-label="Editar precio"
                                 onChange={(e) => {
-                                    if (/^\d{0,10}$/.test(e.target.value)) {
-                                        setPrecioTemporal(e.target.value);
-                                    }
+                                    if (/^\d{0,10}$/.test(e.target.value)) setPrecioTemporal(e.target.value);
                                 }}
                                 onBlur={guardarPrecioManual}
                                 onKeyDown={(e) => {
@@ -185,11 +196,11 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
                                 }}
                             />
                         ) : (
-                            <button type="button" onClick={comenzarEdicionPrecio} className={styles.precio} title="Editar precio">
+                            <button type="button" onClick={comenzarEdicionPrecio} className={styles.precio} title="Editar precio" disabled={guardandoPrecio || !puedeModificar}>
                                 {precio === 0 ? "Sin precio" : `$${precio}`}
                             </button>
                         )}
-                        <button type="button" className={styles.botonPrecio} onClick={sumar} aria-label="Aumentar precio">
+                        <button type="button" className={styles.botonPrecio} onClick={sumar} disabled={guardandoPrecio || !puedeModificar} aria-label="Aumentar precio">
                             +
                         </button>
                     </div>
@@ -197,11 +208,7 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
                         ›
                     </button>
                 </div>
-                {errorPrecio && (
-                    <div role="alert" className={styles.errorPrecio}>
-                        {errorPrecio}
-                    </div>
-                )}
+                {errorPrecio && <div role="alert" className={styles.errorPrecio}>{errorPrecio}</div>}
             </div>
         </div>
     );

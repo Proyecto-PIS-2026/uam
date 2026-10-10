@@ -1,3 +1,4 @@
+import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 export type PublicacionListado = {
@@ -25,6 +26,10 @@ export type ResultadoPublicaciones = {
 };
 
 export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> {
+    if (!autorizado("operador.publicacion.consultar")) {
+        throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
+    }
+
     const consulta = db.sql.public.publicacionOperador
         .innerJoin(db.sql.public.publicacion, (tablas, operaciones) =>
             operaciones.eq(tablas.publicacionOperador.publicacionId, tablas.publicacion.id))

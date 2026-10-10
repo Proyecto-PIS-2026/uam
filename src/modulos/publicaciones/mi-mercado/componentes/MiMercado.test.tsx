@@ -167,6 +167,7 @@ function renderMiMercado(
 ) {
   return render(
     <MiMercado
+      puedeCrear={true} puedeModificar={true} puedeEliminar={true}
       operadorId={9}
       publicaciones={publicaciones}
       incrementoPrecio={incrementoPrecio}
@@ -200,6 +201,22 @@ describe("MiMercado", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("oculta el alta sin permiso de creación aunque se solicite abrirla inicialmente", () => {
+    render(
+      <MiMercado
+        operadorId={9}
+        puedeCrear={false} puedeModificar={true} puedeEliminar={true}
+        abrirAltaInicial={true}
+        publicaciones={[]}
+        incrementoPrecio={5}
+        opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Nueva publicación" })).not.toBeInTheDocument();
+    expect(mocks.solicitud).not.toHaveBeenCalled();
   });
 
   it("abre la consulta de la tarjeta con sus IDs reales, país y precio nulo", () => {
@@ -303,7 +320,7 @@ describe("MiMercado", () => {
     expect(screen.getByTestId("publicacion-52")).toHaveTextContent("Williams");
     expect(obtenerPropsDrawer().publicacion).toEqual(expect.objectContaining({ especie: "Pera", precio: "150.00", paisId: 55 }));
 
-    rerender(<MiMercado operadorId={9} publicaciones={[actualizada]} incrementoPrecio={5} opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }} />);
+    rerender(<MiMercado puedeCrear={true} puedeModificar={true} puedeEliminar={true} operadorId={9} publicaciones={[actualizada]} incrementoPrecio={5} opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }} />);
 
     const consultaActualizada = screen.getByRole("dialog", { name: "Publicación seleccionada" });
     expect(consultaActualizada).toHaveAttribute("data-actualizando", "false");
@@ -914,6 +931,7 @@ describe("MiMercado", () => {
   it("actualiza las publicaciones cuando cambian las props", () => {
     const { rerender } = render(
       <MiMercado
+        puedeCrear={true} puedeModificar={true} puedeEliminar={true}
         operadorId={9}
         publicaciones={[
           crearPublicacion(1, 10, "Manzana"),
@@ -929,6 +947,7 @@ describe("MiMercado", () => {
 
     rerender(
       <MiMercado
+        puedeCrear={true} puedeModificar={true} puedeEliminar={true}
         operadorId={9}
         publicaciones={[
           crearPublicacion(2, 20, "Pera"),

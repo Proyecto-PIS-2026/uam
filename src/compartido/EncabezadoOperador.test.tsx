@@ -1,13 +1,13 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import EncabezadoOperador from "./EncabezadoOperador";
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: vi.fn() }));
 vi.mock("./HeaderPublico", () => ({
-    default: ({ rolUsuario }: { rolUsuario: RolUsuario | null }) => (
-        <header>{rolUsuario ?? "SIN_SESION"}</header>
+    default: ({ sesion }: { sesion: DatosSesion | null }) => (
+        <header>{sesion?.rol ?? "SIN_SESION"}</header>
     ),
 }));
 
