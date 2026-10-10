@@ -15,12 +15,12 @@ function esMasReciente(candidato: RelevamientoGuardado, actual: RelevamientoGuar
     return candidato.ultimoExito > actual.ultimoExito;
 }
 
-function ultimoRelevamientoGuardado(registros: { nombreConfiguracion: string; valorConfiguracion: string }[]): RelevamientoGuardado | null {
+function ultimoRelevamientoGuardado(registros: { claveCache: string; estadoCache: string }[]): RelevamientoGuardado | null {
     let ultimoGuardado: RelevamientoGuardado | null = null;
 
     for (const candidato of registros) {
-        if (!candidato.nombreConfiguracion.startsWith(PREFIJO_CACHE)) continue;
-        const cache = leerEstadoCacheDiaria(candidato.valorConfiguracion);
+        if (!candidato.claveCache.startsWith(PREFIJO_CACHE)) continue;
+        const cache = leerEstadoCacheDiaria(candidato.estadoCache);
         if (!cache?.consulta || !cache.ultimoExito) continue;
 
         const dato = { consulta: cache.consulta, ultimoExito: cache.ultimoExito };
@@ -31,7 +31,7 @@ function ultimoRelevamientoGuardado(registros: { nombreConfiguracion: string; va
 }
 
 export async function obtenerUltimoRelevamientoGuardado(): Promise<ConsultaPreciosReferencia | null> {
-    const registros = await db.orm.public.Configuracion.all();
+    const registros = await db.orm.public.CachePreciosReferencia.all();
     return ultimoRelevamientoGuardado(registros)?.consulta ?? null;
 }
 
@@ -75,14 +75,14 @@ function configuracionWebservice(): { baseUrl: string; token: string } {
 export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPreciosReferencia> {
     const opciones = configuracionWebservice();
     const hash = createHash("sha256").update(opciones.baseUrl).digest();
-    const nombreConfiguracion = `${PREFIJO_CACHE}${hash.toString("hex").slice(0, 24)}`;
+    const claveCache = `${PREFIJO_CACHE}${hash.toString("hex").slice(0, 24)}`;
     const llaveBloqueo = hash.readInt32BE(0);
 
-    const registroInicial = await db.orm.public.Configuracion.where({ nombreConfiguracion }).first();
-    const estadoInicial = leerEstadoCacheDiaria(registroInicial?.valorConfiguracion ?? null);
+    const registroInicial = await db.orm.public.CachePreciosReferencia.where({ claveCache }).first();
+    const estadoInicial = leerEstadoCacheDiaria(registroInicial?.estadoCache ?? null);
     if (estadoInicial?.ultimoIntento === fechaActualMontevideo()) {
         if (estadoInicial.consulta) return estadoInicial.consulta;
-        const respaldo = ultimoRelevamientoGuardado(await db.orm.public.Configuracion.all());
+        const respaldo = ultimoRelevamientoGuardado(await db.orm.public.CachePreciosReferencia.all());
         if (!respaldo) throw new Error("Todavía no hay un relevamiento de precios disponible en la caché.");
     }
 
@@ -94,10 +94,10 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
                 .build(),
         );
 
-        const registro = await tx.orm.public.Configuracion.where({ nombreConfiguracion }).first();
-        const estado = leerEstadoCacheDiaria(registro?.valorConfiguracion ?? null);
+        const registro = await tx.orm.public.CachePreciosReferencia.where({ claveCache }).first();
+        const estado = leerEstadoCacheDiaria(registro?.estadoCache ?? null);
         const hoyBajoBloqueo = fechaActualMontevideo();
-        const ultimoGuardado = ultimoRelevamientoGuardado(await tx.orm.public.Configuracion.all());
+        const ultimoGuardado = ultimoRelevamientoGuardado(await tx.orm.public.CachePreciosReferencia.all());
 
         let estadoConRespaldo = estado;
         const datoActual = estado?.consulta && estado.ultimoExito ? { consulta: estado.consulta, ultimoExito: estado.ultimoExito } : null;
@@ -114,11 +114,11 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
         const nuevoEstado = resultado.nuevoEstado ?? (estadoConRespaldo !== estado ? estadoConRespaldo : null);
 
         if (nuevoEstado) {
-            const valorConfiguracion = JSON.stringify(nuevoEstado);
+            const estadoCache = JSON.stringify(nuevoEstado);
             if (registro) {
-                await tx.orm.public.Configuracion.where({ id: registro.id }).update({ valorConfiguracion });
+                await tx.orm.public.CachePreciosReferencia.where({ id: registro.id }).update({ estadoCache });
             } else {
-                await tx.orm.public.Configuracion.create({ nombreConfiguracion, valorConfiguracion });
+                await tx.orm.public.CachePreciosReferencia.create({ claveCache, estadoCache });
             }
         }
 

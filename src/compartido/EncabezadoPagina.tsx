@@ -3,7 +3,7 @@ import styles from "./EncabezadoPagina.module.css";
 
 type EncabezadoPaginaProps = {
     titulo: string;
-    cantidad?: number;
+    cantidad?: number | null;
     subtitulo: string;
     className?: string;
 };
@@ -14,7 +14,11 @@ export default function EncabezadoPagina({ titulo, cantidad, subtitulo, classNam
             <HojasDecorativas variante="separador" />
             <div className={styles.contenido}>
                 <h1 className={styles.titulo}>{titulo}</h1>
-                <p className={styles.subtitulo}><span className={styles.cantidad}>{cantidad}</span>{" "}{subtitulo}</p>
+                {cantidad ? (
+                    <p className={styles.subtitulo}><span className={styles.cantidad}>{cantidad}</span>{" "}{subtitulo}</p>
+                ) : (
+                    <p className={styles.subtitulo}>{subtitulo}</p>
+                )}
             </div>
         </header>
     );

@@ -52,6 +52,10 @@ const opcionesMenu: OpcionMenu[] = [
         ruta: "/iniciar-sesion",
         soloSinSesion: true,
     },
+    { 
+        nombre: "Administración", 
+        ruta: "/administracion" 
+    }
 ];
 
 type PropiedadesEncabezado = {
