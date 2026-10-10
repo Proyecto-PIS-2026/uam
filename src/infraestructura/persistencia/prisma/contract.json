@@ -8,6 +8,10 @@
       "model": "Administrador",
       "namespace": "public"
     },
+    "cachePreciosReferencia": {
+      "model": "CachePreciosReferencia",
+      "namespace": "public"
+    },
     "calibre": {
       "model": "Calibre",
       "namespace": "public"
@@ -168,6 +172,47 @@
               },
               "namespaceId": "public",
               "table": "administrador"
+            }
+          },
+          "CachePreciosReferencia": {
+            "fields": {
+              "claveCache": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "estadoCache": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "claveCache": {
+                  "column": "claveCache"
+                },
+                "estadoCache": {
+                  "column": "estadoCache"
+                },
+                "id": {
+                  "column": "id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "cachePreciosReferencia"
             }
           },
           "Calibre": {
@@ -1712,6 +1757,43 @@
                 }
               ]
             },
+            "cachePreciosReferencia": {
+              "columns": {
+                "claveCache": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "estadoCache": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "claveCache"
+                  ]
+                }
+              ]
+            },
             "calibre": {
               "columns": {
                 "codigoCalibre": {
@@ -2976,7 +3058,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "090c3a8f7ee1cafc69f331595d913a1e306bd4d66ae029c517f6a15f4dd6e864"
+    "storageHash": "6199bcda0d7cc5d6c1bb7b01b0d8bc41bcb8252696ec6d8cad02dbeaf8f84b57"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

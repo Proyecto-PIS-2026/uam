@@ -275,6 +275,16 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         return ordenActual === "alfabeticoDesc" ? -comparacion : comparacion;
     });
 
+    function actualizarPrecioLocal(publicacionId: number, nuevoPrecio: number) {
+        setListadoRecargado((actual) => {
+            const datosActuales = actual?.origen === publicaciones ? actual.datos : publicaciones;
+            return {
+                origen: publicaciones,
+                datos: datosActuales.map((publicacion) => publicacion.id === publicacionId ? { ...publicacion, precio: String(nuevoPrecio)} : publicacion),
+            };
+        });
+    }
+
     return (
         <main className="relative isolate min-h-screen bg-background">
             {/* <HojasDecorativas variante="fondo" /> */}
@@ -380,7 +390,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                                         incrementoPrecio
                                                     }
                                                     alConsultar={consultarPublicacion}
-                                                    alPrecioActualizado={sincronizarPublicaciones}
+                                                    alPrecioActualizado={actualizarPrecioLocal}
                                                     alPublicacionEliminada={() => window.location.reload()}
                                                 />
                                             ))}
@@ -397,7 +407,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                         operadorId={operadorId}
                                         incrementoPrecio={incrementoPrecio}
                                         alConsultar={consultarPublicacion}
-                                        alPrecioActualizado={sincronizarPublicaciones}
+                                        alPrecioActualizado={actualizarPrecioLocal}
                                         alPublicacionEliminada={() => window.location.reload()}
                                     />
                                 ))}
