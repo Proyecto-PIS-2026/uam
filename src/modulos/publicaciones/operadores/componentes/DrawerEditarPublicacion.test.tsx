@@ -90,7 +90,14 @@ function seleccionarFoto(foto: File) {
 
 describe("DrawerEditarPublicacion", () => {
     it.each(["modificar", "eliminar"] as const)("deshabilita únicamente la acción %s denegada", (accion) => {
-        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" alEliminar={mocks.eliminar} puedeModificar={accion !== "modificar"} puedeEliminar={accion !== "eliminar"} />);
+        render(
+            <DrawerEditarPublicacion
+                {...props}
+                modoInicial="consulta"
+                alGuardar={accion === "modificar" ? undefined : mocks.guardar}
+                alEliminar={accion === "eliminar" ? undefined : mocks.eliminar}
+            />,
+        );
 
         const editar = screen.getByRole("button", { name: "Editar" });
         const eliminar = screen.getByRole("button", { name: "Eliminar" });
