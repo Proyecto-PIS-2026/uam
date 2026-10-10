@@ -52,15 +52,15 @@ const opcionesMenu: OpcionMenu[] = [
         ruta: "/mi-mercado/productor",
         permitido: (sesion) => autorizado("productor.mercado.acceder", sesion),
     },
+    { 
+        nombre: "Administración", 
+        ruta: "/administracion" 
+    },
     {
         nombre: "Iniciar sesión",
         ruta: "/iniciar-sesion",
         soloSinSesion: true,
     },
-    { 
-        nombre: "Administración", 
-        ruta: "/administracion" 
-    }
 ];
 
 type PropiedadesEncabezado = {

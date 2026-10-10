@@ -32,16 +32,13 @@ vi.mock("../../operadores/consultas-edicion-publicacion", () => ({
 }));
 
 vi.mock("./MiMercado", () => ({ default: mocks.miMercado }));
-<<<<<<< HEAD
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound, redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }) }));
-=======
 
 vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
     obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
->>>>>>> develop
 
 const opcionesEdicion = {
     especies: [],
@@ -125,7 +122,6 @@ describe("VistaMiMercado", () => {
         expect(mocks.obtenerPublicaciones).not.toHaveBeenCalled();
         expect(mocks.obtenerOpcionesEdicion).not.toHaveBeenCalled();
     });
-<<<<<<< HEAD
 });
 
 describe("propiedad de Mi Mercado", () => {
@@ -139,6 +135,3 @@ describe("propiedad de Mi Mercado", () => {
         expect(mocks.obtenerOpcionesEdicion).not.toHaveBeenCalled();
     });
 });
-=======
-});
->>>>>>> develop
