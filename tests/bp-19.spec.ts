@@ -34,6 +34,13 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
   });
 
   test("muestra la fecha, las columnas y los precios del relevamiento", async ({ page }) => {
+    // CP-19.1-01 y CP-19.1-12: acceso público desde la navegación.
+    await page.getByRole("link", { name: "Ir al inicio", exact: true }).click();
+    await expect(page).toHaveURL(/\/inicio$/);
+    await page.getByRole("navigation", { name: "Navegación principal", exact: true })
+      .getByRole("link", { name: "Precios de referencia", exact: true }).click();
+    await expect(page).toHaveURL(/\/precios-referencia$/);
+    await expect(page.getByRole("heading", { name: "Precios de referencia", exact: true })).toBeVisible();
     const [anio, mes, dia] = relevamiento.survey_date.split("-");
     await expect(page.getByText(`${dia}/${mes}/${anio}`, { exact: true })).toBeVisible();
     await resultados(page, registros.length);
@@ -109,6 +116,28 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await expect(presentacion).toHaveAttribute("aria-disabled", "true");
     await resultados(page, registros.length);
   });
+
+  for (const { caso, nombre, campo, columna, todas } of [
+    { caso: "CP-19.1-08", nombre: "Calibre", campo: "caliber", columna: 6, todas: "Todos los calibres" },
+    { caso: "CP-19.1-09", nombre: "Categoría", campo: "category", columna: 7, todas: "Todas las categorías" },
+  ] as const) {
+    test(`${caso}: filtra por ${nombre.toLowerCase()} y permite volver al listado completo`, async ({ page }) => {
+      // Elige un valor que excluya registros para detectar un filtro que no se aplica.
+      const valor = registros.find((registro) => registro[campo] !== "-"
+        && registros.some((otro) => otro[campo] !== registro[campo]))?.[campo];
+      expect(valor).toBeDefined();
+      const esperadas = registros.filter((registro) => registro[campo] === valor);
+      await seleccionar(page, nombre, valor!);
+      await resultados(page, esperadas.length);
+      await expect(filas(page)).toHaveCount(Math.min(40, esperadas.length));
+      for (const fila of await filas(page).all()) {
+        await expect(fila.locator("td").nth(columna)).toHaveText(valor!);
+      }
+      await seleccionar(page, nombre, todas);
+      await resultados(page, registros.length);
+      await expect(filas(page)).toHaveCount(Math.min(40, registros.length));
+    });
+  }
 
   test("filtra rangos por unidad y kg, valida límites y permite limpiarlos", async ({ page }) => {
     const minimo = filtros(page).getByRole("textbox", { name: "Precio mínimo", exact: true });
