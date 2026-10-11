@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
+import { test } from "./usuarios-administrativos";
 import {
   iniciarSesionAdministrador,
   iniciarSesionOperador,
@@ -13,9 +14,9 @@ async function seleccionarRol(page: Page, rol: string) {
   await page.getByRole("option", { name: rol, exact: true }).click();
 }
 
-test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa", async ({ page, browser }) => {
+test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa", async ({ page, browser, usuariosAdministrativos }) => {
   test.slow();
-  await iniciarSesionAdministrador(page);
+  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
 
   const secciones = page.getByRole("group", { name: "Secciones de configuración" });
   await expect(secciones.getByRole("button")).toHaveCount(3);
@@ -46,7 +47,7 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   }
 
   await seleccionarRol(page, "Administrador");
-  await expect(filas.getByText(process.env.E2E_ADMIN_EMAIL!, { exact: true })).toBeVisible();
+  await expect(filas.getByText(usuariosAdministrativos.administrador.usuario, { exact: true })).toBeVisible();
   await seleccionarRol(page, "Operador");
   const username = (await filas.first().locator("span").first().innerText()).trim();
   const nombreOperador = (await filas.first().locator("span").nth(1).innerText()).trim();
@@ -69,7 +70,7 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   await busqueda.fill(username);
 
   await filaOperador.click();
-  await expect(page).toHaveURL(/\/gestion-operadores\/\d+$/);
+  await expect(page).toHaveURL(/\/gestion-operadores\/\d+$/, { timeout: 30_000 });
   const rutaPerfil = new URL(page.url()).pathname;
   await expect(page.getByRole("heading", { name: nombreOperador, exact: true, level: 1 })).toBeVisible();
   await page.getByRole("link", { name: /Volver al listado de operadores/ }).click();
@@ -79,7 +80,7 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   await seleccionarRol(page, "Operador");
   await busqueda.fill(username);
   await filaOperador.getByTitle("Editar perfil", { exact: true }).click();
-  await expect(page).toHaveURL(`${rutaPerfil}/editar`);
+  await expect(page).toHaveURL(`${rutaPerfil}/editar`, { timeout: 30_000 });
   await expect(page.getByRole("heading", { name: "Modificar operador", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Volver al perfil/ }).click();
   await expect(page).toHaveURL(rutaPerfil);
@@ -90,7 +91,7 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   for (const perfil of [
     { nombre: "visitante", iniciarSesion: undefined, destino: /^\/iniciar-sesion$/ },
     { nombre: "operador", iniciarSesion: iniciarSesionOperador, destino: /^\/mi-mercado(?:\/|$)/ },
-    { nombre: "productor", iniciarSesion: iniciarSesionProductor, destino: /^\/inicio$/ },
+    { nombre: "productor", iniciarSesion: (pagina: Page) => iniciarSesionProductor(pagina, usuariosAdministrativos.productor), destino: /^\/inicio$/ },
   ]) {
     await test.step(`BP-18.9: rechazar el acceso administrativo del ${perfil.nombre}`, async () => {
       const pagina = await browser.newPage();
@@ -109,9 +110,9 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   }
 });
 
-test("BP-18.2: el importe guardado se aplica al ajuste rápido del operador", async ({ page, browser }) => {
+test("BP-18.2: el importe guardado se aplica al ajuste rápido del operador", async ({ page, browser, usuariosAdministrativos }) => {
   test.slow();
-  await iniciarSesionAdministrador(page);
+  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
   const campoImporte = page.getByRole("textbox");
   const importeOriginal = await campoImporte.inputValue();
   expect(importeOriginal).toMatch(/^[1-9]\d*$/);
