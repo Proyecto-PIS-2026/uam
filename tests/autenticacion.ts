@@ -11,5 +11,5 @@ export async function iniciarSesionOperador(page: Page) {
   await page.getByLabel("Correo electrónico o nombre de usuario").fill(usuario);
   await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
   await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
-  await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+  await expect(page).toHaveURL((url) => url.pathname === "/mi-mercado");
 }
