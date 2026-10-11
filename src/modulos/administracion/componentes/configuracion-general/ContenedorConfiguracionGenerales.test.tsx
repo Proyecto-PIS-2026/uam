@@ -22,25 +22,23 @@ describe("PaginaAdministracionGeneral", () => {
         vi.clearAllMocks();
     });
 
-    it("consulta las configuraciones al cargar la página", async () => {
+    it("consulta únicamente la URL de la Lista Inteligente al cargar la página", async () => {
         obtenerConfiguracionesMock.mockResolvedValue([]);
         const contenido = await PaginaAdministracionGeneral();
         render(contenido);
-        expect(obtenerConfiguracionesMock).toHaveBeenCalledOnce();
+        expect(obtenerConfiguracionesMock).toHaveBeenCalledExactlyOnceWith(["url_lista_inteligente"]);
         expect(screen.getByTestId("listado-configuraciones-generales")).toBeInTheDocument();
     });
 
     it("transforma las configuraciones obtenidas y las pasa al listado", async () => {
         obtenerConfiguracionesMock.mockResolvedValue([
             { nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/lista.pdf" },
-            { nombreConfiguracion: "configuracion_prueba", valorConfiguracion: "30" },
         ]);
         const contenido = await PaginaAdministracionGeneral();
         render(contenido);
         expect(screen.getByTestId("listado-configuraciones-generales")).toHaveTextContent(
             JSON.stringify({
                 url_lista_inteligente: "https://uam.com.uy/lista.pdf",
-                configuracion_prueba: "30",
             }),
         );
     });

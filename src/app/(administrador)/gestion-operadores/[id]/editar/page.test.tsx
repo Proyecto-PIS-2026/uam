@@ -3,9 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import Page from "./page";
 
 const mocks = vi.hoisted(() => ({
+    requerirAdministrador: vi.fn(),
     obtenerOperadorParaModificar: vi.fn(),
     obtenerNaves: vi.fn(),
     notFound: vi.fn(),
+}));
+
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
+    requerirAdministrador: mocks.requerirAdministrador,
 }));
 
 vi.mock(
@@ -16,7 +21,7 @@ vi.mock(
 );
 
 vi.mock(
-    "@/modulos/usuarios/operadores/componentes/modificar-operador-por-admin/obtenerNaves",
+    "@/modulos/usuarios/operadores/consultas-naves",
     () => ({
         obtenerNaves: mocks.obtenerNaves,
     }),
@@ -68,12 +73,21 @@ describe("página de modificación de un operador", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.requerirAdministrador.mockResolvedValue(undefined);
         mocks.obtenerOperadorParaModificar.mockResolvedValue(operador);
         mocks.obtenerNaves.mockResolvedValue(naves);
 
         mocks.notFound.mockImplementation(() => {
             throw new Error("NO_ENCONTRADO");
         });
+    });
+
+    it("no consulta al operador ni naves sin autorización administrativa", async () => {
+        mocks.requerirAdministrador.mockRejectedValueOnce(new Error("NEXT_REDIRECT"));
+
+        await expect(Page(parametros("13"))).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.obtenerOperadorParaModificar).not.toHaveBeenCalled();
+        expect(mocks.obtenerNaves).not.toHaveBeenCalled();
     });
 
     // El id llega como texto en la URL y la página lo convierte a número para consultar

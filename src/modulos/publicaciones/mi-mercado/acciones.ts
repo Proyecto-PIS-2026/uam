@@ -1,33 +1,31 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { obtenerOperadorActual, obtenerOperadorPorId } from "../../usuarios/operadores/operador-actual";
+import { obtenerOperadorAutorizado } from "../../usuarios/operadores/operador-actual";
 import { actualizarPrecioPublicacion, obtenerPublicacionesDeOperador, PublicacionNoEncontradaError } from "./consultas-mi-mercado";
 import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
 
 export async function cargarPublicacionesMiMercado(operadorId: number) {
-    const operador = await obtenerOperadorPorId(operadorId);
-    if (!operador) throw new Error("No se encontró el operador de Mi Mercado.");
+    const operador = await obtenerOperadorAutorizado(operadorId);
 
     const relaciones = await obtenerPublicacionesDeOperador(operador.id);
     return mapearPublicacionesMiMercado(relaciones);
 }
 
-export async function actualizarPrecio(publicacionId: number, nuevoPrecio: number, operadorId?: number) {
+type ResultadoActualizarPrecio =
+    | { publicacionEliminada: true }
+    | { publicacionEliminada: false; fecha: string };
+
+export async function actualizarPrecio(publicacionId: number, nuevoPrecio: number, operadorId?: number): Promise<ResultadoActualizarPrecio> {
     if (operadorId !== undefined && (!Number.isSafeInteger(operadorId) || operadorId <= 0)) {
         throw new Error("El ID del operador debe ser un número entero positivo.");
     }
 
-    const operador = operadorId === undefined
-        ? await obtenerOperadorActual()
-        : await obtenerOperadorPorId(operadorId);
+    const operador = await obtenerOperadorAutorizado(operadorId);
 
-    if (!operador) {
-        throw new Error("No se encontró el operador de Mi Mercado.");
-    }
-
+    let fecha: string;
     try {
-        await actualizarPrecioPublicacion(operador.id, publicacionId, nuevoPrecio);
+        fecha = await actualizarPrecioPublicacion(operador.id, publicacionId, nuevoPrecio);
     } catch (error) {
         /* DEMO: una baja concurrente es un resultado esperado; el cliente recarga Mi Mercado. */
         if (error instanceof PublicacionNoEncontradaError) return { publicacionEliminada: true };
@@ -55,5 +53,5 @@ export async function actualizarPrecio(publicacionId: number, nuevoPrecio: numbe
         }
     }
 
-    return { publicacionEliminada: false };
+    return { publicacionEliminada: false, fecha };
 }

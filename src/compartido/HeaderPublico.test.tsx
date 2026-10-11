@@ -45,6 +45,21 @@ describe("HeaderPublico", () => {
         expect(screen.getAllByRole("link", { name: "Iniciar sesión" })).toHaveLength(2);
     });
 
+    it.each([null, "OPERADOR", "PRODUCTOR"] as const)(
+        "oculta Administración en ambos menús para el rol %s",
+        (rolUsuario) => {
+            render(<HeaderPublico rolUsuario={rolUsuario} />);
+            expect(screen.queryByRole("link", { name: "Administración" })).not.toBeInTheDocument();
+        },
+    );
+
+    it("ofrece la ruta real de Administración al administrador en ambos menús", () => {
+        render(<HeaderPublico rolUsuario="ADMINISTRADOR" />);
+        const enlaces = screen.getAllByRole("link", { name: "Administración" });
+        expect(enlaces).toHaveLength(2);
+        for (const enlace of enlaces) expect(enlace).toHaveAttribute("href", "/administracion");
+    });
+
     it("cierra el desplegable al pulsar fuera del menu de usuario", () => {
         render(<HeaderPublico rolUsuario="OPERADOR" />);
         const botonMenu = screen.getByRole("button", { name: "Abrir menú de usuario" });
@@ -86,6 +101,39 @@ describe("HeaderPublico", () => {
         expect(screen.getAllByRole("link", { name: "Operadores" })).toHaveLength(2);
         expect(screen.queryByRole("link", { name: "Mi mercado" })).not.toBeInTheDocument();
     });
+
+    it("ofrece solamente Mi mercado y Precios de referencia al operador en ambos menús", () => {
+        consultarRutaSimulada.mockReturnValue("/mi-mercado");
+        render(<HeaderPublico rolUsuario="OPERADOR" />);
+
+        for (const nombre of ["Navegación principal", "Navegación móvil"]) {
+            const menu = within(screen.getByRole("navigation", { name: nombre }));
+            expect(menu.getAllByRole("link")).toHaveLength(2);
+            expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado");
+            expect(menu.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
+            for (const opcion of ["Inicio", "Publicaciones", "Operadores"]) {
+                expect(menu.queryByRole("link", { name: opcion })).not.toBeInTheDocument();
+            }
+        }
+
+        expect(screen.getByRole("link", { name: "Ir a Mi mercado" })).toHaveAttribute("href", "/mi-mercado");
+        expect(screen.queryByRole("link", { name: "Ir al inicio" })).not.toBeInTheDocument();
+    });
+
+    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)(
+        "conserva la navegación pública y el destino del logo para el rol %s",
+        (rolUsuario) => {
+            render(<HeaderPublico rolUsuario={rolUsuario} />);
+
+            for (const nombre of ["Navegación principal", "Navegación móvil"]) {
+                const menu = within(screen.getByRole("navigation", { name: nombre }));
+                expect(menu.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/inicio");
+                expect(menu.getByRole("link", { name: "Publicaciones" })).toHaveAttribute("href", "/publicaciones");
+                expect(menu.getByRole("link", { name: "Operadores" })).toHaveAttribute("href", "/operadores");
+            }
+            expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
+        },
+    );
 
     it.each([
         { rol: "OPERADOR" as const, ruta: "/mi-mercado" },
@@ -218,6 +266,18 @@ describe("HeaderPublico", () => {
         fireEvent.click(screen.getByRole("button", { name: "Abrir menú de usuario" }));
 
         fireEvent.click(screen.getByRole("menuitem", { name: "Cerrar sesión" }));
+
+        await waitFor(() => {
+            expect(cerrarSesionSimulada).toHaveBeenCalledOnce();
+        });
+    });
+
+    it("cierra la sesión desde el botón del menú móvil", async () => {
+        render(<HeaderPublico rolUsuario="OPERADOR" />);
+        fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
+        const menuMobile = within(screen.getByRole("navigation", { name: "Navegación móvil" }));
+
+        fireEvent.click(menuMobile.getByRole("button", { name: "Cerrar sesión" }));
 
         await waitFor(() => {
             expect(cerrarSesionSimulada).toHaveBeenCalledOnce();

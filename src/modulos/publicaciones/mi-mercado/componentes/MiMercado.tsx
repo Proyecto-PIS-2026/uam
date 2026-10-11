@@ -275,24 +275,23 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         return ordenActual === "alfabeticoDesc" ? -comparacion : comparacion;
     });
 
-    function actualizarPrecioLocal(publicacionId: number, nuevoPrecio: number) {
+    function actualizarPrecioLocal(publicacionId: number, nuevoPrecio: number, fecha?: string) {
         setListadoRecargado((actual) => {
             const datosActuales = actual?.origen === publicaciones ? actual.datos : publicaciones;
             return {
                 origen: publicaciones,
-                datos: datosActuales.map((publicacion) => publicacion.id === publicacionId ? { ...publicacion, precio: String(nuevoPrecio)} : publicacion),
+                datos: datosActuales.map((publicacion) => publicacion.id === publicacionId ? { ...publicacion, precio: String(nuevoPrecio), fecha: fecha ?? publicacion.fecha } : publicacion),
             };
         });
     }
 
     return (
         <main className="relative isolate min-h-screen bg-background">
-            {/* <HojasDecorativas variante="fondo" /> */}
             <div className="contenedor-pagina relative z-10 flex flex-col gap-6">
 
                 {/* Encabezado */}
                 <header className="encabezado-pagina relative isolate overflow-hidden rounded-2xl bg-secondary">
-                    <HojasDecorativas variante="separador" />
+                    <HojasDecorativas />
                     <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <p className="mb-1 text-xs font-bold uppercase tracking-widest text-primary-soft">
@@ -416,8 +415,8 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                     </>
                 )}
             </div>
-            {altaAbierta && <NuevaPublicacion operadorId={operadorId} abierto={altaAbierta} alCerrar={cerrarAlta} alCrear={publicacionCreada} />}
-            <DrawerEditarPublicacion abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }} eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
+            {altaAbierta && <NuevaPublicacion operadorId={operadorId} incrementoPrecio={incrementoPrecio} abierto={altaAbierta} alCerrar={cerrarAlta} alCrear={publicacionCreada} />}
+            <DrawerEditarPublicacion incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }} eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
                 <ConfirmModal abierto={publicacionPendiente !== null} titulo="Eliminar publicación" descripcion={publicacionPendiente ? `¿Querés eliminar la publicación de ${publicacionPendiente.presentacion.variedad.especie.nombreEspecie}? Esta acción no se puede deshacer.` : ""} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setPublicacionPendiente(null); }} alConfirmar={() => void eliminarPublicacion()} />
             </DrawerEditarPublicacion>
         </main>

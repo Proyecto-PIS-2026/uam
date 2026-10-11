@@ -10,6 +10,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { usePathname } from "next/navigation";
 import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
+import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
 
 import estilos from "./HeaderPublico.module.css";
 
@@ -18,20 +19,24 @@ type OpcionMenu = {
     ruta: string;
     rol?: RolUsuario;
     soloSinSesion?: boolean;
+    ocultarParaOperador?: boolean;
 };
 
 const opcionesMenu: OpcionMenu[] = [
     {
         nombre: "Inicio",
         ruta: "/inicio",
+        ocultarParaOperador: true,
     },
     {
         nombre: "Publicaciones",
         ruta: "/publicaciones",
+        ocultarParaOperador: true,
     },
     {
         nombre: "Operadores",
         ruta: "/operadores",
+        ocultarParaOperador: true,
     },
     {
         nombre: "Precios de referencia",
@@ -54,7 +59,8 @@ const opcionesMenu: OpcionMenu[] = [
     },
     { 
         nombre: "Administración", 
-        ruta: "/administracion" 
+        ruta: "/administracion",
+        rol: "ADMINISTRADOR",
     }
 ];
 
@@ -69,10 +75,12 @@ export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: Propied
     const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
     const referenciaMenuUsuario = useRef<HTMLDivElement>(null);
     const rutaActual = usePathname() ?? "";
+    const rutaPrincipal = obtenerRutaPrincipal(rolUsuario);
     const opcionesVisibles = opcionesMenu.filter(
         (opcion) =>
             (!opcion.rol || opcion.rol === rolUsuario) &&
-            (!opcion.soloSinSesion || rolUsuario === null),
+            (!opcion.soloSinSesion || rolUsuario === null) &&
+            (!opcion.ocultarParaOperador || rolUsuario !== "OPERADOR"),
     );
 
     useEffect(() => {
@@ -164,9 +172,11 @@ export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: Propied
     );
 
     const menuCerrarSesionMobile = rolUsuario && (
-            <span className={`${estilos.enlaceMobile} ${estilos.cerrarSesionMobile}`}>
+        <form action={cerrarSesionYVolverAlInicio}>
+            <button type="submit" className={`${estilos.enlaceMobile} ${estilos.cerrarSesionMobile}`}>
                 Cerrar sesión
-            </span>
+            </button>
+        </form>
     );
 
     const contenido = (
@@ -174,9 +184,9 @@ export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: Propied
             <header className={estilos.header}>
                 <div className={estilos.contenido}>
                     <Link
-                        href="/inicio"
+                        href={rutaPrincipal}
                         className={estilos.marca}
-                        aria-label="Ir al inicio"
+                        aria-label={rolUsuario === "OPERADOR" ? "Ir a Mi mercado" : "Ir al inicio"}
                         onClick={() => cambiarMenuAbierto(false)}
                     >
                         <Image

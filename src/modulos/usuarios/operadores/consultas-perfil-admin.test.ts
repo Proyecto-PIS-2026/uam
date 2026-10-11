@@ -49,6 +49,7 @@ const publicacionBase = {
     id: 101,
     foto: null,
     precio: "120.00",
+    cantidadUnidades: 20,
     fecha: Temporal.Instant.from("2026-10-01T12:00:00Z"),
     publicacionActiva: true,
     publicacionDisponible: true,
@@ -184,6 +185,7 @@ describe("obtenerPerfilAdminOperador", () => {
             { id: 101, disponible: true },
             { id: 102, disponible: false },
         ]);
+        expect(resultado?.publicaciones.map((p) => p.cantidadUnidades)).toEqual([20, 20]);
     });
 
     // Los locales se ordenan por nave y, dentro de cada nave, por número de local

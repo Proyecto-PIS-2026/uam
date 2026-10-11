@@ -26,7 +26,7 @@ export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperad
             </Link>
             <div className={styles.tarjetaPerfil}>
                 <header className={styles.encabezado}>
-                    <HojasDecorativas variante="separador" />
+                    <HojasDecorativas />
                     <div className={styles.fotoOperador}>
                         {operador.fotoPerfil ? (
                             <Image src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} />

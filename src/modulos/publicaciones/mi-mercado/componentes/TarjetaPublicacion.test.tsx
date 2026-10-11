@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -59,6 +60,7 @@ describe("TarjetaPublicacion", () => {
       vi.clearAllMocks();
       vi.mocked(actualizarPrecio).mockResolvedValue({
           publicacionEliminada: false,
+          fecha: "2026-10-10T16:30:00Z",
       });
   });
 
@@ -247,7 +249,7 @@ describe("TarjetaPublicacion", () => {
       110,
       37,
     );
-    expect(alPrecioActualizado).toHaveBeenCalledOnce();
+    expect(alPrecioActualizado).toHaveBeenCalledExactlyOnceWith(1, 110, "2026-10-10T16:30:00Z");
   });
 
   it("recarga la página sin mostrar error si otra persona eliminó la publicación", async () => {
@@ -279,6 +281,31 @@ describe("TarjetaPublicacion", () => {
           );
       });
       expect(screen.getByText("$100")).toBeInTheDocument();
+  });
+
+  it("conserva la fecha del precio confirmado si falla el siguiente cambio pendiente", async () => {
+    const fechaGuardada = "2026-10-10T17:15:00Z";
+    let confirmarPrimero: () => void = () => undefined;
+    vi.mocked(actualizarPrecio)
+      .mockImplementationOnce(() => new Promise<Awaited<ReturnType<typeof actualizarPrecio>>>((resolve) => {
+        confirmarPrimero = () => resolve({ publicacionEliminada: false, fecha: fechaGuardada });
+      }))
+      .mockRejectedValueOnce(new Error("No se pudo guardar el segundo cambio."));
+    const alPrecioActualizado = vi.fn();
+    render(<TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} alPrecioActualizado={alPrecioActualizado} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+    expect(screen.getByText("$120")).toBeInTheDocument();
+    expect(alPrecioActualizado).not.toHaveBeenCalled();
+
+    await act(async () => confirmarPrimero());
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo guardar el segundo cambio."));
+    expect(actualizarPrecio).toHaveBeenNthCalledWith(1, 1, 110, 37);
+    expect(actualizarPrecio).toHaveBeenNthCalledWith(2, 1, 120, 37);
+    expect(screen.getByText("$110")).toBeInTheDocument();
+    expect(alPrecioActualizado).toHaveBeenCalledExactlyOnceWith(1, 110, fechaGuardada);
   });
 
   it("disminuye el precio con el botón", async () => {
@@ -638,9 +665,9 @@ describe("TarjetaPublicacion", () => {
       let finalizarGuardado: () => void = () => undefined;
       vi.mocked(actualizarPrecio).mockImplementationOnce(
           () =>
-              new Promise<{ publicacionEliminada: boolean }>((resolve) => {
+              new Promise<Awaited<ReturnType<typeof actualizarPrecio>>>((resolve) => {
                   finalizarGuardado = () =>
-                      resolve({ publicacionEliminada: false });
+                      resolve({ publicacionEliminada: false, fecha: "2026-10-10T16:30:00Z" });
               })
       );
       const alConsultar = vi.fn();

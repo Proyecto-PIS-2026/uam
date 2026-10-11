@@ -130,6 +130,15 @@ describe("DrawerEditarPublicacion", () => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
+    it("utiliza el incremento configurado al editar el precio", () => {
+        render(<DrawerEditarPublicacion {...props} incrementoPrecio={25} />);
+        const precio = screen.getByLabelText("Precio en pesos");
+        fireEvent.click(screen.getByRole("button", { name: "Aumentar precio en 25" }));
+        expect(precio).toHaveValue("125");
+        fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 25" }));
+        expect(precio).toHaveValue("100");
+    });
+
     it.each([false, true])("muestra los datos sin permitir modificarlos en consulta con web=%s", (esWeb) => {
         mocks.mediaQuery.mockReturnValue(esWeb);
         render(<DrawerEditarPublicacion {...props} modoInicial="consulta" alEliminar={mocks.eliminar} publicacion={{ ...publicacionInicial, foto: "/foto-existente.png" }} />);

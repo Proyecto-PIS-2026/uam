@@ -2,7 +2,7 @@ import ListadoConfiguracionesGenerales from "@/modulos/administracion/componente
 import obtenerConfiguraciones from "@/modulos/administracion/ConsultaConfiguracion";
 
 export default async function PaginaAdministracionGeneral() {
-    const filas = await obtenerConfiguraciones();
+    const filas = await obtenerConfiguraciones(["url_lista_inteligente"]);
 
     const configuracion: Record<string, string | null> = Object.fromEntries(
         filas.map(({ nombreConfiguracion, valorConfiguracion }) => [

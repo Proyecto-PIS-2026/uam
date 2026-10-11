@@ -4,7 +4,8 @@ import { mapearPublicacionesMiMercado } from "../mapear-publicaciones";
 import { obtenerOpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
 import { obtenerOperadorActual, obtenerOperadorPorNombre } from "../../../usuarios/operadores/operador-actual";
 import { obtenerConfiguracion } from "@/modulos/administracion/ConsultaConfiguracion";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 type VistaMiMercadoProps = {
     abrirAltaInicial?: boolean;
@@ -12,10 +13,12 @@ type VistaMiMercadoProps = {
 };
 
 export default async function VistaMiMercado({ abrirAltaInicial = false, operadorNombre }: VistaMiMercadoProps) {
+    const sesion = await requerirOperador();
     const operador = operadorNombre === undefined
         ? await obtenerOperadorActual()
         : await obtenerOperadorPorNombre(operadorNombre);
     if (!operador) notFound();
+    if (operador.usuarioId !== sesion.usuarioId) redirect("/mi-mercado");
     const [publicacionesBD, opcionesEdicion, incrementoPrecioConfiguracion] = await Promise.all([
         obtenerPublicacionesDeOperador(operador.id),
         obtenerOpcionesEdicionPublicacion(),

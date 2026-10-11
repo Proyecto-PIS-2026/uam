@@ -10,14 +10,16 @@ const mocks = vi.hoisted(() => ({
   calibres: vi.fn(),
   paises: vi.fn(),
   altaPublicacionOperador: vi.fn(),
-  obtenerOperadorActual: vi.fn(() => Promise.resolve({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" })),
-  obtenerOperadorPorId: vi.fn(),
+  obtenerOperadorAutorizado: vi.fn(),
+  obtenerSesion: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
+  obtenerSesion: mocks.obtenerSesion,
+}));
 vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
-  obtenerOperadorActual: mocks.obtenerOperadorActual,
-  obtenerOperadorPorId: mocks.obtenerOperadorPorId,
+  obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado,
 }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
@@ -42,13 +44,24 @@ vi.mock("@/modulos/publicaciones/altaPublicacionOperador", () => ({
 
 import { GET, POST } from "./route";
 import { revalidatePath } from "next/cache";
+import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 describe("GET /api/publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.obtenerSesion.mockResolvedValue(null);
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador propio" });
+        mocks.operadores.mockResolvedValue([]);
+        mocks.especies.mockResolvedValue([]);
+        mocks.variedades.mockResolvedValue([]);
+        mocks.presentaciones.mockResolvedValue([]);
+        mocks.categorias.mockResolvedValue([]);
+        mocks.calibres.mockResolvedValue([]);
+        mocks.paises.mockResolvedValue([]);
     });
 
-    it("devuelve los catálogos de publicaciones", async () => {
+    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("devuelve los catálogos de publicaciones para %s", async (rol) => {
+        mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
         mocks.operadores.mockResolvedValue([
         { id: 1, nombreFantasia: "Operador 1" },
         ]);
@@ -75,6 +88,49 @@ describe("GET /api/publicaciones", () => {
         expect(cuerpo.especies).toEqual([
         { id: 1, nombre: "Manzana" },
         ]);
+        expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
+        expect(mocks.operadores).toHaveBeenCalledOnce();
+    });
+
+    it("mantiene los catálogos del alta y devuelve solamente el operador propio", async () => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+        mocks.operadores.mockResolvedValue([{ id: 2, nombreFantasia: "Operador ajeno" }]);
+        mocks.especies.mockResolvedValue([
+            { id: 1, nombreEspecie: "Manzana", especieActiva: true },
+            { id: 2, nombreEspecie: "Pera", especieActiva: false },
+        ]);
+        mocks.variedades.mockResolvedValue([{ id: 3, especieId: 1, nombreVariedad: "Roja", variedadActiva: true }]);
+        mocks.presentaciones.mockResolvedValue([{ id: 4, variedadId: 3, nombrePresentacion: "Caja", presentacionActiva: true }]);
+        mocks.categorias.mockResolvedValue([{ id: 5, especieId: 1, nombreCategoria: "Primera" }]);
+        mocks.calibres.mockResolvedValue([{ id: 6, nombreCalibre: "Mediano" }]);
+        mocks.paises.mockResolvedValue([{ id: 7, nombrePais: "Uruguay" }]);
+
+        const respuesta = await GET();
+
+        expect(respuesta.status).toBe(200);
+        expect(await respuesta.json()).toEqual({
+            operadores: [{ id: 1, nombre: "Operador propio" }],
+            especies: [{ id: 1, nombre: "Manzana" }],
+            variedades: [{ id: 3, especieId: 1, nombre: "Roja" }],
+            presentaciones: [{ id: 4, variedadId: 3, nombre: "Caja" }],
+            categorias: [{ id: 5, especieId: 1, nombre: "Primera" }],
+            calibres: [{ id: 6, nombre: "Mediano" }],
+            paises: [{ id: 7, nombre: "Uruguay" }],
+        });
+        expect(mocks.operadores).not.toHaveBeenCalled();
+        expect(mocks.obtenerOperadorAutorizado).toHaveBeenCalledExactlyOnceWith();
+    });
+
+    it.each([401, 403] as const)("devuelve %s si no puede validar el operador propio", async (status) => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+        mocks.obtenerOperadorAutorizado.mockRejectedValue(new ErrorAutorizacion(status, "Acceso denegado."));
+
+        const respuesta = await GET();
+
+        expect(respuesta.status).toBe(status);
+        expect(await respuesta.json()).toEqual({ errores: ["Acceso denegado."] });
+        expect(mocks.operadores).not.toHaveBeenCalled();
+        expect(mocks.especies).not.toHaveBeenCalled();
     });
   
     it("devuelve 500 si ocurre un error al cargar los catálogos", async () => {
@@ -95,7 +151,16 @@ describe("GET /api/publicaciones", () => {
 describe("POST /api/publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mocks.obtenerOperadorPorId.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" });
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" });
+    });
+
+    it.each([401, 403] as const)("devuelve %s sin crear publicaciones cuando falla la autorización", async (status) => {
+        mocks.obtenerOperadorAutorizado.mockRejectedValue(new ErrorAutorizacion(status, "Acceso denegado."));
+        const solicitud = new Request("http://localhost/api/publicaciones", { method: "POST", body: JSON.stringify({ operadorId: 1 }), headers: { "Content-Type": "application/json" } });
+        const respuesta = await POST(solicitud);
+        expect(respuesta.status).toBe(status);
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
     });
 
     it("devuelve 400 si el cuerpo no es un JSON válido", async () => {
@@ -148,8 +213,7 @@ describe("POST /api/publicaciones", () => {
 
         expect(respuesta.status).toBe(201);
         expect(mocks.altaPublicacionOperador).toHaveBeenCalledWith(datos);
-        expect(mocks.obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(1);
-        expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
+        expect(mocks.obtenerOperadorAutorizado).toHaveBeenCalledExactlyOnceWith(1);
         expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado");
         expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%201");
         expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%201");
@@ -193,13 +257,12 @@ describe("POST /api/publicaciones", () => {
         const respuesta = await POST(solicitud);
 
         expect(respuesta.status).toBe(201);
-        expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
-        expect(mocks.obtenerOperadorPorId).not.toHaveBeenCalled();
+        expect(mocks.obtenerOperadorAutorizado).toHaveBeenCalledOnce();
         expect(mocks.altaPublicacionOperador).toHaveBeenCalledWith({ ...datos, operadorId: 1 });
     });
 
     it("usa el operador indicado para la publicacion", async () => {
-        mocks.obtenerOperadorPorId.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
         mocks.altaPublicacionOperador.mockResolvedValue({ esValido: true, id: 15, mensaje: "Creada" });
         const solicitud = new Request("http://localhost/api/publicaciones", {
             method: "POST",
@@ -210,8 +273,7 @@ describe("POST /api/publicaciones", () => {
         const respuesta = await POST(solicitud);
 
         expect(respuesta.status).toBe(201);
-        expect(mocks.obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(7);
-        expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
+        expect(mocks.obtenerOperadorAutorizado).toHaveBeenCalledExactlyOnceWith(7);
         expect(mocks.altaPublicacionOperador).toHaveBeenCalledWith({ especieId: 4, operadorId: 7 });
         expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
         expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
@@ -230,14 +292,13 @@ describe("POST /api/publicaciones", () => {
 
             expect(respuesta.status).toBe(400);
             expect(await respuesta.json()).toEqual({ errores: ["El operador no es válido."] });
-            expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
-            expect(mocks.obtenerOperadorPorId).not.toHaveBeenCalled();
+            expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
             expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
         },
     );
 
-    it("devuelve 404 cuando no existe el operador indicado", async () => {
-        mocks.obtenerOperadorPorId.mockResolvedValue(null);
+    it("devuelve 403 cuando el operador indicado no es propio", async () => {
+        mocks.obtenerOperadorAutorizado.mockRejectedValue(new ErrorAutorizacion(403, "El operador no corresponde al usuario autenticado."));
         const solicitud = new Request("http://localhost/api/publicaciones", {
             method: "POST",
             body: JSON.stringify({ operadorId: 7 }),
@@ -246,8 +307,8 @@ describe("POST /api/publicaciones", () => {
 
         const respuesta = await POST(solicitud);
 
-        expect(respuesta.status).toBe(404);
-        expect(await respuesta.json()).toEqual({ errores: ["No se encontró el operador seleccionado."] });
+        expect(respuesta.status).toBe(403);
+        expect(await respuesta.json()).toEqual({ errores: ["El operador no corresponde al usuario autenticado."] });
         expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
     });
 

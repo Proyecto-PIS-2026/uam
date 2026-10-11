@@ -22,8 +22,7 @@ interface ListaUsuariosProps {
     usuarios: UsuarioParaModificar[];
     usuarioSeleccionadoId: number | null;
     onSeleccionar?: (usuario: UsuarioParaModificar) => void;
-    onEditar?: (usuario: UsuarioParaModificar) => void;
-    onEliminar?: (usuario: UsuarioParaModificar) => void;
+    onEliminar?: (usuario: UsuarioParaModificar) => void | Promise<void>;
 }
 
 interface Notificacion {
@@ -67,12 +66,13 @@ function obtenerInformacion(usuario: UsuarioParaModificar) {
     return "-";
 }
 
-export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSeleccionar, onEditar, onEliminar }: ListaUsuariosProps) {
+export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSeleccionar, onEliminar }: ListaUsuariosProps) {
     const router = useRouter();
     const [idsEliminados, setIdsEliminados] = useState<number[]>([]);
     const [pagina, setPagina] = useState(1);
     const [usuarioAEliminar, setUsuarioAEliminar] = useState<UsuarioParaModificar | null>(null);
     const [notificacion, setNotificacion] = useState<Notificacion | null>(null);
+    const [eliminando, setEliminando] = useState(false);
 
     const contadorNotificacion = useRef(0);
     const esMobile = useEsMobileSSR();
@@ -97,55 +97,37 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
 
     function manejarSeleccionar(usuario: UsuarioParaModificar) {
         if (onSeleccionar) onSeleccionar(usuario);
-        if (usuario.rol === "ADMINISTRADOR") {
-            const targetId = usuario.administradorId;
-            router.push(`/gestion-de-administradores/${targetId}`);
-        } else if (usuario.rol === "OPERADOR") {
-            const targetId = usuario.operadorId;
-            router.push(`/gestion-de-opradores/${targetId}`);
-        } else {
-            const targetId = usuario.productorId;
-            router.push(`/gestion-de-productores/${targetId}`);
+        if (usuario.rol === "OPERADOR") {
+            router.push(`/gestion-operadores/${usuario.operadorId}`);
         }
     }
 
     function manejarEditar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
         evento.stopPropagation();
-        if (onEditar) {
-            onEditar(usuario);
-            return;
-        }
-        
-        if (usuario.rol === "ADMINISTRADOR") {
-            const targetId = usuario.administradorId;
-            router.push(`/gestion-de-administradores/${targetId}/editar`);
-        } else if (usuario.rol === "OPERADOR") {
-            const targetId = usuario.operadorId;
-            router.push(`/gestion-de-opradores/${targetId}/editar`);
-        } else {
-            const targetId = usuario.productorId;
-            router.push(`/gestion-de-productores/${targetId}/editar`);
+        if (usuario.rol === "OPERADOR") {
+            router.push(`/gestion-operadores/${usuario.operadorId}/editar`);
         }
     }
 
     function manejarAbrirEliminar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
         evento.stopPropagation();
+        if (usuario.rol !== "OPERADOR" || !onEliminar || eliminando) return;
         setUsuarioAEliminar(usuario);
     }
 
     async function confirmarEliminacion() {
-        if (!usuarioAEliminar) return;
+        if (!usuarioAEliminar || !onEliminar || eliminando) return;
         const idAEliminar = usuarioAEliminar.id;
+        setEliminando(true);
         try {
-            if (onEliminar) {
-                await onEliminar(usuarioAEliminar);
-            }
+            await onEliminar(usuarioAEliminar);
             setIdsEliminados((prev) => [...prev, idAEliminar]);
             mostrarNotificacion(`El usuario ${usuarioAEliminar.username} fue eliminado correctamente.`, "success");
-        } catch {
-            mostrarNotificacion(`Ocurrió un error al intentar eliminar a ${usuarioAEliminar.username}.`, "error");
+        } catch (error) {
+            mostrarNotificacion(error instanceof Error ? error.message : `Ocurrió un error al intentar eliminar a ${usuarioAEliminar.username}.`, "error");
         } finally {
             setUsuarioAEliminar(null);
+            setEliminando(false);
         }
     }
 
@@ -170,10 +152,10 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                             <span className={styles.informacion}>{obtenerInformacion(usuario)}</span>
                             <span className={styles.rol}>{obtenerNombreRol(usuario.rol)}</span>
                             <div className={styles.acciones}>
-                                <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} title="Editar perfil" className={styles.botonEditar}>
+                                <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} disabled={eliminando || usuario.rol !== "OPERADOR"} title={usuario.rol === "OPERADOR" ? "Editar perfil" : "Edición todavía no disponible"} className={styles.botonEditar}>
                                     <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} title="Eliminar usuario" className={styles.botonEliminar}>
+                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={eliminando || usuario.rol !== "OPERADOR" || !onEliminar} title={usuario.rol === "OPERADOR" && onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
                                     <DeleteIcon fontSize="small" />
                                 </IconButton>
                             </div>
@@ -188,7 +170,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                 </div>
             )}
 
-            <Dialog open={Boolean(usuarioAEliminar)} onClose={() => setUsuarioAEliminar(null)} maxWidth="xs">
+            <Dialog open={Boolean(usuarioAEliminar)} onClose={() => { if (!eliminando) setUsuarioAEliminar(null); }} maxWidth="xs">
                 <DialogTitle className={styles.modalTitulo}>¿Eliminar usuario?</DialogTitle>
                 <DialogContent>
                     <p className={styles.textoConfirmacion}>
@@ -196,11 +178,11 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                     </p>
                 </DialogContent>
                 <DialogActions className={styles.modalAcciones}>
-                    <Button type="button" variant="outlined" onClick={() => setUsuarioAEliminar(null)} className={styles.botonCancelarModal}>
+                    <Button type="button" variant="outlined" onClick={() => setUsuarioAEliminar(null)} disabled={eliminando} className={styles.botonCancelarModal}>
                         Cancelar
                     </Button>
-                    <Button type="button" variant="contained" color="error" onClick={confirmarEliminacion} className={styles.botonEliminarModal}>
-                        Eliminar
+                    <Button type="button" variant="contained" color="error" onClick={confirmarEliminacion} disabled={eliminando} className={styles.botonEliminarModal}>
+                        {eliminando ? "Eliminando..." : "Eliminar"}
                     </Button>
                 </DialogActions>
             </Dialog>

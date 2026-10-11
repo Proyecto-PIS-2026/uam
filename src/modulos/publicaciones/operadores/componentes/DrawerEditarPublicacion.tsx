@@ -10,7 +10,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
-// import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 import type { CambiosPublicacionOperador } from "../modificar-publicacion";
 import styles from "./DrawerEditarPublicacion.module.css";
 
@@ -48,6 +47,7 @@ export type PublicacionParaEditar = CambiosPublicacionOperador & {
 
 type DrawerEditarPublicacionProps = {
     abierto: boolean;
+    incrementoPrecio?: number;
     alCerrar: () => void;
     modoInicial?: "consulta" | "edicion";
     alEliminar?: () => void;
@@ -74,7 +74,7 @@ function precioParaEdicion(precio: string | null) {
     return Number.isInteger(valor) ? String(valor) : precio;
 }
 
-function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
+function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
     const [editando, setEditando] = useState(modoInicial === "edicion");
     const [precio, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
     const [cantidadUnidades, setCantidadUnidades] = useState(() => publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
@@ -354,9 +354,9 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                     <div className={styles.campo}>
                         <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
                         <div className={styles.controlesPrecio} data-editando={editando}>
-                            {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-10)} disabled={bloqueado} aria-label="Disminuir precio en 10">−</button>}
+                            {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={bloqueado} aria-label={`Disminuir precio en ${incrementoPrecio}`}>−</button>}
                             <input className={styles.entrada} id={`${idBase}-precio`} type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar precio aquí" value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={ocupado} />
-                            {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(10)} disabled={bloqueado} aria-label="Aumentar precio en 10">+</button>}
+                            {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={bloqueado} aria-label={`Aumentar precio en ${incrementoPrecio}`}>+</button>}
                         </div>
                         <small className={styles.ayuda}>Dejalo vacío si el producto no tiene precio.</small>
                     </div>
@@ -412,7 +412,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
     );
 }
 
-export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
+export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", alEliminar, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
     const foto = publicacion?.foto;
@@ -422,9 +422,8 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
     }
     return (
         <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
-            {/* <HojasDecorativas variante="fondo" className={styles.hojasDrawer} /> */}
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}-${publicacion.precio}-${identidadFoto}-${publicacion.presentacionId}-${publicacion.categoriaId}-${publicacion.calibreId}-${publicacion.paisId}-${publicacion.disponible}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} modoInicial={modoInicial} alEliminar={alEliminar} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}-${publicacion.precio}-${identidadFoto}-${publicacion.presentacionId}-${publicacion.categoriaId}-${publicacion.calibreId}-${publicacion.paisId}-${publicacion.disponible}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} alEliminar={alEliminar} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
             )}
             {publicacion && children}
         </Drawer>

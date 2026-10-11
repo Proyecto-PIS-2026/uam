@@ -1,7 +1,6 @@
 "use client";
 
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
-// import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import TextoAjustable from "./TextoAjustable";
 import styles from "./DrawerPublicacionPerfil.module.css";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
@@ -28,7 +27,6 @@ export default function DrawerPublicacionPerfil({publicacion, open, onOpenChange
         <>
             {publicacion && (
                 <div className={styles.tarjeta}>
-                    {/* <HojasDecorativas variante="fondo" className={styles.hojasDrawer} /> */}
                     <div className={styles.indicador} />
                     <div className={styles.bloqueSuperior}>
                         <div className={styles.marcoImagen}>

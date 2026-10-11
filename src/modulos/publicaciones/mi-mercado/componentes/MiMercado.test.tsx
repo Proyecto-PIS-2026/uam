@@ -94,11 +94,13 @@ vi.mock("./TarjetaPublicacion", () => ({
     operadorId,
     incrementoPrecio,
     alConsultar,
+    alPrecioActualizado,
   }: {
     pub: Publicacion;
     operadorId: number;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
+    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number, fecha?: string) => void;
   }) => (
     <div
       data-testid={`publicacion-${pub.id}`}
@@ -107,6 +109,7 @@ vi.mock("./TarjetaPublicacion", () => ({
     >
       {pub.presentacion.variedad.nombreVariedad}
       <button type="button" onClick={() => alConsultar?.(pub)}>Consultar publicación {pub.id}</button>
+      <button type="button" onClick={() => alPrecioActualizado?.(pub.id, Number(pub.precio) + incrementoPrecio, "2026-10-10T16:30:00Z")}>Confirmar precio rápido {pub.id}</button>
     </div>
   ),
 }));
@@ -200,6 +203,18 @@ describe("MiMercado", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("actualiza la fecha del detalle abierto con la fecha guardada por el precio rápido", () => {
+    renderMiMercado([crearPublicacion(52, 10, "Manzana")]);
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+    expect(obtenerPropsDrawer().publicacion?.fecha).toBe("2026-10-03T15:00:00.000Z");
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar precio rápido 52" }));
+
+    expect(obtenerPropsDrawer().publicacion).toMatchObject({ precio: "105", fecha: "2026-10-10T16:30:00Z" });
+    expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
+    expect(mocks.refrescar).not.toHaveBeenCalled();
   });
 
   it("abre la consulta de la tarjeta con sus IDs reales, país y precio nulo", () => {

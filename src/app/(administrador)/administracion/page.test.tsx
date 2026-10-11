@@ -4,9 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import PaginaAdministracion from "./page";
 
-const { obtenerConfiguracionesMock, consultarDatosModificarUsuariosMock } = vi.hoisted(() => ({
+const { obtenerConfiguracionesMock, consultarDatosModificarUsuariosMock, requerirAdministradorMock } = vi.hoisted(() => ({
     obtenerConfiguracionesMock: vi.fn(),
     consultarDatosModificarUsuariosMock: vi.fn(),
+    requerirAdministradorMock: vi.fn(),
+}));
+
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
+    requerirAdministrador: requerirAdministradorMock,
 }));
 
 vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
@@ -79,8 +84,17 @@ vi.mock("@/modulos/administracion/componentes/configuracion-general/ContenedorCo
 describe("PaginaAdministracion", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        requerirAdministradorMock.mockResolvedValue(undefined);
         obtenerConfiguracionesMock.mockResolvedValue([]);
         consultarDatosModificarUsuariosMock.mockResolvedValue([]);
+    });
+
+    it("bloquea la página antes de consultar datos cuando el usuario no es administrador", async () => {
+        requerirAdministradorMock.mockRejectedValueOnce(new Error("NEXT_REDIRECT"));
+
+        await expect(PaginaAdministracion()).rejects.toThrow("NEXT_REDIRECT");
+        expect(obtenerConfiguracionesMock).not.toHaveBeenCalled();
+        expect(consultarDatosModificarUsuariosMock).not.toHaveBeenCalled();
     });
 
     it("renderiza el encabezado y la estructura general de administración", async () => {
@@ -108,14 +122,14 @@ describe("PaginaAdministracion", () => {
         );
     });
 
-    it("procesa y transforma las filas de configuración a un objeto correctamente", async () => {
+    it("consulta y transforma únicamente la configuración usada por publicaciones", async () => {
         obtenerConfiguracionesMock.mockResolvedValue([
             { nombreConfiguracion: "incremento_precio", valorConfiguracion: "15" },
-            { nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy" },
         ]);
 
         render(await PaginaAdministracion());
 
+        expect(obtenerConfiguracionesMock).toHaveBeenCalledExactlyOnceWith(["incremento_precio"]);
         expect(screen.getByTestId("vista-publicaciones")).toHaveTextContent("Contenedor de publicaciones - Incremento: 15");
     });
 });

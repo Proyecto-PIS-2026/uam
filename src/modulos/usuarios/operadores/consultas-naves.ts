@@ -9,9 +9,6 @@ export async function obtenerNaves(): Promise<NaveOpcion[]> {
     const naves = await db.orm.public.Nave.all();
 
     return naves
-        .map((nave) => ({
-            id: nave.id,
-            nombre: nave.nombreNave,
-        }))
+        .map((nave) => ({ id: nave.id, nombre: nave.nombreNave }))
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 }

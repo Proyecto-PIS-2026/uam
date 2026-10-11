@@ -3,6 +3,16 @@ import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Pub
 import PaginaPublicaciones from "./page";
 
 const consultarPublicacionesMock = vi.hoisted(() => vi.fn());
+const obtenerSesionMock = vi.hoisted(() => vi.fn());
+const redirectMock = vi.hoisted(() => vi.fn(() => {
+    throw new Error("NEXT_REDIRECT");
+}));
+
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
+    obtenerSesion: obtenerSesionMock,
+}));
+
+vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 
 vi.mock("@/modulos/consulta-mercado/acciones/Publicaciones", () => ({
     consultarPublicaciones: consultarPublicacionesMock,
@@ -42,6 +52,31 @@ function crearPublicacion(id: number): PublicacionListado {
 describe("PaginaPublicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        obtenerSesionMock.mockResolvedValue(null);
+    });
+
+    it("redirige al operador antes de esperar los filtros o consultar las publicaciones", async () => {
+        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+        const esperarParametros = vi.fn((resolver: (valor: { especie: string }) => void) => resolver({ especie: "Manzana" }));
+        const searchParams = { then: esperarParametros } as unknown as Promise<{ especie: string }>;
+
+        await expect(PaginaPublicaciones({ searchParams })).rejects.toThrow("NEXT_REDIRECT");
+
+        expect(redirectMock).toHaveBeenCalledWith("/mi-mercado");
+        expect(esperarParametros).not.toHaveBeenCalled();
+        expect(consultarPublicacionesMock).not.toHaveBeenCalled();
+    });
+
+    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("conserva el catálogo público para la sesión %s", async (rol) => {
+        obtenerSesionMock.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
+        consultarPublicacionesMock.mockResolvedValue({ publicaciones: [crearPublicacion(1)] });
+
+        render(await PaginaPublicaciones({ searchParams: Promise.resolve({ especie: "Manzana" }) }));
+
+        expect(redirectMock).not.toHaveBeenCalled();
+        expect(consultarPublicacionesMock).toHaveBeenCalledOnce();
+        expect(screen.getByTestId("contenedor-publicaciones")).toHaveAttribute("data-especie", "Manzana");
+        expect(screen.getByText("Producto 1")).toBeInTheDocument();
     });
 
     it("pasa el nombre de la especie de inicio al filtro del catálogo", async () => {

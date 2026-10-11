@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { bajaPublicacionOperador } from "@/modulos/publicaciones/bajaPublicacionOperador";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { obtenerOperadorActual, obtenerOperadorPorId } from "@/modulos/usuarios/operadores/operador-actual";
+import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
+import { ErrorAutorizacion, exigirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { ErrorEdicionPublicacion, modificarPublicacionOperador, type CambiosPublicacionOperador } from "@/modulos/publicaciones/operadores/modificar-publicacion";
 import { revalidatePath } from "next/cache";
 
@@ -47,17 +48,15 @@ export async function DELETE(solicitud: Request, contexto: Contexto) {
 	}
 
 	try {
-		const operador = operadorId === undefined
-			? await obtenerOperadorActual()
-			: await obtenerOperadorPorId(operadorId);
-		if (!operador) {
-			return NextResponse.json({ errores: ["No se encontró el operador seleccionado."] }, { status: 404 });
-		}
+		const operador = await obtenerOperadorAutorizado(operadorId);
 		const eliminada = await bajaPublicacionOperador(publicacionId, operador.id);
 		if (!eliminada) return NextResponse.json({ errores: ["La publicación no pertenece al operador seleccionado."] }, { status: 404 });
 		actualizarVistas(operador);
 		return NextResponse.json({ mensaje: "Publicación eliminada." });
 	} catch (error) {
+		if (error instanceof ErrorAutorizacion) {
+			return NextResponse.json({ errores: [error.message] }, { status: error.status });
+		}
 		console.error("Error al eliminar publicación:", error);
 		return NextResponse.json({ errores: ["No se pudo eliminar la publicación."] }, { status: 500 });
 	}
@@ -103,12 +102,8 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 	}
 
 	try {
-		const operador = operadorId === undefined
-			? await obtenerOperadorActual()
-			: await obtenerOperadorPorId(operadorId);
-		if (!operador) {
-			return NextResponse.json({ errores: ["No se encontró el operador seleccionado."] }, { status: 404 });
-		}
+		const sesion = await exigirOperador();
+		const operador = await obtenerOperadorAutorizado(operadorId);
 		const vinculo = await db.orm.public.PublicacionOperador
 			.select("id")
 			.where({ publicacionId, operadorId: operador.id })
@@ -116,10 +111,13 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 		if (!vinculo) {
 			return NextResponse.json({ errores: ["La publicación no pertenece al operador seleccionado."] }, { status: 404 });
 		}
-		const resultado = await modificarPublicacionOperador(operador.usuarioId, vinculo.id, cambios as CambiosPublicacionOperador, fotoNueva);
+		const resultado = await modificarPublicacionOperador(sesion.usuarioId, vinculo.id, cambios as CambiosPublicacionOperador, fotoNueva);
 		actualizarVistas(operador);
 		return NextResponse.json({ ...resultado, mensaje: "Publicación modificada correctamente." });
 	} catch (error) {
+		if (error instanceof ErrorAutorizacion) {
+			return NextResponse.json({ errores: [error.message] }, { status: error.status });
+		}
 		if (error instanceof ErrorEdicionPublicacion) {
 			return NextResponse.json({ errores: [error.message] }, { status: error.codigo === "NO_ENCONTRADA" ? 404 : 400 });
 		}

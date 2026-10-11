@@ -6,12 +6,15 @@ import ConfiguracionUsuarios from "@/modulos/administracion/componentes/configur
 
 import obtenerConfiguraciones from "@/modulos/administracion/ConsultaConfiguracion";
 import consultarDatosModificarUsuarios from "@/modulos/administracion/componentes/configuracion-usuarios/acciones/ConsultaUsuarios";
+import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaAdministracion() {
+    await requerirAdministrador();
+
     const [filasConfiguracion, datosUsuarios] = await Promise.all([
-        obtenerConfiguraciones(),
+        obtenerConfiguraciones(["incremento_precio"]),
         consultarDatosModificarUsuarios(),
     ]);
 

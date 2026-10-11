@@ -7,10 +7,20 @@ import Page from "./page";
 const {
     obtenerOperadoresMock,
     listadoOperadoresMock,
+    obtenerSesionMock,
+    redirectMock,
 } = vi.hoisted(() => ({
     obtenerOperadoresMock: vi.fn(),
     listadoOperadoresMock: vi.fn(() => null),
+    obtenerSesionMock: vi.fn(),
+    redirectMock: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
 }));
+
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
+    obtenerSesion: obtenerSesionMock,
+}));
+
+vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 
 vi.mock("@/modulos/usuarios/operadores/consultas-listado-publico", () => ({
     obtenerOperadoresPublicos: obtenerOperadoresMock,
@@ -41,6 +51,27 @@ describe("Página de operadores", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         obtenerOperadoresMock.mockReset();
+        obtenerSesionMock.mockResolvedValue(null);
+    });
+
+    it("redirige al operador a Mi Mercado sin consultar el listado público", async () => {
+        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+
+        await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
+
+        expect(redirectMock).toHaveBeenCalledWith("/mi-mercado");
+        expect(obtenerOperadoresMock).not.toHaveBeenCalled();
+    });
+
+    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("conserva el listado público para la sesión %s", async (rol) => {
+        obtenerSesionMock.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
+        obtenerOperadoresMock.mockResolvedValue(operadores);
+
+        const contenido = await Page();
+
+        expect(redirectMock).not.toHaveBeenCalled();
+        expect(obtenerOperadoresMock).toHaveBeenCalledOnce();
+        expect(contenido.props.children.props.children.props.operadores).toBe(operadores);
     });
 
     it("consulta los operadores y los pasa al listado", async () => {

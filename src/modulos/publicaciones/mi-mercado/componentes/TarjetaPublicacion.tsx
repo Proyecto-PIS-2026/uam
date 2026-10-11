@@ -11,7 +11,7 @@ type Props = {
     operadorId: number;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
-    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number) => void;
+    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number, fecha?: string) => void;
     alPublicacionEliminada?: () => void;
 };
 
@@ -34,6 +34,7 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
             return;
         }
         guardandoPrecioRef.current = true;
+        let ultimaFechaGuardada: string | undefined;
         try {
             while (precioPendienteRef.current !== precioConfirmadoRef.current) {
                 const precioAGuardar =precioPendienteRef.current;
@@ -44,15 +45,16 @@ export default function TarjetaPublicacion({ pub, operadorId, incrementoPrecio, 
                         return;
                     }
                     precioConfirmadoRef.current = precioAGuardar;
+                    ultimaFechaGuardada = resultado.fecha;
                     if (precioPendienteRef.current === precioAGuardar) {
-                        alPrecioActualizado?.(pub.id, precioAGuardar);
+                        alPrecioActualizado?.(pub.id, precioAGuardar, ultimaFechaGuardada);
                     }
                     setErrorPrecio("");
                 } catch (error) {
                     const precioAnterior = precioConfirmadoRef.current;
                     precioPendienteRef.current = precioAnterior;
                     setPrecioGuardado({ base: pub.precio, valor: precioAnterior });
-                    alPrecioActualizado?.(pub.id, precioAnterior);
+                    alPrecioActualizado?.(pub.id, precioAnterior, ultimaFechaGuardada);
                     setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
                     break;
                 }

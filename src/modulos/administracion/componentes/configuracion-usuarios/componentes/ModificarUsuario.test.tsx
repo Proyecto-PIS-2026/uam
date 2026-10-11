@@ -1,6 +1,20 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { DatosModificarUsuarios, TipoUsuario, UsuarioParaModificar } from "../Tipos";
 import ModificarUsuario from "./ModificarUsuario";
+
+const mocks = vi.hoisted(() => ({
+    bajaOperador: vi.fn(),
+    refresh: vi.fn(),
+    lista: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({ refresh: mocks.refresh }),
+}));
+
+vi.mock("@/modulos/usuarios/operadores/bajaOperador", () => ({
+    bajaOperador: mocks.bajaOperador,
+}));
 
 interface BuscadorMockProps {
     busqueda: string;
@@ -13,6 +27,7 @@ interface ListaMockProps {
     usuarios: UsuarioParaModificar[];
     usuarioSeleccionadoId: number | null;
     onSeleccionar: (usuario: UsuarioParaModificar) => void;
+    onEliminar: (usuario: UsuarioParaModificar) => Promise<void>;
 }
 
 vi.mock("./BuscadorUsuario", () => ({
@@ -45,11 +60,14 @@ vi.mock("./BuscadorUsuario", () => ({
 }));
 
 vi.mock("./ListaUsuarios", () => ({
-    default: ({
+    default: (props: ListaMockProps) => {
+        mocks.lista(props);
+        const {
         usuarios,
         usuarioSeleccionadoId,
         onSeleccionar,
-    }: ListaMockProps) => (
+        } = props;
+        return (
         <div data-testid="lista-usuarios">
             {usuarios.map((usuario) => (
                 <button
@@ -64,7 +82,8 @@ vi.mock("./ListaUsuarios", () => ({
                 {usuarioSeleccionadoId ?? "ninguno"}
             </span>
         </div>
-    ),
+        );
+    },
 }));
 
 const usuarios: UsuarioParaModificar[] = [
@@ -95,6 +114,30 @@ const datos: DatosModificarUsuarios = {
 };
 
 describe("ModificarUsuario", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.bajaOperador.mockResolvedValue({ esValido: true, mensaje: "Operador eliminado correctamente." });
+    });
+
+    it("conecta la baja real con el id del operador y recarga los datos después del éxito", async () => {
+        render(<ModificarUsuario datos={datos} />);
+        const props = mocks.lista.mock.lastCall?.[0] as ListaMockProps;
+
+        await act(() => props.onEliminar(usuarios[1]));
+
+        expect(mocks.bajaOperador).toHaveBeenCalledWith({ operadorId: 201 });
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("propaga los errores de baja y conserva los datos para mostrar el error", async () => {
+        mocks.bajaOperador.mockResolvedValue({ esValido: false, errores: ["El operador seleccionado ya no existe."] });
+        render(<ModificarUsuario datos={datos} />);
+        const props = mocks.lista.mock.lastCall?.[0] as ListaMockProps;
+
+        await expect(props.onEliminar(usuarios[1])).rejects.toThrow("El operador seleccionado ya no existe.");
+        expect(mocks.refresh).not.toHaveBeenCalled();
+    });
+
     it("muestra todos los usuarios inicialmente y configura el enlace de alta", () => {
         render(<ModificarUsuario datos={datos} />);
 

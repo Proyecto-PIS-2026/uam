@@ -44,10 +44,15 @@ describe("consulta-configuracion", () => {
     });
 
     describe("obtenerConfiguraciones", () => {
-        it("obtiene todas las configuraciones", async () => {
+        it("consulta sólo las configuraciones solicitadas", async () => {
             const configuraciones = [{nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/lista.pdf"}, {nombreConfiguracion: "incremento_precio", valorConfiguracion: "10"}];
             mocks.all.mockResolvedValue(configuraciones);
-            const resultado = await obtenerConfiguraciones();
+            const nombres = ["url_lista_inteligente", "incremento_precio"];
+            const resultado = await obtenerConfiguraciones(nombres);
+            expect(mocks.where).toHaveBeenCalledOnce();
+            const incluir = vi.fn();
+            mocks.where.mock.calls[0][0]({ nombreConfiguracion: { in: incluir } });
+            expect(incluir).toHaveBeenCalledExactlyOnceWith(nombres);
             expect(mocks.select).toHaveBeenCalledExactlyOnceWith("nombreConfiguracion", "valorConfiguracion");
             expect(mocks.all).toHaveBeenCalledOnce();
             expect(resultado).toEqual(configuraciones);
@@ -55,14 +60,20 @@ describe("consulta-configuracion", () => {
 
         it("devuelve un arreglo vacío cuando no existen configuraciones", async () => {
             mocks.all.mockResolvedValue([]);
-            const resultado = await obtenerConfiguraciones();
+            const resultado = await obtenerConfiguraciones(["incremento_precio"]);
             expect(resultado).toEqual([]);
             expect(mocks.all).toHaveBeenCalledOnce();
         });
 
         it("propaga el error cuando falla la consulta", async () => {
             mocks.all.mockRejectedValue(new Error("Error al consultar configuraciones"));
-            await expect(obtenerConfiguraciones()).rejects.toThrow("Error al consultar configuraciones");
+            await expect(obtenerConfiguraciones(["incremento_precio"])).rejects.toThrow("Error al consultar configuraciones");
+        });
+
+        it("no consulta la tabla si no se solicita ninguna configuración", async () => {
+            expect(await obtenerConfiguraciones([])).toEqual([]);
+            expect(mocks.where).not.toHaveBeenCalled();
+            expect(mocks.all).not.toHaveBeenCalled();
         });
     });
 

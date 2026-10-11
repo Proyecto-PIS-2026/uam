@@ -11,7 +11,7 @@ type EncabezadoPaginaProps = {
 export default function EncabezadoPagina({ titulo, cantidad, subtitulo, className = "" }: EncabezadoPaginaProps) {
     return (
         <header className={`${styles.encabezado} ${className}`}>
-            <HojasDecorativas variante="separador" />
+            <HojasDecorativas />
             <div className={styles.contenido}>
                 <h1 className={styles.titulo}>{titulo}</h1>
                 {cantidad ? (

@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { altaPublicacionOperador } from "@/modulos/publicaciones/altaPublicacionOperador";
-import { obtenerOperadorActual, obtenerOperadorPorId } from "@/modulos/usuarios/operadores/operador-actual";
+import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
+import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { revalidatePath } from "next/cache";
 
 export async function GET() {
 	try {
+		const sesion = await obtenerSesion();
+		const operadoresAutorizados = sesion?.rol === "OPERADOR"
+			? [await obtenerOperadorAutorizado()]
+			: db.orm.public.Operador.all();
 		const [operadores, especies, variedades, presentaciones, categorias, calibres, paises] = await Promise.all([
-			db.orm.public.Operador.all(),
+			operadoresAutorizados,
 			db.orm.public.Especie.all(),
 			db.orm.public.Variedad.all(),
 			db.orm.public.Presentacion.all(),
@@ -26,6 +32,9 @@ export async function GET() {
 			paises: paises.map(({ id, nombrePais }) => ({ id, nombre: nombrePais })),
 		});
 	} catch (error) {
+		if (error instanceof ErrorAutorizacion) {
+			return NextResponse.json({ errores: [error.message] }, { status: error.status });
+		}
 		console.error("Error al cargar catálogos de publicaciones:", error);
 		return NextResponse.json({ errores: ["No se pudieron cargar los datos del formulario."] }, { status: 500 });
 	}
@@ -49,12 +58,7 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const operador = operadorId === undefined
-			? await obtenerOperadorActual()
-			: await obtenerOperadorPorId(operadorId);
-		if (!operador) {
-			return NextResponse.json({ errores: ["No se encontró el operador seleccionado."] }, { status: 404 });
-		}
+		const operador = await obtenerOperadorAutorizado(operadorId);
 		const datosDelOperador = typeof datos === "object" && datos !== null && !Array.isArray(datos)
 			? { ...datos, operadorId: operador.id }
 			: datos;
@@ -78,6 +82,9 @@ export async function POST(request: Request) {
 		}
 		return NextResponse.json(resultado, { status: resultado.esValido ? 201 : 400 });
 	} catch (error) {
+		if (error instanceof ErrorAutorizacion) {
+			return NextResponse.json({ errores: [error.message] }, { status: error.status });
+		}
 		console.error("Error al crear publicación:", error);
 		return NextResponse.json({ errores: ["No se pudo guardar la publicación."] }, { status: 500 });
 	}

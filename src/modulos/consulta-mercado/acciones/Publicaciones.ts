@@ -1,4 +1,5 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { Temporal } from "@js-temporal/polyfill";
 
 export type PublicacionListado = {
     id: number;
@@ -25,48 +26,52 @@ export type ResultadoPublicaciones = {
 };
 
 export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> {
-    const consulta = db.sql.public.publicacionOperador
-        .innerJoin(db.sql.public.publicacion, (tablas, operaciones) =>
-            operaciones.eq(tablas.publicacionOperador.publicacionId, tablas.publicacion.id))
-        .innerJoin(db.sql.public.presentacion, (tablas, operaciones) =>
-            operaciones.eq(tablas.publicacion.presentacionId, tablas.presentacion.id))
-        .innerJoin(db.sql.public.variedad, (tablas, operaciones) =>
-            operaciones.eq(tablas.presentacion.variedadId, tablas.variedad.id))
-        .innerJoin(db.sql.public.especie, (tablas, operaciones) =>
-            operaciones.eq(tablas.variedad.especieId, tablas.especie.id))
-        .innerJoin(db.sql.public.categoria, (tablas, operaciones) =>
-            operaciones.eq(tablas.publicacion.categoriaId, tablas.categoria.id))
-        .innerJoin(db.sql.public.calibre, (tablas, operaciones) =>
-            operaciones.eq(tablas.publicacion.calibreId, tablas.calibre.id))
-        .innerJoin(db.sql.public.pais, (tablas, operaciones) =>
-            operaciones.eq(tablas.publicacionOperador.paisId, tablas.pais.id))
-        .innerJoin(db.sql.public.operador, (tablas, operaciones) =>
-            operaciones.eq(tablas.publicacionOperador.operadorId, tablas.operador.id))
-        .select((tablas) => ({
-            id: tablas.publicacion.id,
-            precio: tablas.publicacion.precio,
-            fecha: tablas.publicacion.fecha,
-            foto: tablas.publicacion.foto,
-            especie: tablas.especie.nombreEspecie,
-            variedad: tablas.variedad.nombreVariedad,
-            presentacion: tablas.presentacion.nombrePresentacion,
-            cantidadUnidades: tablas.publicacion.cantidadUnidades,
-            categoria: tablas.categoria.nombreCategoria,
-            calibre: tablas.calibre.nombreCalibre,
-            codigoCalibre: tablas.calibre.codigoCalibre,           
-            pais: tablas.pais.nombrePais,
-            operadorId: tablas.operador.id,
-            operadorNombreFantasia: tablas.operador.nombreFantasia,
-            operadorWhatsApp: tablas.operador.whatsApp,
-        }))
-        .where((tablas, operaciones) =>
-            operaciones.and(
-                operaciones.eq(tablas.publicacion.publicacionActiva, true),
-                operaciones.eq(tablas.publicacion.publicacionDisponible, true)
-            )
-        );
-    
-    const plan = consulta.build();
+    const tablas = db.sql.public;
+    const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
+    const plan = db.raw.sql`
+        SELECT p.id, p.precio, p.fecha, p.foto, p."cantidadUnidades",
+            e."nombreEspecie" AS especie, v."nombreVariedad" AS variedad,
+            pr."nombrePresentacion" AS presentacion, c."nombreCategoria" AS categoria,
+            ca."nombreCalibre" AS calibre, ca."codigoCalibre", pa."nombrePais" AS pais,
+            o.id AS "operadorId", o."nombreFantasia" AS "operadorNombreFantasia",
+            o."whatsApp" AS "operadorWhatsApp"
+        FROM "publicacionOperador" po
+        JOIN publicacion p ON p.id = po."publicacionId"
+        JOIN presentacion pr ON pr.id = p."presentacionId"
+        JOIN variedad v ON v.id = pr."variedadId"
+        JOIN especie e ON e.id = v."especieId"
+        JOIN categoria c ON c.id = p."categoriaId"
+        JOIN calibre ca ON ca.id = p."calibreId"
+        JOIN pais pa ON pa.id = po."paisId"
+        JOIN operador o ON o.id = po."operadorId"
+        WHERE p."publicacionActiva" = true
+          AND p."publicacionDisponible" = true
+          AND EXISTS (
+            SELECT 1
+            FROM local l
+            WHERE l."operadorId" = o.id
+              AND (
+                l."finContrato" IS NULL
+                OR (l."finContrato" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date
+              )
+          )
+    `.returnsRow({
+        id: tablas.publicacion.columns.id,
+        precio: tablas.publicacion.columns.precio,
+        fecha: tablas.publicacion.columns.fecha,
+        foto: tablas.publicacion.columns.foto,
+        cantidadUnidades: tablas.publicacion.columns.cantidadUnidades,
+        especie: tablas.especie.columns.nombreEspecie,
+        variedad: tablas.variedad.columns.nombreVariedad,
+        presentacion: tablas.presentacion.columns.nombrePresentacion,
+        categoria: tablas.categoria.columns.nombreCategoria,
+        calibre: tablas.calibre.columns.nombreCalibre,
+        codigoCalibre: tablas.calibre.columns.codigoCalibre,
+        pais: tablas.pais.columns.nombrePais,
+        operadorId: tablas.operador.columns.id,
+        operadorNombreFantasia: tablas.operador.columns.nombreFantasia,
+        operadorWhatsApp: tablas.operador.columns.whatsApp,
+    }).build();
     const filas = await db.runtime().query(plan);
     const publicaciones: PublicacionListado[] = filas.map((fila) => ({
         id: Number(fila.id),

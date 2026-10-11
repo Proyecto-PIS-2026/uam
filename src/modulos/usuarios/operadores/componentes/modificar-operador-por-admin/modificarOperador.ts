@@ -3,6 +3,8 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import argon2 from "argon2";
 import { validarModificacionOperador } from "./validarModificacionOperador";
+import { revalidatePath } from "next/cache";
+import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export type ResultadoModificacionOperador =
     | { esValido: false; errores: string[] }
@@ -11,8 +13,7 @@ export type ResultadoModificacionOperador =
 export async function modificarOperador(
     valor: unknown,
 ): Promise<ResultadoModificacionOperador> {
-    // TODO(BP-04.4): verificar que el usuario autenticado
-    // sea ADMINISTRADOR antes de permitir la modificación.
+    await exigirAdministrador();
 
     const validacion = validarModificacionOperador(valor);
 
@@ -165,6 +166,15 @@ export async function modificarOperador(
             errores: [resultadoTx],
         };
     }
+
+    revalidatePath("/administracion");
+    revalidatePath("/inicio");
+    revalidatePath("/publicaciones");
+    revalidatePath("/operadores");
+    revalidatePath("/operadores/[nombre]", "page");
+    revalidatePath("/gestion-operadores/[id]", "page");
+    revalidatePath("/mi-mercado");
+    revalidatePath("/mi-mercado/[nombre]", "page");
 
     return {
         esValido: true,

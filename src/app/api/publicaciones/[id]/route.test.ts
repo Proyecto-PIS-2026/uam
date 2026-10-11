@@ -2,7 +2,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const bajaPublicacionOperadorMock = vi.hoisted(() => vi.fn());
-const obtenerOperadorPorIdMock = vi.hoisted(() => vi.fn());
+const obtenerSesionMock = vi.hoisted(() => vi.fn(() => Promise.resolve({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 })));
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: obtenerSesionMock }));
+const obtenerOperadorAutorizadoMock = vi.hoisted(() => vi.fn());
 const vinculoPublicacionMock = vi.hoisted(() => ({
 	select: vi.fn(),
 	where: vi.fn(),
@@ -11,8 +13,7 @@ const vinculoPublicacionMock = vi.hoisted(() => ({
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
-	obtenerOperadorActual: vi.fn(() => Promise.resolve({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" })),
-	obtenerOperadorPorId: obtenerOperadorPorIdMock,
+	obtenerOperadorAutorizado: obtenerOperadorAutorizadoMock,
 }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 	db: { orm: { public: { PublicacionOperador: vinculoPublicacionMock } } },
@@ -31,7 +32,8 @@ vi.mock("@/modulos/publicaciones/bajaPublicacionOperador", () => ({
 }));
 
 import { revalidatePath } from "next/cache";
-import { obtenerOperadorActual, obtenerOperadorPorId } from "@/modulos/usuarios/operadores/operador-actual";
+import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
+import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { ErrorEdicionPublicacion, modificarPublicacionOperador } from "@/modulos/publicaciones/operadores/modificar-publicacion";
 import { DELETE, PATCH } from "./route";
 
@@ -60,8 +62,17 @@ describe("DELETE /api/publicaciones/[id]", () => {
     
 	beforeEach(() => {
 		vi.clearAllMocks();
-		obtenerOperadorPorIdMock.mockResolvedValue({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" });
+		obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+		obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" });
 	});
+
+    it.each([401, 403] as const)("devuelve %s sin eliminar cuando falla la autorización", async (status) => {
+        obtenerOperadorAutorizadoMock.mockRejectedValue(new ErrorAutorizacion(status, "Acceso denegado."));
+        const respuesta = await DELETE(new Request("http://localhost/api/publicaciones/15?operadorId=3"), { params: Promise.resolve({ id: "15" }) });
+        expect(respuesta.status).toBe(status);
+        expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
 
 	it("devuelve 400 si la publicación no es válida", async () => {
 		const solicitud = new Request(
@@ -101,7 +112,7 @@ describe("DELETE /api/publicaciones/[id]", () => {
         expect(cuerpo).toEqual({
             mensaje: "Publicación eliminada.",
         });
-        expect(obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(3);
+        expect(obtenerOperadorAutorizado).toHaveBeenCalledExactlyOnceWith(3);
         expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%203");
         expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%203");
     });
@@ -133,21 +144,19 @@ describe("DELETE /api/publicaciones/[id]", () => {
         const respuesta = await DELETE(solicitud, { params: Promise.resolve({ id: "15" }) });
 
         expect(respuesta.status).toBe(200);
-        expect(obtenerOperadorActual).toHaveBeenCalledOnce();
-        expect(obtenerOperadorPorId).not.toHaveBeenCalled();
+        expect(obtenerOperadorAutorizado).toHaveBeenCalledOnce();
         expect(bajaPublicacionOperadorMock).toHaveBeenCalledWith(15, 3);
     });
 
-    it("elimina usando el operador indicado", async () => {
-        obtenerOperadorPorIdMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
+    it("elimina usando el ID del operador propio indicado", async () => {
+        obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 7, usuarioId: 10, nombreFantasia: "Operador 7" });
         bajaPublicacionOperadorMock.mockResolvedValue(true);
         const solicitud = new Request("http://localhost/api/publicaciones/15?operadorId=7");
 
         const respuesta = await DELETE(solicitud, { params: Promise.resolve({ id: "15" }) });
 
         expect(respuesta.status).toBe(200);
-        expect(obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(7);
-        expect(obtenerOperadorActual).not.toHaveBeenCalled();
+        expect(obtenerOperadorAutorizado).toHaveBeenCalledExactlyOnceWith(7);
         expect(bajaPublicacionOperadorMock).toHaveBeenCalledWith(15, 7);
         expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
         expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
@@ -162,20 +171,19 @@ describe("DELETE /api/publicaciones/[id]", () => {
 
             expect(respuesta.status).toBe(400);
             expect(await respuesta.json()).toEqual({ errores: ["El operador no es válido."] });
-            expect(obtenerOperadorActual).not.toHaveBeenCalled();
-            expect(obtenerOperadorPorId).not.toHaveBeenCalled();
+            expect(obtenerOperadorAutorizado).not.toHaveBeenCalled();
             expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
         },
     );
 
-    it("devuelve 404 cuando no existe el operador indicado", async () => {
-        obtenerOperadorPorIdMock.mockResolvedValue(null);
+    it("devuelve 403 cuando el operador indicado es ajeno", async () => {
+        obtenerOperadorAutorizadoMock.mockRejectedValue(new ErrorAutorizacion(403, "El operador no corresponde al usuario autenticado."));
         const solicitud = new Request("http://localhost/api/publicaciones/15?operadorId=7");
 
         const respuesta = await DELETE(solicitud, { params: Promise.resolve({ id: "15" }) });
 
-        expect(respuesta.status).toBe(404);
-        expect(await respuesta.json()).toEqual({ errores: ["No se encontró el operador seleccionado."] });
+        expect(respuesta.status).toBe(403);
+        expect(await respuesta.json()).toEqual({ errores: ["El operador no corresponde al usuario autenticado."] });
         expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
     });
 
@@ -226,12 +234,22 @@ const contextoEdicion = { params: Promise.resolve({ id: "20" }) };
 describe("PATCH /api/publicaciones/[id]", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		obtenerOperadorPorIdMock.mockResolvedValue({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" });
+		obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+		obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" });
 		vinculoPublicacionMock.select.mockReturnThis();
 		vinculoPublicacionMock.where.mockReturnThis();
 		vinculoPublicacionMock.first.mockResolvedValue({ id: 12 });
 		vi.mocked(modificarPublicacionOperador).mockResolvedValue({ publicacionOperadorId: 12, publicacionId: 20 });
 	});
+
+    it.each([401, 403] as const)("devuelve %s sin modificar cuando falla la autorización", async (status) => {
+        obtenerOperadorAutorizadoMock.mockRejectedValue(new ErrorAutorizacion(status, "Acceso denegado."));
+        const respuesta = await PATCH(solicitudEdicion(), contextoEdicion);
+        expect(respuesta.status).toBe(status);
+        expect(vinculoPublicacionMock.first).not.toHaveBeenCalled();
+        expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
 
 	it("propaga el país y el precio entero de los cambios multipart y actualiza las vistas", async () => {
 		const respuesta = await PATCH(solicitudEdicion(), contextoEdicion);
@@ -244,8 +262,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		});
 		expect(vinculoPublicacionMock.where).toHaveBeenCalledWith({ publicacionId: 20, operadorId: 3 });
 		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosEdicion, null);
-		expect(obtenerOperadorActual).toHaveBeenCalledOnce();
-		expect(obtenerOperadorPorId).not.toHaveBeenCalled();
+		expect(obtenerOperadorAutorizado).toHaveBeenCalledOnce();
 		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado");
 		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%203");
 		expect(revalidatePath).toHaveBeenCalledWith("/publicaciones");
@@ -283,16 +300,15 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosSinFoto, null);
 	});
 
-	it("modifica la publicación usando el operador indicado", async () => {
-		obtenerOperadorPorIdMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
+	it("modifica la publicación usando el ID del operador propio indicado", async () => {
+		obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 7, usuarioId: 10, nombreFantasia: "Operador 7" });
 
 		const respuesta = await PATCH(solicitudEdicion(cambiosEdicion, undefined, "7"), contextoEdicion);
 
 		expect(respuesta.status).toBe(200);
-		expect(obtenerOperadorPorId).toHaveBeenCalledExactlyOnceWith(7);
-		expect(obtenerOperadorActual).not.toHaveBeenCalled();
+		expect(obtenerOperadorAutorizado).toHaveBeenCalledExactlyOnceWith(7);
 		expect(vinculoPublicacionMock.where).toHaveBeenCalledWith({ publicacionId: 20, operadorId: 7 });
-		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(70, 12, cambiosEdicion, null);
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosEdicion, null);
 		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
 		expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
 	});
@@ -304,18 +320,17 @@ describe("PATCH /api/publicaciones/[id]", () => {
 
 			expect(respuesta.status).toBe(400);
 			expect(await respuesta.json()).toEqual({ errores: ["El operador no es válido."] });
-			expect(obtenerOperadorActual).not.toHaveBeenCalled();
-			expect(obtenerOperadorPorId).not.toHaveBeenCalled();
+			expect(obtenerOperadorAutorizado).not.toHaveBeenCalled();
 			expect(modificarPublicacionOperador).not.toHaveBeenCalled();
 		},
 	);
 
-	it("devuelve 404 si no existe el operador indicado", async () => {
-		obtenerOperadorPorIdMock.mockResolvedValue(null);
+	it("devuelve 403 cuando el operador indicado es ajeno", async () => {
+		obtenerOperadorAutorizadoMock.mockRejectedValue(new ErrorAutorizacion(403, "El operador no corresponde al usuario autenticado."));
 		const respuesta = await PATCH(solicitudEdicion(cambiosEdicion, undefined, "7"), contextoEdicion);
 
-		expect(respuesta.status).toBe(404);
-		expect(await respuesta.json()).toEqual({ errores: ["No se encontró el operador seleccionado."] });
+		expect(respuesta.status).toBe(403);
+		expect(await respuesta.json()).toEqual({ errores: ["El operador no corresponde al usuario autenticado."] });
 		expect(vinculoPublicacionMock.first).not.toHaveBeenCalled();
 		expect(modificarPublicacionOperador).not.toHaveBeenCalled();
 	});
@@ -337,7 +352,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 
 			expect(respuesta.status).toBe(400);
 			expect(await respuesta.json()).toEqual({ errores: ["Los cambios no son válidos."] });
-			expect(obtenerOperadorActual).not.toHaveBeenCalled();
+			expect(obtenerOperadorAutorizado).not.toHaveBeenCalled();
 			expect(vinculoPublicacionMock.first).not.toHaveBeenCalled();
 			expect(modificarPublicacionOperador).not.toHaveBeenCalled();
 			expect(revalidatePath).not.toHaveBeenCalled();

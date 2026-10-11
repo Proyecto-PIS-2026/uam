@@ -2,18 +2,21 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import type { DatosModificarUsuarios, TipoUsuario, UsuarioParaModificar } from "../Tipos";
 import BuscadorUsuarios from "./BuscadorUsuario";
 import ListaUsuarios from "./ListaUsuarios";
 import styles from "./ModificarUsuario.module.css";
+import { bajaOperador } from "@/modulos/usuarios/operadores/bajaOperador";
 
 interface ModificarUsuarioProps {
     datos: DatosModificarUsuarios;
 }
 
 export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
+    const router = useRouter();
     const [busqueda, setBusqueda] = useState("");
     const [tipoUsuario, setTipoUsuario] = useState<TipoUsuario | "TODOS">("TODOS");
     const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<UsuarioParaModificar | null>(null);
@@ -42,6 +45,20 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         setUsuarioSeleccionado(null);
     }
 
+    async function eliminarUsuario(usuario: UsuarioParaModificar) {
+        if (usuario.rol !== "OPERADOR") {
+            throw new Error("La baja de este tipo de usuario todavía no está disponible.");
+        }
+
+        const resultado = await bajaOperador({ operadorId: usuario.operadorId });
+        if (!resultado.esValido) {
+            throw new Error(resultado.errores.join(" "));
+        }
+
+        setUsuarioSeleccionado(null);
+        router.refresh();
+    }
+
     const rolParam = tipoUsuario !== "TODOS" ? tipoUsuario.toLowerCase() : "operador";
     const linkAlta = `/alta-usuario?rol=${rolParam}`;
 
@@ -55,7 +72,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
             </div>
             <div className={styles.contenido}>
                 <BuscadorUsuarios busqueda={busqueda} tipoUsuario={tipoUsuario} onBusquedaChange={cambiarBusqueda} onTipoUsuarioChange={cambiarTipoUsuario}/>
-                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} onSeleccionar={setUsuarioSeleccionado}/>
+                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario}/>
             </div>
         </section>
     );

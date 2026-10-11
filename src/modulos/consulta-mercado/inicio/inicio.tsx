@@ -60,7 +60,6 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
 
     const contenido = (
         <main className={styles.pagina}>
-            {/* <HojasDecorativas variante="fondo" /> */}
 
 
             <h1 className={styles.tituloMobile}>Mercado de hoy</h1>
@@ -90,7 +89,7 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                 </Snackbar>
                 <section className={styles.especies} aria-labelledby="titulo-especies">
                     <div className={styles.tituloContenedor}>
-                        <HojasDecorativas variante="separador" />
+                        <HojasDecorativas />
                         <h2 className={styles.titulo} id="titulo-especies">Especies</h2>
                         <p className={styles.subtitulo}>{especies.length} especies con operadores</p>
                     </div>

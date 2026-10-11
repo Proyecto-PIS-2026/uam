@@ -1,11 +1,13 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { Temporal } from "@js-temporal/polyfill";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 const runtime = db.runtime();
 
 export async function obtenerEspeciesConPublicacionesActivas() {
   const especie = db.sql.public.especie;
+  const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
 
   const plan = db.raw.sql`
     SELECT
@@ -18,6 +20,15 @@ export async function obtenerEspeciesConPublicacionesActivas() {
     JOIN especie e ON e.id = v."especieId"
     WHERE p."publicacionDisponible" = true
       AND p."publicacionActiva" = true
+      AND EXISTS (
+        SELECT 1
+        FROM local l
+        WHERE l."operadorId" = po."operadorId"
+          AND (
+            l."finContrato" IS NULL
+            OR (l."finContrato" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date
+          )
+      )
     GROUP BY e."nombreEspecie"
     ORDER BY e."nombreEspecie"
   `

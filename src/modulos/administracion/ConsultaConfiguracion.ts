@@ -1,7 +1,9 @@
 import { db } from "../../infraestructura/persistencia/prisma/db";
 
-export default async function obtenerConfiguraciones() {
+export default async function obtenerConfiguraciones(nombres: readonly string[]) {
+    if (nombres.length === 0) return [];
     return db.orm.public.Configuracion
+        .where((configuracion) => configuracion.nombreConfiguracion.in([...nombres]))
         .select("nombreConfiguracion", "valorConfiguracion")
         .all();
 }

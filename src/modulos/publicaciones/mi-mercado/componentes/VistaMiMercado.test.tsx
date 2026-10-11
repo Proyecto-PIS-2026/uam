@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
     obtenerConfiguracion: vi.fn(),
     miMercado: vi.fn(() => null),
     notFound: vi.fn(() => { throw new Error("NEXT_HTTP_ERROR_FALLBACK;404"); }),
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
+    obtenerSesion: vi.fn(),
 }));
 
 vi.mock("../../../usuarios/operadores/operador-actual", () => ({
@@ -32,7 +34,8 @@ vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
     obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 
-vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
+vi.mock("next/navigation", () => ({ notFound: mocks.notFound, redirect: mocks.redirect }));
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
 
 const opcionesEdicion = {
     especies: [],
@@ -46,6 +49,7 @@ const opcionesEdicion = {
 describe("VistaMiMercado", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Operador 13" });
         mocks.obtenerPublicaciones.mockResolvedValue([]);
         mocks.obtenerOpcionesEdicion.mockResolvedValue(opcionesEdicion);
@@ -64,8 +68,8 @@ describe("VistaMiMercado", () => {
         expect(vista.props.incrementoPrecio).toBe(25);
     });
 
-    it("usa el operador indicado en la ruta", async () => {
-        mocks.obtenerOperadorPorNombre.mockResolvedValue({ id: 37, usuarioId: 11, nombreFantasia: "Frutas & Más" });
+    it("usa el operador propio indicado en la ruta", async () => {
+        mocks.obtenerOperadorPorNombre.mockResolvedValue({ id: 37, usuarioId: 10, nombreFantasia: "Frutas & Más" });
 
         const vista = await VistaMiMercado({ operadorNombre: "Frutas & Más" });
 
@@ -76,6 +80,22 @@ describe("VistaMiMercado", () => {
         expect(vista.props.operadorId).toBe(37);
         expect(vista.props.nombreOperador).toBe("Frutas & Más");
         expect(vista.props.incrementoPrecio).toBe(25);
+    });
+
+    it("no carga publicaciones cuando el nombre corresponde a otro operador", async () => {
+        mocks.obtenerOperadorPorNombre.mockResolvedValue({ id: 37, usuarioId: 11, nombreFantasia: "Ajeno" });
+        await expect(VistaMiMercado({ operadorNombre: "Ajeno" })).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.redirect).toHaveBeenCalledWith("/mi-mercado");
+        expect(mocks.obtenerPublicaciones).not.toHaveBeenCalled();
+        expect(mocks.obtenerOpcionesEdicion).not.toHaveBeenCalled();
+    });
+
+    it("redirige al login sin consultar operadores cuando no hay sesión", async () => {
+        mocks.obtenerSesion.mockResolvedValue(null);
+        await expect(VistaMiMercado({ abrirAltaInicial: true })).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.redirect).toHaveBeenCalledWith("/iniciar-sesion");
+        expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
+        expect(mocks.obtenerOperadorPorNombre).not.toHaveBeenCalled();
     });
 
     it("responde 404 si el operador indicado no existe", async () => {

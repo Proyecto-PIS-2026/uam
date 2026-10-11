@@ -88,12 +88,14 @@ vi.mock("@mui/material/IconButton", () => ({
         children,
         title,
         onClick,
+        disabled,
     }: {
         children?: ReactNode;
         title?: string;
         onClick?: (evento: MouseEvent<HTMLButtonElement>) => void;
+        disabled?: boolean;
     }) => (
-        <button type="button" title={title} onClick={onClick}>
+        <button type="button" title={title} onClick={onClick} disabled={disabled}>
             {children}
         </button>
     ),
@@ -135,12 +137,14 @@ vi.mock("@mui/material/Button", () => ({
         children,
         onClick,
         type = "button",
+        disabled,
     }: {
         children?: ReactNode;
         onClick?: (evento: MouseEvent<HTMLButtonElement>) => void;
         type?: "button" | "submit" | "reset";
+        disabled?: boolean;
     }) => (
-        <button type={type} onClick={onClick}>
+        <button type={type} onClick={onClick} disabled={disabled}>
             {children}
         </button>
     ),
@@ -230,7 +234,6 @@ interface PropsTest {
     usuarios: UsuarioParaModificar[];
     usuarioSeleccionadoId: number | null;
     onSeleccionar?: (usuario: UsuarioParaModificar) => void;
-    onEditar?: (usuario: UsuarioParaModificar) => void;
     onEliminar?: (usuario: UsuarioParaModificar) => void;
 }
 
@@ -343,60 +346,33 @@ describe("ListaUsuarios", () => {
         expect(onSeleccionar).toHaveBeenNthCalledWith(2, usuarios[1]);
         expect(onSeleccionar).toHaveBeenNthCalledWith(3, usuarios[2]);
 
-        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(
-            1,
-            "/gestion-de-administradores/101",
-        );
-        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(
-            2,
-            "/gestion-de-opradores/201",
-        );
-        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(
-            3,
-            "/gestion-de-productores/301",
-        );
+        expect(estadoTest.routerPush).toHaveBeenCalledOnce();
+        expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-operadores/201");
     });
 
-    it("navega a la edición según el rol cuando no se proporciona onEditar", () => {
+    it("navega a la edición del operador y deshabilita las acciones todavía no disponibles", () => {
         renderLista();
 
-        hacerClickEnAccion("ana.admin", "Editar perfil");
+        expect(within(obtenerFila("ana.admin")).getByTitle("Edición todavía no disponible")).toBeDisabled();
         hacerClickEnAccion("beto.operador", "Editar perfil");
-        hacerClickEnAccion("carla.productor", "Editar perfil");
+        expect(within(obtenerFila("carla.productor")).getByTitle("Edición todavía no disponible")).toBeDisabled();
 
-        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(
-            1,
-            "/gestion-de-administradores/101/editar",
-        );
-        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(
-            2,
-            "/gestion-de-opradores/201/editar",
-        );
-        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(
-            3,
-            "/gestion-de-productores/301/editar",
-        );
+        expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-operadores/201/editar");
 
         fireEvent.click(obtenerFila("ana.admin"));
 
-        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(
-            4,
-            "/gestion-de-administradores/101",
-        );
+        expect(estadoTest.routerPush).toHaveBeenCalledOnce();
     });
 
-    it("utiliza onEditar cuando se proporciona y no propaga el click a la fila", () => {
-        const onEditar = vi.fn();
+    it("navega a editar sin propagar el click a la fila", () => {
         const onSeleccionar = vi.fn();
 
-        renderLista({ onEditar, onSeleccionar });
+        renderLista({ onSeleccionar });
 
         hacerClickEnAccion("beto.operador", "Editar perfil");
 
-        expect(onEditar).toHaveBeenCalledTimes(1);
-        expect(onEditar).toHaveBeenCalledWith(usuarios[1]);
         expect(onSeleccionar).not.toHaveBeenCalled();
-        expect(estadoTest.routerPush).not.toHaveBeenCalled();
+        expect(estadoTest.routerPush).toHaveBeenCalledExactlyOnceWith("/gestion-operadores/201/editar");
     });
 
     it("pagina los resultados en escritorio", () => {
@@ -434,11 +410,11 @@ describe("ListaUsuarios", () => {
     });
 
     it("permite cancelar la eliminación y cerrar el diálogo mediante onClose", () => {
-        renderLista();
+        renderLista({ onEliminar: vi.fn() });
 
-        abrirConfirmacionEliminacion("ana.admin");
+        abrirConfirmacionEliminacion("beto.operador");
 
-        expect(screen.getByText("@ana.admin")).toBeInTheDocument();
+        expect(screen.getByText("@beto.operador")).toBeInTheDocument();
 
         fireEvent.click(screen.getByText("Cancelar", { selector: "button" }));
 
@@ -452,27 +428,12 @@ describe("ListaUsuarios", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
-    it("elimina al usuario y muestra una notificación de éxito sin onEliminar", async () => {
-        renderLista({ usuarios: [usuarios[0]] });
+    it("deshabilita la baja sin un backend y no anuncia una eliminación ficticia", () => {
+        renderLista();
 
-        abrirConfirmacionEliminacion("ana.admin");
-        confirmarEliminacion();
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole("alert"),
-            ).toHaveTextContent(
-                "El usuario ana.admin fue eliminado correctamente.",
-            );
-        });
-
-        expect(screen.getByRole("alert")).toHaveAttribute("data-severity", "success");
-        expect(screen.getByText("No se encontraron usuarios.")).toBeInTheDocument();
-        expect(screen.getByTestId("dialog")).not.toBeVisible();
-
-        // Cierre de la alerta.
-        fireEvent.click(screen.getByRole("button", { name: "Cerrar alerta" }));
-
+        for (const usuario of usuarios) {
+            expect(within(obtenerFila(usuario.username)).getByTitle("Baja todavía no disponible")).toBeDisabled();
+        }
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
@@ -504,17 +465,17 @@ describe("ListaUsuarios", () => {
 
         renderLista({ onEliminar });
 
-        abrirConfirmacionEliminacion("carla.productor");
+        abrirConfirmacionEliminacion("beto.operador");
         confirmarEliminacion();
 
         await waitFor(() => {
             expect(screen.getByRole("alert")).toHaveTextContent(
-                "Ocurrió un error al intentar eliminar a carla.productor.",
+                "Error de prueba",
             );
         });
 
         expect(screen.getByRole("alert")).toHaveAttribute("data-severity", "error");
-        expect(screen.getByText("carla.productor")).toBeInTheDocument();
+        expect(screen.getByText("beto.operador")).toBeInTheDocument();
         expect(screen.getByTestId("dialog")).not.toBeVisible();
 
         fireEvent.click(screen.getByRole("button", { name: "Cerrar snackbar" }));

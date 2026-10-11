@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { actualizarConfiguracion, obtenerConfiguracion } from "@/modulos/administracion/ConsultaConfiguracion";
+import { ErrorAutorizacion, exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export const runtime = "nodejs";
 
@@ -65,6 +66,14 @@ export async function GET(_solicitud: Request, contexto: Contexto) {
 }
 
 export async function PATCH(solicitud: Request, contexto: Contexto,) {
+    try {
+        await exigirAdministrador();
+    } catch (error) {
+        if (error instanceof ErrorAutorizacion) {
+            return NextResponse.json({ errores: [error.message] }, { status: error.status });
+        }
+        throw error;
+    }
     const { nombre } = await contexto.params;
     let cuerpo: unknown;
     try {

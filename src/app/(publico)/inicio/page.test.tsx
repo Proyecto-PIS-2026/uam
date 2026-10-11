@@ -1,9 +1,19 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import Page, { metadata } from "./page";
 import Inicio from "../../../modulos/consulta-mercado/inicio/inicio";
 
 const mockObtenerEspeciesInicio = vi.hoisted(() => vi.fn());
 const mockObtenerUrlListaInteligente = vi.hoisted(() => vi.fn());
+const obtenerSesionMock = vi.hoisted(() => vi.fn());
+const redirectMock = vi.hoisted(() => vi.fn(() => {
+    throw new Error("NEXT_REDIRECT");
+}));
+
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
+    obtenerSesion: obtenerSesionMock,
+}));
+
+vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 
 vi.mock("../../../modulos/consulta-mercado/inicio/consultas-inicio", () => ({
   obtenerEspeciesInicio: mockObtenerEspeciesInicio,
@@ -15,6 +25,34 @@ vi.mock("../../../modulos/consulta-mercado/inicio/inicio", () => ({
 }));
 
 describe("Page (mercado de hoy)", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        obtenerSesionMock.mockResolvedValue(null);
+    });
+
+    it("redirige al operador a Mi Mercado sin consultar las especies ni la lista inteligente", async () => {
+        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+
+        await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
+
+        expect(redirectMock).toHaveBeenCalledWith("/mi-mercado");
+        expect(mockObtenerEspeciesInicio).not.toHaveBeenCalled();
+        expect(mockObtenerUrlListaInteligente).not.toHaveBeenCalled();
+    });
+
+    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("conserva el inicio público para la sesión %s", async (rol) => {
+        obtenerSesionMock.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
+        mockObtenerEspeciesInicio.mockResolvedValue([]);
+        mockObtenerUrlListaInteligente.mockResolvedValue(null);
+
+        const elemento = await Page();
+
+        expect(redirectMock).not.toHaveBeenCalled();
+        expect(mockObtenerEspeciesInicio).toHaveBeenCalledOnce();
+        expect(mockObtenerUrlListaInteligente).toHaveBeenCalledOnce();
+        expect(elemento.type).toBe(Inicio);
+        expect(elemento.props).toEqual({ especies: [], urlListaInteligente: null });
+    });
 
     it("obtiene las especies y se las pasa al componente Inicio", async () => {
         const especiesMock = [
