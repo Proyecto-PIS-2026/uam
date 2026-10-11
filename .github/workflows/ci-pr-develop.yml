@@ -119,6 +119,10 @@ jobs:
 
       - name: Iniciar servidor y ejecutar Tests E2E (Playwright)
         env:
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASS: ${{ secrets.E2E_ADMIN_PASS }}
+          E2E_PRODUCTOR_USU: ${{ secrets.E2E_PRODUCTOR_USU }}
+          E2E_PRODUCTOR_PASS: ${{ secrets.E2E_PRODUCTOR_PASS }}
           E2E_OPERADOR_USU: ${{ secrets.E2E_OPERADOR_USU }}
           E2E_OPERADOR_PASS: ${{ secrets.E2E_OPERADOR_PASS }}
         run: |
