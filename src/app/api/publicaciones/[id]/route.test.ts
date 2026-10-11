@@ -1,8 +1,9 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 
 const bajaPublicacionOperadorMock = vi.hoisted(() => vi.fn());
-const obtenerSesionMock = vi.hoisted(() => vi.fn(() => Promise.resolve({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 })));
+const obtenerSesionMock = vi.hoisted(() => vi.fn<() => Promise<DatosSesion | null>>(() => Promise.resolve({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 })));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: obtenerSesionMock }));
 const obtenerOperadorAutorizadoMock = vi.hoisted(() => vi.fn());
 const vinculoPublicacionMock = vi.hoisted(() => ({
@@ -388,4 +389,49 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		expect(modificarPublicacionOperador).not.toHaveBeenCalled();
 		expect(revalidatePath).not.toHaveBeenCalled();
 	});
+});
+
+describe("autorización de cambios de publicaciones", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" });
+    });
+
+    it.each(["DELETE", "PATCH"] as const)("%s rechaza solicitudes sin sesión", async (metodo) => {
+        obtenerSesionMock.mockResolvedValue(null);
+        const handler = metodo === "DELETE" ? DELETE : PATCH;
+        const respuesta = await handler(new Request("http://localhost/api/publicaciones/15", { method: metodo }), {
+            params: Promise.resolve({ id: "15" }),
+        });
+        expect(respuesta.status).toBe(401);
+        expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+        expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+    });
+
+    it.each(["PRODUCTOR", "ADMINISTRADOR"] as const)("rechaza ambos cambios para %s", async (rol) => {
+        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
+        for (const handler of [DELETE, PATCH]) {
+            const respuesta = await handler(handler === PATCH ? solicitudEdicion() : new Request("http://localhost/api/publicaciones/15"), {
+                params: Promise.resolve({ id: "15" }),
+            });
+            expect(respuesta.status).toBe(403);
+        }
+        expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+        expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+    });
+
+    it.each(["DELETE", "PATCH"] as const)("%s rechaza el ID de un operador ajeno", async (metodo) => {
+        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+        obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Otro" });
+        const formulario = new FormData();
+        formulario.set("cambios", JSON.stringify({ presentacionId: 1, categoriaId: 1, calibreId: 1, paisId: 1 }));
+        const handler = metodo === "DELETE" ? DELETE : PATCH;
+        const respuesta = await handler(new Request("http://localhost/api/publicaciones/15?operadorId=7", {
+            method: metodo, ...(metodo === "PATCH" ? { body: formulario } : {}),
+        }), { params: Promise.resolve({ id: "15" }) });
+        expect(respuesta.status).toBe(403);
+        expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+        expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+        expect(vinculoPublicacionMock.first).not.toHaveBeenCalled();
+    });
 });

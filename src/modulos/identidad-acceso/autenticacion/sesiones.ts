@@ -6,7 +6,7 @@ const duracionSesionEnSegundos = 60 * 60 * 8;
 
 export type RolUsuario = "OPERADOR" | "ADMINISTRADOR" | "PRODUCTOR";
 
-type DatosSesion = {
+export type DatosSesion = {
     usuarioId: number;
     rol: RolUsuario;
     expiraEn: number;

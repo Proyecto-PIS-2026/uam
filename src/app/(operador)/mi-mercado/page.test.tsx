@@ -17,6 +17,7 @@ vi.mock("@/modulos/publicaciones/mi-mercado/componentes/VistaMiMercado", () => (
 
 import Page from "./page";
 import VistaMiMercado from "@/modulos/publicaciones/mi-mercado/componentes/VistaMiMercado";
+import * as autorizacion from "@/modulos/identidad-acceso/autorizacion/permisos";
 
 describe("/mi-mercado", () => {
     beforeEach(() => {
@@ -56,5 +57,34 @@ describe("/mi-mercado", () => {
 
         await expect(Page()).rejects.toThrow("No se encontr\u00f3 ning\u00fan operador de Mi Mercado.");
         expect(mocks.redirect).not.toHaveBeenCalled();
+    });
+});
+
+describe("acceso no autorizado a Mi Mercado", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it.each(["PRODUCTOR", "ADMINISTRADOR"] as const)("rechaza el acceso del rol %s", async (rol) => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
+        await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/inicio");
+        expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
+    });
+
+    it("mantiene el inicio de sesión para visitantes", async () => {
+        mocks.obtenerSesion.mockResolvedValue(null);
+        await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/iniciar-sesion");
+    });
+
+    it("comprueba el permiso antes de consultar el operador", async () => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+        const regla = vi.spyOn(autorizacion, "autorizado").mockReturnValue(false);
+        try {
+            await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
+            expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/inicio");
+            expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
+        } finally {
+            regla.mockRestore();
+        }
     });
 });

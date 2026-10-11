@@ -1,3 +1,4 @@
+import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { Temporal } from "@js-temporal/polyfill";
@@ -6,6 +7,10 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 const runtime = db.runtime();
 
 export async function obtenerEspeciesConPublicacionesActivas() {
+  if (!autorizado("operador.publicacion.consultar")) {
+      throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
+  }
+
   const especie = db.sql.public.especie;
   const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
 
@@ -84,6 +89,10 @@ export async function obtenerEspeciesInicio() {
 }
 
 export async function obtenerUrlListaInteligente() {
+  if (!autorizado("listaInteligente.consultar")) {
+      throw new Error("No tiene permisos para consultar la Lista Inteligente.");
+  }
+
   const configuracion = db.sql.public.configuracion;
   const plan = db.raw.sql`
     SELECT c."valorConfiguracion"

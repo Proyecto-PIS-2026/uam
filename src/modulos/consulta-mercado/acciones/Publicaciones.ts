@@ -1,3 +1,4 @@
+import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -26,6 +27,10 @@ export type ResultadoPublicaciones = {
 };
 
 export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> {
+    if (!autorizado("operador.publicacion.consultar")) {
+        throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
+    }
+
     const tablas = db.sql.public;
     const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
     const plan = db.raw.sql`

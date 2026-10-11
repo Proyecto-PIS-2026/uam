@@ -1,6 +1,15 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { ErrorAutorizacion, exigirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
+export async function obtenerOperadorPorId(operadorId: number) {
+    if (!Number.isSafeInteger(operadorId) || operadorId <= 0) return null;
+
+    return db.orm.public.Operador
+        .select("id", "usuarioId", "nombreFantasia")
+        .where({ id: operadorId })
+        .first();
+}
+
 export async function obtenerOperadorPorNombre(nombreFantasia: string) {
     if (!nombreFantasia.trim()) return null;
 

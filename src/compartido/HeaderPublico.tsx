@@ -8,7 +8,8 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { usePathname } from "next/navigation";
-import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
 
@@ -17,7 +18,7 @@ import estilos from "./HeaderPublico.module.css";
 type OpcionMenu = {
     nombre: string;
     ruta: string;
-    rol?: RolUsuario;
+    permitido?: (sesion: DatosSesion | null) => boolean;
     soloSinSesion?: boolean;
     ocultarParaOperador?: boolean;
 };
@@ -31,26 +32,29 @@ const opcionesMenu: OpcionMenu[] = [
     {
         nombre: "Publicaciones",
         ruta: "/publicaciones",
+        permitido: () => autorizado("operador.publicacion.consultar"),
         ocultarParaOperador: true,
     },
     {
         nombre: "Operadores",
         ruta: "/operadores",
+        permitido: () => autorizado("operador.catalogo.consultar"),
         ocultarParaOperador: true,
     },
     {
         nombre: "Precios de referencia",
         ruta: "/precios-referencia",
+        permitido: () => autorizado("preciosReferencia.consultar"),
     },
     {
         nombre: "Mi mercado",
         ruta: "/mi-mercado",
-        rol: "OPERADOR",
+        permitido: (sesion) => autorizado("operador.mercado.acceder", sesion),
     },
     {
         nombre: "Mi mercado",
         ruta: "/mi-mercado/productor",
-        rol: "PRODUCTOR",
+        permitido: (sesion) => autorizado("productor.mercado.acceder", sesion),
     },
     {
         nombre: "Iniciar sesión",
@@ -60,16 +64,17 @@ const opcionesMenu: OpcionMenu[] = [
     { 
         nombre: "Administración", 
         ruta: "/administracion",
-        rol: "ADMINISTRADOR",
+        permitido: (sesion) => autorizado("usuarios.cuentas.gestionar", sesion),
     }
 ];
 
 type PropiedadesEncabezado = {
-    rolUsuario: RolUsuario | null;
+    sesion: DatosSesion | null;
     fotoPerfil?: string | null;
 };
 
-export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: PropiedadesEncabezado) {
+export default function HeaderPublico({ sesion, fotoPerfil = null }: PropiedadesEncabezado) {
+    const rolUsuario = sesion?.rol ?? null;
     const [menuAbierto, cambiarMenuAbierto] = useState(false);
     const [menuUsuarioAbierto, cambiarMenuUsuarioAbierto] = useState(false);
     const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
@@ -78,7 +83,7 @@ export default function HeaderPublico({ rolUsuario, fotoPerfil = null }: Propied
     const rutaPrincipal = obtenerRutaPrincipal(rolUsuario);
     const opcionesVisibles = opcionesMenu.filter(
         (opcion) =>
-            (!opcion.rol || opcion.rol === rolUsuario) &&
+            (!opcion.permitido || opcion.permitido(sesion)) &&
             (!opcion.soloSinSesion || rolUsuario === null) &&
             (!opcion.ocultarParaOperador || rolUsuario !== "OPERADOR"),
     );

@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as autorizacion from "../../../identidad-acceso/autorizacion/permisos";
 import VistaMiMercado from "./VistaMiMercado";
 
 const mocks = vi.hoisted(() => ({
@@ -48,6 +49,7 @@ const opcionesEdicion = {
 
 describe("VistaMiMercado", () => {
     beforeEach(() => {
+        vi.restoreAllMocks();
         vi.clearAllMocks();
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Operador 13" });
@@ -66,6 +68,23 @@ describe("VistaMiMercado", () => {
         expect(vista.props.operadorId).toBe(13);
         expect(vista.props.nombreOperador).toBe("Operador 13");
         expect(vista.props.incrementoPrecio).toBe(25);
+    });
+
+    it("exige consultar publicaciones propias aunque se solicite abrir el alta", async () => {
+        vi.spyOn(autorizacion, "autorizado").mockImplementation((...argumentos) => argumentos[0] !== "operador.publicacion.consultarPropias");
+
+        await expect(VistaMiMercado({ abrirAltaInicial: true })).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.obtenerPublicaciones).not.toHaveBeenCalled();
+    });
+
+    it("permite consultar sin permiso de alta, pero rechaza abrir el formulario", async () => {
+        vi.spyOn(autorizacion, "autorizado").mockImplementation((...argumentos) => argumentos[0] !== "operador.publicacion.crear");
+
+        const vista = await VistaMiMercado({});
+        expect(vista.props.puedeCrear).toBe(false);
+        expect(mocks.obtenerPublicaciones).toHaveBeenCalledOnce();
+        await expect(VistaMiMercado({ abrirAltaInicial: true })).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.obtenerPublicaciones).toHaveBeenCalledOnce();
     });
 
     it("usa el operador propio indicado en la ruta", async () => {
@@ -96,6 +115,16 @@ describe("VistaMiMercado", () => {
         expect(mocks.redirect).toHaveBeenCalledWith("/iniciar-sesion");
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
         expect(mocks.obtenerOperadorPorNombre).not.toHaveBeenCalled();
+    });
+
+    it.each(["modificar", "eliminar"] as const)("propaga la denegación de %s sin impedir la consulta", async (accion) => {
+        vi.spyOn(autorizacion, "autorizado").mockImplementation((...argumentos) => argumentos[0] !== `operador.publicacion.${accion}`);
+
+        const vista = await VistaMiMercado({});
+
+        expect(vista.props.puedeModificar).toBe(accion !== "modificar");
+        expect(vista.props.puedeEliminar).toBe(accion !== "eliminar");
+        expect(mocks.obtenerPublicaciones).toHaveBeenCalledOnce();
     });
 
     it("responde 404 si el operador indicado no existe", async () => {

@@ -5,6 +5,9 @@ import { actualizarPrecio, cargarPublicacionesMiMercado } from "./acciones";
 import { PublicacionNoEncontradaError } from "./consultas-mi-mercado";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 
+const sesionMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: sesionMock }));
+
 const mocks = vi.hoisted(() => ({
     obtenerOperadorAutorizado: vi.fn(),
     actualizarPrecioPublicacion: vi.fn(),
@@ -38,6 +41,7 @@ vi.mock("next/cache", () => ({
 describe("actualizarPrecio", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.actualizarPrecioPublicacion.mockResolvedValue("2026-10-10T16:30:00Z");
     });
 
@@ -49,7 +53,7 @@ describe("actualizarPrecio", () => {
     });
 
     it("usa el operador autenticado cuando no se indica un ID", async () => {
-        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 13, nombreFantasia: "Frutas & Más" });
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Frutas & Más" });
 
         await actualizarPrecio(5, 110);
 
@@ -61,7 +65,7 @@ describe("actualizarPrecio", () => {
     });
 
     it("usa el operador indicado y revalida las vistas públicas", async () => {
-        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 37, usuarioId: 10, nombreFantasia: "Operador 37" });
 
         await actualizarPrecio(5, 110, 37);
 
@@ -72,7 +76,7 @@ describe("actualizarPrecio", () => {
     });
 
     it("no informa un fallo de precio si falla la revalidación después de guardarlo", async () => {
-        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 37, usuarioId: 10, nombreFantasia: "Operador 37" });
         mocks.revalidatePath.mockImplementationOnce(() => { throw new Error("Falló la caché"); });
         const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
 
@@ -88,7 +92,7 @@ describe("actualizarPrecio", () => {
     });
 
     it("mantiene el error cuando el precio no llegó a guardarse", async () => {
-        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 37, usuarioId: 10, nombreFantasia: "Operador 37" });
         mocks.actualizarPrecioPublicacion.mockRejectedValue(new Error("Error de base de datos"));
 
         await expect(actualizarPrecio(5, 110, 37)).rejects.toThrow("Error de base de datos");
@@ -96,7 +100,7 @@ describe("actualizarPrecio", () => {
     });
 
     it("informa la baja concurrente sin revalidar un precio no guardado", async () => {
-        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 37, nombreFantasia: "Operador 37" });
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 37, usuarioId: 10, nombreFantasia: "Operador 37" });
         mocks.actualizarPrecioPublicacion.mockRejectedValue(new PublicacionNoEncontradaError());
 
         await expect(actualizarPrecio(5, 110, 37)).resolves.toEqual({ publicacionEliminada: true });
@@ -128,6 +132,7 @@ describe("actualizarPrecio", () => {
 describe("cargarPublicacionesMiMercado", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
     });
 
     it("no carga publicaciones de otro operador", async () => {
@@ -139,7 +144,7 @@ describe("cargarPublicacionesMiMercado", () => {
     it("consulta nuevamente las publicaciones del operador seleccionado", async () => {
         const relaciones = [{ id: 2, publicacion: { id: 8 } }];
         const publicaciones = [{ id: 8 }];
-        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 13 });
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 13, usuarioId: 10 });
         mocks.obtenerPublicacionesDeOperador.mockResolvedValue(relaciones);
         mocks.mapearPublicacionesMiMercado.mockReturnValue(publicaciones);
 
@@ -156,5 +161,32 @@ describe("cargarPublicacionesMiMercado", () => {
         await expect(cargarPublicacionesMiMercado(99)).rejects.toThrow("No se encontró el operador");
 
         expect(mocks.obtenerPublicacionesDeOperador).not.toHaveBeenCalled();
+    });
+});
+
+describe("autorización de acciones de Mi Mercado", () => {
+    beforeEach(() => {
+        vi.resetAllMocks();
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Propio" });
+    });
+
+    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("impide actualizar el precio con sesión %s", async (rol) => {
+        sesionMock.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
+        await expect(actualizarPrecio(5, 110, 13)).rejects.toMatchObject({ status: rol ? 403 : 401 });
+        expect(mocks.actualizarPrecioPublicacion).not.toHaveBeenCalled();
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("comprueba el permiso de consulta antes de leer publicaciones", async () => {
+        sesionMock.mockResolvedValue({ usuarioId: 70, rol: "OPERADOR", expiraEn: 2000000000 });
+        await expect(cargarPublicacionesMiMercado(13)).rejects.toMatchObject({ status: 403 });
+        expect(mocks.obtenerPublicacionesDeOperador).not.toHaveBeenCalled();
+    });
+
+    it("comprueba el permiso de modificación antes de cambiar precios", async () => {
+        sesionMock.mockResolvedValue({ usuarioId: 70, rol: "OPERADOR", expiraEn: 2000000000 });
+        await expect(actualizarPrecio(5, 110, 13)).rejects.toMatchObject({ status: 403 });
+        expect(mocks.actualizarPrecioPublicacion).not.toHaveBeenCalled();
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 });

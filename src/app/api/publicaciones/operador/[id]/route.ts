@@ -1,9 +1,14 @@
+import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+	if (!autorizado("operador.publicacion.consultar")) {
+		return NextResponse.json({ errores: ["No tiene permisos para consultar publicaciones de Operadores."] }, { status: 403 });
+	}
+
 	const { id } = await context.params;
 	const operadorId = Number(id);
 	if (!Number.isSafeInteger(operadorId) || operadorId <= 0) {

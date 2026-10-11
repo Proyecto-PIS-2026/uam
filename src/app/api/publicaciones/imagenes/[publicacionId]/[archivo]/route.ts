@@ -1,3 +1,4 @@
+import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { leerImagenPublicacion, tipoContenidoImagen } from "../../../../../../modulos/publicaciones/operadores/imagenes-publicacion";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
@@ -11,6 +12,10 @@ type Contexto = {
 };
 
 export async function GET(_pedido: Request, contexto: Contexto): Promise<Response> {
+    if (!autorizado("operador.publicacion.consultar")) {
+        return new Response("No tiene permisos para consultar publicaciones de Operadores.", { status: 403 });
+    }
+
     const { publicacionId, archivo } = await contexto.params;
 
     if (!/^[1-9]\d*$/.test(publicacionId)) {

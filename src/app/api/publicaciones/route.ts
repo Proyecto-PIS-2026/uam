@@ -1,12 +1,16 @@
+import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { altaPublicacionOperador } from "@/modulos/publicaciones/altaPublicacionOperador";
 import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { revalidatePath } from "next/cache";
 
 export async function GET() {
+	if (!autorizado("operador.catalogo.consultar")) {
+		return NextResponse.json({ errores: ["No tiene permisos para consultar el catálogo de Operadores."] }, { status: 403 });
+	}
 	try {
 		const sesion = await obtenerSesion();
 		const operadoresAutorizados = sesion?.rol === "OPERADOR"
@@ -41,6 +45,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+	const sesion = await obtenerSesion();
+	if (!sesion) return NextResponse.json({ errores: ["Debe iniciar sesión."] }, { status: 401 });
+
 	let datos: unknown;
 	try {
 		datos = await request.json();
@@ -59,6 +66,9 @@ export async function POST(request: Request) {
 
 	try {
 		const operador = await obtenerOperadorAutorizado(operadorId);
+		if (!autorizado("operador.publicacion.crear", sesion, operador)) {
+			return NextResponse.json({ errores: ["No tiene permisos para gestionar publicaciones de este Operador."] }, { status: 403 });
+		}
 		const datosDelOperador = typeof datos === "object" && datos !== null && !Array.isArray(datos)
 			? { ...datos, operadorId: operador.id }
 			: datos;

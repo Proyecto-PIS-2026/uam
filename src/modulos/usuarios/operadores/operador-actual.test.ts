@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { obtenerOperadorActual, obtenerOperadorAutorizado, obtenerOperadorPorNombre } from "./operador-actual";
+import { obtenerOperadorActual, obtenerOperadorAutorizado, obtenerOperadorPorId, obtenerOperadorPorNombre } from "./operador-actual";
 
 const sesionMock = vi.hoisted(() => vi.fn());
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: sesionMock }));
@@ -71,5 +71,21 @@ describe("selección del operador de Mi Mercado", () => {
 
         await expect(obtenerOperadorPorNombre("No existe")).resolves.toBeNull();
         expect(operadorMock.where).toHaveBeenCalledExactlyOnceWith({ nombreFantasia: "No existe" });
+    });
+});
+
+describe("consulta del operador por ID", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it("consulta el operador indicado por su ID", async () => {
+        const operador = { id: 37, usuarioId: 11, nombreFantasia: "Operador 37" };
+        operadorMock.first.mockResolvedValue(operador);
+        await expect(obtenerOperadorPorId(37)).resolves.toBe(operador);
+        expect(operadorMock.where).toHaveBeenCalledExactlyOnceWith({ id: 37 });
+    });
+
+    it.each([0, -1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1])("rechaza el ID inválido %s antes de consultar", async (id) => {
+        await expect(obtenerOperadorPorId(id)).resolves.toBeNull();
+        expect(operadorMock.select).not.toHaveBeenCalled();
     });
 });
