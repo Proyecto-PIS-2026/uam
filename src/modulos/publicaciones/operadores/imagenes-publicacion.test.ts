@@ -15,6 +15,18 @@ const sistemaArchivos = vi.hoisted(() => ({
     unlink: vi.fn<(ruta: string) => Promise<void>>(),
 }));
 
+const obtenerSesionMock = vi.hoisted(() => vi.fn());
+const buscarPublicacion = vi.hoisted(() => vi.fn());
+
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
+    obtenerSesion: obtenerSesionMock,
+}));
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
+    db: { orm: { public: {
+        Publicacion: { select: () => ({ where: () => ({ first: buscarPublicacion }) }) },
+    } } },
+}));
+
 vi.mock("node:fs/promises", () => ({ ...sistemaArchivos, default: sistemaArchivos }));
 
 const UUID = "12345678-1234-4234-8234-123456789abc";
@@ -56,6 +68,8 @@ function errorArchivo(codigo: string): NodeJS.ErrnoException {
 
 beforeEach(() => {
     vi.resetAllMocks();
+    obtenerSesionMock.mockResolvedValue(null);
+    buscarPublicacion.mockResolvedValue({ id: 42 });
     sistemaArchivos.readFile.mockResolvedValue(PNG_PEQUENO);
     sistemaArchivos.unlink.mockResolvedValue(undefined);
 });
@@ -153,6 +167,8 @@ describe("eliminarImagenPublicacionGestionada", () => {
         null,
         "",
         "https://ejemplo.com/foto.png",
+        "/generico/tomate.jpg",
+        "data:image/png;base64,YWJj",
         `/api/publicaciones/imagenes/43/${NOMBRE_PNG}`,
         `/api/publicaciones/imagenes/420/${NOMBRE_PNG}`,
         `/api/publicaciones/imagenes/42/../${NOMBRE_PNG}`,
@@ -229,6 +245,16 @@ describe("GET de imágenes de publicaciones", () => {
         sistemaArchivos.readFile.mockRejectedValueOnce(errorArchivo("ENOENT"));
 
         expect((await pedir()).status).toBe(404);
+    });
+
+    it("no sirve un archivo remanente si la publicación fue eliminada", async () => {
+        buscarPublicacion.mockResolvedValue(null);
+
+        const respuesta = await pedir();
+
+        expect(respuesta.status).toBe(404);
+        expect(respuesta.headers.get("Cache-Control")).toBe("private, no-store");
+        expect(sistemaArchivos.readFile).not.toHaveBeenCalled();
     });
 
     it("propaga los errores de lectura distintos de ENOENT", async () => {

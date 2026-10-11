@@ -18,11 +18,6 @@
     padding: 1rem;
 }
 
-.tarjeta .hojasDrawer {
-    z-index: -1;
-    opacity: 0.08;
-}
-
 .bloqueSuperior {
     display: flex;
     height: auto;

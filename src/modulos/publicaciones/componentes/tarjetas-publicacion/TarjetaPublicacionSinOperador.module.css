@@ -106,18 +106,6 @@
     line-height: 1.2;
 }
 
-.operador {
-    min-width: 0;
-    margin: 0.2rem 0 0;
-    overflow: hidden;
-    color: var(--color-secondary);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 0.75rem;
-    font-weight: 400;
-    line-height: 1.2;
-}
-
 .informacionWeb {
     display: none;
 }
@@ -243,10 +231,6 @@
 
     .especie {
         font-size: 0.9rem;
-    }
-
-    .operador {
-        font-size: 0.7rem;
     }
 
     .informacionMobile {
@@ -422,18 +406,6 @@
         font-size: 1.0625rem;
     }
 
-    .operador {
-        margin-top: 6px;
-        color: var(--color-primary);
-        font-size: 0.75rem;
-        font-weight: 800;
-        line-height: 1.4;
-        letter-spacing: 0.025em;
-        text-transform: uppercase;
-        overflow-wrap: anywhere;
-        white-space: normal;
-    }
-
     .informacionWeb {
         display: block;
         margin: 6px 0 0;
@@ -527,7 +499,7 @@
     }
 }
 
-@media (min-width: 480) and (max-width: 767) {
+@media (min-width: 480px) and (max-width: 767px) {
     .consultarPrecio {
         color: var(--color-primary);
         font-size: 1.1rem;
@@ -536,7 +508,7 @@
     }
 }
 
-@media (min-width: 768) and (min-width: 1024px) {
+@media (min-width: 768px) and (min-width: 1024px) {
     .consultarPrecio {
         color: var(--color-primary);
         font-size: 1rem;

@@ -15,7 +15,7 @@
     margin: 0 auto;
     padding: 0 var(--padding-exterior-pagina);
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 2rem;
 }
 
@@ -37,6 +37,97 @@
     align-items: stretch;
     gap: 1.75rem;
     align-self: stretch;
+    margin-left: auto;
+}
+
+.menuOperador {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    margin-left: 1.75rem;
+    align-items: center;
+}
+
+.botonOperador {
+    display: flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.botonOperador:hover,
+.botonOperador:focus-visible {
+    border-color: var(--color-primary);
+    background: var(--color-surface);
+    outline: none;
+}
+
+.iconoOperador {
+    font-size: 1.85rem !important;
+}
+
+.fotoPerfil,
+.fotoPerfilMobile {
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.desplegableOperador {
+    display: flex;
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    right: 0;
+    z-index: 1200;
+    min-width: 11rem;
+    padding: 0.35rem;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    background: var(--color-surface);
+    box-shadow: 0 8px 20px rgb(0 0 0 / 12%);
+}
+
+.desplegableOperador a,
+.desplegableOperador button {
+    display: block;
+    padding: 0.6rem 0.75rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-foreground);
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.opcionDesplegable {
+    display: block;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: none;
+    background: none;
+    color: var(--color-muted);
+    font: inherit;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.desplegableOperador a:hover,
+.desplegableOperador button:hover,
+.opcionDesplegable:hover {
+    border-radius: 0.25rem;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
 }
 
 .enlace {
@@ -148,6 +239,11 @@
 
     .menuMobile {
         display: flex;
+        margin-left: auto;
+    }
+
+    .menuOperador {
+        display: none;
     }
 
     .navegacionMobile {
@@ -205,7 +301,36 @@
         background-color: var(--color-primary-soft);
         color: var(--color-primary);
     }
-}
+
+        .perfilMobile {
+            justify-content: space-between;
+            background: transparent;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .iconoPerfilMobile {
+            color: var(--color-primary);
+            font-size: 1.5rem !important;
+        }
+
+        .fotoPerfilMobile {
+            width: 1.75rem;
+            height: 1.75rem;
+        }
+
+        .cerrarSesionMobile {
+            width: 100%;
+            background: transparent;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            color: var(--color-foreground);
+        }
+    }
 
 @media (max-width: 380px) {
     .logo {
