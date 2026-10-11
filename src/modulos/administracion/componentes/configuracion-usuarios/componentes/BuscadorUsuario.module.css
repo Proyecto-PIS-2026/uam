@@ -1,0 +1,147 @@
+.contenedor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    margin: 0;
+}
+
+.buscador {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.buscador :global(input[type="search"])::-webkit-search-cancel-button {
+    filter: invert(94.63%) sepia(94%) saturate(1606%) hue-rotate(73.59deg) brightness(50.79%) contrast(173.72%);
+}
+
+.selectMui {
+    width: 100%;
+    min-width: 0;
+}
+
+.controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-left: auto;
+}
+
+.selectorRol {
+    display: grid;
+    width: max-content;
+    min-width: 7.5rem;
+    max-width: 100%;
+}
+
+.selectorRol::before {
+    content: attr(data-opcion-mas-larga);
+    grid-area: 1 / 1;
+    visibility: hidden;
+    white-space: nowrap;
+    padding: 0 2.5rem 0 0.875rem;
+    font-size: 1rem;
+}
+
+.controles .selectorRol .selectMui {
+    grid-area: 1 / 1;
+    width: 100%;
+    min-width: 0;
+}
+
+.selectorRolMovil {
+    display: none !important;
+    width: 2.75rem;
+    height: 2.75rem;
+}
+
+.selectorRolMovil :global(.MuiSelect-select) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    box-sizing: border-box;
+    padding: 0 !important;
+}
+
+.selectorRolMovil :global(.MuiSelect-icon) {
+    display: none;
+}
+
+.selectorRolMovil :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.selectorRolMovil:hover :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectorRolMovil:global(.Mui-focused) :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary) !important;
+    border-width: 2px !important;
+}
+
+.selectorRolMovil :global(svg) {
+    display: block;
+    margin: 0;
+    color: var(--color-border);
+}
+
+.selectorRolMovil:global(.Mui-focused) :global(svg) {
+    color: var(--color-primary);
+}
+
+.selectMui :global(.MuiOutlinedInput-root) {
+    background-color: var(--color-surface);
+}
+
+.selectMui :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.selectMui :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputBase-input) {
+    color: var(--color-foreground);
+}
+
+.opcionSelect:global(.Mui-selected) {
+    background-color: var(--color-primary-soft) !important;
+}
+
+@media (max-width: 600px) {
+    .contenedor {
+        flex-wrap: nowrap;
+    }
+
+    .buscador {
+        flex: 1;
+    }
+
+    .controles {
+        flex-shrink: 0;
+        margin-left: 0;
+    }
+
+    .selectorRol {
+        display: none !important;
+    }
+
+    .selectorRolMovil {
+        display: block !important;
+    }
+}

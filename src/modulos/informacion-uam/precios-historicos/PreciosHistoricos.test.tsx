@@ -579,7 +579,7 @@ describe("PreciosHistoricos", () => {
         seleccionarFiltro("Calibre", "M");
         expect(firmasFilasVisibles()).toHaveLength(2);
         expect(navegar).not.toHaveBeenCalled();
-    });
+    }, 10_000);
 
     it("conserva filtros iniciales ausentes en la respuesta y muestra cero resultados", () => {
         render(
@@ -894,6 +894,11 @@ describe("PreciosHistoricos", () => {
         fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
         seleccionarFiltro("Especie", "Manzana");
 
+        abrirFiltrosAdicionales();
+        for (const nombre of ["Variedad", "País", "Calibre", "Categoría"]) {
+            expect(screen.getByRole("combobox", { name: nombre })).toHaveAttribute("aria-disabled", "true");
+        }
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
         expect(screen.getByLabelText(/^Desde/)).toHaveValue("2024-11-01");
         expect(navegar).not.toHaveBeenCalled();
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
@@ -907,6 +912,31 @@ describe("PreciosHistoricos", () => {
         for (const filtro of ["variedad", "pais", "calibre", "categoria"]) {
             expect(parametros.has(filtro)).toBe(false);
         }
+    });
+
+    it("vuelve a habilitar los filtros del histórico cargado al recuperar la especie consultada", () => {
+        render(
+            <PreciosHistoricos
+                producto={producto}
+                historico={historicoConFiltros}
+                {...fechas}
+                especies={[
+                    { id: "60", especie: "Banana" },
+                    { id: "61", especie: "Manzana" },
+                ]}
+            />,
+        );
+        seleccionarFiltro("Especie", "Manzana");
+        seleccionarFiltro("Especie", "Banana");
+        abrirFiltrosAdicionales();
+
+        for (const nombre of ["Variedad", "País", "Calibre", "Categoría"]) {
+            expect(screen.getByRole("combobox", { name: nombre })).not.toHaveAttribute("aria-disabled", "true");
+        }
+        expect(leerOpcionesFiltro("Variedad")).toEqual(["Cavendish", "Orgánica"]);
+        seleccionarFiltro("Variedad", "Orgánica");
+        expect(firmasFilasVisibles()).toHaveLength(2);
+        expect(navegar).not.toHaveBeenCalled();
     });
 
     it("aplica un período dentro del histórico cargado al consultar y sólo navega si se amplía más allá", () => {

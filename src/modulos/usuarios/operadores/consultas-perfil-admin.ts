@@ -12,6 +12,7 @@ export type PublicacionPerfilAdmin = {
     paisId: number;
     foto: string | null;
     precio: string | null;
+    cantidadUnidades?: number | null;
     fecha: string;
     disponible: boolean; // El admin ve también las publicaciones no disponibles
     especie: string;
@@ -87,6 +88,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 "id",
                 "foto",
                 "precio",
+                "cantidadUnidades",
                 "fecha",
                 "publicacionActiva",
                 "publicacionDisponible",
@@ -127,6 +129,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 paisId: completa.paisId,
                 foto: publicacion.foto,
                 precio: publicacion.precio,
+                cantidadUnidades: publicacion.cantidadUnidades,
                 fecha: publicacion.fecha.toString(),
                 disponible: publicacion.publicacionDisponible,
                 especie: publicacion.presentacion.variedad.especie.nombreEspecie,

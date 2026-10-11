@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 import { obtenerPerfilAdminOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-admin";
 import { obtenerOpcionesEdicionPublicacion } from "../../../../modulos/publicaciones/operadores/consultas-edicion-publicacion";
@@ -11,8 +12,7 @@ type PageProps = {
 };
 
 export default async function Page({ params }: PageProps) {
-    // PENDIENTE (BP-04.4): verificar que el usuario sea Administrador
-    // con el mecanismo de identidad-acceso cuando esté implementado.
+    await requerirAdministrador();
 
     const { id } = await params;
     const [perfil, opciones] = await Promise.all([

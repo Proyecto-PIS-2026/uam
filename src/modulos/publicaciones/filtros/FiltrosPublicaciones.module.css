@@ -171,15 +171,6 @@
     grid-row: 5;
 }
 
-.inputPrecioError {
-    border-color: #d32f2f !important;
-}
-
-.inputPrecioError:focus {
-    border-color: #d32f2f !important;
-    box-shadow: 0 0 0 2px rgb(211 47 47 / 15%);
-}
-
 .selectMui {
     width: 100%;
     min-width: 0;
@@ -290,10 +281,6 @@
     font-weight: 600;
 }
 
-.rangoInvalido .barraOpciones {
-    grid-row: 5;
-}
-
 .rangoInvalido .filtrosExtendidos {
     grid-row: 6;
 }
@@ -301,11 +288,6 @@
 @media (max-width: 380px) {
     .contenedor {
         padding: 0.7rem;
-    }
-
-    .inputPrecio {
-        padding: 0 0.5rem;
-        font-size: 0.75rem;
     }
 
     .rangoInvalido .barraOpciones {
@@ -320,10 +302,6 @@
 @media (min-width: 420px) {
     .contenedor {
         padding: 1rem;
-    }
-
-    .inputPrecio {
-        font-size: 0.85rem;
     }
 
     .barraOpciones {

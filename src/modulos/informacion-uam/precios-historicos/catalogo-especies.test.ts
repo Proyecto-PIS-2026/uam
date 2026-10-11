@@ -4,14 +4,14 @@ import type { ConsultaPreciosReferencia } from "../precios-referencia/consultas-
 import { obtenerCatalogoEspeciesHistoricas } from "./catalogo-especies";
 
 const { listar, leerPorClave, transaccion, consultar } = vi.hoisted(() => ({
-    listar: vi.fn<() => Promise<{ nombreConfiguracion: string; valorConfiguracion: string }[]>>(),
+    listar: vi.fn<() => Promise<{ claveCache: string; estadoCache: string }[]>>(),
     leerPorClave: vi.fn(),
     transaccion: vi.fn(),
     consultar: vi.fn(),
 }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
-    db: { orm: { public: { Configuracion: { all: listar, where: leerPorClave } } }, transaction: transaccion },
+    db: { orm: { public: { CachePreciosReferencia: { all: listar, where: leerPorClave } } }, transaction: transaccion },
 }));
 vi.mock("../precios-referencia/cliente-webservice", () => ({ consultarUltimoRelevamiento: consultar }));
 
@@ -44,8 +44,8 @@ function dato(fecha = "2026-10-03"): ConsultaPreciosReferencia {
 
 function registro(nombre: string, consulta: ConsultaPreciosReferencia, ultimoExito = consulta.survey_date) {
     return {
-        nombreConfiguracion: "precios-referencia:latest:" + nombre,
-        valorConfiguracion: JSON.stringify({ version: 1, ultimoIntento: ultimoExito, ultimoExito, consulta }),
+        claveCache: "precios-referencia:latest:" + nombre,
+        estadoCache: JSON.stringify({ version: 1, ultimoIntento: ultimoExito, ultimoExito, consulta }),
     };
 }
 
@@ -73,8 +73,8 @@ describe("obtenerUltimoRelevamientoGuardado", () => {
         const reciente = dato();
         listar.mockResolvedValue([
             registro("anterior", dato("2026-10-01")),
-            { nombreConfiguracion: "otra-configuracion", valorConfiguracion: "valor" },
-            { nombreConfiguracion: "precios-referencia:latest:corrupta", valorConfiguracion: "{" },
+            { claveCache: "otra-configuracion", estadoCache: "valor" },
+            { claveCache: "precios-referencia:latest:corrupta", estadoCache: "{" },
             registro("reciente", reciente),
         ]);
 
@@ -99,8 +99,8 @@ describe("obtenerUltimoRelevamientoGuardado", () => {
 
     it("devuelve null sin llamar al servicio cuando no hay una caché válida", async () => {
         listar.mockResolvedValue([{
-            nombreConfiguracion: "precios-referencia:latest:fallo",
-            valorConfiguracion: JSON.stringify({ version: 1, ultimoIntento: "2026-10-03", ultimoExito: null, consulta: null }),
+            claveCache: "precios-referencia:latest:fallo",
+            estadoCache: JSON.stringify({ version: 1, ultimoIntento: "2026-10-03", ultimoExito: null, consulta: null }),
         }]);
 
         await expect(obtenerUltimoRelevamientoGuardado()).resolves.toBeNull();

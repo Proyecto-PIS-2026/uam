@@ -38,7 +38,7 @@ describe("/mi-mercado/productor", () => {
             vi.mocked(obtenerSesion).mockResolvedValue({ usuarioId: 1, rol, expiraEn: 2000000000 });
 
             await expect(PaginaMiMercadoProductor()).rejects.toThrow("REDIRECCION");
-            expect(redireccionSimulada).toHaveBeenCalledExactlyOnceWith("/inicio");
+            expect(redireccionSimulada).toHaveBeenCalledExactlyOnceWith(rol === "OPERADOR" ? "/mi-mercado" : "/inicio");
         },
     );
 });

@@ -4,6 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import Page from "./page";
 
 const mocks = vi.hoisted(() => ({
+    requerirAdministrador: vi.fn(),
     obtenerPerfil: vi.fn(),
     obtenerOpciones: vi.fn(),
     // El notFound real corta la ejecución lanzando un error; el falso hace lo mismo
@@ -11,6 +12,10 @@ const mocks = vi.hoisted(() => ({
         throw new Error("NEXT_NOT_FOUND");
     }),
     propsPerfil: vi.fn(),
+}));
+
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
+    requerirAdministrador: mocks.requerirAdministrador,
 }));
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
@@ -41,8 +46,17 @@ const opciones = { especies: [], variedades: [], presentaciones: [], categorias:
 describe("Página de perfil del operador para el administrador", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.requerirAdministrador.mockResolvedValue(undefined);
         mocks.obtenerPerfil.mockResolvedValue(perfil);
         mocks.obtenerOpciones.mockResolvedValue(opciones);
+    });
+
+    it("no consulta el perfil ni opciones si la autorización falla", async () => {
+        mocks.requerirAdministrador.mockRejectedValueOnce(new Error("NEXT_REDIRECT"));
+
+        await expect(Page(props("12"))).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.obtenerPerfil).not.toHaveBeenCalled();
+        expect(mocks.obtenerOpciones).not.toHaveBeenCalled();
     });
 
     afterEach(() => {

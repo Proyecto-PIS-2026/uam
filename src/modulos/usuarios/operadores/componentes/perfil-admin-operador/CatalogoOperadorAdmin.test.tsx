@@ -34,6 +34,7 @@ const publicacionBase: PublicacionPerfilAdmin = {
     paisId: 44,
     foto: null,
     precio: "120.00",
+    cantidadUnidades: 20,
     fecha: "2026-10-01T12:00:00Z",
     disponible: true,
     especie: "Tomate",
@@ -115,6 +116,7 @@ describe("CatalogoOperadorAdmin", () => {
             calibreId: 4,
             paisId: 44,
             disponible: true,
+            cantidadUnidades: 20,
         }));
         expect(props.especies).toBe(opciones.especies);
         expect(props.paises).toBe(opciones.paises);
@@ -133,4 +135,3 @@ describe("CatalogoOperadorAdmin", () => {
         expect(ultimasPropsDrawer().abierto).toBe(false);
     });
 });
-

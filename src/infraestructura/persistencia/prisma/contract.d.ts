@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'090c3a8f7ee1cafc69f331595d913a1e306bd4d66ae029c517f6a15f4dd6e864'>;
+  StorageHashBase<'6199bcda0d7cc5d6c1bb7b01b0d8bc41bcb8252696ec6d8cad02dbeaf8f84b57'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -246,6 +246,11 @@ export type FieldOutputTypes = {
       readonly usuarioId: CodecTypes['pg/int4@1']['output'];
       readonly email: CodecTypes['pg/text@1']['output'];
     };
+    readonly CachePreciosReferencia: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly claveCache: CodecTypes['pg/text@1']['output'];
+      readonly estadoCache: CodecTypes['pg/text@1']['output'];
+    };
     readonly Calibre: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly codigoCalibre: CodecTypes['pg/text@1']['output'];
@@ -368,6 +373,11 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly usuarioId: CodecTypes['pg/int4@1']['input'];
       readonly email: CodecTypes['pg/text@1']['input'];
+    };
+    readonly CachePreciosReferencia: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly claveCache: CodecTypes['pg/text@1']['input'];
+      readonly estadoCache: CodecTypes['pg/text@1']['input'];
     };
     readonly Calibre: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -492,6 +502,11 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly usuarioId: CodecTypes['pg/int4@1']['output'];
     };
+    readonly cachePreciosReferencia: {
+      readonly claveCache: CodecTypes['pg/text@1']['output'];
+      readonly estadoCache: CodecTypes['pg/text@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+    };
     readonly calibre: {
       readonly codigoCalibre: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -614,6 +629,11 @@ export type StorageColumnInputTypes = {
       readonly email: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly usuarioId: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly cachePreciosReferencia: {
+      readonly claveCache: CodecTypes['pg/text@1']['input'];
+      readonly estadoCache: CodecTypes['pg/text@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
     };
     readonly calibre: {
       readonly codigoCalibre: CodecTypes['pg/text@1']['input'];
@@ -791,6 +811,33 @@ type ContractBase = Omit<
                   };
                 },
               ];
+            };
+            readonly cachePreciosReferencia: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly claveCache: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly estadoCache: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['claveCache'] }];
+              indexes: readonly [];
+              foreignKeys: readonly [];
             };
             readonly calibre: {
               columns: {
@@ -1806,6 +1853,10 @@ type ContractBase = Omit<
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Configuracion';
     };
+    readonly cachePreciosReferencia: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'CachePreciosReferencia';
+    };
   };
   readonly domain: {
     readonly namespaces: {
@@ -1846,6 +1897,32 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly usuarioId: { readonly column: 'usuarioId' };
                 readonly email: { readonly column: 'email' };
+              };
+            };
+          };
+          readonly CachePreciosReferencia: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly claveCache: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly estadoCache: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'cachePreciosReferencia';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly claveCache: { readonly column: 'claveCache' };
+                readonly estadoCache: { readonly column: 'estadoCache' };
               };
             };
           };

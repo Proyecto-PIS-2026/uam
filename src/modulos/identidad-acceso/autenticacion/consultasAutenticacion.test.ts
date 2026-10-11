@@ -2,7 +2,6 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-    obtenerOperadorAutenticadoPorUsuarioId,
     obtenerUsuarioAdministradorPorCorreo,
     obtenerUsuarioOperadorPorNombre,
     obtenerUsuarioProductorPorNombre,
@@ -11,7 +10,6 @@ import {
 const baseSimulada = vi.hoisted(() => ({
     usuario: { select: vi.fn(), where: vi.fn(), first: vi.fn() },
     administrador: { select: vi.fn(), where: vi.fn(), first: vi.fn() },
-    operador: { select: vi.fn(), where: vi.fn(), first: vi.fn() },
 }));
 
 vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
@@ -20,7 +18,6 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
             public: {
                 Usuario: baseSimulada.usuario,
                 Administrador: baseSimulada.administrador,
-                Operador: baseSimulada.operador,
             },
         },
     },
@@ -80,18 +77,5 @@ describe("obtenerUsuarioAdministradorPorCorreo", () => {
 
         expect(await obtenerUsuarioAdministradorPorCorreo("admin@ejemplo.com"))
             .toBeNull();
-    });
-});
-
-describe("obtenerOperadorAutenticadoPorUsuarioId", () => {
-    it("obtiene el operador asociado al usuario de la sesion", async () => {
-        baseSimulada.operador.first.mockResolvedValue({ id: 10 });
-
-        expect(await obtenerOperadorAutenticadoPorUsuarioId(4)).toEqual({ id: 10 });
-        expect(baseSimulada.operador.where).toHaveBeenCalledWith({ usuarioId: 4 });
-    });
-
-    it("devuelve null cuando el usuario no tiene un operador", async () => {
-        expect(await obtenerOperadorAutenticadoPorUsuarioId(4)).toBeNull();
     });
 });

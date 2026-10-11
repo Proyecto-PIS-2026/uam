@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -56,12 +57,16 @@ function crearPublicacion(): Publicacion {
 
 describe("TarjetaPublicacion", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+      vi.clearAllMocks();
+      vi.mocked(actualizarPrecio).mockResolvedValue({
+          publicacionEliminada: false,
+          fecha: "2026-10-10T16:30:00Z",
+      });
   });
 
   it("muestra los datos principales de la publicación", () => {
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
@@ -87,7 +92,7 @@ describe("TarjetaPublicacion", () => {
     pub.publicacionDisponible = false;
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -100,7 +105,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.variedad.nombreVariedad = "-";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(screen.getByText("Manzana")).toBeInTheDocument();
@@ -115,7 +120,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.variedad.nombreVariedad = "";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(screen.getByText("Manzana")).toBeInTheDocument();
@@ -126,7 +131,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.variedad.nombreVariedad = "   ";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(screen.getByText("Manzana")).toBeInTheDocument();
@@ -140,7 +145,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.nombrePresentacion = "";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -156,7 +161,7 @@ describe("TarjetaPublicacion", () => {
       "/especie.jpg";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -169,7 +174,7 @@ describe("TarjetaPublicacion", () => {
   it("muestra el reemplazo si la URL de la foto ya no existe", () => {
     const pub = crearPublicacion();
     pub.foto = "/api/publicaciones/imagenes/1/foto-perdida.jpg";
-    render(<TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />);
+    render(<TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />);
 
     fireEvent.error(screen.getByRole("img", { name: "Manzana · Red Delicious" }));
 
@@ -185,7 +190,7 @@ describe("TarjetaPublicacion", () => {
       "/especie.jpg";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
@@ -199,7 +204,7 @@ describe("TarjetaPublicacion", () => {
     pub.presentacion.variedad.especie.fotoEspecie = null;
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -212,7 +217,7 @@ describe("TarjetaPublicacion", () => {
     pub.precio = null;
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
     expect(
@@ -223,7 +228,7 @@ describe("TarjetaPublicacion", () => {
   it("aumenta el precio con el botón", async () => {
     const alPrecioActualizado = vi.fn();
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
@@ -244,13 +249,13 @@ describe("TarjetaPublicacion", () => {
       110,
       37,
     );
-    expect(alPrecioActualizado).toHaveBeenCalledOnce();
+    expect(alPrecioActualizado).toHaveBeenCalledExactlyOnceWith(1, 110, "2026-10-10T16:30:00Z");
   });
 
   it("recarga la página sin mostrar error si otra persona eliminó la publicación", async () => {
     vi.mocked(actualizarPrecio).mockResolvedValueOnce({ publicacionEliminada: true });
     const alPublicacionEliminada = vi.fn();
-    render(<TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} alPublicacionEliminada={alPublicacionEliminada} />);
+    render(<TarjetaPublicacion puedeModificar={true} pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} alPublicacionEliminada={alPublicacionEliminada} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
 
@@ -258,23 +263,59 @@ describe("TarjetaPublicacion", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("muestra un mensaje breve si falla el servidor al guardar el precio", async () => {
-    vi.mocked(actualizarPrecio).mockRejectedValueOnce(new Error("Minified React error #441"));
-    const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
-    try {
-      render(<TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />);
-      fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+  it("muestra un error si falla el servidor al guardar el precio", async () => {
+    vi.mocked(actualizarPrecio).mockRejectedValueOnce(
+      new Error("No se pudo guardar el precio."),
+    );
+    render(
+      <TarjetaPublicacion
+        puedeModificar={true}
+        pub={crearPublicacion()}
+        incrementoPrecio={10}
+        operadorId={37}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "No se pudo guardar el precio.",
+      );
+    });
+    expect(screen.getByText("$100")).toBeInTheDocument();
+  });
 
-      await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo guardar el precio. Intentá de nuevo."));
-      expect(screen.queryByText(/Minified React error/)).not.toBeInTheDocument();
-    } finally {
-      registrarError.mockRestore();
-    }
+  it("conserva la fecha confirmada y revierte el precio si falla el siguiente cambio", async () => {
+    const fechaGuardada = "2026-10-10T17:15:00Z";
+    let confirmarPrimero: () => void = () => undefined;
+    vi.mocked(actualizarPrecio)
+      .mockImplementationOnce(() => new Promise<Awaited<ReturnType<typeof actualizarPrecio>>>((resolve) => {
+        confirmarPrimero = () => resolve({ publicacionEliminada: false, fecha: fechaGuardada });
+      }))
+      .mockRejectedValueOnce(new Error("No se pudo guardar el segundo cambio."));
+    const alPrecioActualizado = vi.fn();
+    render(<TarjetaPublicacion puedeModificar={true} pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} alPrecioActualizado={alPrecioActualizado} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+    expect(screen.getByRole("button", { name: "Aumentar precio" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Disminuir precio" })).toBeDisabled();
+    expect(screen.getByTitle("Editar precio")).toBeDisabled();
+    expect(alPrecioActualizado).not.toHaveBeenCalled();
+
+    await act(async () => confirmarPrimero());
+    expect(alPrecioActualizado).toHaveBeenCalledExactlyOnceWith(1, 110, fechaGuardada);
+    expect(screen.getByRole("button", { name: "Aumentar precio" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo guardar el segundo cambio."));
+    expect(actualizarPrecio).toHaveBeenNthCalledWith(1, 1, 110, 37);
+    expect(actualizarPrecio).toHaveBeenNthCalledWith(2, 1, 120, 37);
+    expect(screen.getByText("$110")).toBeInTheDocument();
+    expect(alPrecioActualizado).toHaveBeenNthCalledWith(2, 1, 110, undefined);
   });
 
   it("disminuye el precio con el botón", async () => {
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
@@ -301,22 +342,24 @@ describe("TarjetaPublicacion", () => {
     pub.precio = "5";
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion
+        puedeModificar={true}
+        pub={pub}
+        incrementoPrecio={10}
+        operadorId={37}
+      />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Disminuir precio",
-      }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Disminuir precio" }));
 
     expect(screen.getByText("$5")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(actualizarPrecio).not.toHaveBeenCalled();
   });
 
   it("permite editar manualmente el precio", async () => {
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
@@ -352,7 +395,7 @@ describe("TarjetaPublicacion", () => {
 
   it.each(["125,5", "125.5"])("rechaza el precio decimal %s al escribirlo", (precioDecimal) => {
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
@@ -385,7 +428,7 @@ describe("TarjetaPublicacion", () => {
 
   it("cancela la edición manual con Escape", () => {
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
@@ -417,7 +460,7 @@ describe("TarjetaPublicacion", () => {
 
   it("descarta un precio manual vacío", () => {
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
@@ -449,7 +492,7 @@ describe("TarjetaPublicacion", () => {
 
   it("impide escribir un precio manual negativo", () => {
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
@@ -483,7 +526,7 @@ describe("TarjetaPublicacion", () => {
 
   it("impide escribir un precio manual no numérico", () => {
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
@@ -517,7 +560,7 @@ describe("TarjetaPublicacion", () => {
 
   it("no guarda el precio cuando no se modificó", () => {
     render(
-      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />,
     );
 
     fireEvent.click(screen.getByTitle("Editar precio"));
@@ -529,7 +572,7 @@ describe("TarjetaPublicacion", () => {
 
   it("impide escribir precios de más de diez dígitos", () => {
     render(
-      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />,
+      <TarjetaPublicacion puedeModificar={true} pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />,
     );
 
     fireEvent.click(screen.getByTitle("Editar precio"));
@@ -552,7 +595,7 @@ describe("TarjetaPublicacion", () => {
     const alConsultar = vi.fn();
 
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={pub}
         incrementoPrecio={10}
         operadorId={37}
@@ -575,7 +618,7 @@ describe("TarjetaPublicacion", () => {
     const alConsultar = vi.fn();
 
     render(
-      <TarjetaPublicacion
+      <TarjetaPublicacion puedeModificar={true}
         pub={pub}
         incrementoPrecio={10}
         operadorId={37}
@@ -594,7 +637,7 @@ describe("TarjetaPublicacion", () => {
     const alConsultar = vi.fn();
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} alConsultar={alConsultar} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} alConsultar={alConsultar} />,
     );
 
     fireEvent.click(
@@ -611,7 +654,7 @@ describe("TarjetaPublicacion", () => {
     const alConsultar = vi.fn();
 
     render(
-      <TarjetaPublicacion pub={pub} incrementoPrecio={10} operadorId={37} alConsultar={alConsultar} />,
+      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} alConsultar={alConsultar} />,
     );
 
     fireEvent.click(
@@ -627,27 +670,38 @@ describe("TarjetaPublicacion", () => {
     expect(alConsultar).toHaveBeenCalledWith({ ...pub, precio: "110" });
   });
 
-  it("no consulta mientras se está guardando el precio", async () => {
-    let finalizarGuardado: () => void = () => undefined;
-    vi.mocked(actualizarPrecio).mockImplementationOnce(() => new Promise<{ publicacionEliminada: boolean }>((resolve) => {
-      finalizarGuardado = () => resolve({ publicacionEliminada: false });
-    }));
-    const alConsultar = vi.fn();
-
-    render(
-      <TarjetaPublicacion pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} alConsultar={alConsultar} />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
-    fireEvent.click(screen.getByText("Manzana · Red Delicious"));
-
-    expect(alConsultar).not.toHaveBeenCalled();
-
-    finalizarGuardado();
-    await waitFor(() => expect(screen.getByText("$110")).toBeInTheDocument());
-
-    fireEvent.click(screen.getByText("Manzana · Red Delicious"));
-
-    expect(alConsultar).toHaveBeenCalledWith(expect.objectContaining({ precio: "110" }));
+  it("permite consultar la publicación mientras se guarda el precio", async () => {
+      let finalizarGuardado: () => void = () => undefined;
+      vi.mocked(actualizarPrecio).mockImplementationOnce(
+          () =>
+              new Promise<Awaited<ReturnType<typeof actualizarPrecio>>>((resolve) => {
+                  finalizarGuardado = () =>
+                      resolve({ publicacionEliminada: false, fecha: "2026-10-10T16:30:00Z" });
+              })
+      );
+      const alConsultar = vi.fn();
+      render(
+          <TarjetaPublicacion puedeModificar={true}
+              pub={crearPublicacion()}
+              incrementoPrecio={10}
+              operadorId={37}
+              alConsultar={alConsultar}
+          />
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+      fireEvent.click(screen.getByText("Manzana · Red Delicious"));
+      expect(alConsultar).toHaveBeenCalledWith(expect.objectContaining({ precio: "110" }));
+      finalizarGuardado();
+      await waitFor(() => {expect(actualizarPrecio).toHaveBeenCalledOnce()});
   });
+  it("deshabilita los cambios de precio sin permiso de modificar", () => {
+    render(<TarjetaPublicacion puedeModificar={false} pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />);
+
+    expect(screen.getByRole("button", { name: "Aumentar precio" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Disminuir precio" })).toBeDisabled();
+    expect(screen.getByTitle("Editar precio")).toBeDisabled();
+    fireEvent.click(screen.getByTitle("Editar precio"));
+    expect(screen.queryByRole("textbox", { name: "Editar precio" })).not.toBeInTheDocument();
+  });
+
 });

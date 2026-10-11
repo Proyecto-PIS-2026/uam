@@ -90,15 +90,6 @@
     background-color: var(--color-surface);
 }
 
-.listaLocales {
-    display: grid;
-    margin: 0;
-    padding: 0;
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-    list-style: none;
-}
-
 .dato {
     margin: 0 0 1rem;
     font-size: 0.875rem;
@@ -152,14 +143,6 @@
 
 .finContrato {
     color: #5f5f5f;
-}
-
-.separadorLocal {
-    color: #5f5f5f;
-}
-
-.numeroLocal {
-    color: var(--color-foreground);
 }
 
 .imagenOperador {

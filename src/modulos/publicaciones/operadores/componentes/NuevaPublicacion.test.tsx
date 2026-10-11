@@ -66,6 +66,17 @@ describe("NuevaPublicacion", () => {
         await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
     });
 
+    it("ajusta el precio con el incremento configurado", async () => {
+        render(<NuevaPublicacion operadorId={9} incrementoPrecio={25} abierto alCerrar={mocks.alCerrar} alCrear={mocks.alCrear} />);
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
+        const precio = screen.getByLabelText("Precio en pesos");
+        fireEvent.change(precio, { target: { value: "100" } });
+        fireEvent.click(screen.getByRole("button", { name: "Aumentar precio en 25" }));
+        expect(precio).toHaveValue("125");
+        fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 25" }));
+        expect(precio).toHaveValue("100");
+    });
+
     it("conserva únicamente dígitos en el precio", () => {
         renderDrawer();
         const precio = screen.getByLabelText("Precio en pesos");

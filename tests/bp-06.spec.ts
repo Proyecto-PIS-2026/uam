@@ -1,8 +1,11 @@
+
 import { test, expect } from "@playwright/test";
+import { iniciarSesionOperador } from "./autenticacion";
 
 test("BP-06: modificación rápida del precio", async ({ page }) => {
   const rutaMercado = "/mi-mercado";
 
+  await iniciarSesionOperador(page);
   await page.goto(rutaMercado);
 
   await expect(
@@ -15,22 +18,20 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
 
   await expect(botonPrecio).toBeVisible();
 
-  const tarjeta = botonPrecio.locator(
-    'xpath=ancestor::div[contains(@class,"rounded-2xl")][1]',
-  );
+  const controlesPrecio = botonPrecio.locator("..");
 
-  const aumentar = tarjeta.getByRole("button", {
+  const aumentar = controlesPrecio.getByRole("button", {
     name: "Aumentar precio",
   });
 
-  const disminuir = tarjeta.getByRole("button", {
+  const disminuir = controlesPrecio.getByRole("button", {
     name: "Disminuir precio",
   });
 
   // CA-1 y CA-2
   await expect(aumentar).toBeVisible();
   await expect(disminuir).toBeVisible();
-  await expect(tarjeta.getByTitle("Editar precio")).toBeVisible();
+  await expect(controlesPrecio.getByTitle("Editar precio")).toBeVisible();
 
   const textoInicial = await botonPrecio.textContent();
 
@@ -47,7 +48,7 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
     aumentoRealizado = true;
 
     await expect(
-      tarjeta.getByRole("button", {
+      controlesPrecio.getByRole("button", {
         name: `$${precioInicial + 10}`,
         exact: true,
       }),
@@ -62,11 +63,12 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
       await disminuir.click();
 
       await expect(
-        tarjeta.getByRole("button", {
+        controlesPrecio.getByRole("button", {
           name: `$${precioInicial}`,
           exact: true,
         }),
       ).toBeVisible();
+      await expect(disminuir).toBeEnabled();
     }
   }
 });

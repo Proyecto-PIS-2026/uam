@@ -89,6 +89,25 @@ function seleccionarFoto(foto: File) {
 }
 
 describe("DrawerEditarPublicacion", () => {
+    it.each(["modificar", "eliminar"] as const)("deshabilita únicamente la acción %s denegada", (accion) => {
+        render(
+            <DrawerEditarPublicacion
+                {...props}
+                modoInicial="consulta"
+                alGuardar={accion === "modificar" ? undefined : mocks.guardar}
+                alEliminar={accion === "eliminar" ? undefined : mocks.eliminar}
+            />,
+        );
+
+        const editar = screen.getByRole("button", { name: "Editar" });
+        const eliminar = screen.getByRole("button", { name: "Eliminar" });
+        expect(editar).toHaveProperty("disabled", accion === "modificar");
+        expect(eliminar).toHaveProperty("disabled", accion === "eliminar");
+        fireEvent.click(accion === "modificar" ? editar : eliminar);
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        expect(mocks.eliminar).not.toHaveBeenCalled();
+        expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
+    });
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.mediaQuery.mockReturnValue(false);
@@ -128,6 +147,15 @@ describe("DrawerEditarPublicacion", () => {
         render(<DrawerEditarPublicacion {...props} abierto={abierto} publicacion={publicacion} />);
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("utiliza el incremento configurado al editar el precio", () => {
+        render(<DrawerEditarPublicacion {...props} incrementoPrecio={25} />);
+        const precio = screen.getByLabelText("Precio en pesos");
+        fireEvent.click(screen.getByRole("button", { name: "Aumentar precio en 25" }));
+        expect(precio).toHaveValue("125");
+        fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 25" }));
+        expect(precio).toHaveValue("100");
     });
 
     it.each([false, true])("muestra los datos sin permitir modificarlos en consulta con web=%s", (esWeb) => {

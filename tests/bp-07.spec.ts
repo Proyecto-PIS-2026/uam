@@ -1,4 +1,5 @@
 import { test, expect, type Locator } from "@playwright/test";
+import { iniciarSesionOperador } from "./autenticacion";
 
 test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
   test.slow();
@@ -19,7 +20,9 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
   function tarjeta(precio: string) {
     return page
       .getByRole("button", { name: `$${precio}`, exact: true })
-      .locator('xpath=ancestor::div[contains(@class,"rounded-2xl")][1]');
+      .locator(
+        'xpath=ancestor::div[.//button[@aria-label="Aumentar precio"] and .//button[@aria-label="Disminuir precio"] and .//button[contains(@aria-label, "Ver detalle de")]][1]',
+      );
   }
 
   async function crear(calibre: string, precio: string) {
@@ -74,6 +77,7 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     await expect(tarjeta(precio)).toHaveCount(0);
   }
 
+  await iniciarSesionOperador(page);
   await page.goto(rutaMercado);
   await expect(
     page.getByRole("heading", { name: "Mi Mercado" }),

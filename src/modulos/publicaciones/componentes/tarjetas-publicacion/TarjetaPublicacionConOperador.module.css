@@ -540,7 +540,7 @@
     }
 }
 
-@media (min-width: 480) and (max-width: 767) {
+@media (min-width: 480px) and (max-width: 767px) {
     .consultarPrecio {
         color: var(--color-primary);
         font-size: 1.1rem;
@@ -549,7 +549,7 @@
     }
 }
 
-@media (min-width: 768) and (min-width: 1024px) {
+@media (min-width: 768px) and (min-width: 1024px) {
     .consultarPrecio {
         color: var(--color-primary);
         font-size: 1rem;
