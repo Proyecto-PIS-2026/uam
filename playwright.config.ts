@@ -2,6 +2,13 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: ['**/.app/**'],
+  webServer: process.env.PLAYWRIGHT_TEST_BASE_URL ? undefined : {
+    command: 'node tests/bp-17/e2e-server.mjs',
+    url: 'http://127.0.0.1:3100/precios-referencia',
+    reuseExistingServer: false,
+    timeout: 120_000,
+  },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -12,7 +19,7 @@ export default defineConfig({
 
   use: {
     // MIGRACIÓN REAL: Modificar 'http://localhost:3000' si el puerto de desarrollo local de Next.js cambia
-    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://127.0.0.1:3100',
     trace: 'on-first-retry',
 
     // Se pueden guardar fotos y videos automáticos de las pantallas cuando un test falle con:
