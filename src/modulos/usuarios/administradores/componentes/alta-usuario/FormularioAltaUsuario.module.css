@@ -20,32 +20,6 @@
     color: var(--color-foreground);
 }
 
-.obligatorio {
-    color: #ef4444;
-}
-
-.input,
-.select {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    background-color: var(--color-surface);
-    color: var(--color-foreground);
-    outline: none;
-}
-
-.input:focus,
-.select:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px color-mix(
-        in srgb,
-        var(--color-primary) 20%,
-        transparent
-    );
-}
-
 .botonSecundario {
     flex-shrink: 0;
     padding: 0.55rem 0.85rem;

@@ -10,7 +10,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import Image from "next/image";
-// import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 import type { DatosAltaPublicacionOperador } from "../../validarAltaPublicacionOperador";
 import { ordenarOpcionesPorNombre } from "../ordenar-opciones";
 import drawerStyles from "./DrawerEditarPublicacion.module.css";
@@ -28,6 +27,7 @@ type Catalogos = {
 type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia"> & { precio: string; cantidadUnidades: string; fotografia: string };
 type NuevaPublicacionProps = {
     operadorId: number;
+    incrementoPrecio?: number;
     abierto: boolean;
     alCerrar: () => void;
     alCrear: (mensaje: string) => void;
@@ -49,7 +49,7 @@ function CampoSelect({ nombre, valor, opciones, cambiar, deshabilitado = false }
     );
 }
 
-export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrear }: NuevaPublicacionProps) {
+export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, abierto, alCerrar, alCrear }: NuevaPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
     const [datos, setDatos] = useState<Formulario>({
@@ -180,7 +180,6 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
 
     return (
         <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} slotProps={{ paper: { className: drawerStyles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": "titulo-nueva-publicacion" } }}>
-            {/* <HojasDecorativas variante="fondo" className={drawerStyles.hojasDrawer} /> */}
             <div className={drawerStyles.asa} aria-hidden="true" />
             <header className={drawerStyles.encabezado}>
                 <h1 id="titulo-nueva-publicacion" className={drawerStyles.titulo}>Nueva publicación</h1>
@@ -217,9 +216,9 @@ export default function NuevaPublicacion({ operadorId, abierto, alCerrar, alCrea
                     <div className={drawerStyles.campo}>
                         <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-precio">Precio en pesos</label>
                         <div className={drawerStyles.controlesPrecio}>
-                            <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-10)} disabled={guardando} aria-label="Disminuir precio en 10">−</button>
+                            <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={guardando} aria-label={`Disminuir precio en ${incrementoPrecio}`}>−</button>
                             <input className={drawerStyles.entrada} id="nueva-publicacion-precio" type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar precio aquí" value={datos.precio} onChange={(evento) => actualizar({ precio: evento.target.value.replace(/\D/g, "") })} disabled={guardando} />
-                            <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(10)} disabled={guardando} aria-label="Aumentar precio en 10">+</button>
+                            <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={guardando} aria-label={`Aumentar precio en ${incrementoPrecio}`}>+</button>
                         </div>
                         <small className={drawerStyles.ayuda}>Dejalo vacío si el producto no tiene precio.</small>
                     </div>

@@ -1,6 +1,10 @@
 import "temporal-polyfill/global";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { modificarOperador } from "./modificarOperador";
+
+const autorizacion = vi.hoisted(() => ({ exigirAdministrador: vi.fn() }));
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => autorizacion);
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
  
 const mockDb = vi.hoisted(() => ({
     nave: {
@@ -95,6 +99,7 @@ describe("modificarOperador", () => {
  
     beforeEach(() => {
         vi.clearAllMocks();
+        autorizacion.exigirAdministrador.mockResolvedValue(undefined);
         prepararBase();
         mockArgon2.hash.mockResolvedValue("hash-falso");
  
@@ -111,6 +116,15 @@ describe("modificarOperador", () => {
                     },
                 })
         );
+    });
+
+    it("rechaza usuarios sin permiso antes de consultar o actualizar datos", async () => {
+        autorizacion.exigirAdministrador.mockRejectedValueOnce(new Error("No autorizado"));
+
+        await expect(modificarOperador(datosValidos)).rejects.toThrow("No autorizado");
+        expect(mockDb.nave.first).not.toHaveBeenCalled();
+        expect(mockDb.transaction).not.toHaveBeenCalled();
+        expect(mockArgon2.hash).not.toHaveBeenCalled();
     });
 
     it("devuelve los errores de validación sin tocar la base", async () => {

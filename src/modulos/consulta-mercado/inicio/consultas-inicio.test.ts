@@ -4,8 +4,9 @@ import { obtenerEspeciesConPublicacionesActivas, obtenerEspeciesInicio } from ".
 // Mocks hoisteados: se declaran antes de que vi.mock los referencie internamente
 const mockDb = vi.hoisted(() => ({
     query: vi.fn(),
-    sql: vi.fn((fragmentos: TemplateStringsArray) => {
+    sql: vi.fn((fragmentos: TemplateStringsArray, ...valores: unknown[]) => {
         void fragmentos;
+        void valores;
         return {returnsRow: () => ({build: () => ({})})};
     }),
 }));
@@ -65,6 +66,11 @@ describe("consultas-inicio", () => {
             const sql = mockDb.sql.mock.calls[0][0].join("");
             expect(sql).toContain('GROUP BY e."nombreEspecie"');
             expect(sql).toContain('COUNT(DISTINCT po."operadorId")');
+            expect(sql).toContain('AND EXISTS');
+            expect(sql).toContain('l."operadorId" = po."operadorId"');
+            expect(sql).toContain('l."finContrato" IS NULL');
+            expect(sql).toContain("AT TIME ZONE 'America/Montevideo')::date >= ");
+            expect(sql).not.toContain('JOIN local');
         });
 
     });

@@ -1,3 +1,4 @@
+import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 import { Temporal } from "@js-temporal/polyfill";
@@ -29,6 +30,14 @@ export type PerfilPublicoOperador = {
 }
 
 export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Promise<PerfilPublicoOperador | null> {
+    if (!autorizado("operador.catalogo.consultar")) {
+        throw new Error("No tiene permisos para consultar el catálogo de Operadores.");
+    }
+
+    if (!autorizado("operador.publicacion.consultar")) {
+        throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
+    }
+
     if (!nombreFantasia.trim()) {
         return null;
     }

@@ -37,13 +37,6 @@ export async function obtenerUsuarioAdministradorPorCorreo(correo: string) {
         .first();
 }
 
-export async function obtenerOperadorAutenticadoPorUsuarioId(usuarioId: number) {
-    return db.orm.public.Operador
-        .select("id")
-        .where({ usuarioId })
-        .first();
-}
-
 export async function obtenerFotoPerfilOperadorPorUsuarioId(usuarioId: number) {
     const operador = await db.orm.public.Operador
         .select("fotoPerfil")

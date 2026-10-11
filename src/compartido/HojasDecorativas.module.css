@@ -7,11 +7,6 @@
   user-select: none;
 }
 
-.patron {
-  position: relative;
-  height: 66rem;
-}
-
 .motivo {
   position: absolute;
   display: block;
@@ -130,59 +125,6 @@
 .helecho .parCinco { top: 56%; width: 74%; }
 .helecho .parSeis { top: 68%; width: 58%; }
 
-.fondo {
-  color: var(--color-secondary);
-  opacity: 0.12;
-}
-
-.fondo .motivoUno {
-  top: 2rem;
-  left: -3rem;
-  --ancho: 12rem;
-  --alto: 12rem;
-  --giro: -18deg;
-}
-
-.fondo .motivoDos {
-  top: 12rem;
-  right: -2rem;
-  --ancho: 11rem;
-  --alto: 13rem;
-  --giro: 25deg;
-}
-
-.fondo .motivoTres {
-  top: 22rem;
-  left: -3rem;
-  --ancho: 10rem;
-  --alto: 15rem;
-  --giro: -20deg;
-}
-
-.fondo .motivoCuatro {
-  top: 32rem;
-  right: -3rem;
-  --ancho: 11rem;
-  --alto: 11rem;
-  --giro: 15deg;
-}
-
-.fondo .motivoCinco {
-  top: 42rem;
-  left: -3rem;
-  --ancho: 10rem;
-  --alto: 12rem;
-  --giro: -25deg;
-}
-
-.fondo .motivoSeis {
-  top: 52rem;
-  right: 2%;
-  --ancho: 10rem;
-  --alto: 14rem;
-  --giro: 22deg;
-}
-
 .separador {
   color: var(--color-surface);
   opacity: 0.18;
@@ -212,20 +154,7 @@
   --giro: 24deg;
 }
 
-.separador .motivoCuatro,
-.separador .motivoCinco,
-.separador .motivoSeis {
-  display: none;
-}
-
 @media (max-width: 767px) {
-  .fondo .motivoUno { left: -4rem; --ancho: 9rem; --alto: 9rem; }
-  .fondo .motivoDos { right: -4rem; --ancho: 9rem; --alto: 11rem; }
-  .fondo .motivoTres { left: -4rem; --ancho: 8rem; --alto: 12rem; }
-  .fondo .motivoCuatro { right: -4rem; --ancho: 9rem; --alto: 9rem; }
-  .fondo .motivoCinco { left: -4rem; --ancho: 8rem; --alto: 10rem; }
-  .fondo .motivoSeis { right: -3rem; --ancho: 8rem; --alto: 11rem; }
-
   .separador .motivoUno { right: -2rem; --ancho: 8rem; --alto: 8rem; }
   .separador .motivoDos { right: 5rem; --ancho: 6rem; --alto: 7rem; }
   .separador .motivoTres { display: none; }

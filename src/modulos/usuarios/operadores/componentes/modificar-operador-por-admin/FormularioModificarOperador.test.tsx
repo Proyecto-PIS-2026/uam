@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import FormularioModificarOperador from "./FormularioModificarOperador";
-import type { NaveOpcion } from "./obtenerNaves";
+import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 import type { OperadorParaModificar } from "./obtenerOperadorParaModificar";
 
 const { push, modificarOperadorMock } = vi.hoisted(() => ({

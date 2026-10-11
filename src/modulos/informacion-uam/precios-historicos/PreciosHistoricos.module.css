@@ -3,9 +3,8 @@
 .volver:hover { text-decoration: underline; }
 .filtrosPanel, .tablaPanel { min-width: 0; border: 1px solid var(--color-border); border-radius: .875rem; background: var(--color-surface); box-shadow: 0 1px 3px rgb(0 0 0 / 5%); }
 .filtrosPanel { width: 100%; margin: auto; padding: .875rem; box-sizing: border-box; box-shadow: 0 1px 3px rgb(0 0 0 / 6%); }
-.filtrosCabecera, .tablaCabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
-.filtrosCabecera h2, .tablaCabecera h2 { margin: 0; color: var(--color-secondary); font-size: 1.05rem; font-weight: 700; }
-.filtrosCabecera span { color: var(--color-muted-foreground); font-size: .82rem; }
+.tablaCabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
+.tablaCabecera h2 { margin: 0; color: var(--color-secondary); font-size: 1.05rem; font-weight: 700; }
 .filtros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; margin-top: .75rem; }
 .campo { width: 100%; min-width: 0; }
 .fechas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column: 1 / -1; gap: .625rem; min-width: 0; }

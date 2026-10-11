@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  obtenerOperadorAutorizado: vi.fn(),
   operadorFirst: vi.fn(),
   relacionesAll: vi.fn(),
   publicacionesAll: vi.fn(),
@@ -11,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   calibresAll: vi.fn(),
   paisesAll: vi.fn(),
 }));
+
+vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({ obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
   db: {
@@ -69,10 +72,12 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 }));
 
 import { GET } from "./route";
+import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 describe("GET /api/publicaciones/operador/[id]", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 15, usuarioId: 10, nombreFantasia: "Operador 15" });
     });
 
     it("devuelve 400 si el operador no es válido", async () => {
@@ -93,8 +98,8 @@ describe("GET /api/publicaciones/operador/[id]", () => {
         });
     });
 
-    it("devuelve 404 si el operador no existe", async () => {
-        mocks.operadorFirst.mockResolvedValue(null);
+    it("devuelve 403 si el operador no corresponde al usuario autenticado", async () => {
+        mocks.obtenerOperadorAutorizado.mockRejectedValue(new ErrorAutorizacion(403, "El operador no corresponde al usuario autenticado."));
 
         const solicitud = new Request(
         "http://localhost/api/publicaciones/operador/15"
@@ -106,10 +111,10 @@ describe("GET /api/publicaciones/operador/[id]", () => {
 
         const cuerpo = await respuesta.json();
 
-        expect(respuesta.status).toBe(404);
+        expect(respuesta.status).toBe(403);
 
         expect(cuerpo).toEqual({
-        errores: ["El operador no existe."],
+        errores: ["El operador no corresponde al usuario autenticado."],
         });
     });
 

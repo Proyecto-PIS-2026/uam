@@ -8,7 +8,6 @@ import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "../ImagenPublicacion";
 import Link from "next/link";
-// import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 
 interface DrawerPublicacionProps {
     open: boolean;
@@ -27,7 +26,6 @@ export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: Dr
             {publicacion && (
                 <>
                     <div className={styles.tarjeta}>
-                        {/* <HojasDecorativas variante="fondo" className={styles.hojasDrawer} /> */}
                         <div className={styles.bloqueSuperior}>
                             <div className={styles.marcoImagen}>
                                 <div className={styles.contenedorImagen}>

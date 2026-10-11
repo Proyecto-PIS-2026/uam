@@ -77,7 +77,7 @@ describe("iniciarSesion", () => {
                 contrasena: " clave con espacios ",
             });
             expect(funcionesSimuladas.crearSesion).toHaveBeenCalledWith(4, rol);
-            expect(funcionesSimuladas.redirect).toHaveBeenCalledWith("/");
+            expect(funcionesSimuladas.redirect).toHaveBeenCalledWith(rol === "OPERADOR" ? "/mi-mercado" : "/inicio");
         },
     );
 

@@ -1,3 +1,4 @@
+import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 import { Temporal } from "@js-temporal/polyfill";
@@ -14,6 +15,10 @@ export type OperadorListado = {
 };
 
 export async function obtenerOperadoresPublicos(): Promise<OperadorListado[]> {
+    if (!autorizado("operador.catalogo.consultar")) {
+        throw new Error("No tiene permisos para consultar el catálogo de Operadores.");
+    }
+
     
     const consulta = db.orm.public.Operador
         .select("id", "nombreFantasia", "fotoPerfil")

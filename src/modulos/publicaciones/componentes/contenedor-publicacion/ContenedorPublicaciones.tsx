@@ -21,16 +21,16 @@ function ContenidoPublicaciones({publicaciones, especie = ""}: PropiedadesConten
 		return iniciales.sort(compararPublicacionesPorPrioridad);
 	});
 
-	function quitarEspecieDeUrl() {
+	function actualizarEspecieEnUrl(nuevaEspecie: string) {
 		const url = new URL(window.location.href);
-		if (!url.searchParams.has("especie")) return;
-		url.searchParams.delete("especie");
+		if (nuevaEspecie === "Todas") url.searchParams.delete("especie");
+		else url.searchParams.set("especie", nuevaEspecie);
 		window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
 	}
 
 	return (
 		<div className="flex flex-col gap-6">
-			<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especie} ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alLimpiar={quitarEspecieDeUrl}/>
+			<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especie} ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")}/>
 			<ListadoPublicaciones publicaciones={publicacionesFiltradas} />
 		</div>
 	);

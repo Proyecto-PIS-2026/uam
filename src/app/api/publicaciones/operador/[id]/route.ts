@@ -1,7 +1,14 @@
+import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
+import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+	if (!autorizado("operador.publicacion.consultar")) {
+		return NextResponse.json({ errores: ["No tiene permisos para consultar publicaciones de Operadores."] }, { status: 403 });
+	}
+
 	const { id } = await context.params;
 	const operadorId = Number(id);
 	if (!Number.isSafeInteger(operadorId) || operadorId <= 0) {
@@ -9,8 +16,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 	}
 
 	try {
-		const operador = await db.orm.public.Operador.where({ id: operadorId }).first();
-		if (!operador) return NextResponse.json({ errores: ["El operador no existe."] }, { status: 404 });
+		await obtenerOperadorAutorizado(operadorId);
 
 		const relaciones = await db.orm.public.PublicacionOperador.where({ operadorId }).all();
 		if (relaciones.length === 0) return NextResponse.json({ publicaciones: [] });
@@ -58,6 +64,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 
 		return NextResponse.json({ publicaciones: resultado });
 	} catch (error) {
+		if (error instanceof ErrorAutorizacion) {
+			return NextResponse.json({ errores: [error.message] }, { status: error.status });
+		}
 		console.error("Error al listar publicaciones del operador:", error);
 		return NextResponse.json({ errores: ["No se pudieron cargar las publicaciones."] }, { status: 500 });
 	}

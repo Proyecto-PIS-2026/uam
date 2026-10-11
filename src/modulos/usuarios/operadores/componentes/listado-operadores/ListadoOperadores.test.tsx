@@ -18,6 +18,31 @@ const listaOperadoresConTilde = [
 
 
 describe("ListadoOperadores", () => {
+
+    it("informa cuando no hay operadores disponibles", () => {
+        render(<ListadoOperadores operadores={[]}/>);
+        expect(screen.getByRole("status")).toHaveTextContent("No hay operadores disponibles.");
+    });
+
+    it("informa una búsqueda sin coincidencias y quita el mensaje al recuperar resultados", () => {
+        render(<ListadoOperadores operadores={listaOperadores}/>);
+        const buscador = screen.getByRole("searchbox", { name: "Buscar operadores" });
+        fireEvent.change(buscador, { target: { value: "Inexistente" } });
+        expect(screen.getByRole("status")).toHaveTextContent("No se encontraron operadores que coincidan con la búsqueda y la nave seleccionada.");
+
+        fireEvent.change(buscador, { target: { value: "Jose" } });
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(screen.getByText("Jose")).toBeInTheDocument();
+    });
+
+    it("informa cuando la combinación de búsqueda y nave no tiene coincidencias", () => {
+        render(<ListadoOperadores operadores={listaOperadores}/>);
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar operadores" }), { target: { value: "Jose" } });
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
+        fireEvent.click(screen.getByText("Nave Nave A"));
+        expect(screen.getByRole("status")).toHaveTextContent("No se encontraron operadores");
+        expect(screen.queryByText("Jose")).not.toBeInTheDocument();
+    });
     
     it("Mostrar todos los operadores con Todas seleccionado por defecto", () => {
         render(<ListadoOperadores operadores={listaOperadores} />);

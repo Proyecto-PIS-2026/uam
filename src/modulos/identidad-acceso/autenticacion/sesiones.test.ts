@@ -10,8 +10,26 @@ const cookiesSimuladas = vi.hoisted(() => ({
     delete: vi.fn(),
 }));
 
+const { buscarUsuario } = vi.hoisted(() => ({
+    buscarUsuario: vi.fn(),
+}));
+
 vi.mock("next/headers", () => ({
     cookies: vi.fn(async () => cookiesSimuladas),
+}));
+
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
+    db: {
+        orm: {
+            public: {
+                Usuario: {
+                    where: vi.fn(() => ({
+                        first: buscarUsuario,
+                    })),
+                },
+            },
+        },
+    },
 }));
 
 const secretoPrueba = "secreto-aleatorio-exclusivo-para-las-pruebas";
@@ -27,11 +45,32 @@ function firmarContenido(contenido: string) {
 
 function configurarCookie(datos: unknown) {
     const contenido = Buffer.from(JSON.stringify(datos)).toString("base64url");
-    cookiesSimuladas.get.mockReturnValue({ value: firmarContenido(contenido) });
+
+    cookiesSimuladas.get.mockReturnValue({
+        value: firmarContenido(contenido),
+    });
+
+    if (
+        datos !== null &&
+        typeof datos === "object" &&
+        "usuarioId" in datos &&
+        "rol" in datos
+    ) {
+        buscarUsuario.mockResolvedValue({
+            id: datos.usuarioId,
+            rol: datos.rol,
+        });
+    }
 }
 
 beforeEach(() => {
     vi.resetAllMocks();
+
+    buscarUsuario.mockImplementation(async () => ({
+        id: 4,
+        rol: "OPERADOR",
+    }));
+
     vi.stubEnv("SESSION_SECRET", secretoPrueba);
     vi.stubEnv("NODE_ENV", "development");
     vi.useFakeTimers();
@@ -96,13 +135,34 @@ describe("obtenerSesion", () => {
 
     it("recupera la misma sesion que se emitio para un productor", async () => {
         await crearSesion(4, "PRODUCTOR");
-        cookiesSimuladas.get.mockReturnValue({ value: cookiesSimuladas.set.mock.calls[0][1] });
+
+        cookiesSimuladas.get.mockReturnValue({
+            value: cookiesSimuladas.set.mock.calls[0][1],
+        });
+
+        buscarUsuario.mockResolvedValue({
+            id: 4,
+            rol: "PRODUCTOR",
+        });
 
         expect(await obtenerSesion()).toEqual({
             usuarioId: 4,
             rol: "PRODUCTOR",
             expiraEn: segundosActuales + 28800,
         });
+    });
+
+    it("rechaza la sesión de un operador eliminado de la base de datos", async () => {
+        const datos = {
+            usuarioId: 4,
+            rol: "OPERADOR",
+            expiraEn: segundosActuales + 60,
+        };
+
+        configurarCookie(datos);
+        buscarUsuario.mockResolvedValue(null);
+
+        expect(await obtenerSesion()).toBeNull();
     });
 
     it("devuelve null si no hay cookie", async () => {

@@ -3,27 +3,34 @@ import { obtenerPublicacionesDeOperador } from "../consultas-mi-mercado";
 import { mapearPublicacionesMiMercado } from "../mapear-publicaciones";
 import { obtenerOpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
 import { obtenerOperadorActual, obtenerOperadorPorNombre } from "../../../usuarios/operadores/operador-actual";
-import { notFound } from "next/navigation";
+import { autorizado } from "../../../identidad-acceso/autorizacion/permisos";
+import { obtenerConfiguracion } from "@/modulos/administracion/ConsultaConfiguracion";
+import { notFound, redirect } from "next/navigation";
+import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 type VistaMiMercadoProps = {
     abrirAltaInicial?: boolean;
     operadorNombre?: string;
 };
 
-// TODO: reemplazar por el valor real de Configuración ("incremento_precio")
-// cuando se implemente el ítem BP-18.2
-const incrementoPrecio = 10;
-
 export default async function VistaMiMercado({ abrirAltaInicial = false, operadorNombre }: VistaMiMercadoProps) {
+    const sesion = await requerirOperador();
     const operador = operadorNombre === undefined
         ? await obtenerOperadorActual()
         : await obtenerOperadorPorNombre(operadorNombre);
     if (!operador) notFound();
-    const [publicacionesBD, opcionesEdicion] = await Promise.all([
+    if (operador.usuarioId !== sesion.usuarioId) redirect("/mi-mercado");
+    if (!autorizado("operador.publicacion.consultarPropias", sesion, operador)) redirect("/inicio");
+    const puedeCrear = autorizado("operador.publicacion.crear", sesion, operador);
+    const puedeModificar = autorizado("operador.publicacion.modificar", sesion, operador);
+    const puedeEliminar = autorizado("operador.publicacion.eliminar", sesion, operador);
+    if (abrirAltaInicial && !puedeCrear) redirect("/inicio");
+    const [publicacionesBD, opcionesEdicion, incrementoPrecioConfiguracion] = await Promise.all([
         obtenerPublicacionesDeOperador(operador.id),
         obtenerOpcionesEdicionPublicacion(),
+        obtenerConfiguracion("incremento_precio"),
     ]);
     const publicaciones = mapearPublicacionesMiMercado(publicacionesBD);
-
-    return <MiMercado key={operador.id} publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} nombreOperador={operador.nombreFantasia} abrirAltaInicial={abrirAltaInicial} />;
+    const incrementoPrecio = Number(incrementoPrecioConfiguracion); 
+    return <MiMercado key={operador.id} publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} nombreOperador={operador.nombreFantasia} abrirAltaInicial={abrirAltaInicial} puedeCrear={puedeCrear} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} />;
 }

@@ -323,6 +323,11 @@
         }
 
         .cerrarSesionMobile {
+            width: 100%;
+            background: transparent;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
             color: var(--color-foreground);
         }
     }
