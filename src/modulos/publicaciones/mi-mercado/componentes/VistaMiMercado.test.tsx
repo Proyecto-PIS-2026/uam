@@ -104,7 +104,7 @@ describe("VistaMiMercado", () => {
     it("no carga publicaciones cuando el nombre corresponde a otro operador", async () => {
         mocks.obtenerOperadorPorNombre.mockResolvedValue({ id: 37, usuarioId: 11, nombreFantasia: "Ajeno" });
         await expect(VistaMiMercado({ operadorNombre: "Ajeno" })).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledWith("/mi-mercado");
+        expect(mocks.redirect).toHaveBeenCalledWith("/inicio");
         expect(mocks.obtenerPublicaciones).not.toHaveBeenCalled();
         expect(mocks.obtenerOpcionesEdicion).not.toHaveBeenCalled();
     });
