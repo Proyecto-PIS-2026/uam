@@ -121,6 +121,10 @@ jobs:
         env:
           E2E_OPERADOR_USU: ${{ secrets.E2E_OPERADOR_USU }}
           E2E_OPERADOR_PASS: ${{ secrets.E2E_OPERADOR_PASS }}
+          E2E_PRODUCTOR_USU: ${{ secrets.E2E_PRODUCTOR_USU }}
+          E2E_PRODUCTOR_PASS: ${{ secrets.E2E_PRODUCTOR_PASS }}
+          E2E_ADMINISTRADOR_USU: ${{ secrets.E2E_ADMINISTRADOR_USU }}
+          E2E_ADMINISTRADOR_PASS: ${{ secrets.E2E_ADMINISTRADOR_PASS }}
         run: |
           export SESSION_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
           npm run start &

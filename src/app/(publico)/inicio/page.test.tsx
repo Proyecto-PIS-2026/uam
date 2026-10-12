@@ -30,14 +30,17 @@ describe("Page (mercado de hoy)", () => {
         obtenerSesionMock.mockResolvedValue(null);
     });
 
-    it("redirige al operador a Mi Mercado sin consultar las especies ni la lista inteligente", async () => {
+    it("permite al operador consultar el inicio sin redirigir a Mi Mercado", async () => {
         obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+        mockObtenerEspeciesInicio.mockResolvedValue([]);
+        mockObtenerUrlListaInteligente.mockResolvedValue(null);
 
-        await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
+        const elemento = await Page();
 
-        expect(redirectMock).toHaveBeenCalledWith("/mi-mercado");
-        expect(mockObtenerEspeciesInicio).not.toHaveBeenCalled();
-        expect(mockObtenerUrlListaInteligente).not.toHaveBeenCalled();
+        expect(redirectMock).not.toHaveBeenCalled();
+        expect(mockObtenerEspeciesInicio).toHaveBeenCalledOnce();
+        expect(mockObtenerUrlListaInteligente).toHaveBeenCalledOnce();
+        expect(elemento.type).toBe(Inicio);
     });
 
     it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("conserva el inicio público para la sesión %s", async (rol) => {
