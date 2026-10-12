@@ -14,8 +14,8 @@ test.use({
 });
 
 async function entrarComoAdmin(page: Page) {
-  const usuario = process.env.E2E_ADMIN_USU;
-  const contrasena = process.env.E2E_ADMIN_PASS;
+  const usuario = process.env.E2E_ADMINISTRADOR_USU || process.env.E2E_ADMIN_USU;
+  const contrasena = process.env.E2E_ADMINISTRADOR_PASS || process.env.E2E_ADMIN_PASS;
   if (!usuario || !contrasena) {
     throw new Error("Configurá E2E_ADMIN_USU y E2E_ADMIN_PASS antes de ejecutar BP-01.");
   }
