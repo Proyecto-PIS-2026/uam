@@ -328,6 +328,15 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
 
             <section className={styles.tablaPanel} aria-label={`Histórico de ${producto.especie}`}>
                 <div className={styles.tablaCabecera}><h2>Histórico de precios</h2></div>
+                {/* TODO: Eliminar a futuro la visualización pública de estos errores; es temporal durante la construcción para consultar los datos incorrectos con el cliente. */}
+                {!cargandoTabla && !error && !!historico?.erroresValidacion?.length && (
+                    <details className={styles.erroresValidacion}>
+                        <summary>Ver errores del histórico ({historico.erroresValidacion.length})</summary>
+                        <ul>
+                            {historico.erroresValidacion.map((mensaje, indice) => <li key={indice}>{mensaje}</li>)}
+                        </ul>
+                    </details>
+                )}
                 <div className={styles.tablaContenedor}>
                     <table className={styles.tabla} aria-busy={cargandoTabla} aria-describedby={cargandoTabla ? `${idCarga}-tabla` : undefined}>
                         <thead><tr>
