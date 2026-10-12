@@ -26,6 +26,19 @@ export async function iniciarSesionProductor(page: Page, credenciales: Credencia
     .toHaveAttribute("href", "/mi-mercado/productor");
 }
 
+export async function iniciarSesionOperadorInhabilitado(page: Page) {
+  const usuario = process.env.E2E_INHABILITADO_USU;
+  const contrasena = process.env.E2E_INHABILITADO_PASS;
+ 
+  if (!usuario || !contrasena) {
+    throw new Error(
+      "Configure E2E_INHABILITADO_USU y E2E_INHABILITADO_PASS con las credenciales del operador inhabilitado de la seed.",
+    );
+  }
+ 
+  await enviarCredenciales(page, usuario, contrasena);
+}
+
 export async function iniciarSesionOperador(page: Page) {
   const usuario = process.env.E2E_OPERADOR_USU;
   const contrasena = process.env.E2E_OPERADOR_PASS;
@@ -47,4 +60,6 @@ export async function iniciarSesionOperador(page: Page) {
       url.pathname === "/mi-mercado" ||
       url.pathname.startsWith("/mi-mercado/"),
   );
+
+  
 }
