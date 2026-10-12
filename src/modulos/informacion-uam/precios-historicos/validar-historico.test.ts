@@ -49,6 +49,12 @@ describe("validarHistoricoProducto", () => {
         ["to", "31/10/2025"],
         ["series", null],
         ["series", {}],
+    ])("rechaza el campo raíz inválido %s con un error que identifica su ubicación", (ruta, valor) => {
+        expect(() => validarHistoricoProducto(conCampo(ruta as string, valor)))
+            .toThrow(`inválida en ${ruta}:`);
+    });
+
+    it.each([
         ["series[0]", null],
         ["series[0]", []],
         ["series[0].date", "2025-02-29"],
@@ -56,6 +62,7 @@ describe("validarHistoricoProducto", () => {
         ["series[0].presentations", {}],
         ["series[0].volume_kg", "1000"],
         ["series[0].volume_kg", Infinity],
+        ["series[0].volume_kg", -1],
         ["series[0].presentations[0]", null],
         ["series[0].presentations[0].variety", 1],
         ["series[0].presentations[0].caliber", undefined],
@@ -65,13 +72,20 @@ describe("validarHistoricoProducto", () => {
         ["series[0].presentations[0].prices[0]", null],
         ["series[0].presentations[0].prices[0].category", {}],
         ["series[0].presentations[0].prices[0].min_kg", "70"],
+        ["series[0].presentations[0].prices[0].min_kg", "Ñ"],
+        ["series[0].presentations[0].prices[0].min_kg", -1],
         ["series[0].presentations[0].prices[0].max_kg", NaN],
         ["series[0].presentations[0].prices[0].min_un", null],
         ["series[0].presentations[0].prices[0].max_un", undefined],
         ["series[0].presentations[0].prices[0].is_reference", "true"],
-    ])("rechaza el campo inválido %s con un error que identifica su ubicación", (ruta, valor) => {
-        expect(() => validarHistoricoProducto(conCampo(ruta as string, valor)))
-            .toThrow(`inválida en ${ruta}:`);
+    ])("descarta el registro con %s inválido e informa su ubicación", (ruta, valor) => {
+        const recibido = conCampo(ruta as string, valor);
+        const resultado = validarHistoricoProducto(recibido);
+
+        expect(resultado.series.flatMap((dia) => dia.presentations.flatMap((presentacion) => presentacion.prices))).toEqual([]);
+        expect(resultado.erroresValidacion).toHaveLength(1);
+        expect(resultado.erroresValidacion![0]).toContain(`inválida en ${ruta}:`);
+        expect(resultado.erroresValidacion![0]).toContain("Registro descartado (Banana;");
     });
 
     it.each([
@@ -86,8 +100,8 @@ describe("validarHistoricoProducto", () => {
         expect(validarHistoricoProducto(recibido)).toBe(recibido);
     });
 
-    it("conserva valores del servicio sin imponer relaciones de negocio entre ellos", () => {
-        const recibido = conCampo("series[0].presentations[0].prices[0].min_kg", 100);
+    it("conserva los precios cero y los textos vacíos admitidos por el servicio", () => {
+        const recibido = conCampo("series[0].presentations[0].prices[0].min_kg", 0);
         recibido.series[0].presentations[0].prices[0].min_un = 0;
         recibido.series[0].presentations[0].variety = "";
         const original = JSON.parse(JSON.stringify(recibido)) as HistoricoProducto;
@@ -96,6 +110,65 @@ describe("validarHistoricoProducto", () => {
             speciesId: 60, desde: historico.from, hasta: historico.to,
         })).toBe(recibido);
         expect(recibido).toStrictEqual(original);
+    });
+
+    it.each([
+        ["min_kg", "max_kg"],
+        ["min_un", "max_un"],
+    ])("descarta los precios cuyo %s supera a %s", (minimo) => {
+        const recibido = conCampo(`series[0].presentations[0].prices[0].${minimo}`, 100);
+        const resultado = validarHistoricoProducto(recibido);
+
+        expect(resultado.series[0].presentations).toEqual([]);
+        expect(resultado.erroresValidacion![0]).toContain(`prices[0].${minimo}`);
+        expect(resultado.erroresValidacion![0]).toContain("el mínimo (100) supera al máximo (75)");
+        expect(resultado.erroresValidacion![0]).toContain("fecha: 2025-10-01");
+    });
+
+    it("conserva los precios, presentaciones y días válidos sin modificar la respuesta original", () => {
+        const recibido = conCampo("series[0].presentations[0].prices[0].min_kg", "Ñ");
+        const presentacionValida = structuredClone(historico.series[0].presentations[0]);
+        const diaValido = structuredClone(historico.series[0]);
+        diaValido.date = "2025-10-02";
+        recibido.series[0].presentations[0].prices.push({ ...presentacionValida.prices[0], category: "II" });
+        recibido.series[0].presentations.push(presentacionValida);
+        recibido.series.push(diaValido);
+        const original = structuredClone(recibido);
+
+        const resultado = validarHistoricoProducto(recibido);
+
+        expect(resultado.series).toHaveLength(2);
+        expect(resultado.series[0].presentations).toHaveLength(2);
+        expect(resultado.series[0].presentations[0].prices).toEqual([{ ...presentacionValida.prices[0], category: "II" }]);
+        expect(resultado.series[0].presentations[1]).toEqual(presentacionValida);
+        expect(resultado.series[1]).toEqual(diaValido);
+        expect(resultado.erroresValidacion![0]).toContain('Valor recibido: "Ñ"');
+        expect(resultado.erroresValidacion![0]).toContain("variedad: Cavendish; calibre: G; país: ECUADOR; unidad: KG");
+        expect(recibido).toEqual(original);
+    });
+
+    it("descarta una presentación o un día inválidos sin perder los demás", () => {
+        const recibido = conCampo("series[0].presentations[0].country", null);
+        recibido.series[0].presentations.push(structuredClone(historico.series[0].presentations[0]));
+        recibido.series.push({ ...structuredClone(historico.series[0]), date: "2025-02-30" });
+        recibido.series.push({ ...structuredClone(historico.series[0]), date: "2025-10-02" });
+
+        const resultado = validarHistoricoProducto(recibido);
+
+        expect(resultado.series.map((dia) => dia.date)).toEqual(["2025-10-01", "2025-10-02"]);
+        expect(resultado.series[0].presentations).toEqual(historico.series[0].presentations);
+        expect(resultado.erroresValidacion).toHaveLength(2);
+        expect(resultado.erroresValidacion![0]).toContain("presentations[0].country");
+        expect(resultado.erroresValidacion![1]).toContain("series[1].date");
+    });
+
+    it("mantiene los errores al serializar y revalidar el histórico sin duplicarlos", () => {
+        const resultado = validarHistoricoProducto(conCampo("series[0].presentations[0].prices[0].min_kg", "Ñ"));
+        const desdeCache: unknown = JSON.parse(JSON.stringify(resultado));
+
+        expect(validarHistoricoProducto(resultado)).toBe(resultado);
+        expect(validarHistoricoProducto(desdeCache)).toEqual(resultado);
+        expect(resultado.erroresValidacion).toHaveLength(1);
     });
 
     it("rechaza una especie que no coincide con la consulta", () => {

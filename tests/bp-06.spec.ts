@@ -8,6 +8,13 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
   await iniciarSesionOperador(page);
   await page.goto(rutaMercado);
 
+  const configuracion = await page.request.get("/api/configuracion/incremento_precio");
+  expect(configuracion.ok()).toBe(true);
+  const { valor } = await configuracion.json();
+  const incremento = Number(valor);
+  expect(Number.isSafeInteger(incremento)).toBe(true);
+  expect(incremento).toBeGreaterThan(0);
+
   await expect(
     page.getByRole("heading", { name: "Mi Mercado" }),
   ).toBeVisible();
@@ -49,7 +56,7 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
 
     await expect(
       controlesPrecio.getByRole("button", {
-        name: `$${precioInicial + 10}`,
+        name: `$${precioInicial + incremento}`,
         exact: true,
       }),
     ).toBeVisible();
