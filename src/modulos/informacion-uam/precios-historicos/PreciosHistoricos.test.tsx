@@ -1056,6 +1056,54 @@ describe("PreciosHistoricos", () => {
         expect(screen.queryByText(/No hay registros históricos/)).not.toBeInTheDocument();
     });
 
+    it("permite abrir y cerrar los errores de registros descartados sobre el listado sin ocultar los datos válidos", () => {
+        const erroresValidacion = [
+            '03/11/2025, Banana Cavendish: series[0].presentations[0].prices[1].min_kg tiene el valor "Ñ"; se esperaba un número finito.',
+            "03/11/2025, Banana Cavendish: el precio mínimo por kg ($70) es mayor que el máximo ($60).",
+        ];
+        render(<PreciosHistoricos producto={producto} historico={{ ...historico, erroresValidacion }} {...fechas} />);
+
+        const resumen = screen.getByText("Ver errores del histórico (2)");
+        const aviso = resumen.closest("details")!;
+        expect(aviso).not.toHaveAttribute("open");
+        for (const mensaje of erroresValidacion) expect(within(aviso).getByText(mensaje)).not.toBeVisible();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        const tabla = screen.getByRole("table");
+        expect(aviso.compareDocumentPosition(tabla) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(within(tabla).getAllByRole("row")).toHaveLength(2);
+        const precioValido = within(tabla).getByRole("cell", { name: "$50 - $60" });
+        expect(precioValido).toBeVisible();
+        const registroMobile = document.querySelector("article")!;
+        expect(registroMobile).toHaveTextContent("$50 - $60 / kg");
+        expect(registroMobile).toBeVisible();
+        expect(aviso.compareDocumentPosition(registroMobile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+        fireEvent.click(resumen);
+        expect(aviso).toHaveAttribute("open");
+        for (const mensaje of erroresValidacion) expect(within(aviso).getByText(mensaje)).toBeVisible();
+        expect(precioValido).toBeVisible();
+        expect(registroMobile).toBeVisible();
+
+        fireEvent.click(resumen);
+        expect(aviso).not.toHaveAttribute("open");
+        for (const mensaje of erroresValidacion) expect(within(aviso).getByText(mensaje)).not.toBeVisible();
+        expect(precioValido).toBeVisible();
+        expect(registroMobile).toBeVisible();
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
+    });
+
+    it.each([
+        { cargando: true },
+        { error: "No pudimos cargar los precios históricos." },
+    ])("oculta los errores de registros descartados durante la carga o un fallo de consulta: %o", (estado) => {
+        const mensaje = 'Registro descartado: min_kg tiene el valor "Ñ".';
+        render(<PreciosHistoricos producto={producto} historico={{ ...historico, erroresValidacion: [mensaje] }} {...fechas} {...estado} />);
+
+        expect(screen.queryByText(mensaje)).not.toBeInTheDocument();
+        expect(screen.queryByText("Ver errores del histórico (1)")).not.toBeInTheDocument();
+    });
+
     it.each([
         "No pudimos cargar los precios históricos.",
         "SyntaxError: Unexpected token al leer el JSON del histórico.",
