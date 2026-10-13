@@ -19,7 +19,7 @@ export default async function VistaMiMercado({ abrirAltaInicial = false, operado
         ? await obtenerOperadorActual()
         : await obtenerOperadorPorNombre(operadorNombre);
     if (!operador) notFound();
-    if (operador.usuarioId !== sesion.usuarioId) redirect("/mi-mercado");
+    if (operador.usuarioId !== sesion.usuarioId) redirect("/inicio");
     if (!autorizado("operador.publicacion.consultarPropias", sesion, operador)) redirect("/inicio");
     const puedeCrear = autorizado("operador.publicacion.crear", sesion, operador);
     const puedeModificar = autorizado("operador.publicacion.modificar", sesion, operador);
