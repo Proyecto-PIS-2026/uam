@@ -69,110 +69,110 @@ type ProductorDemo = {
   whatsApp: string;
 };
 
-// Cuentas ficticias para la demostración. Las contraseñas se entregan junto
-// con la documentación de la seed; los números de WhatsApp son ficticios.
+// Cuentas ficticias para la demostración. La contraseña de cada cuenta es
+// su username + "123"; los números de WhatsApp son ficticios.
 const operadores: OperadorDemo[] = [
   {
     username: "jorge_ferias",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$fDUJ3Y1DptTIBU2IPjyqxw$Q0HyF4LnyUKJ1VubZRupwxZ3BfUEgMDk2K1ut/HOPVQ",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$K4IA1fPuZ+wv52EpTs1TKw$t6qq7i1RXCFvBL8ynMDqygSzkZyAmYfg7sNuuUOp89g",
     nombreFantasia: "Jorge Ferias",
     whatsApp: "+598901",
     locales: [{ nave: "E", numero: "141", finContrato: null }],
   },
   {
     username: "pablo_sappa",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$2iKaSnHzDhvP359veoZwGw$iaLrSa6gwc7seCwotqAcFAU4InC7UJrJHAxX8h82wD8",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$MAEH2MceCsjnUe6cwEEURA$te2PRZyGC7GWqYgC6PCgovCI4gwEn/ZL4RoGtDQ78wA",
     nombreFantasia: "Pablo Sappa",
     whatsApp: "+598902",
     locales: [{ nave: "E", numero: "133", finContrato: null }],
   },
   {
     username: "diego_figueroa",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$Ygr+aXrMD+nTFSzqLuUidQ$+e04s9eIV1KCoSZZKeXH4jpH2TbfUi9s9yIyrk54s74",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$ibPWvwk23j0DcJ839kJbCA$SRrZLg1UukNZmAoDYCZlA/DJkJe6cLAqpa0yJN6k/50",
     nombreFantasia: "Diego Figueroa",
     whatsApp: "+598903",
     locales: [{ nave: "E", numero: "145", finContrato: null }],
   },
   {
     username: "bacigalupi",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$/SB9RgUcKNoiiq4HPplZUQ$ClK4lJPCPm59vHHd29TLa6V6CEmLQdPiQJZGeKPZzd0",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$s/tJmTFhqgoLLVSerY0/uQ$IRGzM/96Z/Hv479Ehdp0/7jL9mWFaFh40kmdG9b0HvM",
     nombreFantasia: "Bacigalupi",
     whatsApp: "+598904",
     locales: [{ nave: "E", numero: "153", finContrato: null }],
   },
   {
     username: "lucas_blanco",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$n4evH5GByMDzpGbEmuK2aA$+OVfHqeLA5N9zthMqU2H2G277MJ2zwmSyPUlYnMgmdQ",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$cEA05xUnAtO8XVj2QcSr9w$88hDMm4BhNpj00sH6JG1j++s+KQaaVqtS9EWiezAnFw",
     nombreFantasia: "Lucas Blanco",
     whatsApp: "+598905",
     locales: [{ nave: "E", numero: "155", finContrato: null }],
   },
   {
     username: "britos_hns",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$hF/AFXqrOlAQ2mC1k/1dXQ$r6vWhyIo+US0rQq53m9cl9JeH4CyowVzgWBRAVvg6YQ",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$kXL+RQyLagCeFvt6r46/YA$sm9g277w7Rg4OeMvgR6EyrZIQdFQDMEa87NNj1muMs0",
     nombreFantasia: "Britos HNS",
     whatsApp: "+598906",
     locales: [{ nave: "B", numero: "145", finContrato: null }],
   },
   {
     username: "ciro_gentile",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$7Cd96JLCSvnk7fg/Y2+8EA$lK2htJFM2CKJuibqqYWk9mUnwbQ6edhVNYJ7MgXixUs",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$wp+H0TFEtFvYNUXI74NhBQ$Y+4EUQ5qUptk4YxeXpj5oSyvDb+7SVTpJfqhQkT1F1E",
     nombreFantasia: "Ciro Gentile",
     whatsApp: "+598907",
     locales: [{ nave: "A", numero: "067", finContrato: null }],
   },
   {
     username: "guarino",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$8NDsUPFEKNPhG6mlelqs5A$phXmGWz+scLp0mn4WIM35s/kNuO92ZkilAa2XPRc6Jc",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$SiPsuyJseyZYMDe8MB8tmw$19M1jlWHvnDhQtpbzObwIsCExx9abwy3U6jmQMfWhcY",
     nombreFantasia: "Guarino",
     whatsApp: "+598908",
     locales: [{ nave: "D", numero: "104", finContrato: null }],
   },
   {
     username: "pizzorno",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$cKXbLw5hEujDXRL0HjCKjQ$7YHrm9Ux3OyCITod5/bwR6AyXuQVxyyq+1lXB5VeQV8",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$8iblwtvtgMvzvciqCdxHgw$fOV0uuuPMiSQuzR0ptMXKeKDOJr7ZrSWWt70A22jysc",
     nombreFantasia: "Pizzorno",
     whatsApp: "+598909",
     locales: [{ nave: "B", numero: "146", finContrato: null }],
   },
   {
     username: "don_juan",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$qasEF9MSpl/4Kqh40XRtKg$vbI0lscZ7NZXwSZEK3Z8d9g8IdfZ16TdOePnztkfjZM",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$eP2CcV5iF0kGSKbXC3NL6Q$xy3wUpU9cxoZ8OwnDcHdzmp7qjd+ErIGy7AkvguOUVk",
     nombreFantasia: "Don Juan",
     whatsApp: "+598910",
     locales: [{ nave: "D", numero: "073", finContrato: null }],
   },
   {
     username: "caporale",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$Noa0h8guBFaFWakrLxud/Q$o7pScj68SzUoMtX5uOMr1NKZ9F+q1s4VikoRMmwvQbQ",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$+SmLY7VYyYOCIqMpRK3nxw$1Bn3l13o3mf/DUK9Q73RYgZ34r0EJ8hBBGw4fGt1bGs",
     nombreFantasia: "Caporale",
     whatsApp: "+598911",
     locales: [{ nave: "B", numero: "022", finContrato: null }],
   },
   {
     username: "punto_natural",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$tPD9noGDYv/08hC9PsAGGA$3sN2+Db1wHPx04DA9qi85qTOsn3qn0BPoV13idJB588",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$M7xzr88jeWqVW7I2w/ll0g$q8DJV7/GgMB8v0EFAqtIlT1QG8BlLtI/J392pBshgt8",
     nombreFantasia: "Punto Natural",
     whatsApp: "+598912",
     locales: [{ nave: "A", numero: "114", finContrato: null }],
   },
   {
     username: "pepe",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$3m7FFcopb5dKatLr/9Cnyg$XEFqkUGoG4lf8afc+KZMm/X4T1NVTB9UjiYCYp5V+Kc",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$iLAhvm1ZfOBPmjbqKetp+A$Sg4bfwglcDLPd21F79qQAuoFuMrtIBW8TOejAR1zAXs",
     nombreFantasia: "Pepe",
     whatsApp: "+598913",
     locales: [{ nave: "B", numero: "129", finContrato: null }],
   },
   {
     username: "sandias_de_rivera",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$o5bddB5RA8QlINWQ4aijtQ$JNJW9/LSSFUYO6iueMK/rbE1PqgH9bLZbHPtHY8Nm6U",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$9e5EcKR4CIEBPlrudekZGg$+YJ57x4Csd89F4KduAi8rV1tv6okOrSbKmr4egqEmQo",
     nombreFantasia: "Sandias de Rivera",
     whatsApp: "+598914",
     locales: [{ nave: "Tinglado", numero: "N10", finContrato: null }],
   },
   {
     username: "citricola_salto_grande",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$hBwC5uJalTgD+u8rhAspDw$UUi12ANxsGWAB20q1Y2FXKXahM6IV+oQ7xMdOTlqJBk",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$MlFfwYUza0xMHH2RQpnrzQ$b+DeIlmkKBgm63h6xbGXSXL2tMw9h8rYVevsmIBb6xk",
     nombreFantasia: "Citricola Salto Grande",
     whatsApp: "+598915",
     locales: [{ nave: "A", numero: "025", finContrato: null }],
@@ -182,19 +182,19 @@ const operadores: OperadorDemo[] = [
 const productores: ProductorDemo[] = [
   {
     username: "productor_demo_norte",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$ckq4Kc750Ib5KIEnIa7Q+A$bSZqcZIXHYmeIw1bvC+nKzbCgt46Ox69fOJuCXtoYmE",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$qoZy4RNCNVrcdz5XTj7oVQ$BB8zUvWynyJOKlkYOayu93P/2F357FCG5JnntUDRR7Q",
     whatsApp: "+598916",
   },
   {
     username: "productora_demo_sur",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$OaZBVkmJYX60JCnI5LE+pA$BrS2NtPChLQ8iaXYVyBFVtXBJpw39gn9b6vm47ST/oc",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$8kuGWD4vwNjKdRIqe+olFQ$jjXylOQtK5tbBmwz6LIM6fsqqY2h8IAvci9uRes+oEE",
     whatsApp: "+598917",
   },
 ];
 
 const operadorInhabilitado: OperadorDemo = {
   username: "inhabilitado",
-  passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$ZhGcSpOqe3QcvBo5fhrK6w$wNmdXW5yMPkMtRVhnQqHLSWki8NmdyTVaacdN0XOoQU",
+  passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$gsYjd8+zDf3IHr7hvAcfnQ$mOFyOjyASAOdkTDem0CjhQeshmx8AnhHNDv48pqDYCA",
   nombreFantasia: "Operador Inhabilitado",
   whatsApp: "+598918",
   locales: [{ nave: "E", numero: "999", finContrato: "2020-12-31T23:59:59Z" }],
@@ -492,7 +492,7 @@ async function crearOperadores(archivos: Map<string, string>) {
 
   const usuarioAdmin = await prisma.orm.public.Usuario.create({
     username: "admin",
-    passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$Qv57p7oX1yOvmzQUhP4E9w$VKE7w99CmdB0qBEIPya5FmH2mjehnzj8juyKMX9/rBo",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$TMmigWv06+Qfpv1bxHmq6A$MjIMGIDYAfta6dqwmaaPAI3R88r7OXrwBN4xZGk7ZQk",
     rol: "ADMINISTRADOR",
     twoFactorEnabled: false,
   });
