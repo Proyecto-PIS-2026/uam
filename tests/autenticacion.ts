@@ -27,7 +27,7 @@ export async function iniciarSesionProductor(page: Page, credenciales: Credencia
 }
 
 export async function iniciarSesionOperadorInhabilitado(page: Page) {
-  const usuario = process.env.E2E_INHABILITADO_USU;
+  const usuario = process.env.E2E_INHABILITADO_USU; 
   const contrasena = process.env.E2E_INHABILITADO_PASS;
  
   if (!usuario || !contrasena) {
