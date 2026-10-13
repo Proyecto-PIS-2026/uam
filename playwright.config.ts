@@ -5,6 +5,12 @@ dotenv.config({ path: ['.env.local', '.env'], quiet: true });
 
 export default defineConfig({
   testDir: './tests',
+  webServer: {
+    command: 'node tests/bp-17/e2e-server.mjs',
+    url: 'http://127.0.0.1:3100/precios-referencia',
+    reuseExistingServer: false,
+    timeout: 120_000,
+  },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -30,8 +36,13 @@ export default defineConfig({
     // Chrome de Escritorio como control base del motor Chromium
     {
       name: 'chromium',
-      testIgnore: /bp-18\.spec\.ts/,
+      testIgnore: /bp-(17|18)(?:[\\/]|\.spec\.ts)/,
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium-bp17',
+      testMatch: /bp-17[\\/]bp-17\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3100' },
     },
     {
       name: 'chromium-administracion',
