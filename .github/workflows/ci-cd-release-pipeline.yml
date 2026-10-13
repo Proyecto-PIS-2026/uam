@@ -124,7 +124,7 @@ jobs:
           containerAppName: uam-staging
           resourceGroup: Proyecto-PIS-2026
           environmentVariables: |
-            DATABASE_URL=${{ secrets.TESTING_DATABASE_URL }}
+            DATABASE_URL=${{ secrets.STAGING_DATABASE_URL  }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
             PRECIOS_REFERENCIA_FUENTE=${{ secrets.PRECIOS_REFERENCIA_FUENTE }}
             PRECIOS_REFERENCIA_WEBSERVICE_BASE_URL=${{ secrets.PRECIOS_REFERENCIA_WEBSERVICE_BASE_URL }}
