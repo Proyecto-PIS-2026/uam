@@ -35,8 +35,11 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
     const operadoresFiltrados: OperadorListado[] = [];
 
     for (const operador of operadores) {
-        const nombreOperador = normalizarTexto(operador.nombreFantasia);
-        const coincideConBusqueda = nombreOperador.includes(textoBuscado);
+        const datosOperador = normalizarTexto([
+            operador.nombreFantasia,
+            ...operador.locales.map((local) => `${local.nombreNave === "Tinglado" ? local.nombreNave : `Nave ${local.nombreNave}`} - Local ${local.numeroLocal}`),
+        ].join(" "));
+        const coincideConBusqueda = datosOperador.includes(textoBuscado);
         if (coincideConBusqueda) {
             let coincideConNave = naveSeleccionada === "Todas";
             if (!coincideConNave) {
