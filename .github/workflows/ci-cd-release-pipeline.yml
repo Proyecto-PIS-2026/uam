@@ -123,7 +123,7 @@ jobs:
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
           containerAppName: uam-staging
           resourceGroup: Proyecto-PIS-2026
-          environmentVariables: |
+          environmentVariables: >-
             DATABASE_URL=${{ secrets.STAGING_DATABASE_URL  }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
             PRECIOS_REFERENCIA_FUENTE=${{ secrets.PRECIOS_REFERENCIA_FUENTE }}
