@@ -26,6 +26,7 @@ vi.mock("./DrawerEditarPublicacion", () => ({
         async function guardar() {
             if (!props.publicacion) return;
             const { precio, foto, categoriaId, calibreId, presentacionId, paisId, disponible } = props.publicacion;
+            if (!props.alGuardar) throw new Error("No se pasó alGuardar al drawer");
             await props.alGuardar(props.publicacion.publicacionOperadorId, mocks.cambios ?? {
                 precio, foto, categoriaId, calibreId, presentacionId, paisId, disponible,
             }, mocks.foto);
@@ -240,7 +241,9 @@ describe("PruebaEdicionPublicacion", () => {
             precio: "90", foto: null, categoriaId: 801, calibreId: 901, presentacionId: 701, paisId: 1001, disponible: true,
         };
 
-        expect(() => drawer.alGuardar(999, cambios, null)).toThrow("La publicación seleccionada cambió.");
+        const alGuardar = drawer.alGuardar;
+        if (!alGuardar) throw new Error("No se pasó alGuardar al drawer");
+        expect(() => alGuardar(999, cambios, null)).toThrow("La publicación seleccionada cambió.");
         expect(screen.getByText("$ 180")).toBeInTheDocument();
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });

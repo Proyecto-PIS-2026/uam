@@ -3,6 +3,7 @@ import { consultarPublicaciones } from "./Publicaciones";
 type FilaPublicacion = {
 	id: number | string;
 	precio: number | null;
+	fecha: Date; 
 	foto: string | null;
 	cantidadUnidades?: number | string | null;
 	especie: string;
@@ -17,7 +18,7 @@ type FilaPublicacion = {
 	operadorWhatsApp: string;
 };
 
-const { consulta, plan, query } = vi.hoisted(() => {
+const { consulta, plan, query, sql } = vi.hoisted(() => {
 	const plan = { sql: "consulta de publicaciones" };
 
 	const tablas = {
@@ -85,8 +86,14 @@ const { consulta, plan, query } = vi.hoisted(() => {
 	return {
 		plan,
 		query: vi.fn<() => Promise<FilaPublicacion[]>>(),
+		sql: vi.fn((fragmentos: TemplateStringsArray, ...valores: unknown[]) => {
+			void fragmentos;
+			void valores;
+			return consulta;
+		}),
 
 		consulta: {
+		returnsRow: vi.fn().mockReturnThis(),
 		innerJoin: vi.fn((_tabla, callback) => {
 			callback(tablas, operaciones);
 			return consulta;
@@ -112,17 +119,18 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
 		sql: {
 		public: {
 			publicacionOperador: consulta,
-			publicacion: {},
-			presentacion: {},
-			variedad: {},
-			especie: {},
-			categoria: {},
-			calibre: {},
-			pais: {},
-			operador: {},
+			publicacion: { columns: {} },
+			presentacion: { columns: {} },
+			variedad: { columns: {} },
+			especie: { columns: {} },
+			categoria: { columns: {} },
+			calibre: { columns: {} },
+			pais: { columns: {} },
+			operador: { columns: {} },
 		},
 		},
 		runtime: () => ({ query }),
+		raw: { sql },
 	},
 }));
 
@@ -130,6 +138,7 @@ function crearFila(id = 7): FilaPublicacion {
 	return {
 		id,
 		precio: 150,
+		fecha: new Date("2026-10-03T15:00:00.000Z"), 
 		foto: "/tomate.jpg",
 		cantidadUnidades: null,
 		especie: "Tomate",
@@ -160,19 +169,18 @@ describe("consultarPublicaciones", () => {
 
 	it("ejecuta el plan construido para consultar las publicaciones", async () => {
 		await consultarPublicaciones();
-
 		expect(consulta.build).toHaveBeenCalledTimes(1);
 		expect(query).toHaveBeenCalledExactlyOnceWith(plan);
 	});
 
 	it("mapea los datos de la publicación y agrupa los datos del operador", async () => {
 		query.mockResolvedValue([crearFila()]);
-
 		expect(await consultarPublicaciones()).toEqual({
 		publicaciones: [
 			{
 			id: 7,
 			precio: 150,
+			fecha: new Date("2026-10-03T15:00:00.000Z").toString(),
 			foto: "/tomate.jpg",
 			cantidadUnidades: null,
 			especie: "Tomate",
@@ -192,55 +200,27 @@ describe("consultarPublicaciones", () => {
 		});
 	});
 
-	it.each([
-		[150, 150],
-		[1234.5, 1234.5],
-		[0, 0],
-	])(
+	it.each([[150, 150], [1234.5, 1234.5], [0, 0]])(
 		"mantiene el precio %s recibido de la consulta",
 		async (precio, esperado) => {
-		query.mockResolvedValue([
-			{ ...crearFila(), precio },
-		]);
-
-		const { publicaciones } = await consultarPublicaciones();
-
-		expect(publicaciones).toHaveLength(1);
-		expect(publicaciones[0].precio).toBe(esperado);
+			query.mockResolvedValue([{ ...crearFila(), precio }]);
+			const { publicaciones } = await consultarPublicaciones();
+			expect(publicaciones).toHaveLength(1);
+			expect(publicaciones[0].precio).toBe(esperado);
 		},
 	);
 
 	it("conserva la foto nula cuando la publicación no tiene imagen", async () => {
-		query.mockResolvedValue([
-		{ ...crearFila(), foto: null },
-		]);
-
+		query.mockResolvedValue([{ ...crearFila(), foto: null }]);
 		const { publicaciones } = await consultarPublicaciones();
-
 		expect(publicaciones).toHaveLength(1);
 		expect(publicaciones[0].foto).toBeNull();
 	});
 
 	it("mantiene el orden de los resultados y el operador de cada publicación", async () => {
-		query.mockResolvedValue([
-		crearFila(7),
-		{
-			...crearFila(2),
-			operadorId: 20,
-			operadorNombreFantasia: "Frutas Norte",
-			operadorWhatsApp: "098654321",
-		},
-		crearFila(9),
-		]);
-
+		query.mockResolvedValue([crearFila(7), {...crearFila(2), operadorId: 20, operadorNombreFantasia: "Frutas Norte", operadorWhatsApp: "098654321"}, crearFila(9)]);
 		const { publicaciones } = await consultarPublicaciones();
-
-		expect(publicaciones.map((publicacion) => publicacion.id)).toEqual([
-		7,
-		2,
-		9,
-		]);
-
+		expect(publicaciones.map((publicacion) => publicacion.id)).toEqual([7, 2, 9]);
 		expect(publicaciones.map((publicacion) => publicacion.operador)).toEqual([
 		{
 			id: 10,
@@ -261,31 +241,37 @@ describe("consultarPublicaciones", () => {
 	});
 
 	it("propaga el error cuando falla la consulta a la base de datos", async () => {
-		const error = new Error(
-		"No se pudo consultar las publicaciones",
-		);
-
+		const error = new Error("No se pudo consultar las publicaciones",);
 		query.mockRejectedValue(error);
-
 		await expect(consultarPublicaciones()).rejects.toBe(error);
 	});
 
-	it("construye la consulta con todos los joins necesarios", async () => {
+	it("exige un local vigente sin multiplicar las publicaciones por cantidad de locales", async () => {
 		await consultarPublicaciones();
+		const consultaSql = sql.mock.calls[0][0].join("?");
+		expect(consultaSql).toContain('p."publicacionActiva" = true');
+		expect(consultaSql).toContain('p."publicacionDisponible" = true');
+		expect(consultaSql).toContain('AND EXISTS');
+		expect(consultaSql).toContain('l."operadorId" = o.id');
+		expect(consultaSql).toContain('l."finContrato" IS NULL');
+		expect(consultaSql).toContain("AT TIME ZONE 'America/Montevideo')::date >= ?::date");
+		expect(consultaSql).not.toContain('JOIN local');
+	});
 
-		expect(consulta.innerJoin).toHaveBeenCalledTimes(8);
-		expect(consulta.select).toHaveBeenCalledTimes(1);
-		expect(consulta.where).toHaveBeenCalledTimes(1);
-		expect(consulta.build).toHaveBeenCalledTimes(1);
+	it("compara la vigencia contra el día de Montevideo aunque UTC ya sea el día siguiente", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-10-11T01:00:00Z"));
+		try {
+			await consultarPublicaciones();
+			expect(sql.mock.calls[0][1]).toBe("2026-10-10");
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("conserva el precio nulo cuando la publicación no tiene precio", async () => {
-		query.mockResolvedValue([
-		{ ...crearFila(), precio: null },
-		]);
-
+		query.mockResolvedValue([{ ...crearFila(), precio: null }]);
 		const { publicaciones } = await consultarPublicaciones();
-
 		expect(publicaciones).toHaveLength(1);
 		expect(publicaciones[0].precio).toBeNull();
 	});

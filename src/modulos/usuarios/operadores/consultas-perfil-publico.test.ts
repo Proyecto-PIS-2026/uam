@@ -169,10 +169,12 @@ describe("obtenerPerfilPublicoOperador", () => {
 
     // Verifica que solo se devuelvan publicaciones activas, disponibles y de tipo OPERADOR
     it("devuelve solo las publicaciones visibles con sus datos", async () => {
+        const fechaPublicacion = new Date("2026-10-03T15:00:00.000Z");
         const publicacionVisible = {
             id: 101,
             foto: "/publicaciones/tomate.jpg",
             precio: "120.00",
+            fecha: fechaPublicacion,
             cantidadUnidades: null,
             publicacionActiva: true,
             publicacionDisponible: true,
@@ -203,6 +205,7 @@ describe("obtenerPerfilPublicoOperador", () => {
                 id: 101,
                 foto: "/publicaciones/tomate.jpg",
                 precio: "120.00",
+                fecha: fechaPublicacion.toString(),
                 cantidadUnidades: null,
                 especie: "Tomate",
                 variedad: "Perita",
@@ -216,10 +219,12 @@ describe("obtenerPerfilPublicoOperador", () => {
     });
 
     it("devuelve solo las publicaciones visibles con sus datos, version con unidades", async () => {
+        const fechaPublicacion = new Date("2026-10-03T15:00:00.000Z");
         const publicacionVisible = {
             id: 101,
             foto: "/publicaciones/tomate.jpg",
             precio: "120.00",
+            fecha: fechaPublicacion.toString(),
             cantidadUnidades: 5,
             publicacionActiva: true,
             publicacionDisponible: true,
@@ -244,12 +249,13 @@ describe("obtenerPerfilPublicoOperador", () => {
         ]);
 
         const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
-
+        
         expect(resultado?.publicaciones).toEqual([
             {
                 id: 101,
                 foto: "/publicaciones/tomate.jpg",
                 precio: "120.00",
+                fecha: fechaPublicacion.toString(),
                 cantidadUnidades: 5,
                 especie: "Tomate",
                 variedad: "Perita",

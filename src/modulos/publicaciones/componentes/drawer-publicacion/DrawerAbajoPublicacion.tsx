@@ -5,7 +5,6 @@ import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "../ImagenPublicacion";
 import Link from "next/link";
-// import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 import TextoAjustable from "./TextoAjustable";
@@ -21,12 +20,12 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
     const numeroWhatsApp = publicacion?.operador.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+    const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     const contenido = (
         <SwipeableDrawer anchor="bottom" open={open && publicacion !== null} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }}>
             {publicacion && (
                 <>
                     <div className={styles.tarjeta}>
-                        {/* <HojasDecorativas variante="fondo" className={styles.hojasDrawer} /> */}
                         <div className={styles.indicador} />
                         <div className={styles.bloqueSuperior}>
                             <div className={styles.marcoImagen}>
@@ -71,6 +70,10 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
                             <div className={styles.informacionDetallada}>
                                 <span className={styles.nombreInformacion}>País</span>
                                 <span className={styles.valorInformacion}>{publicacion.pais}</span>
+                            </div>
+                            <div className={styles.informacionDetallada}>
+                                <span className={styles.nombreInformacion}>Actualización</span>
+                                <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
                             </div>
                         </div>
                         <div className={styles.operador}>

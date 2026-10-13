@@ -5,6 +5,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
+import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import type { PrecioReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 import styles from "./PreciosReferencia.module.css";
@@ -74,6 +75,7 @@ function leerPrecio(valor: string): number | null {
 }
 
 export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
+    const router = useRouter();
     const [busqueda, setBusqueda] = useState("");
     const [seleccion, setSeleccion] = useState<SeleccionFiltros>(FILTROS_VACIOS);
     const { especie, variedad, pais, unidad, categoria, calibre } = seleccion;
@@ -151,6 +153,19 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     const desde = (paginaActual - 1) * LIMITE;
     const visibles = filtradas.slice(desde, desde + LIMITE);
     const [anio, mes, dia] = fechaRelevamiento.split("-");
+
+    function abrirHistorico(fila: PrecioReferencia) {
+        const [, especie] = JSON.parse(fila.id);
+        const parametros = new URLSearchParams({
+            species_id: String(especie),
+            producto: fila.especie,
+            variedad: fila.variedad,
+            pais: fila.pais,
+            calibre: fila.calibre,
+            categoria: fila.categoria,
+        });
+        router.push(`/precios-historicos?${parametros}`);
+    }
 
     function cambiar(accion: () => void) {
         accion();
@@ -378,7 +393,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 </thead>
                                 <tbody>
                                     {visibles.map((fila) => (
-                                        <tr key={fila.id} className={fila.esReferencia ? styles.filaReferencia : undefined}>
+                                        <tr key={fila.id} className={fila.esReferencia ? styles.filaReferencia : undefined} onClick={() => abrirHistorico(fila)} style={{ cursor: "pointer" }}>
                                             <td className={styles.producto}><strong>{fila.especie}</strong></td>
                                             <td className={styles.variedad}>{fila.variedad}</td>
                                             <td className={styles.referencia}>
@@ -412,6 +427,8 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                     key={fila.id}
                                     className={`${styles.filaMobile} ${fila.esReferencia ? styles.filaMobileReferencia : ""}`}
                                     role="listitem"
+                                    onClick={() => abrirHistorico(fila)}
+                                    style={{ cursor: "pointer" }}
                                 >
                                     <div className={styles.filaMobileCabecera}>
                                         <div className={styles.filaMobileProducto}>

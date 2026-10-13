@@ -1,7 +1,7 @@
 "use client"; // https://nextjs.org/docs/app/api-reference/directives/use-client
 
+import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import { useState } from "react";
-import EncabezadoPagina from "../../../../../compartido/EncabezadoPagina";
 import type { OperadorListado } from "../../consultas-listado-publico";
 import ControlesListadoOperadores from "./ControlesListadoOperadores";
 import TarjetaOperador from "./TarjetaOperador";
@@ -35,8 +35,11 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
     const operadoresFiltrados: OperadorListado[] = [];
 
     for (const operador of operadores) {
-        const nombreOperador = normalizarTexto(operador.nombreFantasia);
-        const coincideConBusqueda = nombreOperador.includes(textoBuscado);
+        const datosOperador = normalizarTexto([
+            operador.nombreFantasia,
+            ...operador.locales.map((local) => `${local.nombreNave === "Tinglado" ? local.nombreNave : `Nave ${local.nombreNave}`} - Local ${local.numeroLocal}`),
+        ].join(" "));
+        const coincideConBusqueda = datosOperador.includes(textoBuscado);
         if (coincideConBusqueda) {
             let coincideConNave = naveSeleccionada === "Todas";
             if (!coincideConNave) {
@@ -60,7 +63,21 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
 
     const contenido = (
         <section className="contenedor-pagina flex flex-col gap-6">
-            <EncabezadoPagina titulo="Operadores" cantidad={operadores.length} subtitulo="operadores en la plataforma" />
+            <header className="encabezado-pagina relative isolate overflow-hidden rounded-2xl bg-secondary">
+                <HojasDecorativas />
+
+                <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h1 className="titulo-pagina text-white">
+                            Operadores
+                        </h1>
+
+                        <p className="mt-2 text-sm text-white/80 sm:text-base">
+                            Consultá los operadores de la plataforma.
+                        </p>
+                    </div>
+                </div>
+            </header>
 
             <ControlesListadoOperadores
                 busqueda={busqueda}
@@ -72,11 +89,17 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
                 navesDisponibles={navesDisponibles}
             />
 
-            <div className={styles.lista}>
-                {operadoresFiltrados.map((operador) => (
-                    <TarjetaOperador key={operador.id} operador={operador}/>
-                ))}
-            </div>
+            {operadoresFiltrados.length === 0 ? (
+                <p role="status" className="py-8 text-center text-muted">
+                    {operadores.length === 0 ? "No hay operadores disponibles." : "No se encontraron operadores que coincidan con la búsqueda y la nave seleccionada."}
+                </p>
+            ) : (
+                <div className={styles.lista}>
+                    {operadoresFiltrados.map((operador) => (
+                        <TarjetaOperador key={operador.id} operador={operador}/>
+                    ))}
+                </div>
+            )}
         </section>
     );
 

@@ -34,6 +34,7 @@ function crearPublicacion(): PublicacionListado {
         especie: "Tomate",
         variedad: "Perita",
         precio: 150,
+        fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
         presentacion: "Cajón",
         categoria: "Primera",
@@ -136,6 +137,7 @@ describe("DrawerPublicacion", () => {
                     especie: "Manzana",
                     variedad: "Gala",
                     precio: 80,
+                    fecha: "2026-10-03T15:00:00.000Z",
                     operador: {
                         id: 20,
                         nombreFantasia: "Frutas Norte",

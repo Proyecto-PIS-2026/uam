@@ -1,0 +1,237 @@
+.contenedor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.lista {
+    --columnas-usuarios: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 5rem;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background-color: white;
+}
+
+.encabezado {
+    display: grid;
+    grid-template-columns: var(--columnas-usuarios);
+    gap: 1rem;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-bottom: 2px solid var(--color-primary);
+    background-color: var(--color-primary-soft);
+    color: var(--color-secondary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-sizing: border-box;
+}
+
+.columnaAccionesHeader {
+    text-align: right;
+}
+
+.fila {
+    display: grid;
+    grid-template-columns: var(--columnas-usuarios);
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0.5rem 1rem;
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    background-color: white;
+    color: var(--color-foreground);
+    font-family: inherit;
+    font-size: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.fila:last-child {
+    border-bottom: 0;
+}
+
+.fila:hover {
+    background-color: var(--color-primary-soft);
+}
+
+.fila.seleccionada {
+    background-color: var(--color-primary-soft);
+    box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.username {
+    min-width: 0;
+    color: var(--color-secondary);
+    font-weight: 600;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.encabezado span:nth-child(2),
+.informacion {
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    justify-self: stretch;
+    box-sizing: border-box;
+}
+
+.encabezado span:nth-child(2) {
+    white-space: nowrap;
+}
+
+.informacion {
+    overflow: hidden;
+    color: var(--color-foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rol {
+    min-width: 0;
+    color: var(--color-foreground);
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.encabezado span:nth-child(3) {
+    text-align: left;
+}
+
+.acciones {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+}
+
+.botonEditar {
+    color: var(--color-primary) !important;
+}
+
+.botonEliminar {
+    color: #d32f2f !important;
+}
+
+.sinResultados {
+    margin: 0;
+    padding: 1.5rem 0;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.paginacion {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding-top: 0.25rem;
+}
+
+.paginacion :global(.MuiPaginationItem-root) {
+    color: var(--color-foreground);
+}
+
+.paginacion :global(.MuiPaginationItem-root.Mui-selected) {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.paginacion :global(.MuiPaginationItem-root.Mui-selected:hover) {
+    background-color: var(--color-primary-hover);
+}
+
+.paginacion :global(.MuiPaginationItem-root:hover) {
+    background-color: var(--color-primary-soft);
+}
+
+.modalTitulo {
+    color: var(--color-secondary);
+    font-size: 1.1rem !important;
+}
+
+.modalAcciones {
+    padding: 1rem 1.5rem !important;
+}
+
+.botonCancelarModal {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+    text-transform: none !important;
+    font-weight: 600 !important;
+}
+
+.botonEliminarModal {
+    text-transform: none !important;
+    font-weight: 600 !important;
+}
+
+.textoConfirmacion {
+    margin: 0;
+    color: var(--color-foreground);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+    .lista {
+        --columnas-usuarios: minmax(0, 1fr) minmax(0, 1fr) 5rem;
+    }
+
+    .encabezado {
+        gap: 0.75rem;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    .encabezado span:nth-child(2),
+    .informacion {
+        display: none;
+    }
+
+    .encabezado span:nth-child(3) {
+        text-align: left;
+    }
+
+    .fila {
+        gap: 0.75rem;
+        min-height: 3rem;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .username {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .rol {
+        text-align: left;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 500px) {
+    .lista {
+        --columnas-usuarios: minmax(0, 1fr) max-content 5rem;
+    }
+
+    .encabezado span:nth-child(3) {
+        text-align: right;
+    }
+
+    .rol {
+        text-align: right;
+    }
+}

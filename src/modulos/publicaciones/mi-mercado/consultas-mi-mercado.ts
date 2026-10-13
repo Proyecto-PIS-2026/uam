@@ -12,6 +12,15 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
         .where({ operadorId })
         .include("publicacion", (pub) =>
             pub
+                .select(
+                    "id",
+                    "foto",
+                    "precio",
+                    "cantidadUnidades",
+                    "fecha",
+                    "publicacionActiva",
+                    "publicacionDisponible",
+                )
                 .include("presentacion", (pres) =>
                     pres.include("variedad", (variedad) =>
                         variedad.include("especie"))
@@ -41,7 +50,7 @@ export async function actualizarPrecioPublicacion(
         throw new Error("El precio excede el valor máximo permitido.");
     }
 
-    await db.transaction(async (tx) => {
+    return db.transaction(async (tx) => {
         await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ${operadorId})`
             .returnsRow({ locked: "pg/int4@1" }).build());
 
@@ -60,6 +69,7 @@ export async function actualizarPrecioPublicacion(
         if (!publicacionActualizada) {
             throw new PublicacionNoEncontradaError();
         }
+
+        return publicacionActualizada.fecha.toString();
     });
 }
-

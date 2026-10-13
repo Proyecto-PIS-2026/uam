@@ -40,6 +40,7 @@ export default defineConfig({
         },
       },
       {
+        extends: true,
         test: {
           name: 'integration',
           environment: 'node',

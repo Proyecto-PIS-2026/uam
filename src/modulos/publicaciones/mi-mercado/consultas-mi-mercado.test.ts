@@ -17,10 +17,10 @@ const mocks = vi.hoisted(() => {
     const execute = vi.fn();
 
     const relationInclude = vi.fn();
+    const relationSelect = vi.fn();
+    const relationBuilder = {select: relationSelect, include: relationInclude};
 
-    const relationBuilder = {
-        include: relationInclude,
-    };
+    relationSelect.mockReturnValue(relationBuilder);
 
     relationInclude.mockImplementation(
         (
@@ -149,9 +149,10 @@ describe("consultas-mi-mercado", () => {
             { id: 1 },
         ]);
 
-        mocks.publicacionUpdate.mockResolvedValue({ id: 20 });
+        const fechaGuardada = "2026-10-10T16:30:00Z";
+        mocks.publicacionUpdate.mockResolvedValue({ id: 20, fecha: { toString: () => fechaGuardada } });
 
-        await actualizarPrecioPublicacion(
+        const fecha = await actualizarPrecioPublicacion(
             10,
             20,
             125
@@ -183,6 +184,7 @@ describe("consultas-mi-mercado", () => {
         ).toHaveBeenCalledWith({
             precio: "125.00",
         });
+        expect(fecha).toBe(fechaGuardada);
     });
 
     it("rechaza el cambio si la publicación desaparece antes del update", async () => {

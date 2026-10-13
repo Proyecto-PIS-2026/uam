@@ -1,81 +1,264 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { usePathname } from "next/navigation";
+import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
+import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
+import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
 
-import styles from "./HeaderPublico.module.css";
+import estilos from "./HeaderPublico.module.css";
 
-const opcionesMenu = [
+type OpcionMenu = {
+    nombre: string;
+    ruta: string;
+    permitido?: (sesion: DatosSesion | null) => boolean;
+    soloSinSesion?: boolean;
+    ocultarParaOperador?: boolean;
+};
+
+const opcionesMenu: OpcionMenu[] = [
     {
         nombre: "Inicio",
         ruta: "/inicio",
+        ocultarParaOperador: true,
     },
     {
         nombre: "Publicaciones",
         ruta: "/publicaciones",
+        permitido: () => autorizado("operador.publicacion.consultar"),
+        ocultarParaOperador: true,
     },
     {
         nombre: "Operadores",
         ruta: "/operadores",
+        permitido: () => autorizado("operador.catalogo.consultar"),
+        ocultarParaOperador: true,
     },
     {
         nombre: "Precios de referencia",
         ruta: "/precios-referencia",
+        permitido: () => autorizado("preciosReferencia.consultar"),
     },
     {
         nombre: "Mi mercado",
         ruta: "/mi-mercado",
+        permitido: (sesion) => autorizado("operador.mercado.acceder", sesion),
     },
+    {
+        nombre: "Mi mercado",
+        ruta: "/mi-mercado/productor",
+        permitido: (sesion) => autorizado("productor.mercado.acceder", sesion),
+    },
+    {
+        nombre: "Iniciar sesión",
+        ruta: "/iniciar-sesion",
+        soloSinSesion: true,
+    },
+    { 
+        nombre: "Administración", 
+        ruta: "/administracion",
+        permitido: (sesion) => autorizado("usuarios.cuentas.gestionar", sesion),
+    }
 ];
 
-export default function HeaderPublico() {
-    const [menuAbierto, setMenuAbierto] = useState(false);
-    const pathname = usePathname() ?? "";
+type PropiedadesEncabezado = {
+    sesion: DatosSesion | null;
+    fotoPerfil?: string | null;
+};
+
+export default function HeaderPublico({ sesion, fotoPerfil = null }: PropiedadesEncabezado) {
+    const rolUsuario = sesion?.rol ?? null;
+    const [menuAbierto, cambiarMenuAbierto] = useState(false);
+    const [menuUsuarioAbierto, cambiarMenuUsuarioAbierto] = useState(false);
+    const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
+    const referenciaMenuUsuario = useRef<HTMLDivElement>(null);
+    const rutaActual = usePathname() ?? "";
+    const rutaPrincipal = obtenerRutaPrincipal(rolUsuario);
+    const opcionesVisibles = opcionesMenu.filter(
+        (opcion) =>
+            (!opcion.permitido || opcion.permitido(sesion)) &&
+            (!opcion.soloSinSesion || rolUsuario === null) &&
+            (!opcion.ocultarParaOperador || rolUsuario !== "OPERADOR"),
+    );
+
+    useEffect(() => {
+        if (!menuUsuarioAbierto) return;
+
+        function cerrarMenuAlPulsarFuera(evento: PointerEvent) {
+            const elementoPulsado = evento.target;
+            if (
+                elementoPulsado instanceof Node &&
+                !referenciaMenuUsuario.current?.contains(elementoPulsado)
+            ) {
+                cambiarMenuUsuarioAbierto(false);
+            }
+        }
+
+        document.addEventListener("pointerdown", cerrarMenuAlPulsarFuera, true);
+        return () => {
+            document.removeEventListener("pointerdown", cerrarMenuAlPulsarFuera, true);
+        };
+    }, [menuUsuarioAbierto]);
 
     function esRutaActiva(ruta: string) {
         if (ruta === "/mi-mercado") {
-            return pathname === ruta || pathname.startsWith(`${ruta}/`) || pathname.startsWith("/publicaciones/nueva");
+            return (
+                rutaActual === ruta ||
+                rutaActual.startsWith(`${ruta}/`) ||
+                rutaActual.startsWith("/publicaciones/nueva")
+            );
         }
-        if (ruta === "/publicaciones" && pathname.startsWith("/publicaciones/nueva")) {
+        if (ruta === "/publicaciones" && rutaActual.startsWith("/publicaciones/nueva")) {
             return false;
         }
-        return pathname === ruta || pathname.startsWith(`${ruta}/`);
+        return rutaActual === ruta || rutaActual.startsWith(`${ruta}/`);
     }
+
+    const menuUsuario = rolUsuario && (
+        <div ref={referenciaMenuUsuario} className={estilos.menuOperador}>
+            <button
+                type="button"
+                className={estilos.botonOperador}
+                aria-label="Abrir menú de usuario"
+                aria-expanded={menuUsuarioAbierto}
+                onClick={() => cambiarMenuUsuarioAbierto((abierto) => !abierto)}
+            >
+                {fotoPerfil && !fotoPerfilFallida ? (
+                    <Image
+                        src={fotoPerfil}
+                        alt="Foto de perfil"
+                        width={40}
+                        height={40}
+                        className={estilos.fotoPerfil}
+                        onError={() => cambiarFotoPerfilFallida(true)}
+                    />
+                ) : (
+                    <AccountCircleIcon className={estilos.iconoOperador} />
+                )}
+            </button>
+            {menuUsuarioAbierto && (
+                <div className={estilos.desplegableOperador} role="menu">
+                    <span className={estilos.opcionDesplegable} role="menuitem">
+                        Mi perfil
+                    </span>
+                    <form action={cerrarSesionYVolverAlInicio}>
+                        <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
+                            Cerrar sesión
+                        </button>
+                    </form>
+                </div>
+            )}
+        </div>
+    );
+
+    const menuPerfilMobile = rolUsuario && (
+        <button type="button" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`}>
+            <span>Mi perfil</span>
+            {fotoPerfil && !fotoPerfilFallida ? (
+                <Image
+                    src={fotoPerfil}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className={estilos.fotoPerfilMobile}
+                    onError={() => cambiarFotoPerfilFallida(true)}
+                />
+            ) : (
+                <AccountCircleIcon className={estilos.iconoPerfilMobile} />
+            )}
+        </button>
+    );
+
+    const menuCerrarSesionMobile = rolUsuario && (
+        <form action={cerrarSesionYVolverAlInicio}>
+            <button type="submit" className={`${estilos.enlaceMobile} ${estilos.cerrarSesionMobile}`}>
+                Cerrar sesión
+            </button>
+        </form>
+    );
 
     const contenido = (
         <>
-            <header className={styles.header}>
-                <div className={styles.contenido}>
-                    <Link href="/inicio" className={styles.marca} aria-label="Ir al inicio" onClick={() => setMenuAbierto(false)}>
-                        <Image src="/Logo.PNG" alt="Unidad Agroalimentaria Metropolitana" width={410} height={94} priority className={styles.logo}/>
+            <header className={estilos.header}>
+                <div className={estilos.contenido}>
+                    <Link
+                        href={rutaPrincipal}
+                        className={estilos.marca}
+                        aria-label={rolUsuario === "OPERADOR" ? "Ir a Mi mercado" : "Ir al inicio"}
+                        onClick={() => cambiarMenuAbierto(false)}
+                    >
+                        <Image
+                            src="/Logo.PNG"
+                            alt="Unidad Agroalimentaria Metropolitana"
+                            width={410}
+                            height={94}
+                            priority
+                            className={estilos.logo}
+                        />
                     </Link>
-                    <nav className={styles.navegacion} aria-label="Navegación principal">
-                        {opcionesMenu.map((opcion) => (
-                            <Link key={opcion.nombre} href={opcion.ruta} aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined} className={`${styles.enlace} ${esRutaActiva(opcion.ruta) ? styles.enlaceActivo : ""}`}>
+                    <nav className={estilos.navegacion} aria-label="Navegación principal">
+                        {opcionesVisibles.map((opcion) => (
+                            <Link
+                                key={opcion.ruta}
+                                href={opcion.ruta}
+                                aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined}
+                                className={`${estilos.enlace} ${esRutaActiva(opcion.ruta) ? estilos.enlaceActivo : ""}`}
+                            >
                                 {opcion.nombre}
                             </Link>
                         ))}
                     </nav>
-                    <button className={styles.menuMobile} type="button" onClick={() => setMenuAbierto((abierto) => !abierto)}
-                        aria-label={ menuAbierto ? "Cerrar menú" : "Abrir menú" } aria-expanded={menuAbierto} aria-controls="menu-mobile">
-                        <MenuIcon className={`${styles.iconoMenu} ${menuAbierto ? styles.iconoMenuOculto : styles.iconoMenuVisible}`}/>
-                        <CloseIcon className={`${styles.iconoMenu} ${menuAbierto ? styles.iconoCerrarVisible : styles.iconoCerrarOculto}`}/>
+                    {menuUsuario}
+                    <button
+                        className={estilos.menuMobile}
+                        type="button"
+                        onClick={() => cambiarMenuAbierto((abierto) => !abierto)}
+                        aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+                        aria-expanded={menuAbierto}
+                        aria-controls="menu-mobile"
+                    >
+                        <MenuIcon
+                            className={`${estilos.iconoMenu} ${menuAbierto ? estilos.iconoMenuOculto : estilos.iconoMenuVisible}`}
+                        />
+                        <CloseIcon
+                            className={`${estilos.iconoMenu} ${menuAbierto ? estilos.iconoCerrarVisible : estilos.iconoCerrarOculto}`}
+                        />
                     </button>
                 </div>
-                <nav id="menu-mobile" className={`${styles.navegacionMobile} ${menuAbierto ? styles.navegacionMobileAbierta : ""}`} aria-label="Navegación móvil">
-                    {opcionesMenu.map((opcion) => (
-                        <Link key={opcion.nombre} href={opcion.ruta} aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined} className={styles.enlaceMobile} onClick={() => setMenuAbierto(false)}>
+                <nav
+                    id="menu-mobile"
+                    className={`${estilos.navegacionMobile} ${menuAbierto ? estilos.navegacionMobileAbierta : ""}`}
+                    aria-label="Navegación móvil"
+                >
+                    {menuPerfilMobile}
+                    {opcionesVisibles.map((opcion) => (
+                        <Link
+                            key={opcion.ruta}
+                            href={opcion.ruta}
+                            aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined}
+                            className={estilos.enlaceMobile}
+                            onClick={() => cambiarMenuAbierto(false)}
+                        >
                             {opcion.nombre}
                         </Link>
                     ))}
+                    {menuCerrarSesionMobile}
                 </nav>
             </header>
-            {menuAbierto && (<div className={styles.overlayMenu} onMouseDown={() => setMenuAbierto(false)} aria-hidden="true"/>)}
+            {menuAbierto && (
+                <div
+                    className={estilos.overlayMenu}
+                    onMouseDown={() => cambiarMenuAbierto(false)}
+                    aria-hidden="true"
+                />
+            )}
         </>
     );
 

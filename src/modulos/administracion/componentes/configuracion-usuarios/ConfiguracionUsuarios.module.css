@@ -1,0 +1,12 @@
+.contenedor {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .contenedor {
+        display: contents;
+    }
+}

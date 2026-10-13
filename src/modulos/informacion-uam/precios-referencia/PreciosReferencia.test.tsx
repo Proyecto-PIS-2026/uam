@@ -3,7 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPreciosReferencia, type PrecioReferencia } from "./consultas-precios-referencia";
 import PreciosReferencia from "./PreciosReferencia";
 
-beforeEach(() => vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "local"));
+const { navegar } = vi.hoisted(() => ({ navegar: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: navegar }) }));
+
+beforeEach(() => {
+    vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "local");
+    navegar.mockClear();
+});
 afterEach(() => vi.unstubAllEnvs());
 
 const filasConPreciosDistintos: PrecioReferencia[] = [
@@ -99,10 +105,22 @@ function esperarSelectVacio(nombre: string) {
 }
 
 describe("PreciosReferencia", () => {
-    
-    beforeEach(() => {
-        vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "local");
-        document.body.style.setProperty("--Mui-transitions-disabled", "true");
+    it.each(["tabla", "móvil"] as const)("abre el histórico desde %s con la especie y filtros de la fila sin clasificación", (vista) => {
+        const fila: PrecioReferencia = {
+            ...filasConPreciosDistintos[1],
+            id: JSON.stringify([2, 60, "Cavendish", "M", "URUGUAY", "UN", "I"]),
+        };
+        render(<PreciosReferencia fechaRelevamiento="2026-08-27" filas={[fila]} />);
+
+        const registro = vista === "tabla"
+            ? within(screen.getByRole("table")).getAllByRole("row")[1]
+            : within(screen.getByRole("list", { name: "Precios relevados" })).getByRole("listitem");
+        fireEvent.click(registro);
+
+        expect(navegar).toHaveBeenCalledOnce();
+        expect(navegar).toHaveBeenCalledWith(
+            "/precios-historicos?species_id=60&producto=Banana&variedad=Cavendish&pais=URUGUAY&calibre=M&categoria=I",
+        );
     });
 
     it("muestra todos los registros y permite ver solo los marcados como referencia", async () => {

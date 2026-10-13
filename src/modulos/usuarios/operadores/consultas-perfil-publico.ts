@@ -1,3 +1,4 @@
+import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 import { Temporal } from "@js-temporal/polyfill";
@@ -6,6 +7,7 @@ export type PublicacionPerfil = {
     id: number;
     foto: string | null;
     precio: string | null;
+    fecha: string;
     especie: string;
     variedad: string;
     presentacion: string;
@@ -28,6 +30,14 @@ export type PerfilPublicoOperador = {
 }
 
 export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Promise<PerfilPublicoOperador | null> {
+    if (!autorizado("operador.catalogo.consultar")) {
+        throw new Error("No tiene permisos para consultar el catálogo de Operadores.");
+    }
+
+    if (!autorizado("operador.publicacion.consultar")) {
+        throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
+    }
+
     if (!nombreFantasia.trim()) {
         return null;
     }
@@ -78,6 +88,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 "id",
                 "foto",
                 "precio",
+                "fecha",
                 "cantidadUnidades",
                 "publicacionActiva",
                 "publicacionDisponible",
@@ -108,6 +119,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 id: publicacion.id,
                 foto: publicacion.foto,
                 precio: publicacion.precio,
+                fecha: publicacion.fecha.toString(),
                 especie: publicacion.presentacion.variedad.especie.nombreEspecie,
                 variedad: publicacion.presentacion.variedad.nombreVariedad,
                 presentacion: publicacion.presentacion.nombrePresentacion,
