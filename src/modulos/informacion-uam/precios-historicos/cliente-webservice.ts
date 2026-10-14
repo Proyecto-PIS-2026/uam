@@ -3,46 +3,17 @@ import { validarParametrosConsulta, type ConsultaHistorica } from "./parametros-
 import type { HistoricoProducto } from "./tipos";
 import { validarHistoricoProducto } from "./validar-historico";
 
-const TIEMPO_MAXIMO_PREDETERMINADO_MS = 300_000;
-const TIEMPO_MAXIMO_ADMITIDO_MS = 2_147_483_647;
+const TIEMPO_MAXIMO_MS = 300_000;
 
 export class ErrorWebserviceHistorico extends Error {
-    readonly estadoHTTP: number;
-    readonly reintentarEnMs: number | null;
-    readonly duracionMs: number;
-
-    constructor(estadoHTTP: number, reintentarEnMs: number | null, duracionMs: number, consulta: ConsultaHistorica) {
+    constructor(estadoHTTP: number, duracionMs: number, consulta: ConsultaHistorica) {
         super(`El webservice de precios históricos respondió con estado ${estadoHTTP}. ${contextoConsulta(consulta, duracionMs)}`);
         this.name = "ErrorWebserviceHistorico";
-        this.estadoHTTP = estadoHTTP;
-        this.reintentarEnMs = reintentarEnMs;
-        this.duracionMs = duracionMs;
     }
 }
 
 function contextoConsulta(consulta: ConsultaHistorica, duracionMs: number): string {
     return `Duración: ${duracionMs} ms. Especie: ${consulta.speciesId}. Período: ${consulta.desde} a ${consulta.hasta}.`;
-}
-
-function tiempoMaximo(): number {
-    const configurado = process.env.PRECIOS_HISTORICOS_TIMEOUT_MS;
-    const limite = configurado === undefined ? TIEMPO_MAXIMO_PREDETERMINADO_MS : Number(configurado);
-    if (!Number.isSafeInteger(limite) || limite <= 0 || limite > TIEMPO_MAXIMO_ADMITIDO_MS) {
-        throw new Error("PRECIOS_HISTORICOS_TIMEOUT_MS debe ser un entero positivo menor o igual a 2147483647.");
-    }
-    return limite;
-}
-
-function esperaIndicada(respuesta: Response, ahora: number): number | null {
-    const valor = respuesta.headers?.get("Retry-After")?.trim();
-    if (!valor) return null;
-    if (/^\d+$/.test(valor)) {
-        const milisegundos = Number(valor) * 1000;
-        return Number.isSafeInteger(milisegundos) ? milisegundos : null;
-    }
-    if (!/^(?:Mon(?:day)?|Tue(?:sday)?|Wed(?:nesday)?|Thu(?:rsday)?|Fri(?:day)?|Sat(?:urday)?|Sun(?:day)?),?\s/i.test(valor)) return null;
-    const fecha = Date.parse(valor);
-    return Number.isFinite(fecha) ? Math.max(0, fecha - ahora) : null;
 }
 
 function codigoRed(error: TypeError): string | null {
@@ -95,7 +66,7 @@ export async function consultarHistorico(
     const token = opciones.token.trim();
     if (!token || /[\r\n]/.test(token)) throw new Error("Falta un token válido para el webservice de precios.");
 
-    const limiteMs = tiempoMaximo();
+    const limiteMs = TIEMPO_MAXIMO_MS;
     const inicio = Date.now();
 
     const controlador = new AbortController();
@@ -112,7 +83,6 @@ export async function consultarHistorico(
             const ahora = Date.now();
             throw new ErrorWebserviceHistorico(
                 respuesta.status,
-                respuesta.status === 429 ? esperaIndicada(respuesta, ahora) : null,
                 ahora - inicio,
                 consulta,
             );

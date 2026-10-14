@@ -1,0 +1,99 @@
+[
+  {
+    "id": "table.historicoPrecios",
+    "label": "Create table \"historicoPrecios\"",
+    "summary": "Creates table \"historicoPrecios\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "historicoPrecios"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"historicoPrecios\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"historicoPrecios\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"historicoPrecios\"",
+        "sql": "CREATE TABLE \"public\".\"historicoPrecios\" (\n  \"especieId\" int4 NOT NULL,\n  \"fechaDesde\" date NOT NULL,\n  \"fechaHasta\" date NOT NULL,\n  \"fechaUltimaActualizacion\" date NOT NULL,\n  \"historico\" jsonb NOT NULL,\n  PRIMARY KEY (\"especieId\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"historicoPrecios\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"historicoPrecios\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.historicoPrecios.historicoPrecios_especieId_fkey",
+    "label": "Add foreign key \"historicoPrecios_especieId_fkey\" on \"historicoPrecios\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "historicoPrecios_especieId_fkey",
+        "table": "historicoPrecios"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"historicoPrecios_especieId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "historicoPrecios_especieId_fkey",
+          "public",
+          "\"public\".\"historicoPrecios\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"historicoPrecios_especieId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"historicoPrecios\"\nADD CONSTRAINT \"historicoPrecios_especieId_fkey\"\nFOREIGN KEY (\"especieId\")\nREFERENCES \"public\".\"especie\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"historicoPrecios_especieId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "historicoPrecios_especieId_fkey",
+          "public",
+          "\"public\".\"historicoPrecios\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.trasladar_historicos_precios",
+    "label": "Trasladar históricos existentes conservando sus valores JSON",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Copiar históricos v2 y retirar sólo las configuraciones transferidas íntegramente",
+        "sql": "DO $$\nDECLARE\n  origen RECORD;\n  estado JSONB;\n  datos JSONB;\n  uam_id INTEGER;\n  especie_id INTEGER;\n  fecha_desde DATE;\n  fecha_hasta DATE;\n  actualizado DATE;\nBEGIN\n  FOR origen IN\n    SELECT \"id\", \"nombreConfiguracion\", \"valorConfiguracion\"\n    FROM \"public\".\"configuracion\"\n    WHERE \"nombreConfiguracion\" LIKE 'precios-historicos:v2:especie:%'\n    ORDER BY \"id\"\n    FOR UPDATE\n  LOOP\n    IF origen.\"nombreConfiguracion\" !~ '^precios-historicos:v2:especie:[1-9][0-9]*$' THEN\n      CONTINUE;\n    END IF;\n    BEGIN\n      estado := origen.\"valorConfiguracion\"::JSONB;\n      uam_id := split_part(origen.\"nombreConfiguracion\", ':', 4)::INTEGER;\n      datos := estado -> 'historico';\n      IF jsonb_typeof(estado) IS DISTINCT FROM 'object'\n        OR (estado -> 'version') IS DISTINCT FROM '2'::JSONB\n        OR jsonb_typeof(datos) IS DISTINCT FROM 'object'\n        OR jsonb_typeof(datos -> 'species_id') IS DISTINCT FROM 'number'\n        OR (datos ->> 'species_id')::NUMERIC <> uam_id\n        OR jsonb_typeof(datos -> 'series') IS DISTINCT FROM 'array'\n        OR jsonb_typeof(datos -> 'from') IS DISTINCT FROM 'string'\n        OR jsonb_typeof(datos -> 'to') IS DISTINCT FROM 'string'\n        OR jsonb_typeof(estado -> 'fechaUltimaActualizacion') IS DISTINCT FROM 'string'\n      THEN\n        CONTINUE;\n      END IF;\n      IF (datos ->> 'from') !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'\n        OR (datos ->> 'to') !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'\n        OR (estado ->> 'fechaUltimaActualizacion') !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'\n      THEN\n        CONTINUE;\n      END IF;\n      fecha_desde := (datos ->> 'from')::DATE;\n      fecha_hasta := (datos ->> 'to')::DATE;\n      actualizado := (estado ->> 'fechaUltimaActualizacion')::DATE;\n      IF fecha_desde > fecha_hasta\n        OR to_char(fecha_desde, 'YYYY-MM-DD') <> (datos ->> 'from')\n        OR to_char(fecha_hasta, 'YYYY-MM-DD') <> (datos ->> 'to')\n        OR to_char(actualizado, 'YYYY-MM-DD') <> (estado ->> 'fechaUltimaActualizacion')\n      THEN\n        CONTINUE;\n      END IF;\n    EXCEPTION WHEN data_exception THEN\n      CONTINUE;\n    END;\n    SELECT \"id\" INTO especie_id FROM \"public\".\"especie\" WHERE \"uamId\" = uam_id;\n    IF especie_id IS NULL THEN\n      CONTINUE;\n    END IF;\n    INSERT INTO \"public\".\"historicoPrecios\"\n      (\"especieId\", \"historico\", \"fechaDesde\", \"fechaHasta\", \"fechaUltimaActualizacion\")\n    VALUES (especie_id, datos, fecha_desde, fecha_hasta, actualizado)\n    ON CONFLICT (\"especieId\") DO NOTHING;\n    DELETE FROM \"public\".\"configuracion\" AS configuracion\n    WHERE configuracion.\"id\" = origen.\"id\"\n      AND EXISTS (\n        SELECT 1 FROM \"public\".\"historicoPrecios\" AS destino\n        WHERE destino.\"especieId\" = especie_id\n          AND destino.\"historico\" = datos\n          AND destino.\"fechaDesde\" = fecha_desde\n          AND destino.\"fechaHasta\" = fecha_hasta\n          AND destino.\"fechaUltimaActualizacion\" = actualizado\n      );\n  END LOOP;\n  DELETE FROM \"public\".\"configuracion\"\n  WHERE \"nombreConfiguracion\" = 'precios-historicos:v2:sincronizacion'\n    AND NOT EXISTS (\n      SELECT 1 FROM \"public\".\"configuracion\"\n      WHERE \"nombreConfiguracion\" LIKE 'precios-historicos:v2:especie:%'\n    );\nEND;\n$$;"
+      }
+    ],
+    "postcheck": []
+  }
+]

@@ -280,26 +280,6 @@
     overflow-wrap: anywhere;
 }
 
-.erroresValidacion {
-    margin: 0 1rem 1rem;
-    color: #b42318;
-    font-size: 0.875rem;
-    overflow-wrap: anywhere;
-}
-
-.erroresValidacion summary {
-    cursor: pointer;
-}
-
-.erroresValidacion ul {
-    margin: 0.5rem 0 0;
-    padding-left: 1.25rem;
-}
-
-.erroresValidacion li+li {
-    margin-top: 0.35rem;
-}
-
 .tabla {
     width: 100%;
     min-width: 58rem;

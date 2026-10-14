@@ -1,6 +1,7 @@
 import type { ConsultaHistorica } from "../../src/modulos/informacion-uam/precios-historicos/parametros-consulta";
 import { filtrarHistorico, type FiltrosHistoricos } from "../../src/modulos/informacion-uam/precios-historicos/transformar-historico";
 import { validarHistoricoProducto } from "../../src/modulos/informacion-uam/precios-historicos/validar-historico";
+import { textoValorHistorico } from "../../src/modulos/informacion-uam/precios-historicos/valores-historicos";
 
 export async function obtenerHistoricoPrecios(consulta: ConsultaHistorica) {
   const parametros = new URLSearchParams({
@@ -15,7 +16,7 @@ export async function obtenerHistoricoPreciosConFiltros(consulta: ConsultaHistor
   const historico = filtrarHistorico(await obtenerHistoricoPrecios(consulta), consulta);
   const presentaciones = historico.series.flatMap((dia) => dia.presentations);
   const comparar = new Intl.Collator("es", { sensitivity: "base", numeric: true }).compare;
-  const unicos = (valores: string[]) => [...new Set(valores)].sort(comparar);
+  const unicos = (valores: unknown[]) => [...new Set(valores.map(textoValorHistorico))].sort(comparar);
   return {
     historico: filtrarHistorico(historico, consulta, filtros),
     opcionesFiltros: {

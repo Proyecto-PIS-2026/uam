@@ -19,7 +19,6 @@
     "db:migrate": "prisma db migrate",
     "db:seed": "tsx src/infraestructura/persistencia/prisma/seed.ts",
     "db:seed:test": "tsx scripts/db-seed-test.ts",
-    "precios:historicos:inicializar": "tsx scripts/inicializar-historicos.ts",
     "db:setup": "npm run db:contract && npm run db:migrate && npm run db:seed",
     "db:setup:test": "tsx scripts/db-setup-test.ts"
   },

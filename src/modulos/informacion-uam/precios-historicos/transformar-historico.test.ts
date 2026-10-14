@@ -131,42 +131,125 @@ describe("fusionarHistoricos", () => {
             .toThrow("distintas especies");
     });
 
-    it("incorpora el diagnóstico de registros descartados de una actualización sin perder los datos existentes", () => {
-        const guardado = historico([{ date: "2026-10-02", presentations: [presentacion()] }]);
-        const recibido = historico([{ date: "2026-10-08", presentations: [presentacion()] }], {
-            erroresValidacion: ["Registro descartado: precio inválido del 2026-10-08"],
-        });
+    it("repetir valores JSON inesperados no duplica fechas, presentaciones ni categorías", () => {
+        const guardado = historico([{
+            date: { recibido: "fecha" }, volume_kg: [10, "Ñ"],
+            presentations: [presentacion({
+                variety: { variedad: "Ñ" }, country: ["UY", false], caliber: null, measure_unit: false,
+                prices: [{ ...precio(), category: ["I", false], min_kg: { dato: "Ñ" }, max_kg: [60, 70] }],
+            })],
+        }]);
+        const recibido = structuredClone(guardado);
+        const originales = structuredClone({ guardado, recibido });
 
-        const resultado = fusionarHistoricos(guardado, recibido);
+        const fusionado = fusionarHistoricos(guardado, recibido);
 
-        expect(resultado.series).toEqual([...guardado.series, ...recibido.series]);
-        expect(resultado.erroresValidacion).toEqual(recibido.erroresValidacion);
-        expect(guardado).not.toHaveProperty("erroresValidacion");
+        expect(fusionado).toStrictEqual(guardado);
+        expect(fusionado.series).toHaveLength(1);
+        expect(fusionado.series[0].presentations).toHaveLength(1);
+        expect(fusionado.series[0].presentations[0].prices).toHaveLength(1);
+        expect(fusionarHistoricos(fusionado, structuredClone(recibido))).toStrictEqual(fusionado);
+        (fusionado.series[0].date as { recibido: string }).recibido = "otra fecha";
+        (fusionado.series[0].presentations[0].prices[0].min_kg as { dato: string }).dato = "otro valor";
+        expect({ guardado, recibido }).toStrictEqual(originales);
     });
 
-    it("conserva y deduplica diagnósticos al repetir actualizaciones sin compartir sus listas", () => {
-        const guardado = historico([], { erroresValidacion: ["Día inválido", "Precio inválido"] });
-        const recibido = historico([], { erroresValidacion: ["Precio inválido", "Presentación inválida"] });
+    it("reconoce los mismos valores JSON reordenados por JSONB sin duplicar días, presentaciones o precios", () => {
+        const guardado = historico([{
+            date: { zona: "UAM", publicacion: { anio: 2026, mes: 10 }, detalles: [{ calibre: "G", referencia: true }] },
+            presentations: [presentacion({
+                variety: { nombre: "Ñ", ficha: { pais: "UY", apta: false } },
+                country: ["UY", false], caliber: [{ grado: "G", tipo: "M" }],
+                measure_unit: { unidad: "KG", escala: [{ min: 0, max: 1 }] },
+                prices: [{ ...precio(), category: { nombre: "I", rango: [{ desde: 1, hasta: 2 }] } }],
+            })],
+        }]);
+        const recibido = historico([{
+            date: { detalles: [{ referencia: true, calibre: "G" }], publicacion: { mes: 10, anio: 2026 }, zona: "UAM" },
+            presentations: [presentacion({
+                variety: { ficha: { apta: false, pais: "UY" }, nombre: "Ñ" },
+                country: ["UY", false], caliber: [{ tipo: "M", grado: "G" }],
+                measure_unit: { escala: [{ max: 1, min: 0 }], unidad: "KG" },
+                prices: [{ ...precio("I", 999), category: { rango: [{ hasta: 2, desde: 1 }], nombre: "I" } }],
+            })],
+        }]);
         const originales = structuredClone({ guardado, recibido });
 
         const resultado = fusionarHistoricos(guardado, recibido);
 
-        expect(resultado.erroresValidacion).toEqual(["Día inválido", "Precio inválido", "Presentación inválida"]);
+        expect(resultado.series).toHaveLength(1);
+        expect(resultado.series[0].presentations).toHaveLength(1);
+        expect(resultado.series[0].presentations[0].prices).toHaveLength(1);
+        expect(JSON.stringify(resultado)).toBe(JSON.stringify(guardado));
         expect(fusionarHistoricos(resultado, recibido)).toStrictEqual(resultado);
-        resultado.erroresValidacion!.push("Otro diagnóstico");
         expect({ guardado, recibido }).toStrictEqual(originales);
     });
 
-    it("mantiene la forma de los históricos que no tienen diagnósticos de validación", () => {
-        const guardado = historico([]);
-        const recibido = historico([]);
+    it("mantiene el orden de listas JSON como parte de la identidad de fechas, presentaciones y categorías", () => {
+        const primera = presentacion({ variety: ["G", "M"], prices: [{ ...precio(), category: ["I", "II"] }] });
+        const guardado = historico([{ date: ["a", "b"], presentations: [primera] }]);
+        const recibido = historico([
+            { date: ["a", "b"], presentations: [
+                presentacion({ variety: ["G", "M"], prices: [{ ...precio(), category: ["II", "I"] }] }),
+                presentacion({ variety: ["M", "G"], prices: [{ ...precio(), category: ["I", "II"] }] }),
+            ] },
+            { date: ["b", "a"], presentations: [primera] },
+        ]);
+        const originales = structuredClone({ guardado, recibido });
 
-        expect(fusionarHistoricos(guardado, recibido)).toStrictEqual(guardado);
+        const resultado = fusionarHistoricos(guardado, recibido);
+
+        expect(resultado.series.map((dia) => dia.date)).toEqual([["a", "b"], ["b", "a"]]);
+        expect(resultado.series[0].presentations.map((valor) => valor.variety)).toEqual([["G", "M"], ["M", "G"]]);
+        expect(resultado.series[0].presentations[0].prices.map((valor) => valor.category)).toEqual([["I", "II"], ["II", "I"]]);
+        expect(resultado.series[1].presentations).toStrictEqual([primera]);
+        expect(fusionarHistoricos(resultado, recibido)).toStrictEqual(resultado);
+        expect({ guardado, recibido }).toStrictEqual(originales);
+    });
+
+    it("incorpora precios y volumen crudos sin corregir, descartar ni compartir los datos recibidos", () => {
+        const guardado = historico([{ date: "2026-10-08", presentations: [presentacion()] }]);
+        const crudo = { ...precio("II"), min_kg: "Ñ", max_kg: "Infinity", min_un: -5, max_un: null };
+        const recibido = historico([{ date: "2026-10-08", volume_kg: "Ñ", presentations: [presentacion({ prices: [crudo] })] }]);
+        const originales = structuredClone({ guardado, recibido });
+
+        const resultado = fusionarHistoricos(guardado, recibido);
+
+        expect(resultado.series[0].volume_kg).toBe("Ñ");
+        expect(resultado.series[0].presentations[0].prices).toEqual([precio(), crudo]);
+        expect(fusionarHistoricos(resultado, recibido)).toStrictEqual(resultado);
+        resultado.series[0].presentations[0].prices[1].min_kg = "Modificado";
+        expect({ guardado, recibido }).toStrictEqual(originales);
+    });
+
+    it("omite la metadata pública heredada al fusionar sin alterar los originales", () => {
+        const guardado = { ...historico([]), erroresValidacion: ["Diagnóstico heredado"] };
+        const recibido = { ...historico([]), erroresValidacion: ["Otro diagnóstico"] };
+        const originales = structuredClone({ guardado, recibido });
+
         expect(fusionarHistoricos(guardado, recibido)).not.toHaveProperty("erroresValidacion");
+        expect({ guardado, recibido }).toStrictEqual(originales);
+        expect(fusionarHistoricos(historico([]), historico([]))).toStrictEqual(historico([]));
     });
 });
 
 describe("filtrarHistorico", () => {
+    it("filtra por producto conservando los valores crudos y quitando sólo la metadata pública heredada", () => {
+        const crudo = { ...precio("II"), min_kg: "Ñ", max_kg: null, min_un: 100, max_un: -1 };
+        const guardado = {
+            ...historico([{ date: "2026-10-08", volume_kg: "1000", presentations: [presentacion({ prices: [precio(), crudo] })] }]),
+            erroresValidacion: ["Diagnóstico heredado"],
+        };
+        const original = structuredClone(guardado);
+
+        const resultado = filtrarHistorico(guardado, consulta, { categoria: "II" });
+
+        expect(resultado.series[0].presentations[0].prices).toEqual([crudo]);
+        expect(resultado.series[0].volume_kg).toBe("1000");
+        expect(resultado).not.toHaveProperty("erroresValidacion");
+        expect(guardado).toStrictEqual(original);
+    });
+
     it("incluye ambos extremos y conserva días vacíos y volumen cuando no hay filtros de producto", () => {
         const guardado = historico([
             { date: "2026-10-01", presentations: [presentacion()] },

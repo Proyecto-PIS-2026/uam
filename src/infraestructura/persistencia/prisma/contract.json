@@ -32,6 +32,10 @@
       "model": "Especie",
       "namespace": "public"
     },
+    "historicoPrecios": {
+      "model": "HistoricoPrecios",
+      "namespace": "public"
+    },
     "local": {
       "model": "Local",
       "namespace": "public"
@@ -496,6 +500,21 @@
                   "namespace": "public"
                 }
               },
+              "historicoPrecios": {
+                "cardinality": "1:1",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "especieId"
+                  ]
+                },
+                "to": {
+                  "model": "HistoricoPrecios",
+                  "namespace": "public"
+                }
+              },
               "variedades": {
                 "cardinality": "1:N",
                 "on": {
@@ -532,6 +551,83 @@
               },
               "namespaceId": "public",
               "table": "especie"
+            }
+          },
+          "HistoricoPrecios": {
+            "fields": {
+              "especieId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "fechaDesde": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "fechaHasta": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "fechaUltimaActualizacion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "historico": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "especie": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "especieId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Especie",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "especieId": {
+                  "column": "especieId"
+                },
+                "fechaDesde": {
+                  "column": "fechaDesde"
+                },
+                "fechaHasta": {
+                  "column": "fechaHasta"
+                },
+                "fechaUltimaActualizacion": {
+                  "column": "fechaUltimaActualizacion"
+                },
+                "historico": {
+                  "column": "historico"
+                }
+              },
+              "namespaceId": "public",
+              "table": "historicoPrecios"
             }
           },
           "Local": {
@@ -2018,6 +2114,60 @@
                 }
               ]
             },
+            "historicoPrecios": {
+              "columns": {
+                "especieId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "fechaDesde": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "fechaHasta": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "fechaUltimaActualizacion": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "historico": {
+                  "codecId": "pg/jsonb@1",
+                  "nativeType": "jsonb",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "especieId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "historicoPrecios"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "especie"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "especieId"
+                ]
+              },
+              "uniques": []
+            },
             "local": {
               "columns": {
                 "finContrato": {
@@ -3058,7 +3208,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "6199bcda0d7cc5d6c1bb7b01b0d8bc41bcb8252696ec6d8cad02dbeaf8f84b57"
+    "storageHash": "8285ff20f7b7db2cada1d4288da69acb08cb10855826836478c41dcffc5ae21e"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

@@ -385,6 +385,7 @@ async function limpiarBase() {
   await prisma.orm.public.Presentacion.where(() => all()).deleteAll();
   await prisma.orm.public.Variedad.where(() => all()).deleteAll();
   await prisma.orm.public.Categoria.where(() => all()).deleteAll();
+  await prisma.orm.public.HistoricoPrecios.where(() => all()).deleteAll();
   await prisma.orm.public.Especie.where(() => all()).deleteAll();
   await prisma.orm.public.Calibre.where(() => all()).deleteAll();
   await prisma.orm.public.Pais.where(() => all()).deleteAll();

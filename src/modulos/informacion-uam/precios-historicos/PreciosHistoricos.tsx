@@ -11,7 +11,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import type { ProductoSeleccionado, HistoricoProducto, EspecieHistorica, OpcionesFiltrosHistoricos } from "./tipos";
-import { fechaActualMontevideo } from "./parametros-consulta";
+import { esFechaISO, fechaActualMontevideo } from "./parametros-consulta";
+import { textoValorHistorico } from "./valores-historicos";
 import styles from "./PreciosHistoricos.module.css";
 
 type Props = {
@@ -36,12 +37,21 @@ function formatoNumero(valor: number): string {
         .join("");
 }
 
-function formatoVolumen(valor: number | null | undefined): string {
-    return valor == null ? "—" : `${formatoNumero(valor)} kg`;
+function formatoPrecio(valor: unknown): string {
+    return typeof valor === "number" ? formatoNumero(valor) : textoValorHistorico(valor);
 }
 
-function opciones(valores: string[], seleccionado: string) {
-    return [...new Set(seleccionado ? [...valores, seleccionado] : valores)].sort(comparar);
+function formatoVolumen(valor: unknown): string {
+    return valor == null ? "—" : `${formatoPrecio(valor)} kg`;
+}
+
+function formatoFechaRegistro(valor: unknown): string {
+    return esFechaISO(valor) ? formatoFecha.format(new Date(`${valor}T00:00:00Z`)) : textoValorHistorico(valor);
+}
+
+function opciones(valores: unknown[], seleccionado: string) {
+    const textos = valores.map(textoValorHistorico);
+    return [...new Set(seleccionado ? [...textos, seleccionado] : textos)].sort(comparar);
 }
 
 function identificadorEspecie(producto: Pick<ProductoSeleccionado, "id">): string {
@@ -114,8 +124,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     const registros = useMemo(() => {
         if (!historico || error) return [];
         return historico.series
-            .filter((dia) => dia.date >= desde && dia.date <= hasta)
-            .sort((a, b) => b.date.localeCompare(a.date))
+            .filter((dia) => !esFechaISO(dia.date) || dia.date >= desde && dia.date <= hasta)
+            .sort((a, b) => textoValorHistorico(b.date).localeCompare(textoValorHistorico(a.date)))
             .flatMap((dia) => dia.presentations.flatMap((presentacion) =>
                 presentacion.prices.map((precio) => ({ dia, presentacion, precio }))));
     }, [historico, desde, hasta, error]);
@@ -135,11 +145,11 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     const calibreSeleccionado = calibre;
     const filas = useMemo(() => {
         return registros.filter(({ dia, presentacion, precio }) => {
-            if (dia.date < periodoVisible.desde || dia.date > periodoVisible.hasta) return false;
-            if (variedadSeleccionada && presentacion.variety !== variedadSeleccionada) return false;
-            if (paisSeleccionado && presentacion.country !== paisSeleccionado) return false;
-            if (categoriaSeleccionada && precio.category !== categoriaSeleccionada) return false;
-            if (calibreSeleccionado && presentacion.caliber !== calibreSeleccionado) return false;
+            if (esFechaISO(dia.date) && (dia.date < periodoVisible.desde || dia.date > periodoVisible.hasta)) return false;
+            if (variedadSeleccionada && textoValorHistorico(presentacion.variety) !== variedadSeleccionada) return false;
+            if (paisSeleccionado && textoValorHistorico(presentacion.country) !== paisSeleccionado) return false;
+            if (categoriaSeleccionada && textoValorHistorico(precio.category) !== categoriaSeleccionada) return false;
+            if (calibreSeleccionado && textoValorHistorico(presentacion.caliber) !== calibreSeleccionado) return false;
             return true;
         });
     }, [registros, periodoVisible, variedadSeleccionada, paisSeleccionado, categoriaSeleccionada, calibreSeleccionado]);
@@ -338,14 +348,6 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
 
             <section className={styles.tablaPanel} aria-label={`Histórico de ${producto.especie}`}>
                 <div className={styles.tablaCabecera}><h2>Histórico de precios</h2></div>
-                {!cargandoTabla && !error && !!historico?.erroresValidacion?.length && (
-                    <details className={styles.erroresValidacion}>
-                        <summary>Ver errores del histórico ({historico.erroresValidacion.length})</summary>
-                        <ul>
-                            {historico.erroresValidacion.map((mensaje, indice) => <li key={indice}>{mensaje}</li>)}
-                        </ul>
-                    </details>
-                )}
                 <div className={styles.tablaContenedor}>
                     <table className={styles.tabla} aria-busy={cargandoTabla} aria-describedby={cargandoTabla ? `${idCarga}-tabla` : undefined}>
                         <thead><tr>
@@ -367,11 +369,11 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                     </div>
                                 </td></tr>
                             ) : visibles.map(({ dia, presentacion, precio }, indice) => (
-                                <tr key={`${dia.date}-${presentacion.country}-${presentacion.caliber}-${precio.category}-${indice}`} className={precio.is_reference ? styles.filaReferencia : undefined}>
-                                    <td>{formatoFecha.format(new Date(`${dia.date}T00:00:00Z`))}</td>
-                                    <td>{presentacion.variety}</td><td>{presentacion.country}</td><td>{presentacion.caliber}</td><td>{precio.category}</td>
-                                    <td className={styles.referencia}>{precio.is_reference && <span className={styles.insignia}>Referencia</span>}</td>
-                                    <td className={styles.precio}>${formatoNumero(precio.min_kg)} - ${formatoNumero(precio.max_kg)}</td>
+                                <tr key={`${textoValorHistorico(dia.date)}-${textoValorHistorico(presentacion.country)}-${textoValorHistorico(presentacion.caliber)}-${textoValorHistorico(precio.category)}-${indice}`} className={precio.is_reference === true ? styles.filaReferencia : undefined}>
+                                    <td>{formatoFechaRegistro(dia.date)}</td>
+                                    <td>{textoValorHistorico(presentacion.variety)}</td><td>{textoValorHistorico(presentacion.country)}</td><td>{textoValorHistorico(presentacion.caliber)}</td><td>{textoValorHistorico(precio.category)}</td>
+                                    <td className={styles.referencia}>{precio.is_reference === true ? <span className={styles.insignia}>Referencia</span> : precio.is_reference === false ? "" : textoValorHistorico(precio.is_reference)}</td>
+                                    <td className={styles.precio}>${formatoPrecio(precio.min_kg)} - ${formatoPrecio(precio.max_kg)}</td>
                                     <td>{formatoVolumen(dia.volume_kg)}</td>
                                 </tr>
                             ))}
@@ -389,15 +391,15 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             <p>{error}</p>
                         </div>
                     ) : visibles.map(({ dia, presentacion, precio }, indice) => {
-                        const nombre = `${producto.especie} · ${presentacion.variety}`;
-                        const atributos = `${presentacion.country} · Cal. ${presentacion.caliber} · Cat. ${precio.category}`;
+                        const nombre = `${producto.especie} · ${textoValorHistorico(presentacion.variety)}`;
+                        const atributos = `${textoValorHistorico(presentacion.country)} · Cal. ${textoValorHistorico(presentacion.caliber)} · Cat. ${textoValorHistorico(precio.category)}`;
                         const volumen = formatoVolumen(dia.volume_kg);
-                        const precioKg = `$${formatoNumero(precio.min_kg)} - $${formatoNumero(precio.max_kg)} / kg`;
+                        const precioKg = `$${formatoPrecio(precio.min_kg)} - $${formatoPrecio(precio.max_kg)} / kg`;
                         return (
-                            <article className={`${styles.filaMobile} ${precio.is_reference ? styles.filaMobileReferencia : ""}`} key={`${dia.date}-${presentacion.country}-${presentacion.caliber}-${precio.category}-${indice}`}>
+                            <article className={`${styles.filaMobile} ${precio.is_reference === true ? styles.filaMobileReferencia : ""}`} key={`${textoValorHistorico(dia.date)}-${textoValorHistorico(presentacion.country)}-${textoValorHistorico(presentacion.caliber)}-${textoValorHistorico(precio.category)}-${indice}`}>
                                 <header>
-                                    <time dateTime={dia.date}>{formatoFecha.format(new Date(`${dia.date}T00:00:00Z`))}</time>
-                                    <span className={styles.referenciaMobile} title={precio.is_reference ? "Referencia" : undefined}>{precio.is_reference && <span className={styles.insignia}>Referencia</span>}</span>
+                                    <time dateTime={textoValorHistorico(dia.date)}>{formatoFechaRegistro(dia.date)}</time>
+                                    <span className={styles.referenciaMobile} title={precio.is_reference === true ? "Referencia" : precio.is_reference === false ? undefined : textoValorHistorico(precio.is_reference)}>{precio.is_reference === true ? <span className={styles.insignia}>Referencia</span> : precio.is_reference === false ? "" : textoValorHistorico(precio.is_reference)}</span>
                                     <strong className={styles.precioMobile} title={precioKg}>{precioKg}</strong>
                                 </header>
                                 <p className={styles.nombreProductoMobile} title={nombre}>{nombre}</p>

@@ -100,6 +100,7 @@ model Especie {
   fotoEspecie   String?
   variedades    Variedad[]
   categorias    Categoria[]
+  historicoPrecios HistoricoPrecios?
 
   @@map("especie")
 }
@@ -249,4 +250,15 @@ model CachePreciosReferencia {
   estadoCache String
 
   @@map("cachePreciosReferencia")
+}
+
+model HistoricoPrecios {
+  especieId                Int     @id
+  especie                  Especie @relation(fields:[especieId], references:[id])
+  historico                Jsonb
+  fechaDesde               Date
+  fechaHasta               Date
+  fechaUltimaActualizacion  Date
+
+  @@map("historicoPrecios")
 }

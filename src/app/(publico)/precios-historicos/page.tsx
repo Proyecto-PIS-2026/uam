@@ -10,6 +10,7 @@ import {
     type ConsultaHistorica,
 } from "@/modulos/informacion-uam/precios-historicos/parametros-consulta";
 import type { HistoricoProducto, OpcionesFiltrosHistoricos, ProductoSeleccionado } from "@/modulos/informacion-uam/precios-historicos/tipos";
+import { textoValorHistorico } from "@/modulos/informacion-uam/precios-historicos/valores-historicos";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,7 @@ async function ContenidoPreciosHistoricos({ producto, consulta }: {
     }
     return (
         <PreciosHistoricos
-            producto={historico ? { ...producto, especie: historico.species } : producto}
+            producto={historico ? { ...producto, especie: textoValorHistorico(historico.species) } : producto}
             historico={historico}
             desde={consulta.desde}
             hasta={consulta.hasta}

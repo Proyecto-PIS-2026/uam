@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { consultarHistorico, ErrorWebserviceHistorico } from "./cliente-webservice";
 import type { ConsultaHistorica } from "./parametros-consulta";
 import type { HistoricoProducto } from "./tipos";
-import { validarHistoricoProducto } from "./validar-historico";
 
 const opciones = { baseUrl: "https://datos.uam.test/servicio/", token: "jwt-de-prueba" };
 const consulta: ConsultaHistorica = {
@@ -32,7 +31,6 @@ function respuestaValida(): Response {
 
 beforeEach(() => {
     vi.stubEnv("PRECIOS_HISTORICOS_ENDPOINT", plantilla);
-    vi.stubEnv("PRECIOS_HISTORICOS_TIMEOUT_MS", undefined);
 });
 
 afterEach(() => {
@@ -187,7 +185,7 @@ describe("cliente del webservice de precios históricos", () => {
         const error = await consultarHistorico(opciones, consulta, fetcher).catch((causa) => causa as Error);
 
         expect(error).toBeInstanceOf(ErrorWebserviceHistorico);
-        expect(error).toMatchObject({ estadoHTTP: 401, duracionMs: 0, reintentarEnMs: null });
+        expect((error as Error).name).toBe("ErrorWebserviceHistorico");
         expect((error as Error).message).toBe(
             "El webservice de precios históricos respondió con estado 401. Duración: 0 ms. Especie: 60. Período: 2025-10-01 a 2025-10-31.",
         );
@@ -212,7 +210,7 @@ describe("cliente del webservice de precios históricos", () => {
         await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("Respuesta de precios históricos inválida");
     });
 
-    it("descarta el día con una fecha inválida y devuelve los días válidos junto con el diagnóstico", async () => {
+    it("conserva una fecha anidada inválida junto con los demás registros", async () => {
         const recibido = JSON.parse(JSON.stringify(consultaValida)) as HistoricoProducto;
         recibido.series[0].date = "2025-02-30";
         const diaValido = { ...consultaValida.series[0], date: "2025-10-02" };
@@ -221,11 +219,7 @@ describe("cliente del webservice de precios históricos", () => {
 
         const historico = await consultarHistorico(opciones, consulta, fetcher);
 
-        expect(historico.series).toStrictEqual([diaValido]);
-        expect(historico.erroresValidacion).toEqual([
-            expect.stringContaining("series[0].date"),
-        ]);
-        expect(historico.erroresValidacion![0]).toContain("2025-02-30");
+        expect(historico).toStrictEqual(recibido);
     });
 
     it("rechaza la respuesta de otra especie", async () => {
@@ -252,7 +246,7 @@ describe("cliente del webservice de precios históricos", () => {
         await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toBe(error);
     });
 
-    it("descarta un precio cuyo mínimo supera al máximo y conserva las otras categorías", async () => {
+    it("conserva mínimos que superan al máximo y las demás categorías", async () => {
         const recibido = JSON.parse(JSON.stringify(consultaValida)) as HistoricoProducto;
         Object.assign(recibido.series[0].presentations[0].prices[0], {
             min_kg: 100, max_kg: 75, min_un: 200, max_un: 75,
@@ -263,32 +257,128 @@ describe("cliente del webservice de precios históricos", () => {
 
         const historico = await consultarHistorico(opciones, consulta, fetcher);
 
-        expect(historico.series[0].presentations[0].prices).toStrictEqual([precioValido]);
-        expect(historico.erroresValidacion).toEqual(expect.arrayContaining([
-            expect.stringContaining("series[0].presentations[0].prices[0]"),
-        ]));
+        expect(historico).toStrictEqual(recibido);
     });
 
-    it("conserva los precios válidos cuando llega Ñ y preserva el error al revalidar", async () => {
-        const recibido = JSON.parse(JSON.stringify(consultaValida)) as HistoricoProducto;
-        const precioValido = { ...recibido.series[0].presentations[0].prices[0], category: "II" };
-        Object.assign(recibido.series[0].presentations[0].prices[0], { min_kg: "Ñ" });
-        recibido.series[0].presentations[0].prices.push(precioValido);
+    it("conserva el valor Ñ sin generar logs ni cambiar las otras categorías", async () => {
+        const advertir = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        try {
+            const recibido = JSON.parse(JSON.stringify(consultaValida)) as HistoricoProducto;
+            const precioValido = { ...recibido.series[0].presentations[0].prices[0], category: "II" };
+            Object.assign(recibido.series[0].presentations[0].prices[0], { min_kg: "Ñ" });
+            recibido.series[0].presentations[0].prices.push(precioValido);
+            const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+            const historico = await consultarHistorico(opciones, consulta, fetcher);
+
+            expect(historico).toStrictEqual(recibido);
+            expect(advertir).not.toHaveBeenCalled();
+            expect(fetcher).toHaveBeenCalledOnce();
+        } finally {
+            advertir.mockRestore();
+        }
+    });
+
+    it.each([
+        { nombre: "nulos", precios: { min_kg: null, max_kg: null, min_un: null, max_un: null }, volumen: null },
+        { nombre: "negativos", precios: { min_kg: -10, max_kg: -5, min_un: -20, max_un: -15 }, volumen: -1 },
+        { nombre: "texto numérico", precios: { min_kg: "0010.50", max_kg: "20.00", min_un: "10", max_un: "20" }, volumen: "001.25" },
+    ])("devuelve íntegros los precios y volumen de $nombre", async ({ precios, volumen }) => {
+        const recibido = structuredClone(consultaValida);
+        Object.assign(recibido.series[0].presentations[0].prices[0], precios);
+        Object.assign(recibido.series[0], { volume_kg: volumen });
+        const original = structuredClone(recibido);
         const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
 
-        const historico = await consultarHistorico(opciones, consulta, fetcher);
-
-        expect(historico.series[0].presentations[0].prices).toStrictEqual([precioValido]);
-        expect(historico.erroresValidacion).toEqual([
-            expect.stringContaining("series[0].presentations[0].prices[0].min_kg"),
-        ]);
-        expect(historico.erroresValidacion![0]).toContain("2025-10-01");
-        expect(historico.erroresValidacion![0]).toContain("Ñ");
-        expect(validarHistoricoProducto(historico, consulta)).toStrictEqual(historico);
-        expect(validarHistoricoProducto(validarHistoricoProducto(historico, consulta), consulta)).toStrictEqual(historico);
+        await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(original);
+        expect(recibido).toStrictEqual(original);
+        expect(fetcher).toHaveBeenCalledOnce();
     });
 
-    it("permite superar 60 segundos y aborta al alcanzar el límite predeterminado de cinco minutos", async () => {
+    it("conserva un precio negativo dentro de su presentación", async () => {
+        const recibido = structuredClone(consultaValida);
+        recibido.series[0].presentations[0].prices[0].min_kg = -1;
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(recibido);
+    });
+
+    it.each([null, false, { fecha: "2025-10-01" }, [2025, 10, 1]])
+        ("conserva la fecha anidada inesperada %j", async (fecha) => {
+            const recibido = structuredClone(consultaValida);
+            Object.assign(recibido.series[0], { date: fecha });
+            const original = structuredClone(recibido);
+            const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+            await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(original);
+            expect(recibido).toStrictEqual(original);
+        });
+
+    it("conserva objetos, arrays, booleanos y nulos dentro de atributos y precios sin rechazar el histórico", async () => {
+        const recibido = structuredClone(consultaValida);
+        Object.assign(recibido.series[0], { volume_kg: { cantidad: [1000, null] } });
+        Object.assign(recibido.series[0].presentations[0], {
+            variety: { nombre: "Especial" }, country: ["URUGUAY", false], caliber: false, measure_unit: null,
+        });
+        Object.assign(recibido.series[0].presentations[0].prices[0], {
+            category: { nombre: "Primera" }, min_kg: { precio: 10 }, max_kg: [75, "Ñ"],
+            min_un: false, max_un: null, is_reference: { publicado: true },
+        });
+        const original = structuredClone(recibido);
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(original);
+
+        expect(recibido).toStrictEqual(original);
+        expect(fetcher).toHaveBeenCalledOnce();
+    });
+
+    it("descarta solamente un elemento de precios que no es objeto y conserva el precio vecino", async () => {
+        const recibido = structuredClone(consultaValida);
+        const original = structuredClone(recibido);
+        Object.assign(recibido.series[0].presentations[0], {
+            prices: [false, original.series[0].presentations[0].prices[0]],
+        });
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(original);
+        expect(recibido.series[0].presentations[0].prices).toHaveLength(2);
+    });
+
+    it("descarta solamente una presentación sin array de precios y conserva la otra presentación", async () => {
+        const recibido = structuredClone(consultaValida);
+        const original = structuredClone(recibido);
+        const invalida = { ...original.series[0].presentations[0], prices: null };
+        Object.assign(recibido.series[0], {
+            presentations: [invalida, original.series[0].presentations[0]],
+        });
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(original);
+        expect(recibido.series[0].presentations).toHaveLength(2);
+    });
+
+    it("descarta solamente el día sin array de presentaciones y conserva el día vecino", async () => {
+        const recibido = structuredClone(consultaValida);
+        const original = structuredClone(recibido);
+        Object.assign(recibido, {
+            series: [{ ...original.series[0], presentations: null }, original.series[0]],
+        });
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(original);
+        expect(recibido.series).toHaveLength(2);
+    });
+
+    it("rechaza la respuesta completa si ninguno de sus días tiene una estructura operable", async () => {
+        const recibido = structuredClone(consultaValida);
+        Object.assign(recibido, { series: [null, { date: consulta.desde, presentations: null }] });
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("Respuesta de precios históricos inválida");
+    });
+
+    it("permite superar 60 segundos y aborta al alcanzar el límite de cinco minutos definido en el código", async () => {
         vi.useFakeTimers();
         let signal!: AbortSignal;
         const fetcher = vi.fn<typeof fetch>((_url, init) => new Promise<Response>((_resolve, reject) => {
@@ -311,9 +401,9 @@ describe("cliente del webservice de precios históricos", () => {
         expect(vi.getTimerCount()).toBe(0);
     });
 
-    it.each([1000, 180_000])("aplica el timeout configurable de %s ms con diagnóstico de la consulta", async (limiteMs) => {
+    it("incluye el contexto de la consulta al alcanzar el timeout", async () => {
         vi.useFakeTimers();
-        vi.stubEnv("PRECIOS_HISTORICOS_TIMEOUT_MS", String(limiteMs));
+        const limiteMs = 300_000;
         let signal!: AbortSignal;
         const fetcher = vi.fn<typeof fetch>((_url, init) => new Promise<Response>((_resolve, reject) => {
             signal = init!.signal!;
@@ -333,18 +423,8 @@ describe("cliente del webservice de precios históricos", () => {
         expect(vi.getTimerCount()).toBe(0);
     });
 
-    it.each(["", " ", "0", "-1", "1.5", "NaN", "Infinity", "2147483648"])
-        ("rechaza el timeout inválido %j antes de hacer fetch", async (limite) => {
-            vi.stubEnv("PRECIOS_HISTORICOS_TIMEOUT_MS", limite);
-            const fetcher = vi.fn<typeof fetch>();
-
-            await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("PRECIOS_HISTORICOS_TIMEOUT_MS");
-            expect(fetcher).not.toHaveBeenCalled();
-        });
-
     it("el timeout cubre la lectura del JSON aunque ya se hayan recibido las cabeceras", async () => {
         vi.useFakeTimers();
-        vi.stubEnv("PRECIOS_HISTORICOS_TIMEOUT_MS", "1000");
         const fetcher = vi.fn<typeof fetch>(async (_url, init) => ({
             ok: true,
             json: () => new Promise((_resolve, reject) => {
@@ -352,17 +432,17 @@ describe("cliente del webservice de precios históricos", () => {
             }),
         } as unknown as Response));
         const resultado = expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow(
-            "El webservice de precios históricos superó el tiempo máximo de 1000 ms.",
+            "El webservice de precios históricos superó el tiempo máximo de 300000 ms.",
         );
 
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(300_000);
         await resultado;
 
         expect(fetcher).toHaveBeenCalledOnce();
         expect(vi.getTimerCount()).toBe(0);
     });
 
-    it("distingue un HTTP 500 rápido de un timeout y registra su duración sin leer el cuerpo", async () => {
+    it("distingue un HTTP 500 rápido de un timeout e informa su duración sin leer el cuerpo", async () => {
         vi.useFakeTimers();
         const json = vi.fn();
         const fetcher = vi.fn<typeof fetch>(() => new Promise((resolve) => {
@@ -374,53 +454,12 @@ describe("cliente del webservice de precios históricos", () => {
         const error = await resultado;
 
         expect(error).toBeInstanceOf(ErrorWebserviceHistorico);
-        expect(error).toMatchObject({ estadoHTTP: 500, duracionMs: 120, reintentarEnMs: null });
-        expect((error as Error).message).toContain("respondió con estado 500.");
+        expect((error as Error).message).toBe(
+            "El webservice de precios históricos respondió con estado 500. Duración: 120 ms. Especie: 60. Período: 2025-10-01 a 2025-10-31.",
+        );
         expect((error as Error).message).not.toContain("superó");
         expect(json).not.toHaveBeenCalled();
         expect(vi.getTimerCount()).toBe(0);
-    });
-
-    it.each([
-        ["30", 30_000],
-        ["0", 0],
-        ["Fri, 09 Oct 2026 12:00:45 GMT", 45_000],
-        ["Fri, 09 Oct 2026 11:59:00 GMT", 0],
-        ["invalid-date", null],
-        ["-1", null],
-        ["1.5", null],
-        ["999999999999999999999999", null],
-    ])("expone Retry-After de HTTP 429 (%s) sin realizar reintentos ni esperas", async (retryAfter, esperado) => {
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date("2026-10-09T12:00:00.000Z"));
-        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("cuerpo privado", {
-            status: 429, headers: { "Retry-After": retryAfter },
-        }));
-
-        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toMatchObject({
-            estadoHTTP: 429, reintentarEnMs: esperado, duracionMs: 0,
-        });
-
-        expect(fetcher).toHaveBeenCalledOnce();
-        expect(vi.getTimerCount()).toBe(0);
-    });
-
-    it("un 429 sin cabecera Retry-After informa una espera desconocida", async () => {
-        const fetcher = vi.fn<typeof fetch>().mockResolvedValue({ ok: false, status: 429 } as Response);
-
-        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toMatchObject({
-            estadoHTTP: 429, reintentarEnMs: null,
-        });
-    });
-
-    it("no usa Retry-After de otros estados HTTP", async () => {
-        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("", {
-            status: 500, headers: { "Retry-After": "30" },
-        }));
-
-        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toMatchObject({
-            estadoHTTP: 500, reintentarEnMs: null,
-        });
     });
 
     it("informa el código seguro de un fallo de red sin copiar mensajes, URL, token ni causa", async () => {
