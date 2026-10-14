@@ -31,7 +31,7 @@ export default defineConfig({
           environment: 'jsdom',
           globals: true,
           setupFiles: './vitest.setup.ts',
-          include: ['**/*.test.ts', '**/*.test.tsx'],
+          include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
           exclude: [
             '**/*.integration.test.ts',
             '**/tests/**',
@@ -46,7 +46,7 @@ export default defineConfig({
           environment: 'node',
           globals: true,
           setupFiles: './vitest.integration.setup.ts',
-          include: ['**/*.integration.test.ts'],
+          include: ['src/**/*.integration.test.ts'],
           exclude: [
             '**/tests/**',
             '**/node_modules/**',
