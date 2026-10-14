@@ -2,15 +2,34 @@
 
 import { createHmac as crearFirmaHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { crearSesion, obtenerSesion } from "./sesiones";
+import { cerrarSesion, crearSesion, obtenerSesion } from "./sesiones";
 
 const cookiesSimuladas = vi.hoisted(() => ({
     get: vi.fn(),
     set: vi.fn(),
+    delete: vi.fn(),
+}));
+
+const { buscarUsuario } = vi.hoisted(() => ({
+    buscarUsuario: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
     cookies: vi.fn(async () => cookiesSimuladas),
+}));
+
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
+    db: {
+        orm: {
+            public: {
+                Usuario: {
+                    where: vi.fn(() => ({
+                        first: buscarUsuario,
+                    })),
+                },
+            },
+        },
+    },
 }));
 
 const secretoPrueba = "secreto-aleatorio-exclusivo-para-las-pruebas";
@@ -26,11 +45,32 @@ function firmarContenido(contenido: string) {
 
 function configurarCookie(datos: unknown) {
     const contenido = Buffer.from(JSON.stringify(datos)).toString("base64url");
-    cookiesSimuladas.get.mockReturnValue({ value: firmarContenido(contenido) });
+
+    cookiesSimuladas.get.mockReturnValue({
+        value: firmarContenido(contenido),
+    });
+
+    if (
+        datos !== null &&
+        typeof datos === "object" &&
+        "usuarioId" in datos &&
+        "rol" in datos
+    ) {
+        buscarUsuario.mockResolvedValue({
+            id: datos.usuarioId,
+            rol: datos.rol,
+        });
+    }
 }
 
 beforeEach(() => {
     vi.resetAllMocks();
+
+    buscarUsuario.mockImplementation(async () => ({
+        id: 4,
+        rol: "OPERADOR",
+    }));
+
     vi.stubEnv("SESSION_SECRET", secretoPrueba);
     vi.stubEnv("NODE_ENV", "development");
     vi.useFakeTimers();
@@ -95,13 +135,34 @@ describe("obtenerSesion", () => {
 
     it("recupera la misma sesion que se emitio para un productor", async () => {
         await crearSesion(4, "PRODUCTOR");
-        cookiesSimuladas.get.mockReturnValue({ value: cookiesSimuladas.set.mock.calls[0][1] });
+
+        cookiesSimuladas.get.mockReturnValue({
+            value: cookiesSimuladas.set.mock.calls[0][1],
+        });
+
+        buscarUsuario.mockResolvedValue({
+            id: 4,
+            rol: "PRODUCTOR",
+        });
 
         expect(await obtenerSesion()).toEqual({
             usuarioId: 4,
             rol: "PRODUCTOR",
             expiraEn: segundosActuales + 28800,
         });
+    });
+
+    it("rechaza la sesión de un operador eliminado de la base de datos", async () => {
+        const datos = {
+            usuarioId: 4,
+            rol: "OPERADOR",
+            expiraEn: segundosActuales + 60,
+        };
+
+        configurarCookie(datos);
+        buscarUsuario.mockResolvedValue(null);
+
+        expect(await obtenerSesion()).toBeNull();
     });
 
     it("devuelve null si no hay cookie", async () => {
@@ -177,6 +238,47 @@ describe("obtenerSesion", () => {
 
     it("rechaza un contenido JSON nulo", async () => {
         configurarCookie(null);
+
+        expect(await obtenerSesion()).toBeNull();
+    });
+});
+
+
+describe("cerrarSesion", () => {
+
+    it("borra la cookie de sesión", async () => {
+        await cerrarSesion();
+
+        expect(cookiesSimuladas.delete).toHaveBeenCalledOnce();
+        expect(cookiesSimuladas.delete).toHaveBeenCalledWith("uam_sesion");
+    });
+
+    it("no escribe ninguna cookie", async () => {
+        await cerrarSesion();
+
+        expect(cookiesSimuladas.set).not.toHaveBeenCalled();
+    });
+
+    // Recorrido completo: se inicia sesión, hay sesión, se cierra, ya no hay sesión
+    it("deja al usuario sin sesión después de cerrarla", async () => {
+        // Cookies falsas que se comportan como las del navegador: guardan, devuelven y borran por nombre
+        const cookiesGuardadas = new Map<string, { value: string }>();
+        cookiesSimuladas.set.mockImplementation((nombre: string, valor: string) => {
+            cookiesGuardadas.set(nombre, { value: valor });
+        });
+        cookiesSimuladas.get.mockImplementation((nombre: string) => cookiesGuardadas.get(nombre));
+        cookiesSimuladas.delete.mockImplementation((nombre: string) => {
+            cookiesGuardadas.delete(nombre);
+        });
+
+        await crearSesion(4, "OPERADOR");
+        expect(await obtenerSesion()).toEqual({
+            usuarioId: 4,
+            rol: "OPERADOR",
+            expiraEn: segundosActuales + 28800,
+        });
+
+        await cerrarSesion();
 
         expect(await obtenerSesion()).toBeNull();
     });

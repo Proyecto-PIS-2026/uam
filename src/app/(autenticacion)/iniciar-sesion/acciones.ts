@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { crearSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autenticarUsuario } from "@/modulos/identidad-acceso/autenticacion/autenticarUsuario";
 import { existeUsuarioPorNombre } from "@/modulos/identidad-acceso/autenticacion/consultasAutenticacion";
+import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
 
 export type EstadoInicioSesion = {
     error?: string;
@@ -63,5 +64,5 @@ export async function iniciarSesion(
     }
 
     await crearSesion(usuario.usuarioId, usuario.rol);
-    redirect("/");
+    redirect(obtenerRutaPrincipal(usuario.rol));
 }

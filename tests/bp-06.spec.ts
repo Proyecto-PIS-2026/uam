@@ -1,9 +1,19 @@
+
 import { test, expect } from "@playwright/test";
+import { iniciarSesionOperador } from "./autenticacion";
 
 test("BP-06: modificación rápida del precio", async ({ page }) => {
   const rutaMercado = "/mi-mercado";
 
+  await iniciarSesionOperador(page);
   await page.goto(rutaMercado);
+
+  const configuracion = await page.request.get("/api/configuracion/incremento_precio");
+  expect(configuracion.ok()).toBe(true);
+  const { valor } = await configuracion.json();
+  const incremento = Number(valor);
+  expect(Number.isSafeInteger(incremento)).toBe(true);
+  expect(incremento).toBeGreaterThan(0);
 
   await expect(
     page.getByRole("heading", { name: "Mi Mercado" }),
@@ -15,22 +25,20 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
 
   await expect(botonPrecio).toBeVisible();
 
-  const tarjeta = botonPrecio.locator(
-    'xpath=ancestor::div[contains(@class,"rounded-2xl")][1]',
-  );
+  const controlesPrecio = botonPrecio.locator("..");
 
-  const aumentar = tarjeta.getByRole("button", {
+  const aumentar = controlesPrecio.getByRole("button", {
     name: "Aumentar precio",
   });
 
-  const disminuir = tarjeta.getByRole("button", {
+  const disminuir = controlesPrecio.getByRole("button", {
     name: "Disminuir precio",
   });
 
   // CA-1 y CA-2
   await expect(aumentar).toBeVisible();
   await expect(disminuir).toBeVisible();
-  await expect(tarjeta.getByTitle("Editar precio")).toBeVisible();
+  await expect(controlesPrecio.getByTitle("Editar precio")).toBeVisible();
 
   const textoInicial = await botonPrecio.textContent();
 
@@ -47,8 +55,8 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
     aumentoRealizado = true;
 
     await expect(
-      tarjeta.getByRole("button", {
-        name: `$${precioInicial + 10}`,
+      controlesPrecio.getByRole("button", {
+        name: `$${precioInicial + incremento}`,
         exact: true,
       }),
     ).toBeVisible();
@@ -62,11 +70,12 @@ test("BP-06: modificación rápida del precio", async ({ page }) => {
       await disminuir.click();
 
       await expect(
-        tarjeta.getByRole("button", {
+        controlesPrecio.getByRole("button", {
           name: `$${precioInicial}`,
           exact: true,
         }),
       ).toBeVisible();
+      await expect(disminuir).toBeEnabled();
     }
   }
 });

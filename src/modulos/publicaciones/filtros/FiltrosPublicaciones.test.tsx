@@ -199,6 +199,119 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
 
 describe("FiltrosPublicaciones", () => {
 
+    const seleccionarFiltro = (nombre: string, valor: string) => {
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: nombre }));
+        fireEvent.click(screen.getByRole("option", { name: valor }));
+    };
+
+    it("descarta categoría y calibre desaparecidos al editar las publicaciones", () => {
+        const alFiltrar = vi.fn();
+        const vista = render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro="" alFiltrar={alFiltrar}/>);
+        seleccionarFiltro("Categoría", "I");
+        seleccionarFiltro("Calibre", "Grande");
+
+        const actualizadas = [{ ...publicaciones[0], categoria: "II", calibre: "Pequeño" }];
+        vista.rerender(<FiltrosPublicaciones publicaciones={actualizadas} especieFiltro="" alFiltrar={alFiltrar}/>);
+
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Todas");
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Todos");
+        expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual(actualizadas);
+    });
+
+    it("descarta una especie eliminada y sus filtros dependientes, y notifica al padre", () => {
+        const alFiltrar = vi.fn();
+        const alCambiarEspecie = vi.fn();
+        const vista = render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarEspecie={alCambiarEspecie}/>);
+        seleccionarFiltro("Especie", "Manzana");
+        seleccionarFiltro("Variedad", "Gala");
+        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Categoría", "I");
+        seleccionarFiltro("Calibre", "Grande");
+        alCambiarEspecie.mockClear();
+
+        const restantes = [publicacionesPrueba[3]];
+        vista.rerender(<FiltrosPublicaciones publicaciones={restantes} especieFiltro="" alFiltrar={alFiltrar} alCambiarEspecie={alCambiarEspecie}/>);
+
+        for (const nombre of ["Especie", "Variedad", "Presentación", "Categoría"]) {
+            expect(screen.getByRole("combobox", { name: nombre })).toHaveTextContent("Todas");
+        }
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Todos");
+        expect(alCambiarEspecie).toHaveBeenCalledExactlyOnceWith("Todas");
+        expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual(restantes);
+    });
+
+    it("descarta una variedad desaparecida y su presentación, conservando las otras selecciones válidas", () => {
+        const alFiltrar = vi.fn();
+        const vista = render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        seleccionarFiltro("Variedad", "Gala");
+        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Categoría", "I");
+        seleccionarFiltro("Calibre", "Grande");
+
+        const actualizadas = [{ ...publicaciones[0], variedad: "Red", presentacion: "Bolsa" }];
+        vista.rerender(<FiltrosPublicaciones publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+
+        expect(screen.getByRole("combobox", { name: "Especie" })).toHaveTextContent("Manzana");
+        expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Todas");
+        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Todas");
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("I");
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Grande");
+        expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual(actualizadas);
+    });
+
+    it("descarta una presentación desaparecida y conserva la variedad elegida", () => {
+        const alFiltrar = vi.fn();
+        const vista = render(<FiltrosPublicaciones publicaciones={publicacionesPresentacion} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        seleccionarFiltro("Variedad", "Gala");
+        seleccionarFiltro("Presentación", "Caja");
+
+        const restantes = [publicacionesPresentacion[1]];
+        vista.rerender(<FiltrosPublicaciones publicaciones={restantes} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+
+        expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Gala");
+        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Todas");
+        expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual(restantes);
+    });
+
+    it.each(["Categoría", "Calibre"])("conserva %s cuando una baja invalida la combinación y esa fue la última faceta elegida", (ultimaFaceta) => {
+        const alFiltrar = vi.fn();
+        const vista = render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        const selecciones = ultimaFaceta === "Categoría" ? [["Calibre", "Grande"], ["Categoría", "I"]] : [["Categoría", "I"], ["Calibre", "Grande"]];
+        for (const [nombre, valor] of selecciones) seleccionarFiltro(nombre, valor);
+
+        const restantes = publicacionesCombinacionInvalida.slice(1);
+        vista.rerender(<FiltrosPublicaciones publicaciones={restantes} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent(ultimaFaceta === "Categoría" ? "I" : "Todas");
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent(ultimaFaceta === "Calibre" ? "Grande" : "Todos");
+        expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual([restantes[ultimaFaceta === "Categoría" ? 0 : 1]]);
+    });
+
+    it("conserva filtros válidos, búsqueda, rango de precio y orden cuando se actualiza el listado", () => {
+        const alFiltrar = vi.fn();
+        const vista = render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        seleccionarFiltro("Variedad", "Gala");
+        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Categoría", "I");
+        seleccionarFiltro("Calibre", "Grande");
+        fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Manzana" } });
+        fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "50" } });
+        fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "200" } });
+        fireEvent.click(screen.getByRole("button", { name: /menor precio/i }));
+
+        const actualizadas = [{ ...publicaciones[0], precio: 150 }, { ...publicaciones[0], id: 2, precio: 75 }];
+        vista.rerender(<FiltrosPublicaciones publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+
+        expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Gala");
+        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Caja");
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("I");
+        expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Grande");
+        expect(screen.getByLabelText("Buscar publicaciones")).toHaveValue("Manzana");
+        expect(screen.getByLabelText("Precio Mínimo")).toHaveValue("50");
+        expect(screen.getByLabelText("Precio Máximo")).toHaveValue("200");
+        expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual([actualizadas[1], actualizadas[0]]);
+    });
+
     it("renderiza los controles principales", () => {
         render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
 
@@ -965,5 +1078,22 @@ describe("FiltrosPublicaciones", () => {
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(2);
         expect(resultado.every((publicacion) => publicacion.especie === "Manzana")).toBe(true);
+    });
+
+    it("permite filtrar presentación al ingresar con una especie cuya única variedad es guion", () => {
+        const alFiltrar = vi.fn();
+        const publicaciones = [
+            { ...publicacionesVariedadUnica[0], id: 1, presentacion: "Caja" },
+            { ...publicacionesVariedadUnica[0], id: 2, presentacion: "Bolsa" },
+        ];
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro="Pera" alFiltrar={alFiltrar} />);
+
+        expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
+        const presentacion = screen.getByRole("combobox", { name: "Presentación" });
+        expect(presentacion).not.toHaveAttribute("aria-disabled", "true");
+        fireEvent.mouseDown(presentacion);
+        fireEvent.click(screen.getByRole("option", { name: "Bolsa" }));
+
+        expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual([publicaciones[1]]);
     });
 });

@@ -3,12 +3,16 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { validarAltaOperador } from "./validarAltaOperador";
 import argon2 from "argon2";
+import { revalidatePath } from "next/cache";
+import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export type ResultadoAltaOperador =
 	| { esValido: false; errores: string[] }
 	| { esValido: true; id: number; mensaje: string };
 
 export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperador> {
+	await exigirAdministrador();
+
 	const validacion = validarAltaOperador(valor);
 	if (!validacion.esValido) return validacion;
 
@@ -72,6 +76,9 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
 	if (typeof resultadoTx === "string") {
 	    return { esValido: false, errores: [resultadoTx] };
     }
+
+    revalidatePath("/administracion");
+    revalidatePath("/operadores");
 
     return { esValido: true, id: resultadoTx, mensaje: "Operador creado correctamente." };
 }

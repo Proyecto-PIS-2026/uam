@@ -4,7 +4,7 @@ import type { ConsultaPreciosReferencia } from "../precios-referencia/consultas-
 import { obtenerCatalogoEspeciesHistoricas } from "./catalogo-especies";
 
 const { listar, listarEspecies, seleccionarEspecies, leerPorClave, filtrarPorPrefijo, compararPrefijo, transaccion, consultar } = vi.hoisted(() => ({
-    listar: vi.fn<() => Promise<{ nombreConfiguracion: string; valorConfiguracion: string }[]>>(),
+    listar: vi.fn<() => Promise<{ claveCache: string; estadoCache: string }[]>>(),
     listarEspecies: vi.fn<() => Promise<{ uamId: number | null; nombreEspecie: string; especieActiva?: boolean }[]>>(),
     seleccionarEspecies: vi.fn(),
     leerPorClave: vi.fn(),
@@ -17,7 +17,7 @@ const { listar, listarEspecies, seleccionarEspecies, leerPorClave, filtrarPorPre
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
     db: {
         orm: { public: {
-            Configuracion: {
+            CachePreciosReferencia: {
                 where: (filtro: unknown) => typeof filtro === "function" ? filtrarPorPrefijo(filtro) : leerPorClave(filtro),
             },
             Especie: { select: seleccionarEspecies },
@@ -56,8 +56,8 @@ function dato(fecha = "2026-10-03"): ConsultaPreciosReferencia {
 
 function registro(nombre: string, consulta: ConsultaPreciosReferencia, ultimoExito = consulta.survey_date) {
     return {
-        nombreConfiguracion: "precios-referencia:latest:" + nombre,
-        valorConfiguracion: JSON.stringify({ version: 1, ultimoIntento: ultimoExito, ultimoExito, consulta }),
+        claveCache: "precios-referencia:latest:" + nombre,
+        estadoCache: JSON.stringify({ version: 1, ultimoIntento: ultimoExito, ultimoExito, consulta }),
     };
 }
 
@@ -75,8 +75,8 @@ beforeEach(() => {
     seleccionarEspecies.mockReset().mockReturnValue({ all: listarEspecies });
     leerPorClave.mockReset();
     compararPrefijo.mockReset().mockReturnValue("predicado-de-prefijo");
-    filtrarPorPrefijo.mockReset().mockImplementation((filtro: (configuracion: { nombreConfiguracion: { like: typeof compararPrefijo } }) => unknown) => {
-        expect(filtro({ nombreConfiguracion: { like: compararPrefijo } })).toBe("predicado-de-prefijo");
+    filtrarPorPrefijo.mockReset().mockImplementation((filtro: (configuracion: { claveCache: { like: typeof compararPrefijo } }) => unknown) => {
+        expect(filtro({ claveCache: { like: compararPrefijo } })).toBe("predicado-de-prefijo");
         return { all: listar };
     });
     transaccion.mockReset();
@@ -94,8 +94,8 @@ describe("obtenerUltimoRelevamientoGuardado", () => {
         const reciente = dato();
         listar.mockResolvedValue([
             registro("anterior", dato("2026-10-01")),
-            { nombreConfiguracion: "otra-configuracion", valorConfiguracion: "valor" },
-            { nombreConfiguracion: "precios-referencia:latest:corrupta", valorConfiguracion: "{" },
+            { claveCache: "otra-configuracion", estadoCache: "valor" },
+            { claveCache: "precios-referencia:latest:corrupta", estadoCache: "{" },
             registro("reciente", reciente),
         ]);
 
@@ -120,8 +120,8 @@ describe("obtenerUltimoRelevamientoGuardado", () => {
 
     it("devuelve null sin llamar al servicio cuando no hay una caché válida", async () => {
         listar.mockResolvedValue([{
-            nombreConfiguracion: "precios-referencia:latest:fallo",
-            valorConfiguracion: JSON.stringify({ version: 1, ultimoIntento: "2026-10-03", ultimoExito: null, consulta: null }),
+            claveCache: "precios-referencia:latest:fallo",
+            estadoCache: JSON.stringify({ version: 1, ultimoIntento: "2026-10-03", ultimoExito: null, consulta: null }),
         }]);
 
         await expect(obtenerUltimoRelevamientoGuardado()).resolves.toBeNull();

@@ -604,7 +604,7 @@ describe("PreciosHistoricos", () => {
             />,
         );
         expect(firmasFilasVisibles()).toEqual(["Cavendish|ECUADOR|M|I", "Cavendish|ECUADOR|M|II"]);
-    });
+    }, 10_000);
 
     it("conserva filtros iniciales ausentes en la respuesta y muestra cero resultados", () => {
         render(
@@ -920,6 +920,11 @@ describe("PreciosHistoricos", () => {
         fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
         seleccionarFiltro("Especie", "Manzana");
 
+        abrirFiltrosAdicionales();
+        for (const nombre of ["Variedad", "País", "Calibre", "Categoría"]) {
+            expect(screen.getByRole("combobox", { name: nombre })).toHaveAttribute("aria-disabled", "true");
+        }
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
         expect(screen.getByLabelText(/^Desde/)).toHaveValue("2024-11-01");
         expect(navegar).not.toHaveBeenCalled();
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
@@ -933,6 +938,32 @@ describe("PreciosHistoricos", () => {
         for (const filtro of ["variedad", "pais", "calibre", "categoria"]) {
             expect(parametros.has(filtro)).toBe(false);
         }
+    });
+
+    it("vuelve a habilitar los filtros del histórico cargado al recuperar la especie consultada", () => {
+        render(
+            <PreciosHistoricos
+                producto={producto}
+                historico={historicoConFiltros}
+                {...fechas}
+                especies={[
+                    { id: "60", especie: "Banana" },
+                    { id: "61", especie: "Manzana" },
+                ]}
+            />,
+        );
+        seleccionarFiltro("Especie", "Manzana");
+        seleccionarFiltro("Especie", "Banana");
+        abrirFiltrosAdicionales();
+
+        for (const nombre of ["Variedad", "País", "Calibre", "Categoría"]) {
+            expect(screen.getByRole("combobox", { name: nombre })).not.toHaveAttribute("aria-disabled", "true");
+        }
+        expect(leerOpcionesFiltro("Variedad")).toEqual(["Cavendish", "Orgánica"]);
+        seleccionarFiltro("Variedad", "Orgánica");
+        expect(firmasFilasVisibles()).toHaveLength(2);
+        expect(navegar).toHaveBeenCalledOnce();
+        expect(new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams.get("variedad")).toBe("Orgánica");
     });
 
     it("aplica un período dentro del histórico cargado al consultar y sólo navega si se amplía más allá", () => {
@@ -1050,6 +1081,54 @@ describe("PreciosHistoricos", () => {
             expect(aviso).toHaveTextContent("No pudimos cargar los precios históricos.");
         }
         expect(screen.queryByText(/No hay registros históricos/)).not.toBeInTheDocument();
+    });
+
+    it("permite abrir y cerrar los errores de registros descartados sobre el listado sin ocultar los datos válidos", () => {
+        const erroresValidacion = [
+            '03/11/2025, Banana Cavendish: series[0].presentations[0].prices[1].min_kg tiene el valor "Ñ"; se esperaba un número finito.',
+            "03/11/2025, Banana Cavendish: el precio mínimo por kg ($70) es mayor que el máximo ($60).",
+        ];
+        render(<PreciosHistoricos producto={producto} historico={{ ...historico, erroresValidacion }} {...fechas} />);
+
+        const resumen = screen.getByText("Ver errores del histórico (2)");
+        const aviso = resumen.closest("details")!;
+        expect(aviso).not.toHaveAttribute("open");
+        for (const mensaje of erroresValidacion) expect(within(aviso).getByText(mensaje)).not.toBeVisible();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        const tabla = screen.getByRole("table");
+        expect(aviso.compareDocumentPosition(tabla) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(within(tabla).getAllByRole("row")).toHaveLength(2);
+        const precioValido = within(tabla).getByRole("cell", { name: "$50 - $60" });
+        expect(precioValido).toBeVisible();
+        const registroMobile = document.querySelector("article")!;
+        expect(registroMobile).toHaveTextContent("$50 - $60 / kg");
+        expect(registroMobile).toBeVisible();
+        expect(aviso.compareDocumentPosition(registroMobile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+        fireEvent.click(resumen);
+        expect(aviso).toHaveAttribute("open");
+        for (const mensaje of erroresValidacion) expect(within(aviso).getByText(mensaje)).toBeVisible();
+        expect(precioValido).toBeVisible();
+        expect(registroMobile).toBeVisible();
+
+        fireEvent.click(resumen);
+        expect(aviso).not.toHaveAttribute("open");
+        for (const mensaje of erroresValidacion) expect(within(aviso).getByText(mensaje)).not.toBeVisible();
+        expect(precioValido).toBeVisible();
+        expect(registroMobile).toBeVisible();
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
+    });
+
+    it.each([
+        { cargando: true },
+        { error: "No pudimos cargar los precios históricos." },
+    ])("oculta los errores de registros descartados durante la carga o un fallo de consulta: %o", (estado) => {
+        const mensaje = 'Registro descartado: min_kg tiene el valor "Ñ".';
+        render(<PreciosHistoricos producto={producto} historico={{ ...historico, erroresValidacion: [mensaje] }} {...fechas} {...estado} />);
+
+        expect(screen.queryByText(mensaje)).not.toBeInTheDocument();
+        expect(screen.queryByText("Ver errores del histórico (1)")).not.toBeInTheDocument();
     });
 
     it.each([

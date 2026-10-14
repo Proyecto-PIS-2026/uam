@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { consultarHistorico, ErrorWebserviceHistorico } from "./cliente-webservice";
 import type { ConsultaHistorica } from "./parametros-consulta";
 import type { HistoricoProducto } from "./tipos";
+import { validarHistoricoProducto } from "./validar-historico";
 
 const opciones = { baseUrl: "https://datos.uam.test/servicio/", token: "jwt-de-prueba" };
 const consulta: ConsultaHistorica = {
@@ -211,12 +212,20 @@ describe("cliente del webservice de precios históricos", () => {
         await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("Respuesta de precios históricos inválida");
     });
 
-    it("rechaza una fecha inválida anidada antes de devolver el histórico", async () => {
+    it("descarta el día con una fecha inválida y devuelve los días válidos junto con el diagnóstico", async () => {
         const recibido = JSON.parse(JSON.stringify(consultaValida)) as HistoricoProducto;
         recibido.series[0].date = "2025-02-30";
+        const diaValido = { ...consultaValida.series[0], date: "2025-10-02" };
+        recibido.series.push(diaValido);
         const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
 
-        await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow("inválida en series[0].date");
+        const historico = await consultarHistorico(opciones, consulta, fetcher);
+
+        expect(historico.series).toStrictEqual([diaValido]);
+        expect(historico.erroresValidacion).toEqual([
+            expect.stringContaining("series[0].date"),
+        ]);
+        expect(historico.erroresValidacion![0]).toContain("2025-02-30");
     });
 
     it("rechaza la respuesta de otra especie", async () => {
@@ -243,14 +252,40 @@ describe("cliente del webservice de precios históricos", () => {
         await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toBe(error);
     });
 
-    it("conserva los precios del servicio aunque el mínimo supere al máximo por kg y por unidad", async () => {
+    it("descarta un precio cuyo mínimo supera al máximo y conserva las otras categorías", async () => {
         const recibido = JSON.parse(JSON.stringify(consultaValida)) as HistoricoProducto;
         Object.assign(recibido.series[0].presentations[0].prices[0], {
             min_kg: 100, max_kg: 75, min_un: 200, max_un: 75,
         });
+        const precioValido = { ...consultaValida.series[0].presentations[0].prices[0], category: "II" };
+        recibido.series[0].presentations[0].prices.push(precioValido);
         const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
 
-        await expect(consultarHistorico(opciones, consulta, fetcher)).resolves.toStrictEqual(recibido);
+        const historico = await consultarHistorico(opciones, consulta, fetcher);
+
+        expect(historico.series[0].presentations[0].prices).toStrictEqual([precioValido]);
+        expect(historico.erroresValidacion).toEqual(expect.arrayContaining([
+            expect.stringContaining("series[0].presentations[0].prices[0]"),
+        ]));
+    });
+
+    it("conserva los precios válidos cuando llega Ñ y preserva el error al revalidar", async () => {
+        const recibido = JSON.parse(JSON.stringify(consultaValida)) as HistoricoProducto;
+        const precioValido = { ...recibido.series[0].presentations[0].prices[0], category: "II" };
+        Object.assign(recibido.series[0].presentations[0].prices[0], { min_kg: "Ñ" });
+        recibido.series[0].presentations[0].prices.push(precioValido);
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        const historico = await consultarHistorico(opciones, consulta, fetcher);
+
+        expect(historico.series[0].presentations[0].prices).toStrictEqual([precioValido]);
+        expect(historico.erroresValidacion).toEqual([
+            expect.stringContaining("series[0].presentations[0].prices[0].min_kg"),
+        ]);
+        expect(historico.erroresValidacion![0]).toContain("2025-10-01");
+        expect(historico.erroresValidacion![0]).toContain("Ñ");
+        expect(validarHistoricoProducto(historico, consulta)).toStrictEqual(historico);
+        expect(validarHistoricoProducto(validarHistoricoProducto(historico, consulta), consulta)).toStrictEqual(historico);
     });
 
     it("permite superar 60 segundos y aborta al alcanzar el límite predeterminado de cinco minutos", async () => {

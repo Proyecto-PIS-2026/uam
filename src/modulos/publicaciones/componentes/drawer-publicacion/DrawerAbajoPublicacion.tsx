@@ -5,7 +5,6 @@ import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "../ImagenPublicacion";
 import Link from "next/link";
-// import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 import TextoAjustable from "./TextoAjustable";
@@ -27,7 +26,6 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
             {publicacion && (
                 <>
                     <div className={styles.tarjeta}>
-                        {/* <HojasDecorativas variante="fondo" className={styles.hojasDrawer} /> */}
                         <div className={styles.indicador} />
                         <div className={styles.bloqueSuperior}>
                             <div className={styles.marcoImagen}>

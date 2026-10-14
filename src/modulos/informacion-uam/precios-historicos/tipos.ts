@@ -29,6 +29,7 @@ export type HistoricoProducto = {
     from: string;
     to: string;
     series: RegistroHistorico[];
+    erroresValidacion?: string[];
 };
 
 export type ProductoSeleccionado = {

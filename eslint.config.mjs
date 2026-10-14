@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "coverage/**",
+    ".playwright/**",
     "next-env.d.ts",
     "migrations/**",
     "src/infraestructura/persistencia/prisma/contract.d.ts",

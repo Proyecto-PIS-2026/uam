@@ -130,6 +130,40 @@ describe("fusionarHistoricos", () => {
         expect(() => fusionarHistoricos(historico([]), historico([], { species_id: 61 })))
             .toThrow("distintas especies");
     });
+
+    it("incorpora el diagnóstico de registros descartados de una actualización sin perder los datos existentes", () => {
+        const guardado = historico([{ date: "2026-10-02", presentations: [presentacion()] }]);
+        const recibido = historico([{ date: "2026-10-08", presentations: [presentacion()] }], {
+            erroresValidacion: ["Registro descartado: precio inválido del 2026-10-08"],
+        });
+
+        const resultado = fusionarHistoricos(guardado, recibido);
+
+        expect(resultado.series).toEqual([...guardado.series, ...recibido.series]);
+        expect(resultado.erroresValidacion).toEqual(recibido.erroresValidacion);
+        expect(guardado).not.toHaveProperty("erroresValidacion");
+    });
+
+    it("conserva y deduplica diagnósticos al repetir actualizaciones sin compartir sus listas", () => {
+        const guardado = historico([], { erroresValidacion: ["Día inválido", "Precio inválido"] });
+        const recibido = historico([], { erroresValidacion: ["Precio inválido", "Presentación inválida"] });
+        const originales = structuredClone({ guardado, recibido });
+
+        const resultado = fusionarHistoricos(guardado, recibido);
+
+        expect(resultado.erroresValidacion).toEqual(["Día inválido", "Precio inválido", "Presentación inválida"]);
+        expect(fusionarHistoricos(resultado, recibido)).toStrictEqual(resultado);
+        resultado.erroresValidacion!.push("Otro diagnóstico");
+        expect({ guardado, recibido }).toStrictEqual(originales);
+    });
+
+    it("mantiene la forma de los históricos que no tienen diagnósticos de validación", () => {
+        const guardado = historico([]);
+        const recibido = historico([]);
+
+        expect(fusionarHistoricos(guardado, recibido)).toStrictEqual(guardado);
+        expect(fusionarHistoricos(guardado, recibido)).not.toHaveProperty("erroresValidacion");
+    });
 });
 
 describe("filtrarHistorico", () => {

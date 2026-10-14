@@ -120,6 +120,30 @@ describe("ContenedorPublicaciones", () => {
 		}
 	});
 
+	it("sincroniza la especie elegida en la URL y permite volver a todas", async () => {
+		const urlAnterior = window.location.href;
+		window.history.replaceState(window.history.state, "", "/publicaciones?especie=Manzana&orden=asc#lista");
+		try {
+			const publicaciones = [
+				{ ...crearPublicacion(1), especie: "Manzana" },
+				{ ...crearPublicacion(2), especie: "Pera" },
+			];
+			render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana" />);
+			fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+			fireEvent.click(screen.getByRole("option", { name: "Pera" }));
+			await waitFor(() => expect(publicacionesDelListado()).toEqual([publicaciones[1]]));
+			expect(new URL(window.location.href).searchParams.get("especie")).toBe("Pera");
+			expect(new URL(window.location.href).searchParams.get("orden")).toBe("asc");
+			expect(window.location.hash).toBe("#lista");
+			fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+			fireEvent.click(screen.getByRole("option", { name: "Todas" }));
+			await waitFor(() => expect(publicacionesDelListado()).toEqual(publicaciones));
+			expect(window.location.search).toBe("?orden=asc");
+		} finally {
+			window.history.replaceState(window.history.state, "", urlAnterior);
+		}
+	});
+
 	/* Tests nuevos
 	it("vacía el listado cuando se quitan las publicaciones", () => {
 		const { rerender } = render(<ContenedorPublicaciones publicaciones={[crearPublicacion(7)]}/>);

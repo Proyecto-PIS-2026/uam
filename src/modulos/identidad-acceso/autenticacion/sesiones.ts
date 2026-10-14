@@ -1,12 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { db } from "@/infraestructura/persistencia/prisma/db";
 
 const nombreCookieSesion = "uam_sesion";
 const duracionSesionEnSegundos = 60 * 60 * 8;
 
 export type RolUsuario = "OPERADOR" | "ADMINISTRADOR" | "PRODUCTOR";
 
-type DatosSesion = {
+export type DatosSesion = {
     usuarioId: number;
     rol: RolUsuario;
     expiraEn: number;
@@ -45,6 +46,11 @@ export async function crearSesion(usuarioId: number, rol: DatosSesion["rol"]) {
     });
 }
 
+export async function cerrarSesion() {
+    const cookiesSesion = await cookies();
+    cookiesSesion.delete(nombreCookieSesion)
+}
+
 export async function obtenerSesion(): Promise<DatosSesion | null> {
     const valor = (await cookies()).get(nombreCookieSesion)?.value;
     if (!valor) return null;
@@ -75,6 +81,15 @@ export async function obtenerSesion(): Promise<DatosSesion | null> {
         ) {
             return null;
         }
+
+        const usuario = await db.orm.public.Usuario
+            .where({ id: datos.usuarioId })
+            .first();
+
+        if (!usuario || usuario.rol !== datos.rol) {
+            return null;
+        }
+
         return datos;
     } catch {
         return null;

@@ -120,6 +120,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                 presentacion.prices.map((precio) => ({ dia, presentacion, precio }))));
     }, [historico, desde, hasta, error]);
     const disponibles = useMemo(() => {
+        if (cambioEspecie) return { variedades: [], paises: [], categorias: [], calibres: [] };
         const presentaciones = historico && !error ? historico.series.flatMap((dia) => dia.presentations) : [];
         return {
             variedades: opciones(opcionesFiltros?.variedades ?? presentaciones.map((presentacion) => presentacion.variety), variedad),
@@ -127,7 +128,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
             categorias: opciones(opcionesFiltros?.categorias ?? presentaciones.flatMap((presentacion) => presentacion.prices.map((precio) => precio.category)), categoria),
             calibres: opciones(opcionesFiltros?.calibres ?? presentaciones.map((presentacion) => presentacion.caliber), calibre),
         };
-    }, [historico, opcionesFiltros, error, variedad, pais, categoria, calibre]);
+    }, [historico, opcionesFiltros, error, cambioEspecie, variedad, pais, categoria, calibre]);
     const variedadSeleccionada = variedad;
     const paisSeleccionado = pais;
     const categoriaSeleccionada = categoria;
@@ -256,7 +257,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                         </TextField>
                         <TextField
                             className={`${styles.campo} ${styles.filtroVariedad}`}
-                            select label="Variedad" name="variedad" size="small" value={variedadSeleccionada} disabled={cargandoTabla}
+                            select label="Variedad" name="variedad" size="small" value={variedadSeleccionada} disabled={cargandoTabla || cambioEspecie}
                             onChange={(evento) => cambiar(() => setVariedad(evento.target.value), { variedad: evento.target.value })} slotProps={menu}
                         >
                             <MenuItem value="" className={styles.opcionSelect}>Todas las variedades</MenuItem>
@@ -276,7 +277,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             <div ref={contenidoFiltrosRef} className={styles.contenidoAdicional}>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroPais}`}
-                                    select label="País" name="pais" size="small" value={paisSeleccionado} disabled={cargandoTabla}
+                                    select label="País" name="pais" size="small" value={paisSeleccionado} disabled={cargandoTabla || cambioEspecie}
                                     onChange={(evento) => cambiar(() => setPais(evento.target.value), { pais: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todos los países</MenuItem>
@@ -286,7 +287,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </TextField>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroCalibre}`}
-                                    select label="Calibre" name="calibre" size="small" value={calibreSeleccionado} disabled={cargandoTabla}
+                                    select label="Calibre" name="calibre" size="small" value={calibreSeleccionado} disabled={cargandoTabla || cambioEspecie}
                                     onChange={(evento) => cambiar(() => setCalibre(evento.target.value), { calibre: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todos los calibres</MenuItem>
@@ -296,7 +297,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </TextField>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroCategoria}`}
-                                    select label="Categoría" name="categoria" size="small" value={categoriaSeleccionada} disabled={cargandoTabla}
+                                    select label="Categoría" name="categoria" size="small" value={categoriaSeleccionada} disabled={cargandoTabla || cambioEspecie}
                                     onChange={(evento) => cambiar(() => setCategoria(evento.target.value), { categoria: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todas las categorías</MenuItem>
@@ -337,6 +338,14 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
 
             <section className={styles.tablaPanel} aria-label={`Histórico de ${producto.especie}`}>
                 <div className={styles.tablaCabecera}><h2>Histórico de precios</h2></div>
+                {!cargandoTabla && !error && !!historico?.erroresValidacion?.length && (
+                    <details className={styles.erroresValidacion}>
+                        <summary>Ver errores del histórico ({historico.erroresValidacion.length})</summary>
+                        <ul>
+                            {historico.erroresValidacion.map((mensaje, indice) => <li key={indice}>{mensaje}</li>)}
+                        </ul>
+                    </details>
+                )}
                 <div className={styles.tablaContenedor}>
                     <table className={styles.tabla} aria-busy={cargandoTabla} aria-describedby={cargandoTabla ? `${idCarga}-tabla` : undefined}>
                         <thead><tr>

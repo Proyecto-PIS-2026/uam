@@ -3,6 +3,7 @@ import { obtenerHistoricoPrecios, obtenerHistoricoPreciosConFiltros } from "./co
 import type { EstadoHistorico } from "./almacen-historicos";
 import type { ConsultaHistorica } from "./parametros-consulta";
 import type { HistoricoProducto, PresentacionHistorica } from "./tipos";
+import { validarHistoricoProducto } from "./validar-historico";
 
 const { leer, sincronizar } = vi.hoisted(() => ({ leer: vi.fn(), sincronizar: vi.fn() }));
 vi.mock("./almacen-historicos", () => ({ leerHistorico: leer }));
@@ -93,6 +94,95 @@ describe("consultas del histórico persistido", () => {
     it("una especie sin importar requiere la carga administrativa y no se crea desde la consulta pública", async () => {
         leer.mockResolvedValue(null);
         await expect(obtenerHistoricoPrecios(consulta)).rejects.toThrow("administrador todavía no cargó");
+    });
+
+    it.each([
+        ["fecha inexistente", { date: "2026-02-30", presentations: [] }, "series[1].date"],
+        ["presentaciones inválidas", { date: "2026-10-02", presentations: null }, "series[1].presentations"],
+        ["precios inválidos", { date: "2026-10-02", presentations: [{
+            variety: "Cavendish", caliber: "G", country: "ECUADOR", measure_unit: "KG", prices: null,
+        }] }, "series[1].presentations[0].prices"],
+    ])("devuelve los precios guardados y las advertencias al descartar una %s", async (_motivo, diaInvalido, ruta) => {
+        const guardado = estado();
+        const valido = { ...guardado.historico, series: [guardado.historico.series[1]] };
+        const recibido = { ...valido, series: [...valido.series, diaInvalido] };
+        const original = structuredClone(recibido);
+        guardado.historico = validarHistoricoProducto(recibido, consulta);
+        leer.mockResolvedValue(guardado);
+
+        const primero = await obtenerHistoricoPrecios(consulta);
+        const segundo = await obtenerHistoricoPrecios(consulta);
+
+        expect(primero.series.flatMap((dia) => dia.presentations.flatMap((presentacion) => presentacion.prices)))
+            .toStrictEqual(valido.series[0].presentations.flatMap((presentacion) => presentacion.prices));
+        expect(primero.erroresValidacion).toEqual([expect.stringContaining(ruta)]);
+        expect(segundo).toStrictEqual(primero);
+        expect(leer.mock.calls).toEqual([[60], [60]]);
+        expect(recibido).toStrictEqual(original);
+    });
+
+    it("conserva precios válidos y advertencias de un valor Ñ al recuperar el histórico persistido", async () => {
+        const guardado = estado();
+        const dia = guardado.historico.series[1];
+        guardado.historico.series = [{ ...dia, presentations: [dia.presentations[0]] }];
+        Object.assign(guardado.historico.series[0].presentations[0].prices[0], { min_kg: "Ñ" });
+        const recibido = guardado.historico;
+        const original = structuredClone(recibido);
+        const precioValido = recibido.series[0].presentations[0].prices[1];
+        guardado.historico = validarHistoricoProducto(recibido, consulta);
+        leer.mockResolvedValue(guardado);
+
+        const primero = await obtenerHistoricoPrecios(consulta);
+        const segundo = await obtenerHistoricoPrecios(consulta);
+
+        expect(primero.series[0].presentations[0].prices).toStrictEqual([precioValido]);
+        expect(primero.erroresValidacion).toEqual([
+            expect.stringContaining("series[0].presentations[0].prices[0].min_kg"),
+        ]);
+        expect(primero.erroresValidacion![0]).toContain(consulta.desde);
+        expect(primero.erroresValidacion![0]).toContain("Ñ");
+        expect(segundo).toStrictEqual(primero);
+        expect(recibido).toStrictEqual(original);
+    });
+
+    it("preserva sin duplicar las advertencias al validar nuevamente y aplicar filtros en backend", async () => {
+        const guardado = estado();
+        const dia = guardado.historico.series[1];
+        guardado.historico.series = [{ ...dia, presentations: [dia.presentations[0]] }];
+        Object.assign(guardado.historico.series[0].presentations[0].prices[0], { min_kg: "Ñ" });
+        const validado = validarHistoricoProducto(guardado.historico, consulta);
+        guardado.historico = validarHistoricoProducto(validado, consulta);
+        leer.mockResolvedValue(guardado);
+
+        const primero = await obtenerHistoricoPreciosConFiltros(consulta, { categoria: "II" });
+        const segundo = await obtenerHistoricoPrecios(consulta, { categoria: "II" });
+
+        expect(primero.historico.erroresValidacion).toHaveLength(1);
+        expect(primero.historico.erroresValidacion).toEqual(validado.erroresValidacion);
+        expect(primero.historico.series[0].presentations[0].prices.map((precio) => precio.category)).toEqual(["II"]);
+        expect(segundo).toStrictEqual(primero.historico);
+    });
+
+    it.each(["min_kg", "min_un"] as const)("reutiliza precios válidos tras descartar un %s mayor al máximo", async (campo) => {
+        const guardado = estado();
+        const dia = guardado.historico.series[1];
+        guardado.historico.series = [{ ...dia, presentations: [dia.presentations[0]] }];
+        guardado.historico.series[0].presentations[0].prices[0][campo] = 100;
+        const recibido = guardado.historico;
+        const original = structuredClone(recibido);
+        const precioValido = recibido.series[0].presentations[0].prices[1];
+        guardado.historico = validarHistoricoProducto(recibido, consulta);
+        leer.mockResolvedValue(guardado);
+
+        const primero = await obtenerHistoricoPrecios(consulta);
+        const segundo = await obtenerHistoricoPrecios(consulta);
+
+        expect(primero.series[0].presentations[0].prices).toStrictEqual([precioValido]);
+        expect(primero.erroresValidacion).toEqual([
+            expect.stringContaining(`series[0].presentations[0].prices[0].${campo}`),
+        ]);
+        expect(segundo).toStrictEqual(primero);
+        expect(recibido).toStrictEqual(original);
     });
 
     it("rechaza una consulta inválida antes de sincronizar o acceder a la base", async () => {

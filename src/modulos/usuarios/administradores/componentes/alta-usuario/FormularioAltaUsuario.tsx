@@ -5,7 +5,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
-import type { NaveOpcion } from "./obtenerNaves";
+import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 const ROLES_VALIDOS = ["operador", "productor", "administrador"];
 
 export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }) {

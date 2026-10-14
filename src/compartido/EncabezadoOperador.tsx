@@ -9,5 +9,5 @@ export default async function EncabezadoOperador() {
             ? await obtenerFotoPerfilOperadorPorUsuarioId(sesion.usuarioId)
             : null;
 
-    return <HeaderPublico rolUsuario={sesion?.rol ?? null} fotoPerfil={fotoPerfil} />;
+    return <HeaderPublico sesion={sesion} fotoPerfil={fotoPerfil} />;
 }

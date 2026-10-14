@@ -66,6 +66,9 @@ export function fusionarHistoricos(guardado: HistoricoProducto, recibido: Histor
 
     return {
         ...guardado,
+        ...(guardado.erroresValidacion !== undefined || recibido.erroresValidacion !== undefined
+            ? { erroresValidacion: [...new Set([...(guardado.erroresValidacion ?? []), ...(recibido.erroresValidacion ?? [])])] }
+            : {}),
         from: guardado.from < recibido.from ? guardado.from : recibido.from,
         to: guardado.to > recibido.to ? guardado.to : recibido.to,
         series: [...registros.values()].sort((a, b) => a.date.localeCompare(b.date)),
