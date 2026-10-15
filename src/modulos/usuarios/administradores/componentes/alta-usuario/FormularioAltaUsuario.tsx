@@ -1,12 +1,34 @@
 "use client";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./FormularioAltaUsuario.module.css";
 import { useState, useEffect, type FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 const ROLES_VALIDOS = ["operador", "productor", "administrador"];
+
+const DEPARTAMENTOS = [
+    "Artigas",
+    "Canelones",
+    "Cerro Largo",
+    "Colonia",
+    "Durazno",
+    "Flores",
+    "Florida",
+    "Lavalleja",
+    "Maldonado",
+    "Montevideo",
+    "Paysandú",
+    "Río Negro",
+    "Rivera",
+    "Rocha",
+    "Salto",
+    "San José",
+    "Soriano",
+    "Tacuarembó",
+    "Treinta y Tres"
+];
 
 export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }) {
     const searchParams = useSearchParams();    
@@ -26,6 +48,16 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const [enviando, setEnviando] = useState(false);
     const [mensajeVisible, setMensajeVisible] = useState(false);
     const [mostrarPopup, setMostrarPopup] = useState(false);
+    const [direcciones, setDirecciones] = useState([
+        { departamento: "", direccion: "" }
+    ]);
+    const [rolCreado, setRolCreado] = useState("");
+
+    const router = useRouter();
+
+    function volver() {
+        router.push("/administracion#usuarios");
+    }
 
     useEffect(() => {
     if (!mensajeExito) return;
@@ -37,6 +69,22 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         clearTimeout(borrar);
     };
     }, [mensajeExito]);
+
+    function limpiarFormulario() {
+        setNombreUsuario("");
+        setContraseña("");
+        setConfirmacionContraseña("");
+        setCodigoPais("+598");
+        setNombre("");
+        settelefono("");
+        setLocales([
+            { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
+        ]);
+        setDirecciones([{ departamento: "", direccion: "" }]);
+        setErrores([]);
+        setMensajeExito("");
+        setMensajeVisible(false);
+    }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -65,21 +113,39 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     return;
                 }
 
-                setNombreUsuario("");
-                setContraseña("");
-                setConfirmacionContraseña("");
-                setCodigoPais("+598");
-                setNombre("");
-                settelefono("");
-                setLocales([{ numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }]);
-
+                limpiarFormulario();
                 setMensajeExito(resultado.mensaje);
                 setMensajeVisible(true);
+                setRolCreado("operador");
                 setMostrarPopup(true);
                 return;
             }
 
-            // Pendiente: productor y administrador
+            if (rol === "productor") {
+                const resultado = await altaProductor({
+                    rol,
+                    nombreUsuario,
+                    contraseña,
+                    confirmacionContraseña: confirmacioncontraseña,
+                    nombre,
+                    codigoPais,
+                    telefono,
+                    direcciones,
+                });
+
+                if (!resultado.esValido) {
+                    setErrores(resultado.errores);
+                    return;
+                }
+
+                limpiarFormulario();
+                setMensajeExito(resultado.mensaje);
+                setMensajeVisible(true);
+                setRolCreado("productor");
+                setMostrarPopup(true);
+                return;
+            }
+            // Pendiente: administrador
             setErrores(["Esta alta todavía no está disponible para el rol seleccionado."]);
         } finally {
             setEnviando(false);
@@ -106,11 +172,20 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     }
 
     return (
-        <section className="contenedor-pagina flex flex-col gap-6">
+        <section className="contenedor-pagina flex flex-col">
             <EncabezadoPagina
                 titulo="Alta de usuario"
                 subtitulo="Registrar un nuevo usuario en la plataforma"
             />
+
+            <button
+                type="button"
+                className={styles.volver}
+                onClick={volver}
+                disabled={enviando}
+            >
+                ← Volver a la lista de usuarios
+            </button>
 
             <form onSubmit={handleSubmit} className={styles.formulario}>
                 <div className={styles.campo}>
@@ -180,7 +255,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     />
                 </div>
                 
-                {rol === "operador" && (
+                {(rol === "operador" || rol === "productor") && (
                 <>
                     <div className={styles.campo}>
                         <label htmlFor="nombre" className={styles.label}>
@@ -225,7 +300,10 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             />
                         </div>
                     </div>
+                </>
+                )}
 
+                {rol === "operador" && (
                     <div className="flex flex-col gap-3">
                         <label htmlFor="locales" className={styles.label}>
                             Locales <span className="text-red-500">(Mínimo 1)</span>
@@ -324,8 +402,87 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             + Agregar local
                         </button>
                     </div>
-                </>
                 )}
+
+                {rol === "productor" && (
+                    <div className="flex flex-col gap-3">
+                        <label className={styles.label}>
+                            Direcciones de Retiro<span className="text-red-500">(Mínimo 1)</span>
+                        </label>
+
+                        {direcciones.map((direccion, index) => (
+                            <div key={index} className={styles.local}>
+                                <h3 className="text-sm font-semibold text-foreground lg:hidden">
+                                    Dirección {index + 1}
+                                </h3>
+
+                                <select
+                                    value={direccion.departamento}
+                                    required
+                                    onChange={(e) =>
+                                        setDirecciones(direcciones.map((d, i) =>
+                                            i === index
+                                                ? { ...d, departamento: e.target.value }
+                                                : d
+                                        ))
+                                    }
+                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary lg:w-1/3"
+                                >
+                                    <option value="" disabled>
+                                        Seleccionar departamento
+                                    </option>
+
+                                    {DEPARTAMENTOS.map((departamento) => (
+                                        <option key={departamento} value={departamento}>
+                                            {departamento}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <input
+                                    type="text"
+                                    value={direccion.direccion}
+                                    onChange={(e) =>
+                                        setDirecciones(direcciones.map((d, i) =>
+                                            i === index
+                                                ? { ...d, direccion: e.target.value }
+                                                : d
+                                        ))
+                                    }
+                                    placeholder="Dirección (opcional, ej: Yatay 2449)"
+                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary lg:flex-1"
+                                />
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setDirecciones(direcciones.filter((_, i) => i !== index))
+                                    }
+                                    disabled={index === 0}
+                                    className={`${styles.botonSecundario} ${
+                                        index === 0 ? "invisible" : ""
+                                    }`}
+                                >
+                                    Eliminar dirección
+                                </button>
+                            </div>
+                        ))}
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setDirecciones([
+                                    ...direcciones,
+                                    { departamento: "", direccion: "" }
+                                ])
+                            }
+                            className={styles.botonSecundario}
+                        >
+                            + Agregar dirección
+                        </button>
+                    </div>
+                )}
+
 
                 {mensajeExito && (
                     <p
@@ -347,17 +504,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 <div className="flex justify-end gap-3 pt-6">
                     <button
                         type="button"
-                            onClick={() => {
-                                setNombreUsuario("");
-                                setContraseña("");
-                                setConfirmacionContraseña("");
-                                setNombre("");
-                                settelefono("");
-                                setCodigoPais("+598");
-                                setErrores([]);
-                                setMensajeExito("");
-                                setLocales([{ numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }]);
-                            }}
+                        onClick={limpiarFormulario}
                         className={styles.botonSecundario}
                     >
                         Limpiar
@@ -373,36 +520,38 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 </div>
             </form>
 
-            {mostrarPopup && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-foreground te">
-                Operador creado satisfactoriamente
-            </h2>
+            {mostrarPopup && (rolCreado === "operador" || rolCreado === "productor") && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl">
+                        <h2 className="text-xl font-bold text-foreground">
+                            {rolCreado === "operador"
+                                ? "Operador creado satisfactoriamente"
+                                : "Productor creado satisfactoriamente"}
+                        </h2>
 
-            <p className="mt-3 text-sm text-muted-foreground">
-                ¿Desea precargar productos para este operador?
-            </p>
+                        <p className="mt-3 text-sm text-muted-foreground">
+                            ¿Desea precargar productos para este usuario?
+                        </p>
 
-            <div className="mt-6 flex justify-end gap-3">
-                <button
-                    type="button"
-                    onClick={() => setMostrarPopup(false)}
-                    className={styles.botonSecundario}
-                >
-                    Ahora no
-                </button>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setMostrarPopup(false)}
+                                className={styles.botonSecundario}
+                            >
+                                Ahora no
+                            </button>
 
-                <Link
-                    href="/precargar-productos"
-                    className={styles.botonConfirmar}
-                >
-                    Precargar productos
-                </Link>
-            </div>
-        </div>
-    </div>
-)}
+                            <Link
+                                href="/precargar-productos"
+                                className={styles.botonConfirmar}
+                            >
+                                Precargar productos
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

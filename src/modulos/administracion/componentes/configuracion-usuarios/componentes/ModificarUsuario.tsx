@@ -59,8 +59,9 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         router.refresh();
     }
 
-    const rolParam = tipoUsuario !== "TODOS" ? tipoUsuario.toLowerCase() : "operador";
-    const linkAlta = `/alta-usuario?rol=${rolParam}`;
+    const linkAlta = tipoUsuario !== "TODOS"
+        ? `/alta-usuario?rol=${tipoUsuario.toLowerCase()}`
+        : "/alta-usuario";
 
     return (
         <section className={styles.tarjeta}>
