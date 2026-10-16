@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'6199bcda0d7cc5d6c1bb7b01b0d8bc41bcb8252696ec6d8cad02dbeaf8f84b57'>;
+  StorageHashBase<'3fe9ff9b77cc22f3603cc103afea9c647926a2583a93c5bdbb13ab08a75f29a2'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -266,11 +266,6 @@ export type FieldOutputTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['output'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['output'];
     };
-    readonly Departamento: {
-      readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly codigoDepartamento: CodecTypes['pg/text@1']['output'];
-      readonly nombreDepartamento: CodecTypes['pg/text@1']['output'];
-    };
     readonly Especie: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly uamId: CodecTypes['pg/int4@1']['output'] | null;
@@ -322,6 +317,8 @@ export type FieldOutputTypes = {
     readonly Productor: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly usuarioId: CodecTypes['pg/int4@1']['output'];
+      readonly nombreFantasia: CodecTypes['pg/text@1']['output'];
+      readonly fotoPerfil: CodecTypes['pg/text@1']['output'] | null;
       readonly whatsApp: CodecTypes['pg/text@1']['output'];
     };
     readonly Publicacion: {
@@ -347,8 +344,13 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly publicacionId: CodecTypes['pg/int4@1']['output'];
       readonly productorId: CodecTypes['pg/int4@1']['output'];
-      readonly departamentoId: CodecTypes['pg/int4@1']['output'];
-      readonly direccion: CodecTypes['pg/text@1']['output'];
+      readonly paisId: CodecTypes['pg/int4@1']['output'];
+    };
+    readonly Ubicacion: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly nombreUbicacion: CodecTypes['pg/text@1']['output'];
+      readonly urlMaps: CodecTypes['pg/text@1']['output'];
+      readonly publicacionId: CodecTypes['pg/int4@1']['output'];
     };
     readonly Usuario: {
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -394,11 +396,6 @@ export type FieldInputTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['input'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['input'];
     };
-    readonly Departamento: {
-      readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly codigoDepartamento: CodecTypes['pg/text@1']['input'];
-      readonly nombreDepartamento: CodecTypes['pg/text@1']['input'];
-    };
     readonly Especie: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly uamId: CodecTypes['pg/int4@1']['input'] | null;
@@ -450,6 +447,8 @@ export type FieldInputTypes = {
     readonly Productor: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly usuarioId: CodecTypes['pg/int4@1']['input'];
+      readonly nombreFantasia: CodecTypes['pg/text@1']['input'];
+      readonly fotoPerfil: CodecTypes['pg/text@1']['input'] | null;
       readonly whatsApp: CodecTypes['pg/text@1']['input'];
     };
     readonly Publicacion: {
@@ -475,8 +474,13 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly publicacionId: CodecTypes['pg/int4@1']['input'];
       readonly productorId: CodecTypes['pg/int4@1']['input'];
-      readonly departamentoId: CodecTypes['pg/int4@1']['input'];
-      readonly direccion: CodecTypes['pg/text@1']['input'];
+      readonly paisId: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly Ubicacion: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly nombreUbicacion: CodecTypes['pg/text@1']['input'];
+      readonly urlMaps: CodecTypes['pg/text@1']['input'];
+      readonly publicacionId: CodecTypes['pg/int4@1']['input'];
     };
     readonly Usuario: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -521,11 +525,6 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['output'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['output'];
-    };
-    readonly departamento: {
-      readonly codigoDepartamento: CodecTypes['pg/text@1']['output'];
-      readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly nombreDepartamento: CodecTypes['pg/text@1']['output'];
     };
     readonly especie: {
       readonly especieActiva: CodecTypes['pg/bool@1']['output'];
@@ -576,7 +575,9 @@ export type StorageColumnTypes = {
       readonly variedadId: CodecTypes['pg/int4@1']['output'];
     };
     readonly productor: {
+      readonly fotoPerfil: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly nombreFantasia: CodecTypes['pg/text@1']['output'];
       readonly usuarioId: CodecTypes['pg/int4@1']['output'];
       readonly whatsApp: CodecTypes['pg/text@1']['output'];
     };
@@ -600,11 +601,16 @@ export type StorageColumnTypes = {
       readonly publicacionId: CodecTypes['pg/int4@1']['output'];
     };
     readonly publicacionProductor: {
-      readonly departamentoId: CodecTypes['pg/int4@1']['output'];
-      readonly direccion: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly paisId: CodecTypes['pg/int4@1']['output'];
       readonly productorId: CodecTypes['pg/int4@1']['output'];
       readonly publicacionId: CodecTypes['pg/int4@1']['output'];
+    };
+    readonly ubicacion: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly nombreUbicacion: CodecTypes['pg/text@1']['output'];
+      readonly publicacionId: CodecTypes['pg/int4@1']['output'];
+      readonly urlMaps: CodecTypes['pg/text@1']['output'];
     };
     readonly usuario: {
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -649,11 +655,6 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['input'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['input'];
-    };
-    readonly departamento: {
-      readonly codigoDepartamento: CodecTypes['pg/text@1']['input'];
-      readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly nombreDepartamento: CodecTypes['pg/text@1']['input'];
     };
     readonly especie: {
       readonly especieActiva: CodecTypes['pg/bool@1']['input'];
@@ -704,7 +705,9 @@ export type StorageColumnInputTypes = {
       readonly variedadId: CodecTypes['pg/int4@1']['input'];
     };
     readonly productor: {
+      readonly fotoPerfil: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly nombreFantasia: CodecTypes['pg/text@1']['input'];
       readonly usuarioId: CodecTypes['pg/int4@1']['input'];
       readonly whatsApp: CodecTypes['pg/text@1']['input'];
     };
@@ -728,11 +731,16 @@ export type StorageColumnInputTypes = {
       readonly publicacionId: CodecTypes['pg/int4@1']['input'];
     };
     readonly publicacionProductor: {
-      readonly departamentoId: CodecTypes['pg/int4@1']['input'];
-      readonly direccion: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly paisId: CodecTypes['pg/int4@1']['input'];
       readonly productorId: CodecTypes['pg/int4@1']['input'];
       readonly publicacionId: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly ubicacion: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly nombreUbicacion: CodecTypes['pg/text@1']['input'];
+      readonly publicacionId: CodecTypes['pg/int4@1']['input'];
+      readonly urlMaps: CodecTypes['pg/text@1']['input'];
     };
     readonly usuario: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -937,36 +945,6 @@ type ContractBase = Omit<
               };
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [{ readonly columns: readonly ['nombreConfiguracion'] }];
-              indexes: readonly [];
-              foreignKeys: readonly [];
-            };
-            readonly departamento: {
-              columns: {
-                readonly id: {
-                  readonly nativeType: 'int4';
-                  readonly codecId: 'pg/int4@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'function';
-                    readonly expression: 'autoincrement()';
-                  };
-                };
-                readonly codigoDepartamento: {
-                  readonly nativeType: 'text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                };
-                readonly nombreDepartamento: {
-                  readonly nativeType: 'text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                };
-              };
-              primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [
-                { readonly columns: readonly ['codigoDepartamento'] },
-                { readonly columns: readonly ['nombreDepartamento'] },
-              ];
               indexes: readonly [];
               foreignKeys: readonly [];
             };
@@ -1358,6 +1336,16 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
                 };
+                readonly nombreFantasia: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly fotoPerfil: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly whatsApp: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -1365,7 +1353,10 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['usuarioId'] }];
+              uniques: readonly [
+                { readonly columns: readonly ['usuarioId'] },
+                { readonly columns: readonly ['nombreFantasia'] },
+              ];
               indexes: readonly [];
               foreignKeys: readonly [
                 {
@@ -1617,14 +1608,9 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
                 };
-                readonly departamentoId: {
+                readonly paisId: {
                   readonly nativeType: 'int4';
                   readonly codecId: 'pg/int4@1';
-                  readonly nullable: false;
-                };
-                readonly direccion: {
-                  readonly nativeType: 'text';
-                  readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
               };
@@ -1638,9 +1624,9 @@ type ContractBase = Omit<
                   readonly unique: false;
                 },
                 {
-                  readonly name: 'publicacionProductor_departamentoId_idx_d1d4bda1';
-                  readonly prefix: 'publicacionProductor_departamentoId_idx';
-                  readonly columns: readonly ['departamentoId'];
+                  readonly name: 'publicacionProductor_paisId_idx_9a54dcb8';
+                  readonly prefix: 'publicacionProductor_paisId_idx';
+                  readonly columns: readonly ['paisId'];
                   readonly unique: false;
                 },
               ];
@@ -1673,11 +1659,63 @@ type ContractBase = Omit<
                   readonly source: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'publicacionProductor';
-                    readonly columns: readonly ['departamentoId'];
+                    readonly columns: readonly ['paisId'];
                   };
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
-                    readonly tableName: 'departamento';
+                    readonly tableName: 'pais';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly ubicacion: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly nombreUbicacion: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly urlMaps: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly publicacionId: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'ubicacion_publicacionId_idx_a4fbf198';
+                  readonly prefix: 'ubicacion_publicacionId_idx';
+                  readonly columns: readonly ['publicacionId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'ubicacion';
+                    readonly columns: readonly ['publicacionId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'publicacionProductor';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1829,10 +1867,7 @@ type ContractBase = Omit<
     readonly categoria: { readonly namespace: 'public' & NamespaceId; readonly model: 'Categoria' };
     readonly calibre: { readonly namespace: 'public' & NamespaceId; readonly model: 'Calibre' };
     readonly pais: { readonly namespace: 'public' & NamespaceId; readonly model: 'Pais' };
-    readonly departamento: {
-      readonly namespace: 'public' & NamespaceId;
-      readonly model: 'Departamento';
-    };
+    readonly ubicacion: { readonly namespace: 'public' & NamespaceId; readonly model: 'Ubicacion' };
     readonly publicacion: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Publicacion';
@@ -2036,44 +2071,6 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly nombreConfiguracion: { readonly column: 'nombreConfiguracion' };
                 readonly valorConfiguracion: { readonly column: 'valorConfiguracion' };
-              };
-            };
-          };
-          readonly Departamento: {
-            readonly fields: {
-              readonly id: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
-              readonly codigoDepartamento: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
-              readonly nombreDepartamento: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
-            };
-            readonly relations: {
-              readonly publicacionesVendido: {
-                readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
-                  readonly model: 'PublicacionProductor';
-                };
-                readonly cardinality: '1:N';
-                readonly on: {
-                  readonly localFields: readonly ['id'];
-                  readonly targetFields: readonly ['departamentoId'];
-                };
-              };
-            };
-            readonly storage: {
-              readonly table: 'departamento';
-              readonly namespaceId: 'public';
-              readonly fields: {
-                readonly id: { readonly column: 'id' };
-                readonly codigoDepartamento: { readonly column: 'codigoDepartamento' };
-                readonly nombreDepartamento: { readonly column: 'nombreDepartamento' };
               };
             };
           };
@@ -2372,10 +2369,21 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
-              readonly publicacionesOrigen: {
+              readonly publicacionesOperador: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
                   readonly model: 'PublicacionOperador';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['paisId'];
+                };
+              };
+              readonly publicacionesProductor: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'PublicacionProductor';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -2477,6 +2485,14 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly nombreFantasia: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly fotoPerfil: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly whatsApp: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -2512,6 +2528,8 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly id: { readonly column: 'id' };
                 readonly usuarioId: { readonly column: 'usuarioId' };
+                readonly nombreFantasia: { readonly column: 'nombreFantasia' };
+                readonly fotoPerfil: { readonly column: 'fotoPerfil' };
                 readonly whatsApp: { readonly column: 'whatsApp' };
               };
             };
@@ -2699,24 +2717,17 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly departamentoId: {
+              readonly paisId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly direccion: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
             };
             readonly relations: {
-              readonly departamento: {
-                readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
-                  readonly model: 'Departamento';
-                };
+              readonly pais: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'Pais' };
                 readonly cardinality: 'N:1';
                 readonly on: {
-                  readonly localFields: readonly ['departamentoId'];
+                  readonly localFields: readonly ['paisId'];
                   readonly targetFields: readonly ['id'];
                 };
               };
@@ -2742,6 +2753,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly ubicaciones: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Ubicacion';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['publicacionId'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'publicacionProductor';
@@ -2750,8 +2772,50 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly publicacionId: { readonly column: 'publicacionId' };
                 readonly productorId: { readonly column: 'productorId' };
-                readonly departamentoId: { readonly column: 'departamentoId' };
-                readonly direccion: { readonly column: 'direccion' };
+                readonly paisId: { readonly column: 'paisId' };
+              };
+            };
+          };
+          readonly Ubicacion: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly nombreUbicacion: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly urlMaps: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly publicacionId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: {
+              readonly publicacion: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'PublicacionProductor';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['publicacionId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'ubicacion';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly nombreUbicacion: { readonly column: 'nombreUbicacion' };
+                readonly urlMaps: { readonly column: 'urlMaps' };
+                readonly publicacionId: { readonly column: 'publicacionId' };
               };
             };
           };
