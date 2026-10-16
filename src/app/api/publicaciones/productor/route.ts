@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
     try {
-        const [productores, usuarios, especies, variedades, presentaciones, categorias, calibres, departamentos] = await Promise.all([
+        const [productores, usuarios, especies, variedades, presentaciones, categorias, calibres, paises] = await Promise.all([
             db.orm.public.Productor.select("id", "usuarioId").all(),
             db.orm.public.Usuario.select("id", "username").where({ rol: "PRODUCTOR" }).all(),
             db.orm.public.Especie.select("id", "nombreEspecie").where({ especieActiva: true }).all(),
@@ -14,7 +14,7 @@ export async function GET() {
             db.orm.public.Presentacion.select("id", "variedadId", "nombrePresentacion").where({ presentacionActiva: true }).all(),
             db.orm.public.Categoria.select("id", "especieId", "nombreCategoria").all(),
             db.orm.public.Calibre.select("id", "nombreCalibre").all(),
-            db.orm.public.Departamento.select("id", "nombreDepartamento").all(),
+            db.orm.public.Pais.select("id", "codigoPais", "nombrePais").all(),
         ]);
         const nombres = new Map(usuarios.map((usuario) => [usuario.id, usuario.username]));
         return NextResponse.json({
@@ -26,7 +26,7 @@ export async function GET() {
             presentaciones: presentaciones.map(({ id, variedadId, nombrePresentacion }) => ({ id, variedadId, nombre: nombrePresentacion })),
             categorias: categorias.map(({ id, especieId, nombreCategoria }) => ({ id, especieId, nombre: nombreCategoria })),
             calibres: calibres.map(({ id, nombreCalibre }) => ({ id, nombre: nombreCalibre })),
-            departamentos: departamentos.map(({ id, nombreDepartamento }) => ({ id, nombre: nombreDepartamento })),
+            paises: paises.map(({ id, codigoPais, nombrePais }) => ({ id, codigo: codigoPais, nombre: nombrePais })),
         });
     } catch (error) {
         console.error("Error al cargar el alta de publicaciones de Productor:", error);

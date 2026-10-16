@@ -10,22 +10,23 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
     const validacion = validarAltaPublicacionProductor(valor);
     if (!validacion.esValido) return validacion;
     const datos = validacion.datos;
-    const [productor, especie, variedad, presentacion, categoria, calibre, departamento] = await Promise.all([
+    const [productor, especie, variedad, presentacion, categoria, calibre, pais] = await Promise.all([
         db.orm.public.Productor.where({ id: datos.productorId }).first(),
         db.orm.public.Especie.where({ id: datos.especieId }).first(),
         db.orm.public.Variedad.where({ id: datos.variedadId }).first(),
         db.orm.public.Presentacion.where({ id: datos.presentacionId }).first(),
         db.orm.public.Categoria.where({ id: datos.categoriaId }).first(),
         db.orm.public.Calibre.where({ id: datos.calibreId }).first(),
-        db.orm.public.Departamento.where({ id: datos.departamentoId }).first(),
+        db.orm.public.Pais.where({ id: datos.paisId }).first(),
     ]);
-    if (!productor || !especie?.especieActiva || !variedad?.variedadActiva || !presentacion?.presentacionActiva || !categoria || !calibre || !departamento ||
+    if (!productor || !especie?.especieActiva || !variedad?.variedadActiva || !presentacion?.presentacionActiva || !categoria || !calibre || !pais ||
         variedad.especieId !== especie.id || presentacion.variedadId !== variedad.id ||
         (categoria.especieId !== null && categoria.especieId !== especie.id)) {
         return { esValido: false, errores: ["La selección contiene datos que ya no están disponibles. Actualizá el formulario."] };
     }
 
-    const precio = datos.precio?.trim() || null;
+    type Precio = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
+    const precio = (datos.precio?.trim().replace(",", ".") || null) as Precio;
     let id: number;
     try {
         id = await db.transaction(async (tx) => {
@@ -54,8 +55,12 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
             await tx.orm.public.PublicacionProductor.create({
                 publicacionId: publicacion.id,
                 productorId: productor.id,
-                departamentoId: departamento.id,
-                direccion: `https://www.google.com/maps?q=${encodeURIComponent(`${datos.latitud},${datos.longitud}`)}`,
+                paisId: pais.id,
+            });
+            await tx.orm.public.Ubicacion.create({
+                publicacionId: publicacion.id,
+                nombreUbicacion: "Ubicación seleccionada en el mapa",
+                urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${datos.latitud},${datos.longitud}`)}`,
             });
             return publicacion.id;
         });

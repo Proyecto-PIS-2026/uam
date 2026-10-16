@@ -22,11 +22,11 @@ type Catalogos = {
     presentaciones: (Opcion & { variedadId: number })[];
     categorias: (Opcion & { especieId: number | null })[];
     calibres: Opcion[];
-    departamentos: Opcion[];
+    paises: Opcion[];
 };
 type Formulario = {
     productorId: number; especieId: number; variedadId: number; presentacionId: number; calibreId: number;
-    categoriaId: number; departamentoId: number; latitud: number | null; longitud: number | null; disponibilidad: boolean;
+    categoriaId: number; paisId: number; latitud: number | null; longitud: number | null; disponibilidad: boolean;
     precio: string; cantidadUnidades: string; fotografia: string;
 };
 
@@ -65,7 +65,7 @@ export default function AltaPublicacionProductor() {
             presentaciones: opciones(datos.presentaciones),
             categorias: opciones(datos.categorias),
             calibres: opciones(datos.calibres),
-            departamentos: opciones(datos.departamentos),
+            paises: opciones(datos.paises),
         })).catch((error) => setErrores([error instanceof Error ? error.message : "No se pudieron cargar los datos."]));
     }, []);
 
@@ -87,7 +87,7 @@ export default function AltaPublicacionProductor() {
 function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alCrear }: {
     catalogos: Catalogos; productorId: number; abierto: boolean; esWeb: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void;
 }) {
-    const [datos, setDatos] = useState<Formulario>(() => ({ productorId, especieId: 0, variedadId: 0, presentacionId: 0, calibreId: 0, categoriaId: 0, departamentoId: 0, latitud: null, longitud: null, disponibilidad: true, precio: "", cantidadUnidades: "", fotografia: "" }));
+    const [datos, setDatos] = useState<Formulario>(() => ({ productorId, especieId: 0, variedadId: 0, presentacionId: 0, calibreId: 0, categoriaId: 0, paisId: 0, latitud: null, longitud: null, disponibilidad: true, precio: "", cantidadUnidades: "", fotografia: "" }));
     const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
     const [leyendoFoto, setLeyendoFoto] = useState(false);
@@ -127,13 +127,14 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
                 <Campo nombre="Presentación" valor={datos.presentacionId} opciones={presentaciones} cambiar={(id) => cambiar({ presentacionId: id })} deshabilitado={guardando || !datos.variedadId} />
                 <Campo nombre="Categoría" valor={datos.categoriaId} opciones={categorias} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={guardando || !datos.especieId} />
                 <Campo nombre="Calibre" valor={datos.calibreId} opciones={catalogos.calibres} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={guardando} />
+                <Campo nombre="País de origen" valor={datos.paisId} opciones={catalogos.paises} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={guardando} />
             </div>
             <div className={styles.campo}>
                 <span className={styles.etiqueta}>Ubicación de retiro</span>
                 <button type="button" className={styles.guardar} onClick={() => setMapaAbierto(true)} disabled={guardando}>
                     {datos.latitud === null ? "Seleccionar en OpenStreetMap" : "Cambiar ubicación"}
                 </button>
-                {datos.departamentoId > 0 && <small className={styles.ayuda}>El departamento identificado es {catalogos.departamentos.find((departamento) => departamento.id === datos.departamentoId)?.nombre ?? "desconocido"}.</small>}
+                {datos.paisId > 0 && <small className={styles.ayuda}>El país de origen es independiente de la ubicación del pickup.</small>}
                 {datos.latitud !== null && datos.longitud !== null && <small className={styles.ayuda}>Latitud: {datos.latitud.toFixed(6)} · Longitud: {datos.longitud.toFixed(6)}</small>}
             </div>
             <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><input className={styles.entrada} id="productor-precio" inputMode="numeric" maxLength={10} value={datos.precio} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>Dejalo vacío si el producto no tiene precio.</small></div>
@@ -142,7 +143,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
             <div className={styles.seccionFoto}><div className={styles.marcoFoto}>{datos.fotografia ? <Image className={styles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill unoptimized /> : <div className={styles.sinFoto}><PhotoCameraOutlinedIcon /><span>Sin foto</span></div>}{datos.fotografia && <button type="button" className={`${styles.botonFoto} ${styles.borrarFoto}`} onClick={() => cambiar({ fotografia: "" })} disabled={guardando}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}<button type="button" className={styles.botonFoto} onClick={() => fotoInput?.click()} disabled={guardando}>{esWeb ? "Editar foto" : "Cámara"}</button><input ref={setFotoInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={guardando} aria-label="Fotografía" /></div></div>
             {errores.length > 0 && <div role="alert" className={styles.error}>{errores.map((error) => <p key={error}>{error}</p>)}</div>}
         </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={alCerrar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={guardando || leyendoFoto || datos.latitud === null || datos.longitud === null}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
-        <LeafletLocationPicker abierto={mapaAbierto} departamentos={catalogos.departamentos} coordenadas={datos.latitud === null || datos.longitud === null || datos.departamentoId === 0 ? null : { latitud: datos.latitud, longitud: datos.longitud, departamentoId: datos.departamentoId }}
+        <LeafletLocationPicker key={`${datos.latitud ?? "sin"}-${datos.longitud ?? "sin"}`} abierto={mapaAbierto} coordenadas={datos.latitud === null || datos.longitud === null ? null : { latitud: datos.latitud, longitud: datos.longitud }}
             alCerrar={() => setMapaAbierto(false)} alConfirmar={(coordenadas) => { cambiar(coordenadas); setMapaAbierto(false); }} />
     </Drawer>;
 }

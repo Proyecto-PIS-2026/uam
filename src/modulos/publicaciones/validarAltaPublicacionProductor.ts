@@ -5,7 +5,7 @@ export type DatosAltaPublicacionProductor = {
     presentacionId: number;
     calibreId: number;
     categoriaId: number;
-    departamentoId: number;
+    paisId: number;
     latitud: number;
     longitud: number;
     disponibilidad: boolean;
@@ -39,7 +39,7 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
 
     const datos = valor as Record<string, unknown>;
     const errores: string[] = [];
-    const campos = ["productorId", "especieId", "variedadId", "presentacionId", "calibreId", "categoriaId", "departamentoId"] as const;
+    const campos = ["productorId", "especieId", "variedadId", "presentacionId", "calibreId", "categoriaId", "paisId"] as const;
     for (const campo of campos) {
         if (typeof datos[campo] !== "number" || !Number.isSafeInteger(datos[campo]) || datos[campo] <= 0) {
             errores.push(`El campo ${campo} es obligatorio.`);
