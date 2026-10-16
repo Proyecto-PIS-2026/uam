@@ -13,8 +13,14 @@ describe("/mi-mercado/[nombre]", () => {
     beforeEach(() => vi.clearAllMocks());
 
     it("pasa el nombre del operador a Mi Mercado", async () => {
-        const contenido = await Page({ params: Promise.resolve({ nombre: "Frutas%20%26%20M%C3%A1s" }) });
+        const contenido = await Page({ params: Promise.resolve({ nombre: "Frutas & Más" }) });
         expect(contenido.props.operadorNombre).toBe("Frutas & Más");
+        expect(notFoundMock).not.toHaveBeenCalled();
+    });
+
+    it.each(["Frutas 100%", "Frutas %20"])("conserva el nombre existente %s", async (nombre) => {
+        const contenido = await Page({ params: Promise.resolve({ nombre }) });
+        expect(contenido.props.operadorNombre).toBe(nombre);
         expect(notFoundMock).not.toHaveBeenCalled();
     });
 

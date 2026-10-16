@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { ejecutarConsultaExclusiva } from "@/infraestructura/persistencia/consulta-exclusiva";
 import type { ConsultaPreciosReferencia } from "./consultas-precios-referencia";
 import { consultarUltimoRelevamiento } from "./cliente-webservice";
 import { leerEstadoCacheDiaria, resolverCacheDiaria } from "./politica-cache-diaria";
@@ -73,10 +74,16 @@ function configuracionWebservice(): { baseUrl: string; token: string } {
 }
 
 export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPreciosReferencia> {
-    const opciones = configuracionWebservice();
+    let opciones: ReturnType<typeof configuracionWebservice>;
+    try {
+        opciones = configuracionWebservice();
+    } catch (error) {
+        const respaldo = await obtenerUltimoRelevamientoGuardado();
+        if (respaldo) return respaldo;
+        throw error;
+    }
     const hash = createHash("sha256").update(opciones.baseUrl).digest();
     const claveCache = `${PREFIJO_CACHE}${hash.toString("hex").slice(0, 24)}`;
-    const llaveBloqueo = hash.readInt32BE(0);
 
     const registroInicial = await db.orm.public.CachePreciosReferencia.where({ claveCache }).first();
     const estadoInicial = leerEstadoCacheDiaria(registroInicial?.estadoCache ?? null);
@@ -86,18 +93,11 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
         if (!respaldo) throw new Error("Todavía no hay un relevamiento de precios disponible en la caché.");
     }
 
-    const consulta = await db.transaction(async (tx) => {
-
-        await tx.execute(
-            db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1723, ${llaveBloqueo})`
-                .returnsRow({ locked: "pg/int4@1" })
-                .build(),
-        );
-
-        const registro = await tx.orm.public.CachePreciosReferencia.where({ claveCache }).first();
+    const consulta = await ejecutarConsultaExclusiva(claveCache, async (guardar) => {
+        const registro = await db.orm.public.CachePreciosReferencia.where({ claveCache }).first();
         const estado = leerEstadoCacheDiaria(registro?.estadoCache ?? null);
-        const hoyBajoBloqueo = fechaActualMontevideo();
-        const ultimoGuardado = ultimoRelevamientoGuardado(await tx.orm.public.CachePreciosReferencia.all());
+        const hoy = fechaActualMontevideo();
+        const ultimoGuardado = ultimoRelevamientoGuardado(await db.orm.public.CachePreciosReferencia.all());
 
         let estadoConRespaldo = estado;
         const datoActual = estado?.consulta && estado.ultimoExito ? { consulta: estado.consulta, ultimoExito: estado.ultimoExito } : null;
@@ -110,16 +110,18 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
             };
         }
 
-        const resultado = await resolverCacheDiaria(estadoConRespaldo, hoyBajoBloqueo, () => consultarUltimoRelevamiento(opciones));
+        const resultado = await resolverCacheDiaria(estadoConRespaldo, hoy, () => consultarUltimoRelevamiento(opciones));
         const nuevoEstado = resultado.nuevoEstado ?? (estadoConRespaldo !== estado ? estadoConRespaldo : null);
 
         if (nuevoEstado) {
             const estadoCache = JSON.stringify(nuevoEstado);
-            if (registro) {
-                await tx.orm.public.CachePreciosReferencia.where({ id: registro.id }).update({ estadoCache });
-            } else {
-                await tx.orm.public.CachePreciosReferencia.create({ claveCache, estadoCache });
-            }
+            await guardar(async (tx) => {
+                if (registro) {
+                    await tx.orm.public.CachePreciosReferencia.where({ id: registro.id }).update({ estadoCache });
+                } else {
+                    await tx.orm.public.CachePreciosReferencia.create({ claveCache, estadoCache });
+                }
+            });
         }
 
         return resultado.consulta;

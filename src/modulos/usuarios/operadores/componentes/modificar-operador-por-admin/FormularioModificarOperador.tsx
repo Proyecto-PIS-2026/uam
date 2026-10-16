@@ -3,9 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-import { modificarOperador } from "./modificarOperador";
+import { modificarOperador } from "../../acciones/modificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
-import type { OperadorParaModificar } from "./obtenerOperadorParaModificar";
+import type { OperadorParaModificar } from "../../tipos";
 
 import styles from "./FormularioModificarOperador.module.css";
 

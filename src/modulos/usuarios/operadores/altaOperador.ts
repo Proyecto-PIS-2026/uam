@@ -1,6 +1,7 @@
 "use server"
 
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { guardarOperadorAtomico } from "./guardar-operador-atomico";
 import { validarAltaOperador } from "./validarAltaOperador";
 import argon2 from "argon2";
 import { revalidatePath } from "next/cache";
@@ -25,11 +26,7 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
 	}
 
 	const passwordHash = await argon2.hash(datos.contraseña, { type: argon2.argon2id });
-	const resultadoTx  = await db.transaction(async (tx) => {
-		// Serializar altas con el mismo nombre de usuario para que dos envíos
-		// simultáneos no pasen ambos la comprobación antes de insertar.
-		await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1720, hashtext(${datos.nombreUsuario}))`
-			.returnsRow({ locked: "pg/int4@1" }).build());
+	const resultadoTx = await guardarOperadorAtomico(async (tx) => {
 
 		const existente = await tx.orm.public.Usuario.where({ username: datos.nombreUsuario }).first();
         if (existente) return "Ya existe un usuario con ese nombre de usuario.";

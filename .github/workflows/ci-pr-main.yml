@@ -65,6 +65,8 @@ jobs:
         run: npm run db:setup
         
       - name: Ejecutar Suite Completa de Tests (Vitest)
+        env:
+          DATABASE_URL: ""
         run: npm run test:vitest
 
       - name: Instalar Navegadores de Playwright

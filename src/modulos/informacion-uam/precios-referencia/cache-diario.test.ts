@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConsultaPreciosReferencia } from "./consultas-precios-referencia";
 import type { EstadoCacheDiaria } from "./politica-cache-diaria";
 import { obtenerConsultaDiariaWebservice } from "./cache-diario";
+import { obtenerCatalogoEspeciesHistoricas } from "../precios-historicos/catalogo-especies";
 
 const {
     base,
@@ -13,6 +14,8 @@ const {
     bloqueos,
     creaciones,
     actualizaciones,
+    transaccionesAbiertas,
+    consultasSql,
     sembrar,
     leer,
     reiniciar,
@@ -22,7 +25,33 @@ const {
 
     const registros = new Map<string, Registro>();
     let siguienteId = 1;
-    let cola: Promise<void> = Promise.resolve();
+    type Plan = { texto: string; valores: unknown[] };
+    const reservas = new Map<string, { propietario: string; vence: number }>();
+    let transaccionesActivas = 0;
+    const consultasSql = vi.fn(async ({ texto, valores }: Plan) => {
+        const nombre = String(valores[0]);
+        const propietario = String(valores[1]);
+        if (texto.includes("INSERT INTO configuracion")) {
+            const actual = reservas.get(nombre);
+            if (actual && actual.vence >= Date.now()) return [];
+            reservas.set(nombre, { propietario, vence: Date.now() + Number(valores[2]) * 1000 });
+            return [{ id: 1 }];
+        }
+        if (texto.includes("DELETE FROM configuracion")) {
+            if (reservas.get(nombre)?.propietario !== propietario) return [];
+            reservas.delete(nombre);
+            return [{ id: 1 }];
+        }
+        throw new Error("Consulta SQL inesperada");
+    });
+    const leerReserva = (nombre: string) => {
+        const reserva = reservas.get(nombre);
+        return reserva ? { id: 1, nombreConfiguracion: nombre, valorConfiguracion: JSON.stringify(reserva) } : null;
+    };
+    const sql = (partes: TemplateStringsArray, ...valores: unknown[]) => ({
+        returnsRow: () => ({ build: () => ({ texto: partes.join("?"), valores }) }),
+    });
+
 
     const consultar = vi.fn<(_opciones: { baseUrl: string; token: string }) => Promise<ConsultaPreciosReferencia>>();
     const lecturas = vi.fn(async (filtro: Filtro): Promise<Registro | null> => {
@@ -50,18 +79,19 @@ const {
         }),
         create: creaciones,
     };
-    const tx = { orm: { public: { CachePreciosReferencia: tabla } }, execute: bloqueos };
+    const configuracion = {
+        where: ({ nombreConfiguracion }: { nombreConfiguracion: string }) => ({
+            first: async () => leerReserva(nombreConfiguracion),
+        }),
+    };
+    const tx = { orm: { public: { CachePreciosReferencia: tabla, Configuracion: configuracion } }, execute: bloqueos };
 
-    // Serializa las transacciones para representar la espera del advisory lock entre solicitudes.
     const transacciones = vi.fn(async (trabajo: (transaccion: typeof tx) => Promise<unknown>) => {
-        const anterior = cola;
-        let liberar!: () => void;
-        cola = new Promise<void>((resolve) => { liberar = resolve; });
-        await anterior;
+        transaccionesActivas++;
         try {
             return await trabajo(tx);
         } finally {
-            liberar();
+            transaccionesActivas--;
         }
     });
 
@@ -69,7 +99,8 @@ const {
         base: {
             orm: { public: { CachePreciosReferencia: tabla } },
             transaction: transacciones,
-            raw: { sql: () => ({ returnsRow: () => ({ build: () => ({}) }) }) },
+            raw: { sql },
+            runtime: () => ({ query: consultasSql }),
         },
         consultar,
         lecturas,
@@ -78,6 +109,8 @@ const {
         bloqueos,
         creaciones,
         actualizaciones,
+        transaccionesAbiertas: () => transaccionesActivas,
+        consultasSql,
         sembrar: (claveCache: string, estadoCache: string) => {
             registros.set(claveCache, { id: siguienteId++, claveCache, estadoCache });
         },
@@ -85,7 +118,9 @@ const {
         reiniciar: () => {
             registros.clear();
             siguienteId = 1;
-            cola = Promise.resolve();
+            reservas.clear();
+            transaccionesActivas = 0;
+            consultasSql.mockClear();
             consultar.mockReset();
             lecturas.mockClear();
             listados.mockClear();
@@ -144,6 +179,55 @@ afterEach(() => {
 });
 
 describe("obtenerConsultaDiariaWebservice", () => {
+    it("inicializa y persiste el catálogo de un histórico sin caché coordinando accesos simultáneos", async () => {
+        const guardado = dato("2026-10-02");
+        consultar.mockResolvedValue(guardado);
+
+        await expect(Promise.all([
+            obtenerCatalogoEspeciesHistoricas(),
+            obtenerCatalogoEspeciesHistoricas(),
+        ])).resolves.toEqual([
+            [{ id: "2", especie: "Acelga" }],
+            [{ id: "2", especie: "Acelga" }],
+        ]);
+
+        expect(consultar).toHaveBeenCalledOnce();
+        expect(creaciones).toHaveBeenCalledOnce();
+        expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-02", guardado));
+
+        await expect(obtenerCatalogoEspeciesHistoricas()).resolves.toEqual([{ id: "2", especie: "Acelga" }]);
+        expect(consultar).toHaveBeenCalledOnce();
+        expect(creaciones).toHaveBeenCalledOnce();
+    });
+
+    it.each([
+        ["PRECIOS_REFERENCIA_WEBSERVICE_BASE_URL", undefined],
+        ["PRECIOS_REFERENCIA_WEBSERVICE_BASE_URL", "http://precios.example.test"],
+        ["PRECIOS_REFERENCIA_JWT_TOKEN", ""],
+    ])("usa el respaldo de BD si la configuración %s no permite consultar", async (nombre, valor) => {
+        const anterior = dato("2026-09-30");
+        const ultimo = dato("2026-10-01");
+        sembrar("precios-referencia:latest:anterior", JSON.stringify(estado("2026-09-30", anterior)));
+        sembrar(claveCacheActual, JSON.stringify(estado("2026-10-01", ultimo)));
+        vi.stubEnv(nombre!, valor);
+
+        await expect(obtenerConsultaDiariaWebservice()).resolves.toEqual(ultimo);
+
+        expect(consultar).not.toHaveBeenCalled();
+        expect(transacciones).not.toHaveBeenCalled();
+        expect(listados).toHaveBeenCalledOnce();
+    });
+
+    it("informa la configuración faltante si tampoco hay un relevamiento guardado", async () => {
+        vi.stubEnv("PRECIOS_REFERENCIA_JWT_TOKEN", undefined);
+
+        await expect(obtenerConsultaDiariaWebservice()).rejects.toThrow("Faltan la URL o el JWT");
+
+        expect(consultar).not.toHaveBeenCalled();
+        expect(transacciones).not.toHaveBeenCalled();
+        expect(listados).toHaveBeenCalledOnce();
+    });
+
     it("devuelve un estado válido de hoy con una sola lectura y sin transacción ni consulta remota", async () => {
         const guardado = dato("2026-10-02");
         sembrar(claveCacheActual, JSON.stringify(estado("2026-10-02", guardado)));
@@ -190,17 +274,49 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(actualizaciones).toHaveBeenCalledOnce();
     });
 
-    it("relee bajo el bloqueo y hace una sola consulta remota para dos misses simultáneos", async () => {
+    it("relee después de reservar y hace una sola consulta remota para dos accesos simultáneos", async () => {
         const guardado = dato("2026-10-02");
         consultar.mockResolvedValue(guardado);
 
         const resultados = await Promise.all([obtenerConsultaDiariaWebservice(), obtenerConsultaDiariaWebservice()]);
 
         expect(resultados).toEqual([guardado, guardado]);
-        expect(transacciones).toHaveBeenCalledTimes(2);
-        expect(bloqueos).toHaveBeenCalledTimes(2);
+        expect(transacciones).toHaveBeenCalledOnce();
+        expect(bloqueos).toHaveBeenCalledOnce();
         expect(lecturas).toHaveBeenCalledTimes(4);
         expect(consultar).toHaveBeenCalledOnce();
+        expect(creaciones).toHaveBeenCalledOnce();
+        expect(actualizaciones).not.toHaveBeenCalled();
+    });
+
+    it("mantiene la base libre durante una consulta lenta y comparte el resultado con accesos simultáneos", async () => {
+        const guardado = dato("2026-10-02");
+        let entregar!: (consulta: ConsultaPreciosReferencia) => void;
+        let avisarInicio!: () => void;
+        const inicio = new Promise<void>((resolve) => { avisarInicio = resolve; });
+        consultar.mockImplementationOnce(() => new Promise<ConsultaPreciosReferencia>((resolve) => {
+            entregar = resolve;
+            avisarInicio();
+        }));
+
+        const primera = obtenerConsultaDiariaWebservice();
+        await inicio;
+        const segunda = obtenerConsultaDiariaWebservice();
+        await vi.waitFor(() => expect(lecturas).toHaveBeenCalledTimes(3));
+
+        expect(consultar).toHaveBeenCalledOnce();
+        expect(transacciones).not.toHaveBeenCalled();
+        expect(transaccionesAbiertas()).toBe(0);
+        expect(consultasSql).toHaveBeenCalledOnce();
+        expect(creaciones).not.toHaveBeenCalled();
+
+        entregar(guardado);
+        await expect(Promise.all([primera, segunda])).resolves.toEqual([guardado, guardado]);
+
+        expect(consultar).toHaveBeenCalledOnce();
+        expect(transacciones).toHaveBeenCalledOnce();
+        expect(transaccionesAbiertas()).toBe(0);
+        expect(consultasSql).toHaveBeenCalledTimes(4);
         expect(creaciones).toHaveBeenCalledOnce();
         expect(actualizaciones).not.toHaveBeenCalled();
     });
@@ -307,7 +423,7 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-02", guardado));
     });
 
-    it("recalcula el día al terminar la espera del bloqueo", async () => {
+    it("recalcula el día al terminar la espera de otra consulta", async () => {
         vi.setSystemTime(new Date("2026-10-03T02:59:00.000Z")); // 2 de octubre, 23:59 en Montevideo.
         const viernes = dato("2026-10-02");
         const sabado = dato("2026-10-03");
@@ -322,7 +438,9 @@ describe("obtenerConsultaDiariaWebservice", () => {
         const primera = obtenerConsultaDiariaWebservice();
         await inicio;
         const segunda = obtenerConsultaDiariaWebservice();
-        await vi.waitFor(() => expect(transacciones).toHaveBeenCalledTimes(2));
+        await vi.waitFor(() => expect(lecturas).toHaveBeenCalledTimes(3));
+        expect(transacciones).not.toHaveBeenCalled();
+        expect(transaccionesAbiertas()).toBe(0);
 
         vi.setSystemTime(new Date("2026-10-03T03:00:01.000Z")); // 3 de octubre, 00:00 en Montevideo.
         entregarPrimera(viernes);

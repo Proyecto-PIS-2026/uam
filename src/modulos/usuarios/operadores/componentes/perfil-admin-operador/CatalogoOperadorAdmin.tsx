@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 
-import DrawerEditarPublicacion, { type PublicacionParaEditar } from "../../../../publicaciones/operadores/componentes/DrawerEditarPublicacion";
-import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/consultas-edicion-publicacion";
+import DrawerEditarPublicacion from "../../../../publicaciones/operadores/componentes/DrawerEditarPublicacion";
+import type { PublicacionParaEditar } from "../../../../publicaciones/operadores/tipos";
+import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/tipos";
 import type { PublicacionPerfilAdmin } from "../../consultas-perfil-admin";
 import TarjetaPublicacionAdmin from "./TarjetaPublicacionAdmin";
 

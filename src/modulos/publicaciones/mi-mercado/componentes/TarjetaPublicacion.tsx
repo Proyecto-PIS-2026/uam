@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
-import type { Publicacion } from "./MiMercado";
-import { actualizarPrecio } from "../acciones";
+import type { Publicacion } from "../tipos";
+import { actualizarPrecio, incrementarPrecio } from "../acciones";
 import styles from "./TarjetaPublicacion.module.css";
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
     puedeModificar: boolean;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
-    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number, fecha?: string) => void;
+    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number, fecha?: string, version?: number) => void;
     alPublicacionEliminada?: () => void;
 };
 
@@ -25,109 +25,123 @@ export default function TarjetaPublicacion({
     alPrecioActualizado,
     alPublicacionEliminada,
 }: Props) {
-    let precioInicial = 0;
-    if (Number(pub.precio)) {
-        precioInicial = Number(pub.precio);
-    }
-    const [precioGuardado, setPrecioGuardado] = useState({ base: pub.precio, valor: precioInicial });
-    const precio = precioGuardado.base === pub.precio ? precioGuardado.valor : precioInicial;
+    const recibido = { precio: Number(pub.precio ?? 0), version: pub.version, fecha: pub.fecha };
+    const [confirmado, setConfirmado] = useState(recibido);
+    const actual = confirmado.version > recibido.version ? confirmado : recibido;
+    const [optimista, setOptimista] = useState<number | null>(null);
+    const precio = optimista ?? actual.precio;
     const [errorPrecio, setErrorPrecio] = useState("");
-    const precioPendienteRef = useRef(precioInicial);
-    const precioConfirmadoRef = useRef(precioInicial);
-    const guardandoPrecioRef = useRef(false);
+    const guardandoRef = useRef(false);
+    const incrementosPendientesRef = useRef(0);
+    const precioVisibleRef = useRef(recibido.precio);
+    const versionEdicionRef = useRef(pub.version);
     const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+    const [guardandoManual, setGuardandoManual] = useState(false);
     const [editandoPrecio, setEditandoPrecio] = useState(false);
-    const [precioTemporal, setPrecioTemporal] = useState(String(precioInicial));
+    const [precioTemporal, setPrecioTemporal] = useState(String(precio));
 
-    async function guardarPrecioPendiente() {
-        if (guardandoPrecioRef.current) {
+    async function guardar(valor: number) {
+        if (guardandoRef.current) return;
+        const nuevoPrecio = valor;
+        if (!Number.isSafeInteger(nuevoPrecio) || nuevoPrecio <= 0 || nuevoPrecio > 9_999_999_999) {
+            setErrorPrecio("El precio debe ser un entero positivo de hasta 10 dígitos.");
             return;
         }
-        guardandoPrecioRef.current = true;
-        let ultimaFechaGuardada: string | undefined;
+        guardandoRef.current = true;
         setGuardandoPrecio(true);
+        setGuardandoManual(true);
+        setOptimista(nuevoPrecio);
+        setErrorPrecio("");
         try {
-            while (precioPendienteRef.current !== precioConfirmadoRef.current) {
-                const precioAGuardar =precioPendienteRef.current;
-                try {
-                    const resultado = await actualizarPrecio(pub.id, precioAGuardar, operadorId);
-                    if (resultado?.publicacionEliminada) {
-                        alPublicacionEliminada?.();
-                        return;
-                    }
-                    precioConfirmadoRef.current = precioAGuardar;
-                    ultimaFechaGuardada = resultado.fecha;
-                    if (precioPendienteRef.current === precioAGuardar) {
-                        alPrecioActualizado?.(pub.id, precioAGuardar, ultimaFechaGuardada);
-                    }
-                    setErrorPrecio("");
-                } catch (error) {
-                    const precioAnterior = precioConfirmadoRef.current;
-                    precioPendienteRef.current = precioAnterior;
-                    setPrecioGuardado({ base: pub.precio, valor: precioAnterior });
-                    alPrecioActualizado?.(pub.id, precioAnterior, ultimaFechaGuardada);
-                    setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
-                    break;
-                }
+            const resultado = await actualizarPrecio(pub.id, valor, operadorId, versionEdicionRef.current);
+            if (resultado.publicacionEliminada) {
+                alPublicacionEliminada?.();
+                return;
             }
+            const precioActual = Number(resultado.precio ?? 0);
+            setConfirmado({ precio: precioActual, version: resultado.version, fecha: resultado.fecha });
+            alPrecioActualizado?.(pub.id, precioActual, resultado.fecha, resultado.version);
+            if (resultado.conflicto) setErrorPrecio("El precio cambió en otra sesión. Se muestra el valor actual. Revisalo antes de volver a guardar.");
+        } catch (error) {
+            setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
         } finally {
-            guardandoPrecioRef.current = false;
+            guardandoRef.current = false;
             setGuardandoPrecio(false);
+            setGuardandoManual(false);
+            setOptimista(null);
         }
     }
 
-    function cambiarPrecio(nuevoPrecio: number) {
-        if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) {
-            setErrorPrecio("El precio debe ser un número mayor a cero.");
-            return;
-        }
-        if (!Number.isInteger(nuevoPrecio)) {
-            setErrorPrecio("El precio debe ser un número entero, sin decimales.");
-            return;
-        }
+    async function guardarIncrementos() {
+        if (guardandoRef.current) return;
+        guardandoRef.current = true;
+        setGuardandoPrecio(true);
         setErrorPrecio("");
-        precioPendienteRef.current = nuevoPrecio;
-        setPrecioGuardado({  base: pub.precio, valor: nuevoPrecio });
-        void guardarPrecioPendiente();
+        try {
+            while (incrementosPendientesRef.current !== 0) {
+                const incremento = incrementosPendientesRef.current;
+                incrementosPendientesRef.current = 0;
+                const resultado = await incrementarPrecio(pub.id, incremento, operadorId);
+                if (resultado.publicacionEliminada) {
+                    incrementosPendientesRef.current = 0;
+                    alPublicacionEliminada?.();
+                    return;
+                }
+                const precioActual = Number(resultado.precio ?? 0);
+                setConfirmado({ precio: precioActual, version: resultado.version, fecha: resultado.fecha });
+                alPrecioActualizado?.(pub.id, precioActual, resultado.fecha, resultado.version);
+                if (resultado.conflicto) {
+                    incrementosPendientesRef.current = 0;
+                    setErrorPrecio("La publicación cambió en otra sesión. Revisá el precio actualizado y volvé a intentar.");
+                }
+                precioVisibleRef.current = precioActual + incrementosPendientesRef.current;
+                setOptimista(precioVisibleRef.current);
+            }
+        } catch (error) {
+            incrementosPendientesRef.current = 0;
+            setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
+        } finally {
+            guardandoRef.current = false;
+            setGuardandoPrecio(false);
+            setOptimista(null);
+        }
+    }
+
+    function cambiarPorIncremento(incremento: number) {
+        if (guardandoManual) return;
+        const precioActual = guardandoRef.current ? precioVisibleRef.current : actual.precio;
+        const siguiente = precioActual + incremento;
+        if (!Number.isSafeInteger(siguiente) || siguiente <= 0 || siguiente > 9_999_999_999) return;
+        incrementosPendientesRef.current += incremento;
+        precioVisibleRef.current = siguiente;
+        setOptimista(siguiente);
+        void guardarIncrementos();
     }
 
     function consultarPublicacion() {
-        alConsultar?.({ ...pub, precio: pub.precio === null && precio === 0 ? null : String(precio)});
+        alConsultar?.({ ...pub, precio: pub.precio === null && precio === 0 ? null : String(precio), version: actual.version, fecha: actual.fecha });
     }
 
     function restar() {
-        const nuevoPrecio = precioPendienteRef.current - incrementoPrecio;
-        if (nuevoPrecio <= 0) {
-            return;
-        }
-        cambiarPrecio(nuevoPrecio);
+        cambiarPorIncremento(-incrementoPrecio);
     }
 
     function sumar() {
-        const nuevoPrecio = precioPendienteRef.current + incrementoPrecio;
-        cambiarPrecio(nuevoPrecio);
+        cambiarPorIncremento(incrementoPrecio);
     }
 
     function comenzarEdicionPrecio() {
+        versionEdicionRef.current = actual.version;
         setPrecioTemporal(String(precio));
         setEditandoPrecio(true);
     }
 
     function guardarPrecioManual() {
-        const texto = precioTemporal.trim();
-        if (texto === "") {
-            setPrecioTemporal(String(precio));
-            setEditandoPrecio(false);
-            return;
-        }
-        const nuevoPrecio = Number(texto);
-        if (!Number.isInteger(nuevoPrecio) || nuevoPrecio <= 0 || nuevoPrecio === precio) {
-            setPrecioTemporal(String(precio));
-            setEditandoPrecio(false);
-            return;
-        }
-        cambiarPrecio(nuevoPrecio);
+        if (!editandoPrecio) return;
         setEditandoPrecio(false);
+        const texto = precioTemporal.trim();
+        if (texto === "" || Number(texto) === precio) return;
+        void guardar(Number(texto));
     }
 
     function cancelarEdicionPrecio() {
@@ -170,7 +184,7 @@ export default function TarjetaPublicacion({
                 </button>
                 <div className={styles.contenedorPrecio}>
                     <div className={styles.controlesPrecio}>
-                        <button type="button" className={styles.botonPrecio} onClick={restar} disabled={guardandoPrecio || !puedeModificar} aria-label="Disminuir precio">
+                        <button type="button" className={styles.botonPrecio} onClick={restar} disabled={guardandoManual || editandoPrecio || !puedeModificar} aria-label="Disminuir precio">
                             −
                         </button>
                         {editandoPrecio && puedeModificar ? (
@@ -202,7 +216,7 @@ export default function TarjetaPublicacion({
                                 {precio === 0 ? "Sin precio" : `$${precio}`}
                             </button>
                         )}
-                        <button type="button" className={styles.botonPrecio} onClick={sumar} disabled={guardandoPrecio || !puedeModificar} aria-label="Aumentar precio">
+                        <button type="button" className={styles.botonPrecio} onClick={sumar} disabled={guardandoManual || editandoPrecio || !puedeModificar} aria-label="Aumentar precio">
                             +
                         </button>
                     </div>

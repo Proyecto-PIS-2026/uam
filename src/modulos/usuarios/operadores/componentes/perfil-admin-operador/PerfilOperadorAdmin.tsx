@@ -1,6 +1,6 @@
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
-import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/consultas-edicion-publicacion";
+import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/tipos";
 
 import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";

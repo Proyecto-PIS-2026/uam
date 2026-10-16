@@ -1,18 +1,15 @@
-import consultaLocal from "../precios-referencia/consulta-referencia.json";
-import { obtenerUltimoRelevamientoGuardado } from "../precios-referencia/cache-diario";
+import { obtenerConsultaDiariaWebservice, obtenerUltimoRelevamientoGuardado } from "../precios-referencia/cache-diario";
 import type { ConsultaPreciosReferencia } from "../precios-referencia/consultas-precios-referencia";
 import type { EspecieHistorica } from "./tipos";
 
 const comparar = new Intl.Collator("es", { sensitivity: "base", numeric: true }).compare;
 
 export async function obtenerCatalogoEspeciesHistoricas(): Promise<EspecieHistorica[]> {
-    let consulta: ConsultaPreciosReferencia = consultaLocal;
-    if (process.env.PRECIOS_REFERENCIA_FUENTE === "webservice") {
-        try {
-            consulta = await obtenerUltimoRelevamientoGuardado() ?? consultaLocal;
-        } catch {
-            
-        }
+    let consulta: ConsultaPreciosReferencia | null;
+    try {
+        consulta = await obtenerUltimoRelevamientoGuardado() ?? await obtenerConsultaDiariaWebservice();
+    } catch {
+        return [];
     }
 
     const especies = new Map<string, EspecieHistorica>();

@@ -5,49 +5,16 @@ import { useRouter } from "next/navigation";
 import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
 import { compararEspeciesPorPrioridad } from "../../../../compartido/prioridad-especies";
-import DrawerEditarPublicacion, { type PublicacionParaEditar } from "../../operadores/componentes/DrawerEditarPublicacion";
+import DrawerEditarPublicacion from "../../operadores/componentes/DrawerEditarPublicacion";
+import type { Publicacion } from "../tipos";
+import type { PublicacionParaEditar, OpcionesEdicionPublicacion, CambiosPublicacionOperador } from "../../operadores/tipos";
 import NuevaPublicacion from "../../operadores/componentes/NuevaPublicacion";
-import type { OpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
-import type { CambiosPublicacionOperador } from "../../operadores/modificar-publicacion";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../filtros/FiltrosPublicaciones";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
+import { useActualizacionesPublicaciones } from "../../tiempo-real/use-actualizaciones-publicaciones";
 import styles from "./MiMercado.module.css";
-
-export type Publicacion = {
-    id: number;
-    publicacionOperadorId: number;
-    paisId: number;
-    foto: string | null;
-    precio: string | null;
-    fecha: string; 
-    publicacionActiva: boolean;
-    publicacionDisponible: boolean;
-    presentacion: {
-        id: number;
-        nombrePresentacion: string;
-        variedad: {
-            id: number;
-            nombreVariedad: string;
-            especie: {
-                id: number;
-                nombreEspecie: string;
-                fotoEspecie: string | null;
-            };
-        };
-    };
-    cantidadUnidades?: number | null;
-    categoria: {
-        id: number;
-        nombreCategoria: string;
-    };
-    calibre: {
-        id: number;
-        codigoCalibre: string;
-        nombreCalibre: string;
-    };
-};
 
 type Props = {
     operadorId: number;
@@ -119,6 +86,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         precio: publicacionSeleccionada.precio,
         foto: publicacionSeleccionada.foto,
         fecha: publicacionSeleccionada.fecha,
+        version: publicacionSeleccionada.version,
         categoriaId: publicacionSeleccionada.categoria.id,
         calibreId: publicacionSeleccionada.calibre.id,
         presentacionId: publicacionSeleccionada.presentacion.id,
@@ -137,11 +105,8 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         if (abrirAltaInicial) router.replace("/mi-mercado", { scroll: false });
     }
 
-    /*
-     * DEMO: la respuesta de esta acción actualiza las tarjetas directamente.
-     * Para recuperar el refresco automático de la ruta, restaurar router.refresh()
-     * en las ramas de éxito y error de esta función.
-     */
+    useActualizacionesPublicaciones(() => sincronizarPublicaciones(), operadorId);
+
     async function sincronizarPublicaciones() {
         const recarga = ++ultimaRecarga.current;
         setSincronizando(true);
@@ -149,7 +114,14 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         try {
             const datos = await cargarPublicacionesMiMercado(operadorId);
             if (recarga !== ultimaRecarga.current) return false;
-            setListadoRecargado({ origen: publicaciones, datos });
+            setListadoRecargado((anterior) => {
+                const vigentes = anterior?.origen === publicaciones ? anterior.datos : publicaciones;
+                const porId = new Map(vigentes.map((publicacion) => [publicacion.id, publicacion]));
+                return { origen: publicaciones, datos: datos.map((publicacion) => {
+                    const vigente = porId.get(publicacion.id);
+                    return vigente && vigente.version > publicacion.version ? vigente : publicacion;
+                }) };
+            });
             setIdsEliminados((actuales) => actuales.filter((id) => datos.some((publicacion) => publicacion.id === id)));
             setSeleccion((actual) => actual && datos.some((publicacion) => publicacion.id === actual.publicacion.id) ? actual : null);
             setPublicacionPendiente((actual) => actual && datos.some((publicacion) => publicacion.id === actual.id) ? actual : null);
@@ -157,7 +129,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         } catch {
             if (recarga !== ultimaRecarga.current) return false;
             setMensaje("");
-            setError("Los cambios se guardaron, pero no se pudo actualizar el listado. Recargá la página.");
+            setError("No se pudo actualizar el listado. Recargá la página.");
             return false;
         } finally {
             if (recarga === ultimaRecarga.current) setSincronizando(false);
@@ -203,6 +175,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                     return;
                 }
             }
+            if (respuesta.status === 409) await sincronizarPublicaciones();
             throw new Error(resultado.errores?.[0] ?? "No se pudieron guardar los cambios.");
         }
 
@@ -278,12 +251,12 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         return ordenActual === "alfabeticoDesc" ? -comparacion : comparacion;
     });
 
-    function actualizarPrecioLocal(publicacionId: number, nuevoPrecio: number, fecha?: string) {
+    function actualizarPrecioLocal(publicacionId: number, nuevoPrecio: number, fecha?: string, version?: number) {
         setListadoRecargado((actual) => {
             const datosActuales = actual?.origen === publicaciones ? actual.datos : publicaciones;
             return {
                 origen: publicaciones,
-                datos: datosActuales.map((publicacion) => publicacion.id === publicacionId ? { ...publicacion, precio: String(nuevoPrecio), fecha: fecha ?? publicacion.fecha } : publicacion),
+                datos: datosActuales.map((publicacion) => publicacion.id === publicacionId && (version === undefined || version >= publicacion.version) ? { ...publicacion, precio: String(nuevoPrecio), fecha: fecha ?? publicacion.fecha, version: version ?? publicacion.version } : publicacion),
             };
         });
     }
@@ -394,7 +367,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                                     }
                                                     alConsultar={consultarPublicacion}
                                                     alPrecioActualizado={actualizarPrecioLocal}
-                                                    alPublicacionEliminada={() => window.location.reload()}
+                                                    alPublicacionEliminada={() => void sincronizarPublicaciones()}
                                                 />
                                             ))}
                                         </div>
@@ -412,7 +385,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                         incrementoPrecio={incrementoPrecio}
                                         alConsultar={consultarPublicacion}
                                         alPrecioActualizado={actualizarPrecioLocal}
-                                        alPublicacionEliminada={() => window.location.reload()}
+                                        alPublicacionEliminada={() => void sincronizarPublicaciones()}
                                     />
                                 ))}
                             </div>

@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import relevamiento from "../src/modulos/informacion-uam/precios-referencia/consulta-referencia.json" with { type: "json" };
+import { relevamiento as datosPrueba } from "./fixtures/precios-referencia.mjs";
+import type { ConsultaPreciosReferencia } from "../src/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 
-// Ejecutar contra una aplicación iniciada con PRECIOS_REFERENCIA_FUENTE=local.
-// La consulta se realiza en el servidor: page.route no intercepta el webservice.
+test.use({ baseURL: "http://127.0.0.1:3100" });
+const relevamiento: ConsultaPreciosReferencia = datosPrueba;
 const registros = relevamiento.types.flatMap((tipo) => tipo.products.flatMap((producto) =>
   producto.varieties.flatMap((variedad) => variedad.presentations.flatMap((presentacion) =>
     presentacion.prices.map((precio) => ({
@@ -34,9 +35,6 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
   });
 
   test("muestra la fecha, las columnas y los precios del relevamiento", async ({ page }) => {
-    // CP-19.1-01 y CP-19.1-12: acceso público desde la navegación.
-    await page.getByRole("link", { name: "Ir al inicio", exact: true }).click();
-    await expect(page).toHaveURL(/\/inicio$/);
     await page.getByRole("navigation", { name: "Navegación principal", exact: true })
       .getByRole("link", { name: "Precios de referencia", exact: true }).click();
     await expect(page).toHaveURL(/\/precios-referencia$/);

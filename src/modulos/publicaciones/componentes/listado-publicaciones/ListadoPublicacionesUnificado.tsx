@@ -30,6 +30,7 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
     const esMobile = useMediaQuery("(max-width: 767px)");
     const [mostrarBotonArriba, setMostrarBotonArriba] = useState(false);
     const [animandoSalida, setAnimandoSalida] = useState(false);
+    const seleccionActual = publicacionSeleccionada ? publicaciones.find((publicacion) => publicacion.id === publicacionSeleccionada.id) : null;
 
     useEffect(() => {
         const manejarScroll = () => {
@@ -145,10 +146,10 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
                     ))}
                 </ul>
             )}
-            {publicacionSeleccionada && (esMobile ? (
-				<DrawerAbajoPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
+            {seleccionActual && (esMobile ? (
+				<DrawerAbajoPublicacion publicacion={seleccionActual} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
     		) : (
-        		<DrawerDerechaPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
+                <DrawerDerechaPublicacion publicacion={seleccionActual} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
     		))}
             {mostrarBotonArriba && (
                 <button type="button" onClick={volverArriba} aria-label="Volver arriba"

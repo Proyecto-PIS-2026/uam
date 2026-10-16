@@ -3,7 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 
 import PerfilOperadorAdmin from "./PerfilOperadorAdmin";
 import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
-import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/operadores/consultas-edicion-publicacion";
+import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/operadores/tipos";
 
 const mocks = vi.hoisted(() => ({
     propsCatalogo: vi.fn(),

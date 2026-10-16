@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'3fe9ff9b77cc22f3603cc103afea9c647926a2583a93c5bdbb13ab08a75f29a2'>;
+  StorageHashBase<'d35c23367da1c32c344855a6e2f38be254754d64822b8595be691a0f20a430f1'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -323,6 +323,7 @@ export type FieldOutputTypes = {
     };
     readonly Publicacion: {
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly version: CodecTypes['pg/int4@1']['output'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['output'];
       readonly publicacionActiva: CodecTypes['pg/bool@1']['output'];
@@ -453,6 +454,7 @@ export type FieldInputTypes = {
     };
     readonly Publicacion: {
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly version: CodecTypes['pg/int4@1']['input'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['input'];
       readonly publicacionActiva: CodecTypes['pg/bool@1']['input'];
@@ -593,6 +595,7 @@ export type StorageColumnTypes = {
       readonly publicacionActiva: CodecTypes['pg/bool@1']['output'];
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['output'];
       readonly tipoPublicacion: 'OPERADOR' | 'PRODUCTOR';
+      readonly version: CodecTypes['pg/int4@1']['output'];
     };
     readonly publicacionOperador: {
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -723,6 +726,7 @@ export type StorageColumnInputTypes = {
       readonly publicacionActiva: CodecTypes['pg/bool@1']['input'];
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['input'];
       readonly tipoPublicacion: 'OPERADOR' | 'PRODUCTOR';
+      readonly version: CodecTypes['pg/int4@1']['input'];
     };
     readonly publicacionOperador: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -1382,6 +1386,15 @@ type ContractBase = Omit<
                   readonly default: {
                     readonly kind: 'function';
                     readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly version: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 1>;
                   };
                 };
                 readonly fecha: {
@@ -2540,6 +2553,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly version: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly fecha: {
                 readonly nullable: false;
                 readonly type: {
@@ -2628,6 +2645,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly id: { readonly column: 'id' };
+                readonly version: { readonly column: 'version' };
                 readonly fecha: { readonly column: 'fecha' };
                 readonly publicacionDisponible: { readonly column: 'publicacionDisponible' };
                 readonly publicacionActiva: { readonly column: 'publicacionActiva' };

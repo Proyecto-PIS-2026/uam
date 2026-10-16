@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActualizacionesPublicaciones } from "../../../../publicaciones/tiempo-real/use-actualizaciones-publicaciones";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
 import type { PublicacionListado } from "../../../../consulta-mercado/acciones/Publicaciones";
@@ -17,7 +19,10 @@ type CatalogoOperadorProps = {
 };
 
 export default function CatalogoOperador({publicaciones, whatsAppOperador = "", idOperador = 0, nombreOperador = ""}: CatalogoOperadorProps) {
-    const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionPerfil | null>(null);
+    const router = useRouter();
+    useActualizacionesPublicaciones(() => router.refresh(), { operadorPublicoId: idOperador });
+    const [seleccionId, setSeleccionId] = useState<number | null>(null);
+    const publicacionSeleccionada = publicaciones.find((publicacion) => publicacion.id === seleccionId) ?? null;
     const [drawerAbierto, setDrawerAbierto] = useState(false);
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(false);
     const [ordenActual, setOrdenActual] = useState<OrdenPublicaciones>("prioridad");
@@ -37,7 +42,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
     }
 
     function abrirDrawer(publicacion: PublicacionPerfil) {
-        setPublicacionSeleccionada(publicacion);
+        setSeleccionId(publicacion.id);
         setDrawerAbierto(true);
     }
 

@@ -1,248 +1,84 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-    actualizarPrecioPublicacion,
-    obtenerPublicacionesDeOperador,
-} from "./consultas-mi-mercado";
+import { actualizarPrecioPublicacion, ConflictoPublicacionError, incrementarPrecioPublicacion, obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
 
 const mocks = vi.hoisted(() => {
-    const publicacionOperadorWhere = vi.fn();
-    const publicacionOperadorInclude = vi.fn();
-    const publicacionOperadorAll = vi.fn();
-
-    const publicacionWhere = vi.fn();
-    const publicacionUpdate = vi.fn();
-    const rawSql = vi.fn();
-    const rawReturnsRow = vi.fn();
-    const rawBuild = vi.fn();
-    const execute = vi.fn();
-
-    const relationInclude = vi.fn();
-    const relationSelect = vi.fn();
-    const relationBuilder = {select: relationSelect, include: relationInclude};
-
-    relationSelect.mockReturnValue(relationBuilder);
-
-    relationInclude.mockImplementation(
-        (
-            _relacion: string,
-            callback?: (builder: typeof relationBuilder) => unknown
-        ) => {
-            callback?.(relationBuilder);
-            return relationBuilder;
-        }
-    );
-
-    const publicacionOperadorBuilder = {
-        where: publicacionOperadorWhere,
-        include: publicacionOperadorInclude,
-        all: publicacionOperadorAll,
+    const consulta = () => {
+        const builder = { where: vi.fn(), include: vi.fn(), select: vi.fn(), all: vi.fn(), first: vi.fn(), update: vi.fn() };
+        builder.where.mockReturnValue(builder);
+        builder.select.mockReturnValue(builder);
+        builder.include.mockImplementation((_nombre, callback) => { callback?.(builder); return builder; });
+        return builder;
     };
-
-    publicacionOperadorWhere.mockReturnValue(
-        publicacionOperadorBuilder
-    );
-
-    publicacionOperadorInclude.mockImplementation(
-        (
-            _relacion: string,
-            callback?: (builder: typeof relationBuilder) => unknown
-        ) => {
-            callback?.(relationBuilder);
-            return publicacionOperadorBuilder;
-        }
-    );
-
-    const publicacionBuilder = {
-        where: publicacionWhere,
-        update: publicacionUpdate,
-    };
-
-    publicacionWhere.mockReturnValue(publicacionBuilder);
-
-    rawSql.mockReturnValue({ returnsRow: rawReturnsRow });
-    rawReturnsRow.mockReturnValue({ build: rawBuild });
-    rawBuild.mockReturnValue({ tipo: "bloqueo" });
-
-    const tx = {
-        execute,
-        orm: {
-            public: {
-                PublicacionOperador: { where: publicacionOperadorWhere },
-                Publicacion: { where: publicacionWhere },
-            },
-        },
-    };
-    const transaction = vi.fn((callback: (cliente: typeof tx) => Promise<unknown>) => callback(tx));
-
-    return {
-        publicacionOperadorWhere,
-        publicacionOperadorInclude,
-        publicacionOperadorAll,
-        publicacionWhere,
-        publicacionUpdate,
-        relationInclude,
-        rawSql,
-        rawReturnsRow,
-        rawBuild,
-        execute,
-        transaction,
-        tx,
-    };
+    return { relacion: consulta(), publicacion: consulta(), transaction: vi.fn(), execute: vi.fn(), notificar: vi.fn() };
 });
 
-vi.mock(
-    "../../../infraestructura/persistencia/prisma/db",
-    () => ({
-        db: {
-            transaction: mocks.transaction,
-            raw: { sql: mocks.rawSql },
-            orm: {
-                public: {
-                    PublicacionOperador: {
-                        where: mocks.publicacionOperadorWhere,
-                    },
-                    Publicacion: {
-                        where: mocks.publicacionWhere,
-                    },
-                },
-            },
-        },
-    })
-);
+vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({ db: {
+    orm: { public: { PublicacionOperador: mocks.relacion, Publicacion: mocks.publicacion } },
+    transaction: mocks.transaction,
+    raw: { sql: () => ({ returnsRow: () => ({ build: () => ({}) }) }) },
+} }));
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioPublicacion: mocks.notificar }));
 
-describe("consultas-mi-mercado", () => {
+describe("precios de Mi Mercado", () => {
+    let fila: { id: number; precio: string | null; version: number; fecha: string };
     beforeEach(() => {
         vi.clearAllMocks();
-    });
-
-    it("obtiene las publicaciones del operador", async () => {
-        const publicaciones = [
-            { id: 1 },
-            { id: 2 },
-        ];
-
-        mocks.publicacionOperadorAll.mockResolvedValue(
-            publicaciones
-        );
-
-        const resultado =
-            await obtenerPublicacionesDeOperador(10);
-
-        expect(
-            mocks.publicacionOperadorWhere
-        ).toHaveBeenCalledWith({
-            operadorId: 10,
+        fila = { id: 20, precio: "100.00", version: 1, fecha: "2026-10-10T16:30:00Z" };
+        let turno = Promise.resolve();
+        mocks.transaction.mockImplementation((callback) => {
+            const resultado = turno.then(() => callback({ orm: { public: { PublicacionOperador: mocks.relacion, Publicacion: mocks.publicacion } }, execute: mocks.execute }));
+            turno = resultado.then(() => {}, () => {});
+            return resultado;
         });
-
-        expect(
-            mocks.publicacionOperadorInclude
-        ).toHaveBeenCalledWith(
-            "publicacion",
-            expect.any(Function)
-        );
-
-        expect(resultado).toBe(publicaciones);
+        mocks.relacion.all.mockResolvedValue([{ id: 1, publicacionId: 20 }]);
+        mocks.publicacion.first.mockImplementation(async () => ({ ...fila }));
+        mocks.publicacion.update.mockImplementation(async (cambios) => { fila = { ...fila, ...cambios }; return { ...fila }; });
     });
 
-    it("actualiza el precio de una publicación del operador", async () => {
-        mocks.publicacionOperadorAll.mockResolvedValue([
-            { id: 1 },
-        ]);
-
-        const fechaGuardada = "2026-10-10T16:30:00Z";
-        mocks.publicacionUpdate.mockResolvedValue({ id: 20, fecha: { toString: () => fechaGuardada } });
-
-        const fecha = await actualizarPrecioPublicacion(
-            10,
-            20,
-            125
-        );
-
-        expect(
-            mocks.publicacionOperadorWhere
-        ).toHaveBeenCalledWith({
-            operadorId: 10,
-            publicacionId: 20,
-        });
-        expect(mocks.transaction).toHaveBeenCalledOnce();
-        expect(mocks.rawSql.mock.calls[0]?.[0].join("")).toContain("pg_advisory_xact_lock(1719,");
-        expect(mocks.rawSql.mock.calls[0]?.[1]).toBe(10);
-        expect(mocks.rawReturnsRow).toHaveBeenCalledWith({ locked: "pg/int4@1" });
-        expect(mocks.execute).toHaveBeenCalledWith({ tipo: "bloqueo" });
-        expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(
-            mocks.publicacionOperadorWhere.mock.invocationCallOrder[0]
-        );
-
-        expect(
-            mocks.publicacionWhere
-        ).toHaveBeenCalledWith({
-            id: 20,
-        });
-
-        expect(
-            mocks.publicacionUpdate
-        ).toHaveBeenCalledWith({
-            precio: "125.00",
-        });
-        expect(fecha).toBe(fechaGuardada);
+    it("consulta solamente las publicaciones del operador", async () => {
+        expect(await obtenerPublicacionesDeOperador(10)).toEqual([{ id: 1, publicacionId: 20 }]);
+        expect(mocks.relacion.where).toHaveBeenCalledWith({ operadorId: 10 });
     });
 
-    it("rechaza el cambio si la publicación desaparece antes del update", async () => {
-        mocks.publicacionOperadorAll.mockResolvedValue([{ id: 1 }]);
-        mocks.publicacionUpdate.mockResolvedValue(null);
-
-        await expect(actualizarPrecioPublicacion(10, 20, 125)).rejects.toThrow(
-            "La publicación no existe o no pertenece al operador."
-        );
-
-        expect(mocks.publicacionUpdate).toHaveBeenCalledWith({ precio: "125.00" });
+    it("guarda el precio con la revisión esperada y notifica dentro de la transacción", async () => {
+        expect(await actualizarPrecioPublicacion(10, 20, 125, 1)).toEqual({ precio: 125, version: 2, fecha: fila.fecha });
+        expect(mocks.publicacion.where).toHaveBeenCalledWith({ id: 20, version: 1 });
+        expect(mocks.notificar).toHaveBeenCalledWith(expect.anything(), { operadorId: 10, publicacionId: 20 });
+        expect(mocks.notificar.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.publicacion.update.mock.invocationCallOrder[0]);
     });
 
-    it("rechaza actualizar una publicación que no pertenece al operador", async () => {
-        mocks.publicacionOperadorAll.mockResolvedValue(
-            []
-        );
-
-        await expect(
-            actualizarPrecioPublicacion(
-                10,
-                20,
-                125
-            )
-        ).rejects.toThrow(
-            "La publicación no existe o no pertenece al operador."
-        );
-
-        expect(
-            mocks.publicacionWhere
-        ).not.toHaveBeenCalled();
-
-        expect(
-            mocks.publicacionUpdate
-        ).not.toHaveBeenCalled();
+    it("rechaza la segunda edición de la misma revisión sin sobrescribir", async () => {
+        const resultados = await Promise.allSettled([actualizarPrecioPublicacion(10, 20, 125, 1), actualizarPrecioPublicacion(10, 20, 200, 1)]);
+        expect(resultados[0].status).toBe("fulfilled");
+        expect(resultados[1]).toMatchObject({ status: "rejected", reason: expect.any(ConflictoPublicacionError) });
+        expect(fila.precio).toBe("125.00");
+        expect(mocks.publicacion.update).toHaveBeenCalledOnce();
     });
 
-    it("rechaza precios decimales antes de consultar la base de datos", async () => {
-        await expect(
-            actualizarPrecioPublicacion(10, 20, 125.5)
-        ).rejects.toThrow(
-            "El precio debe ser un número entero, sin decimales."
-        );
+    it("acumula dos incrementos concurrentes sobre el último precio guardado", async () => {
+        await Promise.all([incrementarPrecioPublicacion(10, 20, 10), incrementarPrecioPublicacion(10, 20, 10)]);
+        expect(fila).toMatchObject({ precio: "120.00", version: 3 });
+    });
 
-        expect(mocks.publicacionOperadorWhere).not.toHaveBeenCalled();
+    it("rechaza ediciones sin revisión", async () => {
+        await expect(actualizarPrecioPublicacion(10, 20, 125)).rejects.toBeInstanceOf(ConflictoPublicacionError);
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+    });
+
+    it("rechaza publicaciones ajenas y no emite eventos", async () => {
+        mocks.relacion.all.mockResolvedValue([]);
+        await expect(incrementarPrecioPublicacion(10, 20, 10)).rejects.toThrow("no pertenece");
+        expect(mocks.publicacion.first).not.toHaveBeenCalled();
+        expect(mocks.notificar).not.toHaveBeenCalled();
+    });
+
+    it.each([0, -1, 125.5, 10_000_000_000, Number.NaN])("rechaza precio inválido %s antes de consultar", async (precio) => {
+        await expect(actualizarPrecioPublicacion(10, 20, precio, 1)).rejects.toThrow();
         expect(mocks.transaction).not.toHaveBeenCalled();
-        expect(mocks.publicacionWhere).not.toHaveBeenCalled();
-        expect(mocks.publicacionUpdate).not.toHaveBeenCalled();
     });
 
-    it("rechaza precios que superan el límite antes de consultar la base de datos", async () => {
-        await expect(
-            actualizarPrecioPublicacion(10, 20, 10_000_000_000)
-        ).rejects.toThrow();
-
-        expect(mocks.publicacionOperadorWhere).not.toHaveBeenCalled();
-        expect(mocks.transaction).not.toHaveBeenCalled();
-        expect(mocks.publicacionWhere).not.toHaveBeenCalled();
-        expect(mocks.publicacionUpdate).not.toHaveBeenCalled();
+    it("valida el resultado del incremento sobre la base actual", async () => {
+        await expect(incrementarPrecioPublicacion(10, 20, -100)).rejects.toThrow("mayor a cero");
+        expect(mocks.notificar).not.toHaveBeenCalled();
     });
 });

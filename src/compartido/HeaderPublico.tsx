@@ -134,6 +134,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     <Image
                         src={fotoPerfil}
                         alt="Foto de perfil"
+                        unoptimized={fotoPerfil.startsWith("/api/")}
                         width={40}
                         height={40}
                         className={estilos.fotoPerfil}
@@ -165,6 +166,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 <Image
                     src={fotoPerfil}
                     alt=""
+                    unoptimized={fotoPerfil.startsWith("/api/")}
                     width={32}
                     height={32}
                     className={estilos.fotoPerfilMobile}

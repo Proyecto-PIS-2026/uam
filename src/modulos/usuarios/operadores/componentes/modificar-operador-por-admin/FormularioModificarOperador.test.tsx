@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 
 import FormularioModificarOperador from "./FormularioModificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
-import type { OperadorParaModificar } from "./obtenerOperadorParaModificar";
+import type { OperadorParaModificar } from "../../tipos";
 
 const { push, modificarOperadorMock } = vi.hoisted(() => ({
     push: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 
-vi.mock("./modificarOperador", () => ({
+vi.mock("../../acciones/modificarOperador", () => ({
     modificarOperador: modificarOperadorMock,
 }));
 

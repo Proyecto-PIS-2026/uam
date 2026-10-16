@@ -8,6 +8,8 @@ import { MenuItem, TextField } from "@mui/material";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import styles from "./FiltrosPublicaciones.module.css";
 
+import type { FiltrosConsulta, OpcionProducto } from "../../consulta-mercado/acciones/filtros-consulta";
+
 import type { PublicacionListado } from "../../consulta-mercado/acciones/Publicaciones";
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
@@ -32,6 +34,9 @@ export function compararPublicacionesPorPrioridad(a: Pick<PublicacionListado, "e
 
 type FiltrosPublicacionesProps = {
     publicaciones: PublicacionListado[];
+    opcionesRemotas?: OpcionProducto[];
+    totalRemoto?: number;
+    alConsultar?: (consulta: FiltrosConsulta) => void;
     especieFiltro: string;
     alFiltrar?: (publicaciones: PublicacionListado[]) => void;
     alLimpiar?: () => void;
@@ -40,14 +45,15 @@ type FiltrosPublicacionesProps = {
     alCambiarOrden?: (orden: OrdenPublicaciones) => void;
 };
 
-export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden}: FiltrosPublicacionesProps) {
+export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, totalRemoto, alConsultar}: FiltrosPublicacionesProps) {
+    const opciones = opcionesRemotas ?? publicaciones;
     // Hooks useState para los filtros
     const [busqueda, setBusqueda] = useState("");                                           // Barra de busqueda
     const [precioMinimo, setPrecioMinimo] = useState("");                                   // Precio Minimo
     const [precioMaximo, setPrecioMaximo] = useState("");                                   // Precio Maximo
     const [especie, setEspecie] = useState(especieFiltro === "" ? "Todas" : especieFiltro); // Filtro Especie
     const [variedad, setVariedad] = useState(() => {
-        const variedadesIniciales = new Set(publicaciones.filter((publicacion) => publicacion.especie === especieFiltro).map((publicacion) => publicacion.variedad));
+        const variedadesIniciales = new Set(opciones.filter((publicacion) => publicacion.especie === especieFiltro).map((publicacion) => publicacion.variedad));
         return especieFiltro !== "" && variedadesIniciales.size === 1 && variedadesIniciales.has("-") ? "-" : "Todas";
     });                                                                                  // Filtro Variedad
     const [presentacion, setPresentacion] = useState("Todas");                              // Filtro Presentacion
@@ -65,14 +71,14 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
     // Filtros de Ordenamiento
     const [orden, setOrden] = useState<OrdenPublicaciones>(ordenInicial);
 
-    const [publicacionesAnteriores, setPublicacionesAnteriores] = useState(publicaciones);
+    const [publicacionesAnteriores, setPublicacionesAnteriores] = useState(opciones);
     const especieNotificada = useRef(especie);
 
     // Reconciliar antes de filtrar evita publicar resultados con selecciones que ya no existen.
-    if (publicacionesAnteriores !== publicaciones) {
-        setPublicacionesAnteriores(publicaciones);
-        const nuevaEspecie = especie === "Todas" || publicaciones.some((publicacion) => publicacion.especie === especie) ? especie : "Todas";
-        let publicacionesBase = nuevaEspecie === "Todas" ? publicaciones : publicaciones.filter((publicacion) => publicacion.especie === nuevaEspecie);
+    if (publicacionesAnteriores !== opciones) {
+        setPublicacionesAnteriores(opciones);
+        const nuevaEspecie = especie === "Todas" || opciones.some((publicacion) => publicacion.especie === especie) ? especie : "Todas";
+        let publicacionesBase = nuevaEspecie === "Todas" ? opciones : opciones.filter((publicacion) => publicacion.especie === nuevaEspecie);
         const variedadesDisponibles = new Set(publicacionesBase.map((publicacion) => publicacion.variedad));
         let nuevaVariedad = nuevaEspecie !== "Todas" && variedadesDisponibles.has(variedad) ? variedad : "Todas";
         if (nuevaEspecie !== "Todas" && variedadesDisponibles.size === 1 && variedadesDisponibles.has("-")) nuevaVariedad = "-";
@@ -105,22 +111,22 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Opciones de Filtros disponibles
     const especies = useMemo(() => {
-        const nombres = [...new Set(publicaciones.map((publicacion) => publicacion.especie))];
+        const nombres = [...new Set(opciones.map((publicacion) => publicacion.especie))];
         return nombres.sort(ordenInicial === "prioridad" ? compararEspeciesPorPrioridad : compararOpciones);
-    }, [publicaciones, ordenInicial]);
+    }, [opciones, ordenInicial]);
 
     // Opciones de Variedad disponibles segun Especie
     const variedades = useMemo(() => {
-        let publicacionesBase = publicaciones;
+        let publicacionesBase = opciones;
         if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === especie);
 
         return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad))].sort(compararOpciones);
-    }, [publicaciones, especie]);
+    }, [opciones, especie]);
 
     // Publicaciones segun Especie, Variedad y Presentacion
     const publicacionesSegunJerarquia = useMemo(() => {
-        let publicacionesBase = publicaciones;
+        let publicacionesBase = opciones;
         if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
             publicacion.especie === especie);
         if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
@@ -129,18 +135,18 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
             publicacion.presentacion === presentacion);
 
         return publicacionesBase;
-    }, [publicaciones, especie, variedad, presentacion]);
+    }, [opciones, especie, variedad, presentacion]);
 
     // Opciones de Presentacion disponibles segun Especie y Variedad
     const presentaciones = useMemo(() => {
-        let publicacionesBase = publicaciones;
+        let publicacionesBase = opciones;
         if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === especie);
         if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.variedad === variedad);
 
         return [...new Set(publicacionesBase.map((publicacion) =>  publicacion.presentacion))].sort(compararOpciones);
-    }, [publicaciones, especie, variedad]);
+    }, [opciones, especie, variedad]);
 
     // Opciones de Categoria disponibles segun Calibre
     const categorias = useMemo(() => {
@@ -163,7 +169,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Obtener Publicaciones segun la jerarquia de filtros
     const obtenerPublicacionesJerarquia = (nuevaEspecie: string, nuevaVariedad: string, nuevaPresentacion: string) => {
-        let publicacionesBase = publicaciones;
+        let publicacionesBase = opciones;
         if (nuevaEspecie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
             publicacion.especie === nuevaEspecie);
         if (nuevaVariedad !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => 
@@ -175,7 +181,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
     };
 
     // Ajuste de filtros de Categoria y Calibre
-    const ajustarFiltrosCategoriaCalibre = (publicacionesBase: PublicacionListado[]) => {
+    const ajustarFiltrosCategoriaCalibre = (publicacionesBase: OpcionProducto[]) => {
         const categoriaValida = categoria === "Todas" || publicacionesBase.some((publicacion) => 
             publicacion.categoria === categoria);
         const calibreValido = calibre === "Todas" || publicacionesBase.some((publicacion) => 
@@ -204,6 +210,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Aplicacion de Filtros
     const publicacionesFiltradas = useMemo(() => {
+        if (opcionesRemotas) return [];
         const textoBusqueda = normalizarTexto(busqueda.trim());
         const minimo = precioMinimo.trim() === "" ? null : Number(precioMinimo);
         const maximo = precioMaximo.trim() === "" ? null : Number(precioMaximo);
@@ -247,8 +254,14 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         if (orden === "alfabeticoDesc") return [...filtradas].sort((a, b) => compararPublicacionesAlfabeticamente(b, a));
 
         return filtradas;
-    }, [publicaciones, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden]);
+    }, [publicaciones, opcionesRemotas, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden]);
     
+    useEffect(() => {
+        alConsultar?.({ busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden });
+    }, [alConsultar, busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden]);
+
+    const cantidadResultados = totalRemoto ?? publicacionesFiltradas.length;
+
     // Devolver al Componente Padre
     useEffect(() => { alFiltrar?.(publicacionesFiltradas) }, [publicacionesFiltradas, alFiltrar]);
 
@@ -286,7 +299,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Manejador para el cambio de Especie
     const manejarCambioEspecie = (nuevaEspecie: string) => {
-        let publicacionesBase = publicaciones;
+        let publicacionesBase = opciones;
         if (nuevaEspecie !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.especie === nuevaEspecie);
         const variedadesNuevas = [...new Set(publicacionesBase.map((p) => p.variedad))].sort(compararOpciones);
         const nuevaVariedad =  nuevaEspecie !== "Todas" && variedadesNuevas.length === 1 && variedadesNuevas[0] === "-" ? "-" : "Todas";
@@ -501,7 +514,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
             {/* Boton para limpiar filtros */}
             <div className={styles.pie}>
-                <span className={styles.resultados}> {publicacionesFiltradas.length}{" "} {publicacionesFiltradas.length === 1 ? "publicación" : "publicaciones"}</span>
+                <span className={styles.resultados}> {cantidadResultados}{" "} {cantidadResultados === 1 ? "publicación" : "publicaciones"}</span>
                 <button type="button" className={styles.limpiar} onClick={limpiarFiltros}> Limpiar filtros </button>
             </div>
         </div>

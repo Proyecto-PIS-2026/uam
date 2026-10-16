@@ -1,4 +1,4 @@
-import type { Publicacion } from "./componentes/MiMercado";
+import type { Publicacion } from "./tipos";
 import type { obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
 
 type RelacionesPublicacion = Awaited<ReturnType<typeof obtenerPublicacionesDeOperador>>;
@@ -13,6 +13,7 @@ export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion):
             foto: pub.foto as string | null,
             precio: pub.precio === null ? null : String(pub.precio),
             fecha: pub.fecha.toString(),
+            version: pub.version,
             publicacionActiva: pub.publicacionActiva as boolean,
             publicacionDisponible: pub.publicacionDisponible as boolean,
             cantidadUnidades: pub.cantidadUnidades as number | null,

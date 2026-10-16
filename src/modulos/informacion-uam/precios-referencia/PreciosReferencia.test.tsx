@@ -1,16 +1,15 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { obtenerPreciosReferencia, type PrecioReferencia } from "./consultas-precios-referencia";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { convertirConsultaEnPreciosReferencia, type PrecioReferencia } from "./consultas-precios-referencia";
 import PreciosReferencia from "./PreciosReferencia";
+import { relevamiento } from "../../../../tests/fixtures/precios-referencia.mjs";
 
 const { navegar } = vi.hoisted(() => ({ navegar: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: navegar }) }));
 
 beforeEach(() => {
-    vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "local");
     navegar.mockClear();
 });
-afterEach(() => vi.unstubAllEnvs());
 
 const filasConPreciosDistintos: PrecioReferencia[] = [
     {
@@ -124,16 +123,16 @@ describe("PreciosReferencia", () => {
     });
 
     it("muestra todos los registros y permite ver solo los marcados como referencia", async () => {
-        const datos = await obtenerPreciosReferencia();
+        const datos = convertirConsultaEnPreciosReferencia(relevamiento);
         render(<PreciosReferencia {...datos} />);
 
         expect(screen.getByRole("heading", { name: "Precios de referencia" })).toBeInTheDocument();
-        expect(screen.getByText("363 resultados")).toBeInTheDocument();
+        expect(screen.getByText("89 resultados")).toBeInTheDocument();
         expect(within(screen.getByRole("table")).getAllByText("Referencia").length).toBeGreaterThan(1);
 
         fireEvent.click(screen.getByRole("checkbox", { name: "Solo registros de referencia" }));
 
-        expect(screen.getByText("67 resultados")).toBeInTheDocument();
+        expect(screen.getByText("44 resultados")).toBeInTheDocument();
         const filasVisibles = within(screen.getByRole("table")).getAllByRole("row").slice(1);
         expect(filasVisibles).toHaveLength(40);
         for (const fila of filasVisibles) {
@@ -142,7 +141,7 @@ describe("PreciosReferencia", () => {
     });
 
     it("encuentra una especie con tilde aunque se busque sin ella", async () => {
-        const datos = await obtenerPreciosReferencia();
+        const datos = convertirConsultaEnPreciosReferencia(relevamiento);
         render(<PreciosReferencia {...datos} />);
 
         fireEvent.change(screen.getByRole("searchbox", { name: "Buscar especie o variedad" }), { target: { value: "brocoli" } });
@@ -339,7 +338,7 @@ describe("PreciosReferencia", () => {
     });
 
     it("ignora las palabras de clasificación en la búsqueda", async () => {
-        const datos = await obtenerPreciosReferencia();
+        const datos = convertirConsultaEnPreciosReferencia(relevamiento);
         render(<PreciosReferencia {...datos} />);
 
         fireEvent.change(screen.getByRole("searchbox", { name: "Buscar especie o variedad" }), {

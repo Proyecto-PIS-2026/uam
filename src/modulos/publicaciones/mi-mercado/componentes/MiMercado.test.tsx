@@ -8,11 +8,9 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
-import type { PublicacionParaEditar } from "../../operadores/componentes/DrawerEditarPublicacion";
-import type { CambiosPublicacionOperador } from "../../operadores/modificar-publicacion";
-import MiMercado, {
-  type Publicacion,
-} from "./MiMercado";
+import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../../operadores/tipos";
+import MiMercado from "./MiMercado";
+import type { Publicacion } from "../tipos";
 
 type DrawerMockProps = {
   abierto: boolean;
@@ -122,6 +120,7 @@ function crearPublicacion(
   return {
     id,
     publicacionOperadorId: id,
+    version: 1,
     paisId: 44,
     foto: null,
     precio: "100",
@@ -294,6 +293,7 @@ describe("MiMercado", () => {
       json: async () => ({ mensaje: "Publicación actualizada.", publicacionId: 52, publicacionOperadorId: 13 }),
     });
     const cambios: CambiosPublicacionOperador = {
+      version: 1,
       precio: "150",
       foto: null,
       presentacionId: 22,
@@ -368,6 +368,7 @@ describe("MiMercado", () => {
       json: async () => ({ errores: ["No se pudieron guardar los cambios."] }),
     });
     const cambios: CambiosPublicacionOperador = {
+      version: 1,
       precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
     };
     const propsIniciales = obtenerPropsDrawer();
@@ -393,7 +394,7 @@ describe("MiMercado", () => {
     mocks.cargarPublicaciones.mockResolvedValue([]);
 
     await act(async () => {
-      await obtenerPropsDrawer().alGuardar(52, {
+      await obtenerPropsDrawer().alGuardar(52, { version: 1,
         precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
@@ -411,7 +412,7 @@ describe("MiMercado", () => {
     mocks.cargarPublicaciones.mockResolvedValue([]);
 
     await act(async () => {
-      await obtenerPropsDrawer().alGuardar(52, {
+      await obtenerPropsDrawer().alGuardar(52, { version: 1,
         precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
@@ -429,12 +430,12 @@ describe("MiMercado", () => {
     mocks.cargarPublicaciones.mockRejectedValue(new Error("No se pudo consultar la base de datos"));
 
     await act(async () => {
-      await obtenerPropsDrawer().alGuardar(52, {
+      await obtenerPropsDrawer().alGuardar(52, { version: 1,
         precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 
-    expect(screen.getAllByText("Los cambios se guardaron, pero no se pudo actualizar el listado. Recargá la página.").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("No se pudo actualizar el listado. Recargá la página.").length).toBeGreaterThan(0);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-actualizando", "false");
@@ -496,7 +497,7 @@ describe("MiMercado", () => {
     fireEvent.click(screen.getByRole("button", { name: "Eliminar desde consulta" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
 
-    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Los cambios se guardaron, pero no se pudo actualizar el listado."));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo actualizar el listado."));
     expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(mocks.cargarPublicaciones).toHaveBeenCalledExactlyOnceWith(9);

@@ -5,8 +5,10 @@ import { bajaPublicacionOperador } from "@/modulos/publicaciones/bajaPublicacion
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { ErrorEdicionPublicacion, modificarPublicacionOperador, type CambiosPublicacionOperador } from "@/modulos/publicaciones/operadores/modificar-publicacion";
+import { ErrorEdicionPublicacion, modificarPublicacionOperador } from "@/modulos/publicaciones/operadores/modificar-publicacion";
+import type { CambiosPublicacionOperador } from "@/modulos/publicaciones/operadores/tipos";
 import { revalidatePath } from "next/cache";
+import { ErrorCuerpoDemasiadoGrande, leerFormularioLimitado } from "@/infraestructura/http/cuerpo-limitado";
 
 export const runtime = "nodejs";
 
@@ -87,7 +89,7 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 	let cambios: unknown;
 	let fotoNueva: File | null = null;
 	try {
-		const formulario = await solicitud.formData();
+		const formulario = await leerFormularioLimitado(solicitud);
 		const datos = formulario.get("cambios");
 		if (typeof datos !== "string") {
 			return NextResponse.json({ errores: ["Los cambios no son válidos."] }, { status: 400 });
@@ -98,7 +100,10 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 			return NextResponse.json({ errores: ["La fotografía no es válida."] }, { status: 400 });
 		}
 		fotoNueva = fotografia;
-	} catch {
+	} catch (error) {
+		if (error instanceof ErrorCuerpoDemasiadoGrande) {
+			return NextResponse.json({ errores: [error.message] }, { status: 413 });
+		}
 		return NextResponse.json({ errores: ["No se pudieron leer los cambios de la publicación."] }, { status: 400 });
 	}
 
@@ -132,7 +137,7 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 			return NextResponse.json({ errores: [error.message] }, { status: error.status });
 		}
 		if (error instanceof ErrorEdicionPublicacion) {
-			return NextResponse.json({ errores: [error.message] }, { status: error.codigo === "NO_ENCONTRADA" ? 404 : 400 });
+			return NextResponse.json({ errores: [error.message] }, { status: error.codigo === "NO_ENCONTRADA" ? 404 : error.codigo === "CONFLICTO" ? 409 : 400 });
 		}
 		console.error("Error al modificar publicación:", error);
 		return NextResponse.json({ errores: ["No se pudo modificar la publicación."] }, { status: 500 });

@@ -7,13 +7,39 @@ import { validarHistoricoProducto } from "./validar-historico";
 
 const {
     base, consultar, lecturas, transacciones, bloqueos, creaciones, actualizaciones,
-    sembrar, leer, reiniciar,
+    sembrar, leer, reiniciar, transaccionesAbiertas, consultasSql,
 } = vi.hoisted(() => {
     type Registro = { id: number; nombreConfiguracion: string; valorConfiguracion: string };
     type Filtro = { nombreConfiguracion?: string; id?: number };
     const registros = new Map<string, Registro>();
     let siguienteId = 1;
-    let cola: Promise<void> = Promise.resolve();
+    type Plan = { texto: string; valores: unknown[] };
+    const reservas = new Map<string, { propietario: string; vence: number }>();
+    let transaccionesActivas = 0;
+    const consultasSql = vi.fn(async ({ texto, valores }: Plan) => {
+        const nombre = String(valores[0]);
+        const propietario = String(valores[1]);
+        if (texto.includes("INSERT INTO configuracion")) {
+            const actual = reservas.get(nombre);
+            if (actual && actual.vence >= Date.now()) return [];
+            reservas.set(nombre, { propietario, vence: Date.now() + Number(valores[2]) * 1000 });
+            return [{ id: 1 }];
+        }
+        if (texto.includes("DELETE FROM configuracion")) {
+            if (reservas.get(nombre)?.propietario !== propietario) return [];
+            reservas.delete(nombre);
+            return [{ id: 1 }];
+        }
+        throw new Error("Consulta SQL inesperada");
+    });
+    const leerReserva = (nombre: string) => {
+        const reserva = reservas.get(nombre);
+        return reserva ? { id: 1, nombreConfiguracion: nombre, valorConfiguracion: JSON.stringify(reserva) } : null;
+    };
+    const sql = (partes: TemplateStringsArray, ...valores: unknown[]) => ({
+        returnsRow: () => ({ build: () => ({ texto: partes.join("?"), valores }) }),
+    });
+
 
     const consultar = vi.fn<(
         opciones: { baseUrl: string; token: string }, consulta: ConsultaHistorica,
@@ -35,7 +61,9 @@ const {
     });
     const tabla = {
         where: (filtro: Filtro) => ({
-            first: () => lecturas(filtro),
+            first: () => filtro.nombreConfiguracion?.startsWith("consulta-en-curso:")
+                ? Promise.resolve(leerReserva(filtro.nombreConfiguracion))
+                : lecturas(filtro),
             update: (valores: Pick<Registro, "valorConfiguracion">) => actualizaciones(filtro, valores),
         }),
         create: creaciones,
@@ -44,14 +72,11 @@ const {
     const tx = { orm: { public: { Configuracion: tabla } }, execute: bloqueos };
 
     const transacciones = vi.fn(async (trabajo: (transaccion: typeof tx) => Promise<unknown>) => {
-        const anterior = cola;
-        let liberar!: () => void;
-        cola = new Promise<void>((resolve) => { liberar = resolve; });
-        await anterior;
+        transaccionesActivas++;
         try {
             return await trabajo(tx);
         } finally {
-            liberar();
+            transaccionesActivas--;
         }
     });
 
@@ -59,9 +84,12 @@ const {
         base: {
             orm: { public: { Configuracion: tabla } },
             transaction: transacciones,
-            raw: { sql: () => ({ returnsRow: () => ({ build: () => ({}) }) }) },
+            raw: { sql },
+            runtime: () => ({ query: consultasSql }),
         },
         consultar, lecturas, transacciones, bloqueos, creaciones, actualizaciones,
+        transaccionesAbiertas: () => transaccionesActivas,
+        consultasSql,
         sembrar: (nombreConfiguracion: string, valorConfiguracion: string) => {
             registros.set(nombreConfiguracion, { id: siguienteId++, nombreConfiguracion, valorConfiguracion });
         },
@@ -69,7 +97,9 @@ const {
         reiniciar: () => {
             registros.clear();
             siguienteId = 1;
-            cola = Promise.resolve();
+            reservas.clear();
+            transaccionesActivas = 0;
+            consultasSql.mockClear();
             consultar.mockReset();
             lecturas.mockClear();
             transacciones.mockClear();
@@ -425,7 +455,7 @@ describe("obtenerHistoricoPrecios", () => {
         await expect(obtenerHistoricoPrecios(consulta)).resolves.toEqual(dato());
 
         expect(consultar).toHaveBeenCalledTimes(2);
-        expect(transacciones).toHaveBeenCalledTimes(2);
+        expect(transacciones).toHaveBeenCalledOnce();
         expect(creaciones).toHaveBeenCalledOnce();
     });
 
@@ -460,7 +490,7 @@ describe("obtenerHistoricoPrecios", () => {
         expect(JSON.parse(leer(clave())!)).toEqual({ version: 1, historico: vacio });
     });
 
-    it("relee bajo el bloqueo y consulta una sola vez ante dos solicitudes simultáneas", async () => {
+    it("mantiene la base libre durante una consulta lenta y evita duplicados simultáneos", async () => {
         let entregar!: (historico: HistoricoProducto) => void;
         let avisarInicio!: () => void;
         const inicio = new Promise<void>((resolve) => { avisarInicio = resolve; });
@@ -472,13 +502,21 @@ describe("obtenerHistoricoPrecios", () => {
         const primera = obtenerHistoricoPrecios(consulta);
         await inicio;
         const segunda = obtenerHistoricoPrecios(consulta);
-        await vi.waitFor(() => expect(transacciones).toHaveBeenCalledTimes(2));
+        await vi.waitFor(() => expect(lecturas).toHaveBeenCalledTimes(3));
+        expect(consultar).toHaveBeenCalledOnce();
+        expect(transacciones).not.toHaveBeenCalled();
+        expect(transaccionesAbiertas()).toBe(0);
+        expect(consultasSql).toHaveBeenCalledOnce();
+        expect(creaciones).not.toHaveBeenCalled();
         entregar(dato());
 
         await expect(Promise.all([primera, segunda])).resolves.toEqual([dato(), dato()]);
 
         expect(lecturas).toHaveBeenCalledTimes(4);
-        expect(bloqueos).toHaveBeenCalledTimes(2);
+        expect(bloqueos).toHaveBeenCalledOnce();
+        expect(transacciones).toHaveBeenCalledOnce();
+        expect(transaccionesAbiertas()).toBe(0);
+        expect(consultasSql).toHaveBeenCalledTimes(4);
         expect(consultar).toHaveBeenCalledOnce();
         expect(creaciones).toHaveBeenCalledOnce();
         expect(actualizaciones).not.toHaveBeenCalled();

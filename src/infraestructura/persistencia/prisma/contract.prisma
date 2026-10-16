@@ -180,6 +180,7 @@ model Ubicacion {
 // PUBLICACIONES ABSTRACTAS
 model Publicacion {
   id                    Int                  @id @default(autoincrement())
+  version               Int                  @default(1)
   fecha                 temporal.updatedAt()
   publicacionDisponible Boolean              @default(true)
   publicacionActiva     Boolean              @default(true)

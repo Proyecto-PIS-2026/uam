@@ -86,6 +86,10 @@ describe("validarModificacionOperador", () => {
         });
     });
  
+    it.each(["Frutas 100%", "Frutas %20"])("rechaza cambiar el nombre a %s", (nombre) => {
+        expect(erroresDe({ nombre })).toContain("El nombre del operador no puede contener %.");
+    });
+
     describe("código de país", () => {
         it.each(["+1", "598", ""])("rechaza el código %j", (codigoPais) => {
             expect(erroresDe({ codigoPais })).toContain("El código de país no es válido.");
@@ -97,12 +101,12 @@ describe("validarModificacionOperador", () => {
             expect(datosDe({ telefono: "099 123-456" }).telefono).toBe("+59899123456");
         });
  
-        it("acepta el mínimo de 7 dígitos", () => {
-            expect(datosDe({ telefono: "1234567" }).telefono).toBe("+5981234567");
+        it.each(["1234567", "123456789012"])("rechaza el número uruguayo %s", (telefono) => {
+            expect(erroresDe({ telefono })).toEqual(["El teléfono no es válido."]);
         });
- 
-        it("acepta el máximo de 12 dígitos", () => {
-            expect(datosDe({ telefono: "123456789012" }).telefono).toBe("+598123456789012");
+
+        it("normaliza paréntesis y puntos igual que el alta", () => {
+            expect(datosDe({ telefono: "(099) 123.456" }).telefono).toBe("+59899123456");
         });
  
         it.each(["123456", "1234567890123", "99abc456", ""])(
@@ -169,7 +173,7 @@ describe("validarModificacionOperador", () => {
         it.each(["", "   "])("rechaza un local con el número %j", (nombre) => {
             const errores = erroresDe({ locales: [{ ...localValido, nombre }] });
  
-            expect(errores).toEqual(["Local 1: falta su número."]);
+            expect(errores).toEqual(["Local 1: falta el número."]);
         });
  
         it("acepta un local sin fecha de fin de contrato", () => {
@@ -197,7 +201,7 @@ describe("validarModificacionOperador", () => {
  
         it("rechaza un local que no es un objeto", () => {
             expect(erroresDe({ locales: [null] })).toEqual([
-                "Local 1: falta su número.",
+                "Local 1: falta el número.",
                 "Local 1: seleccioná una nave.",
             ]);
         });

@@ -1,4 +1,5 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
 import type { Numeric } from "@prisma/orm-postgres/target/codec-types";
 
 export class PublicacionNoEncontradaError extends Error {
@@ -18,6 +19,7 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
                     "precio",
                     "cantidadUnidades",
                     "fecha",
+                    "version",
                     "publicacionActiva",
                     "publicacionDisponible",
                 )
@@ -33,43 +35,53 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
     return resultado;
 }
 
-export async function actualizarPrecioPublicacion(
-    operadorId: number,
-    publicacionId: number,
-    nuevoPrecio: number
-) {
-    if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) {
-        throw new Error("El precio debe ser un número mayor a cero.");
-    }
+export type PrecioActualizado = { precio: number | null; fecha: string; version: number };
 
-    if (!Number.isInteger(nuevoPrecio)) {
-        throw new Error("El precio debe ser un número entero, sin decimales.");
+export class ConflictoPublicacionError extends Error {
+    constructor(public readonly actual: PrecioActualizado) {
+        super("La publicación cambió en otra sesión. Revisá el precio actualizado antes de volver a guardar.");
     }
+}
 
-    if (nuevoPrecio > 9_999_999_999) {
-        throw new Error("El precio excede el valor máximo permitido.");
+function validarPrecio(precio: number) {
+    if (!Number.isFinite(precio) || precio <= 0) throw new Error("El precio debe ser un número mayor a cero.");
+    if (!Number.isInteger(precio)) throw new Error("El precio debe ser un número entero, sin decimales.");
+    if (precio > 9_999_999_999) throw new Error("El precio excede el valor máximo permitido.");
+}
+
+export async function actualizarPrecioPublicacion(operadorId: number, publicacionId: number, nuevoPrecio: number, versionEsperada?: number) {
+    validarPrecio(nuevoPrecio);
+    return guardarPrecio(operadorId, publicacionId, nuevoPrecio, false, versionEsperada);
+}
+
+export async function incrementarPrecioPublicacion(operadorId: number, publicacionId: number, incremento: number) {
+    if (!Number.isSafeInteger(incremento) || incremento === 0 || Math.abs(incremento) > 9_999_999_999) {
+        throw new Error("El incremento no es válido.");
     }
+    return guardarPrecio(operadorId, publicacionId, incremento, true);
+}
 
+async function guardarPrecio(operadorId: number, publicacionId: number, valor: number, incrementar: boolean, versionEsperada?: number): Promise<PrecioActualizado> {
     return db.transaction(async (tx) => {
         await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ${operadorId})`
             .returnsRow({ locked: "pg/int4@1" }).build());
-
-        const pertenencia = await tx.orm.public.PublicacionOperador
-            .where({ operadorId, publicacionId })
-            .all();
-
-        if (pertenencia.length === 0) {
-            throw new PublicacionNoEncontradaError();
+        const pertenencia = await tx.orm.public.PublicacionOperador.where({ operadorId, publicacionId }).all();
+        if (pertenencia.length === 0) throw new PublicacionNoEncontradaError();
+        const actual = await tx.orm.public.Publicacion.select("precio", "version", "fecha").where({ id: publicacionId }).first();
+        if (!actual) throw new PublicacionNoEncontradaError();
+        if (!incrementar && (!Number.isSafeInteger(versionEsperada) || versionEsperada !== actual.version)) {
+            throw new ConflictoPublicacionError({ precio: actual.precio === null ? null : Number(actual.precio), fecha: actual.fecha.toString(), version: actual.version });
         }
-
-        const publicacionActualizada = await tx.orm.public.Publicacion
-            .where({ id: publicacionId })
-            .update({ precio: nuevoPrecio.toFixed(2) as Numeric<12, 2> });
-
-        if (!publicacionActualizada) {
-            throw new PublicacionNoEncontradaError();
+        const precio = incrementar ? Number(actual.precio ?? 0) + valor : valor;
+        validarPrecio(precio);
+        const actualizada = await tx.orm.public.Publicacion.where({ id: publicacionId, version: actual.version })
+            .update({ precio: precio.toFixed(2) as Numeric<12, 2>, version: actual.version + 1 });
+        if (!actualizada) {
+            const vigente = await tx.orm.public.Publicacion.select("precio", "version", "fecha").where({ id: publicacionId }).first();
+            if (!vigente) throw new PublicacionNoEncontradaError();
+            throw new ConflictoPublicacionError({ precio: vigente.precio === null ? null : Number(vigente.precio), fecha: vigente.fecha.toString(), version: vigente.version });
         }
-
-        return publicacionActualizada.fecha.toString();
+        await notificarCambioPublicacion(tx, { operadorId, publicacionId });
+        return { precio: Number(actualizada.precio), fecha: actualizada.fecha.toString(), version: actualizada.version };
     });
 }

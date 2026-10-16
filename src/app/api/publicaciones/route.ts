@@ -6,6 +6,7 @@ import { altaPublicacionOperador } from "@/modulos/publicaciones/altaPublicacion
 import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { revalidatePath } from "next/cache";
+import { ErrorCuerpoDemasiadoGrande, leerJsonLimitado } from "@/infraestructura/http/cuerpo-limitado";
 
 export async function GET() {
 	if (!autorizado("operador.catalogo.consultar")) {
@@ -50,8 +51,11 @@ export async function POST(request: Request) {
 
 	let datos: unknown;
 	try {
-		datos = await request.json();
-	} catch {
+		datos = await leerJsonLimitado(request);
+	} catch (error) {
+		if (error instanceof ErrorCuerpoDemasiadoGrande) {
+			return NextResponse.json({ errores: [error.message] }, { status: 413 });
+		}
 		return NextResponse.json({ errores: ["El cuerpo de la solicitud no es un JSON válido."] }, { status: 400 });
 	}
 

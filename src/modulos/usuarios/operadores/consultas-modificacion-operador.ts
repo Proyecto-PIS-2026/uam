@@ -1,18 +1,7 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import type { OperadorParaModificar } from "./tipos";
 
 const CODIGOS_PAIS = ["+598", "+595", "+56", "+55", "+54"];
-
-export type OperadorParaModificar = {
-    id: number;
-    nombre: string;
-    codigoPais: string;
-    telefono: string;
-    locales: {
-        nombre: string;
-        naveId: number;
-        contrato: string;
-    }[];
-};
 
 function separarTelefono(whatsApp: string) {
     const codigoPais =

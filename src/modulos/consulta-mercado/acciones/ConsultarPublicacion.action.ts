@@ -6,7 +6,9 @@ import {
 } from "./Publicaciones";
 import { exigirConsultaMercadoPublico } from "@/modulos/identidad-acceso/autorizacion/controles";
 
-export default async function obtenerPublicaciones(): Promise<ResultadoPublicaciones | null> {
+import type { FiltrosConsulta } from "./filtros-consulta";
+
+export default async function obtenerPublicaciones(filtros: FiltrosConsulta = {}): Promise<ResultadoPublicaciones | null> {
   await exigirConsultaMercadoPublico();
-  return consultarPublicaciones();
+  return consultarPublicaciones(filtros);
 }

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { LIMITE_FORMULARIO_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
 const bajaPublicacionOperadorMock = vi.hoisted(() => vi.fn());
 const obtenerSesionMock = vi.hoisted(() => vi.fn<() => Promise<DatosSesion | null>>(() => Promise.resolve({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 })));
@@ -233,6 +234,20 @@ function solicitudEdicion(cambios: unknown = cambiosEdicion, fotografia?: File, 
 const contextoEdicion = { params: Promise.resolve({ id: "20" }) };
 
 describe("PATCH /api/publicaciones/[id]", () => {
+    it("devuelve 413 sin modificar una solicitud demasiado grande", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones/20", {
+            method: "PATCH", body: "cuerpo demasiado grande",
+            headers: {
+                "content-type": "multipart/form-data; boundary=prueba",
+                "content-length": String(LIMITE_FORMULARIO_PUBLICACION + 1),
+            },
+        });
+        const respuesta = await PATCH(solicitud, contextoEdicion);
+        expect(respuesta.status).toBe(413);
+        expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });

@@ -15,5 +15,5 @@ export default function ImagenPublicacion({ src, alt, reemplazo, ...props }: Pro
 
     if (!fuente || fuente === fuenteFallida) return <>{reemplazo}</>;
 
-    return <Image {...props} src={fuente} alt={alt} onError={() => setFuenteFallida(fuente)} />;
+    return <Image {...props} src={fuente} alt={alt} unoptimized={fuente.startsWith("/api/") || props.unoptimized} onError={() => setFuenteFallida(fuente)} />;
 }

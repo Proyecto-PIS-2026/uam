@@ -30,6 +30,7 @@ const mockDb = vi.hoisted(() => ({
         create: vi.fn(),
     },
     transaction: vi.fn(),
+    execute: vi.fn(),
 }));
 
 const mockArgon2 = vi.hoisted(() => ({
@@ -49,6 +50,9 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
             },
         },
         transaction: mockDb.transaction,
+        raw: { sql: (partes: TemplateStringsArray, ...valores: unknown[]) => ({
+            returnsRow: () => ({ build: () => ({ texto: partes.join("?"), valores }) }),
+        }) },
     },
 }));
 
@@ -106,6 +110,7 @@ describe("modificarOperador", () => {
         mockDb.transaction.mockImplementation(
             async (operaciones: (tx: unknown) => unknown) =>
                 operaciones({
+                    execute: mockDb.execute,
                     orm: {
                         public: {
                             Nave: mockDb.nave,

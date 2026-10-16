@@ -7,6 +7,9 @@ const ejecutarTransaccion = vi.hoisted(() => vi.fn());
 const ejecutarSql = vi.hoisted(() => vi.fn());
 const consultaSql = vi.hoisted(() => vi.fn());
 const eliminarImagen = vi.hoisted(() => vi.fn());
+const notificar = vi.hoisted(() => vi.fn());
+
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioPublicacion: notificar }));
 
 vi.mock("./operadores/imagenes-publicacion", () => ({
 	eliminarImagenPublicacionGestionada: eliminarImagen,
@@ -57,6 +60,7 @@ describe("bajaPublicacionOperador", () => {
 		expect(ejecutarSql.mock.invocationCallOrder[0]).toBeLessThan(buscarRelacion.mock.invocationCallOrder[0]);
 		expect(buscarPublicacion).toHaveBeenCalledOnce();
 		expect(eliminarPublicacion).toHaveBeenCalledOnce();
+		expect(notificar).toHaveBeenCalledWith(expect.anything(), { operadorId: 3, publicacionId: 15 });
 	});
 
 	it("limpia la imagen gestionada sólo después de confirmar la transacción", async () => {

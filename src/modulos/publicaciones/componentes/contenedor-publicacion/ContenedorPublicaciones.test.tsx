@@ -1,172 +1,104 @@
-// Eliminar comentarios luego de integrar los filtros
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-//import { useEffect } from "react";
-
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useEffect } from "react";
+import type { FiltrosConsulta } from "../../../consulta-mercado/acciones/filtros-consulta";
+import type { ResultadoPublicaciones } from "../../../consulta-mercado/acciones/Publicaciones";
 import ContenedorPublicaciones from "./ContenedorPublicaciones";
 
-type PropsListadoPublicaciones = {
-  publicaciones: PublicacionListado[];
-};
+const { cargar, escuchar } = vi.hoisted(() => ({ cargar: vi.fn(), escuchar: vi.fn() }));
 
-/*type PropsFiltrosPublicaciones = {
-	publicaciones: PublicacionListado[];
-	especieFiltro: string;
-	alFiltrar?: (publicaciones: PublicacionListado[]) => void;
-};*/
-
-const { mockListadoPublicaciones } = vi.hoisted(() => ({
-  mockListadoPublicaciones: vi.fn<(props: PropsListadoPublicaciones) => null>(() => null),
+vi.mock("../../../consulta-mercado/acciones/ConsultarPublicacion.action", () => ({ default: cargar }));
+vi.mock("../../tiempo-real/use-actualizaciones-publicaciones", () => ({ useActualizacionesPublicaciones: escuchar }));
+vi.mock("../listado-publicaciones/ListadoPublicacionesUnificado", () => ({ default: ({ publicaciones }: ResultadoPublicaciones) => <div data-testid="listado">{publicaciones.map((p) => <span key={p.id}>{p.especie} {p.precio}</span>)}</div> }));
+vi.mock("../../filtros/FiltrosPublicaciones", () => ({
+    default: function FiltrosSimulados({ alConsultar, especieFiltro }: { alConsultar: (consulta: FiltrosConsulta) => void; especieFiltro: string }) {
+        useEffect(() => { alConsultar({ especie: especieFiltro, orden: "prioridad" }); }, [alConsultar, especieFiltro]);
+        return <button onClick={() => alConsultar({ especie: "Limón", orden: "precioAsc" })}>Filtrar limón</button>;
+    },
 }));
 
-/*const { mockFiltrosPublicaciones } = vi.hoisted(() => ({
-	mockFiltrosPublicaciones: vi.fn(({publicaciones, alFiltrar}: PropsFiltrosPublicaciones) => {
-		useEffect(() => {
-			alFiltrar?.(publicaciones) }, [publicaciones, alFiltrar]);
-			return null;
-	})
-}));*/
-
-vi.mock("../listado-publicaciones/ListadoPublicacionesUnificado", () => ({ default: mockListadoPublicaciones }));
-
-//vi.mock("../../filtros/FiltrosPublicaciones", () => ({ default: mockFiltrosPublicaciones }));
-
-function crearPublicacion(id: number): PublicacionListado {
-	return {
-		id,
-		especie: `Producto ${id}`,
-		variedad: "-",
-		precio: 150,
-		fecha: "2026-10-03T15:00:00.000Z",
-		foto: null,
-		presentacion: "Cajón",
-		categoria: "Primera",
-		calibre: "Mediano",
-		codigoCalibre: "M",
-		pais: "Uruguay",
-		operador: {
-			id: 10,
-			nombreFantasia: "Huerta Sur",
-			whatsApp: "099123456",
-		},
-	};
+function resultado(pagina = 1, precio = 100): ResultadoPublicaciones {
+    return {
+        publicaciones: [{ id: pagina, especie: "Tomate", precio, fecha: "2026-10-16T10:00:00Z", foto: null, variedad: "Perita", presentacion: "KG", categoria: "I", calibre: "M", codigoCalibre: "M", pais: "Uruguay", operador: { id: 1, nombreFantasia: "Huerta", whatsApp: "" } }],
+        opciones: [], total: 35, totalCatalogo: 35, pagina, tamanoPagina: 30,
+    };
 }
 
-function publicacionesDelListado(): PublicacionListado[] | undefined {
-	return mockListadoPublicaciones.mock.calls.at(-1)?.[0]?.publicaciones;
-}
+beforeEach(() => {
+    vi.clearAllMocks();
+    cargar.mockResolvedValue(resultado());
+});
 
-/*function especieDelFiltro(): string | undefined {
-	return mockFiltrosPublicaciones.mock.calls.at(-1)?.[0]?.especieFiltro;
-}*/
+it("muestra la página inicial sin pedir de nuevo el catálogo al montar", () => {
+    render(<ContenedorPublicaciones resultado={resultado()} />);
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Anterior" })).toBeDisabled();
+    expect(cargar).not.toHaveBeenCalled();
+});
 
-describe("ContenedorPublicaciones", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
+it("pide la página siguiente y actualiza el listado", async () => {
+    cargar.mockResolvedValue(resultado(2, 200));
+    render(<ContenedorPublicaciones resultado={resultado()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    await waitFor(() => expect(screen.getByText("Página 2 de 2")).toBeInTheDocument());
+    expect(cargar).toHaveBeenCalledWith({ especie: "", orden: "prioridad", pagina: 2 });
+    expect(screen.getByTestId("listado")).toHaveTextContent("200");
+});
 
-	it("entrega primero las especies prioritarias y luego las demás en orden alfabético", () => {
-		const publicaciones = [
-			{...crearPublicacion(1), especie: "Pera"},
-			{...crearPublicacion(2), especie: "Manzana"},
-			{...crearPublicacion(3), especie: "Acelga"},
-			{...crearPublicacion(4), especie: "Papa"},
-		];
-		render(<ContenedorPublicaciones publicaciones={publicaciones}/>);
-		expect(publicacionesDelListado()).toEqual([publicaciones[3], publicaciones[1], publicaciones[2], publicaciones[0]]);
-	});
+it("consulta los filtros sobre el catálogo completo y vuelve a la primera página", async () => {
+    render(<ContenedorPublicaciones resultado={resultado(2)} />);
+    fireEvent.click(screen.getByText("Filtrar limón"));
+    await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc", pagina: 1 }));
+});
 
-	it("entrega una lista vacía cuando no hay publicaciones", () => {
-		render(<ContenedorPublicaciones publicaciones={[]}/>);
-		expect(publicacionesDelListado()).toEqual([]);
-	});
+it("agrupa las notificaciones de tiempo real en una sola recarga", async () => {
+    cargar.mockResolvedValue(resultado(1, 250));
+    render(<ContenedorPublicaciones resultado={resultado()} />);
+    act(() => {
+        escuchar.mock.calls.at(-1)![0]();
+        escuchar.mock.calls.at(-1)![0]();
+        escuchar.mock.calls.at(-1)![0]();
+    });
+    await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("250"));
+    expect(cargar).toHaveBeenCalledOnce();
+});
 
-	it("actualiza el listado cuando recibe nuevas publicaciones", () => {
-		const { rerender } = render(<ContenedorPublicaciones publicaciones={[crearPublicacion(7)]}/>);
-		const publicaciones = [crearPublicacion(2), crearPublicacion(9)];
-		rerender(<ContenedorPublicaciones publicaciones={publicaciones}/>);
-		expect(publicacionesDelListado()).toEqual(publicaciones);
-	});
+it("no reemplaza datos nuevos con una respuesta vieja", async () => {
+    let resolverAntigua: (dato: ResultadoPublicaciones) => void = () => {};
+    cargar.mockImplementationOnce(() => new Promise((resolve) => { resolverAntigua = resolve; })).mockResolvedValue(resultado(1, 400));
+    render(<ContenedorPublicaciones resultado={resultado()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    fireEvent.click(screen.getByText("Filtrar limón"));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)); });
+    expect(cargar).toHaveBeenCalledOnce();
+    await act(async () => resolverAntigua(resultado(2, 99)));
+    await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("400"));
+    expect(screen.getByTestId("listado")).toHaveTextContent("400");
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+});
 
-	it("actualiza los datos aunque la publicación conserve el mismo ID", () => {
-		const publicacion = crearPublicacion(7);
-		const { rerender } = render(<ContenedorPublicaciones publicaciones={[publicacion]}/>);
-		const actualizada = {...publicacion, precio: 80, foto: "/tomate.jpg"};
-		rerender(<ContenedorPublicaciones publicaciones={[actualizada]}/>);
-		expect(publicacionesDelListado()).toEqual([actualizada]);
-	});
+it("reconsulta los filtros vigentes cuando cambia la respuesta del servidor", async () => {
+    const vista = render(<ContenedorPublicaciones resultado={resultado()} />);
+    fireEvent.click(screen.getByText("Filtrar limón"));
+    await waitFor(() => expect(cargar).toHaveBeenCalledOnce());
+    cargar.mockClear();
+    vista.rerender(<ContenedorPublicaciones resultado={resultado(1, 999)} />);
+    await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc", pagina: 1 }));
+});
 
+it("mantiene los datos disponibles y permite reintentar un error", async () => {
+    cargar.mockRejectedValueOnce(new Error("sin red")).mockResolvedValue(resultado(2, 300));
+    render(<ContenedorPublicaciones resultado={resultado()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron actualizar");
+    expect(screen.getByTestId("listado")).toHaveTextContent("100");
+    fireEvent.click(screen.getByText("Reintentar"));
+    await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("300"));
+});
 
-	it("quita la especie de la URL al limpiar filtros y conserva los demás parámetros", async () => {
-		const urlAnterior = window.location.href;
-		window.history.replaceState(window.history.state, "", "/publicaciones?especie=Manzana&orden=asc#lista");
-
-		try {
-			const publicaciones = [
-				{ ...crearPublicacion(1), especie: "Manzana" },
-				{ ...crearPublicacion(2), especie: "Pera" },
-			];
-			render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana" />);
-			expect(publicacionesDelListado()).toEqual([publicaciones[0]]);
-
-			fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-
-			await waitFor(() => expect(publicacionesDelListado()).toEqual(publicaciones));
-			expect(window.location.pathname).toBe("/publicaciones");
-			expect(window.location.search).toBe("?orden=asc");
-			expect(window.location.hash).toBe("#lista");
-		} finally {
-			window.history.replaceState(window.history.state, "", urlAnterior);
-		}
-	});
-
-	it("sincroniza la especie elegida en la URL y permite volver a todas", async () => {
-		const urlAnterior = window.location.href;
-		window.history.replaceState(window.history.state, "", "/publicaciones?especie=Manzana&orden=asc#lista");
-		try {
-			const publicaciones = [
-				{ ...crearPublicacion(1), especie: "Manzana" },
-				{ ...crearPublicacion(2), especie: "Pera" },
-			];
-			render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana" />);
-			fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
-			fireEvent.click(screen.getByRole("option", { name: "Pera" }));
-			await waitFor(() => expect(publicacionesDelListado()).toEqual([publicaciones[1]]));
-			expect(new URL(window.location.href).searchParams.get("especie")).toBe("Pera");
-			expect(new URL(window.location.href).searchParams.get("orden")).toBe("asc");
-			expect(window.location.hash).toBe("#lista");
-			fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
-			fireEvent.click(screen.getByRole("option", { name: "Todas" }));
-			await waitFor(() => expect(publicacionesDelListado()).toEqual(publicaciones));
-			expect(window.location.search).toBe("?orden=asc");
-		} finally {
-			window.history.replaceState(window.history.state, "", urlAnterior);
-		}
-	});
-
-	/* Tests nuevos
-	it("vacía el listado cuando se quitan las publicaciones", () => {
-		const { rerender } = render(<ContenedorPublicaciones publicaciones={[crearPublicacion(7)]}/>);
-		rerender(<ContenedorPublicaciones publicaciones={[]}/>);
-		expect(publicacionesDelListado()).toEqual([]);
-	});
-
-	it("muestra los resultados que llegan después de una lista vacía", () => {
-		const { rerender } = render(<ContenedorPublicaciones publicaciones={[]}/>);
-		const publicaciones = [crearPublicacion(7)];
-		rerender(<ContenedorPublicaciones publicaciones={publicaciones}/>);
-		expect(publicacionesDelListado()).toEqual(publicaciones);
-	});
-	
-	it("pasa la especie válida al filtro", () => {
-		const publicaciones = [{ ...crearPublicacion(1), especie: "Manzana" }];
-		render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana"/>);
-		expect(especieDelFiltro()).toBe("Manzana");
-	});
-
-	it("pasa una especie vacía al filtro cuando la especie no es válida", () => {
-		const publicaciones = [{ ...crearPublicacion(1), especie: "Manzana" }];
-		render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Error"/>);
-		expect(especieDelFiltro()).toBe("");
-	});*/
+it("cancela la recarga pendiente al desmontarse", async () => {
+    const vista = render(<ContenedorPublicaciones resultado={resultado()} />);
+    act(() => escuchar.mock.calls.at(-1)![0]());
+    vista.unmount();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(cargar).not.toHaveBeenCalled();
 });

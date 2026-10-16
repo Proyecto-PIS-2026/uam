@@ -1,23 +1,15 @@
+import { limpiarImagenPublicacionNoReferenciada } from "./limpiar-imagen-publicacion";
+import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarImagenPublicacion } from "./imagenes-publicacion";
+import type { CambiosPublicacionOperador } from "./tipos";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
 
-export type CambiosPublicacionOperador = {
-    precio: string | null;
-    cantidadUnidades?: number | null;
-    foto?: string | null;
-    categoriaId: number;
-    calibreId: number;
-    presentacionId: number;
-    paisId: number;
-    disponible: boolean;
-};
-
 export class ErrorEdicionPublicacion extends Error {
     constructor(
-        public readonly codigo: "DATOS_INVALIDOS" | "NO_ENCONTRADA",
+        public readonly codigo: "DATOS_INVALIDOS" | "NO_ENCONTRADA" | "CONFLICTO",
         mensaje: string
     ) {
         super(mensaje);
@@ -77,6 +69,26 @@ export async function modificarPublicacionOperador(
         }
     }
 
+    let imagenCreada: { url: string; publicacionId: number } | undefined;
+    if (fotoNueva) {
+        const operador = await db.orm.public.Operador.select("id").where({ usuarioId: usuarioIdAutenticado }).first();
+        if (!operador) throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Operador no encontrado.");
+        const vinculo = await db.orm.public.PublicacionOperador.select("publicacionId")
+            .where({ id: publicacionOperadorId, operadorId: operador.id }).first();
+        if (!vinculo) throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Publicación no encontrada para este operador.");
+        const actual = await db.orm.public.Publicacion.select("tipoPublicacion", "version").where({ id: vinculo.publicacionId }).first();
+        if (!actual || actual.tipoPublicacion !== "OPERADOR") throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Publicación no encontrada.");
+        if (!Number.isSafeInteger(cambios.version) || cambios.version !== actual.version) {
+            throw new ErrorEdicionPublicacion("CONFLICTO", "La publicación cambió en otra sesión. Cancelá la edición y revisá los datos actualizados antes de volver a guardar.");
+        }
+        try {
+            const url = await guardarImagenPublicacion(vinculo.publicacionId, fotoNueva);
+            imagenCreada = { url, publicacionId: vinculo.publicacionId };
+        } catch (error) {
+            if (error instanceof ErrorImagenPublicacion) throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", error.message);
+            throw error;
+        }
+    }
     const resultado = await db.transaction(async (tx) => {
             const operador = await tx.orm.public.Operador
                 .select("id")
@@ -102,14 +114,21 @@ export async function modificarPublicacionOperador(
             if (!vinculo) {
                 throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Publicación no encontrada para este operador.");
             }
+            if (imagenCreada && imagenCreada.publicacionId !== vinculo.publicacionId) {
+                throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "La publicación cambió mientras se preparaba la imagen.");
+            }
 
             const publicacion = await tx.orm.public.Publicacion
-                .select("tipoPublicacion", "foto")
+                .select("tipoPublicacion", "foto", "version")
                 .where({ id: vinculo.publicacionId })
                 .first();
 
             if (!publicacion || publicacion.tipoPublicacion !== "OPERADOR") {
                 throw new ErrorEdicionPublicacion("NO_ENCONTRADA", "Publicación no encontrada.");
+            }
+
+            if (!Number.isSafeInteger(cambios.version) || cambios.version !== publicacion.version) {
+                throw new ErrorEdicionPublicacion("CONFLICTO", "La publicación cambió en otra sesión. Cancelá la edición y revisá los datos actualizados antes de volver a guardar.");
             }
 
             const presentacion = await tx.orm.public.Presentacion
@@ -179,25 +198,14 @@ export async function modificarPublicacionOperador(
                 }
             }
 
-            let imagenNueva: string | null = null;
-            if (fotoNueva) {
-                try {
-                    imagenNueva = await guardarImagenPublicacion(vinculo.publicacionId, fotoNueva);
-                } catch (error) {
-                    if (error instanceof ErrorImagenPublicacion) {
-                        throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", error.message);
-                    }
-                    throw error;
-                }
-            }
-
             // Una edición abierta antes de otro cambio no debe restaurar una URL vieja.
             // Sólo null solicita borrar la foto; el archivo nuevo la reemplaza.
-            const fotoActual = imagenNueva ?? (cambios.foto === null ? null : publicacion.foto);
+            const fotoActual = imagenCreada?.url ?? (cambios.foto === null ? null : publicacion.foto);
 
-            await tx.orm.public.Publicacion
-                .where({ id: vinculo.publicacionId })
+            const actualizada = await tx.orm.public.Publicacion
+                .where({ id: vinculo.publicacionId, version: cambios.version })
                 .update({
+                    version: cambios.version + 1,
                     precio: precioParaGuardar,
                     cantidadUnidades: cantidadUnidadesParaGuardar,
                     foto: fotoActual,
@@ -207,9 +215,15 @@ export async function modificarPublicacionOperador(
                     publicacionDisponible: cambios.disponible,
                 });
 
+            if (!actualizada) {
+                throw new ErrorEdicionPublicacion("CONFLICTO", "La publicación cambió mientras se guardaban los datos. Volvé a consultar la publicación.");
+            }
+
             await tx.orm.public.PublicacionOperador
                 .where({ id: vinculo.id })
                 .update({ paisId: cambios.paisId });
+
+            await notificarCambioPublicacion(tx, { operadorId: operador.id, publicacionId: vinculo.publicacionId });
 
             return {
                 publicacionOperadorId: vinculo.id,
@@ -217,6 +231,15 @@ export async function modificarPublicacionOperador(
                 fotoAnterior: publicacion.foto,
                 fotoActual
             };
+        }).catch(async (error: unknown) => {
+            if (imagenCreada) {
+                try {
+                    await limpiarImagenPublicacionNoReferenciada(imagenCreada.url, imagenCreada.publicacionId);
+                } catch (errorLimpieza) {
+                    console.error("No se pudo eliminar la imagen de una edición fallida", errorLimpieza);
+                }
+            }
+            throw error;
         });
 
     if (resultado.fotoAnterior !== resultado.fotoActual) {

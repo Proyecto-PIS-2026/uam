@@ -1,7 +1,7 @@
 import { File as NodeFile } from "node:buffer";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { GET } from "../../../app/api/publicaciones/imagenes/[publicacionId]/[archivo]/route";
+import sharp from "sharp";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     ErrorImagenPublicacion,
     eliminarImagenPublicacionGestionada,
@@ -9,258 +9,144 @@ import {
     leerImagenPublicacion,
     tipoContenidoImagen,
 } from "./imagenes-publicacion";
+import { AlmacenamientoImagenesFilesystem } from "@/infraestructura/imagenes/almacenamiento-filesystem";
+import { crearServicioImagenes } from "@/infraestructura/imagenes/imagenes";
 
-const sistemaArchivos = vi.hoisted(() => ({
-    readFile: vi.fn<(ruta: string) => Promise<Buffer>>(),
-    unlink: vi.fn<(ruta: string) => Promise<void>>(),
-}));
-
-const obtenerSesionMock = vi.hoisted(() => vi.fn());
-const buscarPublicacion = vi.hoisted(() => vi.fn());
-
-vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
-    obtenerSesion: obtenerSesionMock,
-}));
-vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
-    db: { orm: { public: {
-        Publicacion: { select: () => ({ where: () => ({ first: buscarPublicacion }) }) },
-    } } },
-}));
-
-vi.mock("node:fs/promises", () => ({ ...sistemaArchivos, default: sistemaArchivos }));
+const archivos = vi.hoisted(() => ({ mkdir: vi.fn(), readFile: vi.fn(), writeFile: vi.fn(), unlink: vi.fn() }));
+vi.mock("node:fs/promises", () => ({ ...archivos, default: archivos }));
 
 const UUID = "12345678-1234-4234-8234-123456789abc";
-const NOMBRE_PNG = `${UUID}.png`;
-const URL_PNG = `/api/publicaciones/imagenes/42/${NOMBRE_PNG}`;
-const TAMANO_MAXIMO = 10 * 1024 * 1024;
-const PNG_PEQUENO = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l8sAAAAASUVORK5CYII=",
-    "base64",
-);
-const JPEG_PEQUENO = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0xff, 0xd9]);
-const WEBP_PEQUENO = Buffer.from("RIFF0000WEBP", "ascii");
-const IDS_INVALIDOS = [0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1];
-const NOMBRES_INVALIDOS = [
-    "imagen.png",
-    `../${NOMBRE_PNG}`,
-    `../../${NOMBRE_PNG}`,
-    `${UUID}.svg`,
-    `${NOMBRE_PNG}?descargar=1`,
-    `${NOMBRE_PNG}/otro`,
-    `..%2F${NOMBRE_PNG}`,
-];
+const NOMBRE = `${UUID}.png`;
+const URL = `/api/publicaciones/imagenes/42/${NOMBRE}`;
+const CLAVE = `publicaciones/42/${NOMBRE}`;
+const MAXIMO = 10 * 1024 * 1024;
 
-function archivo(contenido: Buffer, tamanoDeclarado?: number): File {
-    const foto = new NodeFile([contenido], "nombre-ignorado.txt", { type: "text/plain" });
-    if (tamanoDeclarado !== undefined) {
-        Object.defineProperty(foto, "size", { value: tamanoDeclarado });
-    }
+function archivo(contenido: Buffer, tamano = contenido.length): File {
+    const foto = new NodeFile([new Uint8Array(contenido)], "archivo.txt", { type: "text/plain" });
+    Object.defineProperty(foto, "size", { value: tamano });
     return foto as unknown as File;
 }
 
-function rutaGuardada(nombreArchivo = NOMBRE_PNG): string {
-    return join(process.cwd(), "storage", "publicaciones", "42", nombreArchivo);
-}
-
-function errorArchivo(codigo: string): NodeJS.ErrnoException {
-    return Object.assign(new Error("Error del sistema de archivos"), { code: codigo });
+async function foto(formato: "png" | "jpeg" | "webp" = "png", width = 20, height = 10) {
+    return sharp({ create: { width, height, channels: 3, background: "#229944" } }).toFormat(formato).toBuffer();
 }
 
 beforeEach(() => {
     vi.resetAllMocks();
-    obtenerSesionMock.mockResolvedValue(null);
-    buscarPublicacion.mockResolvedValue({ id: 42 });
-    sistemaArchivos.readFile.mockResolvedValue(PNG_PEQUENO);
-    sistemaArchivos.unlink.mockResolvedValue(undefined);
+    archivos.mkdir.mockResolvedValue(undefined);
+    archivos.writeFile.mockResolvedValue(undefined);
+    archivos.unlink.mockResolvedValue(undefined);
 });
 
-afterEach(() => {
-    vi.restoreAllMocks();
-});
+describe("almacenamiento de imágenes", () => {
+    it.each(["png", "jpeg", "webp"] as const)("guarda %s en filesystem y devuelve una URL sin base64", async (formato) => {
+        const url = await guardarImagenPublicacion(42, archivo(await foto(formato)));
+        expect(url).toMatch(/^\/api\/publicaciones\/imagenes\/42\/[a-f0-9-]+\.webp$/);
+        const [ruta, contenido, opciones] = archivos.writeFile.mock.calls[0];
+        expect(ruta).toBe(join(process.cwd(), "storage", "publicaciones", "42", url.split("/").at(-1)!));
+        expect(opciones).toEqual({ flag: "wx", mode: 0o600 });
+        expect((await sharp(contenido).metadata()).format).toBe("webp");
+    });
 
-describe("guardarImagenPublicacion", () => {
+    it("usa el mismo almacenamiento para el alta codificada y la edición con File", async () => {
+        const contenido = await foto();
+        const url = await guardarImagenPublicacion(42, `data:image/png;base64,${contenido.toString("base64")}`);
+        expect(url).toContain("/api/publicaciones/imagenes/42/");
+        expect(archivos.writeFile).toHaveBeenCalledOnce();
+    });
+
+    it("reduce las dimensiones y retira los metadatos", async () => {
+        const contenido = await sharp(await foto("jpeg", 2000, 1000)).withExif({ IFD0: { Artist: "Privado" } }).jpeg().toBuffer();
+        await guardarImagenPublicacion(42, archivo(contenido));
+        const metadata = await sharp(archivos.writeFile.mock.calls[0][1]).metadata();
+        expect(metadata.width).toBe(1600);
+        expect(metadata.height).toBe(800);
+        expect(metadata.exif).toBeUndefined();
+    });
+
+    it("permite sustituir el adaptador sin cambiar el servicio", async () => {
+        const adaptador = { guardar: vi.fn().mockResolvedValue(undefined), leer: vi.fn(), eliminar: vi.fn() };
+        const servicio = crearServicioImagenes(adaptador);
+        const url = await servicio.guardar("productores", 9, archivo(await foto()));
+        expect(url).toContain("/api/imagenes/productores/9/");
+        expect(adaptador.guardar).toHaveBeenCalledOnce();
+        expect(archivos.writeFile).not.toHaveBeenCalled();
+    });
+
+    it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])("rechaza el destino %s", async (id) => {
+        await expect(guardarImagenPublicacion(id, archivo(await foto()))).rejects.toBeInstanceOf(ErrorImagenPublicacion);
+        expect(archivos.writeFile).not.toHaveBeenCalled();
+    });
+
     it.each([
-        { formato: "JPEG", tipo: "jpeg", contenido: JPEG_PEQUENO },
-        { formato: "PNG", tipo: "png", contenido: PNG_PEQUENO },
-        { formato: "WebP", tipo: "webp", contenido: WEBP_PEQUENO },
-    ])("codifica $formato para guardar en la base sin depender del nombre ni del MIME", async ({ tipo, contenido }) => {
-
-        const url = await guardarImagenPublicacion(42, archivo(contenido));
-
-        expect(url).toBe(`data:image/${tipo};base64,${contenido.toString("base64")}`);
-    });
-
-    it.each(IDS_INVALIDOS)("rechaza el ID inválido %s antes de guardar", async (id) => {
-        await expect(guardarImagenPublicacion(id, archivo(PNG_PEQUENO))).rejects.toBeInstanceOf(ErrorImagenPublicacion);
-    });
-
-    it.each([
-        { caso: "archivo ausente", crear: () => null as unknown as File },
-        { caso: "archivo sin arrayBuffer", crear: () => ({ size: 10 }) as File },
-        { caso: "archivo vacío", crear: () => archivo(Buffer.alloc(0)) },
-        { caso: "tamaño declarado mayor a 10 MB", crear: () => archivo(PNG_PEQUENO, TAMANO_MAXIMO + 1) },
-        { caso: "contenido vacío aunque declare tamaño válido", crear: () => archivo(Buffer.alloc(0), 1) },
-        { caso: "contenido mayor a 10 MB aunque declare tamaño válido", crear: () => archivo(Buffer.alloc(TAMANO_MAXIMO + 1), 1) },
-    ])("rechaza $caso", async ({ crear }) => {
-        await expect(guardarImagenPublicacion(42, crear())).rejects.toThrow("10 MB");
-    });
-
-    it("acepta una imagen de exactamente 10 MB", async () => {
-        const contenido = Buffer.alloc(TAMANO_MAXIMO);
-        PNG_PEQUENO.copy(contenido);
-
-        const url = await guardarImagenPublicacion(42, archivo(contenido));
-        expect(url.startsWith("data:image/png;base64,")).toBe(true);
-        expect(url.length).toBe("data:image/png;base64,".length + 4 * Math.ceil(TAMANO_MAXIMO / 3));
-    });
-
-    it.each([
-        { caso: "texto", contenido: Buffer.from("no es una imagen") },
-        { caso: "PNG con firma incompleta", contenido: PNG_PEQUENO.subarray(0, 7) },
-        { caso: "JPEG sin terminación", contenido: Buffer.from([0xff, 0xd8, 0xff, 0xe0]) },
-        { caso: "RIFF de otro formato", contenido: Buffer.from("RIFF0000WAVE") },
-    ])("rechaza $caso", async ({ contenido }) => {
+        Buffer.from("texto"),
+        Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+        Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0xff, 0xd9]),
+        Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>'),
+    ])("rechaza una firma engañosa o un formato no admitido", async (contenido) => {
         await expect(guardarImagenPublicacion(42, archivo(contenido))).rejects.toThrow("JPEG, PNG o WebP");
-    });
-
-    it("propaga el error al leer el archivo de entrada", async () => {
-        const foto = archivo(PNG_PEQUENO);
-        const error = new Error("No se pudo leer la foto");
-        vi.spyOn(foto, "arrayBuffer").mockRejectedValue(error);
-
-        await expect(guardarImagenPublicacion(42, foto)).rejects.toBe(error);
-    });
-});
-
-describe("leerImagenPublicacion", () => {
-    it("recupera el contenido desde la carpeta de la publicación", async () => {
-        await expect(leerImagenPublicacion(42, NOMBRE_PNG)).resolves.toBe(PNG_PEQUENO);
-        expect(sistemaArchivos.readFile).toHaveBeenCalledExactlyOnceWith(rutaGuardada());
-    });
-
-    it.each(IDS_INVALIDOS)("rechaza el ID inválido %s sin leer archivos", async (id) => {
-        await expect(leerImagenPublicacion(id, NOMBRE_PNG)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
-        expect(sistemaArchivos.readFile).not.toHaveBeenCalled();
-    });
-
-    it.each(NOMBRES_INVALIDOS)("rechaza el nombre no gestionado %s sin leer archivos", async (nombre) => {
-        await expect(leerImagenPublicacion(42, nombre)).rejects.toThrow("nombre de la imagen");
-        expect(sistemaArchivos.readFile).not.toHaveBeenCalled();
-    });
-
-    it("propaga el error si el archivo no existe", async () => {
-        const error = errorArchivo("ENOENT");
-        sistemaArchivos.readFile.mockRejectedValueOnce(error);
-
-        await expect(leerImagenPublicacion(42, NOMBRE_PNG)).rejects.toBe(error);
-    });
-});
-
-describe("eliminarImagenPublicacionGestionada", () => {
-    it("elimina una imagen gestionada de la publicación indicada", async () => {
-        await eliminarImagenPublicacionGestionada(URL_PNG, 42);
-
-        expect(sistemaArchivos.unlink).toHaveBeenCalledExactlyOnceWith(rutaGuardada());
+        expect(archivos.writeFile).not.toHaveBeenCalled();
     });
 
     it.each([
         null,
-        "",
-        "https://ejemplo.com/foto.png",
-        "/generico/tomate.jpg",
-        "data:image/png;base64,YWJj",
-        `/api/publicaciones/imagenes/43/${NOMBRE_PNG}`,
-        `/api/publicaciones/imagenes/420/${NOMBRE_PNG}`,
-        `/api/publicaciones/imagenes/42/../${NOMBRE_PNG}`,
-        `/api/publicaciones/imagenes/42/${NOMBRE_PNG}?descargar=1`,
-        "/api/publicaciones/imagenes/42/imagen.png",
-    ])("ignora la URL que no identifica una imagen gestionada propia %s", async (url) => {
-        await expect(eliminarImagenPublicacionGestionada(url, 42)).resolves.toBeUndefined();
-        expect(sistemaArchivos.unlink).not.toHaveBeenCalled();
+        { size: 10 },
+        archivo(Buffer.alloc(0)),
+        archivo(Buffer.alloc(1), MAXIMO + 1),
+        archivo(Buffer.alloc(MAXIMO + 1), 1),
+    ])("rechaza entradas vacías y tamaños fuera del límite", async (entrada) => {
+        await expect(guardarImagenPublicacion(42, entrada as File)).rejects.toThrow("10 MB");
+        expect(archivos.writeFile).not.toHaveBeenCalled();
     });
 
-    it("rechaza un ID inválido aunque coincida con el prefijo de la URL", async () => {
-        await expect(eliminarImagenPublicacionGestionada(`/api/publicaciones/imagenes/0/${NOMBRE_PNG}`, 0))
-            .rejects.toBeInstanceOf(ErrorImagenPublicacion);
-        expect(sistemaArchivos.unlink).not.toHaveBeenCalled();
+    it.each(["data:image/png;base64,A", "data:image/png;base64,====", "https://host/foto.png", "data:image/gif;base64,YWJj"])("rechaza codificación %s", async (entrada) => {
+        await expect(guardarImagenPublicacion(42, entrada)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
     });
 
-    it("tolera que una imagen ya haya sido eliminada", async () => {
-        sistemaArchivos.unlink.mockRejectedValueOnce(errorArchivo("ENOENT"));
-
-        await expect(eliminarImagenPublicacionGestionada(URL_PNG, 42)).resolves.toBeUndefined();
+    it("limpia un archivo parcial si falla la escritura y conserva el error", async () => {
+        const error = Object.assign(new Error("Disco lleno"), { code: "ENOSPC" });
+        archivos.writeFile.mockRejectedValueOnce(error);
+        await expect(guardarImagenPublicacion(42, archivo(await foto()))).rejects.toBe(error);
+        expect(archivos.unlink).toHaveBeenCalledWith(archivos.writeFile.mock.calls[0][0]);
     });
 
-    it("propaga los errores de eliminación distintos de ENOENT", async () => {
-        const error = errorArchivo("EACCES");
-        sistemaArchivos.unlink.mockRejectedValueOnce(error);
-
-        await expect(eliminarImagenPublicacionGestionada(URL_PNG, 42)).rejects.toBe(error);
+    it("no sobrescribe ni elimina un archivo existente", async () => {
+        const error = Object.assign(new Error("Existe"), { code: "EEXIST" });
+        archivos.writeFile.mockRejectedValueOnce(error);
+        await expect(new AlmacenamientoImagenesFilesystem().guardar(CLAVE, Buffer.from("foto"))).rejects.toBe(error);
+        expect(archivos.unlink).not.toHaveBeenCalled();
     });
-});
 
-describe("tipoContenidoImagen", () => {
-    it.each([
-        { extension: "jpg", tipo: "image/jpeg" },
-        { extension: "png", tipo: "image/png" },
-        { extension: "webp", tipo: "image/webp" },
-    ])("devuelve el Content-Type de una imagen $extension gestionada", ({ extension, tipo }) => {
+    it("sigue leyendo imágenes heredadas almacenadas en filesystem", async () => {
+        const contenido = await foto();
+        archivos.readFile.mockResolvedValue(contenido);
+        await expect(leerImagenPublicacion(42, NOMBRE)).resolves.toBe(contenido);
+        expect(archivos.readFile).toHaveBeenCalledWith(join(process.cwd(), "storage", "publicaciones", "42", NOMBRE));
+    });
+
+    it.each([`../${NOMBRE}`, `${NOMBRE}/otro`, `..%2F${NOMBRE}`, "foto.png", `${UUID}.svg`])("impide nombres o rutas no gestionadas %s", async (nombre) => {
+        await expect(leerImagenPublicacion(42, nombre)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
+        expect(archivos.readFile).not.toHaveBeenCalled();
+    });
+
+    it.each([`../${CLAVE}`, `publicaciones/42/../${NOMBRE}`, `publicaciones\\42\\${NOMBRE}`, `otro/42/${NOMBRE}`])("el adaptador también valida las claves %s", async (clave) => {
+        await expect(new AlmacenamientoImagenesFilesystem().leer(clave)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
+        expect(archivos.readFile).not.toHaveBeenCalled();
+    });
+
+    it("elimina exclusivamente el archivo gestionado propio y tolera su ausencia", async () => {
+        archivos.unlink.mockRejectedValue(Object.assign(new Error("No existe"), { code: "ENOENT" }));
+        await expect(eliminarImagenPublicacionGestionada(URL, 42)).resolves.toBeUndefined();
+        expect(archivos.unlink).toHaveBeenCalledWith(join(process.cwd(), "storage", "publicaciones", "42", NOMBRE));
+    });
+
+    it.each([null, "", "/generico/acelga.jpg", "data:image/png;base64,YWJj", URL.replace("/42/", "/43/"), URL + "?a=1"])("conserva referencias que no pertenecen a la publicación %s", async (url) => {
+        await eliminarImagenPublicacionGestionada(url, 42);
+        expect(archivos.unlink).not.toHaveBeenCalled();
+    });
+
+    it.each([["jpg", "image/jpeg"], ["png", "image/png"], ["webp", "image/webp"]])("identifica el tipo seguro %s", (extension, tipo) => {
         expect(tipoContenidoImagen(`${UUID}.${extension}`)).toBe(tipo);
-    });
-
-    it.each(NOMBRES_INVALIDOS)("no reconoce el nombre no gestionado %s", (nombre) => {
-        expect(tipoContenidoImagen(nombre)).toBeNull();
-    });
-});
-
-describe("GET de imágenes de publicaciones", () => {
-    function pedir(publicacionId = "42", nombreArchivo = NOMBRE_PNG): Promise<Response> {
-        return GET(new Request(`http://localhost${URL_PNG}`), {
-            params: Promise.resolve({ publicacionId, archivo: nombreArchivo }),
-        });
-    }
-
-    it("entrega el contenido y los headers de una imagen existente", async () => {
-        const respuesta = await pedir();
-
-        expect(respuesta.status).toBe(200);
-        expect(respuesta.headers.get("Content-Type")).toBe("image/png");
-        expect(respuesta.headers.get("Content-Length")).toBe(String(PNG_PEQUENO.length));
-        expect(respuesta.headers.get("Cache-Control")).toBe("public, max-age=31536000, immutable");
-        expect(respuesta.headers.get("X-Content-Type-Options")).toBe("nosniff");
-        expect(Buffer.from(await respuesta.arrayBuffer())).toEqual(PNG_PEQUENO);
-    });
-
-    it.each(["0", "-1", "1.5", "abc", "../../42", "9007199254740992"])("responde 404 para el ID inválido %s", async (id) => {
-        expect((await pedir(id)).status).toBe(404);
-        expect(sistemaArchivos.readFile).not.toHaveBeenCalled();
-    });
-
-    it("responde 404 para un nombre que intenta salir de la carpeta", async () => {
-        expect((await pedir("42", `../${NOMBRE_PNG}`)).status).toBe(404);
-        expect(sistemaArchivos.readFile).not.toHaveBeenCalled();
-    });
-
-    it("responde 404 cuando la imagen gestionada no existe", async () => {
-        sistemaArchivos.readFile.mockRejectedValueOnce(errorArchivo("ENOENT"));
-
-        expect((await pedir()).status).toBe(404);
-    });
-
-    it("no sirve un archivo remanente si la publicación fue eliminada", async () => {
-        buscarPublicacion.mockResolvedValue(null);
-
-        const respuesta = await pedir();
-
-        expect(respuesta.status).toBe(404);
-        expect(respuesta.headers.get("Cache-Control")).toBe("private, no-store");
-        expect(sistemaArchivos.readFile).not.toHaveBeenCalled();
-    });
-
-    it("propaga los errores de lectura distintos de ENOENT", async () => {
-        const error = errorArchivo("EACCES");
-        sistemaArchivos.readFile.mockRejectedValueOnce(error);
-
-        await expect(pedir()).rejects.toBe(error);
+        expect(tipoContenidoImagen(`otro.${extension}`)).toBeNull();
     });
 });

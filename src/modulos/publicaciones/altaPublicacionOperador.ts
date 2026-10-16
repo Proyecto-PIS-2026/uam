@@ -1,5 +1,8 @@
 import { db } from "../../infraestructura/persistencia/prisma/db";
 import { validarAltaPublicacionOperador } from "./validarAltaPublicacionOperador";
+import { ErrorImagenPublicacion, guardarImagenPublicacion } from "./operadores/imagenes-publicacion";
+import { limpiarImagenPublicacionNoReferenciada } from "./operadores/limpiar-imagen-publicacion";
+import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
 
 export type ResultadoAltaPublicacion =
 	| { esValido: false; errores: string[] }
@@ -33,44 +36,68 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 
 	type Precio = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 	const precio = (datos.precio?.trim().replace(",", ".") || null) as Precio;
-	const id = await db.transaction(async (tx) => {
-		// Serializar las altas del mismo operador para que dos envíos simultáneos
-		// no pasen ambos la comprobación antes de insertar.
-		await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ${operador.id})`
-			.returnsRow({ locked: "pg/int4@1" }).build());
+	let imagenCreada: { url: string; publicacionId: number } | undefined;
+	let resultado: ResultadoAltaPublicacion;
+	try {
+		if (datos.fotografia) {
+			const plan = db.raw.sql`SELECT nextval(pg_get_serial_sequence('publicacion', 'id'))::int AS id`
+				.returnsRow({ id: "pg/int4@1" }).build();
+			const [identificador] = await db.runtime().query(plan);
+			if (!identificador) throw new Error("No se pudo reservar el identificador de la publicación.");
+			const url = await guardarImagenPublicacion(identificador.id, datos.fotografia);
+			imagenCreada = { url, publicacionId: identificador.id };
+		}
+		resultado = await db.transaction(async (tx): Promise<ResultadoAltaPublicacion> => {
+			await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ${operador.id})`
+				.returnsRow({ locked: "pg/int4@1" }).build());
 
-		const relaciones = await tx.orm.public.PublicacionOperador.where({ operadorId: operador.id }).all();
-		if (relaciones.length > 0) {
-			const ids = new Set(relaciones.map((relacion) => relacion.publicacionId));
-			const coincidencias = await tx.orm.public.Publicacion.where({
+			const operadorActual = await tx.orm.public.Operador.where({ id: operador.id }).first();
+			if (!operadorActual) {
+				return { esValido: false, errores: ["El operador ya no existe. No se pudo guardar la publicación."] };
+			}
+
+			const relaciones = await tx.orm.public.PublicacionOperador.where({ operadorId: operador.id }).all();
+			if (relaciones.length > 0) {
+				const ids = new Set(relaciones.map((relacion) => relacion.publicacionId));
+				const coincidencias = await tx.orm.public.Publicacion.where({
+					presentacionId: presentacion.id,
+					categoriaId: categoria.id,
+					calibreId: calibre.id,
+				}).select("id").all();
+				if (coincidencias.some((publicacion) => ids.has(publicacion.id))) {
+					return { esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre."] };
+				}
+			}
+
+			const publicacion = await tx.orm.public.Publicacion.create({
+				...(imagenCreada ? { id: imagenCreada.publicacionId } : {}),
+				tipoPublicacion: "OPERADOR",
+				publicacionDisponible: datos.disponibilidad,
+				precio,
+				foto: imagenCreada?.url ?? null,
+				cantidadUnidades: datos.cantidadUnidades,
 				presentacionId: presentacion.id,
 				categoriaId: categoria.id,
 				calibreId: calibre.id,
-			}).select("id").all();
-			if (coincidencias.some((publicacion) => ids.has(publicacion.id))) return null;
+			});
+			await tx.orm.public.PublicacionOperador.create({
+				publicacionId: publicacion.id,
+				operadorId: operador.id,
+				paisId: pais.id,
+			});
+			await notificarCambioPublicacion(tx, { operadorId: operador.id, publicacionId: publicacion.id });
+			return { esValido: true, id: publicacion.id, mensaje: "Publicación creada correctamente." };
+		});
+	} catch (error) {
+		if (imagenCreada) {
+			await limpiarImagenPublicacionNoReferenciada(imagenCreada.url, imagenCreada.publicacionId);
 		}
-
-		const publicacion = await tx.orm.public.Publicacion.create({
-			tipoPublicacion: "OPERADOR",
-			publicacionDisponible: datos.disponibilidad,
-			precio,
-			foto: datos.fotografia || null,
-			cantidadUnidades: datos.cantidadUnidades,
-			presentacionId: presentacion.id,
-			categoriaId: categoria.id,
-			calibreId: calibre.id,
-		});
-		await tx.orm.public.PublicacionOperador.create({
-			publicacionId: publicacion.id,
-			operadorId: operador.id,
-			paisId: pais.id,
-		});
-		return publicacion.id;
-	});
-
-	if (id === null) {
-		return { esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre."] };
+		if (error instanceof ErrorImagenPublicacion) return { esValido: false, errores: [error.message] };
+		throw error;
 	}
 
-	return { esValido: true, id, mensaje: "Publicación creada correctamente." };
+	if (!resultado.esValido && imagenCreada) {
+		await limpiarImagenPublicacionNoReferenciada(imagenCreada.url, imagenCreada.publicacionId);
+	}
+	return resultado;
 }

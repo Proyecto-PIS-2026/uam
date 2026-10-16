@@ -10,40 +10,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
-import type { CambiosPublicacionOperador } from "../modificar-publicacion";
+import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionPresentacion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
 import styles from "./DrawerEditarPublicacion.module.css";
-
-export type OpcionEdicion = {
-    id: number;
-    nombre: string;
-};
-
-export type OpcionVariedad = OpcionEdicion & {
-    especieId: number;
-};
-
-export type OpcionPresentacion = OpcionEdicion & {
-    variedadId: number;
-};
-
-export type OpcionCategoria = OpcionEdicion & {
-    especieId: number | null;
-};
-
-export type PublicacionParaEditar = CambiosPublicacionOperador & {
-    foto: string | null;
-    fecha: string;
-    publicacionOperadorId: number;
-    publicacionId: number;
-    especieId: number;
-    variedadId: number;
-    especie: string;
-    variedad: string;
-    presentacion?: string;
-    cantidadUnidades?: number | null;
-    categoria?: string;
-    calibre?: string;
-};
 
 type DrawerEditarPublicacionProps = {
     abierto: boolean;
@@ -76,20 +44,34 @@ function precioParaEdicion(precio: string | null) {
     return Number.isInteger(valor) ? String(valor) : precio;
 }
 
-function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
+function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
     const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
-    const [precio, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
-    const [cantidadUnidades, setCantidadUnidades] = useState(() => publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
-    const [foto, setFoto] = useState(publicacion.foto);
+    const [baseEdicion, setBaseEdicion] = useState(recibida);
+    const [guardada, setGuardada] = useState<{ origen: PublicacionParaEditar; datos: PublicacionParaEditar } | null>(null);
+    const vigente = guardada?.origen === recibida ? guardada.datos : recibida;
+    const publicacion = editando ? baseEdicion : vigente;
+    const [precioEditado, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
+    const [cantidadUnidadesEditado, setCantidadUnidades] = useState(() => publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
+    const [fotoEditado, setFoto] = useState(publicacion.foto);
     const [fotoNueva, setFotoNueva] = useState<File | null>(null);
     const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
-    const [especieId, setEspecieId] = useState(publicacion.especieId);
-    const [variedadId, setVariedadId] = useState(publicacion.variedadId);
-    const [categoriaId, setCategoriaId] = useState(publicacion.categoriaId);
-    const [calibreId, setCalibreId] = useState(publicacion.calibreId);
-    const [presentacionId, setPresentacionId] = useState(publicacion.presentacionId);
-    const [paisId, setPaisId] = useState(publicacion.paisId);
-    const [disponible, setDisponible] = useState(publicacion.disponible);
+    const [especieIdEditado, setEspecieId] = useState(publicacion.especieId);
+    const [variedadIdEditado, setVariedadId] = useState(publicacion.variedadId);
+    const [categoriaIdEditado, setCategoriaId] = useState(publicacion.categoriaId);
+    const [calibreIdEditado, setCalibreId] = useState(publicacion.calibreId);
+    const [presentacionIdEditado, setPresentacionId] = useState(publicacion.presentacionId);
+    const [paisIdEditado, setPaisId] = useState(publicacion.paisId);
+    const [disponibleEditado, setDisponible] = useState(publicacion.disponible);
+    const precio = editando ? precioEditado : (precioParaEdicion(publicacion.precio));
+    const cantidadUnidades = editando ? cantidadUnidadesEditado : (publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
+    const foto = editando ? fotoEditado : (publicacion.foto);
+    const especieId = editando ? especieIdEditado : (publicacion.especieId);
+    const variedadId = editando ? variedadIdEditado : (publicacion.variedadId);
+    const categoriaId = editando ? categoriaIdEditado : (publicacion.categoriaId);
+    const calibreId = editando ? calibreIdEditado : (publicacion.calibreId);
+    const presentacionId = editando ? presentacionIdEditado : (publicacion.presentacionId);
+    const paisId = editando ? paisIdEditado : (publicacion.paisId);
+    const disponible = editando ? disponibleEditado : (publicacion.disponible);
     const [error, setError] = useState("");
     const inputFotoRef = useRef<HTMLInputElement>(null);
     const inputGaleriaRef = useRef<HTMLInputElement>(null);
@@ -97,7 +79,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
     const idBase = `editar-publicacion-${publicacion.publicacionOperadorId}`;
     const ocupado = guardando || eliminando || actualizando;
     const bloqueado = ocupado || !editando;
-    const fotoVisible = vistaPrevia ?? foto;
+    const fotoVisible = editando || guardada?.origen === recibida ? vistaPrevia ?? foto : publicacion.foto;
     const especieSeleccionada = especies.find((opcion) => opcion.id === especieId);
     const variedadSeleccionada = variedades.find((opcion) => opcion.id === variedadId);
     const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
@@ -109,6 +91,12 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
             if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
         };
     }, []);
+    useEffect(() => {
+        if (!editando && guardada?.origen !== recibida && urlVistaPreviaRef.current) {
+            URL.revokeObjectURL(urlVistaPreviaRef.current);
+            urlVistaPreviaRef.current = null;
+        }
+    }, [editando, guardada, recibida]);
 
     function seleccionarFoto(evento: ChangeEvent<HTMLInputElement>) {
         if (bloqueado) return;
@@ -186,28 +174,30 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         setPresentacionId(primeraPresentacion?.id ?? 0);
     }
 
-    function cancelarEdicion() {
-        if (modoInicial === "edicion") {
-            alCerrar();
-            return;
-        }
+    function prepararEdicion() {
         if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
         urlVistaPreviaRef.current = null;
         if (inputFotoRef.current) inputFotoRef.current.value = "";
         if (inputGaleriaRef.current) inputGaleriaRef.current.value = "";
+        setBaseEdicion(vigente);
         setVistaPrevia(null);
         setFotoNueva(null);
-        setFoto(publicacion.foto);
-        setPrecio(precioParaEdicion(publicacion.precio));
-        setCantidadUnidades(publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
-        setEspecieId(publicacion.especieId);
-        setVariedadId(publicacion.variedadId);
-        setPresentacionId(publicacion.presentacionId);
-        setCategoriaId(publicacion.categoriaId);
-        setCalibreId(publicacion.calibreId);
-        setPaisId(publicacion.paisId);
-        setDisponible(publicacion.disponible);
+        setFoto(vigente.foto);
+        setPrecio(precioParaEdicion(vigente.precio));
+        setCantidadUnidades(vigente.cantidadUnidades == null ? "" : String(vigente.cantidadUnidades));
+        setEspecieId(vigente.especieId);
+        setVariedadId(vigente.variedadId);
+        setPresentacionId(vigente.presentacionId);
+        setCategoriaId(vigente.categoriaId);
+        setCalibreId(vigente.calibreId);
+        setPaisId(vigente.paisId);
+        setDisponible(vigente.disponible);
         setError("");
+    }
+
+    function cancelarEdicion() {
+        if (modoInicial === "edicion") { alCerrar(); return; }
+        prepararEdicion();
         setEditando(false);
     }
 
@@ -270,6 +260,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         }
 
         const cambios: CambiosPublicacionOperador = {
+            version: publicacion.version ?? 0,
             precio: precio.trim() || null,
             cantidadUnidades: cantidadFinal,
             foto: foto === publicacion.foto ? undefined : foto,
@@ -282,6 +273,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
         setGuardando(true);
         try {
             await alGuardar(publicacion.publicacionOperadorId, cambios, fotoNueva);
+            setGuardada({ origen: recibida, datos: { ...publicacion, ...cambios, version: cambios.version + 1, foto } });
             if (modoInicial === "consulta") {
                 setFotoNueva(null);
                 setEditando(false);
@@ -405,7 +397,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
                     ) : (
                         <>
                             <button className={`${styles.cancelar} ${styles.eliminar}`} type="button" onClick={alEliminar} disabled={ocupado || !puedeEliminar || !alEliminar}>{eliminando ? "Eliminando..." : "Eliminar"}</button>
-                            <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); setError(""); setEditando(true); }} disabled={ocupado || !puedeModificar || !alGuardar}>Editar</button>
+                            <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); prepararEdicion(); setEditando(true); }} disabled={ocupado || !puedeModificar || !alGuardar}>Editar</button>
                         </>
                     )}
                 </div>
@@ -417,15 +409,13 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion, especies, varieda
 export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
-    const foto = publicacion?.foto;
-    const identidadFoto = foto ? `${foto.length}:${foto.slice(0, 32)}:${foto.slice(-32)}` : "sin-foto";
     function cerrar() {
         if (!guardando && !eliminando && !actualizando) alCerrar();
     }
     return (
         <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}-${publicacion.precio}-${identidadFoto}-${publicacion.presentacionId}-${publicacion.categoriaId}-${publicacion.calibreId}-${publicacion.paisId}-${publicacion.disponible}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
             )}
             {publicacion && children}
         </Drawer>

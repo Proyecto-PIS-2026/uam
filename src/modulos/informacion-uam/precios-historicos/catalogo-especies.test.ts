@@ -3,17 +3,22 @@ import { obtenerUltimoRelevamientoGuardado } from "../precios-referencia/cache-d
 import type { ConsultaPreciosReferencia } from "../precios-referencia/consultas-precios-referencia";
 import { obtenerCatalogoEspeciesHistoricas } from "./catalogo-especies";
 
-const { listar, leerPorClave, transaccion, consultar } = vi.hoisted(() => ({
+const { listar, leerPorClave, transaccion, consultar, consultarDiario } = vi.hoisted(() => ({
     listar: vi.fn<() => Promise<{ claveCache: string; estadoCache: string }[]>>(),
     leerPorClave: vi.fn(),
     transaccion: vi.fn(),
     consultar: vi.fn(),
+    consultarDiario: vi.fn(),
 }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
     db: { orm: { public: { CachePreciosReferencia: { all: listar, where: leerPorClave } } }, transaction: transaccion },
 }));
 vi.mock("../precios-referencia/cliente-webservice", () => ({ consultarUltimoRelevamiento: consultar }));
+vi.mock("../precios-referencia/cache-diario", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../precios-referencia/cache-diario")>(),
+    obtenerConsultaDiariaWebservice: consultarDiario,
+}));
 
 type ProductoReferencia = ConsultaPreciosReferencia["types"][number]["products"][number];
 
@@ -53,6 +58,7 @@ function esperarSoloLectura() {
     expect(consultar).not.toHaveBeenCalled();
     expect(transaccion).not.toHaveBeenCalled();
     expect(leerPorClave).not.toHaveBeenCalled();
+    expect(consultarDiario).not.toHaveBeenCalled();
 }
 
 beforeEach(() => {
@@ -60,7 +66,7 @@ beforeEach(() => {
     leerPorClave.mockReset();
     transaccion.mockReset();
     consultar.mockReset();
-    vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "webservice");
+    consultarDiario.mockReset().mockRejectedValue(new Error("No hay relevamientos disponibles"));
     // El catálogo guardado no necesita las credenciales ni la configuración del servicio.
     vi.stubEnv("PRECIOS_REFERENCIA_WEBSERVICE_BASE_URL", undefined);
     vi.stubEnv("PRECIOS_REFERENCIA_JWT_TOKEN", undefined);
@@ -133,33 +139,29 @@ describe("obtenerCatalogoEspeciesHistoricas", () => {
         esperarSoloLectura();
     });
 
-    it.each(["local", undefined])("usa el catálogo local sin leer BD cuando la fuente es %s", async (fuente) => {
-        vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", fuente);
+    it("obtiene el primer relevamiento mediante la consulta diaria si no hay una caché guardada", async () => {
+        consultarDiario.mockResolvedValue(dato());
 
-        const especies = await obtenerCatalogoEspeciesHistoricas();
+        await expect(obtenerCatalogoEspeciesHistoricas()).resolves.toEqual([{ id: "60", especie: "Banana" }]);
 
-        expect(especies.length).toBeGreaterThan(1);
-        expect(especies).toContainEqual({ id: "60", especie: "Banana" });
-        expect(listar).not.toHaveBeenCalled();
-        esperarSoloLectura();
-    });
-
-    it("recurre al catálogo local si la caché está vacía sin intentar el webservice", async () => {
-        const especies = await obtenerCatalogoEspeciesHistoricas();
-
-        expect(especies.length).toBeGreaterThan(1);
-        expect(especies).toContainEqual({ id: "60", especie: "Banana" });
         expect(listar).toHaveBeenCalledOnce();
-        esperarSoloLectura();
+        expect(consultarDiario).toHaveBeenCalledOnce();
+        expect(consultar).not.toHaveBeenCalled();
     });
 
-    it("recurre al catálogo local si falla la lectura de BD sin intentar el webservice", async () => {
+    it("devuelve un catálogo vacío si no hay caché y tampoco puede obtener el primer relevamiento", async () => {
+        await expect(obtenerCatalogoEspeciesHistoricas()).resolves.toEqual([]);
+
+        expect(listar).toHaveBeenCalledOnce();
+        expect(consultarDiario).toHaveBeenCalledOnce();
+        expect(consultar).not.toHaveBeenCalled();
+    });
+
+    it("devuelve un catálogo vacío si falla la lectura de BD sin intentar el webservice", async () => {
         listar.mockRejectedValue(new Error("Base de datos no disponible"));
 
-        const especies = await obtenerCatalogoEspeciesHistoricas();
+        await expect(obtenerCatalogoEspeciesHistoricas()).resolves.toEqual([]);
 
-        expect(especies.length).toBeGreaterThan(1);
-        expect(especies).toContainEqual({ id: "60", especie: "Banana" });
         expect(listar).toHaveBeenCalledOnce();
         esperarSoloLectura();
     });

@@ -4,8 +4,10 @@ import { bajaOperador } from "./bajaOperador";
 const mocks = vi.hoisted(() => ({
     exigirAdministrador: vi.fn(),
     transaction: vi.fn(),
+    bloquear: vi.fn(),
     revalidatePath: vi.fn(),
     eliminarImagen: vi.fn(),
+    eliminarPerfil: vi.fn(),
     operador: { where: vi.fn().mockReturnThis(), first: vi.fn(), delete: vi.fn() },
     usuario: { where: vi.fn().mockReturnThis(), delete: vi.fn() },
     local: { where: vi.fn().mockReturnThis(), delete: vi.fn(), deleteAll: vi.fn() },
@@ -17,11 +19,17 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
     exigirAdministrador: mocks.exigirAdministrador,
 }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
+vi.mock("@/infraestructura/imagenes/imagenes", () => ({ imagenes: { eliminar: mocks.eliminarPerfil } }));
 vi.mock("@/modulos/publicaciones/operadores/imagenes-publicacion", () => ({
     eliminarImagenPublicacionGestionada: mocks.eliminarImagen,
 }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
-    db: { transaction: mocks.transaction },
+    db: {
+        transaction: mocks.transaction,
+        raw: { sql: (partes: TemplateStringsArray, ...valores: unknown[]) => ({
+            returnsRow: () => ({ build: () => ({ texto: partes.join("?"), valores }) }),
+        }) },
+    },
 }));
 
 describe("baja de operador con autorización y múltiples dependencias", () => {
@@ -34,7 +42,9 @@ describe("baja de operador con autorización y múltiples dependencias", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.exigirAdministrador.mockResolvedValue(undefined);
+        mocks.bloquear.mockReset().mockResolvedValue(undefined);
         mocks.eliminarImagen.mockResolvedValue(undefined);
+        mocks.eliminarPerfil.mockResolvedValue(undefined);
         mocks.publicacion.first.mockResolvedValue({ foto: null });
         locales = [10, 11, 12];
         relaciones = [{ publicacionId: 20 }, { publicacionId: 21 }];
@@ -44,7 +54,6 @@ describe("baja de operador con autorización y múltiples dependencias", () => {
 
         mocks.operador.first.mockImplementation(async () => operadorExiste ? { id: 14, usuarioId: 90 } : null);
         mocks.relacion.all.mockImplementation(async () => [...relaciones]);
-        // El ORM distingue borrar una coincidencia de borrar todas.
         mocks.local.delete.mockImplementation(async () => { locales.shift(); });
         mocks.local.deleteAll.mockImplementation(async () => { locales = []; });
         mocks.relacion.delete.mockImplementation(async () => { relaciones.shift(); });
@@ -63,7 +72,7 @@ describe("baja de operador con autorización y múltiples dependencias", () => {
         mocks.transaction.mockImplementation(async (operaciones: (tx: unknown) => Promise<unknown>) => {
             const copia = { locales: [...locales], relaciones: [...relaciones], publicaciones: [...publicaciones], operadorExiste, usuarioExiste };
             try {
-                return await operaciones({ orm: { public: {
+                return await operaciones({ execute: mocks.bloquear, orm: { public: {
                     Operador: mocks.operador,
                     Usuario: mocks.usuario,
                     Local: mocks.local,
@@ -99,6 +108,34 @@ describe("baja de operador con autorización y múltiples dependencias", () => {
         expect(usuarioExiste).toBe(false);
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/administracion");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/publicaciones");
+    });
+
+    it("incluye las publicaciones confirmadas mientras esperaba el bloqueo del operador", async () => {
+        let liberar!: () => void;
+        let avisarEspera!: () => void;
+        const bloqueo = new Promise<void>((resolve) => { liberar = resolve; });
+        const esperando = new Promise<void>((resolve) => { avisarEspera = resolve; });
+        mocks.bloquear.mockImplementation(async () => {
+            avisarEspera();
+            await bloqueo;
+        });
+
+        const baja = bajaOperador({ operadorId: 14 });
+        await esperando;
+        expect(mocks.operador.first).not.toHaveBeenCalled();
+        expect(mocks.relacion.all).not.toHaveBeenCalled();
+        relaciones.push({ publicacionId: 22 });
+        publicaciones.push(22);
+        liberar();
+
+        expect((await baja).esValido).toBe(true);
+        expect(mocks.bloquear).toHaveBeenCalledWith({
+            texto: "SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ?)", valores: [14],
+        });
+        expect(publicaciones).toEqual([]);
+        expect(relaciones).toEqual([]);
+        expect(operadorExiste).toBe(false);
+        expect(usuarioExiste).toBe(false);
     });
 
     it("revierte la operación completa si falla la eliminación de la cuenta", async () => {
@@ -143,6 +180,14 @@ describe("baja de operador con autorización y múltiples dependencias", () => {
         expect(operadorExiste).toBe(false);
         expect(registrar).toHaveBeenCalledOnce();
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/publicaciones");
+    });
+
+    it("elimina la foto de perfil gestionada después del commit", async () => {
+        const fotoPerfil = "/api/imagenes/operadores/14/12345678-1234-4234-8234-123456789abc.webp";
+        mocks.operador.first.mockResolvedValue({ id: 14, usuarioId: 90, fotoPerfil });
+        mocks.eliminarPerfil.mockImplementation(async () => expect(operadorExiste).toBe(false));
+        expect((await bajaOperador({ operadorId: 14 })).esValido).toBe(true);
+        expect(mocks.eliminarPerfil).toHaveBeenCalledWith(fotoPerfil, "operadores", 14);
     });
 
     it("conserva los mensajes de validación y de operador inexistente", async () => {

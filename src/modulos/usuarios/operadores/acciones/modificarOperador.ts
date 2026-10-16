@@ -1,8 +1,9 @@
 "use server";
 
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { guardarOperadorAtomico } from "../guardar-operador-atomico";
 import argon2 from "argon2";
-import { validarModificacionOperador } from "./validarModificacionOperador";
+import { validarModificacionOperador } from "../validaciones/validarModificacionOperador";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
@@ -48,7 +49,7 @@ export async function modificarOperador(
           })
         : null;
 
-    const resultadoTx = await db.transaction(async (tx) => {
+    const resultadoTx = await guardarOperadorAtomico(async (tx) => {
         const operador = await tx.orm.public.Operador
             .select("id", "usuarioId")
             .where({ id: datos.operadorId })
@@ -71,11 +72,6 @@ export async function modificarOperador(
         ) {
             return "Ya existe un operador con ese nombre.";
         }
-
-        /*
-         * Comprobamos que ninguno de los locales elegidos
-         * pertenezca a otro Operador.
-         */
         for (const local of datos.locales) {
             const localExistente =
                 await tx.orm.public.Local
@@ -108,16 +104,6 @@ export async function modificarOperador(
                     passwordHash,
                 });
         }
-
-        /*
-         * Obtenemos TODOS los locales actuales y los
-         * eliminamos individualmente por ID.
-         *
-         * No usamos un delete() directamente sobre
-         * where({ operadorId }) porque necesitamos
-         * garantizar que desaparezcan todos antes de
-         * volver a crearlos.
-         */
         const localesActuales =
             await tx.orm.public.Local
                 .select("id")
@@ -133,10 +119,6 @@ export async function modificarOperador(
                 })
                 .delete();
         }
-
-        /*
-         * Recreamos los locales con los datos nuevos.
-         */
         for (const local of datos.locales) {
             await tx.orm.public.Local.create({
                 operadorId: datos.operadorId,
@@ -158,7 +140,7 @@ export async function modificarOperador(
         }
 
         return datos.operadorId;
-    });
+    }, datos.operadorId);
 
     if (typeof resultadoTx === "string") {
         return {

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { LIMITE_JSON_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
 
 const mocks = vi.hoisted(() => ({
@@ -153,6 +154,16 @@ describe("POST /api/publicaciones", () => {
         vi.clearAllMocks();
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" });
+    });
+
+    it("devuelve 413 sin guardar una solicitud demasiado grande", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST", body: "{}", headers: { "content-length": String(LIMITE_JSON_PUBLICACION + 1) },
+        });
+        const respuesta = await POST(solicitud);
+        expect(respuesta.status).toBe(413);
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
     });
 
     it.each([401, 403] as const)("devuelve %s sin crear publicaciones cuando falla la autorización", async (status) => {

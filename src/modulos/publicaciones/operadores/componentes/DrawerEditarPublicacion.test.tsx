@@ -27,6 +27,7 @@ type PropsDrawer = ComponentProps<typeof DrawerEditarPublicacion>;
 
 const publicacionInicial: NonNullable<PropsDrawer["publicacion"]> = {
     publicacionOperadorId: 15,
+        version: 1,
     publicacionId: 41,
     especieId: 1,
     variedadId: 11,
@@ -449,6 +450,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(screen.queryByRole("dialog", { name: "¿Guardar los cambios?" })).not.toBeInTheDocument();
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, {
+            version: 1,
             precio: "150", 
             foto: undefined, 
             categoriaId: 3, 
@@ -832,4 +834,22 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(mocks.guardar).not.toHaveBeenCalled();
         expect(mocks.cerrar).toHaveBeenCalledOnce();
     });
+    it("conserva el borrador y su versión cuando llegan cambios remotos", async () => {
+        const vista = render(<DrawerEditarPublicacion {...props} />);
+        fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "150" } });
+        vista.rerender(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, precio: "200", version: 2 }} />);
+        expect(screen.getByLabelText("Precio en pesos")).toHaveValue("150");
+        guardarDesdeBoton();
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ precio: "150", version: 1 }), null));
+    });
+
+    it("consulta los datos nuevos al cancelar un borrador desactualizado", () => {
+        const vista = render(<DrawerEditarPublicacion {...props} modoInicial="consulta" />);
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "150" } });
+        vista.rerender(<DrawerEditarPublicacion {...props} modoInicial="consulta" publicacion={{ ...publicacionInicial, precio: "200", version: 2 }} />);
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+        expect(screen.getByLabelText("Precio en pesos")).toHaveValue("200");
+    });
+
 });

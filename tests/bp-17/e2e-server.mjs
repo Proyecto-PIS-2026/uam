@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { relevamiento as referencia } from "../fixtures/precios-referencia.mjs";
 
 const carpeta = fileURLToPath(new URL(".", import.meta.url));
 const raiz = path.resolve(carpeta, "../..");
@@ -32,7 +33,11 @@ writeFileSync(path.join(app, "next.config.mjs"), `export default {
     }
 };\n`);
 
-const referencia = JSON.parse(readFileSync(path.join(raiz, "src/modulos/informacion-uam/precios-referencia/consulta-referencia.json"), "utf8"));
+writeFileSync(path.join(app, "src/modulos/informacion-uam/precios-referencia/cache-diario.ts"), `
+const referencia = ${JSON.stringify(referencia)};
+export async function obtenerConsultaDiariaWebservice() { return referencia; }
+export async function obtenerUltimoRelevamientoGuardado() { return referencia; }
+`);
 const mock = createServer((req, res) => {
     const url = new URL(req.url, "http://127.0.0.1:3101");
     const id = Number(url.searchParams.get("species_id"));
@@ -68,7 +73,6 @@ mock.listen(3101, "127.0.0.1", () => {
         cwd: app, stdio: "inherit",
         env: {
             ...process.env,
-            PRECIOS_REFERENCIA_FUENTE: "local",
             DATABASE_URL: "postgresql://bp17:bp17@127.0.0.1:65534/bp17",
             SESSION_SECRET: randomBytes(32).toString("hex"),
         },

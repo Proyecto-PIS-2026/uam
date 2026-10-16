@@ -6,6 +6,7 @@ import Page from "./page";
 // Creo dos funciones falsas de obtener perfil y el notFound
 const mocks = vi.hoisted(() => ({
     obtenerPerfil: vi.fn(),
+    refresh: vi.fn(),
     obtenerSesion: vi.fn(),
     obtenerOperadorActual: vi.fn(),
     redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
@@ -31,6 +32,7 @@ vi.mock("../../../../modulos/usuarios/operadores/consultas-perfil-publico", () =
 vi.mock("next/navigation", () => ({
     notFound: mocks.notFound,
     redirect: mocks.redirect,
+    useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
 // Reemplaza Image de Next por un img común
@@ -72,7 +74,7 @@ describe("Página pública del operador", () => {
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorActual.mockResolvedValue({ id: 24, usuarioId: 10, nombreFantasia: "Mi huerta" });
 
-        await expect(Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }) })).rejects.toThrow("NEXT_REDIRECT");
+        await expect(Page({ params: Promise.resolve({ nombre: "Frutas del Norte" }) })).rejects.toThrow("NEXT_REDIRECT");
 
         expect(mocks.redirect).toHaveBeenCalledWith("/mi-mercado");
         expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
@@ -85,7 +87,7 @@ describe("Página pública del operador", () => {
         mocks.obtenerOperadorActual.mockResolvedValue({ id: perfil.id, usuarioId: 10, nombreFantasia: perfil.nombreFantasia });
         mocks.obtenerPerfil.mockResolvedValue(perfil);
 
-        render(await Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }) }));
+        render(await Page({ params: Promise.resolve({ nombre: "Frutas del Norte" }) }));
 
         expect(mocks.redirect).not.toHaveBeenCalled();
         expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
@@ -98,7 +100,7 @@ describe("Página pública del operador", () => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
         mocks.obtenerPerfil.mockResolvedValue(perfil);
 
-        render(await Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }) }));
+        render(await Page({ params: Promise.resolve({ nombre: "Frutas del Norte" }) }));
 
         expect(mocks.redirect).not.toHaveBeenCalled();
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
@@ -110,7 +112,7 @@ describe("Página pública del operador", () => {
     it("consulta el operador indicado en la URL y muestra su perfil y catálogo", async () => {
         mocks.obtenerPerfil.mockResolvedValue(perfil);
 
-        const contenido = await Page({params: Promise.resolve({nombre: "Frutas%20del%20Norte"})});
+        const contenido = await Page({params: Promise.resolve({nombre: "Frutas del Norte"})});
         render(contenido);
 
         expect(mocks.obtenerPerfil).toHaveBeenCalledWith("Frutas del Norte");

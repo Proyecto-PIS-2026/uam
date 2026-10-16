@@ -1,7 +1,19 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
 import CatalogoOperador from "./CatalogoOperador";
+
+const tiempoReal = vi.hoisted(() => ({
+    refresh: vi.fn(),
+    suscribir: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: tiempoReal.refresh }) }));
+vi.mock("../../../../publicaciones/tiempo-real/use-actualizaciones-publicaciones", () => ({
+    useActualizacionesPublicaciones: tiempoReal.suscribir,
+}));
+
+beforeEach(() => { vi.clearAllMocks(); });
 
 // Reemplaza Image de Next por un img comun
 vi.mock("next/image", async () => {
@@ -14,7 +26,7 @@ vi.mock("next/image", async () => {
 // Reemplaza el Drawer real para probar solamente el comportamiento del catalogo
 vi.mock("./DrawerPublicacionPerfil", () => ({
     default: ({publicacion, open}: {publicacion: PublicacionPerfil | null; open: boolean}) =>
-        open && publicacion ? <div data-testid="drawer">{publicacion.especie}</div> : null,
+        open && publicacion ? <div data-testid="drawer">{publicacion.especie} {publicacion.precio}</div> : null,
 }));
 
 // Datos de prueba
@@ -54,6 +66,37 @@ function nombresDeGrupos() {
 }
 
 describe("CatalogoOperador", () => {
+    it("recarga el perfil con el canal público del operador sin solicitar eventos privados", () => {
+        render(<CatalogoOperador publicaciones={[tomate]} idOperador={13}/>);
+        const argumentos = tiempoReal.suscribir.mock.calls.at(-1)!;
+        expect(argumentos[1]).toEqual({ operadorPublicoId: 13 });
+        argumentos[0]();
+        expect(tiempoReal.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("actualiza el detalle abierto y mantiene búsqueda y agrupación al recibir precios nuevos", () => {
+        const { rerender } = render(<CatalogoOperador publicaciones={[tomate, manzana]}/>);
+        fireEvent.change(screen.getByRole("searchbox", {name: "Buscar publicaciones"}), { target: { value: "tomate" } });
+        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: "Ver detalles de Tomate - Perita"}));
+        expect(screen.getByTestId("drawer")).toHaveTextContent("120");
+
+        rerender(<CatalogoOperador publicaciones={[{...tomate, precio: "175"}, manzana, papa]}/>);
+
+        expect(screen.getByTestId("drawer")).toHaveTextContent("175");
+        expect(screen.getByRole("searchbox", {name: "Buscar publicaciones"})).toHaveValue("tomate");
+        expect(screen.getByRole("button", {name: "Desagrupar"})).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getAllByRole("button", {name: /Ver detalles de/})).toHaveLength(1);
+    });
+
+    it("deja de mostrar el detalle si la publicación seleccionada desaparece", () => {
+        const { rerender } = render(<CatalogoOperador publicaciones={[tomate, manzana]}/>);
+        fireEvent.click(screen.getByRole("button", {name: "Ver detalles de Tomate - Perita"}));
+        rerender(<CatalogoOperador publicaciones={[manzana]}/>);
+        expect(screen.queryByTestId("drawer")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", {name: "Ver detalles de Tomate - Perita"})).not.toBeInTheDocument();
+    });
+
     it("muestra el mensaje de vacío cuando no hay publicaciones", () => {
         render(<CatalogoOperador publicaciones={[]}/>);
         expect(screen.getByRole("heading", {name: "Publicaciones"})).toBeInTheDocument();

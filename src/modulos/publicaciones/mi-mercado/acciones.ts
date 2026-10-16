@@ -5,7 +5,7 @@ import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { ErrorAutorizacion } from "../../identidad-acceso/autorizacion/controles";
 import { revalidatePath } from "next/cache";
 import { obtenerOperadorAutorizado } from "../../usuarios/operadores/operador-actual";
-import { actualizarPrecioPublicacion, obtenerPublicacionesDeOperador, PublicacionNoEncontradaError } from "./consultas-mi-mercado";
+import { actualizarPrecioPublicacion, incrementarPrecioPublicacion, ConflictoPublicacionError, obtenerPublicacionesDeOperador, PublicacionNoEncontradaError } from "./consultas-mi-mercado";
 import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
 
 export async function cargarPublicacionesMiMercado(operadorId: number) {
@@ -24,9 +24,17 @@ export async function cargarPublicacionesMiMercado(operadorId: number) {
 
 type ResultadoActualizarPrecio =
     | { publicacionEliminada: true }
-    | { publicacionEliminada: false; fecha: string };
+    | { publicacionEliminada: false; fecha: string; precio: number | null; version: number; conflicto?: boolean };
 
-export async function actualizarPrecio(publicacionId: number, nuevoPrecio: number, operadorId?: number): Promise<ResultadoActualizarPrecio> {
+export async function actualizarPrecio(publicacionId: number, nuevoPrecio: number, operadorId?: number, versionEsperada?: number): Promise<ResultadoActualizarPrecio> {
+    return cambiarPrecio(publicacionId, nuevoPrecio, operadorId, false, versionEsperada);
+}
+
+export async function incrementarPrecio(publicacionId: number, incremento: number, operadorId?: number): Promise<ResultadoActualizarPrecio> {
+    return cambiarPrecio(publicacionId, incremento, operadorId, true);
+}
+
+async function cambiarPrecio(publicacionId: number, valor: number, operadorId: number | undefined, incrementar: boolean, versionEsperada?: number): Promise<ResultadoActualizarPrecio> {
     const sesion = await obtenerSesion();
     if (!sesion) throw new ErrorAutorizacion(401, "Debe iniciar sesión.");
 
@@ -40,20 +48,17 @@ export async function actualizarPrecio(publicacionId: number, nuevoPrecio: numbe
         throw new ErrorAutorizacion(403, "No tiene permisos para modificar las publicaciones de este Operador.");
     }
 
-    let fecha: string;
+    let resultado;
     try {
-        fecha = await actualizarPrecioPublicacion(operador.id, publicacionId, nuevoPrecio);
+        resultado = incrementar
+            ? await incrementarPrecioPublicacion(operador.id, publicacionId, valor)
+            : await actualizarPrecioPublicacion(operador.id, publicacionId, valor, versionEsperada);
     } catch (error) {
-        /* DEMO: una baja concurrente es un resultado esperado; el cliente recarga Mi Mercado. */
+        if (error instanceof ConflictoPublicacionError) return { publicacionEliminada: false, conflicto: true, ...error.actual };
         if (error instanceof PublicacionNoEncontradaError) return { publicacionEliminada: true };
         throw error;
     }
 
-    /*
-     * DEMO: Mi Mercado actualiza su listado con cargarPublicacionesMiMercado.
-     * Para recuperar la revalidación automática de esa vista, volver a incluir
-     * "/mi-mercado" y la ruta con el nombre del operador en este arreglo.
-     */
     const rutas = [
         "/publicaciones",
         `/operadores/${encodeURIComponent(operador.nombreFantasia)}`,
@@ -65,10 +70,9 @@ export async function actualizarPrecio(publicacionId: number, nuevoPrecio: numbe
         try {
             revalidatePath(ruta);
         } catch (error) {
-            // El precio ya se guardó. El cliente recarga Mi Mercado directamente.
             console.error(`No se pudo revalidar ${ruta} tras guardar el precio:`, error);
         }
     }
 
-    return { publicacionEliminada: false, fecha };
+    return { publicacionEliminada: false, ...resultado };
 }

@@ -4,8 +4,7 @@ import VistaMiMercado from "../../../../modulos/publicaciones/mi-mercado/compone
 export const dynamic = "force-dynamic";
 
 export default async function Page({ params }: { params: Promise<{ nombre: string }> }) {
-    const { nombre: nombreCodificado } = await params;
-    const nombre = decodeURIComponent(nombreCodificado);
+    const { nombre } = await params;
     if (!nombre.trim()) notFound();
 
     return <VistaMiMercado operadorNombre={nombre} />;

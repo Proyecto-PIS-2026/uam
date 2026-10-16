@@ -2,35 +2,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-    obtenerSesion: vi.fn(),
-    obtenerOperadorAutorizado: vi.fn(),
-    leerImagenPublicacion: vi.fn(),
-    select: vi.fn(),
-    where: vi.fn(),
-    first: vi.fn(),
-    buscarPublicacion: vi.fn(),
-    seleccionarPublicacion: vi.fn(),
-    filtrarPublicacion: vi.fn(),
+    puedeLeerImagen: vi.fn(),
+    leer: vi.fn(),
 }));
 
-vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
-    obtenerSesion: mocks.obtenerSesion,
+vi.mock("@/infraestructura/imagenes/acceso-imagenes", () => ({
+    puedeLeerImagen: mocks.puedeLeerImagen,
 }));
-vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
-    obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado,
+vi.mock("@/infraestructura/imagenes/imagenes", () => ({
+    imagenes: { leer: mocks.leer },
 }));
-vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
-    db: { orm: { public: {
-        PublicacionOperador: { select: mocks.select },
-        Publicacion: { select: mocks.seleccionarPublicacion },
-    } } },
-}));
-vi.mock("@/modulos/publicaciones/operadores/imagenes-publicacion", async (importOriginal) => {
-    const modulo = await importOriginal<typeof import("@/modulos/publicaciones/operadores/imagenes-publicacion")>();
-    return { ...modulo, leerImagenPublicacion: mocks.leerImagenPublicacion };
-});
 
-import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { GET } from "./route";
 
 const archivo = "12345678-1234-4123-8123-123456789abc.png";
@@ -44,90 +26,62 @@ function solicitarImagen(publicacionId = "15", nombreArchivo = archivo) {
 describe("GET /api/publicaciones/imagenes/[publicacionId]/[archivo]", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mocks.obtenerSesion.mockResolvedValue(null);
-        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 3, usuarioId: 10, nombreFantasia: "Propio" });
-        mocks.select.mockReturnValue({ where: mocks.where });
-        mocks.where.mockReturnValue({ first: mocks.first });
-        mocks.first.mockResolvedValue({ id: 25 });
-        mocks.seleccionarPublicacion.mockReturnValue({ where: mocks.filtrarPublicacion });
-        mocks.filtrarPublicacion.mockReturnValue({ first: mocks.buscarPublicacion });
-        mocks.buscarPublicacion.mockResolvedValue({ id: 15 });
-        mocks.leerImagenPublicacion.mockResolvedValue(Buffer.from([1, 2, 3]));
+        mocks.puedeLeerImagen.mockResolvedValue(true);
+        mocks.leer.mockResolvedValue(Buffer.from([1, 2, 3]));
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("conserva las imágenes públicas para %s y varía la caché por sesión", async (rol) => {
-        mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
+    it.each([
+        ["png", "image/png"],
+        ["jpg", "image/jpeg"],
+        ["webp", "image/webp"],
+    ])("devuelve una imagen %s autorizada sin almacenarla en caché compartida", async (extension, tipo) => {
+        const nombreArchivo = archivo.replace(".png", `.${extension}`);
 
-        const respuesta = await solicitarImagen();
+        const respuesta = await solicitarImagen("15", nombreArchivo);
 
         expect(respuesta.status).toBe(200);
-        expect(respuesta.headers.get("Content-Type")).toBe("image/png");
+        expect(respuesta.headers.get("Content-Type")).toBe(tipo);
         expect(respuesta.headers.get("Content-Length")).toBe("3");
-        expect(respuesta.headers.get("Cache-Control")).toBe("public, max-age=31536000, immutable");
+        expect(respuesta.headers.get("Cache-Control")).toBe("private, no-store");
         expect(respuesta.headers.get("Vary")).toBe("Cookie");
+        expect(respuesta.headers.get("X-Content-Type-Options")).toBe("nosniff");
         expect(Array.from(new Uint8Array(await respuesta.arrayBuffer()))).toEqual([1, 2, 3]);
-        expect(mocks.leerImagenPublicacion).toHaveBeenCalledExactlyOnceWith(15, archivo);
-        expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
-        expect(mocks.select).not.toHaveBeenCalled();
+        expect(mocks.puedeLeerImagen).toHaveBeenCalledExactlyOnceWith("publicaciones", 15, nombreArchivo);
+        expect(mocks.leer).toHaveBeenCalledExactlyOnceWith("publicaciones", 15, nombreArchivo);
     });
 
-    it("permite al operador ver fotos propias y evita almacenarlas en caché compartida", async () => {
-        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+    it("devuelve 404 sin leer disco cuando no se autoriza la foto solicitada", async () => {
+        mocks.puedeLeerImagen.mockResolvedValue(false);
 
         const respuesta = await solicitarImagen();
 
-        expect(respuesta.status).toBe(200);
-        expect(mocks.obtenerOperadorAutorizado).toHaveBeenCalledExactlyOnceWith();
-        expect(mocks.select).toHaveBeenCalledExactlyOnceWith("id");
-        expect(mocks.where).toHaveBeenCalledExactlyOnceWith({ publicacionId: 15, operadorId: 3 });
-        expect(mocks.leerImagenPublicacion).toHaveBeenCalledExactlyOnceWith(15, archivo);
+        expect(respuesta.status).toBe(404);
+        expect(await respuesta.text()).toBe("Imagen no encontrada");
         expect(respuesta.headers.get("Cache-Control")).toBe("private, no-store");
         expect(respuesta.headers.get("Vary")).toBe("Cookie");
+        expect(mocks.leer).not.toHaveBeenCalled();
     });
 
-    it("rechaza una foto ajena sin leer el archivo", async () => {
-        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
-        mocks.first.mockResolvedValue(null);
-
-        const respuesta = await solicitarImagen();
-
-        expect(respuesta.status).toBe(403);
-        expect(await respuesta.text()).toBe("La publicación no corresponde al operador autenticado.");
-        expect(respuesta.headers.get("Cache-Control")).toBe("private, no-store");
-        expect(respuesta.headers.get("Vary")).toBe("Cookie");
-        expect(mocks.leerImagenPublicacion).not.toHaveBeenCalled();
-    });
-
-    it.each([401, 403] as const)("devuelve %s si no puede validar el operador propio", async (status) => {
-        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
-        mocks.obtenerOperadorAutorizado.mockRejectedValue(new ErrorAutorizacion(status, "Acceso denegado."));
-
-        const respuesta = await solicitarImagen();
-
-        expect(respuesta.status).toBe(status);
-        expect(await respuesta.text()).toBe("Acceso denegado.");
-        expect(mocks.select).not.toHaveBeenCalled();
-        expect(mocks.leerImagenPublicacion).not.toHaveBeenCalled();
-    });
-
-    it.each(["abc", "0", "-1", "1.5", "9007199254740992"])("rechaza un ID inválido: %s", async (id) => {
+    it.each(["abc", "0", "-1", "1.5", "9007199254740992"])("rechaza un ID inválido, %s", async (id) => {
         const respuesta = await solicitarImagen(id);
 
         expect(respuesta.status).toBe(404);
-        expect(mocks.obtenerSesion).not.toHaveBeenCalled();
-        expect(mocks.leerImagenPublicacion).not.toHaveBeenCalled();
+        expect(mocks.puedeLeerImagen).not.toHaveBeenCalled();
+        expect(mocks.leer).not.toHaveBeenCalled();
     });
 
-    it("rechaza un nombre de archivo inválido antes de leer sesión o disco", async () => {
-        const respuesta = await solicitarImagen("15", "foto.png");
+    it.each(["foto.png", "../foto.png", archivo.replace(".png", ".svg")])(
+        "rechaza un archivo inválido antes de consultar permisos o disco, %s", async (nombreArchivo) => {
+            const respuesta = await solicitarImagen("15", nombreArchivo);
 
-        expect(respuesta.status).toBe(404);
-        expect(mocks.obtenerSesion).not.toHaveBeenCalled();
-        expect(mocks.leerImagenPublicacion).not.toHaveBeenCalled();
-    });
+            expect(respuesta.status).toBe(404);
+            expect(mocks.puedeLeerImagen).not.toHaveBeenCalled();
+            expect(mocks.leer).not.toHaveBeenCalled();
+        },
+    );
 
-    it("devuelve 404 cuando no existe el archivo", async () => {
-        mocks.leerImagenPublicacion.mockRejectedValue(Object.assign(new Error("No existe"), { code: "ENOENT" }));
+    it("devuelve 404 cuando no existe el archivo autorizado", async () => {
+        mocks.leer.mockRejectedValue(Object.assign(new Error("No existe"), { code: "ENOENT" }));
 
         const respuesta = await solicitarImagen();
 
@@ -135,21 +89,18 @@ describe("GET /api/publicaciones/imagenes/[publicacionId]/[archivo]", () => {
         expect(await respuesta.text()).toBe("Imagen no encontrada");
     });
 
-    it.each([null, "OPERADOR"] as const)("devuelve 404 para una publicación eliminada aunque quede su archivo, sesión %s", async (rol) => {
-        mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
-        mocks.buscarPublicacion.mockResolvedValue(null);
-
-        const respuesta = await solicitarImagen();
-
-        expect(respuesta.status).toBe(404);
-        expect(respuesta.headers.get("Cache-Control")).toBe("private, no-store");
-        expect(mocks.leerImagenPublicacion).not.toHaveBeenCalled();
-    });
-
-    it("propaga los demás errores de lectura", async () => {
+    it("propaga los errores inesperados de lectura", async () => {
         const error = new Error("Error de lectura");
-        mocks.leerImagenPublicacion.mockRejectedValue(error);
+        mocks.leer.mockRejectedValue(error);
 
         await expect(solicitarImagen()).rejects.toBe(error);
+    });
+
+    it("no lee la imagen cuando falla la consulta de permisos", async () => {
+        const error = new Error("Consulta de permisos fallida");
+        mocks.puedeLeerImagen.mockRejectedValue(error);
+
+        await expect(solicitarImagen()).rejects.toBe(error);
+        expect(mocks.leer).not.toHaveBeenCalled();
     });
 });
