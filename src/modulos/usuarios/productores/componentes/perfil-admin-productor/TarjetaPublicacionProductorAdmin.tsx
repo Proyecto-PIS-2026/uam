@@ -14,13 +14,12 @@ type TarjetaPublicacionProductorAdminProps = {
     publicacion: PublicacionPerfilAdminProductor;
 };
 
-// Copia de TarjetaPublicacion (perfil público) adaptada al administrador
 export default function TarjetaPublicacionProductorAdmin({publicacion }: TarjetaPublicacionProductorAdminProps) {
     const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
     const ubicacion = `${publicacion.departamento} · ${publicacion.direccion}`;
 
     return (
-        <article className={styles.tarjeta} aria-label={nombreProducto}>
+        <article className={styles.tarjeta} aria-label={`Ver detalles de ${nombreProducto}`}>
             <div className={styles.contenedorImagen}>
                 <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 767px) 96px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.imagen} reemplazo={
                     <div className={styles.sinFoto}>
@@ -31,7 +30,7 @@ export default function TarjetaPublicacionProductorAdmin({publicacion }: Tarjeta
                 } />
             </div>
 
-            <div className={styles.contenido}>
+                        <div className={styles.contenido}>
                 <div className={styles.encabezado}>
                     <div className="flex w-full min-w-0 items-start justify-between gap-2">
                         <h3 className={`${styles.especie} min-w-0 flex-1`} title={nombreProducto}>{nombreProducto}</h3>
@@ -53,6 +52,7 @@ export default function TarjetaPublicacionProductorAdmin({publicacion }: Tarjeta
                         </span>
                     </div>
                     <p className={styles.informacionWeb}>{publicacion.calibre} · Categoría {publicacion.categoria}</p>
+                    <p className={styles.ubicacion} title={ubicacion}>{ubicacion}</p>
                 </div>
                 <div className={styles.cuerpo}>
                     <div className={styles.informacionMobile}>
