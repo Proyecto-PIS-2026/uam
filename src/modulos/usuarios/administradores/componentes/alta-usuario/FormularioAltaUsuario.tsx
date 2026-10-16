@@ -8,28 +8,6 @@ import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 const ROLES_VALIDOS = ["operador", "productor", "administrador"];
 
-const DEPARTAMENTOS = [
-    "Artigas",
-    "Canelones",
-    "Cerro Largo",
-    "Colonia",
-    "Durazno",
-    "Flores",
-    "Florida",
-    "Lavalleja",
-    "Maldonado",
-    "Montevideo",
-    "Paysandú",
-    "Río Negro",
-    "Rivera",
-    "Rocha",
-    "Salto",
-    "San José",
-    "Soriano",
-    "Tacuarembó",
-    "Treinta y Tres"
-];
-
 export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }) {
     const searchParams = useSearchParams();    
     const rolInicial = searchParams.get("rol") ?? "";
@@ -48,9 +26,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const [enviando, setEnviando] = useState(false);
     const [mensajeVisible, setMensajeVisible] = useState(false);
     const [mostrarPopup, setMostrarPopup] = useState(false);
-    const [direcciones, setDirecciones] = useState([
-        { departamento: "", direccion: "" }
-    ]);
     const [rolCreado, setRolCreado] = useState("");
 
     const router = useRouter();
@@ -80,7 +55,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         setLocales([
             { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
         ]);
-        setDirecciones([{ departamento: "", direccion: "" }]);
         setErrores([]);
         setMensajeExito("");
         setMensajeVisible(false);
@@ -130,7 +104,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     nombre,
                     codigoPais,
                     telefono,
-                    direcciones,
                 });
 
                 if (!resultado.esValido) {
@@ -403,86 +376,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         </button>
                     </div>
                 )}
-
-                {rol === "productor" && (
-                    <div className="flex flex-col gap-3">
-                        <label className={styles.label}>
-                            Direcciones de Retiro<span className="text-red-500">(Mínimo 1)</span>
-                        </label>
-
-                        {direcciones.map((direccion, index) => (
-                            <div key={index} className={styles.local}>
-                                <h3 className="text-sm font-semibold text-foreground lg:hidden">
-                                    Dirección {index + 1}
-                                </h3>
-
-                                <select
-                                    value={direccion.departamento}
-                                    required
-                                    onChange={(e) =>
-                                        setDirecciones(direcciones.map((d, i) =>
-                                            i === index
-                                                ? { ...d, departamento: e.target.value }
-                                                : d
-                                        ))
-                                    }
-                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary lg:w-1/3"
-                                >
-                                    <option value="" disabled>
-                                        Seleccionar departamento
-                                    </option>
-
-                                    {DEPARTAMENTOS.map((departamento) => (
-                                        <option key={departamento} value={departamento}>
-                                            {departamento}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <input
-                                    type="text"
-                                    value={direccion.direccion}
-                                    onChange={(e) =>
-                                        setDirecciones(direcciones.map((d, i) =>
-                                            i === index
-                                                ? { ...d, direccion: e.target.value }
-                                                : d
-                                        ))
-                                    }
-                                    placeholder="Dirección (opcional, ej: Yatay 2449)"
-                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary lg:flex-1"
-                                />
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setDirecciones(direcciones.filter((_, i) => i !== index))
-                                    }
-                                    disabled={index === 0}
-                                    className={`${styles.botonSecundario} ${
-                                        index === 0 ? "invisible" : ""
-                                    }`}
-                                >
-                                    Eliminar dirección
-                                </button>
-                            </div>
-                        ))}
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setDirecciones([
-                                    ...direcciones,
-                                    { departamento: "", direccion: "" }
-                                ])
-                            }
-                            className={styles.botonSecundario}
-                        >
-                            + Agregar dirección
-                        </button>
-                    </div>
-                )}
-
 
                 {mensajeExito && (
                     <p
