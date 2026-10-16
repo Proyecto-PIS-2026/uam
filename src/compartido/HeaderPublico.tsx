@@ -38,7 +38,7 @@ const opcionesMenu: OpcionMenu[] = [
     // Listado de publicaciones de productores
     {
         nombre: "Publicaciones",
-        ruta: "/publicacionesProductor",
+        ruta: "/publicaciones-productor",
         permitido: (sesion) => autorizado("productor.publicacion.consultar", sesion),
     },
     {

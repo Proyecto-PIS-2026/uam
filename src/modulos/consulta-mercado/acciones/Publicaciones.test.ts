@@ -1,289 +1,445 @@
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import "temporal-polyfill/full/global";
 import { consultarPublicaciones } from "./Publicaciones";
 
-type FilaPublicacion = {
-	id: number | string;
-	precio: number | null;
-	fecha: Date; 
-	foto: string | null;
-	cantidadUnidades?: number | string | null;
-	especie: string;
-	variedad: string;
-	presentacion: string;
-	categoria: string;
-	calibre: string;
-	codigoCalibre: string;
-	pais: string;
-	operadorId: number | string;
-	operadorNombreFantasia: string;
-	operadorWhatsApp: string;
-};
-
-const { consulta, plan, query, sql } = vi.hoisted(() => {
-	const plan = { sql: "consulta de publicaciones" };
-
-	const tablas = {
-		publicacionOperador: {
-			publicacionId: "publicacionOperador.publicacionId",
-			operadorId: "publicacionOperador.operadorId",
-			paisId: "publicacionOperador.paisId"
-		},
-		publicacion: {
-			id: "publicacion.id",
-			presentacionId: "publicacion.presentacionId",
-			categoriaId: "publicacion.categoriaId",
-			calibreId: "publicacion.calibreId",
-			precio: "publicacion.precio",
-			foto: "publicacion.foto",
-			publicacionActiva: "publicacion.publicacionActiva",
-			publicacionDisponible: "publicacion.publicacionDisponible"
-		},
-		presentacion: {
-			id: "presentacion.id",
-			variedadId: "presentacion.variedadId",
-			nombrePresentacion: "presentacion.nombrePresentacion"
-		},
-		variedad: {
-			id: "variedad.id",
-			especieId: "variedad.especieId",
-			nombreVariedad: "variedad.nombreVariedad"
-		},
-			especie: {
-			id: "especie.id",
-			nombreEspecie: "especie.nombreEspecie"
-		},
-			categoria: {
-			id: "categoria.id",
-			nombreCategoria: "categoria.nombreCategoria"
-		},
-		calibre: {
-			id: "calibre.id",
-			nombreCalibre: "calibre.nombreCalibre",
-			codigoCalibre: "calibre.codigoCalibre"
-		},
-		pais: {
-			id: "pais.id",
-			nombrePais: "pais.nombrePais"
-		},
-			operador: {
-			id: "operador.id",
-			nombreFantasia: "operador.nombreFantasia",
-			whatsApp: "operador.whatsApp"
-		}
-	};
-
-	const operaciones = {
-		eq: vi.fn((izquierda, derecha) => ({
-		tipo: "eq",
-		izquierda,
-		derecha,
-		})),
-		and: vi.fn((...condiciones) => ({
-		tipo: "and",
-		condiciones,
-		})),
-	};
-
-	return {
-		plan,
-		query: vi.fn<() => Promise<FilaPublicacion[]>>(),
-		sql: vi.fn((fragmentos: TemplateStringsArray, ...valores: unknown[]) => {
-			void fragmentos;
-			void valores;
-			return consulta;
-		}),
-
-		consulta: {
-		returnsRow: vi.fn().mockReturnThis(),
-		innerJoin: vi.fn((_tabla, callback) => {
-			callback(tablas, operaciones);
-			return consulta;
-		}),
-
-		select: vi.fn((callback) => {
-			callback(tablas);
-			return consulta;
-		}),
-
-		where: vi.fn((callback) => {
-			callback(tablas, operaciones);
-			return consulta;
-		}),
-
-		build: vi.fn().mockReturnValue(plan),
-		},
-	};
-});
-
-vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
-	db: {
-		sql: {
-		public: {
-			publicacionOperador: consulta,
-			publicacion: { columns: {} },
-			presentacion: { columns: {} },
-			variedad: { columns: {} },
-			especie: { columns: {} },
-			categoria: { columns: {} },
-			calibre: { columns: {} },
-			pais: { columns: {} },
-			operador: { columns: {} },
-		},
-		},
-		runtime: () => ({ query }),
-		raw: { sql },
-	},
+const mocks = vi.hoisted(() => ({
+    autorizado: vi.fn(),
+    primerWhere: vi.fn(),
+    where: vi.fn(),
+    include: vi.fn(),
+    all: vi.fn(),
+    or: vi.fn(),
 }));
 
-function crearFila(id = 7): FilaPublicacion {
-	return {
-		id,
-		precio: 150,
-		fecha: new Date("2026-10-03T15:00:00.000Z"), 
-		foto: "/tomate.jpg",
-		cantidadUnidades: null,
-		especie: "Tomate",
-		variedad: "Perita",
-		presentacion: "Cajón",
-		categoria: "Primera",
-		calibre: "Mediano",
-		codigoCalibre: "M",
-		pais: "Uruguay",
-		operadorId: 10,
-		operadorNombreFantasia: "Huerta Sur",
-		operadorWhatsApp: "099123456",
-	};
+vi.mock("../../identidad-acceso/autorizacion/permisos", () => ({
+    autorizado: mocks.autorizado,
+}));
+
+vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
+    db: {
+        orm: {
+            public: {
+                PublicacionOperador: {
+                    where: mocks.primerWhere,
+                },
+            },
+        },
+    },
+}));
+
+vi.mock("@prisma/orm-postgres/orm-client", () => ({
+    or: mocks.or,
+}));
+
+type PredicadoPublicacion = {
+    publicacionActiva: { eq: (valor: boolean) => unknown };
+    publicacionDisponible: { eq: (valor: boolean) => unknown };
+};
+
+type PredicadoLocal = {
+    finContrato: {
+        isNull: () => unknown;
+        gte: (fecha: unknown) => unknown;
+    };
+};
+
+type PredicadoOperador = {
+    locales: {
+        some: (predicado: (local: PredicadoLocal) => unknown) => unknown;
+    };
+};
+
+type NodoPredicado = {
+    publicacion: {
+        some: (predicado?: (publicacion: PredicadoPublicacion) => unknown) => unknown;
+    };
+    operador: {
+        some: (predicado: (operador: PredicadoOperador) => unknown) => unknown;
+    };
+    pais: {
+        some: () => unknown;
+    };
+};
+
+type RegistroPredicado = {
+    somePublicacion: ReturnType<typeof vi.fn>;
+    eqActiva: ReturnType<typeof vi.fn>;
+    eqDisponible: ReturnType<typeof vi.fn>;
+    someOperador: ReturnType<typeof vi.fn>;
+    someLocales: ReturnType<typeof vi.fn>;
+    finContratoIsNull: ReturnType<typeof vi.fn>;
+    finContratoGte: ReturnType<typeof vi.fn>;
+    somePais: ReturnType<typeof vi.fn>;
+};
+
+const predicadosEvaluados: RegistroPredicado[] = [];
+
+function crearNodoPredicado(): NodoPredicado {
+    const eqActiva = vi.fn(() => true);
+    const eqDisponible = vi.fn(() => true);
+    const finContratoIsNull = vi.fn(() => "finContrato.isNull");
+    const finContratoGte = vi.fn(() => "finContrato.gte");
+
+    const somePublicacion = vi.fn((predicado?: (publicacion: PredicadoPublicacion) => unknown) => {
+        if (!predicado) return true;
+
+        return predicado({
+            publicacionActiva: { eq: eqActiva },
+            publicacionDisponible: { eq: eqDisponible },
+        });
+    });
+
+    const someLocales = vi.fn((predicado: (local: PredicadoLocal) => unknown) =>
+        predicado({
+            finContrato: {
+                isNull: finContratoIsNull,
+                gte: finContratoGte,
+            },
+        }),
+    );
+
+    const someOperador = vi.fn((predicado: (operador: PredicadoOperador) => unknown) =>
+        predicado({
+            locales: { some: someLocales },
+        }),
+    );
+
+    const somePais = vi.fn(() => true);
+
+    predicadosEvaluados.push({
+        somePublicacion,
+        eqActiva,
+        eqDisponible,
+        someOperador,
+        someLocales,
+        finContratoIsNull,
+        finContratoGte,
+        somePais,
+    });
+
+    return {
+        publicacion: { some: somePublicacion },
+        operador: { some: someOperador },
+        pais: { some: somePais },
+    };
+}
+
+type ConstructorConsulta = {
+    where: typeof mocks.where;
+    include: typeof mocks.include;
+    all: typeof mocks.all;
+};
+
+const consulta: ConstructorConsulta = {
+    where: mocks.where,
+    include: mocks.include,
+    all: mocks.all,
+};
+
+type ConstructorSeleccion = {
+    select: (...campos: string[]) => ConstructorSeleccion;
+    include: (
+        relacion: string,
+        callback: (builder: ConstructorSeleccion) => unknown,
+    ) => ConstructorSeleccion;
+};
+
+function crearConstructorSeleccion(): ConstructorSeleccion {
+    const seleccion: ConstructorSeleccion = {
+        select: () => seleccion,
+        include: (_relacion, callback) => {
+            callback(crearConstructorSeleccion());
+            return seleccion;
+        },
+    };
+
+    return seleccion;
+}
+
+type FilaMock = {
+    publicacion: {
+        id: string;
+        precio: string | null;
+        fecha: Date;
+        foto: string | null;
+        cantidadUnidades: string | null;
+        presentacion: {
+            nombrePresentacion: string;
+            variedad: {
+                nombreVariedad: string;
+                especie: { nombreEspecie: string } | null;
+            } | null;
+        } | null;
+        categoria: { nombreCategoria: string } | null;
+        calibre: { nombreCalibre: string; codigoCalibre: string } | null;
+    } | null;
+    pais: { nombrePais: string } | null;
+    operador: {
+        id: string;
+        nombreFantasia: string;
+        whatsApp: string;
+    } | null;
+};
+
+function crearFilaValida(): FilaMock {
+    return {
+        publicacion: {
+            id: "101",
+            precio: "125.50",
+            fecha: new Date("2026-10-16T12:30:00.000Z"),
+            foto: "/publicaciones/manzana.jpg",
+            cantidadUnidades: "24",
+            presentacion: {
+                nombrePresentacion: "Caja de 10 kg",
+                variedad: {
+                    nombreVariedad: "Royal Gala",
+                    especie: { nombreEspecie: "Manzana" },
+                },
+            },
+            categoria: { nombreCategoria: "I" },
+            calibre: { nombreCalibre: "Grande", codigoCalibre: "G" },
+        },
+        pais: { nombrePais: "Uruguay" },
+        operador: {
+            id: "7",
+            nombreFantasia: "Frutas del Sur",
+            whatsApp: "+59899111222",
+        },
+    };
 }
 
 describe("consultarPublicaciones", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		query.mockReset();
-		query.mockResolvedValue([]);
-	});
+    beforeEach(() => {
+        vi.clearAllMocks();
+        predicadosEvaluados.length = 0;
 
-	it("devuelve una lista vacía cuando no hay publicaciones", async () => {
-		expect(await consultarPublicaciones()).toEqual({
-		publicaciones: [],
-		});
-	});
+        mocks.autorizado.mockReturnValue(true);
+        mocks.all.mockResolvedValue([]);
+        mocks.or.mockReturnValue("condicion-or");
 
-	it("ejecuta el plan construido para consultar las publicaciones", async () => {
-		await consultarPublicaciones();
-		expect(consulta.build).toHaveBeenCalledTimes(1);
-		expect(query).toHaveBeenCalledExactlyOnceWith(plan);
-	});
+        mocks.primerWhere.mockImplementation(
+            (predicado: (nodo: NodoPredicado) => unknown) => {
+                predicado(crearNodoPredicado());
+                return consulta;
+            },
+        );
 
-	it("mapea los datos de la publicación y agrupa los datos del operador", async () => {
-		query.mockResolvedValue([crearFila()]);
-		expect(await consultarPublicaciones()).toEqual({
-		publicaciones: [
-			{
-			id: 7,
-			precio: 150,
-			fecha: new Date("2026-10-03T15:00:00.000Z").toString(),
-			foto: "/tomate.jpg",
-			cantidadUnidades: null,
-			especie: "Tomate",
-			variedad: "Perita",
-			presentacion: "Cajón",
-			categoria: "Primera",
-			calibre: "Mediano",
-			codigoCalibre: "M",
-			pais: "Uruguay",
-			operador: {
-				id: 10,
-				nombreFantasia: "Huerta Sur",
-				whatsApp: "099123456",
-			},
-			},
-		],
-		});
-	});
+        mocks.where.mockImplementation(
+            (predicado: (nodo: NodoPredicado) => unknown) => {
+                predicado(crearNodoPredicado());
+                return consulta;
+            },
+        );
 
-	it.each([[150, 150], [1234.5, 1234.5], [0, 0]])(
-		"mantiene el precio %s recibido de la consulta",
-		async (precio, esperado) => {
-			query.mockResolvedValue([{ ...crearFila(), precio }]);
-			const { publicaciones } = await consultarPublicaciones();
-			expect(publicaciones).toHaveLength(1);
-			expect(publicaciones[0].precio).toBe(esperado);
-		},
-	);
+        mocks.include.mockImplementation(
+            (_relacion: string, callback: (builder: ConstructorSeleccion) => unknown) => {
+                callback(crearConstructorSeleccion());
+                return consulta;
+            },
+        );
+    });
 
-	it("conserva la foto nula cuando la publicación no tiene imagen", async () => {
-		query.mockResolvedValue([{ ...crearFila(), foto: null }]);
-		const { publicaciones } = await consultarPublicaciones();
-		expect(publicaciones).toHaveLength(1);
-		expect(publicaciones[0].foto).toBeNull();
-	});
+    afterEach(() => {
+        vi.useRealTimers();
+    });
 
-	it("mantiene el orden de los resultados y el operador de cada publicación", async () => {
-		query.mockResolvedValue([crearFila(7), {...crearFila(2), operadorId: 20, operadorNombreFantasia: "Frutas Norte", operadorWhatsApp: "098654321"}, crearFila(9)]);
-		const { publicaciones } = await consultarPublicaciones();
-		expect(publicaciones.map((publicacion) => publicacion.id)).toEqual([7, 2, 9]);
-		expect(publicaciones.map((publicacion) => publicacion.operador)).toEqual([
-		{
-			id: 10,
-			nombreFantasia: "Huerta Sur",
-			whatsApp: "099123456",
-		},
-		{
-			id: 20,
-			nombreFantasia: "Frutas Norte",
-			whatsApp: "098654321",
-		},
-		{
-			id: 10,
-			nombreFantasia: "Huerta Sur",
-			whatsApp: "099123456",
-		},
-		]);
-	});
+    it("exige el permiso de consulta de publicaciones de operadores", async () => {
+        mocks.autorizado.mockReturnValue(false);
 
-	it("propaga el error cuando falla la consulta a la base de datos", async () => {
-		const error = new Error("No se pudo consultar las publicaciones",);
-		query.mockRejectedValue(error);
-		await expect(consultarPublicaciones()).rejects.toBe(error);
-	});
+        await expect(consultarPublicaciones()).rejects.toThrow(
+            "No tiene permisos para consultar publicaciones de Operadores.",
+        );
 
-	it("exige un local vigente sin multiplicar las publicaciones por cantidad de locales", async () => {
-		await consultarPublicaciones();
-		const consultaSql = sql.mock.calls[0][0].join("?");
-		expect(consultaSql).toContain('p."publicacionActiva" = true');
-		expect(consultaSql).toContain('p."publicacionDisponible" = true');
-		expect(consultaSql).toContain('AND EXISTS');
-		expect(consultaSql).toContain('l."operadorId" = o.id');
-		expect(consultaSql).toContain('l."finContrato" IS NULL');
-		expect(consultaSql).toContain("AT TIME ZONE 'America/Montevideo')::date >= ?::date");
-		expect(consultaSql).not.toContain('JOIN local');
-	});
+        expect(mocks.autorizado).toHaveBeenCalledTimes(1);
+        expect(mocks.autorizado).toHaveBeenCalledWith("operador.publicacion.consultar");
+        expect(mocks.primerWhere).not.toHaveBeenCalled();
+        expect(mocks.where).not.toHaveBeenCalled();
+        expect(mocks.include).not.toHaveBeenCalled();
+        expect(mocks.all).not.toHaveBeenCalled();
+    });
 
-	it("compara la vigencia contra el día de Montevideo aunque UTC ya sea el día siguiente", async () => {
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date("2026-10-11T01:00:00Z"));
-		try {
-			await consultarPublicaciones();
-			expect(sql.mock.calls[0][1]).toBe("2026-10-10");
-		} finally {
-			vi.useRealTimers();
-		}
-	});
+    it("construye los filtros del ORM y carga las relaciones necesarias", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-10-16T14:30:00.000Z"));
 
-	it("conserva el precio nulo cuando la publicación no tiene precio", async () => {
-		query.mockResolvedValue([{ ...crearFila(), precio: null }]);
-		const { publicaciones } = await consultarPublicaciones();
-		expect(publicaciones).toHaveLength(1);
-		expect(publicaciones[0].precio).toBeNull();
-	});
+        await consultarPublicaciones();
 
-	it("mantiene la cantidad de unidades entera recibida de la consulta", async () => {
-		query.mockResolvedValue([
-			{ ...crearFila(), cantidadUnidades: 45 },
-		]);
+        expect(mocks.primerWhere).toHaveBeenCalledTimes(1);
+        expect(mocks.where).toHaveBeenCalledTimes(3);
+        expect(mocks.include).toHaveBeenCalledTimes(3);
+        expect(mocks.include.mock.calls.map(([relacion]) => relacion)).toEqual([
+            "publicacion",
+            "pais",
+            "operador",
+        ]);
+        expect(mocks.all).toHaveBeenCalledTimes(1);
 
-		const { publicaciones } = await consultarPublicaciones();
+        expect(predicadosEvaluados).toHaveLength(4);
 
-		expect(publicaciones).toHaveLength(1);
-		expect(publicaciones[0].cantidadUnidades).toBe(45);
-	});
+        const filtroActiva = predicadosEvaluados[0];
+        expect(filtroActiva.somePublicacion).toHaveBeenCalledTimes(1);
+        expect(filtroActiva.eqActiva).toHaveBeenCalledWith(true);
+
+        const filtroDisponible = predicadosEvaluados[1];
+        expect(filtroDisponible.somePublicacion).toHaveBeenCalledTimes(1);
+        expect(filtroDisponible.eqDisponible).toHaveBeenCalledWith(true);
+
+        const filtroContrato = predicadosEvaluados[2];
+        expect(filtroContrato.someOperador).toHaveBeenCalledTimes(1);
+        expect(filtroContrato.someLocales).toHaveBeenCalledTimes(1);
+        expect(filtroContrato.finContratoIsNull).toHaveBeenCalledTimes(1);
+
+        const inicioHoy = Temporal.PlainDate.from("2026-10-16")
+            .toZonedDateTime({
+                timeZone: "America/Montevideo",
+                plainTime: Temporal.PlainTime.from("00:00"),
+            })
+            .toInstant();
+
+        expect(filtroContrato.finContratoGte).toHaveBeenCalledWith(inicioHoy);
+        expect(mocks.or).toHaveBeenCalledTimes(1);
+        expect(mocks.or).toHaveBeenCalledWith("finContrato.isNull", "finContrato.gte");
+
+        const filtroPais = predicadosEvaluados[3];
+        expect(filtroPais.somePais).toHaveBeenCalledTimes(1);
+    });
+
+    it("devuelve una lista vacía cuando el ORM no encuentra publicaciones", async () => {
+        mocks.all.mockResolvedValue([]);
+
+        await expect(consultarPublicaciones()).resolves.toEqual({
+            publicaciones: [],
+        });
+    });
+
+    it("transforma los tipos y mapea todos los datos de la publicación, operador y país", async () => {
+        const fila = crearFilaValida();
+        mocks.all.mockResolvedValue([fila]);
+
+        const resultado = await consultarPublicaciones();
+
+        expect(resultado.publicaciones).toEqual([
+            {
+                id: 101,
+                precio: 125.5,
+                fecha: fila.publicacion!.fecha.toString(),
+                foto: "/publicaciones/manzana.jpg",
+                especie: "Manzana",
+                variedad: "Royal Gala",
+                presentacion: "Caja de 10 kg",
+                cantidadUnidades: 24,
+                categoria: "I",
+                calibre: "Grande",
+                codigoCalibre: "G",
+                pais: "Uruguay",
+                operador: {
+                    id: 7,
+                    nombreFantasia: "Frutas del Sur",
+                    whatsApp: "+59899111222",
+                },
+            },
+        ]);
+    });
+
+    it("conserva precio, foto y cantidad de unidades nulos", async () => {
+        const fila = crearFilaValida();
+        fila.publicacion!.precio = null;
+        fila.publicacion!.foto = null;
+        fila.publicacion!.cantidadUnidades = null;
+        mocks.all.mockResolvedValue([fila]);
+
+        const resultado = await consultarPublicaciones();
+
+        expect(resultado.publicaciones).toHaveLength(1);
+        expect(resultado.publicaciones[0]).toMatchObject({
+            precio: null,
+            foto: null,
+            cantidadUnidades: null,
+        });
+    });
+
+    it("descarta filas sin publicación, operador o país", async () => {
+        const sinPublicacion = {
+            ...crearFilaValida(),
+            publicacion: null,
+        };
+        const sinOperador = {
+            ...crearFilaValida(),
+            operador: null,
+        };
+        const sinPais = {
+            ...crearFilaValida(),
+            pais: null,
+        };
+
+        mocks.all.mockResolvedValue([sinPublicacion, sinOperador, sinPais]);
+
+        const resultado = await consultarPublicaciones();
+
+        expect(resultado.publicaciones).toEqual([]);
+    });
+
+    it("descarta filas sin presentación, variedad o especie", async () => {
+        const sinPresentacion = crearFilaValida();
+        sinPresentacion.publicacion!.presentacion = null;
+
+        const sinVariedad = crearFilaValida();
+        sinVariedad.publicacion!.presentacion!.variedad = null;
+
+        const sinEspecie = crearFilaValida();
+        sinEspecie.publicacion!.presentacion!.variedad!.especie = null;
+
+        mocks.all.mockResolvedValue([
+            sinPresentacion,
+            sinVariedad,
+            sinEspecie,
+        ]);
+
+        const resultado = await consultarPublicaciones();
+
+        expect(resultado.publicaciones).toEqual([]);
+    });
+
+    it("descarta filas sin categoría o calibre", async () => {
+        const sinCategoria = crearFilaValida();
+        sinCategoria.publicacion!.categoria = null;
+
+        const sinCalibre = crearFilaValida();
+        sinCalibre.publicacion!.calibre = null;
+
+        mocks.all.mockResolvedValue([sinCategoria, sinCalibre]);
+
+        const resultado = await consultarPublicaciones();
+
+        expect(resultado.publicaciones).toEqual([]);
+    });
+
+    it("conserva las filas válidas y descarta las inválidas en una misma consulta", async () => {
+        const valida = crearFilaValida();
+        const invalida = crearFilaValida();
+        invalida.publicacion!.presentacion = null;
+
+        mocks.all.mockResolvedValue([valida, invalida]);
+
+        const resultado = await consultarPublicaciones();
+
+        expect(resultado.publicaciones).toHaveLength(1);
+        expect(resultado.publicaciones[0]).toMatchObject({
+            id: 101,
+            especie: "Manzana",
+            operador: {
+                id: 7,
+                nombreFantasia: "Frutas del Sur",
+            },
+        });
+    });
+
+    it("propaga los errores producidos por la consulta del ORM", async () => {
+        mocks.all.mockRejectedValue(new Error("Fallo de base de datos mockeado"));
+
+        await expect(consultarPublicaciones()).rejects.toThrow(
+            "Fallo de base de datos mockeado",
+        );
+    });
 });

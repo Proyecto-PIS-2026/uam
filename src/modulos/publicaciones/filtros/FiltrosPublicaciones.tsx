@@ -49,7 +49,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
     const [variedad, setVariedad] = useState(() => {
         const variedadesIniciales = new Set(publicaciones.filter((publicacion) => publicacion.especie === especieFiltro).map((publicacion) => publicacion.variedad));
         return especieFiltro !== "" && variedadesIniciales.size === 1 && variedadesIniciales.has("-") ? "-" : "Todas";
-    });                                                                                  // Filtro Variedad
+    });                                                                                     // Filtro Variedad
     const [presentacion, setPresentacion] = useState("Todas");                              // Filtro Presentacion
     const [categoria, setCategoria] = useState("Todas");                                    // Filtro Categoria
     const [calibre, setCalibre] = useState("Todas");                                        // Filtro Calibre

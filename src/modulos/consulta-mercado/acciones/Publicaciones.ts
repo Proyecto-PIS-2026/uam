@@ -1,6 +1,7 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import { Temporal } from "@js-temporal/polyfill";
+import "temporal-polyfill/full/global";
+import { or } from "@prisma/orm-postgres/orm-client";
 
 export type PublicacionListado = {
     id: number;
@@ -27,76 +28,72 @@ export type ResultadoPublicaciones = {
 };
 
 export async function consultarPublicaciones(): Promise<ResultadoPublicaciones> {
-    if (!autorizado("operador.publicacion.consultar")) {
-        throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
-    }
-
-    const tablas = db.sql.public;
-    const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
-    const plan = db.raw.sql`
-        SELECT p.id, p.precio, p.fecha, p.foto, p."cantidadUnidades",
-            e."nombreEspecie" AS especie, v."nombreVariedad" AS variedad,
-            pr."nombrePresentacion" AS presentacion, c."nombreCategoria" AS categoria,
-            ca."nombreCalibre" AS calibre, ca."codigoCalibre", pa."nombrePais" AS pais,
-            o.id AS "operadorId", o."nombreFantasia" AS "operadorNombreFantasia",
-            o."whatsApp" AS "operadorWhatsApp"
-        FROM "publicacionOperador" po
-        JOIN publicacion p ON p.id = po."publicacionId"
-        JOIN presentacion pr ON pr.id = p."presentacionId"
-        JOIN variedad v ON v.id = pr."variedadId"
-        JOIN especie e ON e.id = v."especieId"
-        JOIN categoria c ON c.id = p."categoriaId"
-        JOIN calibre ca ON ca.id = p."calibreId"
-        JOIN pais pa ON pa.id = po."paisId"
-        JOIN operador o ON o.id = po."operadorId"
-        WHERE p."publicacionActiva" = true
-          AND p."publicacionDisponible" = true
-          AND EXISTS (
-            SELECT 1
-            FROM local l
-            WHERE l."operadorId" = o.id
-              AND (
-                l."finContrato" IS NULL
-                OR (l."finContrato" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date
-              )
-          )
-    `.returnsRow({
-        id: tablas.publicacion.columns.id,
-        precio: tablas.publicacion.columns.precio,
-        fecha: tablas.publicacion.columns.fecha,
-        foto: tablas.publicacion.columns.foto,
-        cantidadUnidades: tablas.publicacion.columns.cantidadUnidades,
-        especie: tablas.especie.columns.nombreEspecie,
-        variedad: tablas.variedad.columns.nombreVariedad,
-        presentacion: tablas.presentacion.columns.nombrePresentacion,
-        categoria: tablas.categoria.columns.nombreCategoria,
-        calibre: tablas.calibre.columns.nombreCalibre,
-        codigoCalibre: tablas.calibre.columns.codigoCalibre,
-        pais: tablas.pais.columns.nombrePais,
-        operadorId: tablas.operador.columns.id,
-        operadorNombreFantasia: tablas.operador.columns.nombreFantasia,
-        operadorWhatsApp: tablas.operador.columns.whatsApp,
-    }).build();
-    const filas = await db.runtime().query(plan);
-    const publicaciones: PublicacionListado[] = filas.map((fila) => ({
-        id: Number(fila.id),
-        precio: fila.precio === null ? null : Number(fila.precio),
-        fecha: fila.fecha.toString(),
-        foto: fila.foto,
-        especie: fila.especie,
-        variedad: fila.variedad,
-        presentacion: fila.presentacion,
-        cantidadUnidades: fila.cantidadUnidades === null ? null : Number(fila.cantidadUnidades),
-        categoria: fila.categoria,
-        calibre: fila.calibre,
-        codigoCalibre: fila.codigoCalibre,
-        pais: fila.pais,
-        operador: {
-            id: Number(fila.operadorId),
-            nombreFantasia: fila.operadorNombreFantasia,
-            whatsApp: fila.operadorWhatsApp
-        }
-    }));
-
+    if (!autorizado("operador.publicacion.consultar")) throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
+    const zonaHoraria = "America/Montevideo";
+    const hoy = Temporal.Now.plainDateISO(zonaHoraria);
+    const inicioHoy = hoy.toZonedDateTime({ timeZone: zonaHoraria, plainTime: Temporal.PlainTime.from("00:00") }).toInstant();
+    const filas = await db.orm.public.PublicacionOperador.where((po) => 
+        po.publicacion.some((p) => 
+            p.publicacionActiva.eq(true)
+        )
+    ).where((po) => 
+        po.publicacion.some((p) => 
+            p.publicacionDisponible.eq(true)
+        )
+    ).where((po) => 
+        po.operador.some((o) =>
+            o.locales.some((l) =>
+                or(l.finContrato.isNull(), l.finContrato.gte(inicioHoy))
+            )
+        )
+    ).where((po) => 
+        po.pais.some()
+    ).include("publicacion", (p) =>
+        p.select("id", "precio", "fecha", "foto", "cantidadUnidades").include("presentacion", (pr) =>
+            pr.select("nombrePresentacion").include("variedad", (v) =>
+                v.select("nombreVariedad").include("especie", (e) =>
+                    e.select("nombreEspecie")
+                ),
+            ),
+        ).include("categoria", (c) =>
+            c.select("nombreCategoria")
+        ).include("calibre", (c) =>
+            c.select("nombreCalibre", "codigoCalibre")
+        )
+    ).include("pais", (pa) => 
+        pa.select("nombrePais")
+    ).include("operador", (o) =>
+        o.select("id", "nombreFantasia", "whatsApp")
+    ).all();
+    const publicaciones: PublicacionListado[] = filas.flatMap((fila): PublicacionListado[] => {
+        const p = fila.publicacion;
+        const pais = fila.pais;
+        const operador = fila.operador;
+        const presentacion = p?.presentacion;
+        const variedad = presentacion?.variedad;
+        const especie = variedad?.especie;
+        const categoria = p?.categoria;
+        const calibre = p?.calibre;
+        if (!p || !pais || !operador || !presentacion || !variedad || !especie || !categoria || !calibre) return [];
+        return [{
+            id: Number(p.id),
+            precio: p.precio === null ? null : Number(p.precio),
+            fecha: p.fecha.toString(),
+            foto: p.foto,
+            especie: especie.nombreEspecie,
+            variedad: variedad.nombreVariedad,
+            presentacion: presentacion.nombrePresentacion,
+            cantidadUnidades: p.cantidadUnidades === null ? null : Number(p.cantidadUnidades),
+            categoria: categoria.nombreCategoria,
+            calibre: calibre.nombreCalibre,
+            codigoCalibre: calibre.codigoCalibre,
+            pais: pais.nombrePais,
+            operador: {
+                id: Number(operador.id),
+                nombreFantasia: operador.nombreFantasia,
+                whatsApp: operador.whatsApp,
+            },
+        }];
+    });
     return { publicaciones };
 }
