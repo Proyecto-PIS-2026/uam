@@ -12,7 +12,7 @@ const publicacionBase: PublicacionPerfilAdminProductor = {
     presentacionId: 7,
     categoriaId: 3,
     calibreId: 4,
-    departamentoId: 8,
+    paisId: 1,
     foto: null,
     precio: "90.00",
     cantidadUnidades: 15,
@@ -24,8 +24,11 @@ const publicacionBase: PublicacionPerfilAdminProductor = {
     categoria: "I",
     calibre: "G",
     codigoCalibre: "G",
-    departamento: "Canelones",
-    direccion: "Ruta 5 km 30",
+    pais: "Uruguay",
+    ubicaciones: [
+        { nombre: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1" },
+        { nombre: "Ruta 5 km 200, Maldonado", urlMaps: "https://goo.gl/maps/maldonado1" },
+    ],
 };
 
 describe("CatalogoProductorAdmin", () => {

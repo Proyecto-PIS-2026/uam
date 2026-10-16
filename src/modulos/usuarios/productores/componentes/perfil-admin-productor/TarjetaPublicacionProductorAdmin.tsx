@@ -14,23 +14,23 @@ type TarjetaPublicacionProductorAdminProps = {
     publicacion: PublicacionPerfilAdminProductor;
 };
 
-export default function TarjetaPublicacionProductorAdmin({publicacion }: TarjetaPublicacionProductorAdminProps) {
+export default function TarjetaPublicacionProductorAdmin({ publicacion }: TarjetaPublicacionProductorAdminProps) {
     const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
-    const ubicacion = `${publicacion.departamento} · ${publicacion.direccion}`;
+    const ubicacion = publicacion.ubicaciones.map((lugar) => lugar.nombre).join(" · ");
 
     return (
         <article className={styles.tarjeta} aria-label={`Ver detalles de ${nombreProducto}`}>
             <div className={styles.contenedorImagen}>
                 <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 767px) 96px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.imagen} reemplazo={
                     <div className={styles.sinFoto}>
-                        <ImageOutlinedIcon className={styles.iconoFoto}/>
+                        <ImageOutlinedIcon className={styles.iconoFoto} />
                         <span className={styles.textoSinFotoMobile}>Foto</span>
                         <span className={styles.textoSinFotoWeb}>Sin foto disponible</span>
                     </div>
                 } />
             </div>
 
-                        <div className={styles.contenido}>
+            <div className={styles.contenido}>
                 <div className={styles.encabezado}>
                     <div className="flex w-full min-w-0 items-start justify-between gap-2">
                         <h3 className={`${styles.especie} min-w-0 flex-1`} title={nombreProducto}>{nombreProducto}</h3>
@@ -39,10 +39,9 @@ export default function TarjetaPublicacionProductorAdmin({publicacion }: Tarjeta
                                 shrink-0 rounded-full
                                 px-2 py-0.5
                                 text-[10px] font-bold
-                                ${
-                                    publicacion.disponible
-                                        ? "bg-primary-soft text-secondary"
-                                        : "bg-gray-100 text-muted"
+                                ${publicacion.disponible
+                                    ? "bg-primary-soft text-secondary"
+                                    : "bg-gray-100 text-muted"
                                 }
                             `}
                         >
@@ -52,7 +51,7 @@ export default function TarjetaPublicacionProductorAdmin({publicacion }: Tarjeta
                         </span>
                     </div>
                     <p className={styles.informacionWeb}>{publicacion.calibre} · Categoría {publicacion.categoria}</p>
-                    <p className={styles.ubicacion} title={ubicacion}>{ubicacion}</p>
+                    {ubicacion && <p className={styles.ubicacion} title={ubicacion}>{ubicacion}</p>}
                 </div>
                 <div className={styles.cuerpo}>
                     <div className={styles.informacionMobile}>

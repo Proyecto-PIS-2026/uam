@@ -31,8 +31,9 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
 // Informacion de prueba de un productor
 const productorBase = {
     id: 2,
+    nombreFantasia: "Granja Los Álamos",
+    fotoPerfil: null,
     whatsApp: "+59899200002",
-    usuario: { username: "productor_demo_norte"},
 };
 
 const publicacionBase = {
@@ -62,9 +63,11 @@ const publicacionBase = {
 
 const relacionBase = {
     id: 301,
-    departamentoId: 8,
-    direccion: "Ruta 5 km 30",
-    departamento: { nombreDepartamento: "Canelones" },
+    paisId: 1,
+    pais: { nombrePais: "Uruguay"},
+    ubicaciones: [
+        { nombreUbicacion: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1"}
+    ],
     publicacion: publicacionBase,
 };
 
@@ -110,24 +113,23 @@ describe("obtenerPerfilAdminProductor", () => {
         expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
     });
 
-    // El nombre que se muestra es el nombre de usuario de su cuenta
-    it("devuelve el perfil con el nombre de usuario y el WhatsApp", async () => {
+    // El perfil trae el nombre de fantasía, y el Whatsapp del productor
+    it("devuelve el perfil con el nombre de fantasía, la foto y el Whatsapp", async () => {
         mockDb.productor.first.mockResolvedValue(productorBase);
 
         const resultado = await obtenerPerfilAdminProductor(2);
 
         expect(resultado).toEqual({
             id: 2,
-            nombreUsuario: "productor_demo_norte",
+            nombreFantasia: "Granja Los Álamos",
+            fotoPerfil: null,
             whatsApp: "+59899200002",
             publicaciones: [],
         });
-        expect(mockDb.productor.include).toHaveBeenCalledWith("usuario", expect.any(Function));
         expect(mockDb.publicaciones.where).toHaveBeenCalledWith({ productorId: 2 });
     });
 
-    // Cada publicación trae su departamento y su dirección, además de los datos del producto
-    it("devuelve cada publicación con su departamento y su dirección", async () => {
+    it("devuelve cada publicación con su país y sus ubicaciones", async () => {
         mockDb.productor.first.mockResolvedValue(productorBase);
         mockDb.publicaciones.all.mockResolvedValue([relacionBase]);
  
@@ -142,7 +144,7 @@ describe("obtenerPerfilAdminProductor", () => {
                 presentacionId: 7,
                 categoriaId: 3,
                 calibreId: 4,
-                departamentoId: 8,
+                paisId: 1,
                 foto: null,
                 precio: "90.00",
                 cantidadUnidades: 15,
@@ -154,8 +156,10 @@ describe("obtenerPerfilAdminProductor", () => {
                 categoria: "I",
                 calibre: "G",
                 codigoCalibre: "G",
-                departamento: "Canelones",
-                direccion: "Ruta 5 km 30",
+                pais: "Uruguay",
+                ubicaciones: [
+                    { nombre: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1" },
+                ],
             },
         ]);
     });

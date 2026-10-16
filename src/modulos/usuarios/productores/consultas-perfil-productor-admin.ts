@@ -1,5 +1,11 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 
+// Una ubicación donde está el producto, con su enlace a Google Maps
+export type UbicacionPublicacionProductor = {
+    nombre: string;
+    urlMaps: string;
+};
+
 // Datos de una publicación del productor tal como los ve el administrador
 export type PublicacionPerfilAdminProductor = {
     id: number;
@@ -9,7 +15,7 @@ export type PublicacionPerfilAdminProductor = {
     presentacionId: number;
     categoriaId: number;
     calibreId: number;
-    departamentoId: number;
+    paisId: number;
     foto: string | null;
     precio: string | null;
     cantidadUnidades?: number | null;
@@ -21,14 +27,15 @@ export type PublicacionPerfilAdminProductor = {
     categoria: string;
     calibre: string;
     codigoCalibre: string;
-    departamento: string;
-    direccion: string;
+    pais: string;
+    ubicaciones: UbicacionPublicacionProductor[]; // Una publicación puede estar en varias ubicaciones
 };
 
 // Datos del perfil de un productor tal como los ve el administrador
 export type PerfilAdminProductor = {
     id: number;
-    nombreUsuario: string;
+    nombreFantasia: string;
+    fotoPerfil: string | null;
     whatsApp: string;
     publicaciones: PublicacionPerfilAdminProductor[];
 };
@@ -40,8 +47,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
 
     // await porque la consulta a la base de datos es asíncrona pero quiero esperar a la respuesta antes de seguir
     const productor = await db.orm.public.Productor
-        .select("id", "whatsApp")
-        .include("usuario", (usuario) => usuario.select("username"))
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp")
         .first({ id });
 
     if (!productor) {
@@ -51,7 +57,8 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
     // Obtener las publicaciones
     const consultaCompleta = db.orm.public.PublicacionProductor // Solo armo la consulta sin ejecutarla
         .where({ productorId: productor.id })
-        .include("departamento", (consultaDepartamento) => consultaDepartamento.select("nombreDepartamento"))
+        .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
+        .include("ubicaciones", (consultaUbicaciones) => consultaUbicaciones.select("nombreUbicacion", "urlMaps"))
         .include("publicacion", (consultaPublicacion) => {
             const camposPublicacion = consultaPublicacion.select(
                 "id",
@@ -95,7 +102,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
                 presentacionId: publicacion.presentacionId,
                 categoriaId: publicacion.categoriaId,
                 calibreId: publicacion.calibreId,
-                departamentoId: completa.departamentoId,
+                paisId: completa.paisId,
                 foto: publicacion.foto,
                 precio: publicacion.precio,
                 cantidadUnidades: publicacion.cantidadUnidades,
@@ -107,15 +114,19 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
                 categoria: publicacion.categoria.nombreCategoria,
                 calibre: publicacion.calibre.codigoCalibre,
                 codigoCalibre: publicacion.calibre.codigoCalibre,
-                departamento: completa.departamento.nombreDepartamento,
-                direccion: completa.direccion,
+                pais: completa.pais.nombrePais,
+                ubicaciones: completa.ubicaciones.map((ubicacion) => ({
+                    nombre: ubicacion.nombreUbicacion,
+                    urlMaps: ubicacion.urlMaps,
+                })),
             });
         }
     }
 
     const productorResultante: PerfilAdminProductor = {
         id: productor.id,
-        nombreUsuario: productor.usuario.username,
+        nombreFantasia: productor.nombreFantasia,
+        fotoPerfil: productor.fotoPerfil,
         whatsApp: productor.whatsApp,
         publicaciones,
     };

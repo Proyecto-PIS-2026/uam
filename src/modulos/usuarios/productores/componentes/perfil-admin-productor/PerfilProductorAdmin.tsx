@@ -4,6 +4,7 @@ import type { PerfilAdminProductor } from "../../consultas-perfil-productor-admi
 import styles from "./PerfilProductorAdmin.module.css";
 import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
 import Link from "next/link";
+import Image from "next/image";
 
 type PerfilProductorAdminProps = {
     productor: PerfilAdminProductor;
@@ -11,7 +12,7 @@ type PerfilProductorAdminProps = {
 
 
 export default function PerfilProductorAdmin({ productor }: PerfilProductorAdminProps) {
-    const inicialProductor = productor.nombreUsuario.trim()[0]?.toUpperCase();
+    const inicialProductor = productor.nombreFantasia.trim()[0]?.toUpperCase();
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-productor">
             <Link href="/administracion#usuarios" className={styles.volver}>
@@ -21,12 +22,16 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <div className={styles.avatar}>
+                        {productor.fotoPerfil ? (
+                            <Image src={productor.fotoPerfil} alt={`Foto de ${productor.nombreFantasia}`} width={96} height={96} className={styles.imagenAvatar} />
+                        ) : (
                             <span aria-hidden="true">{inicialProductor}</span>
+                        )}
                     </div>
 
                     <div className={styles.identidad}>
                         <p className={styles.tipoPerfil}>Perfil Productor</p>
-                        <h1 id="nombre-productor" className={styles.nombre}>{productor.nombreUsuario}</h1>
+                        <h1 id="nombre-productor" className={styles.nombre}>{productor.nombreFantasia}</h1>
                     </div>
                     <Link
                         href={`/gestion-productores/${productor.id}/editar`}

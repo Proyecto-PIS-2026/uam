@@ -11,7 +11,7 @@ const publicacionBase: PublicacionPerfilAdminProductor = {
     presentacionId: 7,
     categoriaId: 3,
     calibreId: 4,
-    departamentoId: 8,
+    paisId: 1,
     foto: null,
     precio: "90.00",
     cantidadUnidades: 15,
@@ -23,8 +23,11 @@ const publicacionBase: PublicacionPerfilAdminProductor = {
     categoria: "Extra",
     calibre: "Grande",
     codigoCalibre: "G",
-    departamento: "Canelones",
-    direccion: "Ruta 5 km 30",
+    pais: "Uruguay",
+    ubicaciones: [
+        { nombre: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1" },
+        { nombre: "Ruta 5 km 200, Maldonado", urlMaps: "https://goo.gl/maps/maldonado1" },
+    ],
 };
 
 describe ('TarjetaPublicacionProductorAdmin', () => {
@@ -43,11 +46,11 @@ describe ('TarjetaPublicacionProductorAdmin', () => {
         expect(screen.getByText(/90/)).toBeInTheDocument();
     });
 
-    // Muestra dónde está el producto
-    it("muestra el departamento y la dirección", () => {
+    // Muestra dónde está el producto: los nombres de sus ubicaciones
+    it("muestra los nombres de las ubicaciones", () => {
         render(<TarjetaPublicacionProductorAdmin publicacion={publicacionBase} />);
  
-        expect(screen.getByText("Canelones · Ruta 5 km 30")).toBeInTheDocument();
+        expect(screen.getByText("Ruta 3 km 500, Salto · Ruta 5 km 200, Maldonado")).toBeInTheDocument();
     });
 
     // Si la variedad es "-", el nombre es solo la especie

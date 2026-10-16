@@ -18,7 +18,8 @@ vi.mock("./CatalogoProductorAdmin", () => ({
 
 const productorBase: PerfilAdminProductor = {
     id: 2,
-    nombreUsuario: "productor_demo_norte",
+    nombreFantasia: "Granja Los Álamos",
+    fotoPerfil: null,
     whatsApp: "+59899200002",
     publicaciones: [],
 };
@@ -32,13 +33,21 @@ describe("PerfilProductorAdmin", () => {
         cleanup();
     });
 
-    // Muestra la identidad del productor
-    it("muestra el nombre de usuario, la inicial y el WhatsApp del productor", () => {
+        // Muestra la identidad del productor: nombre de fantasía, inicial y WhatsApp
+    it("muestra el nombre de fantasía, la inicial y el WhatsApp del productor", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
-        expect(screen.getByRole("heading", { level: 1, name: "productor_demo_norte" })).toBeInTheDocument();
-        expect(screen.getByText("P")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { level: 1, name: "Granja Los Álamos" })).toBeInTheDocument();
+        expect(screen.getByText("G")).toBeInTheDocument();
         expect(screen.getByText("+59899200002")).toBeInTheDocument();
+    });
+
+    // Con foto, se muestra la foto en lugar de la inicial
+    it("muestra la foto del productor cuando tiene", () => {
+        render(<PerfilProductorAdmin productor={{ ...productorBase, fotoPerfil: "/productores/granja.jpg" }} />);
+
+        expect(screen.getByRole("img", { name: "Foto de Granja Los Álamos" })).toBeInTheDocument();
+        expect(screen.queryByText("G")).not.toBeInTheDocument();
     });
 
     // El enlace de volver lleva al listado de usuarios del panel de administración
