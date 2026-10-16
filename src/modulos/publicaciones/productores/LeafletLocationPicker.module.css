@@ -1,0 +1,120 @@
+.fondo {
+    position: fixed;
+    z-index: 1400;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgb(0 0 0 / 45%);
+}
+
+.modal {
+    display: flex;
+    width: min(46rem, 100%);
+    max-height: min(42rem, 100%);
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow: hidden;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    box-shadow: 0 1rem 3rem rgb(0 0 0 / 25%);
+}
+
+.encabezado,
+.pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.encabezado h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.cerrar {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-secondary);
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-secondary);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.ayuda,
+.coordenadas,
+.estado {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+}
+
+.mapa {
+    position: relative;
+    min-height: 20rem;
+    height: min(55dvh, 32rem);
+    flex: 1 1 auto;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    background: var(--color-primary-soft);
+}
+
+.mapa :global(.leaflet-container) {
+    width: 100%;
+    height: 100%;
+    font: inherit;
+}
+
+.mapa :global(.leaflet-control-attribution) {
+    font-size: 0.625rem;
+}
+
+.estado,
+.error {
+    position: absolute;
+    z-index: 1000;
+    inset: 1rem;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    pointer-events: none;
+}
+
+.error {
+    color: #b42332;
+}
+
+.cancelar,
+.confirmar {
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
+    border-radius: 0.75rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cancelar {
+    border: 1px solid var(--color-secondary);
+    background: var(--color-surface);
+    color: var(--color-secondary);
+}
+
+.confirmar {
+    border: 0;
+    background: var(--color-secondary);
+    color: white;
+}
+
+.confirmar:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
