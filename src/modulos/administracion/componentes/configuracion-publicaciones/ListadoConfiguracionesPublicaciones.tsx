@@ -49,7 +49,7 @@ export default function ListadoConfiguraciones({ configuracion }: ListadoConfigu
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="secciones-pagina">
             <TarjetaInput
                 titulo="Importe de ajuste rápido de precios"
                 descripcion="Configurá el importe utilizado para aumentar o disminuir rápidamente el precio de una publicación."

@@ -12,19 +12,23 @@ import Page from "./page";
 describe("/mi-mercado/[nombre]", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it("pasa el nombre del operador a Mi Mercado", async () => {
-        const contenido = await Page({ params: Promise.resolve({ nombre: "Frutas & Más" }) });
-        expect(contenido.props.operadorNombre).toBe("Frutas & Más");
-        expect(notFoundMock).not.toHaveBeenCalled();
-    });
-
-    it.each(["Frutas 100%", "Frutas %20"])("conserva el nombre existente %s", async (nombre) => {
-        const contenido = await Page({ params: Promise.resolve({ nombre }) });
+    it.each([
+        ["Jorge%20Ferias", "Jorge Ferias"],
+        ["Frutas%20%26%20M%C3%A1s", "Frutas & Más"],
+        ["Frutas%20100%25", "Frutas 100%"],
+        ["Frutas%20%2520", "Frutas %20"],
+    ])("decodifica una sola vez el nombre de la URL %s", async (nombreCodificado, nombre) => {
+        const contenido = await Page({ params: Promise.resolve({ nombre: nombreCodificado }) });
         expect(contenido.props.operadorNombre).toBe(nombre);
         expect(notFoundMock).not.toHaveBeenCalled();
     });
 
-    it.each(["", "   "])("rechaza el nombre vacío %s", async (nombre) => {
+    it.each(["", "   ", "%20%20"])("rechaza el nombre vacío %s", async (nombre) => {
+        await expect(Page({ params: Promise.resolve({ nombre }) })).rejects.toThrow("NOT_FOUND");
+        expect(notFoundMock).toHaveBeenCalledOnce();
+    });
+
+    it.each(["%", "%ZZ", "%C3"])("rechaza la codificación inválida %s", async (nombre) => {
         await expect(Page({ params: Promise.resolve({ nombre }) })).rejects.toThrow("NOT_FOUND");
         expect(notFoundMock).toHaveBeenCalledOnce();
     });

@@ -1,12 +1,16 @@
 "use client";
 import Link from "next/link";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
 import styles from "./FormularioAltaUsuario.module.css";
 import { useState, useEffect, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
+import BotonVolver from "@/compartido/BotonVolver";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 const ROLES_VALIDOS = ["operador", "productor", "administrador"];
+const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
 export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }) {
     const searchParams = useSearchParams();    
@@ -79,7 +83,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 return;
             }
 
-            // Pendiente: productor y administrador
             setErrores(["Esta alta todavía no está disponible para el rol seleccionado."]);
         } finally {
             setEnviando(false);
@@ -106,303 +109,265 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     }
 
     return (
-        <section className="contenedor-pagina flex flex-col gap-6">
+        <section className="contenedor-pagina secciones-pagina">
+            <BotonVolver href="/administracion">Volver al panel administrativo</BotonVolver>
             <EncabezadoPagina
                 titulo="Alta de usuario"
                 subtitulo="Registrar un nuevo usuario en la plataforma"
             />
 
             <form onSubmit={handleSubmit} className={styles.formulario}>
-                <div className={styles.campo}>
-                    <label htmlFor="rol" className={styles.label}>
-                        Rol del usuario<span className="text-red-500">*</span>
-                    </label>
-                    <select
+                <div className={styles.grilla}>
+                    <TextField
                         id="rol"
+                        select
+                        label="Rol del usuario"
                         value={rol}
                         onChange={(e) => setRol(e.target.value)}
                         required
+                        fullWidth
+                        size="small"
                         className={styles.control}
+                        slotProps={propiedadesMenuSelect}
                     >
-                        <option value="" disabled>
-                            Seleccionar un rol
-                        </option>
-                        <option value="operador">Operador</option>
-                        <option value="productor">Productor</option>
-                        <option value="administrador">Administrador</option>
-                    </select>
-                </div>
-
-                <div className={styles.campo}>
-                    <label htmlFor="nombreUsuario" className={styles.label}>
-                        Nombre de Usuario<span className="text-red-500">*</span>
-                    </label>
-                    <input
+                        <MenuItem value="" disabled className={styles.opcionSelect}>Seleccionar un rol</MenuItem>
+                        <MenuItem value="operador" className={styles.opcionSelect}>Operador</MenuItem>
+                        <MenuItem value="productor" className={styles.opcionSelect}>Productor</MenuItem>
+                        <MenuItem value="administrador" className={styles.opcionSelect}>Administrador</MenuItem>
+                    </TextField>
+                    <TextField
                         id="nombreUsuario"
-                        type="text"
+                        label="Nombre de Usuario"
                         value={nombreUsuario}
                         required
                         onChange={(e) => setNombreUsuario(e.target.value)}
                         placeholder="Ingresar nombre de usuario"
+                        autoComplete="username"
+                        fullWidth
+                        size="small"
                         className={styles.control}
                     />
-                </div>
-
-                <div className={styles.campo}>
-                    <label htmlFor="contraseña" className={styles.label}>
-                        Contraseña<span className="text-red-500">*</span>
-                    </label>
-                    <input
+                    <TextField
                         id="contraseña"
+                        label="Contraseña"
                         type="password"
                         value={contraseña}
                         required
-                        minLength={8}
                         onChange={(e) => setContraseña(e.target.value)}
                         placeholder="Ingresar contraseña"
+                        autoComplete="new-password"
+                        fullWidth
+                        size="small"
+                        slotProps={{ htmlInput: { minLength: 8 } }}
+                        className={styles.control}
+                    />
+                    <TextField
+                        id="confirmacionContraseña"
+                        label="Confirmación de Contraseña"
+                        type="password"
+                        value={confirmacioncontraseña}
+                        required
+                        onChange={(e) => setConfirmacionContraseña(e.target.value)}
+                        placeholder="Ingresar confirmación de contraseña"
+                        autoComplete="new-password"
+                        fullWidth
+                        size="small"
+                        slotProps={{ htmlInput: { minLength: 8 } }}
                         className={styles.control}
                     />
                 </div>
 
-                <div className={styles.campo}>
-                    <label htmlFor="confirmacionContraseña" className={styles.label}>
-                        Confirmación de Contraseña<span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        id="confirmacionContraseña"
-                        type="password"
-                        value={confirmacioncontraseña}
-                        required
-                        minLength={8}
-                        onChange={(e) => setConfirmacionContraseña(e.target.value)}
-                        placeholder="ingresar confirmación de contraseña"
-                        className={styles.control}
-                    />
-                </div>
-                
                 {rol === "operador" && (
-                <>
-                    <div className={styles.campo}>
-                        <label htmlFor="nombre" className={styles.label}>
-                            Nombre<span className="text-red-500">*</span>
-                        </label>
-                        <input
+                    <>
+                        <TextField
                             id="nombre"
-                            type="text"
+                            label="Nombre"
                             value={nombre}
                             required
                             onChange={(e) => setNombre(e.target.value)}
                             placeholder="Ingresar nombre"
+                            fullWidth
+                            size="small"
                             className={styles.control}
                         />
-                    </div>
-
-                    <div className={styles.campo}>
-                        <label htmlFor="numero" className={styles.label}>
-                            Numero de Teléfono (whatsApp)<span className="text-red-500">*</span>
-                        </label>
-                        <div className="flex gap-2">
-                            <select
+                        <div className={styles.filaTelefono}>
+                            <TextField
+                                id="codigoPais"
+                                select
+                                label="Código de país"
                                 value={codigoPais}
                                 onChange={(e) => setCodigoPais(e.target.value)}
-                                aria-label="Código de país"
-                                className={`${styles.control} w-44`}
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                slotProps={propiedadesMenuSelect}
                             >
-                                <option value="+598">+598 (Uruguay)</option>
-                                <option value="+54">+54 (Argentina)</option>
-                                <option value="+55">+55 (Brasil)</option>
-                                <option value="+56">+56 (Chile)</option>
-                                <option value="+595">+595 (Paraguay)</option>
-                            </select>
-                            <input
+                                <MenuItem value="+598" className={styles.opcionSelect}>+598 (Uruguay)</MenuItem>
+                                <MenuItem value="+54" className={styles.opcionSelect}>+54 (Argentina)</MenuItem>
+                                <MenuItem value="+55" className={styles.opcionSelect}>+55 (Brasil)</MenuItem>
+                                <MenuItem value="+56" className={styles.opcionSelect}>+56 (Chile)</MenuItem>
+                                <MenuItem value="+595" className={styles.opcionSelect}>+595 (Paraguay)</MenuItem>
+                            </TextField>
+                            <TextField
                                 id="numero"
+                                label="Número de teléfono (WhatsApp)"
                                 type="tel"
                                 value={telefono}
                                 required
                                 onChange={(e) => settelefono(e.target.value)}
                                 placeholder="Ej: 99123456"
+                                fullWidth
+                                size="small"
                                 className={styles.control}
                             />
                         </div>
-                    </div>
 
-                    <div className="flex flex-col gap-3">
-                        <label htmlFor="locales" className={styles.label}>
-                            Locales <span className="text-red-500">(Mínimo 1)</span>
-                        </label>
-                        {locales.map((local, index) => (
-                            <div
-                                key={index}
-                                className={styles.local}
-                            >
-
-                                <h3 className="text-sm font-semibold text-foreground lg:hidden">
-                                    Local {index + 1}
-                                </h3>
-
-                                <input
-                                    type="text"
-                                    placeholder="Número de local"
-                                    value={local.numeroLocal}
-                                    required
-                                    onChange={(e) => actualizarLocal(index, "numeroLocal", e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary lg:w-1/4"
-                                />
-
-                                <select
-                                    value={local.nave}
-                                    required
-                                    onChange={(e) => actualizarLocal(index, "nave", e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary lg:w-1/4"
-                                >
-                                    <option value="" disabled>Seleccionar nave</option>
-                                    {naves.map((nave) => (
-                                        <option key={nave.id} value={nave.id}>
-                                            {nave.nombre}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                {local.mostrarContrato ? (
-                                    <div className="flex w-full flex-col gap-2 lg:w-1/3 lg:flex-row">
-                                        <input
-                                            type="date"
-                                            value={local.contrato}
-                                            onChange={(e) =>
-                                                actualizarLocal(index, "contrato", e.target.value)
-                                            }
-                                            className={`${styles.control} min-w-0`}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setLocales(locales.map((l, i) =>
-                                                    i === index
-                                                        ? { ...l, contrato: "", mostrarContrato: false }
-                                                        : l
-                                                ))
-                                            }
-                                            className={styles.botonSecundario}
-                                        >
-                                            Eliminar fecha
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setLocales(locales.map((l, i) =>
-                                                i === index
-                                                    ? { ...l, mostrarContrato: true }
-                                                    : l
-                                            ))
-                                        }
-                                        className={styles.botonSecundario}
-                                    >
-                                        + Agregar fin de contrato
-                                    </button>
-                                )}
-
-                                <button
-                                    type="button"
-                                    onClick={() => eliminarLocal(index)}
-                                    disabled={index === 0}
-                                    className={`${styles.botonSecundario} ${
-                                        index === 0 ? "invisible" : ""
-                                    }`}
-                                >
-                                    Eliminar local
+                        <section className={styles.locales} aria-labelledby="titulo-locales">
+                            <div className={styles.encabezadoLocales}>
+                                <div>
+                                    <h2 id="titulo-locales" className={styles.subtitulo}>Locales</h2>
+                                    <p className={styles.ayuda}>Agregá al menos un local para el operador.</p>
+                                </div>
+                                <button type="button" onClick={agregarLocal} className={styles.botonSecundario}>
+                                    + Agregar local
                                 </button>
                             </div>
-                        ))}
-
-                        <button
-                            type="button"
-                            onClick={agregarLocal}
-                            className={styles.botonSecundario}
-                        >
-                            + Agregar local
-                        </button>
-                    </div>
-                </>
+                            {locales.map((local, index) => (
+                                <div key={index} className={styles.local}>
+                                    <div className={styles.encabezadoLocal}>
+                                        <h3 className={styles.tituloLocal}>Local {index + 1}</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => eliminarLocal(index)}
+                                            disabled={index === 0}
+                                            className={styles.botonEliminar}
+                                        >
+                                            Eliminar local
+                                        </button>
+                                    </div>
+                                    <div className={styles.grillaLocal}>
+                                        <TextField
+                                            id={`numero-local-${index}`}
+                                            label="Número de local"
+                                            placeholder="Número de local"
+                                            value={local.numeroLocal}
+                                            required
+                                            onChange={(e) => actualizarLocal(index, "numeroLocal", e.target.value)}
+                                            fullWidth
+                                            size="small"
+                                            className={styles.control}
+                                        />
+                                        <TextField
+                                            id={`nave-${index}`}
+                                            select
+                                            label="Nave"
+                                            value={local.nave}
+                                            required
+                                            onChange={(e) => actualizarLocal(index, "nave", e.target.value)}
+                                            fullWidth
+                                            size="small"
+                                            className={styles.control}
+                                            slotProps={propiedadesMenuSelect}
+                                        >
+                                            <MenuItem value="" disabled className={styles.opcionSelect}>Seleccionar nave</MenuItem>
+                                            {naves.map((nave) => (
+                                                <MenuItem key={nave.id} value={nave.id} className={styles.opcionSelect}>
+                                                    {nave.nombre}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                        {local.mostrarContrato ? (
+                                            <div className={styles.contrato}>
+                                                <TextField
+                                                    id={`contrato-${index}`}
+                                                    label="Fin de contrato"
+                                                    type="date"
+                                                    value={local.contrato}
+                                                    onChange={(e) => actualizarLocal(index, "contrato", e.target.value)}
+                                                    fullWidth
+                                                    size="small"
+                                                    slotProps={{ inputLabel: { shrink: true } }}
+                                                    className={styles.control}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setLocales(locales.map((l, i) =>
+                                                        i === index ? { ...l, contrato: "", mostrarContrato: false } : l
+                                                    ))}
+                                                    className={styles.botonSecundario}
+                                                >
+                                                    Eliminar fecha
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => setLocales(locales.map((l, i) =>
+                                                    i === index ? { ...l, mostrarContrato: true } : l
+                                                ))}
+                                                className={styles.botonSecundario}
+                                            >
+                                                + Agregar fin de contrato
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </section>
+                    </>
                 )}
 
                 {mensajeExito && (
                     <p
-                        className={`text-sm text-green-600 transition-opacity duration-500 ${
-                            mensajeVisible ? "opacity-100" : "opacity-0"
-                        }`}
+                        className={`text-sm text-green-600 transition-opacity duration-500 ${mensajeVisible ? "opacity-100" : "opacity-0"}`}
                         role="status"
                     >
                         {mensajeExito}
                     </p>
                 )}
                 {errores.length > 0 && (
-                        <ul className="text-sm text-red-500">
-                            {errores.map((error) => (
-                                <li key={error}>{error}</li>
-                            ))}
-                        </ul>
+                    <ul className={styles.errores} role="alert">
+                        {errores.map((error) => <li key={error}>{error}</li>)}
+                    </ul>
                 )}
-                <div className="flex justify-end gap-3 pt-6">
+                <div className={styles.acciones}>
                     <button
                         type="button"
-                            onClick={() => {
-                                setNombreUsuario("");
-                                setContraseña("");
-                                setConfirmacionContraseña("");
-                                setNombre("");
-                                settelefono("");
-                                setCodigoPais("+598");
-                                setErrores([]);
-                                setMensajeExito("");
-                                setLocales([{ numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }]);
-                            }}
+                        onClick={() => {
+                            setNombreUsuario("");
+                            setContraseña("");
+                            setConfirmacionContraseña("");
+                            setNombre("");
+                            settelefono("");
+                            setCodigoPais("+598");
+                            setErrores([]);
+                            setMensajeExito("");
+                            setLocales([{ numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }]);
+                        }}
                         className={styles.botonSecundario}
                     >
                         Limpiar
                     </button>
-
-                    <button
-                        type="submit"
-                        disabled={enviando}
-                        className={styles.botonConfirmar}
-                    >
+                    <button type="submit" disabled={enviando} className={styles.botonConfirmar}>
                         {enviando ? "Registrando..." : "Registrar usuario"}
                     </button>
                 </div>
             </form>
 
             {mostrarPopup && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-foreground te">
-                Operador creado satisfactoriamente
-            </h2>
-
-            <p className="mt-3 text-sm text-muted-foreground">
-                ¿Desea precargar productos para este operador?
-            </p>
-
-            <div className="mt-6 flex justify-end gap-3">
-                <button
-                    type="button"
-                    onClick={() => setMostrarPopup(false)}
-                    className={styles.botonSecundario}
-                >
-                    Ahora no
-                </button>
-
-                <Link
-                    href="/precargar-productos"
-                    className={styles.botonConfirmar}
-                >
-                    Precargar productos
-                </Link>
-            </div>
-        </div>
-    </div>
-)}
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-md rounded-2xl bg-surface p-4 shadow-xl">
+                        <h2 className="text-xl font-bold text-foreground">Operador creado satisfactoriamente</h2>
+                        <p className="mt-3 text-sm text-muted-foreground">¿Desea precargar productos para este operador?</p>
+                        <div className={`${styles.acciones} mt-4`}>
+                            <button type="button" onClick={() => setMostrarPopup(false)} className={styles.botonSecundario}>
+                                Ahora no
+                            </button>
+                            <Link href="/precargar-productos" className={styles.botonConfirmar}>Precargar productos</Link>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

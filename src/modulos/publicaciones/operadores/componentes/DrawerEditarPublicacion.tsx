@@ -9,6 +9,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionPresentacion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
 import styles from "./DrawerEditarPublicacion.module.css";
@@ -85,6 +86,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
     const presentacionesDisponibles = presentaciones.filter((opcion) => opcion.variedadId === variedadId);
     const categoriasDisponibles = categorias.filter((opcion) => opcion.especieId === null || opcion.especieId === especieId);
+    const paisesOrdenados = [...paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre));
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     useEffect(() => {
         return () => {
@@ -328,7 +330,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                         <div className={styles.campo}>
                             <TextField select label="País" id={`${idBase}-pais`} value={paises.some((opcion) => opcion.id === paisId) ? paisId : ""} onChange={(evento) => { if (!bloqueado) setPaisId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
                                 {paises.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin países disponibles</MenuItem>}
-                                {paises.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                                {paisesOrdenados.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                             </TextField>
                         </div>
                         <div className={styles.campo}>

@@ -1,7 +1,7 @@
 .pagina {
     position: relative;
     isolation: isolate;
-    min-height: 100dvh;
+    flex: 1;
     background: var(--color-background);
     color: var(--color-foreground);
 }
@@ -13,9 +13,9 @@
     width: 100%;
     max-width: var(--ancho-maximo-pagina);
     margin: 0 auto;
-    padding: 1.5rem var(--padding-exterior-pagina) var(--padding-exterior-pagina);
+    padding: var(--padding-exterior-pagina);
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--espacio-secciones);
 }
 
 .hero {
@@ -136,7 +136,7 @@
 .especies {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--espacio-secciones);
 }
 
 .acceso {
@@ -199,6 +199,7 @@
 .titulo {
     position: relative;
     z-index: 1;
+    color: var(--color-titulo-pagina);
     font-size: var(--tamano-titulo-pagina);
     font-weight: 700;
     line-height: var(--interlineado-titulo-pagina);
@@ -207,8 +208,11 @@
 .subtitulo {
     position: relative;
     z-index: 1;
-    color: rgb(168, 208, 93);
-    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    color: var(--color-subtitulo-pagina);
+    font-size: var(--tamano-subtitulo-pagina);
+    font-weight: 400;
+    line-height: var(--interlineado-subtitulo-pagina);
 }
 
 .controles {
@@ -276,7 +280,7 @@
 }
 
 .sinResultados {
-    padding: 2rem 1rem;
+    padding: var(--padding-panel);
     border: 1px solid var(--color-border);
     border-radius: 0.75rem;
     background: var(--color-surface);

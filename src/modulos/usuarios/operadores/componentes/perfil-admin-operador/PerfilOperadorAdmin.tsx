@@ -1,4 +1,5 @@
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
+import BotonVolver from "@/compartido/BotonVolver";
 import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
 import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/tipos";
 
@@ -6,6 +7,7 @@ import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
 import Image from "next/image";
 import Link from "next/link";
+import EditIcon from "@mui/icons-material/Edit";
 
 type PerfilOperadorAdminProps = {
     operador: PerfilAdminOperador;
@@ -21,9 +23,9 @@ export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperad
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <Link href="/administracion" className={styles.volver}>
-                ← Volver al listado de operadores
-            </Link>
+            <BotonVolver href="/administracion" className={styles.volver}>
+                Volver al listado de operadores
+            </BotonVolver>
             <div className={styles.tarjetaPerfil}>
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
@@ -45,19 +47,8 @@ export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperad
                         aria-label="Editar operador"
                         title="Editar operador"
                     >
-                        <svg
-                            aria-hidden="true"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <path d="M12 20h9" />
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                        </svg>
-                        <span className={styles.textoEditar}>Editar</span>
+                        <EditIcon aria-hidden="true" className={styles.iconoEditar} />
+                        <span>Editar</span>
                     </Link>
                 </header>
 

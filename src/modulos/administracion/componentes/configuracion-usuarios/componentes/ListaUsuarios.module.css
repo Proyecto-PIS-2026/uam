@@ -1,7 +1,7 @@
 .contenedor {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--espacio-secciones);
     width: 100%;
 }
 
@@ -21,7 +21,7 @@
     grid-template-columns: var(--columnas-usuarios);
     gap: 1rem;
     align-items: center;
-    padding: 0.8rem 1rem;
+    padding: var(--espacio-controles) var(--padding-panel);
     border-bottom: 2px solid var(--color-primary);
     background-color: var(--color-primary-soft);
     color: var(--color-secondary);
@@ -125,7 +125,7 @@
 
 .sinResultados {
     margin: 0;
-    padding: 1.5rem 0;
+    padding: var(--espacio-secciones) 0;
     color: var(--color-muted);
     font-size: 0.9rem;
     text-align: center;
@@ -135,7 +135,6 @@
     display: flex;
     justify-content: center;
     width: 100%;
-    padding-top: 0.25rem;
 }
 
 .paginacion :global(.MuiPaginationItem-root) {
@@ -155,13 +154,22 @@
     background-color: var(--color-primary-soft);
 }
 
+.modal:global(.MuiDialog-paper) {
+    margin: var(--padding-exterior-pagina);
+}
+
 .modalTitulo {
+    padding: var(--padding-panel) !important;
     color: var(--color-secondary);
     font-size: 1.1rem !important;
 }
 
+.modalContenido {
+    padding: 0 var(--padding-panel) !important;
+}
+
 .modalAcciones {
-    padding: 1rem 1.5rem !important;
+    padding: var(--padding-panel) !important;
 }
 
 .botonCancelarModal {
@@ -190,7 +198,7 @@
 
     .encabezado {
         gap: 0.75rem;
-        padding: 0.65rem 0.75rem;
+        padding: var(--espacio-controles);
         font-size: 0.75rem;
     }
 
@@ -206,7 +214,7 @@
     .fila {
         gap: 0.75rem;
         min-height: 3rem;
-        padding: 0.65rem 0.75rem;
+        padding: var(--espacio-controles);
         font-size: 0.8rem;
     }
 

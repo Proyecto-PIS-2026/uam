@@ -21,7 +21,7 @@ export default function TarjetaPublicacion({publicacion, onSeleccionar}: Tarjeta
     return (
         <button type="button" className={styles.tarjeta} onClick={() => onSeleccionar?.(publicacion)} aria-label={`Ver detalles de ${nombreProducto}`} aria-haspopup="dialog">
             <div className={styles.contenedorImagen}>
-                <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 767px) 96px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.imagen} reemplazo={
+                <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 419px) 88px, (max-width: 700px) 96px, (max-width: 774.4px) calc(50vw - 24px), (max-width: 1027.2px) calc(33.333vw - 21.333px), (max-width: 1279px) calc(25vw - 20px), 234px" className={styles.imagen} reemplazo={
                     <div className={styles.sinFoto}>
                         <ImageOutlinedIcon className={styles.iconoFoto}/>
                         <span className={styles.textoSinFotoMobile}>Foto</span>

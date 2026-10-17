@@ -204,7 +204,7 @@
     }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 701px) {
     .tarjeta {
         min-height: 0;
         flex-direction: column;

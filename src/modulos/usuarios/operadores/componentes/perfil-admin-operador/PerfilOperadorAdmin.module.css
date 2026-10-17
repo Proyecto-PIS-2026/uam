@@ -3,20 +3,10 @@
     max-width: var(--ancho-maximo-pagina);
     margin: 0 auto;
     padding: var(--padding-exterior-pagina);
-    padding-bottom: 1.5rem;
 }
 
 .volver {
-    display: inline-block;
-    margin-bottom: 0.75rem;
-    color: var(--color-primary-hover);
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.volver:hover {
-    text-decoration: underline;
+    margin-bottom: var(--espacio-secciones);
 }
 
 .tarjetaPerfil {
@@ -30,7 +20,8 @@
 }
 
 .encabezado {
-    display: flex;
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
     position: relative;
     isolation: isolate;
     width: 100%;
@@ -68,17 +59,16 @@
 
 .tipoPerfil {
     margin: 0;
-    color: #a8d05d;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    color: var(--color-subtitulo-pagina);
+    font-size: var(--tamano-subtitulo-pagina);
+    font-weight: 400;
+    line-height: var(--interlineado-subtitulo-pagina);
 }
 
 .nombre {
     margin: 0.25rem 0 0;
     overflow-wrap: anywhere;
-    color: white;
+    color: var(--color-titulo-pagina);
     font-size: var(--tamano-titulo-pagina);
     font-weight: 700;
     line-height: var(--interlineado-titulo-pagina);
@@ -86,12 +76,12 @@
 
 .tarjetaInformacion {
     width: 100%;
-    padding: 1.25rem;
+    padding: var(--padding-panel);
     background-color: var(--color-surface);
 }
 
 .dato {
-    margin: 0 0 1rem;
+    margin: 0;
     font-size: 0.875rem;
 }
 
@@ -100,14 +90,14 @@
 }
 
 .subtitulo {
-    margin: 1.25rem 0 0.75rem;
+    margin: var(--espacio-secciones) 0 var(--espacio-controles);
     color: var(--color-secondary);
     font-size: 1rem;
     font-weight: 700;
 }
 
 .subtituloPublicaciones {
-    margin: 1.5rem 0 1rem;
+    margin: var(--espacio-secciones) 0;
     color: var(--color-secondary);
     font-size: 1.25rem;
     font-weight: 700;
@@ -153,29 +143,37 @@
 }
 
 .botonEditar {
-    display: flex;
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
+    display: inline-flex;
+    position: relative;
     z-index: 1;
-    width: 2.25rem;
-    height: 2.25rem;
+    grid-column: 1 / -1;
+    justify-self: end;
+    min-height: 3rem;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    background-color: var(--color-surface);
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--color-secondary);
+    border-radius: 0.75rem;
+    background: var(--color-surface);
     color: var(--color-secondary);
-    transition: background-color 0.15s ease;
-    text-decoration: None;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 150ms, border-color 150ms;
 }
 
-.botonEditar svg {
-    width: 1.125rem;
-    height: 1.125rem;
+.botonEditar .iconoEditar {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
 }
 
 .botonEditar:hover {
-    background-color: var(--color-primary-soft);
+    background: var(--color-primary-soft);
 }
 
 .botonEditar:focus-visible {
@@ -183,8 +181,14 @@
     outline-offset: 2px;
 }
 
-.textoEditar {
-    display: none;
+@media (min-width: 701px) {
+    .encabezado {
+        grid-template-columns: 6rem minmax(0, 1fr) auto;
+    }
+
+    .botonEditar {
+        grid-column: auto;
+    }
 }
 
 @media (min-width: 768px) {
@@ -203,28 +207,5 @@
 
     .finContrato {
         margin-left: 0;
-    }
-
-    .botonEditar {
-        top: 1rem;
-        right: 1rem;
-        width: auto;
-        height: auto;
-        padding: 0.5rem 1.125rem 0.5rem 0.875rem;
-        gap: 0.5rem;
-        border-radius: 999px;
-        font-size: 0.9375rem;
-        font-weight: 600;
-        line-height: 1.2;
-        white-space: nowrap;
-    }
-
-    .botonEditar svg {
-        width: 1.125rem;
-        height: 1.125rem;
-    }
-
-    .textoEditar {
-        display: inline;
     }
 }

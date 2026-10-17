@@ -5,21 +5,25 @@ import styles from "./TarjetaOperador.module.css";
 
 type TarjetaOperadorProps = {
     operador: OperadorListado;
+    puedeGestionar?: boolean;
 };
 
-export default function TarjetaOperador({ operador }: TarjetaOperadorProps) {
+export default function TarjetaOperador({ operador, puedeGestionar = false }: TarjetaOperadorProps) {
     const localesTexto = operador.locales.map((local) => {
         const nombreNave = local.nombreNave === "Tinglado" ? local.nombreNave : `Nave ${local.nombreNave}`;
         return `${nombreNave} - ${local.numeroLocal}`;
     }).join(" | ");
     const foto = operador.fotoPerfil?.trim();
     const inicial = operador.nombreFantasia.trim().charAt(0).toLocaleUpperCase("es");
+    const href = puedeGestionar
+        ? `/gestion-operadores/${operador.id}`
+        : `/operadores/${encodeURIComponent(operador.nombreFantasia)}`;
 
     const contenido = (
-        <Link href={`/operadores/${encodeURIComponent(operador.nombreFantasia)}`} className={styles.tarjeta}>
+        <Link href={href} className={styles.tarjeta}>
             <div className={styles.imagen}>
                 {foto ? (
-                    <Image src={foto} alt={`Foto de ${operador.nombreFantasia}`} fill sizes="(max-width: 767px) 64px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.foto} />
+                    <Image src={foto} alt={`Foto de ${operador.nombreFantasia}`} fill sizes="(max-width: 700px) 64px, (max-width: 774.4px) calc(50vw - 24px), (max-width: 1027.2px) calc(33.333vw - 21.333px), (max-width: 1279px) calc(25vw - 20px), 234px" className={styles.foto} />
                 ) : (
                     <span className={styles.inicial}>{inicial}</span>
                 )}

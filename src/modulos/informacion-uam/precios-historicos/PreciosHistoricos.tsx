@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import BotonVolver from "@/compartido/BotonVolver";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { MenuItem, TextField } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
+import FuentePrecios from "../FuentePrecios";
 import type { ProductoSeleccionado, HistoricoProducto, EspecieHistorica } from "./tipos";
 import { fechaActualMontevideo } from "./parametros-consulta";
 import styles from "./PreciosHistoricos.module.css";
@@ -123,7 +124,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         const presentaciones = historico && !error ? historico.series.flatMap((dia) => dia.presentations) : [];
         return {
             variedades: opciones(presentaciones.map((presentacion) => presentacion.variety), variedad),
-            paises: opciones(presentaciones.map((presentacion) => presentacion.country), pais),
+            paises: opciones(presentaciones.map((presentacion) => presentacion.country), pais).sort(compararPaisesPorPrioridad),
             categorias: opciones(presentaciones.flatMap((presentacion) => presentacion.prices.map((precio) => precio.category)), categoria),
             calibres: opciones(presentaciones.map((presentacion) => presentacion.caliber), calibre),
         };
@@ -226,9 +227,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
 
     return (
         <div className={styles.pagina}>
-            <Link className={styles.volver} href="/precios-referencia">
-                <ArrowBackIcon fontSize="small" /> Volver a precios de referencia
-            </Link>
+            <BotonVolver href="/precios-referencia">Volver a precios de referencia</BotonVolver>
             <EncabezadoPagina titulo={`Histórico de ${producto.especie}`} cantidad={filas.length} subtitulo="registros históricos" />
 
             <section className={styles.filtrosPanel} aria-label="Filtros de precios históricos">
@@ -411,6 +410,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                     </nav>
                 )}
             </section>
+            <FuentePrecios />
         </div>
     );
 }

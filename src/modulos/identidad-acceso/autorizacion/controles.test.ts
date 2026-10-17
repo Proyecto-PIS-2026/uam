@@ -84,9 +84,10 @@ describe("acceso al mercado público", () => {
     it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)(
         "conserva las consultas y páginas públicas para %s",
         async (rol) => {
-            sesionMock.mockResolvedValue(rol === null ? null : { usuarioId: 10, rol, expiraEn: 2000000000 });
+            const sesion = rol === null ? null : { usuarioId: 10, rol, expiraEn: 2000000000 };
+            sesionMock.mockResolvedValue(sesion);
 
-            await expect(redirigirOperadorAMiMercado()).resolves.toBeUndefined();
+            await expect(redirigirOperadorAMiMercado()).resolves.toBe(sesion);
             await expect(exigirConsultaMercadoPublico()).resolves.toBeUndefined();
             expect(redirect).not.toHaveBeenCalled();
         },

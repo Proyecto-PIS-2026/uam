@@ -21,7 +21,7 @@ type PublicacionesAgrupadas = {
     publicaciones: PublicacionListado[];
 };
 
-const clasesLista = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5";
+const clasesLista = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas";
 
 export default function ListadoPublicaciones({publicaciones}: {publicaciones: PublicacionListado[]}) {
     const [agruparPorOperador, setAgruparPorOperador] = useState(false);
@@ -90,8 +90,8 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
     }
 
     return (
-        <div>
-            <div className="mb-6 flex items-center justify-between border-b border-[var(--color-border)] pb-4">
+        <div className="secciones-pagina">
+            <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-4">
                 <h1 className="text-2xl font-semibold text-[var(--color-secondary)]">
                     Publicaciones
                 </h1>
@@ -110,10 +110,10 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
                 </button>
             </div>
             {agruparPorOperador ? (
-                <div className="flex flex-col gap-6">
+                <div className="secciones-pagina">
                     {publicacionesAgrupadas.map((operador) => (
-                        <div key={operador.id}>
-                            <div className="mb-6">
+                        <div key={operador.id} className="secciones-pagina">
+                            <div>
                                 <h2 className="text-lg font-semibold text-[var(--color-primary)]">
                                     {operador.nombreFantasia}
                                 </h2>

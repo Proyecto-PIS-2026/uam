@@ -10,6 +10,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import Image from "next/image";
+import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import type { DatosAltaPublicacionOperador } from "../../validarAltaPublicacionOperador";
 import { ordenarOpcionesPorNombre } from "../ordenar-opciones";
 import drawerStyles from "./DrawerEditarPublicacion.module.css";
@@ -88,7 +89,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                     presentaciones: ordenarOpcionesPorNombre(resultado.presentaciones),
                     categorias: ordenarOpcionesPorNombre(resultado.categorias),
                     calibres: ordenarOpcionesPorNombre(resultado.calibres),
-                    paises: ordenarOpcionesPorNombre(resultado.paises),
+                    paises: [...resultado.paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre)),
                 });
             })
             .catch(() => { if (activo) setErrores(["No se pudieron cargar los datos del formulario."]); })

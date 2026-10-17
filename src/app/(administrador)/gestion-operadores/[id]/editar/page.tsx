@@ -27,7 +27,7 @@ export default async function Page({ params }: PageProps) {
     }
 
     return (
-        <main>
+        <main className="flex-1">
             <FormularioModificarOperador
                 operador={operador}
                 naves={naves}

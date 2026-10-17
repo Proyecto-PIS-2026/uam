@@ -23,7 +23,7 @@
 
 .titulo {
     margin: 0;
-    color: #ffffff;
+    color: var(--color-titulo-pagina);
     font-family: inherit;
     font-size: var(--tamano-titulo-pagina);
     font-weight: 700;
@@ -32,11 +32,11 @@
 
 .subtitulo {
     margin: 0;
-    color: rgb(168, 208, 93);
+    color: var(--color-subtitulo-pagina);
     font-family: inherit;
-    font-size: 0.875rem;
+    font-size: var(--tamano-subtitulo-pagina);
     font-weight: 400;
-    line-height: 1.25rem;
+    line-height: var(--interlineado-subtitulo-pagina);
 }
 
 .cantidad {

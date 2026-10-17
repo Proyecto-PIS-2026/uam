@@ -160,7 +160,7 @@ export default function TarjetaPublicacion({
     const contenido = (
         <div className={styles.tarjeta}>
             <button type="button" onClick={consultarPublicacion} className={styles.botonFoto} aria-label={`Ver detalle de ${nombreProducto}`}>
-                <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(min-width: 768px) 320px, 128px" unoptimized className={styles.foto} reemplazo={<div className={styles.sinFoto}>Sin fotografía</div>} />
+                <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(max-width: 639px) 112px, (max-width: 700px) 128px, (max-width: 776px) calc(50vw - 22px), (max-width: 1028px) calc(33.333vw - 18.667px), (max-width: 1279px) calc(25vw - 17px), 320px" unoptimized className={styles.foto} reemplazo={<div className={styles.sinFoto}>Sin fotografía</div>} />
             </button>
             <div className={styles.contenido}>
                 <button type="button" onClick={consultarPublicacion} className={styles.botonInformacion}>

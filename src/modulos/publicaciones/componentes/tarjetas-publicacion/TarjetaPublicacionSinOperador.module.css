@@ -285,7 +285,7 @@
 
 /* MOBILE GRANDE */
 
-@media (min-width: 420px) and (max-width: 767px) {
+@media (min-width: 420px) and (max-width: 700px) {
     .tarjeta {
         gap: 1rem;
         padding: 0.875rem;
@@ -332,7 +332,7 @@
 
 /* DESKTOP: TARJETA VERTICAL */
 
-@media (min-width: 768px) {
+@media (min-width: 701px) {
     .tarjeta {
         height: 100%;
         flex-direction: column;
@@ -499,7 +499,7 @@
     }
 }
 
-@media (min-width: 480px) and (max-width: 767px) {
+@media (min-width: 480px) and (max-width: 700px) {
     .consultarPrecio {
         color: var(--color-primary);
         font-size: 1.1rem;
@@ -523,5 +523,11 @@
         font-size: 1rem;
         font-weight: 700;
         white-space: nowrap;
+    }
+}
+
+@media (min-width: 701px) and (max-width: 1279px) {
+    .consultarPrecio {
+        font-size: 1rem;
     }
 }

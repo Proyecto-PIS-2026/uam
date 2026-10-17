@@ -1,12 +1,11 @@
 .tarjeta {
     display: flex;
-    margin-top: 0.45rem;
     flex-direction: column;
     gap: 1rem;
     position: relative;
     box-sizing: border-box;
     width: 100%;
-    padding: 1.25rem;
+    padding: var(--padding-panel);
     border: 1px solid var(--color-border);
     border-radius: 0.75rem;
     background-color: #fff;
@@ -109,7 +108,7 @@
 
 @media (min-width: 768px) {
     .tarjeta {
-        padding: var(--padding-titulo-pagina);
+        padding: var(--padding-panel);
         border: none;
         border-radius: 0 0.5rem 0.5rem 0.5rem;
         background-color: #fff;

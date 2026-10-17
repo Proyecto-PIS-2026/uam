@@ -56,7 +56,7 @@
 .panel {
     width: 100%;
     min-width: 0;
-    padding: 1.25rem 0;
+    padding: var(--espacio-secciones) 0 0;
 }
 
 @media (max-width: 480px) {

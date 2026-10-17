@@ -12,8 +12,8 @@ export default async function PaginaMiMercadoProductor() {
     if (!autorizado("productor.mercado.acceder", sesion)) redirect("/inicio");
 
     return (
-        <main className="contenedor-pagina flex-1 py-10">
-            <h1 className="mb-4 text-3xl font-bold">Mi mercado</h1>
+        <main className="contenedor-pagina secciones-pagina flex-1">
+            <h1 className="text-3xl font-bold">Mi mercado</h1>
             <p>Mi mercado de productor aún no está implementado.</p>
         </main>
     );

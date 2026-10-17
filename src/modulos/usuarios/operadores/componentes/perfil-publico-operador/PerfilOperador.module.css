@@ -3,7 +3,6 @@
     max-width: var(--ancho-maximo-pagina);
     margin: 0 auto;
     padding: var(--padding-exterior-pagina);
-    padding-bottom: 1.5rem;
 }
 
 .tarjetaPerfil {
@@ -55,17 +54,16 @@
 
 .tipoPerfil {
     margin: 0;
-    color: #a8d05d;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    color: var(--color-subtitulo-pagina);
+    font-size: var(--tamano-subtitulo-pagina);
+    font-weight: 400;
+    line-height: var(--interlineado-subtitulo-pagina);
 }
 
 .nombre {
     margin: 0.25rem 0 0;
     overflow-wrap: anywhere;
-    color: white;
+    color: var(--color-titulo-pagina);
     font-size: var(--tamano-titulo-pagina);
     font-weight: 700;
     line-height: var(--interlineado-titulo-pagina);
@@ -73,7 +71,7 @@
 
 .tarjetaInformacion {
     width: 100%;
-    padding: 1.25rem;
+    padding: var(--padding-panel);
     background-color: var(--color-surface);
 }
 
@@ -152,6 +150,10 @@
 }
 
 @media (min-width: 768px) {
+    .listaLocales {
+        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    }
+
     .botonWhatsApp {
         width: 4rem;
         height: 4rem;

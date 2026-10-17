@@ -170,9 +170,9 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                 </div>
             )}
 
-            <Dialog open={Boolean(usuarioAEliminar)} onClose={() => { if (!eliminando) setUsuarioAEliminar(null); }} maxWidth="xs">
+            <Dialog open={Boolean(usuarioAEliminar)} onClose={() => { if (!eliminando) setUsuarioAEliminar(null); }} maxWidth="xs" slotProps={{ paper: { className: styles.modal } }}>
                 <DialogTitle className={styles.modalTitulo}>¿Eliminar usuario?</DialogTitle>
-                <DialogContent>
+                <DialogContent className={styles.modalContenido}>
                     <p className={styles.textoConfirmacion}>
                         ¿Estás seguro de que quieres eliminar al usuario <strong>@{usuarioAEliminar?.username}</strong>?
                     </p>

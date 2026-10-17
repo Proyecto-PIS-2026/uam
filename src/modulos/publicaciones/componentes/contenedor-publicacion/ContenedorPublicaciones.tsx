@@ -110,7 +110,7 @@ export default function ContenedorPublicaciones({ resultado, especie = "" }: Pro
     const paginas = Math.max(1, Math.ceil(datos.total / datos.tamanoPagina));
 
     return (
-        <div className="flex flex-col gap-6" aria-busy={cargando}>
+        <div className="secciones-pagina" aria-busy={cargando}>
             <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} totalRemoto={datos.total} especieFiltro={especie} ordenInicial="prioridad" alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
             {error && <p role="alert">{error} <button type="button" onClick={() => void cargar()}>Reintentar</button></p>}
             <ListadoPublicaciones publicaciones={datos.publicaciones} />

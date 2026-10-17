@@ -7,7 +7,9 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import type { PrecioReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
+import FuentePrecios from "../FuentePrecios";
 import styles from "./PreciosReferencia.module.css";
 
 type Props = { fechaRelevamiento: string; filas: PrecioReferencia[] };
@@ -110,7 +112,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
         especies: opciones(filas.map((fila) => fila.especie)),
         variedades: especie ? opciones(filasCompatibles(filas, seleccion, ["variedad", "unidad"]).map((fila) => fila.variedad)) : [],
         unidades: variedad ? opciones(filasCompatibles(filas, seleccion, ["unidad"]).map((fila) => fila.unidad)) : [],
-        paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)),
+        paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)).sort(compararPaisesPorPrioridad),
         categorias: opciones(filasCompatibles(filas, seleccion, ["categoria"]).map((fila) => fila.categoria)),
         calibres: opciones(filasCompatibles(filas, seleccion, ["calibre"]).map((fila) => fila.calibre)),
     }), [filas, seleccion, especie, variedad]);
@@ -470,6 +472,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                     </nav>
                 )}
             </section>
+            <FuentePrecios />
         </div>
     );
 }

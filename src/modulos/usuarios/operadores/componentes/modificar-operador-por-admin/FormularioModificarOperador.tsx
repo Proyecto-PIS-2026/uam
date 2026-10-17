@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import BotonVolver from "@/compartido/BotonVolver";
 
 import { modificarOperador } from "../../acciones/modificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
@@ -138,14 +139,13 @@ export default function FormularioModificarOperador({
     return (
         <div className={styles.pagina}>
             <div className={styles.contenedor}>
-                <button
-                    type="button"
+                <BotonVolver
                     className={styles.volver}
                     onClick={cancelar}
                     disabled={guardando}
                 >
-                    ← Volver al perfil
-                </button>
+                    Volver al perfil
+                </BotonVolver>
 
                 <header className={styles.encabezado}>
                     <h1 className={styles.titulo}>

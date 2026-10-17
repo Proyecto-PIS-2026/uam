@@ -203,7 +203,7 @@ describe("PreciosReferencia", () => {
         expect(screen.getByRole("combobox", { name: "Variedad" })).not.toHaveAttribute("aria-disabled");
         expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveAttribute("aria-disabled", "true");
         expect(opcionesDe("Variedad")).toEqual(["Todas las variedades", "Fuji", "Gala"]);
-        expect(opcionesDe("País")).toEqual(["Todos los países", "BRASIL", "URUGUAY"]);
+        expect(opcionesDe("País")).toEqual(["Todos los países", "URUGUAY", "BRASIL"]);
 
         seleccionar("Variedad", "Gala");
         expect(screen.getByRole("combobox", { name: "Presentación" })).not.toHaveAttribute("aria-disabled");
@@ -331,7 +331,7 @@ describe("PreciosReferencia", () => {
         esperarSelectVacio("Especie");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
         expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveAttribute("aria-disabled", "true");
-        expect(opcionesDe("País")).toEqual(["Todos los países", "ARGENTINA", "BRASIL", "URUGUAY"]);
+        expect(opcionesDe("País")).toEqual(["Todos los países", "URUGUAY", "ARGENTINA", "BRASIL"]);
         expect(opcionesDe("Categoría")).toEqual(["Todas las categorías", "Extra", "I", "II"]);
         expect(opcionesDe("Calibre")).toEqual(["Todos los calibres", "G", "M", "P"]);
         expect(screen.getByText("10 resultados")).toBeInTheDocument();

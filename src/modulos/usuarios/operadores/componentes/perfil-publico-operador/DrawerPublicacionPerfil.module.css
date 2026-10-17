@@ -22,7 +22,7 @@
 .tarjeta {
     position: relative;
     isolation: isolate;
-    padding: 1rem;
+    padding: var(--padding-panel);
 }
 
 .tarjeta::before {

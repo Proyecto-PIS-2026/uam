@@ -1,113 +1,247 @@
 .formulario {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    padding: 1.5rem;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
-    background-color: var(--color-surface);
+    border-radius: 1rem;
+    background: var(--color-surface);
 }
 
-.campo {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+.grilla,
+.grillaLocal {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-controles);
 }
 
-.label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--color-foreground);
-}
-
-.botonSecundario {
-    flex-shrink: 0;
-    padding: 0.55rem 0.85rem;
-    border: 1px solid var(--color-border);
-    border-radius: 2rem;
-    background-color: var(--color-surface);
-    color: var(--color-foreground);
-    font: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: border-color 150ms, background-color 150ms, color 150ms;
-}
-
-.botonSecundario:hover {
-    border-color: var(--color-primary);
-}
-
-.botonSecundario:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-}
-
-.botonSecundario:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.botonConfirmar {
-    flex-shrink: 0;
-    padding: 0.55rem 0.85rem;
-    border: 1px solid var(--color-primary);
-    border-radius: 2rem;
-    background-color: var(--color-primary);
-    color: white;
-    font: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 150ms, background-color 150ms;
-}
-
-.botonConfirmar:hover {
-    opacity: 0.9;
-}
-
-.botonConfirmar:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-}
-
-.botonConfirmar:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.filaTelefono {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: var(--espacio-controles);
 }
 
 .control {
     width: 100%;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    background-color: var(--color-background);
-    padding: 0.5rem 0.75rem;
-    color: var(--color-foreground);
-    outline: none;
+    min-width: 0;
 }
 
-.control:focus {
-    box-shadow: 0 0 0 2px var(--color-primary);
+.control :global(.MuiOutlinedInput-root) {
+    height: 3rem;
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 1rem;
+}
+
+.control :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.control :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline),
+.control :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-primary);
+}
+
+.control :global(.MuiSelect-select.MuiSelect-outlined) {
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 3rem;
+}
+
+.control :global(.MuiInputLabel-root) {
+    color: var(--color-muted);
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+.control :global(.MuiInputLabel-root:not(.MuiInputLabel-shrink)) {
+    top: 50%;
+    transform: translate(14px, -50%) scale(1);
+}
+
+.control :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-primary);
+}
+
+.control :global(.MuiFormLabel-asterisk) {
+    color: #b42332;
+}
+
+.control :global(.MuiSelect-icon) {
+    color: var(--color-muted);
+}
+
+.opcionSelect {
+    color: var(--color-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+.opcionSelect:global(.Mui-selected),
+.opcionSelect:global(.Mui-selected:hover),
+.opcionSelect:global(.Mui-focusVisible) {
+    background: var(--color-primary-soft) !important;
+    color: var(--color-secondary);
+}
+
+.locales {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.encabezadoLocales,
+.encabezadoLocal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-controles);
+}
+
+.subtitulo {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.ayuda {
+    margin: 0.25rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.875rem;
 }
 
 .local {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
-    background-color: var(--color-background);
-    padding: 0.75rem;
+    border-radius: 0.875rem;
+    background: var(--color-background);
 }
 
-@media (min-width: 1024px) {
-    .local {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        border: 0;
-        border-radius: 0;
-        background-color: transparent;
-        padding: 0;
+.tituloLocal {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.grillaLocal {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+}
+
+.contrato {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.botonSecundario,
+.botonConfirmar,
+.botonEliminar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--color-secondary);
+    border-radius: 0.75rem;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 150ms, border-color 150ms;
+}
+
+.botonSecundario {
+    background: var(--color-surface);
+    color: var(--color-secondary);
+}
+
+.botonSecundario:hover:not(:disabled) {
+    background: var(--color-primary-soft);
+}
+
+.botonConfirmar {
+    background: var(--color-secondary);
+    color: white;
+}
+
+.botonConfirmar:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+}
+
+.botonEliminar {
+    min-height: 2.75rem;
+    border-color: #f2c4cc;
+    background: #fbeaec;
+    color: #b42332;
+}
+
+.botonEliminar:hover:not(:disabled) {
+    background: #f8dadd;
+}
+
+.botonSecundario:focus-visible,
+.botonConfirmar:focus-visible,
+.botonEliminar:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.botonSecundario:disabled,
+.botonConfirmar:disabled,
+.botonEliminar:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--espacio-controles);
+}
+
+.acciones > * {
+    min-width: 10rem;
+}
+
+.errores {
+    margin: 0;
+    padding: 1rem 1rem 1rem 2rem;
+    border: 1px solid #f2c4cc;
+    border-radius: 0.75rem;
+    background: #fbeaec;
+    color: #b42332;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 700px) {
+    .grilla,
+    .grillaLocal,
+    .filaTelefono {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .encabezadoLocales {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .acciones {
+        flex-direction: column-reverse;
+    }
+
+    .acciones > * {
+        width: 100%;
+        min-width: 0;
     }
 }

@@ -262,29 +262,29 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
     }
 
     return (
-        <main className="relative isolate min-h-screen bg-background">
-            <div className="contenedor-pagina relative z-10 flex flex-col gap-6">
+        <main className="relative isolate flex-1 bg-background">
+            <div className="contenedor-pagina secciones-pagina relative z-10">
 
                 {/* Encabezado */}
                 <header className="encabezado-pagina relative isolate overflow-hidden rounded-2xl bg-secondary">
                     <HojasDecorativas />
                     <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p className="mb-1 text-xs font-bold uppercase tracking-widest text-primary-soft">
+                            <p className="mb-1 text-xs font-bold uppercase tracking-widest text-[var(--color-subtitulo-pagina)]">
                                 Mis publicaciones
                             </p>
 
-                            <h1 className="titulo-pagina text-white">
+                            <h1 className="titulo-pagina">
                                 Mi Mercado
                             </h1>
 
-                            <p className="mt-2 text-sm text-white/80 sm:text-base">
+                            <p className="subtitulo-pagina mt-1">
                                 Consultá los productos que tenés publicados.
                             </p>
                         </div>
 
                         <div className="flex flex-col gap-3 sm:items-end">
-                            <p className="text-sm font-semibold text-white/80">
+                            <p className="subtitulo-pagina">
                                 {publicacionesVigentes.length}{" "}{publicacionesVigentes.length === 1 ? "publicación" : "publicaciones"}
                             </p>
                             {puedeCrear && <button type="button" onClick={abrirAlta} className="rounded-lg bg-surface px-4 py-3 text-sm font-semibold text-secondary hover:bg-primary-soft">Nueva publicación</button>}
@@ -297,7 +297,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
 
                 {/* Estado vacío */}
                 {publicacionesVigentes.length === 0 ? (
-                    <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
+                    <div className="rounded-2xl border border-border bg-surface p-[var(--padding-panel)] text-center shadow-sm">
                         <h2 className="text-xl font-bold text-foreground">
                             No tenés publicaciones
                         </h2>
@@ -336,12 +336,12 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                         {publicacionesVisibles.length === 0 ? (
                             <p className={styles.sinResultados}>No hay publicaciones que coincidan con la búsqueda.</p>
                         ) : agruparPorEspecie ? (
-                            <div className="space-y-6">
+                            <div className="secciones-pagina">
                                 {grupos.map(({ especie, items }) => (
-                                    <section key={especie.id}>
+                                    <section key={especie.id} className="secciones-pagina">
 
                                         {/* Encabezado de especie */}
-                                        <div className="mb-6 flex items-center gap-2 border-b border-border pb-2">
+                                        <div className="flex items-center gap-2 border-b border-border pb-2">
                                             <h3 className="text-xl font-bold text-foreground">
                                                 {especie.nombreEspecie}
                                             </h3>
@@ -355,7 +355,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                         </div>
 
                                         {/* Tarjetas */}
-                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 tarjetas-compactas-mercado">
                                             {items.map((pub) => (
                                                 <TarjetaPublicacion
                                                     key={pub.id}
@@ -375,7 +375,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                                 ))}
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 tarjetas-compactas-mercado">
                                 {publicacionesVisibles.map((pub) => (
                                     <TarjetaPublicacion
                                         key={pub.id}

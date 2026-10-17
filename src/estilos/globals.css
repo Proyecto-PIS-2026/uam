@@ -19,8 +19,15 @@
   --ancho-maximo-pagina: 80rem;
   --padding-exterior-pagina: 1rem;
   --padding-titulo-pagina: 1rem;
+  --espacio-secciones: 1rem;
+  --padding-panel: 1rem;
+  --espacio-controles: 0.75rem;
   --tamano-titulo-pagina: 1.875rem;
   --interlineado-titulo-pagina: 1.2;
+  --color-titulo-pagina: #ffffff;
+  --color-subtitulo-pagina: #a8d05d;
+  --tamano-subtitulo-pagina: 0.875rem;
+  --interlineado-subtitulo-pagina: 1.25rem;
 }
 
 body {
@@ -40,10 +47,35 @@ body {
   padding: var(--padding-titulo-pagina);
 }
 
+.secciones-pagina {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--espacio-secciones);
+}
+
 .titulo-pagina {
+  color: var(--color-titulo-pagina);
   font-size: var(--tamano-titulo-pagina);
   font-weight: 700;
   line-height: var(--interlineado-titulo-pagina);
+}
+
+.subtitulo-pagina {
+  color: var(--color-subtitulo-pagina);
+  font-size: var(--tamano-subtitulo-pagina);
+  font-weight: 400;
+  line-height: var(--interlineado-subtitulo-pagina);
+}
+
+@media (min-width: 701px) and (max-width: 1279px) {
+  .tarjetas-compactas {
+    grid-template-columns: repeat(auto-fill, minmax(14.8rem, 1fr));
+  }
+
+  .tarjetas-compactas-mercado {
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  }
 }
 
 .confirm-modal {

@@ -28,7 +28,7 @@ export default async function PaginaAdministracion() {
     return (
         <div className="relative isolate flex-1 bg-background text-foreground">
             <main className="contenedor-pagina relative z-10 flex-1">
-                <div className="relative z-10 flex flex-col gap-6">
+                <div className="secciones-pagina relative z-10">
                     <EncabezadoPagina titulo="Panel Administrativo" cantidad={null} subtitulo="Configuración" />
                     <ContenedorConfiguracionGeneral
                         publicaciones={<ContenedorConfiguracionPublicaciones configuracion={configuracion} />}

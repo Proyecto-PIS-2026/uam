@@ -50,7 +50,7 @@ export default function FormularioInicioSesion() {
         <>
             <form
                 action={accion}
-                className="w-full max-w-md space-y-5 rounded-lg bg-[var(--color-surface)] p-6 shadow-sm"
+                className="w-full max-w-md secciones-pagina rounded-lg bg-[var(--color-surface)] p-[var(--padding-panel)] shadow-sm"
             >
                 <div>
                     <label htmlFor="identificador" className="mb-2 block text-sm font-medium">
@@ -122,7 +122,7 @@ export default function FormularioInicioSesion() {
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="titulo-recuperacion-contrasena"
-                        className="w-full max-w-md rounded-lg bg-[var(--color-surface)] p-6 shadow-xl"
+                        className="w-full max-w-md rounded-lg bg-[var(--color-surface)] p-[var(--padding-panel)] shadow-xl"
                     >
                         <h2 id="titulo-recuperacion-contrasena" className="mb-3 text-xl font-semibold">
                             Solicitar recuperación de contraseña

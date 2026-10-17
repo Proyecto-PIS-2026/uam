@@ -38,20 +38,25 @@ function configurarSearchParams(rol: string | null = null) {
     } as ReturnType<typeof useSearchParams>);
 }
 
+function seleccionarOpcion(campo: string, opcion: string) {
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: new RegExp(`^${campo}`) }));
+    fireEvent.click(screen.getByRole("option", { name: opcion }));
+}
+
 function completarFormulario() {
-    fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
+    fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
         target: { value: "usuario1" },
     });
 
-    fireEvent.change(screen.getByLabelText("Contraseña*"), {
+    fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
         target: { value: "clave12345" },
     });
 
-    fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
+    fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
         target: { value: "clave12345" },
     });
 
-    fireEvent.change(screen.getByLabelText("Nombre*"), {
+    fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), {
         target: { value: "Huerta Sur" },
     });
 
@@ -63,9 +68,7 @@ function completarFormulario() {
         target: { value: "101" },
     });
 
-    fireEvent.change(screen.getAllByRole("combobox")[2], {
-        target: { value: "1" },
-    });
+    seleccionarOpcion("Nave", "Nave Central");
 }
 
 describe("FormularioAltaUsuario", () => {
@@ -85,14 +88,14 @@ describe("FormularioAltaUsuario", () => {
             screen.getByText("Registrar un nuevo usuario en la plataforma"),
         ).toBeInTheDocument();
 
-        expect(screen.getByLabelText("Rol del usuario*")).toBeInTheDocument();
-        expect(screen.getByLabelText("Nombre de Usuario*")).toBeInTheDocument();
-        expect(screen.getByLabelText("Contraseña*")).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Rol del usuario\s*\*$/)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Nombre de Usuario\s*\*$/)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Contraseña\s*\*$/)).toBeInTheDocument();
         expect(
-            screen.getByLabelText("Confirmación de Contraseña*"),
+            screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/),
         ).toBeInTheDocument();
 
-        expect(screen.queryByLabelText("Nombre*")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Nombre\s*\*$/)).not.toBeInTheDocument();
         expect(
             screen.queryByPlaceholderText("Ej: 99123456"),
         ).not.toBeInTheDocument();
@@ -101,11 +104,9 @@ describe("FormularioAltaUsuario", () => {
     it("selecciona el rol operador y muestra sus campos", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
-        expect(screen.getByLabelText("Nombre*")).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Nombre\s*\*$/)).toBeInTheDocument();
         expect(
             screen.getByLabelText("Código de país"),
         ).toBeInTheDocument();
@@ -118,10 +119,13 @@ describe("FormularioAltaUsuario", () => {
             screen.getByPlaceholderText("Número de local"),
         ).toBeInTheDocument();
 
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Nave/ }));
+
         expect(screen.getByText("Seleccionar nave")).toBeInTheDocument();
 
         expect(screen.getByText("Nave Central")).toBeInTheDocument();
         expect(screen.getByText("Nave Norte")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("option", { name: "Nave Central" }));
     });
 
     it("selecciona operador automáticamente cuando el rol viene en la URL", () => {
@@ -129,8 +133,8 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        expect(screen.getByLabelText("Rol del usuario*")).toHaveValue("operador");
-        expect(screen.getByLabelText("Nombre*")).toBeInTheDocument();
+        expect(screen.getByRole("combobox", { name: /^Rol del usuario/ })).toHaveTextContent("Operador");
+        expect(screen.getByLabelText(/^Nombre\s*\*$/)).toBeInTheDocument();
         expect(
             screen.getByPlaceholderText("Número de local"),
         ).toBeInTheDocument();
@@ -139,45 +143,35 @@ describe("FormularioAltaUsuario", () => {
     it("permite cambiar el código de país", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
-        const codigoPais = screen.getByLabelText("Código de país");
+        const codigoPais = screen.getByRole("combobox", { name: "Código de país" });
 
-        expect(codigoPais).toHaveValue("+598");
+        expect(codigoPais).toHaveTextContent("+598 (Uruguay)");
 
-        fireEvent.change(codigoPais, {
-            target: { value: "+54" },
-        });
+        seleccionarOpcion("Código de país", "+54 (Argentina)");
 
-        expect(codigoPais).toHaveValue("+54");
+        expect(codigoPais).toHaveTextContent("+54 (Argentina)");
     });
 
     it("permite seleccionar una nave", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         const selects = screen.getAllByRole("combobox");
 
         const nave = selects[2];
 
-        fireEvent.change(nave, {
-            target: { value: "2" },
-        });
+        seleccionarOpcion("Nave", "Nave Norte");
 
-        expect(nave).toHaveValue("2");
+        expect(nave).toHaveTextContent("Nave Norte");
     });
 
     it("permite agregar un segundo local", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         expect(
             screen.getAllByPlaceholderText("Número de local"),
@@ -195,9 +189,7 @@ describe("FormularioAltaUsuario", () => {
     it("no permite eliminar el primer local", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         const botonesEliminar = screen.getAllByRole("button", {
             name: "Eliminar local",
@@ -210,9 +202,7 @@ describe("FormularioAltaUsuario", () => {
     it("permite eliminar un local adicional", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         fireEvent.click(screen.getByRole("button", { name: "+ Agregar local" }));
 
@@ -271,23 +261,21 @@ describe("FormularioAltaUsuario", () => {
     it("limpia los datos del formulario", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
-        fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
+        fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
             target: { value: "usuario1" },
         });
 
-        fireEvent.change(screen.getByLabelText("Contraseña*"), {
+        fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
             target: { value: "clave12345" },
         });
 
-        fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
+        fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
             target: { value: "clave12345" },
         });
 
-        fireEvent.change(screen.getByLabelText("Nombre*"), {
+        fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), {
             target: { value: "Huerta Sur" },
         });
 
@@ -299,18 +287,18 @@ describe("FormularioAltaUsuario", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Limpiar" }));
 
-        expect(screen.getByLabelText("Nombre de Usuario*")).toHaveValue("");
-        expect(screen.getByLabelText("Contraseña*")).toHaveValue("");
+        expect(screen.getByLabelText(/^Nombre de Usuario\s*\*$/)).toHaveValue("");
+        expect(screen.getByLabelText(/^Contraseña\s*\*$/)).toHaveValue("");
         expect(
-            screen.getByLabelText("Confirmación de Contraseña*"),
+            screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/),
         ).toHaveValue("");
 
-        expect(screen.getByLabelText("Nombre*")).toHaveValue("");
+        expect(screen.getByLabelText(/^Nombre\s*\*$/)).toHaveValue("");
         expect(
             screen.getByPlaceholderText("Ej: 99123456"),
         ).toHaveValue("");
 
-        expect(screen.getByLabelText("Código de país")).toHaveValue("+598");
+        expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598 (Uruguay)");
 
         expect(
             screen.getAllByPlaceholderText("Número de local"),
@@ -320,19 +308,17 @@ describe("FormularioAltaUsuario", () => {
     it("muestra error cuando se selecciona un rol todavía no disponible", async () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "productor" },
-        });
+        seleccionarOpcion("Rol del usuario", "Productor");
 
-        fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
+        fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
             target: { value: "usuario1" },
         });
 
-        fireEvent.change(screen.getByLabelText("Contraseña*"), {
+        fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
             target: { value: "clave12345" },
         });
 
-        fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
+        fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
             target: { value: "clave12345" },
         });
 
@@ -358,9 +344,7 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
 
@@ -417,9 +401,7 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
 
@@ -431,12 +413,12 @@ describe("FormularioAltaUsuario", () => {
             expect(altaOperador).toHaveBeenCalled();
         });
 
-        expect(screen.getByLabelText("Nombre de Usuario*")).toHaveValue("");
-        expect(screen.getByLabelText("Contraseña*")).toHaveValue("");
+        expect(screen.getByLabelText(/^Nombre de Usuario\s*\*$/)).toHaveValue("");
+        expect(screen.getByLabelText(/^Contraseña\s*\*$/)).toHaveValue("");
         expect(
-            screen.getByLabelText("Confirmación de Contraseña*"),
+            screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/),
         ).toHaveValue("");
-        expect(screen.getByLabelText("Nombre*")).toHaveValue("");
+        expect(screen.getByLabelText(/^Nombre\s*\*$/)).toHaveValue("");
         expect(
             screen.getByPlaceholderText("Ej: 99123456"),
         ).toHaveValue("");
@@ -457,9 +439,7 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
 
@@ -493,9 +473,7 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
 
@@ -533,9 +511,7 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
 

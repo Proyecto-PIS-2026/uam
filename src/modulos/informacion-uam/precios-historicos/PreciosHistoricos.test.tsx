@@ -557,7 +557,7 @@ describe("PreciosHistoricos", () => {
         abrirFiltrosAdicionales();
         const opcionesEsperadas = {
             Variedad: ["Cavendish", "Orgánica"],
-            País: ["BRASIL", "ECUADOR", "URUGUAY"],
+            País: ["URUGUAY", "BRASIL", "ECUADOR"],
             Calibre: ["G", "M", "P"],
             Categoría: ["I", "II", "III"],
         };

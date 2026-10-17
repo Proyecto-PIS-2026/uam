@@ -38,6 +38,7 @@ export async function redirigirOperadorAMiMercado() {
     if (sesion?.rol === "OPERADOR") {
         redirect(obtenerRutaPrincipal(sesion.rol));
     }
+    return sesion;
 }
 
 export async function exigirConsultaMercadoPublico() {

@@ -63,7 +63,7 @@ describe("Página de operadores", () => {
         expect(obtenerOperadoresMock).not.toHaveBeenCalled();
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("conserva el listado público para la sesión %s", async (rol) => {
+    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("adapta los enlaces del listado a la sesión %s", async (rol) => {
         obtenerSesionMock.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
         obtenerOperadoresMock.mockResolvedValue(operadores);
 
@@ -72,6 +72,8 @@ describe("Página de operadores", () => {
         expect(redirectMock).not.toHaveBeenCalled();
         expect(obtenerOperadoresMock).toHaveBeenCalledOnce();
         expect(contenido.props.children.props.children.props.operadores).toBe(operadores);
+        expect(contenido.props.children.props.children.props.puedeGestionar).toBe(rol === "ADMINISTRADOR");
+        expect(obtenerSesionMock).toHaveBeenCalledOnce();
     });
 
     it("consulta los operadores y los pasa al listado", async () => {

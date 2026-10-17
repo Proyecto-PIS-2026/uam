@@ -1,28 +1,8 @@
 .pagina {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--espacio-secciones);
     min-width: 0;
-}
-
-.volver {
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-start;
-    gap: 0.35rem;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--color-primary);
-    font: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.volver:hover {
-    text-decoration: underline;
 }
 
 .filtrosPanel,
@@ -36,8 +16,8 @@
 
 .filtrosPanel {
     width: 100%;
-    margin: auto;
-    padding: 0.875rem;
+    margin: 0;
+    padding: var(--padding-panel);
     box-sizing: border-box;
     box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
 }
@@ -60,8 +40,8 @@
 .filtros {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.625rem;
-    margin-top: 0.75rem;
+    gap: var(--espacio-controles);
+    margin-top: 0;
 }
 
 .campo {
@@ -73,7 +53,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-column: 1 / -1;
-    gap: 0.625rem;
+    gap: var(--espacio-controles);
     min-width: 0;
 }
 
@@ -115,7 +95,7 @@
     grid-column: 1 / -1;
     min-width: 0;
     height: 0;
-    margin-top: -0.625rem;
+    margin-top: calc(-1 * var(--espacio-controles));
     overflow: hidden;
     visibility: hidden;
     transition:
@@ -134,8 +114,8 @@
 .contenidoAdicional {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.625rem;
-    padding: 0.625rem 0 0.125rem;
+    gap: var(--espacio-controles);
+    padding: var(--espacio-controles) 0 0.125rem;
     opacity: 0;
     transition: opacity 0.08s ease-out;
 }
@@ -181,8 +161,8 @@
     gap: 0.75rem;
     width: 100%;
     min-width: 0;
-    margin-top: 0.5rem;
-    padding-top: 0.65rem;
+    margin-top: var(--espacio-controles);
+    padding-top: var(--espacio-controles);
     box-sizing: border-box;
     border-top: 1px solid var(--color-border);
 }
@@ -250,7 +230,7 @@
 }
 
 .tablaCabecera {
-    padding: 1rem;
+    padding: var(--padding-panel);
 }
 
 .tablaContenedor {
@@ -269,7 +249,7 @@
 .errorCarga {
     flex-direction: column;
     gap: 0.75rem;
-    padding: 1rem;
+    padding: var(--padding-panel);
     color: #946200;
     text-align: center;
 }
@@ -532,12 +512,6 @@
     }
 }
 
-@media (min-width: 420px) {
-    .filtrosPanel {
-        padding: 1rem;
-    }
-}
-
 @media (min-width: 600px) {
     .filtros {
         grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -634,7 +608,7 @@
         grid-template-columns: repeat(5, minmax(0, 1fr));
         grid-column: 1 / -1;
         grid-row: 2;
-        gap: 0.625rem;
+        gap: var(--espacio-controles);
     }
 
     .fechas .campo {

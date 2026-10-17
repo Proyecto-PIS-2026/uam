@@ -1,0 +1,44 @@
+.volver {
+    display: flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 0.5rem;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0;
+    border: 0;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: var(--color-primary);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.volver:hover:not(:disabled) {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.volver:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+}
+
+.volver:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.volver .icono {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    color: inherit;
+}

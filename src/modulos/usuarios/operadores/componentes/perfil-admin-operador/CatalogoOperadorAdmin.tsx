@@ -53,7 +53,7 @@ export default function CatalogoOperadorAdmin({publicaciones, opciones}: Catalog
             {publicaciones.length == 0 ? (
                 <p>El operador no tiene publicaciones.</p>
             ) : (
-                <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas">
                     {publicaciones.map((publicacion) => (
                         <li key={publicacion.id}>
                             <TarjetaPublicacionAdmin publicacion={publicacion} onSeleccionar={abrirDrawer} />

@@ -16,7 +16,13 @@ type PageProps = {
 
 export default async function Page({ params }: PageProps) {
     const sesion = await obtenerSesion();
-    const { nombre } = await params;
+    const { nombre: nombreCodificado } = await params;
+    let nombre: string;
+    try {
+        nombre = decodeURIComponent(nombreCodificado);
+    } catch {
+        notFound();
+    }
 
     if (sesion?.rol === "OPERADOR") {
         const operador = await obtenerOperadorActual();

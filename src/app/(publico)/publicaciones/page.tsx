@@ -18,7 +18,7 @@ export default async function PaginaPublicaciones({searchParams}: Props) {
     return (
             <div className="relative isolate flex-1 bg-background text-foreground">
                 <main className="contenedor-pagina relative z-10 flex-1">
-                    <div className="relative z-10 flex flex-col gap-6">
+                    <div className="secciones-pagina relative z-10">
                         <EncabezadoPagina titulo="Publicaciones" cantidad={resultado.totalCatalogo} subtitulo="publicaciones en la plataforma" />
                         <ContenedorPublicaciones key={especie} resultado={resultado} especie={especie}/>
                     </div>
