@@ -12,6 +12,7 @@ export type OfertaProductorDemo = {
   price: number | null;
   quantity: number;
   available: boolean;
+  cantidadUbicaciones: number;
 };
 
 // Cada establecimiento tiene su propio surtido. Las especies repetidas usan
@@ -42,7 +43,7 @@ const PLAN_OFERTAS: ReadonlyArray<readonly [string, string, readonly string[]]> 
 ];
 
 type BandaProductor = Omit<OfertaProductorDemo,
-  "producerUsername" | "price" | "quantity" | "available"> & {
+  "producerUsername" | "price" | "quantity" | "available" | "cantidadUbicaciones"> & {
   minimumPrice: number;
   maximumPrice: number;
 };
@@ -124,6 +125,7 @@ export function crearOfertasProductoresDemo(catalogo: ConsultaUam): OfertaProduc
         price: indice === 3 ? null : precioEnBanda(banda.minimumPrice, banda.maximumPrice),
         quantity: available ? cantidadDisponible(banda.measureUnit, indice + ofertas.length) : 0,
         available,
+        cantidadUbicaciones: indice % 5,
       });
     }
   }

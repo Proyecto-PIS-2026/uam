@@ -5,8 +5,8 @@ import styles from "./ListadoPublicacionesUnificado.module.css";
 
 import TarjetaPublicacionConProductor from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionConProductor";
 import TarjetaPublicacionSinProductor from "@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublicacionSinProductor";
-import { DrawerDerechaPublicacionProductor } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerDerechaPublicacionProductor";
-import { DrawerAbajoPublicacionProductor } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerAbajoPublicacionProductor";
+import { DrawerDerechaPublicacion } from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerDerechaPublicacion";
+import { DrawerAbajoPublicacion} from "@/modulos/publicaciones/componentes/drawer-publicacion/DrawerAbajoPublicacion";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -123,9 +123,9 @@ export default function ListadoPublicacionesProductor({ publicaciones }: { publi
                 </ul>
             )}
             {publicacionSeleccionada && (esMobile ? (
-                <DrawerAbajoPublicacionProductor publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
+                <DrawerAbajoPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
             ) : (
-                <DrawerDerechaPublicacionProductor publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
+                <DrawerDerechaPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
             ))}
             {mostrarBotonArriba && (
                 <button type="button" onClick={volverArriba} aria-label="Volver arriba" className={`${styles.botonArriba} ${animandoSalida ? styles.botonArribaOcultando : styles.botonArribaVisible}`}>
