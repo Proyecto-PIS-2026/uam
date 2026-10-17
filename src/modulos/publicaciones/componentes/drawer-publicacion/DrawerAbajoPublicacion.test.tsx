@@ -68,7 +68,7 @@ describe("DrawerPublicacion", () => {
     it("no muestra el detalle cuando está cerrado", () => {
         render(<DrawerAbajoPublicacion publicacion={crearPublicacion()} open={false} onOpenChange={vi.fn()} />);
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.queryByText("Tomate")).not.toBeInTheDocument();
+        expect(screen.getByText("Tomate")).not.toBeVisible();
     });
     it("no muestra datos ni acciones de contacto sin una publicación", () => {
         render(<DrawerAbajoPublicacion publicacion={null} open onOpenChange={vi.fn()} />,);
@@ -85,6 +85,7 @@ describe("DrawerPublicacion", () => {
     });
     it("muestra la foto con la especie como texto alternativo", () => {
         render(<DrawerAbajoPublicacion publicacion={{ ...crearPublicacion(), foto: "/tomate.jpg", }} open onOpenChange={vi.fn()} />);
+        fireEvent.load(screen.getByAltText("Foto de Tomate"));
         expect(screen.getByRole("img", { name: "Foto de Tomate" })).toBeInTheDocument();
         expect(screen.queryByTestId("ImageOutlinedIcon")).not.toBeInTheDocument();
     });

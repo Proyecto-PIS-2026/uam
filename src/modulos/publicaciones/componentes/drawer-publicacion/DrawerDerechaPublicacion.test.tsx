@@ -5,17 +5,29 @@ import { DrawerDerechaPublicacion } from "./DrawerDerechaPublicacion";
 
 
 vi.mock("@mui/material/SwipeableDrawer", () => ({
-    default: ({ open, onOpen, onClose, anchor, children }: { open: boolean; onOpen: () => void; onClose: () => void; anchor?: string; children: ReactNode; }) => (
+    default: ({open, onOpen, onClose, anchor, children}: {open: boolean; onOpen: () => void; onClose: () => void; anchor?: string; children: ReactNode}) => (
         <>
             <button onClick={onOpen}>Abrir detalle</button>
-            {open && (<div role="dialog" aria-label="Detalle de publicación" data-anchor={anchor}>
+            <div role="dialog" aria-label="Detalle de publicación" data-anchor={anchor} hidden={!open}>
                 <button onClick={onClose}>Cerrar detalle</button>
                 {children}
             </div>
-            )}
         </>
     ),
 }));
+
+vi.mock("next/image", async () => {
+    const { createElement } = await import("react");
+    return {
+        default: ({src, alt, onLoad, onError, style}: {
+            src: string;
+            alt: string;
+            onLoad?: React.ReactEventHandler<HTMLImageElement>;
+            onError?: React.ReactEventHandler<HTMLImageElement>;
+            style?: React.CSSProperties;
+        }) => createElement("img", {src, alt, onLoad, onError, style})
+    };
+});
 
 vi.mock("./TextoAjustable", () => ({
     default: ({ children }: { children: ReactNode }) => (

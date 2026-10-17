@@ -10,11 +10,13 @@ vi.stubGlobal(
     },
 );
 
-Object.defineProperty(document, "fonts", {
-    configurable: true,
-    value: {
-        ready: Promise.resolve(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-    },
-});
+if (typeof document !== 'undefined') {
+    Object.defineProperty(document, 'fonts', {
+        configurable: true,
+        value: {
+            ready: Promise.resolve(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        },
+    });
+}
