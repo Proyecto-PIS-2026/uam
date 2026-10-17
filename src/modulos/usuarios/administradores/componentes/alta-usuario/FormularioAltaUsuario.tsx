@@ -5,6 +5,8 @@ import styles from "./FormularioAltaUsuario.module.css";
 import { useState, useEffect, type FormEvent } from "react";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
+import { altaProductor } from "@/modulos/usuarios/productores/altaProductor";
+
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 const ROLES_VALIDOS = ["operador", "productor", "administrador"];
 
