@@ -4,10 +4,12 @@ import {
     ErrorAutorizacion,
     exigirAdministrador,
     exigirOperador,
+    exigirProductor,
     exigirConsultaMercadoPublico,
     redirigirOperadorAMiMercado,
     requerirAdministrador,
     requerirOperador,
+    requerirProductor,
 } from "./controles";
 
 vi.mock("../autenticacion/sesiones", () => ({ obtenerSesion: vi.fn() }));
@@ -20,6 +22,7 @@ const sesionMock = vi.mocked(obtenerSesion);
 describe.each([
     { rol: "ADMINISTRADOR" as const, exigir: exigirAdministrador, requerir: requerirAdministrador },
     { rol: "OPERADOR" as const, exigir: exigirOperador, requerir: requerirOperador },
+    { rol: "PRODUCTOR" as const, exigir: exigirProductor, requerir: requerirProductor },
 ])("autorización de $rol", ({ rol, exigir, requerir }) => {
     beforeEach(() => {
         vi.clearAllMocks();

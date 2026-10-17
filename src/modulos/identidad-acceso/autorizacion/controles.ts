@@ -62,3 +62,11 @@ export function exigirOperador() {
 export function requerirOperador() {
     return requerirRol("OPERADOR");
 }
+
+export function exigirProductor() {
+    return exigirRol("PRODUCTOR");
+}
+
+export function requerirProductor() {
+    return requerirRol("PRODUCTOR");
+}

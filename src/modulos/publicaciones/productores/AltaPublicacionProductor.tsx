@@ -17,7 +17,6 @@ import type { UbicacionSeleccionada } from "./LeafletLocationPicker";
 
 type Opcion = { id: number; nombre: string };
 type Catalogos = {
-    productores: Opcion[];
     especies: Opcion[];
     variedades: (Opcion & { especieId: number })[];
     presentaciones: (Opcion & { variedadId: number })[];
@@ -66,21 +65,19 @@ function Campo({ nombre, valor, opciones: lista, cambiar, deshabilitado = false 
     </TextField>;
 }
 
-export default function AltaPublicacionProductor() {
+export default function AltaPublicacionProductor({ productorId }: { productorId: number }) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
-    const [productorId, setProductorId] = useState(0);
     const [abierto, setAbierto] = useState(false);
     const [errores, setErrores] = useState<string[]>([]);
     const [mensaje, setMensaje] = useState("");
 
     useEffect(() => {
         fetch("/api/publicaciones/productor").then(async (respuesta) => {
-            if (!respuesta.ok) throw new Error("No se pudieron cargar los Productores.");
+            if (!respuesta.ok) throw new Error("No se pudieron cargar los datos.");
             return respuesta.json() as Promise<Catalogos>;
         }).then((datos) => setCatalogos({
             ...datos,
-            productores: opciones(datos.productores),
             especies: opciones(datos.especies),
             variedades: opciones(datos.variedades),
             presentaciones: opciones(datos.presentaciones),
@@ -93,10 +90,7 @@ export default function AltaPublicacionProductor() {
     return <main className="contenedor-pagina flex-1 py-10">
         <h1 className="mb-4 text-3xl font-bold">Alta de publicación de Productor</h1>
         {errores.length > 0 && <div role="alert" className={styles.error}>{errores.map((error) => <p key={error}>{error}</p>)}</div>}
-        {!catalogos ? <p role="status">Cargando Productores...</p> : catalogos.productores.length === 0 ? <p>No hay Productores disponibles para realizar el alta.</p> : <>
-            <div className="max-w-md">
-                <Campo nombre="Productor" valor={productorId} opciones={catalogos.productores} cambiar={(id) => setProductorId(id)} />
-            </div>
+        {!catalogos ? <p role="status">Cargando datos...</p> : <>
             <button type="button" className={styles.guardar} onClick={() => { setErrores([]); setMensaje(""); setAbierto(true); }} disabled={!productorId}>Agregar producto</button>
             {mensaje && <p role="status">{mensaje}</p>}
         </>}
