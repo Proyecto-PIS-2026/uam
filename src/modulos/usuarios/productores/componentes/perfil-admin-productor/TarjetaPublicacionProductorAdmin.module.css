@@ -330,6 +330,7 @@
         display: block;
         padding-bottom: 14px;
         border-bottom: 0;
+        flex-wrap: wrap;
     }
 
     .especie {
@@ -395,10 +396,13 @@
 }
 
 .ubicacion {
+    display: -webkit-box;
+    flex-basis: 100%;
     margin: 0.125rem 0 0;
     overflow: hidden;
     color: var(--color-muted);
     font-size: 0.75rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
 }

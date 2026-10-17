@@ -39,9 +39,10 @@ export default function TarjetaPublicacionProductorAdmin({ publicacion }: Tarjet
                                 shrink-0 rounded-full
                                 px-2 py-0.5
                                 text-[10px] font-bold
-                                ${publicacion.disponible
-                                    ? "bg-primary-soft text-secondary"
-                                    : "bg-gray-100 text-muted"
+                                ${
+                                    publicacion.disponible
+                                        ? "bg-primary-soft text-secondary"
+                                        : "bg-gray-100 text-muted"
                                 }
                             `}
                         >
@@ -51,7 +52,6 @@ export default function TarjetaPublicacionProductorAdmin({ publicacion }: Tarjet
                         </span>
                     </div>
                     <p className={styles.informacionWeb}>{publicacion.calibre} · Categoría {publicacion.categoria}</p>
-                    {ubicacion && <p className={styles.ubicacion} title={ubicacion}>{ubicacion}</p>}
                 </div>
                 <div className={styles.cuerpo}>
                     <div className={styles.informacionMobile}>

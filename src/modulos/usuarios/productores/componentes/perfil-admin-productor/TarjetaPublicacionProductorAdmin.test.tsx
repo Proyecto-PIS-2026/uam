@@ -46,13 +46,6 @@ describe ('TarjetaPublicacionProductorAdmin', () => {
         expect(screen.getByText(/90/)).toBeInTheDocument();
     });
 
-    // Muestra dónde está el producto: los nombres de sus ubicaciones
-    it("muestra los nombres de las ubicaciones", () => {
-        render(<TarjetaPublicacionProductorAdmin publicacion={publicacionBase} />);
- 
-        expect(screen.getByText("Ruta 3 km 500, Salto · Ruta 5 km 200, Maldonado")).toBeInTheDocument();
-    });
-
     // Si la variedad es "-", el nombre es solo la especie
     it("muestra solo la especie cuando no hay variedad", () => {
         render(<TarjetaPublicacionProductorAdmin publicacion={{ ...publicacionBase, variedad: "-" }} />);
