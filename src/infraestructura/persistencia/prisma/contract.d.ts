@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'3fe9ff9b77cc22f3603cc103afea9c647926a2583a93c5bdbb13ab08a75f29a2'>;
+  StorageHashBase<'e329d367f1b1e76ef0a18c17bf60a4774f04fced990d58d8f439815417932f7c'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -358,6 +358,7 @@ export type FieldOutputTypes = {
       readonly passwordHash: CodecTypes['pg/text@1']['output'];
       readonly twoFactorSecret: CodecTypes['pg/text@1']['output'] | null;
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['output'];
+      readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['output'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
     };
     readonly Variedad: {
@@ -488,6 +489,7 @@ export type FieldInputTypes = {
       readonly passwordHash: CodecTypes['pg/text@1']['input'];
       readonly twoFactorSecret: CodecTypes['pg/text@1']['input'] | null;
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['input'];
+      readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['input'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
     };
     readonly Variedad: {
@@ -616,6 +618,7 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly passwordHash: CodecTypes['pg/text@1']['output'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
+      readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['output'];
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['output'];
       readonly twoFactorSecret: CodecTypes['pg/text@1']['output'] | null;
       readonly username: CodecTypes['pg/text@1']['output'];
@@ -746,6 +749,7 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly passwordHash: CodecTypes['pg/text@1']['input'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
+      readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['input'];
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['input'];
       readonly twoFactorSecret: CodecTypes['pg/text@1']['input'] | null;
       readonly username: CodecTypes['pg/text@1']['input'];
@@ -1748,6 +1752,15 @@ type ContractBase = Omit<
                   readonly nullable: true;
                 };
                 readonly twoFactorEnabled: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly solicitoRestablecimiento: {
                   readonly nativeType: 'bool';
                   readonly codecId: 'pg/bool@1';
                   readonly nullable: false;
@@ -2841,6 +2854,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
+              readonly solicitoRestablecimiento: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly rol: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -2868,6 +2885,7 @@ type ContractBase = Omit<
                 readonly passwordHash: { readonly column: 'passwordHash' };
                 readonly twoFactorSecret: { readonly column: 'twoFactorSecret' };
                 readonly twoFactorEnabled: { readonly column: 'twoFactorEnabled' };
+                readonly solicitoRestablecimiento: { readonly column: 'solicitoRestablecimiento' };
                 readonly rol: { readonly column: 'rol' };
               };
             };

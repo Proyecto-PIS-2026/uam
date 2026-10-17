@@ -1582,6 +1582,13 @@
                   "plane": "domain"
                 }
               },
+              "solicitoRestablecimiento": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "twoFactorEnabled": {
                 "nullable": false,
                 "type": {
@@ -1631,6 +1638,9 @@
                 },
                 "rol": {
                   "column": "rol"
+                },
+                "solicitoRestablecimiento": {
+                  "column": "solicitoRestablecimiento"
                 },
                 "twoFactorEnabled": {
                   "column": "twoFactorEnabled"
@@ -3004,6 +3014,15 @@
                     "plane": "storage"
                   }
                 },
+                "solicitoRestablecimiento": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "twoFactorEnabled": {
                   "codecId": "pg/bool@1",
                   "default": {
@@ -3139,7 +3158,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "3fe9ff9b77cc22f3603cc103afea9c647926a2583a93c5bdbb13ab08a75f29a2"
+    "storageHash": "e329d367f1b1e76ef0a18c17bf60a4774f04fced990d58d8f439815417932f7c"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",
