@@ -8,6 +8,8 @@ export type DatosAltaPublicacionProductor = {
     paisId: number;
     latitud: number;
     longitud: number;
+    departamento: string;
+    nombreLugar: string | null;
     disponibilidad: boolean;
     precio?: string;
     cantidadUnidades?: number | null;
@@ -50,6 +52,13 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
     }
     if (typeof datos.longitud !== "number" || !Number.isFinite(datos.longitud) || datos.longitud < -180 || datos.longitud > 180) {
         errores.push("La longitud no es válida.");
+    }
+    if (typeof datos.departamento !== "string" || datos.departamento.trim() === "") {
+        errores.push("El departamento de la ubicación no es válido.");
+    }
+    if (datos.nombreLugar !== null && datos.nombreLugar !== undefined &&
+        (typeof datos.nombreLugar !== "string" || datos.nombreLugar.trim() === "" || datos.nombreLugar.length > 300)) {
+        errores.push("El nombre de la ubicación no es válido.");
     }
     if (typeof datos.disponibilidad !== "boolean") errores.push("La disponibilidad no es válida.");
     if (datos.precio !== undefined && (typeof datos.precio !== "string" || (datos.precio.trim() !== "" && !/^\d{1,10}$/.test(datos.precio.trim())))) {

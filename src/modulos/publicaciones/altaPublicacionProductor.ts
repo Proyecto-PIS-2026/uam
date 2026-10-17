@@ -52,14 +52,14 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
                 categoriaId: categoria.id,
                 calibreId: calibre.id,
             });
-            await tx.orm.public.PublicacionProductor.create({
+            const publicacionProductor = await tx.orm.public.PublicacionProductor.create({
                 publicacionId: publicacion.id,
                 productorId: productor.id,
                 paisId: pais.id,
             });
             await tx.orm.public.Ubicacion.create({
-                publicacionId: publicacion.id,
-                nombreUbicacion: "Ubicación seleccionada en el mapa",
+                publicacionId: publicacionProductor.id,
+                nombreUbicacion: datos.nombreLugar?.trim() || datos.departamento.trim(),
                 urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${datos.latitud},${datos.longitud}`)}`,
             });
             return publicacion.id;
