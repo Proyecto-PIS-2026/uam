@@ -168,7 +168,7 @@ describe("PreciosHistoricos", () => {
         expect(filtros.compareDocumentPosition(grafica) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(grafica.compareDocumentPosition(tabla) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(document.querySelectorAll('button[type="submit"]')).toHaveLength(1);
-        expect(within(filtros).getByRole("button", { name: "Consultar", exact: true })).toHaveAttribute("type", "submit");
+        expect(within(filtros).getByRole("button", { name: "Consultar" })).toHaveAttribute("type", "submit");
         expect(propsGrafica()).toMatchObject({ ...fechas, producto: "Banana", cargando: false, error: false });
     });
 
@@ -1199,7 +1199,7 @@ describe("PreciosHistoricos", () => {
         expect(propsGrafica()).toMatchObject(fechas);
         expect(propsGrafica().registros).toHaveLength(2);
         expect(tabla.getByRole("cell", { name: "02/11/2025" })).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Consultar", exact: true }));
+        fireEvent.click(screen.getByRole("button", { name: "Consultar" }));
 
         expect(tabla.getAllByRole("row")).toHaveLength(2);
         expect(propsGrafica()).toMatchObject({ desde: "2025-11-05", hasta: fechas.hasta });
