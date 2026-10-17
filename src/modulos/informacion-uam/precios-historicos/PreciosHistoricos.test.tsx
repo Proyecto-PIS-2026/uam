@@ -1,10 +1,26 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ComponentProps } from "react";
 import PreciosHistoricos from "./PreciosHistoricos";
+import type GraficaPreciosHistoricos from "./GraficaPreciosHistoricos";
 import type { HistoricoProducto, ProductoSeleccionado, ValorHistorico } from "./tipos";
 
-const { navegar } = vi.hoisted(() => ({ navegar: vi.fn() }));
+type PropsGrafica = ComponentProps<typeof GraficaPreciosHistoricos>;
+const { navegar, renderizarGrafica } = vi.hoisted(() => ({
+    navegar: vi.fn(),
+    renderizarGrafica: vi.fn<(props: PropsGrafica) => void>(),
+}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: navegar }) }));
+vi.mock("./GraficaPreciosHistoricos", () => ({
+    default: (props: PropsGrafica) => {
+        renderizarGrafica(props);
+        return <div data-testid="grafica-historico" />;
+    },
+}));
+
+function propsGrafica(): PropsGrafica {
+    return renderizarGrafica.mock.calls.at(-1)![0];
+}
 
 const urlInicial = window.location.href;
 const estadoInicial = window.history.state;
@@ -128,8 +144,33 @@ function historicoConRegistros(cantidad: number): HistoricoProducto {
 }
 
 describe("PreciosHistoricos", () => {
-    beforeEach(() => navegar.mockReset().mockImplementation((url: string) => window.history.replaceState(null, "", url)));
+    beforeEach(() => {
+        navegar.mockReset().mockImplementation((url: string) => window.history.replaceState(null, "", url));
+        renderizarGrafica.mockClear();
+    });
     afterEach(() => window.history.replaceState(estadoInicial, "", urlInicial));
+
+    it("reúne fechas y filtros en un único panel de consulta antes de la gráfica y el listado", () => {
+        render(<PreciosHistoricos producto={producto} historico={historico} {...fechas} />);
+        abrirFiltrosAdicionales();
+        const formulario = screen.getByRole("form", { name: "Consultar período histórico" });
+        const grafica = screen.getByTestId("grafica-historico");
+        const filtros = screen.getByRole("region", { name: "Filtros de precios históricos" });
+        const tabla = screen.getByRole("table");
+
+        expect(document.querySelectorAll("form")).toHaveLength(1);
+        for (const nombre of ["Especie", "Variedad", "País", "Calibre", "Categoría"]) {
+            expect(formulario).toContainElement(within(filtros).getByRole("combobox", { name: nombre }));
+        }
+        expect(formulario).toContainElement(within(filtros).getByLabelText(/^Desde/));
+        expect(formulario).toContainElement(within(filtros).getByLabelText(/^Hasta/));
+        expect(formulario).not.toContainElement(grafica);
+        expect(filtros.compareDocumentPosition(grafica) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(grafica.compareDocumentPosition(tabla) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(document.querySelectorAll('button[type="submit"]')).toHaveLength(1);
+        expect(within(filtros).getByRole("button", { name: "Consultar", exact: true })).toHaveAttribute("type", "submit");
+        expect(propsGrafica()).toMatchObject({ ...fechas, producto: "Banana", cargando: false, error: false });
+    });
 
     it.each([
         ["País", "BRASIL", 1, "pais"],
@@ -423,7 +464,9 @@ describe("PreciosHistoricos", () => {
         render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={historicoConRegistros(83)} {...fechas} />);
         const tabla = screen.getByRole("table");
         const paginacion = within(screen.getByRole("navigation", { name: "Páginas de precios históricos" }));
+        const registrosGrafica = propsGrafica().registros;
 
+        expect(registrosGrafica).toHaveLength(83);
         expect(within(tabla).getAllByRole("row")).toHaveLength(41);
         expect(document.querySelectorAll("article")).toHaveLength(40);
         expect(within(tabla).getByRole("cell", { name: "Variedad 1" })).toBeInTheDocument();
@@ -434,12 +477,14 @@ describe("PreciosHistoricos", () => {
         expect(paginacion.getByRole("button", { name: "Anterior" })).toBeDisabled();
 
         fireEvent.click(paginacion.getByRole("button", { name: "Siguiente" }));
+        expect(propsGrafica().registros).toBe(registrosGrafica);
         expect(paginacion.getByText("41-80 de 83")).toBeInTheDocument();
         expect(within(tabla).getByRole("cell", { name: "Variedad 41" })).toBeInTheDocument();
         expect(within(tabla).getAllByRole("row")).toHaveLength(41);
         expect(document.querySelectorAll("article")).toHaveLength(40);
 
         fireEvent.click(paginacion.getByRole("button", { name: "Siguiente" }));
+        expect(propsGrafica().registros).toBe(registrosGrafica);
         expect(paginacion.getByText("81-83 de 83")).toBeInTheDocument();
         expect(paginacion.getByText("Página 3 de 3")).toBeInTheDocument();
         expect(within(tabla).getAllByRole("row")).toHaveLength(4);
@@ -813,6 +858,7 @@ describe("PreciosHistoricos", () => {
         expect(tarjeta).not.toBeNull();
         expect(within(tarjeta!).getByText("$1 250,5 - $900,25 / kg")).toBeInTheDocument();
         expect(precioRecibido).toEqual(precioOriginal);
+        expect(propsGrafica().registros[0].precio).toBe(precioRecibido);
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
@@ -931,13 +977,20 @@ describe("PreciosHistoricos", () => {
         expect(within(screen.getByRole("table")).getByRole("cell", { name: texto })).toBeInTheDocument();
         expect(within(document.querySelector("article")!).getByText(`${texto} / kg`)).toBeInTheDocument();
         expect(precioRecibido).toMatchObject({ min_kg, max_kg });
+        expect(propsGrafica().registros[0].precio).toBe(precioRecibido);
         expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
     it("consulta los filtros al cambiarlos y aplica las fechas al presionar Consultar", () => {
         render(<PreciosHistoricos producto={productoSinFiltros} historico={historicoConFiltros} {...fechas} />);
+        expect(propsGrafica().registros).toHaveLength(5);
         seleccionarFiltro("Variedad", "Orgánica");
+        expect(propsGrafica().registros).toHaveLength(2);
+        expect(propsGrafica().registros.map(({ precio }) => precio)).toEqual([
+            historicoConFiltros.series[0].presentations[2].prices[0],
+            historicoConFiltros.series[0].presentations[3].prices[0],
+        ]);
         abrirFiltrosAdicionales();
         seleccionarFiltro("País", "URUGUAY");
         seleccionarFiltro("Calibre", "P");
@@ -1139,13 +1192,19 @@ describe("PreciosHistoricos", () => {
         };
         render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
         const tabla = within(screen.getByRole("table"));
+        expect(propsGrafica().registros).toHaveLength(2);
         fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-05" } });
 
         expect(tabla.getAllByRole("row")).toHaveLength(3);
+        expect(propsGrafica()).toMatchObject(fechas);
+        expect(propsGrafica().registros).toHaveLength(2);
         expect(tabla.getByRole("cell", { name: "02/11/2025" })).toBeInTheDocument();
-        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+        fireEvent.click(screen.getByRole("button", { name: "Consultar", exact: true }));
 
         expect(tabla.getAllByRole("row")).toHaveLength(2);
+        expect(propsGrafica()).toMatchObject({ desde: "2025-11-05", hasta: fechas.hasta });
+        expect(propsGrafica().registros).toHaveLength(1);
+        expect(propsGrafica().registros[0].dia.date).toBe("2025-11-07");
         expect(tabla.queryByRole("cell", { name: "02/11/2025" })).not.toBeInTheDocument();
         expect(tabla.getByRole("cell", { name: "07/11/2025" })).toBeInTheDocument();
         expect(navegar).not.toHaveBeenCalled();
@@ -1293,12 +1352,14 @@ describe("PreciosHistoricos", () => {
         const { rerender } = render(
             <PreciosHistoricos producto={producto} historico={null} {...fechas} error={error} cargando />,
         );
+        expect(propsGrafica()).toMatchObject({ cargando: true, error: true, registros: [] });
         expect(screen.getAllByRole("progressbar", { name: "Cargando precios históricos" })).toHaveLength(2);
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Consultar" })).toBeDisabled();
 
         rerender(<PreciosHistoricos producto={producto} historico={null} {...fechas} error={error} />);
+        expect(propsGrafica()).toMatchObject({ cargando: false, error: true, registros: [] });
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
         expect(screen.getAllByRole("alert")).toHaveLength(2);
         expect(screen.getAllByTestId("WarningAmberIcon")).toHaveLength(2);

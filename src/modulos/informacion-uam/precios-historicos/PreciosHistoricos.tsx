@@ -13,6 +13,7 @@ import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import type { ProductoSeleccionado, HistoricoProducto, EspecieHistorica, OpcionesFiltrosHistoricos } from "./tipos";
 import { esFechaISO, fechaActualMontevideo } from "./parametros-consulta";
 import { textoValorHistorico } from "./valores-historicos";
+import GraficaPreciosHistoricos from "./GraficaPreciosHistoricos";
 import styles from "./PreciosHistoricos.module.css";
 
 type Props = {
@@ -345,6 +346,15 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                 {rangoInvalido && <p className={styles.vacio} role="alert">La fecha de inicio debe ser anterior o igual a la fecha de fin.</p>}
                 {!cargandoTabla && !error && filas.length === 0 && <p className={styles.vacio} role="status">No hay registros históricos para la selección y el período indicados.</p>}
             </section>
+
+            <GraficaPreciosHistoricos
+                registros={filas}
+                desde={periodoVisible.desde}
+                hasta={periodoVisible.hasta}
+                producto={producto.especie}
+                cargando={cargandoTabla}
+                error={Boolean(error)}
+            />
 
             <section className={styles.tablaPanel} aria-label={`Histórico de ${producto.especie}`}>
                 <div className={styles.tablaCabecera}><h2>Histórico de precios</h2></div>
