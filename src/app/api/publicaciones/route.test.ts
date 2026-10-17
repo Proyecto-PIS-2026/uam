@@ -382,7 +382,7 @@ describe("autorización de alta de publicaciones", () => {
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Propio" });
     });
 
-    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)(
+    it.each([null, "PRODUCTOR"] as const)(
         "rechaza el alta con sesión %s antes de escribir",
         async (rol) => {
             mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);

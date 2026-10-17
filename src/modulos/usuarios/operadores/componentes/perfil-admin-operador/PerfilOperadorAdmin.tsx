@@ -2,6 +2,7 @@ import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
 import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/consultas-edicion-publicacion";
 
+import BotonAltaPublicacionAdmin from "./BotonAltaPublicacionAdmin";
 import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
 import Image from "next/image";
@@ -91,7 +92,11 @@ export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperad
                 </div>
             </div>
 
-            <h2 className={styles.subtituloPublicaciones}>Publicaciones ({operador.publicaciones.length})</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">        
+                <h2 className={styles.subtituloPublicaciones}>Publicaciones ({operador.publicaciones.length})</h2>
+                <BotonAltaPublicacionAdmin operadorId={operador.id} />    
+            </div>
+
             <CatalogoOperadorAdmin publicaciones={operador.publicaciones} opciones={opciones} />
         </section>
     );
