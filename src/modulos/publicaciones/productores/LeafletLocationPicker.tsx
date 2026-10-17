@@ -134,21 +134,23 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
                 <h2 id="titulo-ubicacion-productor">Seleccionar ubicación</h2>
                 <button type="button" className={styles.cerrar} onClick={alCerrar} aria-label="Cerrar mapa">×</button>
             </header>
-            <p className={styles.ayuda}>Haz click para seleccionar una ubicación en el mapa o busca por nombre:</p>
-            <form className={styles.buscador} onSubmit={buscarLugar}>
-                <div className={styles.controlesBusqueda}>
-                    <input id="buscar-ubicacion-productor" aria-label="Buscar ubicación por nombre" type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setResultados([]); }} placeholder="Ej.: Mercado Modelo, Montevideo" />
-                    <button type="submit" disabled={buscando || !busqueda.trim()}>{buscando ? "Buscando..." : "Buscar"}</button>
+            <div className={styles.contenido}>
+                <p className={styles.ayuda}>Haz click para seleccionar una ubicación en el mapa o busca por nombre:</p>
+                <form className={styles.buscador} onSubmit={buscarLugar}>
+                    <div className={styles.controlesBusqueda}>
+                        <input id="buscar-ubicacion-productor" aria-label="Buscar ubicación por nombre" type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setResultados([]); }} placeholder="Ej.: Mercado Modelo, Montevideo" />
+                        <button type="submit" disabled={buscando || !busqueda.trim()}>{buscando ? "Buscando..." : "Buscar"}</button>
+                    </div>
+                    {resultados.length > 0 && <ul className={styles.resultados} aria-label="Resultados de búsqueda">
+                        {resultados.map((resultado) => <li key={resultado.place_id}><button type="button" onClick={() => elegirResultado(resultado)}>{resultado.display_name}</button></li>)}
+                    </ul>}
+                </form>
+                <div className={styles.mapaContenedor}>
+                    <div className={styles.mapa} ref={mapaRef} />
+                    {error && <p className={styles.error} role="alert">{error}</p>}
                 </div>
-                {resultados.length > 0 && <ul className={styles.resultados} aria-label="Resultados de búsqueda">
-                    {resultados.map((resultado) => <li key={resultado.place_id}><button type="button" onClick={() => elegirResultado(resultado)}>{resultado.display_name}</button></li>)}
-                </ul>}
-            </form>
-            <div className={styles.mapaContenedor}>
-                <div className={styles.mapa} ref={mapaRef} />
-                {error && <p className={styles.error} role="alert">{error}</p>}
+                {seleccion && <p className={styles.coordenadas}>{seleccion.nombreLugar ? `${seleccion.nombreLugar}, ` : ""}{seleccion.departamento}</p>}
             </div>
-            {seleccion && <p className={styles.coordenadas}>{seleccion.nombreLugar ? `${seleccion.nombreLugar}, ` : ""}{seleccion.departamento}</p>}
             <footer className={styles.pie}>
                 <button type="button" className={styles.cancelar} onClick={alCerrar}>Cancelar</button>
                 <button type="button" className={styles.confirmar} onClick={() => seleccion && alConfirmar(seleccion)} disabled={!seleccion || Boolean(error)}>Usar esta ubicación</button>
