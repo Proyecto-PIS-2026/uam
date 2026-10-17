@@ -61,8 +61,8 @@ vi.mock("@/modulos/publicaciones/componentes/tarjetas-publicacion/TarjetaPublica
     ),
 }));
 
-vi.mock("@/modulos/publicaciones/componentes/drawer-publicacion/DrawerDerechaPublicacionProductor", () => ({
-    DrawerDerechaPublicacionProductor: ({
+vi.mock("@/modulos/publicaciones/componentes/drawer-publicacion/DrawerDerechaPublicacion", () => ({
+    DrawerDerechaPublicacion: ({
         publicacion,
         open,
         onOpenChange,
@@ -83,8 +83,8 @@ vi.mock("@/modulos/publicaciones/componentes/drawer-publicacion/DrawerDerechaPub
     ),
 }));
 
-vi.mock("@/modulos/publicaciones/componentes/drawer-publicacion/DrawerAbajoPublicacionProductor", () => ({
-    DrawerAbajoPublicacionProductor: ({
+vi.mock("@/modulos/publicaciones/componentes/drawer-publicacion/DrawerAbajoPublicacion", () => ({
+    DrawerAbajoPublicacion: ({
         publicacion,
         open,
         onOpenChange,

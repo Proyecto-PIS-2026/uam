@@ -6,9 +6,13 @@ import TarjetaPublicacion from "./TarjetaPublicacion";
 // Reemplaza Image de Next por un img comun durante los tests
 vi.mock("next/image", async () => {
     const { createElement } = await import("react");
-
     return {
-        default: ({ src, alt }: { src: string; alt: string }) => createElement("img", { src, alt })
+        default: ({src, alt, onLoad, onError}: {
+            src: string;
+            alt: string;
+            onLoad?: React.ReactEventHandler<HTMLImageElement>;
+            onError?: React.ReactEventHandler<HTMLImageElement>;
+        }) => createElement("img", { src, alt, onLoad, onError }),
     };
 });
 
@@ -51,6 +55,7 @@ describe("TarjetaPublicacion", () => {
     // Verifica que se muestre la imagen cuando la publicacion tiene foto
     it("muestra la imagen cuando la publicación tiene foto", () => {
         render(<TarjetaPublicacion publicacion={{...publicacion, foto: "/tomate.jpg"}}/>);
+        fireEvent.load(screen.getByAltText("Foto de Tomate - Perita"));
         expect(screen.getByRole("img", {name: "Foto de Tomate - Perita",})).toHaveAttribute("src", "/tomate.jpg");
         expect(screen.queryByText("Foto")).not.toBeInTheDocument();
         expect(screen.queryByText("Sin foto disponible")).not.toBeInTheDocument();

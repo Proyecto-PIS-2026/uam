@@ -37,6 +37,13 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
     const tieneFoto = Boolean(publicacion?.foto?.trim());
     const drawerVisible = open && publicacion !== null && (!tieneFoto || fotoPreparada === claveFoto);
+    
+    useEffect(() => {
+        if (drawerVisible && contenidoRef.current) {
+            contenidoRef.current.scrollTop = 0;
+        }
+    }, [drawerVisible, publicacion?.id]);
+    
     useEffect(() => {
         const contenido = contenidoRef.current;
         if (!contenido || !drawerVisible) {
@@ -57,7 +64,12 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
             {publicacion &&  usuario && (
                 <>
                     <div className={styles.tarjeta}>
-                        <div className={styles.indicador} />
+                        <div className={styles.encabezado}>
+                            <div className={styles.titulo}>Detalle de publicación</div>
+                            <button className={styles.cerrar} type="button" onClick={() => onOpenChange(false)} aria-label="Detalle de consulta">
+                                <CloseIcon fontSize="small" />
+                            </button>
+                        </div>
                         <div ref={contenidoRef} className={styles.contenidoScrollable}>
                             <div className={styles.cabecera}>
                                 <div className={styles.bloqueSuperior}>
@@ -132,9 +144,9 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
                         </div>
                     </div>
                     <Dialog open={fotoAmpliada && open && Boolean(publicacion?.foto)} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" }  } }}>
-                        <IconButton aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(false)} className={styles.cerrarFoto}>
-                            <CloseIcon />
-                        </IconButton>
+                        <button aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(false)} className={`${styles.cerrar} ${styles.cerrarFoto}`}>
+                            <CloseIcon fontSize="small" />
+                        </button>
                         <div className={styles.fotoAmpliada}>
                             <ImagenPublicacion key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="100vw" className={styles.imagenAmpliada}  reemplazo={
                                 <div className={styles.sinFoto}>

@@ -21,12 +21,12 @@ export default function UbicacionesRetiro({ ubicaciones}: UbicacionesRetiroProps
                                 <span className={styles.icono} aria-hidden="true">
                                     <LocationOnOutlinedIcon />
                                 </span>
-                                <span className={styles.informacion}>
+                                <div className={styles.informacion}>
                                     <span className={styles.nombre}>
                                         {ubicacion.nombreUbicacion.trim() || `Punto de entrega ${indice + 1}`}
                                     </span>
                                     <span className={styles.descripcion}>Ver ubicación en Google Maps</span>
-                                </span>
+                                </div>
                                 <ChevronRightIcon className={styles.flecha} aria-hidden="true"/>
                             </a>
                         </div>

@@ -11,10 +11,9 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "../ImagenPublicacion";
 import Link from "next/link";
 import Dialog from "@mui/material/Dialog";
-import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface DrawerPublicacionProps {
     open: boolean;
@@ -34,12 +33,26 @@ export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: Dr
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
     const tieneFoto = Boolean(publicacion?.foto?.trim());
     const drawerVisible = open && publicacion !== null && (!tieneFoto || fotoPreparada === claveFoto);
+    const contenidoRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (drawerVisible && contenidoRef.current) {
+            contenidoRef.current.scrollTop = 0;
+        }
+    }, [drawerVisible, publicacion?.id]);
+
     const contenido = (
         <SwipeableDrawer anchor="right" open={drawerVisible} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
             {publicacion && usuario && (
                 <>
                     <div className={styles.tarjeta}>
-                        <div className={styles.contenidoScrollable}>
+                        <div className={styles.encabezado}>
+                            <div className={styles.titulo}>Detalle de publicación</div>
+                            <button className={styles.cerrar} type="button" onClick={() => onOpenChange(false)} aria-label="Detalle de consulta">
+                                <CloseIcon fontSize="small" />
+                            </button>
+                        </div>
+                        <div ref={contenidoRef} className={styles.contenidoScrollable}>
                             <div className={styles.bloqueSuperior}>
                                 <div className={styles.marcoImagen}>
                                     <div className={styles.contenedorImagen}>
@@ -108,9 +121,9 @@ export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: Dr
                         </div>
                     </div>
                     <Dialog open={fotoAmpliada && open && Boolean(publicacion?.foto)} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" }  } }}>
-                        <IconButton aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(false)} className={styles.cerrarFoto}>
-                            <CloseIcon />
-                        </IconButton>
+                        <button aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(false)} className={`${styles.cerrar} ${styles.cerrarFoto}`}>
+                            <CloseIcon fontSize="small" />
+                        </button>
                         <div className={styles.fotoAmpliada}>
                             <ImagenPublicacion key={claveFoto} src={publicacion?.foto ?? null} loading="eager" onLoad={() => setFotoPreparada(claveFoto)} onError={() => setFotoPreparada(claveFoto)} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="100vw" className={styles.imagenAmpliada}  reemplazo={
                                 <div className={styles.sinFoto}>
