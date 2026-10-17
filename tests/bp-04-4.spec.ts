@@ -189,7 +189,7 @@ test("BP-04.4 CA-3 CP-05: funcionalidades permitidas al Productor", async ({ pag
   await iniciarSesion(page, "PRODUCTOR");
   await page.goto("/mi-mercado/productor");
   await expect(page).toHaveURL((url) => url.pathname === "/mi-mercado/productor");
-  await expect(page.getByRole("heading", { name: "Mi mercado", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible();
   await consultarHistoricos(page);
 });
 

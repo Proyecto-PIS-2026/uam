@@ -1,0 +1,253 @@
+import type { SwipeableDrawerProps } from "@mui/material/SwipeableDrawer";
+import type { DialogProps } from "@mui/material/Dialog";
+import type { ReactNode } from "react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
+import MiMercadoProductor from "./MiMercadoProductor";
+
+const mocks = vi.hoisted(() => ({ mediaQuery: vi.fn() }));
+
+vi.mock("@mui/material/useMediaQuery", () => ({ default: mocks.mediaQuery }));
+vi.mock("@mui/material/SwipeableDrawer", () => ({
+    default: ({ anchor, open, children, onClose }: SwipeableDrawerProps) => <section role="dialog" aria-label="Detalle de publicación" data-anchor={anchor} hidden={!open} onTouchEnd={onClose}>{children}</section>,
+}));
+vi.mock("@mui/material/Dialog", () => ({
+    default: ({ open, children, "aria-label": etiqueta }: DialogProps) => open ? <section role="dialog" aria-label={etiqueta}>{children}</section> : null,
+}));
+vi.mock("../../componentes/drawer-publicacion/TextoAjustable", () => ({
+    default: ({ children }: { children: ReactNode }) => <span>{children}</span>,
+}));
+vi.mock("next/image", async () => {
+    const { createElement } = await import("react");
+    return {
+        default: ({ src, alt, onLoad, onError }: {
+            src: string;
+            alt: string;
+            onLoad?: React.ReactEventHandler<HTMLImageElement>;
+            onError?: React.ReactEventHandler<HTMLImageElement>;
+        }) => createElement("img", { src, alt, onLoad, onError }),
+    };
+});
+
+function crearPublicacion(id: number, especie: string, precio: string | null = "100"): PublicacionMiMercadoProductor {
+    return {
+        id,
+        publicacionProductorId: id + 100,
+        paisId: 1,
+        pais: "Uruguay",
+        foto: null,
+        precio,
+        fecha: "2026-10-16T14:00:00.000Z",
+        publicacionActiva: true,
+        publicacionDisponible: true,
+        cantidadUnidades: 0,
+        presentacion: {
+            id,
+            nombrePresentacion: "Cajón",
+            variedad: {
+                id,
+                nombreVariedad: "-",
+                especie: { id, nombreEspecie: especie, fotoEspecie: null },
+            },
+        },
+        categoria: { id: 1, nombreCategoria: "Primera" },
+        calibre: { id: 1, codigoCalibre: "G", nombreCalibre: "Grande" },
+        ubicaciones: [{ id: 1, nombreUbicacion: "Quinta del productor", urlMaps: "https://maps.google.com/?q=Montevideo" }],
+    };
+}
+
+describe("MiMercadoProductor", () => {
+    beforeEach(() => {
+        mocks.mediaQuery.mockReturnValue(false);
+        vi.stubGlobal("ResizeObserver", class {
+            observe() {}
+            disconnect() {}
+        });
+    });
+
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    it("muestra las publicaciones propias con los filtros y grupos del mercado", () => {
+        render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera"), crearPublicacion(2, "Manzana")]} nombreProductor="Mi quinta" />);
+
+        expect(screen.getByRole("heading", { level: 1, name: "Mi Mercado" })).toBeInTheDocument();
+        expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Manzana", "Pera"]);
+        expect(screen.getByRole("searchbox", { name: "Buscar publicaciones" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Desagrupar" })).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByRole("button", { name: "Nueva publicación" })).toBeDisabled();
+        expect(screen.queryByRole("button", { name: /Editar|Eliminar|Aumentar precio|Disminuir precio/ })).not.toBeInTheDocument();
+    });
+
+    it("filtra, desagrupa y ordena sin consultar APIs de operador", () => {
+        render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera", "40"), crearPublicacion(2, "Manzana", "80")]} />);
+
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar publicaciones" }), { target: { value: "PERA" } });
+        expect(screen.getByTitle("Pera")).toBeInTheDocument();
+        expect(screen.queryByTitle("Manzana")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        fireEvent.click(screen.getByRole("button", { name: "Desagrupar" }));
+        expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
+        expect(screen.getAllByTitle(/Pera|Manzana/).map((titulo) => titulo.textContent)).toEqual(["Pera", "Manzana"]);
+    });
+
+    it.each([
+        { esWeb: false, anchor: "bottom" },
+        { esWeb: true, anchor: "right" },
+    ])("abre el detalle desde $anchor con la edición deshabilitada", ({ esWeb, anchor }) => {
+        mocks.mediaQuery.mockReturnValue(esWeb);
+        render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
+
+        fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+        const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
+        expect(detalle).toHaveAttribute("data-anchor", anchor);
+        expect(within(detalle).getByText("Uruguay")).toBeInTheDocument();
+        expect(within(detalle).getByText("0")).toBeInTheDocument();
+        expect(within(detalle).getByRole("link", { name: "Quinta del productor" })).toHaveAttribute("href", "https://maps.google.com/?q=Montevideo");
+        expect(within(detalle).queryByRole("textbox")).not.toBeInTheDocument();
+        expect(within(detalle).getByRole("button", { name: "Editar" })).toBeDisabled();
+        expect(within(detalle).queryByRole("button", { name: /Eliminar|Guardar/ })).not.toBeInTheDocument();
+        expect(within(detalle).queryByRole("link", { name: "Ver Perfil" })).not.toBeInTheDocument();
+        fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it.each([false, true])("abre el detalle desde toda la tarjeta con escritorio=%s", (esWeb) => {
+        mocks.mediaQuery.mockReturnValue(esWeb);
+        render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
+        const tarjeta = screen.getByRole("button", { name: "Ver detalle de Pera" });
+        const zonas = [tarjeta, ...["$100", "Disponible", "Pera", "Sin fotografía", "›"].map((texto) => within(tarjeta).getByText(texto))];
+
+        for (const zona of zonas) {
+            fireEvent.click(zona);
+            const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
+            expect(within(detalle).getByText("$100")).toBeInTheDocument();
+            fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));
+            expect(screen.queryByRole("dialog", { name: "Detalle de publicación" })).not.toBeInTheDocument();
+        }
+    });
+
+    it("permite volver a abrir la publicación después del cierre solicitado por el drawer", () => {
+        render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
+
+        fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+        fireEvent.touchEnd(screen.getByRole("dialog", { name: "Detalle de publicación" }));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+    });
+
+    it("conserva los datos actualizados al recibir otras publicaciones", () => {
+        const inicial = crearPublicacion(1, "Pera");
+        const { rerender } = render(<MiMercadoProductor publicaciones={[inicial]} />);
+        fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+
+        rerender(<MiMercadoProductor publicaciones={[{ ...inicial, precio: "150", publicacionDisponible: false }]} />);
+
+        const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
+        expect(within(detalle).getByText("$150")).toBeInTheDocument();
+        expect(within(detalle).getByText("No disponible")).toBeInTheDocument();
+        rerender(<MiMercadoProductor publicaciones={[crearPublicacion(2, "Manzana")]} />);
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(screen.getByTitle("Manzana")).toBeInTheDocument();
+        expect(screen.queryByTitle("Pera")).not.toBeInTheDocument();
+    });
+
+    it("muestra el estado vacío sin filtros ni acciones de operador", () => {
+        render(<MiMercadoProductor publicaciones={[]} />);
+
+        expect(screen.getByRole("heading", { name: "No tenés publicaciones" })).toBeInTheDocument();
+        expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Nueva publicación" })).toBeDisabled();
+        expect(screen.queryByRole("button", { name: /Editar|Eliminar|Aumentar precio|Disminuir precio/ })).not.toBeInTheDocument();
+    });
+
+    it("muestra precios ausentes y ubicaciones sin enlaces inseguros", () => {
+        const publicacion = crearPublicacion(1, "Pera", null);
+        publicacion.ubicaciones = [{ id: 2, nombreUbicacion: "Quinta sin mapa", urlMaps: "javascript:alert(1)" }];
+        render(<MiMercadoProductor publicaciones={[publicacion]} />);
+        fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+
+        const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
+        expect(within(detalle).getByText("Consultar precio")).toBeInTheDocument();
+        expect(within(detalle).getByText("Quinta sin mapa")).toBeInTheDocument();
+        expect(within(detalle).queryByRole("link")).not.toBeInTheDocument();
+    });
+
+    it("muestra los valores en cero y el reemplazo cuando no hay foto ni puntos de retiro", () => {
+        const publicacion = crearPublicacion(1, "Pera", "0");
+        publicacion.ubicaciones = [];
+        render(<MiMercadoProductor publicaciones={[publicacion]} />);
+        fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+
+        const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
+        expect(within(detalle).getByText("$0")).toBeInTheDocument();
+        expect(within(detalle).getByText("0")).toBeInTheDocument();
+        expect(within(detalle).getByText("Foto")).toBeInTheDocument();
+        expect(within(detalle).getByText("No hay puntos de retiro informados.")).toBeInTheDocument();
+        expect(within(detalle).queryByRole("button", { name: /Ampliar foto/ })).not.toBeInTheDocument();
+        expect(within(detalle).queryByRole("link", { name: /WhatsApp|Ver Perfil/ })).not.toBeInTheDocument();
+    });
+
+    it.each([
+        { esWeb: false, anchor: "bottom" },
+        { esWeb: true, anchor: "right" },
+    ])("espera la foto y permite ampliarla y cerrarla desde $anchor", ({ esWeb, anchor }) => {
+        mocks.mediaQuery.mockReturnValue(esWeb);
+        const publicacion = { ...crearPublicacion(1, "Pera"), foto: "/pera.jpg" };
+        render(<MiMercadoProductor publicaciones={[publicacion]} />);
+        fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        fireEvent.load(screen.getByAltText("Foto de Pera"));
+        const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
+        expect(detalle).toHaveAttribute("data-anchor", anchor);
+        fireEvent.click(within(detalle).getByRole("button", { name: "Ampliar foto de Pera" }));
+        const fotoAmpliada = screen.getByRole("dialog", { name: "Foto ampliada del producto" });
+        expect(within(fotoAmpliada).getByRole("img", { name: "Foto ampliada de Pera" })).toHaveAttribute("src", "/pera.jpg");
+        fireEvent.click(within(fotoAmpliada).getByRole("button", { name: "Cerrar foto ampliada" }));
+
+        expect(screen.queryByRole("dialog", { name: "Foto ampliada del producto" })).not.toBeInTheDocument();
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+        fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar" }));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("permite abrir la consulta aunque falle la carga de la foto", () => {
+        const publicacion = { ...crearPublicacion(1, "Pera"), foto: "/pera-no-disponible.jpg" };
+        render(<MiMercadoProductor publicaciones={[publicacion]} />);
+        fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        fireEvent.error(screen.getByAltText("Foto de Pera"));
+
+        const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
+        expect(within(detalle).getByText("Foto")).toBeInTheDocument();
+        expect(within(detalle).getByText("$100")).toBeInTheDocument();
+        expect(within(detalle).queryByRole("img")).not.toBeInTheDocument();
+        fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("prepara la nueva foto cuando cambia la publicación seleccionada", () => {
+        const publicacion = { ...crearPublicacion(1, "Pera"), foto: "/pera.jpg" };
+        const { rerender } = render(<MiMercadoProductor publicaciones={[publicacion]} />);
+        fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+        fireEvent.load(screen.getByAltText("Foto de Pera"));
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+
+        rerender(<MiMercadoProductor publicaciones={[{ ...publicacion, foto: "/pera-actualizada.jpg", precio: "125.00" }]} />);
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        fireEvent.load(screen.getByAltText("Foto de Pera"));
+
+        const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
+        expect(within(detalle).getByRole("img", { name: "Foto de Pera" })).toHaveAttribute("src", "/pera-actualizada.jpg");
+        expect(within(detalle).getByText("$125.00")).toBeInTheDocument();
+    });
+});
