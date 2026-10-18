@@ -84,6 +84,17 @@ describe("AltaPublicacionProductor", () => {
         const seleccionar = vi.spyOn(archivo, "click").mockImplementation(() => undefined);
         fireEvent.click(screen.getByRole("button", { name: esWeb ? "Editar foto" : "Cámara" }));
         expect(seleccionar).toHaveBeenCalledOnce();
+        if (esWeb) {
+            expect(screen.queryByRole("button", { name: "Galería" })).not.toBeInTheDocument();
+        } else {
+            const galeria = screen.getByLabelText("Fotografía desde galería");
+            expect(galeria).not.toHaveAttribute("capture");
+            expect(galeria).toHaveAttribute("accept", "image/png,image/jpeg,image/webp");
+            const seleccionarGaleria = vi.spyOn(galeria, "click").mockImplementation(() => undefined);
+            fireEvent.click(screen.getByRole("button", { name: "Galería" }));
+            expect(seleccionarGaleria).toHaveBeenCalledOnce();
+            expect(seleccionar).toHaveBeenCalledOnce();
+        }
     });
 
     it("reinicia variedad, presentación y categoría al cambiar de especie", async () => {
@@ -191,10 +202,11 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.queryByAltText("Vista previa de la fotografía")).not.toBeInTheDocument();
     });
 
-    it("muestra la fotografía seleccionada y permite borrarla", async () => {
+    it.each(["Fotografía", "Fotografía desde galería"])("muestra la fotografía seleccionada mediante %s y permite borrarla", async (entrada) => {
+        mocks.esWeb = false;
         await abrirAlta();
-        fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [] } });
-        fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [new File(["foto"], "foto.png", { type: "image/png" })] } });
+        fireEvent.change(screen.getByLabelText(entrada), { target: { files: [] } });
+        fireEvent.change(screen.getByLabelText(entrada), { target: { files: [new File(["foto"], "foto.png", { type: "image/png" })] } });
         expect(await screen.findByAltText("Vista previa de la fotografía")).toHaveAttribute("src", expect.stringContaining("data:image/png;base64,"));
         fireEvent.click(screen.getByRole("button", { name: "Borrar foto" }));
         expect(screen.queryByAltText("Vista previa de la fotografía")).not.toBeInTheDocument();
