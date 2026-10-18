@@ -36,6 +36,11 @@ export default async function Page({ params }: PageProps) {
         notFound(); // https://nextjs.org/docs/app/api-reference/functions/not-found
     }
 
+    // El Administrador va a gestion del operador, no al perfil público. Se hace la redirección para que el Administrador no vea el perfil público.
+    if (sesion?.rol === "ADMINISTRADOR") {
+        redirect(`/gestion-operadores/${perfil.id}`);
+    }
+
     const contenido = (
         <main className={styles.pagina}>
             <div className={styles.contenido}>

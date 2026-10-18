@@ -1,8 +1,14 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
 import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/consultas-edicion-publicacion";
 
-import BotonAltaPublicacionAdmin from "./BotonAltaPublicacionAdmin";
+import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
+import NuevaPublicacion from "@/modulos/publicaciones/operadores/componentes/NuevaPublicacion";
 import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
 import Image from "next/image";
@@ -20,6 +26,21 @@ function formatearFecha(fecha: string): string {
 
 export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperadorAdminProps) {
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
+    const router = useRouter();
+    const [altaAbierta, setAltaAbierta] = useState(false);
+    const [mensaje, setMensaje] = useState("");
+
+    function abrirAlta() {
+        setMensaje("");
+        setAltaAbierta(true);
+    }
+
+    function publicacionCreada(aviso: string) {
+        setAltaAbierta(false);
+        setMensaje(aviso);
+        router.refresh();
+    }
+
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
             <Link href="/administracion" className={styles.volver}>
@@ -92,12 +113,20 @@ export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperad
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3">        
+            {mensaje && <p className={styles.mensajeExito} role="status">{mensaje}</p>}
+
+            <div className={styles.filaPublicaciones}>
                 <h2 className={styles.subtituloPublicaciones}>Publicaciones ({operador.publicaciones.length})</h2>
-                <BotonAltaPublicacionAdmin operadorId={operador.id} />    
+                <Button variant="contained" onClick={abrirAlta} startIcon={<AddIcon />} className={styles.botonAlta}>
+                    Agregar Producto
+                </Button>
             </div>
 
-            <CatalogoOperadorAdmin publicaciones={operador.publicaciones} opciones={opciones} />
+            <CatalogoOperadorAdmin operadorId={operador.id} publicaciones={operador.publicaciones} opciones={opciones} />
+
+            {altaAbierta && (
+                <NuevaPublicacion operadorId={operador.id} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={publicacionCreada} />
+            )}
         </section>
     );
 

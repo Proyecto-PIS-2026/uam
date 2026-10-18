@@ -57,6 +57,8 @@ describe("matriz de autorización BP-04.4", () => {
         "usuarios.restablecimientos.gestionar",
         "administracion.configuracion.gestionar",
         "administracion.publicacion.crear",
+        "administracion.publicacion.modificar",
+        "administracion.publicacion.eliminar",
     ] as const)("%s es exclusivo de Administradores", (permiso) => {
         for (const rol of roles) {
             expect(autorizado(permiso, sesionDe(rol))).toBe(rol === "ADMINISTRADOR");

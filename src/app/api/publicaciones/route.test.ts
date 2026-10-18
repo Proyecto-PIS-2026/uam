@@ -408,3 +408,61 @@ describe("autorización de alta de publicaciones", () => {
         expect(revalidatePath).not.toHaveBeenCalled();
     });
 });
+
+describe("alta de publicaciones como administrador", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
+        mocks.operadores.mockResolvedValue([
+            { id: 7, usuarioId: 70, nombreFantasia: "Operador 7" },
+            { id: 8, usuarioId: 80, nombreFantasia: "Operador 8" },
+        ]);
+    });
+
+    it("crea la publicación para el operador indicado sin buscar el operador de la sesión", async () => {
+        mocks.altaPublicacionOperador.mockResolvedValue({ esValido: true, id: 15, mensaje: "Creada" });
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST",
+            body: JSON.stringify({ especieId: 4, operadorId: 7 }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const respuesta = await POST(solicitud);
+
+        expect(respuesta.status).toBe(201);
+        expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
+        expect(mocks.altaPublicacionOperador).toHaveBeenCalledExactlyOnceWith({ especieId: 4, operadorId: 7 });
+        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
+        expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
+    });
+
+    it("devuelve 400 si el administrador no indica el operador", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST",
+            body: JSON.stringify({ especieId: 4 }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const respuesta = await POST(solicitud);
+
+        expect(respuesta.status).toBe(400);
+        expect(await respuesta.json()).toEqual({ errores: ["Debe seleccionar un operador."] });
+        expect(mocks.operadores).not.toHaveBeenCalled();
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+    });
+
+    it("devuelve 404 si el operador indicado no existe", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST",
+            body: JSON.stringify({ especieId: 4, operadorId: 99 }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const respuesta = await POST(solicitud);
+
+        expect(respuesta.status).toBe(404);
+        expect(await respuesta.json()).toEqual({ errores: ["El operador no existe."] });
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
+});
