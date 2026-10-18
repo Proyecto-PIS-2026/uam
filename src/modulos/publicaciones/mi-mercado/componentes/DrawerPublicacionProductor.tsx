@@ -10,6 +10,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import TextoAjustable from "../../componentes/drawer-publicacion/TextoAjustable";
+import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import styles from "./DrawerPublicacionProductor.module.css";
 
@@ -31,7 +32,6 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [fotoPreparada, setFotoPreparada] = useState<string | null>(null);
     const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
-    const [necesitaScroll, setNecesitaScroll] = useState(false);
     const contenidoRef = useRef<HTMLDivElement>(null);
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
     const tieneFoto = Boolean(publicacion?.foto?.trim());
@@ -53,12 +53,6 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
         const contenido = contenidoRef.current;
         if (!abierto || !contenido) return;
         contenido.scrollTop = 0;
-        const actualizarScroll = () => setNecesitaScroll(contenido.scrollHeight > contenido.clientHeight + 1);
-        actualizarScroll();
-        const observer = new ResizeObserver(actualizarScroll);
-        observer.observe(contenido);
-        Array.from(contenido.children).forEach((hijo) => observer.observe(hijo));
-        return () => observer.disconnect();
     }, [abierto, publicacion?.id, esWeb]);
 
     function cerrar() {
@@ -140,11 +134,9 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                                 )}
                             </section>
                         </div>
-                        <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
-                            <div className={styles.bloqueBotones}>
-                                <button className={styles.botonCerrar} type="button" onClick={cerrar}>Cerrar</button>
-                                <button className={styles.botonEditar} type="button" disabled title="Próximamente">Editar</button>
-                            </div>
+                        <div className={estilosAcciones.pie}>
+                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled title="Próximamente">Eliminar</button>
+                            <button className={estilosAcciones.guardar} type="button" disabled title="Próximamente">Editar</button>
                         </div>
                     </div>
                     <Dialog open={abierto && fotoAmpliada === claveFoto && tieneFoto} onClose={() => setFotoAmpliada(null)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" } } }}>

@@ -223,60 +223,6 @@
     text-align: right;
 }
 
-.pie {
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    gap: 0.5rem;
-    margin: 0;
-    padding: max(1rem, env(safe-area-inset-bottom)) 1rem;
-    border-top: 1px solid var(--color-border);
-    background-color: var(--color-surface);
-}
-
-.bloqueBotones {
-    display: flex;
-    width: 100%;
-    gap: 0.5rem;
-}
-
-.botonCerrar,
-.botonEditar {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    min-height: 3rem;
-    padding: 0.9rem 0.5rem;
-    border: none;
-    border-radius: 0.65rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-.botonCerrar {
-    background: var(--color-primary-soft);
-    color: var(--color-secondary);
-}
-
-.botonEditar {
-    gap: 0.5rem;
-    background: var(--color-secondary);
-    color: var(--color-surface);
-}
-
-.botonEditar:not(:disabled):hover {
-    background-color: var(--color-primary-hover);
-}
-
-.botonCerrar:focus-visible,
-.botonEditar:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-}
-
 .ampliarFoto {
     position: absolute;
     inset: 0;
@@ -413,11 +359,6 @@
     flex-shrink: 0;
 }
 
-.botonEditar:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
 @media (width < 768px) {
     .drawer.drawer {
         width: 100%;
@@ -435,14 +376,6 @@
     .contenidoScrollable {
         box-sizing: border-box;
         flex: 0 1 auto;
-    }
-
-    .pie {
-        border-top-color: transparent;
-    }
-
-    .pieConScroll {
-        border-top-color: var(--color-border);
     }
 
     .cabecera {
@@ -552,14 +485,6 @@
 
     .bloqueMedio {
         margin-top: 0.75rem;
-    }
-
-    .botonCerrar,
-    .botonEditar {
-        min-height: auto;
-        padding: 0.75rem 0.5rem;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
     }
 
     .modalFoto.modalFoto {

@@ -60,38 +60,33 @@ function crearPublicacion(id: number, especie: string, precio: string | null = "
 describe("MiMercadoProductor", () => {
     beforeEach(() => {
         mocks.mediaQuery.mockReturnValue(false);
-        vi.stubGlobal("ResizeObserver", class {
-            observe() {}
-            disconnect() {}
-        });
     });
 
     afterEach(() => {
         cleanup();
         vi.clearAllMocks();
-        vi.unstubAllGlobals();
     });
 
-    it("muestra las publicaciones propias con los filtros y grupos del mercado", () => {
+    it("muestra las publicaciones propias sin agrupar y el botón de alta junto al listado", () => {
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera"), crearPublicacion(2, "Manzana")]} nombreProductor="Mi quinta" />);
 
         expect(screen.getByRole("heading", { level: 1, name: "Mi Mercado" })).toBeInTheDocument();
-        expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Manzana", "Pera"]);
+        expect(screen.getAllByTitle(/Pera|Manzana/).map((titulo) => titulo.textContent)).toEqual(["Manzana", "Pera"]);
+        expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
         expect(screen.getByRole("searchbox", { name: "Buscar publicaciones" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Desagrupar" })).toHaveAttribute("aria-pressed", "true");
-        expect(screen.getByRole("button", { name: "Nueva publicación" })).toBeDisabled();
+        expect(screen.queryByRole("button", { name: /Agrupar|Desagrupar/i })).not.toBeInTheDocument();
+        const encabezadoListado = screen.getByRole("heading", { level: 2, name: "Publicaciones" }).parentElement!;
+        expect(within(encabezadoListado).getByRole("button", { name: "Nueva publicación" })).toBeDisabled();
         expect(screen.queryByRole("button", { name: /Editar|Eliminar|Aumentar precio|Disminuir precio/ })).not.toBeInTheDocument();
     });
 
-    it("filtra, desagrupa y ordena sin consultar APIs de operador", () => {
+    it("filtra y ordena sin consultar APIs de operador", () => {
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera", "40"), crearPublicacion(2, "Manzana", "80")]} />);
 
         fireEvent.change(screen.getByRole("searchbox", { name: "Buscar publicaciones" }), { target: { value: "PERA" } });
         expect(screen.getByTitle("Pera")).toBeInTheDocument();
         expect(screen.queryByTitle("Manzana")).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-        fireEvent.click(screen.getByRole("button", { name: "Desagrupar" }));
-        expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
         expect(screen.getAllByTitle(/Pera|Manzana/).map((titulo) => titulo.textContent)).toEqual(["Pera", "Manzana"]);
@@ -100,7 +95,7 @@ describe("MiMercadoProductor", () => {
     it.each([
         { esWeb: false, anchor: "bottom" },
         { esWeb: true, anchor: "right" },
-    ])("abre el detalle desde $anchor con la edición deshabilitada", ({ esWeb, anchor }) => {
+    ])("abre el detalle desde $anchor con edición y eliminación deshabilitadas", ({ esWeb, anchor }) => {
         mocks.mediaQuery.mockReturnValue(esWeb);
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
 
@@ -112,7 +107,8 @@ describe("MiMercadoProductor", () => {
         expect(within(detalle).getByRole("link", { name: "Quinta del productor" })).toHaveAttribute("href", "https://maps.google.com/?q=Montevideo");
         expect(within(detalle).queryByRole("textbox")).not.toBeInTheDocument();
         expect(within(detalle).getByRole("button", { name: "Editar" })).toBeDisabled();
-        expect(within(detalle).queryByRole("button", { name: /Eliminar|Guardar/ })).not.toBeInTheDocument();
+        expect(within(detalle).getByRole("button", { name: "Eliminar" })).toBeDisabled();
+        expect(within(detalle).queryByRole("button", { name: /Guardar|^Cerrar$/ })).not.toBeInTheDocument();
         expect(within(detalle).queryByRole("link", { name: "Ver Perfil" })).not.toBeInTheDocument();
         fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -216,7 +212,7 @@ describe("MiMercadoProductor", () => {
 
         expect(screen.queryByRole("dialog", { name: "Foto ampliada del producto" })).not.toBeInTheDocument();
         expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
-        fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar" }));
+        fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
