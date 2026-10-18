@@ -16,7 +16,7 @@ type TarjetaPublicacionProductorAdminProps = {
 
 export default function TarjetaPublicacionProductorAdmin({ publicacion }: TarjetaPublicacionProductorAdminProps) {
     const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
-    const ubicacion = publicacion.ubicaciones.map((lugar) => lugar.nombre).join(" · ");
+    // const ubicacion = publicacion.ubicaciones.map((lugar) => lugar.nombre).join(" · ");
 
     return (
         <article className={styles.tarjeta} aria-label={`Ver detalles de ${nombreProducto}`}>
