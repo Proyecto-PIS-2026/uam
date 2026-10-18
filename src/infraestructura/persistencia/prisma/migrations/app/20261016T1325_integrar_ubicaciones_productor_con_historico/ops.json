@@ -1,0 +1,698 @@
+[
+  {
+    "id": "dropColumn.publicacionProductor.direccion",
+    "label": "Drop column \"direccion\" from \"publicacionProductor\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "direccion",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"direccion\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "direccion"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"direccion\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\" DROP COLUMN \"direccion\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"direccion\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "direccion"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropConstraint.publicacionProductor.publicacionProductor_departamentoId_fkey",
+    "label": "Drop constraint \"publicacionProductor_departamentoId_fkey\" on \"publicacionProductor\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacionProductor_departamentoId_fkey",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"publicacionProductor_departamentoId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_departamentoId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"publicacionProductor_departamentoId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\" DROP CONSTRAINT \"publicacionProductor_departamentoId_fkey\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"publicacionProductor_departamentoId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_departamentoId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropTable.departamento",
+    "label": "Drop table \"departamento\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "departamento"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"departamento\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"departamento\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"departamento\"",
+        "sql": "DROP TABLE \"public\".\"departamento\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"departamento\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"departamento\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropIndex.publicacionProductor.publicacionProductor_departamentoId_idx_d1d4bda1",
+    "label": "Drop index \"publicacionProductor_departamentoId_idx_d1d4bda1\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacionProductor_departamentoId_idx_d1d4bda1",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacionProductor_departamentoId_idx_d1d4bda1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor_departamentoId_idx_d1d4bda1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop index \"publicacionProductor_departamentoId_idx_d1d4bda1\"",
+        "sql": "DROP INDEX \"public\".\"publicacionProductor_departamentoId_idx_d1d4bda1\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacionProductor_departamentoId_idx_d1d4bda1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor_departamentoId_idx_d1d4bda1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.publicacionProductor.departamentoId",
+    "label": "Drop column \"departamentoId\" from \"publicacionProductor\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "departamentoId",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"departamentoId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "departamentoId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"departamentoId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\" DROP COLUMN \"departamentoId\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"departamentoId\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "departamentoId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.ubicacion",
+    "label": "Create table \"ubicacion\"",
+    "summary": "Creates table \"ubicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "ubicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ubicacion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ubicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ubicacion\"",
+        "sql": "CREATE TABLE \"public\".\"ubicacion\" (\n  \"id\" SERIAL NOT NULL,\n  \"nombreUbicacion\" text NOT NULL,\n  \"publicacionId\" int4 NOT NULL,\n  \"urlMaps\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ubicacion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ubicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.productor.fotoPerfil",
+    "label": "Add column \"fotoPerfil\" to \"productor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "fotoPerfil",
+        "table": "productor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"fotoPerfil\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "productor",
+          "fotoPerfil"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"fotoPerfil\"",
+        "sql": "ALTER TABLE \"public\".\"productor\" ADD COLUMN \"fotoPerfil\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"fotoPerfil\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "productor",
+          "fotoPerfil"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.productor.nombreFantasia",
+    "label": "Add column \"nombreFantasia\" to \"productor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "nombreFantasia",
+        "table": "productor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"nombreFantasia\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "productor",
+          "nombreFantasia"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"nombreFantasia\"",
+        "sql": "ALTER TABLE \"public\".\"productor\" ADD COLUMN \"nombreFantasia\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"nombreFantasia\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "productor",
+          "nombreFantasia"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.backfill-productor-nombreFantasia",
+    "label": "Data transform: backfill-productor-nombreFantasia",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check backfill-productor-nombreFantasia has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"productor\" WHERE \"nombreFantasia\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run backfill-productor-nombreFantasia",
+        "sql": "UPDATE \"public\".\"productor\" SET \"nombreFantasia\" = 'TEMP-productor-' || \"id\" WHERE \"nombreFantasia\" IS NULL",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify backfill-productor-nombreFantasia resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"productor\" WHERE \"nombreFantasia\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.productor.nombreFantasia",
+    "label": "Set NOT NULL on \"productor\".\"nombreFantasia\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "nombreFantasia",
+        "table": "productor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"nombreFantasia\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "productor",
+          "nombreFantasia"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"nombreFantasia\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"productor\" WHERE \"nombreFantasia\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"nombreFantasia\"",
+        "sql": "ALTER TABLE \"public\".\"productor\" ALTER COLUMN \"nombreFantasia\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"nombreFantasia\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "productor",
+          "nombreFantasia",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.publicacionProductor.paisId",
+    "label": "Add column \"paisId\" to \"publicacionProductor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "paisId",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paisId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "paisId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"paisId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\" ADD COLUMN \"paisId\" int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paisId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "paisId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.publicacionProductor.paisId",
+    "label": "Set NOT NULL on \"publicacionProductor\".\"paisId\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "paisId",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paisId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "paisId"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"paisId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"publicacionProductor\" WHERE \"paisId\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"paisId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\" ALTER COLUMN \"paisId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paisId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "paisId",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.productor.productor_nombreFantasia_key",
+    "label": "Add unique constraint on \"productor\" (nombreFantasia)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "productor_nombreFantasia_key",
+        "table": "productor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"productor_nombreFantasia_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "productor_nombreFantasia_key",
+          "public",
+          "\"public\".\"productor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"productor_nombreFantasia_key\"",
+        "sql": "ALTER TABLE \"public\".\"productor\" ADD CONSTRAINT \"productor_nombreFantasia_key\" UNIQUE (\"nombreFantasia\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"productor_nombreFantasia_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "productor_nombreFantasia_key",
+          "public",
+          "\"public\".\"productor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacionProductor.publicacionProductor_paisId_idx_9a54dcb8",
+    "label": "Create index \"publicacionProductor_paisId_idx_9a54dcb8\" on \"publicacionProductor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacionProductor_paisId_idx_9a54dcb8",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacionProductor_paisId_idx_9a54dcb8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor_paisId_idx_9a54dcb8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacionProductor_paisId_idx_9a54dcb8\"",
+        "sql": "CREATE INDEX \"publicacionProductor_paisId_idx_9a54dcb8\" ON \"public\".\"publicacionProductor\" (\"paisId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacionProductor_paisId_idx_9a54dcb8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacionProductor_paisId_idx_9a54dcb8\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ubicacion.ubicacion_publicacionId_idx_a4fbf198",
+    "label": "Create index \"ubicacion_publicacionId_idx_a4fbf198\" on \"ubicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ubicacion_publicacionId_idx_a4fbf198",
+        "table": "ubicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ubicacion_publicacionId_idx_a4fbf198\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ubicacion_publicacionId_idx_a4fbf198\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ubicacion_publicacionId_idx_a4fbf198\"",
+        "sql": "CREATE INDEX \"ubicacion_publicacionId_idx_a4fbf198\" ON \"public\".\"ubicacion\" (\"publicacionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ubicacion_publicacionId_idx_a4fbf198\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ubicacion_publicacionId_idx_a4fbf198\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacionProductor.publicacionProductor_paisId_fkey",
+    "label": "Add foreign key \"publicacionProductor_paisId_fkey\" on \"publicacionProductor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacionProductor_paisId_fkey",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacionProductor_paisId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_paisId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacionProductor_paisId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\"\nADD CONSTRAINT \"publicacionProductor_paisId_fkey\"\nFOREIGN KEY (\"paisId\")\nREFERENCES \"public\".\"pais\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacionProductor_paisId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacionProductor_paisId_fkey",
+          "public",
+          "\"public\".\"publicacionProductor\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ubicacion.ubicacion_publicacionId_fkey",
+    "label": "Add foreign key \"ubicacion_publicacionId_fkey\" on \"ubicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ubicacion_publicacionId_fkey",
+        "table": "ubicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ubicacion_publicacionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ubicacion_publicacionId_fkey",
+          "public",
+          "\"public\".\"ubicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ubicacion_publicacionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ubicacion\"\nADD CONSTRAINT \"ubicacion_publicacionId_fkey\"\nFOREIGN KEY (\"publicacionId\")\nREFERENCES \"public\".\"publicacionProductor\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ubicacion_publicacionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ubicacion_publicacionId_fkey",
+          "public",
+          "\"public\".\"ubicacion\""
+        ]
+      }
+    ]
+  }
+]
