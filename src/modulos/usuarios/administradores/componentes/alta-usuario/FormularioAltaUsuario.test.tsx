@@ -81,7 +81,12 @@ describe("FormularioAltaUsuario", () => {
         configurarSearchParams();
         vi.mocked(useRouter).mockReturnValue({
             push: mockPush,
-        } as ReturnType<typeof useRouter>);
+            back: vi.fn(),
+            forward: vi.fn(),
+            refresh: vi.fn(),
+            replace: vi.fn(),
+            prefetch: vi.fn(),
+        });
     });
 
     it("vuelve a la lista de usuarios", () => {
