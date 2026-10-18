@@ -29,6 +29,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const [mensajeVisible, setMensajeVisible] = useState(false);
     const [mostrarPopup, setMostrarPopup] = useState(false);
     const [rolCreado, setRolCreado] = useState("");
+    const [idUsuarioCreado, setIdUsuarioCreado] = useState<number | null>(null);
 
     const router = useRouter();
 
@@ -92,6 +93,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 limpiarFormulario();
                 setMensajeExito(resultado.mensaje);
                 setMensajeVisible(true);
+                setIdUsuarioCreado(resultado.id);
                 setRolCreado("operador");
                 setMostrarPopup(true);
                 return;
@@ -116,6 +118,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 limpiarFormulario();
                 setMensajeExito(resultado.mensaje);
                 setMensajeVisible(true);
+                setIdUsuarioCreado(resultado.id);
                 setRolCreado("productor");
                 setMostrarPopup(true);
                 return;
@@ -438,7 +441,11 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             </button>
 
                             <Link
-                                href="/precargar-productos"
+                                href={
+                                    rolCreado === "operador"
+                                        ? `/gestion-operadores/${idUsuarioCreado}`
+                                        : `/gestion-productores/${idUsuarioCreado}`
+                                }
                                 className={styles.botonConfirmar}
                             >
                                 Precargar productos
