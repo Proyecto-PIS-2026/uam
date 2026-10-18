@@ -86,6 +86,7 @@ describe("FormularioAltaUsuario", () => {
             refresh: vi.fn(),
             replace: vi.fn(),
             prefetch: vi.fn(),
+            bfcacheId: "",
         });
     });
 
