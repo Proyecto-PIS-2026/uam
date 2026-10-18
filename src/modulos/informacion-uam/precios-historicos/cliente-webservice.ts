@@ -3,7 +3,24 @@ import { validarParametrosConsulta, type ConsultaHistorica } from "./parametros-
 import type { HistoricoProducto } from "./tipos";
 import { validarHistoricoProducto } from "./validar-historico";
 
-const TIEMPO_MAXIMO_MS = 60_000;
+const TIEMPO_MAXIMO_MS = 300_000;
+
+export class ErrorWebserviceHistorico extends Error {
+    constructor(estadoHTTP: number, duracionMs: number, consulta: ConsultaHistorica) {
+        super(`El webservice de precios históricos respondió con estado ${estadoHTTP}. ${contextoConsulta(consulta, duracionMs)}`);
+        this.name = "ErrorWebserviceHistorico";
+    }
+}
+
+function contextoConsulta(consulta: ConsultaHistorica, duracionMs: number): string {
+    return `Duración: ${duracionMs} ms. Especie: ${consulta.speciesId}. Período: ${consulta.desde} a ${consulta.hasta}.`;
+}
+
+function codigoRed(error: TypeError): string | null {
+    const causa = error.cause;
+    if (!causa || typeof causa !== "object" || !("code" in causa)) return null;
+    return typeof causa.code === "string" && /^[A-Z0-9_]+$/.test(causa.code) ? causa.code : null;
+}
 
 function construirUrl(baseUrl: string, consulta: ConsultaHistorica): string {
     const plantilla = process.env.PRECIOS_HISTORICOS_ENDPOINT?.trim();
@@ -49,8 +66,11 @@ export async function consultarHistorico(
     const token = opciones.token.trim();
     if (!token || /[\r\n]/.test(token)) throw new Error("Falta un token válido para el webservice de precios.");
 
+    const limiteMs = TIEMPO_MAXIMO_MS;
+    const inicio = Date.now();
+
     const controlador = new AbortController();
-    const temporizador = setTimeout(() => controlador.abort(), TIEMPO_MAXIMO_MS);
+    const temporizador = setTimeout(() => controlador.abort(), limiteMs);
     try {
         const respuesta = await fetcher(url, {
             method: "GET",
@@ -60,7 +80,12 @@ export async function consultarHistorico(
             signal: controlador.signal,
         });
         if (!respuesta.ok) {
-            throw new Error("El webservice de precios históricos respondió con estado " + respuesta.status + ".");
+            const ahora = Date.now();
+            throw new ErrorWebserviceHistorico(
+                respuesta.status,
+                ahora - inicio,
+                consulta,
+            );
         }
         let contenido: unknown;
         try {
@@ -72,6 +97,16 @@ export async function consultarHistorico(
             throw error;
         }
         return validarHistoricoProducto(contenido, consulta);
+    } catch (error) {
+        const duracionMs = Date.now() - inicio;
+        if (controlador.signal.aborted) {
+            throw new Error(`El webservice de precios históricos superó el tiempo máximo de ${limiteMs} ms. ${contextoConsulta(consulta, duracionMs)}`);
+        }
+        if (error instanceof TypeError) {
+            const codigo = codigoRed(error);
+            throw new Error(`El webservice de precios históricos falló por un error de red (TypeError${codigo ? `, código ${codigo}` : ""}). ${contextoConsulta(consulta, duracionMs)}`);
+        }
+        throw error;
     } finally {
         clearTimeout(temporizador);
     }
