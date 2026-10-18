@@ -248,6 +248,6 @@ describe("MiMercadoProductor", () => {
 
         const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
         expect(within(detalle).getByRole("img", { name: "Foto de Pera" })).toHaveAttribute("src", "/pera-actualizada.jpg");
-        expect(within(detalle).getByText("$125.00")).toBeInTheDocument();
+        expect(within(detalle).getByText("$125")).toBeInTheDocument();
     });
 });

@@ -91,7 +91,7 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                                             {variedad !== "-" && <TextoAjustable className={styles.variedad} minimo={esWeb ? 14 : 10} maximo={esWeb ? 26 : 23}>{variedad}</TextoAjustable>}
                                         </div>
                                         <div className={`${styles.precio} ${publicacion.precio === null ? styles.precioSinValor : ""}`}>
-                                            {publicacion.precio === null ? "Consultar precio" : `$${publicacion.precio}`}
+                                            {publicacion.precio === null ? "Consultar precio" : `$${Number(publicacion.precio).toFixed(0)}`}
                                         </div>
                                     </div>
                                 </div>
