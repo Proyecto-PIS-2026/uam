@@ -428,7 +428,7 @@ describe("FormularioAltaUsuario", () => {
 
         expect(
             screen.getByRole("link", { name: "Precargar productos" }),
-        ).toHaveAttribute("href", "/precargar-productos");
+        ).toHaveAttribute("href", "/gestion-operadores/25");
     });
 
     it("envía correctamente el alta de un productor", async () => {
@@ -500,7 +500,7 @@ describe("FormularioAltaUsuario", () => {
 
         expect(
             screen.getByRole("link", { name: "Precargar productos" }),
-        ).toHaveAttribute("href", "/precargar-productos");
+        ).toHaveAttribute("href", "/gestion-productores/30");
 
         expect(altaOperador).not.toHaveBeenCalled();
     });
