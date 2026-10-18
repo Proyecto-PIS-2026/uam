@@ -1153,11 +1153,26 @@ describe("PreciosHistoricos", () => {
         }
     });
 
-    it("vuelve a habilitar los filtros del histórico cargado al recuperar la especie consultada", () => {
+    it("conserva los filtros aplicados y los datos parciales al elegir otra especie y volver sin consultar", () => {
+        window.history.replaceState(
+            estadoInicial,
+            "",
+            "/precios-historicos?species_id=60&producto=Banana&variedad=Cavendish&pais=ECUADOR&calibre=M&categoria=I&from=2025-11-01&to=2025-11-08",
+        );
+        const registro = historicoConFiltros.series[0];
+        const presentacion = registro.presentations[0];
+        const datosFiltrados: HistoricoProducto = {
+            ...historicoConFiltros,
+            series: [{ ...registro, presentations: [{ ...presentacion, prices: [presentacion.prices[0]] }] }],
+        };
         render(
             <PreciosHistoricos
                 producto={producto}
-                historico={historicoConFiltros}
+                historico={datosFiltrados}
+                opcionesFiltros={{
+                    variedades: ["Cavendish", "Orgánica"], paises: ["ECUADOR", "BRASIL", "URUGUAY"],
+                    calibres: ["M", "G", "P"], categorias: ["I", "II", "III"],
+                }}
                 {...fechas}
                 especies={[
                     { id: "60", especie: "Banana" },
@@ -1165,18 +1180,32 @@ describe("PreciosHistoricos", () => {
                 ]}
             />,
         );
+        const urlAplicada = window.location.href;
+        const filasAplicadas = firmasFilasVisibles();
+        const registrosGrafica = propsGrafica().registros;
         seleccionarFiltro("Especie", "Manzana");
+
+        expect(window.location.href).toBe(urlAplicada);
+        expect(firmasFilasVisibles()).toEqual(filasAplicadas);
+        expect(propsGrafica().registros).toEqual(registrosGrafica);
         seleccionarFiltro("Especie", "Banana");
         abrirFiltrosAdicionales();
 
-        for (const nombre of ["Variedad", "País", "Calibre", "Categoría"]) {
-            expect(screen.getByRole("combobox", { name: nombre })).not.toHaveAttribute("aria-disabled", "true");
+        for (const [nombre, valor] of Object.entries({ Variedad: "Cavendish", País: "ECUADOR", Calibre: "M", Categoría: "I" })) {
+            const filtro = screen.getByRole("combobox", { name: nombre });
+            expect(filtro).not.toHaveAttribute("aria-disabled", "true");
+            expect(filtro).toHaveTextContent(valor);
         }
+        expect(firmasFilasVisibles()).toEqual(["Cavendish|ECUADOR|M|I"]);
+        expect(propsGrafica().registros).toEqual(registrosGrafica);
+        expect(window.location.href).toBe(urlAplicada);
+        expect(navegar).not.toHaveBeenCalled();
         expect(leerOpcionesFiltro("Variedad")).toEqual(["Cavendish", "Orgánica"]);
         seleccionarFiltro("Variedad", "Orgánica");
-        expect(firmasFilasVisibles()).toHaveLength(2);
         expect(navegar).toHaveBeenCalledOnce();
-        expect(new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams.get("variedad")).toBe("Orgánica");
+        expect(Object.fromEntries(new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams)).toMatchObject({
+            variedad: "Orgánica", pais: "ECUADOR", calibre: "M", categoria: "I",
+        });
     });
 
     it("aplica un período dentro del histórico cargado al consultar y sólo navega si se amplía más allá", () => {

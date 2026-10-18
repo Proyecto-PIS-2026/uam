@@ -1,5 +1,5 @@
 import { Temporal } from "temporal-polyfill";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { conBloqueoActualizacion, leerHistorico, type EstadoHistorico } from "./almacen-historicos";
 import type { HistoricoProducto } from "./tipos";
 
@@ -7,8 +7,12 @@ const mocks = vi.hoisted(() => {
     type Fecha = { toString: () => string };
     type Registro = { especieId: number; historico: unknown; fechaDesde: Fecha; fechaHasta: Fecha; fechaUltimaActualizacion: Fecha };
     type Especie = { id: number; uamId: number | null };
+    type Configuracion = { nombreConfiguracion: string; valorConfiguracion: string };
     const registros = new Map<number, Registro>();
     const especies = new Map<number, Especie>();
+    const configuraciones = new Map<string, Configuracion>();
+    let ahoraBase = 0;
+    let activas = 0;
     let cola: Promise<void> = Promise.resolve();
     const copiarJson = (valor: unknown): unknown => valor === undefined ? undefined : JSON.parse(JSON.stringify(valor));
     const copiar = (registro: Registro): Registro => ({ ...registro, historico: copiarJson(registro.historico) });
@@ -42,20 +46,51 @@ const mocks = vi.hoisted(() => {
             select: (...columnas: string[]) => ({ first: () => lecturasEspecies(filtro, columnas) }),
         }),
     };
+    const leerConfiguracion = vi.fn(async (filtro: { nombreConfiguracion: string }) => {
+        const registro = configuraciones.get(filtro.nombreConfiguracion);
+        return registro ? { ...registro } : null;
+    });
+    const crearConfiguracion = vi.fn(async (registro: Configuracion) => {
+        if (configuraciones.has(registro.nombreConfiguracion)) throw new Error("Reserva duplicada");
+        configuraciones.set(registro.nombreConfiguracion, { ...registro });
+    });
+    const actualizarConfiguracion = vi.fn(async (filtro: { nombreConfiguracion: string }, valores: { valorConfiguracion: string }) => {
+        if (!configuraciones.has(filtro.nombreConfiguracion)) throw new Error("Reserva inexistente");
+        configuraciones.set(filtro.nombreConfiguracion, { ...filtro, ...valores });
+    });
+    const eliminarConfiguracion = vi.fn(async (filtro: { nombreConfiguracion: string }) => {
+        configuraciones.delete(filtro.nombreConfiguracion);
+    });
+    const tablaConfiguracion = {
+        where: (filtro: { nombreConfiguracion: string }) => ({
+            first: () => leerConfiguracion(filtro),
+            update: (valores: { valorConfiguracion: string }) => actualizarConfiguracion(filtro, valores),
+            delete: () => eliminarConfiguracion(filtro),
+        }),
+        create: crearConfiguracion,
+    };
     const bloqueos = vi.fn<(_consulta: { texto: string; valores: unknown[] }) => Promise<void>>(async () => undefined);
-    const tx = { orm: { public: { Especie: tablaEspecies, HistoricoPrecios: tabla } }, execute: bloqueos };
+    const reloj = vi.fn<(_consulta: { texto: string; valores: unknown[] }) => Promise<{ ahora: number }[]>>(async () => [{ ahora: ahoraBase }]);
+    const tx = {
+        orm: { public: { Especie: tablaEspecies, HistoricoPrecios: tabla, Configuracion: tablaConfiguracion } },
+        execute: bloqueos, query: reloj,
+    };
     const lecturasFueraTransaccion = vi.fn();
     const transacciones = vi.fn(async (trabajo: (transaccion: typeof tx) => Promise<unknown>) => {
         const anterior = cola;
         let liberar!: () => void;
         cola = new Promise<void>((resolve) => { liberar = resolve; });
         await anterior;
+        activas++;
         const copiaInicial = [...registros].map(([id, valor]) => [id, copiar(valor)] as const);
+        const configuracionesIniciales = [...configuraciones].map(([clave, valor]) => [clave, { ...valor }] as const);
         try { return await trabajo(tx); } catch (error) {
             registros.clear();
             for (const [id, valor] of copiaInicial) registros.set(id, valor);
+            configuraciones.clear();
+            for (const [clave, valor] of configuracionesIniciales) configuraciones.set(clave, valor);
             throw error;
-        } finally { liberar(); }
+        } finally { activas--; liberar(); }
     });
     return {
         base: {
@@ -75,6 +110,17 @@ const mocks = vi.hoisted(() => {
             }) },
         },
         lecturas, lecturasEspecies, creaciones, actualizaciones, bloqueos, transacciones, lecturasFueraTransaccion,
+        leerConfiguracion, crearConfiguracion, actualizarConfiguracion, eliminarConfiguracion, reloj,
+        transaccionesActivas: () => activas,
+        fijarRelojBase: (ahora: number) => { ahoraBase = ahora; },
+        reserva: (speciesId: number) => {
+            const registro = configuraciones.get(`precios-historicos:actualizacion:${speciesId}`);
+            return registro ? JSON.parse(registro.valorConfiguracion) as { token: string; venceEn: number } : null;
+        },
+        sembrarReserva: (speciesId: number, valor: unknown) => {
+            const nombreConfiguracion = `precios-historicos:actualizacion:${speciesId}`;
+            configuraciones.set(nombreConfiguracion, { nombreConfiguracion, valorConfiguracion: JSON.stringify(valor) });
+        },
         sembrar: (registro: Registro) => registros.set(registro.especieId, copiar(registro)),
         leer: (especieId: number) => {
             const registro = registros.get(especieId);
@@ -85,11 +131,15 @@ const mocks = vi.hoisted(() => {
         reiniciar: () => {
             registros.clear();
             especies.clear();
+            configuraciones.clear();
+            ahoraBase = Date.parse("2026-10-09T12:00:00Z");
+            activas = 0;
             especies.set(101, { id: 101, uamId: 60 });
             especies.set(205, { id: 205, uamId: 61 });
             cola = Promise.resolve();
             for (const mock of [lecturas, lecturasEspecies, creaciones, actualizaciones,
-                bloqueos, transacciones, lecturasFueraTransaccion]) mock.mockClear();
+                bloqueos, transacciones, lecturasFueraTransaccion, leerConfiguracion,
+                crearConfiguracion, actualizarConfiguracion, eliminarConfiguracion, reloj]) mock.mockClear();
         },
     };
 });
@@ -118,6 +168,7 @@ function registro(especieId = 101, fecha = "2026-10-01", contenido: unknown = hi
     };
 }
 beforeEach(mocks.reiniciar);
+afterEach(() => vi.useRealTimers());
 
 describe("almacén de históricos", () => {
     it("usa la clave interna de Especie y guarda JSONB y las tres fechas de la tabla dedicada", async () => {
@@ -253,9 +304,9 @@ describe("almacén de históricos", () => {
         expect(mocks.creaciones).toHaveBeenCalledOnce();
         expect(mocks.ids()).toHaveLength(1);
     });
-    it("resuelve la clave interna dentro de la transacción y bloquea antes de leer o escribir", async () => {
+    it("resuelve la clave interna dentro de las transacciones cortas y bloquea antes de reservar o escribir", async () => {
         await guardarConBloqueo(estado());
-        expect(mocks.bloqueos).toHaveBeenCalledOnce();
+        expect(mocks.bloqueos).toHaveBeenCalledTimes(3);
         expect(mocks.bloqueos).toHaveBeenCalledWith({ texto: expect.stringContaining("pg_advisory_xact_lock(1725, ?)"), valores: [60] });
         expect(mocks.transacciones.mock.invocationCallOrder[0]).toBeLessThan(mocks.lecturasEspecies.mock.invocationCallOrder[0]);
         expect(mocks.bloqueos.mock.invocationCallOrder[0]).toBeLessThan(mocks.lecturasEspecies.mock.invocationCallOrder[0]);
@@ -287,94 +338,62 @@ describe("almacén de históricos", () => {
         });
 });
 
-describe("bloqueo de actualización por especie", () => {
-    it("lee y guarda con una única transacción protegida por el bloqueo de solicitud", async () => {
-        const resultado = await conBloqueoActualizacion(60, async (almacen) => {
+describe("reserva de actualización por especie", () => {
+    it("cierra la transacción antes del trabajo remoto y solo abre otra al guardar", async () => {
+        let finalizarPedido!: () => void;
+        let avisarPedido!: () => void;
+        const pedido = new Promise<void>((resolve) => { finalizarPedido = resolve; });
+        const inicio = new Promise<void>((resolve) => { avisarPedido = resolve; });
+        const pendiente = conBloqueoActualizacion(60, async (almacen) => {
+            expect(mocks.transaccionesActivas()).toBe(0);
             expect(await almacen.leer()).toBeNull();
+            avisarPedido();
+            await pedido;
+            expect(mocks.transaccionesActivas()).toBe(0);
             await almacen.guardar(estado("2026-10-08"));
-            expect(await almacen.leer()).toEqual(estado("2026-10-08"));
+            expect(mocks.transaccionesActivas()).toBe(0);
             return "terminada";
         });
-
-        expect(resultado).toBe("terminada");
-        expect(mocks.transacciones).toHaveBeenCalledOnce();
-        expect(mocks.lecturasFueraTransaccion).not.toHaveBeenCalled();
-        expect(mocks.bloqueos.mock.calls.map(([consulta]) => consulta)).toEqual([
-            { texto: expect.stringContaining("pg_advisory_xact_lock(1725, ?)"), valores: [60] },
-        ]);
-        expect(mocks.bloqueos.mock.invocationCallOrder[0]).toBeLessThan(mocks.lecturasEspecies.mock.invocationCallOrder[0]);
-        expect(mocks.ids()).toEqual([101]);
-    });
-
-    it("rechaza guardar una especie diferente de la bloqueada antes de escribir", async () => {
-        await expect(conBloqueoActualizacion(60, async (almacen) => {
-            await almacen.guardar(estado("2026-10-08", 61));
-        })).rejects.toThrow("especie bloqueada");
-
-        expect(mocks.ids()).toEqual([]);
-        expect(mocks.creaciones).not.toHaveBeenCalled();
-        expect(mocks.actualizaciones).not.toHaveBeenCalled();
-        expect(mocks.lecturasEspecies).toHaveBeenCalledOnce();
-        expect(mocks.lecturasEspecies).toHaveBeenCalledWith({ uamId: 60 }, ["id"]);
-        expect(mocks.bloqueos).toHaveBeenCalledOnce();
-        expect(mocks.transacciones).toHaveBeenCalledOnce();
-    });
-
-    it("rechaza una especie no registrada antes del callback y libera el bloqueo para la siguiente solicitud", async () => {
-        const trabajo = vi.fn(async () => "no debe consultarse");
-        await expect(conBloqueoActualizacion(999, trabajo)).rejects.toThrow("La especie no está registrada en la base de datos.");
-
-        expect(trabajo).not.toHaveBeenCalled();
-        expect(mocks.lecturasEspecies).toHaveBeenCalledWith({ uamId: 999 }, ["id"]);
-        expect(mocks.lecturas).not.toHaveBeenCalled();
-        expect(mocks.creaciones).not.toHaveBeenCalled();
-        expect(mocks.actualizaciones).not.toHaveBeenCalled();
-        expect(mocks.lecturasFueraTransaccion).not.toHaveBeenCalled();
-        expect(mocks.transacciones).toHaveBeenCalledOnce();
-        expect(mocks.bloqueos).toHaveBeenCalledWith({ texto: expect.stringContaining("pg_advisory_xact_lock(1725, ?)"), valores: [999] });
-        mocks.registrarEspecie(301, 999);
-        await expect(conBloqueoActualizacion(999, trabajo)).resolves.toBe("no debe consultarse");
-        expect(trabajo).toHaveBeenCalledOnce();
-        expect(mocks.transacciones).toHaveBeenCalledTimes(2);
-    });
-
-    it("un fallo libera la transacción pendiente y permite continuar sin conservar la escritura fallida", async () => {
-        let avisarInicio!: () => void;
-        let rechazar!: (error: Error) => void;
-        const inicio = new Promise<void>((resolve) => { avisarInicio = resolve; });
-        const espera = new Promise<void>((_resolve, reject) => { rechazar = reject; });
-        const primera = conBloqueoActualizacion(60, async (almacen) => {
-            await almacen.guardar(estado("2026-10-08"));
-            avisarInicio();
-            await espera;
-        });
-        const falloEsperado = expect(primera).rejects.toThrow("Fallo simulado");
         await inicio;
-        const segunda = conBloqueoActualizacion(60, async (almacen) => {
-            expect(await almacen.leer()).toBeNull();
-            await almacen.guardar(estado("2026-10-09"));
-            return "recuperada";
-        });
-        rechazar(new Error("Fallo simulado"));
+        expect(mocks.transacciones).toHaveBeenCalledOnce();
+        expect(mocks.transaccionesActivas()).toBe(0);
+        expect(mocks.ids()).toEqual([]);
+        expect(mocks.reserva(60)?.token).toEqual(expect.any(String));
+        finalizarPedido();
 
-        await falloEsperado;
-        await expect(segunda).resolves.toBe("recuperada");
-        expect(mocks.transacciones).toHaveBeenCalledTimes(2);
-        expect(mocks.lecturasFueraTransaccion).not.toHaveBeenCalled();
-        expect(mocks.leer(101)?.fechaUltimaActualizacion.toString()).toBe("2026-10-09");
-        expect((mocks.leer(101)?.historico as HistoricoProducto).series.map((dia) => dia.date)).toEqual(["2026-10-09"]);
+        await expect(pendiente).resolves.toBe("terminada");
+        expect(mocks.transacciones).toHaveBeenCalledTimes(3);
+        expect(mocks.lecturasFueraTransaccion).toHaveBeenCalledWith("HistoricoPrecios");
+        expect(mocks.ids()).toEqual([101]);
+        expect(mocks.reserva(60)).toBeNull();
     });
 
-    it("relee el progreso después del bloqueo para que otra solicitud pueda omitir el pedido ya completado", async () => {
+    it("una especie puede guardar mientras otra espera la respuesta remota", async () => {
+        let terminar!: () => void;
+        let avisar!: () => void;
+        const espera = new Promise<void>((resolve) => { terminar = resolve; });
+        const inicio = new Promise<void>((resolve) => { avisar = resolve; });
+        const primera = conBloqueoActualizacion(60, async () => { avisar(); await espera; });
+        await inicio;
+
+        await guardarConBloqueo(estado("2026-10-09", 61));
+
+        expect(mocks.ids()).toEqual([205]);
+        expect(mocks.transaccionesActivas()).toBe(0);
+        expect(mocks.reserva(60)).not.toBeNull();
+        terminar();
+        await primera;
+        expect(mocks.reserva(60)).toBeNull();
+    });
+
+    it("dos solicitudes coordinadas por la base comparten la actualización y esperan sin transacción", async () => {
+        vi.useFakeTimers();
         mocks.sembrar(registro(101, "2026-10-08", historico("2026-10-08")));
         let responder!: (nuevo: EstadoHistorico) => void;
         let avisarPedido!: () => void;
         const pendiente = new Promise<EstadoHistorico>((resolve) => { responder = resolve; });
         const pedidoIniciado = new Promise<void>((resolve) => { avisarPedido = resolve; });
-        const pedirNovedades = vi.fn(async () => {
-            avisarPedido();
-            return pendiente;
-        });
+        const pedirNovedades = vi.fn(async () => { avisarPedido(); return pendiente; });
         const actualizar = () => conBloqueoActualizacion(60, async (almacen) => {
             const anterior = await almacen.leer();
             if (anterior && anterior.fechaUltimaActualizacion >= "2026-10-09") return "omitida";
@@ -383,14 +402,190 @@ describe("bloqueo de actualización por especie", () => {
         });
 
         const primera = actualizar();
-        const segunda = actualizar();
         await pedidoIniciado;
+        const token = mocks.reserva(60)?.token;
+        const segunda = actualizar();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(mocks.reserva(60)?.token).toBe(token);
+        expect(pedirNovedades).toHaveBeenCalledOnce();
+        expect(mocks.transaccionesActivas()).toBe(0);
+        expect(vi.getTimerCount()).toBe(1);
         responder(estado("2026-10-09"));
+        await primera;
+        await vi.advanceTimersByTimeAsync(1_000);
 
         await expect(Promise.all([primera, segunda])).resolves.toEqual(["actualizada", "omitida"]);
         expect(pedirNovedades).toHaveBeenCalledOnce();
-        expect(mocks.transacciones).toHaveBeenCalledTimes(2);
-        expect(mocks.lecturasFueraTransaccion).not.toHaveBeenCalled();
         expect(mocks.actualizaciones).toHaveBeenCalledOnce();
+        expect(mocks.reserva(60)).toBeNull();
+    });
+
+    it("calcula la vigencia con el reloj de la base y recupera una reserva vencida", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2035-01-01T00:00:00Z"));
+        mocks.fijarRelojBase(10_000);
+        mocks.sembrarReserva(60, { token: "instancia-caida", venceEn: 10_000 });
+        await conBloqueoActualizacion(60, async (almacen) => {
+            expect(mocks.reserva(60)).toEqual({ token: expect.any(String), venceEn: 370_000 });
+            expect(mocks.reserva(60)?.token).not.toBe("instancia-caida");
+            await almacen.guardar(estado());
+        });
+
+        expect(mocks.actualizarConfiguracion).toHaveBeenCalledOnce();
+        expect(mocks.reloj.mock.calls.every(([consulta]) => consulta.texto.includes("clock_timestamp()"))).toBe(true);
+        expect(mocks.ids()).toEqual([101]);
+        expect(mocks.reserva(60)).toBeNull();
+    });
+
+    it("una reserva ajena vigente no inicia el trabajo aunque el reloj de la aplicación esté adelantado", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2035-01-01T00:00:00Z"));
+        mocks.fijarRelojBase(10_000);
+        mocks.sembrarReserva(60, { token: "otra-instancia", venceEn: 20_000 });
+        const trabajo = vi.fn(async () => "recuperada");
+        const pendiente = conBloqueoActualizacion(60, trabajo);
+        await vi.advanceTimersByTimeAsync(1_000);
+
+        expect(trabajo).not.toHaveBeenCalled();
+        expect(mocks.transaccionesActivas()).toBe(0);
+        expect(mocks.reserva(60)?.token).toBe("otra-instancia");
+        mocks.fijarRelojBase(20_000);
+        await vi.advanceTimersByTimeAsync(1_000);
+        await expect(pendiente).resolves.toBe("recuperada");
+        expect(trabajo).toHaveBeenCalledOnce();
+    });
+
+    it("una solicitud vencida no puede guardar ni liberar la reserva de quien la reemplazó", async () => {
+        mocks.fijarRelojBase(0);
+        let continuarPrimera!: () => void;
+        let continuarSegunda!: () => void;
+        let avisarPrimera!: () => void;
+        let avisarSegunda!: () => void;
+        const esperaPrimera = new Promise<void>((resolve) => { continuarPrimera = resolve; });
+        const esperaSegunda = new Promise<void>((resolve) => { continuarSegunda = resolve; });
+        const inicioPrimera = new Promise<void>((resolve) => { avisarPrimera = resolve; });
+        const inicioSegunda = new Promise<void>((resolve) => { avisarSegunda = resolve; });
+        const primera = conBloqueoActualizacion(60, async (almacen) => {
+            avisarPrimera();
+            await esperaPrimera;
+            await almacen.guardar(estado("2026-10-08"));
+        });
+        const rechazo = expect(primera).rejects.toThrow("venció o fue reemplazada");
+        await inicioPrimera;
+        const primerToken = mocks.reserva(60)?.token;
+        mocks.fijarRelojBase(360_000);
+        const segunda = conBloqueoActualizacion(60, async (almacen) => {
+            avisarSegunda();
+            await esperaSegunda;
+            await almacen.guardar(estado("2026-10-09"));
+        });
+        await inicioSegunda;
+        const segundoToken = mocks.reserva(60)?.token;
+        expect(segundoToken).not.toBe(primerToken);
+        continuarPrimera();
+        await rechazo;
+
+        expect(mocks.ids()).toEqual([]);
+        expect(mocks.reserva(60)?.token).toBe(segundoToken);
+        expect(mocks.eliminarConfiguracion).not.toHaveBeenCalled();
+        continuarSegunda();
+        await segunda;
+        expect(mocks.leer(101)?.fechaUltimaActualizacion.toString()).toBe("2026-10-09");
+        expect(mocks.reserva(60)).toBeNull();
+    });
+
+    it("rechaza una escritura después del vencimiento aunque nadie haya tomado la reserva", async () => {
+        mocks.fijarRelojBase(0);
+        await expect(conBloqueoActualizacion(60, async (almacen) => {
+            mocks.fijarRelojBase(360_000);
+            await almacen.guardar(estado());
+        })).rejects.toThrow("venció o fue reemplazada");
+
+        expect(mocks.creaciones).not.toHaveBeenCalled();
+        expect(mocks.reserva(60)).toBeNull();
+    });
+
+    it("limita la espera de una reserva ajena sin escribir ni liberar su token", async () => {
+        vi.useFakeTimers();
+        mocks.fijarRelojBase(0);
+        mocks.sembrarReserva(60, { token: "otra-instancia", venceEn: 1_000_000 });
+        const trabajo = vi.fn(async () => undefined);
+        const pendiente = conBloqueoActualizacion(60, trabajo);
+        const rechazo = expect(pendiente).rejects.toThrow("Otra solicitud sigue actualizando");
+
+        await vi.advanceTimersByTimeAsync(380_000);
+        await rechazo;
+
+        expect(trabajo).not.toHaveBeenCalled();
+        expect(mocks.transaccionesActivas()).toBe(0);
+        expect(mocks.creaciones).not.toHaveBeenCalled();
+        expect(mocks.eliminarConfiguracion).not.toHaveBeenCalled();
+        expect(mocks.reserva(60)?.token).toBe("otra-instancia");
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("un fallo remoto libera la reserva y permite reintentar sin modificar el histórico anterior", async () => {
+        mocks.sembrar(registro());
+        const anterior = await leerHistorico(60);
+        await expect(conBloqueoActualizacion(60, async () => { throw new Error("Fallo remoto"); }))
+            .rejects.toThrow("Fallo remoto");
+
+        expect(await leerHistorico(60)).toEqual(anterior);
+        expect(mocks.reserva(60)).toBeNull();
+        expect(mocks.transaccionesActivas()).toBe(0);
+        await guardarConBloqueo(estado("2026-10-09"));
+        expect(mocks.leer(101)?.fechaUltimaActualizacion.toString()).toBe("2026-10-09");
+    });
+
+    it("revierte una escritura fallida y libera la reserva para el siguiente intento", async () => {
+        mocks.creaciones.mockImplementationOnce(async (valores) => {
+            mocks.sembrar(valores);
+            throw new Error("Fallo al guardar");
+        });
+        await expect(guardarConBloqueo(estado())).rejects.toThrow("Fallo al guardar");
+
+        expect(mocks.ids()).toEqual([]);
+        expect(mocks.reserva(60)).toBeNull();
+        await guardarConBloqueo(estado("2026-10-09"));
+        expect(mocks.ids()).toEqual([101]);
+    });
+
+    it("un fallo al liberar no oculta el resultado guardado y la reserva remanente se recupera al vencer", async () => {
+        mocks.fijarRelojBase(0);
+        mocks.eliminarConfiguracion.mockRejectedValueOnce(new Error("Base temporalmente indisponible"));
+
+        await expect(guardarConBloqueo(estado())).resolves.toBeUndefined();
+
+        expect(mocks.ids()).toEqual([101]);
+        expect(mocks.reserva(60)).not.toBeNull();
+        mocks.fijarRelojBase(360_000);
+        await guardarConBloqueo(estado("2026-10-09"));
+        expect(mocks.reserva(60)).toBeNull();
+    });
+
+    it("rechaza guardar una especie diferente de la reservada antes de escribir", async () => {
+        await expect(conBloqueoActualizacion(60, async (almacen) => {
+            await almacen.guardar(estado("2026-10-08", 61));
+        })).rejects.toThrow("especie bloqueada");
+
+        expect(mocks.ids()).toEqual([]);
+        expect(mocks.creaciones).not.toHaveBeenCalled();
+        expect(mocks.actualizaciones).not.toHaveBeenCalled();
+        expect(mocks.lecturasEspecies).toHaveBeenCalledOnce();
+        expect(mocks.reserva(60)).toBeNull();
+    });
+
+    it("rechaza una especie no registrada antes de crear una reserva o ejecutar el trabajo", async () => {
+        const trabajo = vi.fn(async () => "registrada");
+        await expect(conBloqueoActualizacion(999, trabajo)).rejects.toThrow("La especie no está registrada en la base de datos.");
+
+        expect(trabajo).not.toHaveBeenCalled();
+        expect(mocks.lecturasEspecies).toHaveBeenCalledWith({ uamId: 999 }, ["id"]);
+        expect(mocks.lecturas).not.toHaveBeenCalled();
+        expect(mocks.crearConfiguracion).not.toHaveBeenCalled();
+        expect(mocks.transaccionesActivas()).toBe(0);
+        mocks.registrarEspecie(301, 999);
+        await expect(conBloqueoActualizacion(999, trabajo)).resolves.toBe("registrada");
+        expect(trabajo).toHaveBeenCalledOnce();
     });
 });

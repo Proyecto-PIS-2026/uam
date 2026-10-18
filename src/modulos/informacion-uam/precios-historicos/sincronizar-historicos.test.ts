@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
     bloquear: vi.fn(),
 }));
 
-vi.mock("./almacen-historicos", () => ({ conBloqueoActualizacion: mocks.bloquear }));
+vi.mock("./almacen-historicos", () => ({ conBloqueoActualizacion: mocks.bloquear, leerHistorico: mocks.leer }));
 vi.mock("./cliente-webservice", () => ({ consultarHistorico: mocks.consultar }));
 
 const baseUrl = "https://precios.example.test/servicio";
@@ -206,6 +206,7 @@ describe("actualizarHistoricoEspecie", () => {
 
         expect(mocks.consultar).not.toHaveBeenCalled();
         expect(mocks.guardar).not.toHaveBeenCalled();
+        expect(mocks.bloquear).not.toHaveBeenCalled();
         expect(estados.get(10)).toBe(guardado);
     });
 
@@ -266,6 +267,27 @@ describe("actualizarHistoricoEspecie", () => {
 
         expect(estados.get(10)).toBe(guardado);
         expect(guardado).toStrictEqual(original);
+        expect(mocks.guardar).not.toHaveBeenCalled();
+    });
+
+    it("mantiene disponible el histórico anterior si no puede obtener la reserva de actualización", async () => {
+        const guardado = sembrar(10, "2026-10-08");
+        mocks.bloquear.mockRejectedValueOnce(new Error("Otra solicitud sigue actualizando el histórico."));
+
+        await expect(actualizarHistoricoEspecie(10)).resolves.toBeUndefined();
+
+        expect(estados.get(10)).toBe(guardado);
+        expect(mocks.consultar).not.toHaveBeenCalled();
+        expect(mocks.guardar).not.toHaveBeenCalled();
+    });
+
+    it("propaga el fallo de reserva cuando todavía no hay un histórico guardado", async () => {
+        const fallo = new Error("Otra solicitud sigue actualizando el histórico.");
+        mocks.bloquear.mockRejectedValueOnce(fallo);
+
+        await expect(actualizarHistoricoEspecie(10)).rejects.toBe(fallo);
+
+        expect(mocks.consultar).not.toHaveBeenCalled();
         expect(mocks.guardar).not.toHaveBeenCalled();
     });
 

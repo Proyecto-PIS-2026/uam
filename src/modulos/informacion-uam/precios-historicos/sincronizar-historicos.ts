@@ -1,4 +1,4 @@
-import { conBloqueoActualizacion } from "./almacen-historicos";
+import { conBloqueoActualizacion, leerHistorico } from "./almacen-historicos";
 import { consultarHistorico } from "./cliente-webservice";
 import { esFechaISO, fechaActualMontevideo, validarParametrosConsulta, type ConsultaHistorica } from "./parametros-consulta";
 import type { HistoricoProducto } from "./tipos";
@@ -37,6 +37,11 @@ function validarCobertura(historico: HistoricoProducto, consulta: ConsultaHistor
 async function ejecutarActualizacion(speciesId: number): Promise<void> {
     let habiaHistorico = false;
     try {
+        const hoy = fechaActualMontevideo();
+        validarParametrosConsulta({ speciesId, desde: hoy, hasta: hoy });
+        const inicial = await leerHistorico(speciesId);
+        habiaHistorico = inicial !== null;
+        if (inicial && inicial.fechaUltimaActualizacion >= hoy) return;
         await conBloqueoActualizacion(speciesId, async (almacen) => {
             const hoy = fechaActualMontevideo();
             validarParametrosConsulta({ speciesId, desde: hoy, hasta: hoy });

@@ -5,6 +5,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlined";
 import { MenuItem, TextField } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "next/link";
@@ -196,12 +197,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     function cambiarEspecie(id: string) {
         if (id === especieId) return;
         setEspecieId(id);
-        setVariedad("");
-        setPais("");
-        setCategoria("");
-        setCalibre("");
         setPagina(1);
-        actualizarUrl({ variedad: "", pais: "", calibre: "", categoria: "" });
     }
 
     function limpiar() {
@@ -238,6 +234,9 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         for (const [nombre, valor] of new FormData(evento.currentTarget)) {
             if (typeof valor === "string") parametros[nombre] = valor;
         }
+        if (cambioEspecie) {
+            Object.assign(parametros, { variedad: "", pais: "", calibre: "", categoria: "" });
+        }
         const url = urlConsulta(parametros);
         setPagina(1);
         iniciarConsulta(() => {
@@ -268,7 +267,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                         </TextField>
                         <TextField
                             className={`${styles.campo} ${styles.filtroVariedad}`}
-                            select label="Variedad" name="variedad" size="small" value={variedadSeleccionada} disabled={cargandoTabla || cambioEspecie}
+                            select label="Variedad" name="variedad" size="small" value={cambioEspecie ? "" : variedadSeleccionada} disabled={cargandoTabla || cambioEspecie}
                             onChange={(evento) => cambiar(() => setVariedad(evento.target.value), { variedad: evento.target.value })} slotProps={menu}
                         >
                             <MenuItem value="" className={styles.opcionSelect}>Todas las variedades</MenuItem>
@@ -288,7 +287,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             <div ref={contenidoFiltrosRef} className={styles.contenidoAdicional}>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroPais}`}
-                                    select label="País" name="pais" size="small" value={paisSeleccionado} disabled={cargandoTabla || cambioEspecie}
+                                    select label="País" name="pais" size="small" value={cambioEspecie ? "" : paisSeleccionado} disabled={cargandoTabla || cambioEspecie}
                                     onChange={(evento) => cambiar(() => setPais(evento.target.value), { pais: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todos los países</MenuItem>
@@ -298,7 +297,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </TextField>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroCalibre}`}
-                                    select label="Calibre" name="calibre" size="small" value={calibreSeleccionado} disabled={cargandoTabla || cambioEspecie}
+                                    select label="Calibre" name="calibre" size="small" value={cambioEspecie ? "" : calibreSeleccionado} disabled={cargandoTabla || cambioEspecie}
                                     onChange={(evento) => cambiar(() => setCalibre(evento.target.value), { calibre: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todos los calibres</MenuItem>
@@ -308,7 +307,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </TextField>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroCategoria}`}
-                                    select label="Categoría" name="categoria" size="small" value={categoriaSeleccionada} disabled={cargandoTabla || cambioEspecie}
+                                    select label="Categoría" name="categoria" size="small" value={cambioEspecie ? "" : categoriaSeleccionada} disabled={cargandoTabla || cambioEspecie}
                                     onChange={(evento) => cambiar(() => setCategoria(evento.target.value), { categoria: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todas las categorías</MenuItem>
@@ -344,7 +343,6 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                     </div>
                 </form>
                 {rangoInvalido && <p className={styles.vacio} role="alert">La fecha de inicio debe ser anterior o igual a la fecha de fin.</p>}
-                {!cargandoTabla && !error && filas.length === 0 && <p className={styles.vacio} role="status">No hay registros históricos para la selección y el período indicados.</p>}
             </section>
 
             <GraficaPreciosHistoricos
@@ -421,6 +419,12 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                         );
                     })}
                 </div>
+                {!cargandoTabla && !error && filas.length === 0 && (
+                    <div className={styles.estadoVacio} role="status">
+                        <PlaylistRemoveOutlinedIcon className={styles.iconoVacio} aria-hidden="true" />
+                        <p>No hay registros históricos para los filtros y el período seleccionados.</p>
+                    </div>
+                )}
                 {!cargandoTabla && filas.length > LIMITE && (
                     <nav className={styles.paginacion} aria-label="Páginas de precios históricos">
                         <span>{inicio + 1}-{Math.min(inicio + LIMITE, filas.length)} de {filas.length}</span>

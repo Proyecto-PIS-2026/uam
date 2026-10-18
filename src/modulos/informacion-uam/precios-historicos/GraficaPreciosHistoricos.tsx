@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo } from "react";
+import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlined";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, type LabelProps, type TooltipContentProps, type TooltipValueType } from "recharts";
 import { agruparPreciosPorFecha, obtenerExtremos, obtenerFechasAnteriores, type PuntoGraficaHistorica, type RegistroGrafica } from "./datos-grafica";
 import { esFechaISO, fechaActualMontevideo } from "./parametros-consulta";
@@ -128,10 +129,9 @@ export default function GraficaPreciosHistoricos({ registros, desde, hasta, prod
     }
 
     return (
-        <section className={styles.panel} aria-labelledby={`${id}-titulo`} aria-describedby={`${id}-descripcion`} aria-busy={cargando}>
+        <section className={styles.panel} aria-labelledby={`${id}-titulo`} aria-busy={cargando}>
             <header className={styles.encabezado}>
                 <h2 id={`${id}-titulo`}>Evolución del precio</h2>
-                <p id={`${id}-descripcion`}>Precios mínimo y máximo por día de {producto}, del {fecha(desde)} al {fecha(hasta)}. Se muestran todos los días con datos para los filtros seleccionados.</p>
             </header>
             {disponible && (
                 <>
@@ -150,7 +150,10 @@ export default function GraficaPreciosHistoricos({ registros, desde, hasta, prod
                 ) : error ? (
                     <div className={styles.estado}><p>La gráfica no está disponible porque no se pudieron consultar los precios.</p></div>
                 ) : !extremos ? (
-                    <div className={styles.estado}><p>No hay precios para graficar con los filtros y el período seleccionados.</p></div>
+                    <div className={`${styles.estado} ${styles.estadoVacio}`}>
+                        <PlaylistRemoveOutlinedIcon className={styles.iconoVacio} aria-hidden="true" />
+                        <p>No hay precios para graficar con los filtros y el período seleccionados.</p>
+                    </div>
                 ) : (
                     <ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={{ width: 600, height: 350 }}>
                         <LineChart data={puntos} margin={{ top: fechasAnteriores.length ? 32 : 20, right: 16, left: 0, bottom: 8 }} accessibilityLayer aria-label={`Precios diarios de ${producto}. Mínimo y máximo en pesos por kilogramo.`}>
