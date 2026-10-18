@@ -151,7 +151,7 @@ describe("ModificarUsuario", () => {
 
         expect(screen.getByRole("link", { name: /Nuevo Usuario/ })).toHaveAttribute(
             "href",
-            "/alta-usuario?rol=operador",
+            "/alta-usuario",
         );
 
         expect(screen.getByTestId("usuario-seleccionado")).toHaveTextContent("ninguno");
@@ -237,7 +237,7 @@ describe("ModificarUsuario", () => {
         expect(screen.getByRole("button", { name: "ana.admin" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "beto.operador" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "carla.productor" })).toBeInTheDocument();
-        expect(enlaceAlta).toHaveAttribute("href", "/alta-usuario?rol=operador");
+        expect(enlaceAlta).toHaveAttribute("href", "/alta-usuario");
     });
 
     it("limpia la búsqueda y la selección al cambiar el rol", () => {
