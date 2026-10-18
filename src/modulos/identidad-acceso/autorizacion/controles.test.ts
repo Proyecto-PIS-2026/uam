@@ -103,3 +103,28 @@ describe("acceso al mercado público", () => {
         expect(redirect).not.toHaveBeenCalled();
     });
 });
+
+describe("acceso del productor a su mercado", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        sesionMock.mockResolvedValue(null);
+    });
+
+    it("rechaza la consulta sin sesión", async () => {
+        await expect(exigirProductor()).rejects.toMatchObject({ status: 401 });
+        expect(redirect).not.toHaveBeenCalled();
+    });
+
+    it.each(["ADMINISTRADOR", "OPERADOR"] as const)("rechaza el rol %s", async (rol) => {
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
+
+        await expect(exigirProductor()).rejects.toMatchObject({ status: 403 });
+    });
+
+    it("devuelve la sesión del productor autenticado", async () => {
+        const sesion = { usuarioId: 10, rol: "PRODUCTOR" as const, expiraEn: 2000000000 };
+        sesionMock.mockResolvedValue(sesion);
+
+        await expect(exigirProductor()).resolves.toBe(sesion);
+    });
+});
