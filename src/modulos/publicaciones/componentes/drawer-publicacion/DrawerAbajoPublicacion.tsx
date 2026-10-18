@@ -6,7 +6,6 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "../ImagenPublicacion";
 import Link from "next/link";
 import Dialog from "@mui/material/Dialog";
-import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
