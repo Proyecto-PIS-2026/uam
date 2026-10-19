@@ -1,35 +1,36 @@
+export type ValorHistorico = string | number | boolean | null | ValorHistorico[] | { [clave: string]: ValorHistorico };
+
 export type PrecioHistorico = {
-    category: string;
-    min_kg: number;
-    max_kg: number;
-    min_un: number;
-    max_un: number;
-    is_reference: boolean;
+    category: ValorHistorico;
+    min_kg: ValorHistorico;
+    max_kg: ValorHistorico;
+    min_un: ValorHistorico;
+    max_un: ValorHistorico;
+    is_reference: ValorHistorico;
 };
 
 export type PresentacionHistorica = {
-    variety: string;
-    caliber: string;
-    country: string;
-    measure_unit: string;
+    variety: ValorHistorico;
+    caliber: ValorHistorico;
+    country: ValorHistorico;
+    measure_unit: ValorHistorico;
     prices: PrecioHistorico[];
 };
 
 export type RegistroHistorico = {
-    date: string;
+    date: ValorHistorico;
     presentations: PresentacionHistorica[];
-    volume_kg?: number | null;
+    volume_kg?: ValorHistorico;
 };
 
 export type HistoricoProducto = {
-    classification_id: number;
-    classification: string;
+    classification_id: ValorHistorico;
+    classification: ValorHistorico;
     species_id: number;
-    species: string;
+    species: ValorHistorico;
     from: string;
     to: string;
     series: RegistroHistorico[];
-    erroresValidacion?: string[];
 };
 
 export type ProductoSeleccionado = {
@@ -44,4 +45,11 @@ export type ProductoSeleccionado = {
 export type EspecieHistorica = {
     id: string;
     especie: string;
+};
+
+export type OpcionesFiltrosHistoricos = {
+    variedades: string[];
+    paises: string[];
+    calibres: string[];
+    categorias: string[];
 };
