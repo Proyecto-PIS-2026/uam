@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'3fe9ff9b77cc22f3603cc103afea9c647926a2583a93c5bdbb13ab08a75f29a2'>;
+  StorageHashBase<'7c157f9d97fc2e8870f9ce0262a133f15e5d9ab81d48f8869ecd817e25f241e0'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -273,6 +273,13 @@ export type FieldOutputTypes = {
       readonly especieActiva: CodecTypes['pg/bool@1']['output'];
       readonly fotoEspecie: CodecTypes['pg/text@1']['output'] | null;
     };
+    readonly HistoricoPrecios: {
+      readonly especieId: CodecTypes['pg/int4@1']['output'];
+      readonly historico: CodecTypes['pg/jsonb@1']['output'];
+      readonly fechaDesde: CodecTypes['pg/date-temporal@1']['output'];
+      readonly fechaHasta: CodecTypes['pg/date-temporal@1']['output'];
+      readonly fechaUltimaActualizacion: CodecTypes['pg/date-temporal@1']['output'];
+    };
     readonly Local: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly numeroLocal: CodecTypes['pg/text@1']['output'];
@@ -402,6 +409,13 @@ export type FieldInputTypes = {
       readonly nombreEspecie: CodecTypes['pg/text@1']['input'];
       readonly especieActiva: CodecTypes['pg/bool@1']['input'];
       readonly fotoEspecie: CodecTypes['pg/text@1']['input'] | null;
+    };
+    readonly HistoricoPrecios: {
+      readonly especieId: CodecTypes['pg/int4@1']['input'];
+      readonly historico: CodecTypes['pg/jsonb@1']['input'];
+      readonly fechaDesde: CodecTypes['pg/date-temporal@1']['input'];
+      readonly fechaHasta: CodecTypes['pg/date-temporal@1']['input'];
+      readonly fechaUltimaActualizacion: CodecTypes['pg/date-temporal@1']['input'];
     };
     readonly Local: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -533,6 +547,13 @@ export type StorageColumnTypes = {
       readonly nombreEspecie: CodecTypes['pg/text@1']['output'];
       readonly uamId: CodecTypes['pg/int4@1']['output'] | null;
     };
+    readonly historicoPrecios: {
+      readonly especieId: CodecTypes['pg/int4@1']['output'];
+      readonly fechaDesde: CodecTypes['pg/date-temporal@1']['output'];
+      readonly fechaHasta: CodecTypes['pg/date-temporal@1']['output'];
+      readonly fechaUltimaActualizacion: CodecTypes['pg/date-temporal@1']['output'];
+      readonly historico: CodecTypes['pg/jsonb@1']['output'];
+    };
     readonly local: {
       readonly finContrato: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -662,6 +683,13 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly nombreEspecie: CodecTypes['pg/text@1']['input'];
       readonly uamId: CodecTypes['pg/int4@1']['input'] | null;
+    };
+    readonly historicoPrecios: {
+      readonly especieId: CodecTypes['pg/int4@1']['input'];
+      readonly fechaDesde: CodecTypes['pg/date-temporal@1']['input'];
+      readonly fechaHasta: CodecTypes['pg/date-temporal@1']['input'];
+      readonly fechaUltimaActualizacion: CodecTypes['pg/date-temporal@1']['input'];
+      readonly historico: CodecTypes['pg/jsonb@1']['input'];
     };
     readonly local: {
       readonly finContrato: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
@@ -988,6 +1016,52 @@ type ContractBase = Omit<
               uniques: readonly [{ readonly columns: readonly ['uamId'] }];
               indexes: readonly [];
               foreignKeys: readonly [];
+            };
+            readonly historicoPrecios: {
+              columns: {
+                readonly especieId: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
+                readonly historico: {
+                  readonly nativeType: 'jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: false;
+                };
+                readonly fechaDesde: {
+                  readonly nativeType: 'date';
+                  readonly codecId: 'pg/date-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly fechaHasta: {
+                  readonly nativeType: 'date';
+                  readonly codecId: 'pg/date-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly fechaUltimaActualizacion: {
+                  readonly nativeType: 'date';
+                  readonly codecId: 'pg/date-temporal@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['especieId'] };
+              uniques: readonly [];
+              indexes: readonly [];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'historicoPrecios';
+                    readonly columns: readonly ['especieId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'especie';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
             };
             readonly local: {
               columns: {
@@ -1892,6 +1966,10 @@ type ContractBase = Omit<
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'CachePreciosReferencia';
     };
+    readonly historicoPrecios: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'HistoricoPrecios';
+    };
   };
   readonly domain: {
     readonly namespaces: {
@@ -2109,6 +2187,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['especieId'];
                 };
               };
+              readonly historicoPrecios: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'HistoricoPrecios';
+                };
+                readonly cardinality: '1:1';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['especieId'];
+                };
+              };
               readonly variedades: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -2130,6 +2219,54 @@ type ContractBase = Omit<
                 readonly nombreEspecie: { readonly column: 'nombreEspecie' };
                 readonly especieActiva: { readonly column: 'especieActiva' };
                 readonly fotoEspecie: { readonly column: 'fotoEspecie' };
+              };
+            };
+          };
+          readonly HistoricoPrecios: {
+            readonly fields: {
+              readonly especieId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly historico: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
+              readonly fechaDesde: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/date-temporal@1' };
+              };
+              readonly fechaHasta: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/date-temporal@1' };
+              };
+              readonly fechaUltimaActualizacion: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/date-temporal@1' };
+              };
+            };
+            readonly relations: {
+              readonly especie: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Especie';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['especieId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'historicoPrecios';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly especieId: { readonly column: 'especieId' };
+                readonly historico: { readonly column: 'historico' };
+                readonly fechaDesde: { readonly column: 'fechaDesde' };
+                readonly fechaHasta: { readonly column: 'fechaHasta' };
+                readonly fechaUltimaActualizacion: { readonly column: 'fechaUltimaActualizacion' };
               };
             };
           };

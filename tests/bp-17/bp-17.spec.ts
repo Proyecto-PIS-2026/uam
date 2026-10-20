@@ -122,7 +122,7 @@ test.describe("BP-17.1 histórico de precios", () => {
     await page.getByRole("textbox", { name: "Desde", exact: true }).fill("2019-01-01");
     await page.getByRole("textbox", { name: "Hasta", exact: true }).fill("2019-01-02");
     await page.getByRole("button", { name: "Consultar", exact: true }).click();
-    await expect(page.getByRole("main").getByRole("status")).toHaveText("No hay registros históricos para la selección y el período indicados.");
+    await expect(page.getByRole("main").getByRole("status")).toHaveText("No hay registros históricos para los filtros y el período seleccionados.");
     await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
   });
 
