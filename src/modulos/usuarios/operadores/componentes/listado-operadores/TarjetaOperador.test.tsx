@@ -81,5 +81,9 @@ describe("TarjetaOperador", () => {
         expect(screen.getByText("1")).toBeInTheDocument();
         expect(screen.getByText("producto")).toBeInTheDocument();
     });
-    
+   
+    it("Enlaza a la gestión del operador si es administrador", () => {
+        render(<TarjetaOperador operador={operador} esAdmin />);
+        expect(screen.getByRole("link")).toHaveAttribute("href", "/gestion-operadores/1");
+    });
 });

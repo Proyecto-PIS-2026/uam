@@ -76,6 +76,12 @@ const permisos = {
         sesion?.rol === "ADMINISTRADOR",
     "administracion.configuracion.gestionar": (sesion: DatosSesion | null): boolean =>
         sesion?.rol === "ADMINISTRADOR",
+    "administracion.publicacion.crear": (sesion: DatosSesion | null): boolean =>
+        sesion?.rol === "ADMINISTRADOR",
+    "administracion.publicacion.modificar": (sesion: DatosSesion | null): boolean =>
+        sesion?.rol === "ADMINISTRADOR",
+    "administracion.publicacion.eliminar": (sesion: DatosSesion | null): boolean =>
+        sesion?.rol === "ADMINISTRADOR",
 } as const;
 
 export type Permiso = keyof typeof permisos;
