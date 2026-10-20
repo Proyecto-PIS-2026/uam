@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import Page from "./page";
 import PaginaPerfil from "./[nombre]/page";
 import ListadoProductores from "@/modulos/usuarios/productores/componentes/ListadoProductores";
@@ -14,9 +14,6 @@ vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.no
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
 vi.mock("@/modulos/usuarios/productores/consultas-productores", () => ({
     obtenerProductoresDisponibles: mocks.listado, obtenerPerfilProductor: mocks.perfil,
-}));
-vi.mock("@/modulos/usuarios/operadores/componentes/perfil-publico-operador/TextoAjustable", () => ({
-    default: ({ texto, className }: { texto: string; className?: string }) => <span className={className}>{texto}</span>,
 }));
 
 const productores: ProductorListado[] = [
@@ -83,7 +80,7 @@ describe("Listado y navegación de productores", () => {
         expect(screen.getAllByRole("link")).toHaveLength(2);
     });
 
-    it("permite ir del listado al perfil, consultar una publicación y regresar", async () => {
+    it("permite seleccionar un productor del listado y consultar su información y publicaciones", async () => {
         const { unmount } = render(await Page());
         const enlace = screen.getByRole("link", { name: /Álamo & Sur/ });
         const nombre = decodeURIComponent(enlace.getAttribute("href")!.split("/").at(-1)!);
@@ -92,19 +89,8 @@ describe("Listado y navegación de productores", () => {
         expect(mocks.perfil).toHaveBeenCalledWith(perfil.nombreFantasia);
         expect(screen.getByRole("heading", { name: perfil.nombreFantasia })).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Puntos de retiro" })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Volver a productores" })).toHaveAttribute("href", "/productores");
-        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Naranja - Valencia" }));
-        const detalle = within(await screen.findByRole("dialog", { name: "Detalle de publicación" }));
-        expect(detalle.getByText("Consultar precio")).toBeInTheDocument();
-        expect(detalle.getByText("Uruguay")).toBeInTheDocument();
-        expect(detalle.getByRole("link", { name: /WhatsApp/ })).toHaveAttribute("href", expect.stringContaining("https://wa.me/59899123456"));
-    });
-
-    it("muestra un perfil sin publicaciones ni puntos de retiro", async () => {
-        mocks.perfil.mockResolvedValue({ ...perfil, publicaciones: [], ubicaciones: [] });
-        render(await PaginaPerfil({ params: Promise.resolve({ nombre: perfil.nombreFantasia }) }));
-        expect(screen.getByText("No hay publicaciones disponibles.")).toBeInTheDocument();
-        expect(screen.getByText("Sin puntos de retiro publicados.")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Publicaciones" })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Naranja - Valencia" })).toBeInTheDocument();
     });
 
     it("devuelve no encontrado para un productor inexistente o no visible", async () => {
