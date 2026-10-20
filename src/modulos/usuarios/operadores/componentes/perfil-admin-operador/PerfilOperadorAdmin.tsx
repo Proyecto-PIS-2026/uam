@@ -44,7 +44,7 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <Link href="/administracion" className={styles.volver}>
+            <Link href="/administracion#usuarios" className={styles.volver}>
                 ← Volver al listado de operadores
             </Link>
             <div className={styles.tarjetaPerfil}>

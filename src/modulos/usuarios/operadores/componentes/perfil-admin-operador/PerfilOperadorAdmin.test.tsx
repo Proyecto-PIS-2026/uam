@@ -95,7 +95,7 @@ describe("PerfilOperadorAdmin", () => {
     it("ofrece volver al listado de operadores", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
-        expect(screen.getByRole("link", { name: /Volver al listado de operadores/ })).toHaveAttribute("href", "/administracion");
+        expect(screen.getByRole("link", { name: /Volver al listado de operadores/ })).toHaveAttribute("href", "/administracion#usuarios");
     });
 
     it("ofrece editar el operador", () => {
