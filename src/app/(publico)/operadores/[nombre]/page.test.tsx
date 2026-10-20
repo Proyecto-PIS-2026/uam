@@ -94,18 +94,7 @@ describe("Página pública del operador", () => {
         expect(screen.getByText("Tomate - Perita")).toBeInTheDocument();
     });
 
-    it("redirige al administrador a la gestión del operador", async () => {
-        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 20, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
-        mocks.obtenerPerfil.mockResolvedValue(perfil);
-
-        await expect(Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }) })).rejects.toThrow("NEXT_REDIRECT");
-
-        expect(mocks.redirect).toHaveBeenCalledWith("/gestion-operadores/13");
-        expect(mocks.obtenerPerfil).toHaveBeenCalledWith("Frutas del Norte");
-        expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
-    });
-
-    it.each([null, "PRODUCTOR"] as const)("conserva el perfil público para la sesión %s", async (rol) => {
+    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("conserva el perfil público para la sesión %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
         mocks.obtenerPerfil.mockResolvedValue(perfil);
 
