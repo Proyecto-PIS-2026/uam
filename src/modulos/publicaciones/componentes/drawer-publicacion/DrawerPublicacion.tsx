@@ -31,7 +31,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
     const numeroWhatsApp = usuario?.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-    const enlacePerfil = publicacion && usuario ? publicacion.tipoPublicacion === "OPERADOR" ? esAdmin ? `/gestion-operadores/${publicacion.operador.id}` : `/operadores/${encodeURIComponent(usuario.nombreFantasia)}` : `/productores/${encodeURIComponent(usuario.nombreFantasia)}` : "";    
+    const enlacePerfil = publicacion && usuario ? publicacion.tipoPublicacion === "OPERADOR" ? esAdmin ? `/gestion-operadores/${publicacion.operador.id}` : `/operadores/${encodeURIComponent(usuario.nombreFantasia)}?origen=publicaciones` : `/productores/${encodeURIComponent(usuario.nombreFantasia)}?origen=publicaciones` : "";    
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
@@ -153,7 +153,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             <CloseIcon fontSize="small" />
                         </button>
                         <div className={styles.fotoAmpliada}>
-                            <ImagenPublicacion key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="100vw" className={styles.imagenAmpliada}  reemplazo={
+                            <ImagenPublicacion loading="eager" key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="(min-width: 832px) 50rem, (min-width: 768px) calc(100vw - 2rem), (min-width: 536px) 32rem, calc(100vw - 1.5rem)" className={styles.imagenAmpliada}  reemplazo={
                                 <div className={styles.sinFoto}>
                                     <ImageOutlinedIcon className={styles.iconoFoto} />
                                     Foto

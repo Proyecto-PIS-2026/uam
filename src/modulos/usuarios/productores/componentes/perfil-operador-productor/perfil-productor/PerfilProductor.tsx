@@ -1,14 +1,19 @@
 import HojasDecorativas from "../../../../../../compartido/HojasDecorativas";
 import type { PerfilProductorPorOperador } from "../../../acciones/consultas-perfil-por-operador";
-import styles from "./PerfilProductor.module.css";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Image from "next/image";
+import Link from "next/link";
+
+import styles from "./PerfilProductor.module.css";
 
 type PerfilProductorProps  = {
     productor: PerfilProductorPorOperador;
+    hrefVolver?: string;
+    textoVolver?: string;
 };
 
-export default function PerfilProductor({ productor }: PerfilProductorProps) {
+export default function PerfilProductor({ productor, hrefVolver = "/productores", textoVolver = "Volver al listado de productores" }: PerfilProductorProps) {
     const inicialOperador = productor.nombreFantasia.trim()[0]?.toUpperCase();;
 
     const numeroWhatsApp = productor.whatsApp.replace(/\D/g, "");
@@ -17,6 +22,10 @@ export default function PerfilProductor({ productor }: PerfilProductorProps) {
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
+            <Link href={hrefVolver} className={styles.volver}>
+                <ArrowBackIcon fontSize="small" aria-hidden="true" />
+                {textoVolver}
+            </Link>
             <div className={styles.tarjetaPerfil}>
                 <header className={styles.encabezado}>
                     <HojasDecorativas />

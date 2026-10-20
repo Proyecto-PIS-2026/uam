@@ -29,6 +29,7 @@ const opcionesMenu: OpcionMenu[] = [
         ruta: "/inicio",
         ocultarParaOperador: true,
     },
+    
     {
         nombre: "Publicaciones",
         ruta: "/publicaciones",
@@ -41,37 +42,44 @@ const opcionesMenu: OpcionMenu[] = [
         ruta: "/publicaciones-productor",
         permitido: (sesion) => autorizado("productor.publicacion.consultar", sesion),
     },
+
     {
         nombre: "Operadores",
         ruta: "/operadores",
         permitido: () => autorizado("operador.catalogo.consultar"),
         ocultarParaOperador: true,
     },
-    {
-        nombre: "Precios de referencia",
-        ruta: "/precios-referencia",
-        permitido: () => autorizado("preciosReferencia.consultar"),
-    },
+
     {
         nombre: "Productores",
         ruta: "/productores",
         permitido: (sesion) => autorizado("productor.publicacion.consultar", sesion),
     },
+
+    {
+        nombre: "Precios de referencia",
+        ruta: "/precios-referencia",
+        permitido: () => autorizado("preciosReferencia.consultar"),
+    },
+
     {
         nombre: "Mi mercado",
         ruta: "/mi-mercado",
         permitido: (sesion) => autorizado("operador.mercado.acceder", sesion),
     },
+
     {
         nombre: "Mi mercado",
         ruta: "/mi-mercado/productor",
         permitido: (sesion) => autorizado("productor.mercado.acceder", sesion),
     },
+
     {
         nombre: "Iniciar sesión",
         ruta: "/iniciar-sesion",
         soloSinSesion: true,
     },
+
     { 
         nombre: "Administración", 
         ruta: "/administracion",

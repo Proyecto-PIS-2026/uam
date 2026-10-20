@@ -1,19 +1,22 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { PublicacionPerfil } from "../../consultas-perfil-publico";
+import type { PublicacionPerfilProductor } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 
-// Reemplaza Image de Next por un img comun durante los tests
 vi.mock("next/image", async () => {
     const { createElement } = await import("react");
-
     return {
-        default: ({ src, alt }: { src: string; alt: string }) => createElement("img", { src, alt })
+        default: ({ src, alt, onLoad, style,} : {
+            src: string;
+            alt: string;
+            onLoad?: React.ReactEventHandler<HTMLImageElement>;
+            style?: React.CSSProperties;
+        }) => createElement("img", { src, alt, onLoad, style }),
     };
 });
 
 // Datos de prueba
-const publicacion: PublicacionPerfil = {
+const publicacion: PublicacionPerfilProductor  = {
     id: 101,
     foto: null,
     precio: "120",
@@ -24,6 +27,8 @@ const publicacion: PublicacionPerfil = {
     categoria: "Extra",
     calibre: "A",
     pais: "URUGUAY",
+    cantidadUnidades: null,
+    ubicaciones: [],
 };
 
 describe("TarjetaPublicacion", () => {
@@ -50,8 +55,9 @@ describe("TarjetaPublicacion", () => {
 
     // Verifica que se muestre la imagen cuando la publicacion tiene foto
     it("muestra la imagen cuando la publicación tiene foto", () => {
-        render(<TarjetaPublicacion publicacion={{...publicacion, foto: "/tomate.jpg"}}/>);
-        expect(screen.getByRole("img", {name: "Foto de Tomate - Perita",})).toHaveAttribute("src", "/tomate.jpg");
+        render(<TarjetaPublicacion publicacion={{ ...publicacion, foto: "/tomate.jpg" }}/>);
+        fireEvent.load(screen.getByAltText("Foto de Tomate - Perita"));
+        expect(screen.getByRole("img", { name: "Foto de Tomate - Perita" })).toHaveAttribute("src", "/tomate.jpg");
         expect(screen.queryByText("Foto")).not.toBeInTheDocument();
         expect(screen.queryByText("Sin foto disponible")).not.toBeInTheDocument();
     });

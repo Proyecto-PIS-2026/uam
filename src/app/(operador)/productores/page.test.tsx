@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import Page from "./page";
 import PaginaPerfil from "./[nombre]/page";
 import ListadoProductores from "@/modulos/usuarios/productores/componentes/ListadoProductores";
-import type { PerfilProductor, ProductorListado } from "@/modulos/usuarios/productores/consultas-productores";
+import type { PerfilProductor, ProductorListado } from "@/modulos/usuarios/productores/acciones/consultas-productores";
 
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(), listado: vi.fn(), perfil: vi.fn(),
@@ -92,7 +92,6 @@ describe("Listado y navegación de productores", () => {
         expect(mocks.perfil).toHaveBeenCalledWith(perfil.nombreFantasia);
         expect(screen.getByRole("heading", { name: perfil.nombreFantasia })).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Puntos de retiro" })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Volver a productores" })).toHaveAttribute("href", "/productores");
         fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Naranja - Valencia" }));
         const detalle = within(await screen.findByRole("dialog", { name: "Detalle de publicación" }));
         expect(detalle.getByText("Consultar precio")).toBeInTheDocument();

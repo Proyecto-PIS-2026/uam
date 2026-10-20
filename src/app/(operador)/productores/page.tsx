@@ -1,5 +1,5 @@
 import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { obtenerProductoresDisponibles } from "@/modulos/usuarios/productores/consultas-productores";
+import { obtenerProductoresDisponibles } from "@/modulos/usuarios/productores/acciones/consultas-productores";
 import ListadoProductores from "@/modulos/usuarios/productores/componentes/listado-productores/ListadoProductores";
 export const dynamic = "force-dynamic";
 

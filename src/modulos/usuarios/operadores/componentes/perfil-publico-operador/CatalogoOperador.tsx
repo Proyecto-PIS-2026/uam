@@ -5,8 +5,12 @@ import type { PublicacionPerfil } from "../../consultas-perfil-publico";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
 import type { PublicacionListado } from "../../../../consulta-mercado/acciones/PublicacionesOperador";
 import { compararEspeciesPorPrioridad } from "../../../../../compartido/prioridad-especies";
-import DrawerPublicacionPerfil from "./DrawerPublicacionPerfil";
+import { DrawerPublicacionPerfil } from "./DrawerPublicacionPerfil";
 import TarjetaPublicacion from "./TarjetaPublicacion";
+
+import ViewListIcon from "@mui/icons-material/ViewList";
+import ViewModuleIcon from "@mui/icons-material/ViewModule";
+
 import styles from "./CatalogoOperador.module.css";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
@@ -61,6 +65,8 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
         return compararEspeciesPorPrioridad(primera, segunda);
     });
 
+    const publicacionParaDrawer = publicacionSeleccionada ? publicacionesParaFiltros.find((publicacion) => publicacion.id === publicacionSeleccionada.id) ?? null : null;
+
     return (
         <>
             <section className={styles.contenedor}>
@@ -71,10 +77,18 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
 
                     <div className={styles.encabezadoCatalogo}>
                         <h2 className={styles.titulo}>Publicaciones</h2>
-
-                        <button type="button" className={`${styles.botonAgrupar} ${agruparPorEspecie ? styles.botonAgruparActivo : ""}`} aria-pressed={agruparPorEspecie} onClick={() => setAgruparPorEspecie((valorActual) => !valorActual)}>
-                            {agruparPorEspecie ? "Desagrupar" : "Agrupar por especie"}
-                        </button>
+                        <div className={styles.espacioAgrupar}>
+                            <button type="button" className={`${styles.botonAgrupar} ${agruparPorEspecie ? styles.botonAgruparActivo : ""}`} aria-pressed={agruparPorEspecie} onClick={() => setAgruparPorEspecie((valorActual) => !valorActual)}>
+                                <span key={agruparPorEspecie ? "desagrupar" : "agrupar"} className={styles.textoAgrupar}>
+                                    {agruparPorEspecie ? (
+                                        <ViewListIcon fontSize="small" />
+                                    ) : (
+                                        <ViewModuleIcon fontSize="small" />
+                                    )}
+                                        {agruparPorEspecie ? "Desagrupar" : "Agrupar por especie"}
+                                </span>
+                            </button>
+                        </div>
                     </div>
 
                     {publicacionesVisibles.length > 0 ? (
@@ -113,7 +127,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
                 </div>
             </section>
 
-            <DrawerPublicacionPerfil publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto} whatsAppOperador={whatsAppOperador}/>
+            <DrawerPublicacionPerfil publicacion={publicacionParaDrawer} open={drawerAbierto} onOpenChange={setDrawerAbierto} whatsAppOperador={whatsAppOperador}/>
         </>
     );
 }

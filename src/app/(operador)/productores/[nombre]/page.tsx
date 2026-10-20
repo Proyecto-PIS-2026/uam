@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
@@ -7,21 +6,22 @@ import CatalogoProductor from "@/modulos/usuarios/productores/componentes/perfil
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ params }: { params: Promise<{ nombre: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ nombre: string }>; searchParams: Promise<{ origen?: string | string[] }> }) {
     await requerirOperador();
-const { nombre } = await params;
-const nombreDecodificado = decodeURIComponent(nombre);
-const productor = await obtenerPerfilProductorPorOperador(nombreDecodificado);
-    
+    const { nombre } = await params;
+    const nombreDecodificado = decodeURIComponent(nombre);
+    const productor = await obtenerPerfilProductorPorOperador(nombreDecodificado);
+
     if (!productor) notFound();
+
+    const { origen } = await searchParams;
+    const desdePublicaciones = origen === "publicaciones";
+    const hrefVolver = desdePublicaciones ? "/publicaciones-productor" : "/productores";
+    const textoVolver = desdePublicaciones ? "Volver al listado de publicaciones" : "Volver al listado de productores";
+        
     const contenido = (
         <main className="flex-1 bg-background font-sans text-foreground">
-            <div className="contenedor-pagina">
-                <Link href="/productores" className="mb-4 inline-block text-primary hover:underline">
-                    Volver a productores
-                </Link>
-            </div>
-            <PerfilProductor productor={productor} />
+            <PerfilProductor productor={productor} hrefVolver={hrefVolver} textoVolver={textoVolver}/>
             <CatalogoProductor
                 key={productor.id}
                 publicaciones={productor.publicaciones}

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 
 import PerfilProductorAdmin from "./PerfilProductorAdmin";
-import type { PerfilAdminProductor } from "../../consultas-perfil-productor-admin";
+import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 
 const mocks = vi.hoisted(() => ({
     propsCatalogo: vi.fn(),

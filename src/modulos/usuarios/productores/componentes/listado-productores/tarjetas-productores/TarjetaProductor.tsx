@@ -12,7 +12,7 @@ export default function TarjetaProductor({ productor }: TarjetaProductorProps) {
     const inicial = productor.nombreFantasia.trim().charAt(0).toLocaleUpperCase("es");
 
     const contenido = (
-        <Link href={`/productores/${encodeURIComponent(productor.nombreFantasia)}`} className={styles.tarjeta}>
+        <Link href={`/productores/${encodeURIComponent(productor.nombreFantasia)}?origen=productores`} className={styles.tarjeta}>
             <div className={styles.imagen}>
                 {foto ? (
                     <Image src={foto} alt={`Foto de ${productor.nombreFantasia}`} fill sizes="(max-width: 767px) 64px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.foto} />

@@ -261,22 +261,6 @@
     padding: 0.65rem 1rem;
 }
 
-.operador {
-    padding-top: 0;
-    padding-bottom: 0.5rem;
-    line-height: 1.4;
-}
-
-.publicado {
-    color: black; 
-    font-weight: 400;
-}
-
-.nombreOperador {
-    color: var(--color-secondary);
-    font-weight: 600;
-}
-
 .bloqueBotones {
     display: flex;
     width: 100%;
@@ -484,15 +468,6 @@
         padding: 0.75rem 1rem;
         padding-bottom: max(1rem, env(safe-area-inset-bottom));
         border-top: 1px solid var(--color-border);
-    }
-
-    .operador {
-        padding: 0;
-    }
-
-    .publicado,
-    .nombreOperador {
-        font-size: 1rem;
     }
 
     .botonPerfil,

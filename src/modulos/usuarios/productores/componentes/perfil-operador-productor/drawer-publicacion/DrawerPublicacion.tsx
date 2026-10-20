@@ -135,12 +135,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             )}
                         </div>
                         <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
-                            <div className={styles.operador}>
-                                <span className={styles.publicado}>Publicado por</span>{" "}
-                                <span className={styles.nombreOperador}>{usuario.nombreFantasia}</span>
-                            </div>
                             <div className={styles.bloqueBotones}>
-                                <Link href={enlacePerfil} className={styles.botonPerfil} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
                                 <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                                     <span>WhatsApp</span>
@@ -153,7 +148,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             <CloseIcon fontSize="small" />
                         </button>
                         <div className={styles.fotoAmpliada}>
-                            <ImagenPublicacion key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="100vw" className={styles.imagenAmpliada}  reemplazo={
+                            <ImagenPublicacion loading="eager" key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="(min-width: 832px) 50rem, (min-width: 768px) calc(100vw - 2rem), (min-width: 536px) 32rem, calc(100vw - 1.5rem)" className={styles.imagenAmpliada}  reemplazo={
                                 <div className={styles.sinFoto}>
                                     <ImageOutlinedIcon className={styles.iconoFoto} />
                                     Foto

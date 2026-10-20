@@ -151,6 +151,21 @@
     object-fit: cover;
 }
 
+.volver {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-primary-hover);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.volver:hover {
+    text-decoration: underline;
+}
+
 @media (min-width: 768px) {
     .botonWhatsApp {
         width: 4rem;

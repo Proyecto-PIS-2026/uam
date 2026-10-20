@@ -1,6 +1,6 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
-import type { PublicacionPerfil } from "../operadores/consultas-perfil-publico";
+import type { PublicacionPerfil } from "../../operadores/consultas-perfil-publico";
 
 export type ProductorListado = {
     id: number;

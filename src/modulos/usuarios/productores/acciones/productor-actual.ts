@@ -1,4 +1,4 @@
-import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { db } from "../../../../infraestructura/persistencia/prisma/db";
 import { exigirProductor } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export async function obtenerProductorActual() {
