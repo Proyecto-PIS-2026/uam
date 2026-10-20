@@ -10,6 +10,7 @@ import BuscadorUsuarios from "./BuscadorUsuario";
 import ListaUsuarios from "./ListaUsuarios";
 import styles from "./ModificarUsuario.module.css";
 import { bajaOperador } from "@/modulos/usuarios/operadores/bajaOperador";
+import { bajaProductor } from "@/modulos/usuarios/productores/bajaProductor";
 
 interface ModificarUsuarioProps {
     datos: DatosModificarUsuarios;
@@ -46,11 +47,15 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
     }
 
     async function eliminarUsuario(usuario: UsuarioParaModificar) {
-        if (usuario.rol !== "OPERADOR") {
+        let resultado;
+        if (usuario.rol === "OPERADOR") {
+            resultado = await bajaOperador({ operadorId: usuario.operadorId });
+        } else if (usuario.rol === "PRODUCTOR") {
+            resultado = await bajaProductor({ productorId: usuario.productorId });
+        } else {
             throw new Error("La baja de este tipo de usuario todavía no está disponible.");
         }
 
-        const resultado = await bajaOperador({ operadorId: usuario.operadorId });
         if (!resultado.esValido) {
             throw new Error(resultado.errores.join(" "));
         }
