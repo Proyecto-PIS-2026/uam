@@ -85,7 +85,7 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   await page.getByRole("button", { name: /Volver al perfil/ }).click();
   await expect(page).toHaveURL(rutaPerfil);
   await page.getByRole("link", { name: /Volver al listado de operadores/ }).click();
-  await expect(page).toHaveURL("/administracion");
+  await expect(page).toHaveURL(/\/administracion#usuarios$/);
 
   // Una URL directa también debe respetar los permisos, con sesiones independientes.
   for (const perfil of [
