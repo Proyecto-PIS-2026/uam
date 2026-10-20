@@ -53,6 +53,11 @@ const opcionesMenu: OpcionMenu[] = [
         permitido: () => autorizado("preciosReferencia.consultar"),
     },
     {
+        nombre: "Productores",
+        ruta: "/productores",
+        permitido: (sesion) => autorizado("productor.publicacion.consultar", sesion),
+    },
+    {
         nombre: "Mi mercado",
         ruta: "/mi-mercado",
         permitido: (sesion) => autorizado("operador.mercado.acceder", sesion),

@@ -109,7 +109,8 @@ describe("HeaderPublico", () => {
 
         for (const nombre of ["Navegación principal", "Navegación móvil"]) {
             const menu = within(screen.getByRole("navigation", { name: nombre }));
-            expect(menu.getAllByRole("link")).toHaveLength(3);
+            expect(menu.getAllByRole("link")).toHaveLength(4);
+            expect(menu.getByRole("link", { name: "Productores" })).toHaveAttribute("href", "/productores");
             expect(menu.getByRole("link", { name: "Publicaciones" })).toHaveAttribute("href", "/publicaciones-productor");
             expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado");
             expect(menu.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
@@ -133,6 +134,7 @@ describe("HeaderPublico", () => {
                 expect(menu.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/inicio");
                 expect(menu.getByRole("link", { name: "Publicaciones" })).toHaveAttribute("href", "/publicaciones");
                 expect(menu.getByRole("link", { name: "Operadores" })).toHaveAttribute("href", "/operadores");
+                expect(menu.queryByRole("link", { name: "Productores" })).not.toBeInTheDocument();
             }
             expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
         },
