@@ -22,6 +22,7 @@ model Usuario {
   passwordHash     String
   twoFactorSecret  String?
   twoFactorEnabled Boolean        @default(false)
+  solicitoRestablecimiento Boolean        @default(false)
   rol              RolUsuario
 
   notificaciones   Notificacion[]

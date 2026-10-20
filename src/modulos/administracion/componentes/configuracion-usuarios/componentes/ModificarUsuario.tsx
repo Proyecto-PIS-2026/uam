@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import type { DatosModificarUsuarios, TipoUsuario, UsuarioParaModificar } from "../Tipos";
-import BuscadorUsuarios from "./BuscadorUsuario";
+import BuscadorUsuarios, { type FiltroRestablecimiento } from "./BuscadorUsuario";
 import ListaUsuarios from "./ListaUsuarios";
 import styles from "./ModificarUsuario.module.css";
 import { bajaOperador } from "@/modulos/usuarios/operadores/bajaOperador";
@@ -20,19 +20,20 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
     const [busqueda, setBusqueda] = useState("");
     const [tipoUsuario, setTipoUsuario] = useState<TipoUsuario | "TODOS">("TODOS");
     const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<UsuarioParaModificar | null>(null);
-
+    const [restablecimiento, setRestablecimiento] = useState<FiltroRestablecimiento>("TODOS");
     const usuariosFiltrados = useMemo(() => {
         const texto = busqueda.trim().toLowerCase();
 
         return datos.usuarios.filter((usuario) => {
             if (tipoUsuario !== "TODOS" && usuario.rol !== tipoUsuario) return false;
+            if (restablecimiento === "SOLICITADO" && !usuario.solicitoRestablecimiento) return false;
             if (!texto) return true;
             if (usuario.username.toLowerCase().includes(texto)) return true;
             if (usuario.rol === "ADMINISTRADOR" && usuario.email.toLowerCase().includes(texto)) return true;
             if (usuario.rol === "OPERADOR" && usuario.nombreFantasia.toLowerCase().includes(texto)) return true;
             return false;
         });
-    }, [datos, busqueda, tipoUsuario]);
+    }, [datos, busqueda, tipoUsuario, restablecimiento]);
 
     function cambiarBusqueda(nuevaBusqueda: string) {
         setBusqueda(nuevaBusqueda);
@@ -44,6 +45,11 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         setBusqueda("");
         setUsuarioSeleccionado(null);
     }
+
+    function cambiarRestablecimiento(nuevoValor: FiltroRestablecimiento) {
+        setRestablecimiento(nuevoValor);
+        setUsuarioSeleccionado(null);
+    }   
 
     async function eliminarUsuario(usuario: UsuarioParaModificar) {
         if (usuario.rol !== "OPERADOR") {
@@ -72,7 +78,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
                 </Button>
             </div>
             <div className={styles.contenido}>
-                <BuscadorUsuarios busqueda={busqueda} tipoUsuario={tipoUsuario} onBusquedaChange={cambiarBusqueda} onTipoUsuarioChange={cambiarTipoUsuario}/>
+                <BuscadorUsuarios busqueda={busqueda} tipoUsuario={tipoUsuario} onBusquedaChange={cambiarBusqueda} onTipoUsuarioChange={cambiarTipoUsuario} restablecimiento={restablecimiento} onRestablecimientoChange={cambiarRestablecimiento}/>
                 <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario}/>
             </div>
         </section>

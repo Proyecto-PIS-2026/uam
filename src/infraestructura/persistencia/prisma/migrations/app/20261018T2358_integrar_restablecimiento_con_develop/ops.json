@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.usuario.solicitoRestablecimiento",
+    "label": "Add column \"solicitoRestablecimiento\" to \"usuario\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "solicitoRestablecimiento",
+        "table": "usuario"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"solicitoRestablecimiento\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "usuario",
+          "solicitoRestablecimiento"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"solicitoRestablecimiento\"",
+        "sql": "ALTER TABLE \"public\".\"usuario\" ADD COLUMN \"solicitoRestablecimiento\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"solicitoRestablecimiento\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "usuario",
+          "solicitoRestablecimiento"
+        ]
+      }
+    ]
+  }
+]
