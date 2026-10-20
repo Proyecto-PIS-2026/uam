@@ -103,16 +103,18 @@ describe("HeaderPublico", () => {
         expect(screen.queryByRole("link", { name: "Mi mercado" })).not.toBeInTheDocument();
     });
 
-    it("ofrece solamente Mi mercado y Precios de referencia al operador en ambos menús", () => {
+    it("ofrece Publicaciones de productores, Mi mercado y Precios de referencia al operador en ambos menús", () => {
         consultarRutaSimulada.mockReturnValue("/mi-mercado");
         render(<HeaderPublico sesion={{ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 }} />);
 
         for (const nombre of ["Navegación principal", "Navegación móvil"]) {
             const menu = within(screen.getByRole("navigation", { name: nombre }));
-            expect(menu.getAllByRole("link")).toHaveLength(2);
+            expect(menu.getAllByRole("link")).toHaveLength(3);
+            expect(menu.getByRole("link", { name: "Publicaciones" })).toHaveAttribute("href", "/publicaciones-productor");
             expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado");
             expect(menu.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
-            for (const opcion of ["Inicio", "Publicaciones", "Operadores"]) {
+
+            for (const opcion of ["Inicio", "Operadores"]) {
                 expect(menu.queryByRole("link", { name: opcion })).not.toBeInTheDocument();
             }
         }
