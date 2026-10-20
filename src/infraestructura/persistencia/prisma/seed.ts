@@ -424,6 +424,7 @@ async function limpiarBase() {
   await prisma.orm.public.Presentacion.where(() => all()).deleteAll();
   await prisma.orm.public.Variedad.where(() => all()).deleteAll();
   await prisma.orm.public.Categoria.where(() => all()).deleteAll();
+  await prisma.orm.public.HistoricoPrecios.where(() => all()).deleteAll();
   await prisma.orm.public.Especie.where(() => all()).deleteAll();
   await prisma.orm.public.Calibre.where(() => all()).deleteAll();
   await prisma.orm.public.Pais.where(() => all()).deleteAll();
@@ -641,7 +642,7 @@ async function main() {
   // Obtener IDs de productores creados para asociar sus publicaciones y ubicaciones
   const productoresDb = await prisma.orm.public.Productor.all();
   const usuariosDb = await prisma.orm.public.Usuario.all();
-  
+
   // Crear un mapa para buscar el username de cada usuario por su ID rápidamente
   const usuarioUsernameMap = new Map<number, string>(
     usuariosDb.map((u) => [u.id, u.username])

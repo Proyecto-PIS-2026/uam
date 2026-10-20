@@ -405,7 +405,7 @@ describe("FormularioAltaUsuario", () => {
 
         expect(
             screen.getByRole("link", { name: "Precargar productos" }),
-        ).toHaveAttribute("href", "/precargar-productos");
+        ).toHaveAttribute("href", "/gestion-operadores/25");
     });
 
     it("limpia el formulario después de un alta exitosa", async () => {

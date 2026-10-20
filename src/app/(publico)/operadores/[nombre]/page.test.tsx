@@ -94,7 +94,7 @@ describe("Página pública del operador", () => {
         expect(screen.getByText("Tomate - Perita")).toBeInTheDocument();
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("conserva el perfil público para la sesión %s", async (rol) => {
+    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("conserva el perfil público para la sesión %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
         mocks.obtenerPerfil.mockResolvedValue(perfil);
 
