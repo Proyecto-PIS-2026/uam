@@ -13,14 +13,15 @@ interface DrawerPublicacionProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     publicacion: PublicacionListado | null;
-
+    esAdmin?: boolean;
 }
 
-export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: DrawerPublicacionProps) {
+export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange, esAdmin }: DrawerPublicacionProps) {
     const numeroWhatsApp = publicacion?.operador.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
+    const href = esAdmin? `/gestion-operadores/${publicacion?.operador.id}`: `/operadores/${encodeURIComponent(publicacion?.operador.nombreFantasia ?? "")}`;
     const contenido = (
         <SwipeableDrawer anchor="right" open={open && publicacion !== null} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }}>
             {publicacion && (
@@ -78,7 +79,7 @@ export function DrawerDerechaPublicacion({ publicacion, open, onOpenChange }: Dr
                         <div className={styles.bloqueInferior}>
                             <div className={styles.operador}><span className={styles.publicado}>Publicado por</span>{" "}<span className={styles.nombreOperador}>{publicacion.operador.nombreFantasia}</span></div>
                             <div className={styles.bloqueBotones}>
-                                <Link href={`/operadores/${encodeURIComponent(publicacion.operador.nombreFantasia)}`} className={styles.botonPerfil} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
+                                <Link href={href} className={styles.botonPerfil} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
                                 <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${publicacion.operador.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                                     <span>WhatsApp</span>

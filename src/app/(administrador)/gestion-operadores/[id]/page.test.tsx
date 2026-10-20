@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
         throw new Error("NEXT_NOT_FOUND");
     }),
     propsPerfil: vi.fn(),
+    obtenerConfiguracion: vi.fn(),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
@@ -22,6 +23,10 @@ vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 
 vi.mock("../../../../modulos/usuarios/operadores/consultas-perfil-admin", () => ({
     obtenerPerfilAdminOperador: mocks.obtenerPerfil,
+}));
+
+vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({ 
+    obtenerConfiguracion: mocks.obtenerConfiguracion 
 }));
 
 vi.mock("../../../../modulos/publicaciones/operadores/consultas-edicion-publicacion", () => ({
@@ -49,6 +54,7 @@ describe("Página de perfil del operador para el administrador", () => {
         mocks.requerirAdministrador.mockResolvedValue(undefined);
         mocks.obtenerPerfil.mockResolvedValue(perfil);
         mocks.obtenerOpciones.mockResolvedValue(opciones);
+        mocks.obtenerConfiguracion.mockResolvedValue("15");
     });
 
     it("no consulta el perfil ni opciones si la autorización falla", async () => {
@@ -70,7 +76,7 @@ describe("Página de perfil del operador para el administrador", () => {
         expect(mocks.obtenerPerfil).toHaveBeenCalledWith(12);
         expect(mocks.obtenerOpciones).toHaveBeenCalledOnce();
         expect(screen.getByTestId("perfil")).toBeInTheDocument();
-        expect(mocks.propsPerfil).toHaveBeenLastCalledWith({ operador: perfil, opciones });
+        expect(mocks.propsPerfil).toHaveBeenLastCalledWith({ operador: perfil, opciones, incrementoPrecio: 15 });
         expect(mocks.notFound).not.toHaveBeenCalled();
     });
 
