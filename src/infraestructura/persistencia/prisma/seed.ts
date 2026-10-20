@@ -657,6 +657,29 @@ async function main() {
   }
 
   const productoresPorUsername = new Map(productores.map((productor) => [productor.username, productor]));
+  const ubicacionesDemo = [
+    {
+        nombreUbicacion: "Depósito Central - Salto",
+        latitud: -31.388,
+        longitud: -57.960,
+    },
+    {
+        nombreUbicacion: "Chacra Los Naranjos - Zona Norte",
+        latitud: -31.365,
+        longitud: -57.955,
+    },
+    {
+        nombreUbicacion: "Empaque Las Quintas - Zona Este",
+        latitud: -31.390,
+        longitud: -57.930,
+    },
+    {
+        nombreUbicacion: "Depósito El Ombú - Zona Sur",
+        latitud: -31.410,
+        longitud: -57.950,
+    },
+  ];
+
   for (const [indice, oferta] of ofertasProductores.entries()) {
     const prodDemo = productoresPorUsername.get(oferta.producerUsername);
     if (!prodDemo) throw new Error(`Productor de demostración inexistente: ${oferta.producerUsername}`);
@@ -689,11 +712,13 @@ async function main() {
       productorId,
       paisId,
     });
-    await prisma.orm.public.Ubicacion.create({
-      nombreUbicacion: prodDemo.ubicacionNombre,
-      urlMaps: prodDemo.ubicacionUrl,
-      publicacionId: publicacionProductor.id,
-    });
+    for (const punto of ubicacionesDemo.slice(0, oferta.cantidadUbicaciones)) {
+      await prisma.orm.public.Ubicacion.create({
+          nombreUbicacion: punto.nombreUbicacion,
+          urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${punto.latitud},${punto.longitud}`)}`,
+          publicacionId: publicacionProductor.id,
+      });
+    }
   }
 
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "incremento_precio", valorConfiguracion: "10" });

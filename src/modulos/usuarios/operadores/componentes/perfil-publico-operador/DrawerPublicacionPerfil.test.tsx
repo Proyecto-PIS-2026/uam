@@ -23,8 +23,14 @@ vi.mock("@mui/material/SwipeableDrawer", () => ({
 
 vi.mock("next/image", async () => {
     const { createElement } = await import("react");
+
     return {
-        default: ({src, alt}: {src: string; alt: string}) => createElement("img", {src, alt}),
+        default: ({src, alt, onLoad, onError}: {
+            src: string;
+            alt: string;
+            onLoad?: React.ReactEventHandler<HTMLImageElement>;
+            onError?: React.ReactEventHandler<HTMLImageElement>;
+        }) => createElement("img", { src, alt, onLoad, onError }),
     };
 });
 
@@ -128,6 +134,7 @@ describe("DrawerPublicacionPerfil", () => {
 
     it("muestra la imagen de la publicación cuando tiene foto", () => {
         render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
+        fireEvent.load(screen.getByAltText("Foto de Tomate"));
         expect(screen.getByRole("img", {name: "Foto de Tomate"})).toHaveAttribute("src", "/tomate.jpg");
         expect(screen.queryByText("Foto")).not.toBeInTheDocument();
     });

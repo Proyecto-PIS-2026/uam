@@ -3,11 +3,13 @@
 import { useMemo, useState } from "react";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
-import type { PublicacionListado } from "../../../../consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "../../../../consulta-mercado/acciones/PublicacionesOperador";
 import { compararEspeciesPorPrioridad } from "../../../../../compartido/prioridad-especies";
 import DrawerPublicacionPerfil from "./DrawerPublicacionPerfil";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import styles from "./CatalogoOperador.module.css";
+
+const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
 type CatalogoOperadorProps = {
     publicaciones: PublicacionPerfil[];
@@ -25,6 +27,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
         ...publicacion,
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
         codigoCalibre: publicacion.calibre,
+        tipoPublicacion: "OPERADOR",
         operador: {id: idOperador, nombreFantasia: nombreOperador, whatsApp: whatsAppOperador},
     })), [publicaciones, idOperador, nombreOperador, whatsAppOperador]);
     const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
@@ -63,7 +66,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
             <section className={styles.contenedor}>
                 <div className={styles.catalogo}>
                     <div className={styles.filtros}>
-                        <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual}/>
+                        <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual}/>
                     </div>
 
                     <div className={styles.encabezadoCatalogo}>

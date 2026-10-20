@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { redirigirOperadorAMiMercado } from "@/modulos/identidad-acceso/autorizacion/controles";
-import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacion.action";
+import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacionOperador.action";
 import ContenedorPublicaciones from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 
