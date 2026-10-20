@@ -711,45 +711,45 @@ describe("FormularioAltaUsuario", () => {
             ).not.toBeDisabled();
         });
     });
-});
 
-it("muestra error cuando ya existe un productor con ese nombre", async () => {
-    vi.mocked(altaProductor).mockResolvedValue({
-        esValido: false,
-        errores: ["Ya existe un productor con ese nombre."],
+    it("muestra error cuando ya existe un productor con ese nombre", async () => {
+        vi.mocked(altaProductor).mockResolvedValue({
+            esValido: false,
+            errores: ["Ya existe un productor con ese nombre."],
+        });
+
+        render(<FormularioAltaUsuario naves={naves} />);
+
+        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
+            target: { value: "productor" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
+            target: { value: "productor1" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Contraseña*"), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Nombre*"), {
+            target: { value: "Huerta Sur" },
+        });
+
+        fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+            target: { value: "99123456" },
+        });
+
+        fireEvent.submit(
+            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
+        );
+
+        expect(
+            await screen.findByText("Ya existe un productor con ese nombre."),
+        ).toBeInTheDocument();
     });
-
-    render(<FormularioAltaUsuario naves={naves} />);
-
-    fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-        target: { value: "productor" },
-    });
-
-    fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
-        target: { value: "productor1" },
-    });
-
-    fireEvent.change(screen.getByLabelText("Contraseña*"), {
-        target: { value: "clave12345" },
-    });
-
-    fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
-        target: { value: "clave12345" },
-    });
-
-    fireEvent.change(screen.getByLabelText("Nombre*"), {
-        target: { value: "Huerta Sur" },
-    });
-
-    fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
-        target: { value: "99123456" },
-    });
-
-    fireEvent.submit(
-        screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
-    );
-
-    expect(
-        await screen.findByText("Ya existe un productor con ese nombre."),
-    ).toBeInTheDocument();
 });

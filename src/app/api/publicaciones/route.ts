@@ -65,10 +65,28 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const operador = await obtenerOperadorAutorizado(operadorId);
-		if (!autorizado("operador.publicacion.crear", sesion, operador)) {
-			return NextResponse.json({ errores: ["No tiene permisos para gestionar publicaciones de este Operador."] }, { status: 403 });
+		const esAdmin = autorizado("administracion.publicacion.crear", sesion);
+
+		let operador;
+
+		if (esAdmin) {
+			if (operadorId === undefined) {
+				return NextResponse.json({ errores: ["Debe seleccionar un operador."] },{ status: 400 });
+			}
+
+			const operadores = await db.orm.public.Operador.all();
+			operador = operadores.find((item) => item.id === operadorId);
+
+			if (!operador) {
+				return NextResponse.json({ errores: ["El operador no existe."] },{ status: 404 });
+			}
+		} else {
+			operador = await obtenerOperadorAutorizado(operadorId);
+			if (!autorizado("operador.publicacion.crear", sesion, operador)) {
+				return NextResponse.json({ errores: ["No tiene permisos para gestionar publicaciones de este Operador."] }, { status: 403 });
+			}
 		}
+		
 		const datosDelOperador = typeof datos === "object" && datos !== null && !Array.isArray(datos)
 			? { ...datos, operadorId: operador.id }
 			: datos;

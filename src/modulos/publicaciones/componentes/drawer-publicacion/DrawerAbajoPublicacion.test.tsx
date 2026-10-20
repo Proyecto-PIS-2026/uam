@@ -59,6 +59,10 @@ describe("DrawerPublicacion", () => {
         expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/operadores/Huerta%20Sur");
         expect(screen.getByRole("link", { name: "Contactar a Huerta Sur por WhatsApp" })).toBeInTheDocument();
     });
+    it("lleva Ver Perfil a la gestión del operador cuando es administrador", () => {
+        render(<DrawerAbajoPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} esAdmin />);
+        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/gestion-operadores/10");
+    });
     it("no muestra el detalle cuando está cerrado", () => {
         render(<DrawerAbajoPublicacion publicacion={crearPublicacion()} open={false} onOpenChange={vi.fn()} />);
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

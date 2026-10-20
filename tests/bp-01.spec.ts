@@ -198,7 +198,7 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       await expect(page.getByRole("heading", { name: "Operador creado satisfactoriamente" })).toBeVisible();
       creado = true;
       await expect(page.getByRole("link", { name: "Precargar productos" }))
-        .toHaveAttribute("href", /\/gestion-operadores\/\d+/);
+        .toHaveAttribute("href", /^\/gestion-operadores\/\d+$/);
       await info.attach("BP-01.1-alta-exitosa", {
         body: await page.screenshot({ fullPage: true }), contentType: "image/png",
       });

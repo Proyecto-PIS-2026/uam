@@ -23,7 +23,7 @@ type PublicacionesAgrupadas = {
 
 const clasesLista = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5";
 
-export default function ListadoPublicaciones({publicaciones}: {publicaciones: PublicacionListado[]}) {
+export default function ListadoPublicaciones({publicaciones, esAdmin = false}: {publicaciones: PublicacionListado[], esAdmin?: boolean}) {
     const [agruparPorOperador, setAgruparPorOperador] = useState(false);
     const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionListado | null>(null);
     const [drawerAbierto, setDrawerAbierto] = useState(false);
@@ -146,9 +146,9 @@ export default function ListadoPublicaciones({publicaciones}: {publicaciones: Pu
                 </ul>
             )}
             {publicacionSeleccionada && (esMobile ? (
-				<DrawerAbajoPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
+				<DrawerAbajoPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto} esAdmin={esAdmin}/>
     		) : (
-        		<DrawerDerechaPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto}/>
+        		<DrawerDerechaPublicacion publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto} esAdmin={esAdmin}/>
     		))}
             {mostrarBotonArriba && (
                 <button type="button" onClick={volverArriba} aria-label="Volver arriba"

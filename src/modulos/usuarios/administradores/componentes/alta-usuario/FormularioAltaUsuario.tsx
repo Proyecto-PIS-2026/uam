@@ -439,17 +439,18 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             >
                                 Ahora no
                             </button>
-
-                            <Link
-                                href={
-                                    rolCreado === "operador"
-                                        ? `/gestion-operadores/${idUsuarioCreado}`
-                                        : `/gestion-productores/${idUsuarioCreado}`
-                                }
-                                className={styles.botonConfirmar}
-                            >
-                                Precargar productos
-                            </Link>
+                            {idUsuarioCreado !== null && (
+                                <Link
+                                    href={
+                                        rolCreado === "operador"
+                                            ? `/gestion-operadores/${idUsuarioCreado}`
+                                            : `/gestion-productores/${idUsuarioCreado}`
+                                    }
+                                    className={styles.botonConfirmar}
+                                >
+                                    Precargar productos
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </div>
