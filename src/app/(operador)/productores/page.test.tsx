@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import Page from "./page";
 import PaginaPerfil from "./[nombre]/page";
 import ListadoProductores from "@/modulos/usuarios/productores/componentes/ListadoProductores";
@@ -14,9 +14,6 @@ vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.no
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
 vi.mock("@/modulos/usuarios/productores/consultas-productores", () => ({
     obtenerProductoresDisponibles: mocks.listado, obtenerPerfilProductor: mocks.perfil,
-}));
-vi.mock("@/modulos/usuarios/operadores/componentes/perfil-publico-operador/TextoAjustable", () => ({
-    default: ({ texto, className }: { texto: string; className?: string }) => <span className={className}>{texto}</span>,
 }));
 
 const productores: ProductorListado[] = [
@@ -83,7 +80,7 @@ describe("Listado y navegación de productores", () => {
         expect(screen.getAllByRole("link")).toHaveLength(2);
     });
 
-    it("permite ir del listado al perfil, consultar una publicación y regresar", async () => {
+    it("permite seleccionar un productor del listado y consultar su información y publicaciones", async () => {
         const { unmount } = render(await Page());
         const enlace = screen.getByRole("link", { name: /Álamo & Sur/ });
         const nombre = decodeURIComponent(enlace.getAttribute("href")!.split("/").at(-1)!);

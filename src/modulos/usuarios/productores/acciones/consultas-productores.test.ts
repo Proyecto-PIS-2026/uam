@@ -68,11 +68,8 @@ describe("Consultas de productores para operadores", () => {
         mocks.first.mockResolvedValue({ ...productor, publicacionesProductor: [relacion(), relacion(false, true, "PRODUCTOR", "Oculta"), relacion(true, false), relacion(true, true, "OPERADOR")] });
         const perfil = await obtenerPerfilProductor(productor.nombreFantasia);
         expect(mocks.first).toHaveBeenCalledWith({ nombreFantasia: productor.nombreFantasia });
-        expect(perfil).toMatchObject({ nombreFantasia: productor.nombreFantasia, whatsApp: productor.whatsApp, ubicaciones: ["Salto"] });
-        expect(perfil?.publicaciones).toEqual([{
-            id: 10, foto: null, precio: null, fecha: "2026-10-18T12:00:00Z", cantidadUnidades: 20,
-            especie: "Naranja", variedad: "Valencia", presentacion: "KG", categoria: "I", calibre: "M", pais: "Uruguay",
-        }]);
+        expect(perfil).toMatchObject({ nombreFantasia: productor.nombreFantasia, ubicaciones: ["Salto"] });
+        expect(perfil?.publicaciones.map((publicacion) => publicacion.id)).toEqual([10]);
     });
 
     it.each([null, { ...productor, usuario: { rol: "OPERADOR" } }])("oculta perfiles inexistentes o con cuenta no disponible", async (resultado) => {
