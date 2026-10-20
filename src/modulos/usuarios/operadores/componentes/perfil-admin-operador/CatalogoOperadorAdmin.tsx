@@ -14,6 +14,7 @@ type CatalogoOperadorAdminProps = {
     operadorId: number;
     publicaciones: PublicacionPerfilAdmin[];
     opciones: OpcionesEdicionPublicacion;
+    incrementoPrecio?: number;
 };
 
 function paraDrawer(publicacion: PublicacionPerfilAdmin): PublicacionParaEditar {
@@ -42,7 +43,7 @@ function paraDrawer(publicacion: PublicacionPerfilAdmin): PublicacionParaEditar 
 // Muestra las tarjetas y abre el detalle en el drawer de publicaciones, en modo consulta.
 // El Administrador puede editar y eliminar las publicaciones del operador, pero no
 // tiene la modificación rápida de precio de Mi Mercado.
-export default function CatalogoOperadorAdmin({operadorId, publicaciones, opciones}: CatalogoOperadorAdminProps) {
+export default function CatalogoOperadorAdmin({operadorId, publicaciones, opciones, incrementoPrecio}: CatalogoOperadorAdminProps) {
     const router = useRouter();
     const [seleccionadaId, setSeleccionadaId] = useState<number | null>(null);
     const [drawerAbierto, setDrawerAbierto] = useState(false);
@@ -120,6 +121,7 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
                 alCerrar={cerrarDrawer}
                 modoInicial="consulta"
                 publicacion={publicacionSeleccionada ? paraDrawer (publicacionSeleccionada) : null}
+                incrementoPrecio={incrementoPrecio}
                 alGuardar={guardarCambios}
                 alEliminar={() => { setError(""); setBajaPendiente(true); }}
                 eliminando={eliminando}

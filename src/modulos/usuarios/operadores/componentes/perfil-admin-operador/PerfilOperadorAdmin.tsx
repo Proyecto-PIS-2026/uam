@@ -17,6 +17,7 @@ import Link from "next/link";
 type PerfilOperadorAdminProps = {
     operador: PerfilAdminOperador;
     opciones: OpcionesEdicionPublicacion;
+    incrementoPrecio?: number;
 };
 
 function formatearFecha(fecha: string): string {
@@ -24,7 +25,7 @@ function formatearFecha(fecha: string): string {
     return `${dia}/${mes}/${anio}`;
 }
 
-export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperadorAdminProps) {
+export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrecio }: PerfilOperadorAdminProps) {
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(false);
@@ -122,10 +123,10 @@ export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperad
                 </Button>
             </div>
 
-            <CatalogoOperadorAdmin operadorId={operador.id} publicaciones={operador.publicaciones} opciones={opciones} />
+            <CatalogoOperadorAdmin operadorId={operador.id} publicaciones={operador.publicaciones} opciones={opciones} incrementoPrecio={incrementoPrecio} />
 
             {altaAbierta && (
-                <NuevaPublicacion operadorId={operador.id} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={publicacionCreada} />
+                <NuevaPublicacion operadorId={operador.id} incrementoPrecio={incrementoPrecio} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={publicacionCreada} />
             )}
         </section>
     );
