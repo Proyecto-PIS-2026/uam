@@ -8,12 +8,13 @@ import Link from "next/link";
 import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
 
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
 import TextoAjustable from "./TextoAjustable";
 import UbicacionesRetiro from "./UbicacionesRetiro";
-import styles from "./DrawerAbajoPublicacion.module.css";
+import styles from "./DrawerPublicacion.module.css";
 
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { useEffect, useRef, useState } from "react";
 
 interface DrawerPublicacionProps {
@@ -22,21 +23,25 @@ interface DrawerPublicacionProps {
     publicacion: PublicacionListado | PublicacionProductorListado | null;
 }
 
-export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: DrawerPublicacionProps) {
-    const usuario = publicacion ? "productor" in publicacion ? publicacion.productor : publicacion.operador : null;
+export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPublicacionProps) {
+    const esWeb = useMediaQuery("(min-width: 768px)");
+    
+    const usuario = publicacion ? publicacion.tipoPublicacion === "PRODUCTOR" ? publicacion.productor : publicacion.operador : null;
     const numeroWhatsApp = usuario?.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-    const enlacePerfil = publicacion && usuario ? `/${"productor" in publicacion ? "productores" : "operadores"}/${encodeURIComponent(usuario.nombreFantasia)}` : "";
+    const enlacePerfil = publicacion && usuario ? `/${publicacion.tipoPublicacion === "PRODUCTOR" ? "productores" : "operadores"}/${encodeURIComponent(usuario.nombreFantasia)}` : "";
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
-    const [fotoAmpliada, setFotoAmpliada] = useState(false);
-    const contenidoRef = useRef<HTMLDivElement>(null);
-    const [necesitaScroll, setNecesitaScroll] = useState(false);
-    const [fotoPreparada, setFotoPreparada] = useState<string | null>(null);
+    
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
     const tieneFoto = Boolean(publicacion?.foto?.trim());
+    const [fotoAmpliada, setFotoAmpliada] = useState(false);
+    const [fotoPreparada, setFotoPreparada] = useState<string | null>(null);
     const drawerVisible = open && publicacion !== null && (!tieneFoto || fotoPreparada === claveFoto);
-    
+
+    const contenidoRef = useRef<HTMLDivElement>(null);
+    const [necesitaScroll, setNecesitaScroll] = useState(false);
+
     useEffect(() => {
         if (drawerVisible && contenidoRef.current) {
             contenidoRef.current.scrollTop = 0;
@@ -56,10 +61,10 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
         }
         comprobarScroll();
         return () => observer.disconnect();
-    }, [drawerVisible, publicacion]);
+    }, [drawerVisible, publicacion, esWeb]);
 
     const contenido = (
-        <SwipeableDrawer anchor="bottom" open={drawerVisible} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
+        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={drawerVisible} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
             {publicacion &&  usuario && (
                 <>
                     <div className={styles.tarjeta}>
@@ -74,7 +79,7 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
                                 <div className={styles.bloqueSuperior}>
                                     <div className={styles.marcoImagen}>
                                         <div className={styles.contenedorImagen}>
-                                            <ImagenPublicacion key={claveFoto} src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} loading="eager" onLoad={() => setFotoPreparada(claveFoto)} fill sizes="160px" className={styles.imagen} onError={() => setFotoPreparada(claveFoto)} reemplazo={
+                                            <ImagenPublicacion key={claveFoto} src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} loading="eager" onLoad={() => setFotoPreparada(claveFoto)} fill sizes="(min-width: 768px) 400px, 160px" className={styles.imagen} onError={() => setFotoPreparada(claveFoto)} reemplazo={
                                                 <div className={styles.sinFoto}>
                                                     <ImageOutlinedIcon className={styles.iconoFoto} />
                                                     Foto
@@ -87,9 +92,9 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
                                     </div>
                                     <div className={styles.bloqueSuperiorDerecho}>
                                         <div className={styles.nombrePublicacion}>
-                                            <TextoAjustable className={styles.especie} minimo={10} maximo={30}>{publicacion.especie}</TextoAjustable>
+                                            <TextoAjustable className={styles.especie} minimo={esWeb ? 16 : 10} maximo={esWeb ? 34 : 30}>{publicacion.especie}</TextoAjustable>
                                             {publicacion.variedad !== "-" &&
-                                                <TextoAjustable className={styles.variedad} minimo={10} maximo={23}>{publicacion.variedad}</TextoAjustable>
+                                                <TextoAjustable className={styles.variedad} minimo={esWeb ? 14 : 10} maximo={esWeb ? 26 : 23}>{publicacion.variedad}</TextoAjustable>
                                             }
                                         </div>
                                         <div className={`${styles.precio} ${publicacion.precio == null ? styles.consultarPrecio : ""}`}>
@@ -124,7 +129,7 @@ export function DrawerAbajoPublicacion({ publicacion, open, onOpenChange }: Draw
                                     <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
                                 </div>
                             </div>
-                            {"productor" in publicacion && (
+                            {publicacion.tipoPublicacion === "PRODUCTOR" && (
                                 <UbicacionesRetiro ubicaciones={publicacion.ubicaciones} />
                             )}
                         </div>

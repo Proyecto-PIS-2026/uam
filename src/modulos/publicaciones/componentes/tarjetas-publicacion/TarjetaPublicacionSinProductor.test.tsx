@@ -37,6 +37,7 @@ const crearPublicacion = (
     calibre: "Mediano",
     codigoCalibre: "M2",
     pais: "Uruguay",
+    tipoPublicacion: "PRODUCTOR" as const,
     productor: {
         id: 3,
         nombreFantasia: "Finca La Esperanza",

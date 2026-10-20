@@ -38,6 +38,7 @@ describe("obtenerPublicaciones", () => {
                 calibre: "Grande",
                 codigoCalibre: "G",
                 pais: "Uruguay",
+                tipoPublicacion: "PRODUCTOR" as const,
                 productor: {
                     id: 7,
                     nombreFantasia: "Productor de prueba",

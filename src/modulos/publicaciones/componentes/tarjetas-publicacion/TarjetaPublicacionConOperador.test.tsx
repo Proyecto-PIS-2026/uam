@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
 import TarjetaPublicacionConOperador from "./TarjetaPublicacionConOperador";
 
 vi.mock("next/image", async () => {
@@ -29,6 +29,7 @@ function crearPublicacion(): PublicacionListado {
         calibre: "Mediano",
         codigoCalibre: "M",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 10,
             nombreFantasia: "Huerta Sur",

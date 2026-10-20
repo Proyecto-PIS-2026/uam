@@ -91,6 +91,7 @@ type FilaMock = {
         fecha: Date;
         foto: string | null;
         cantidadUnidades: string | null;
+        tipoPublicacion: "PRODUCTOR",
         presentacion: {
             nombrePresentacion: string;
             variedad: {
@@ -119,6 +120,7 @@ function crearFilaValida(): FilaMock {
             fecha: new Date("2026-10-16T12:30:00.000Z"),
             foto: "/publicaciones/manzana.jpg",
             cantidadUnidades: "24",
+            tipoPublicacion: "PRODUCTOR",
             presentacion: {
                 nombrePresentacion: "Caja de 10 kg",
                 variedad: {
@@ -229,6 +231,7 @@ describe("consultarPublicacionesProductores", () => {
                 variedad: "Royal Gala",
                 presentacion: "Caja de 10 kg",
                 cantidadUnidades: 24,
+                tipoPublicacion: "PRODUCTOR",
                 categoria: "I",
                 calibre: "Grande",
                 codigoCalibre: "G",

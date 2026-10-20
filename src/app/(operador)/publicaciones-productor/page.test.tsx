@@ -37,8 +37,7 @@ vi.mock("@/compartido/EncabezadoPagina", () => ({
     ),
 }));
 
-vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicacionesProductor", () => ({
-    default: ({ publicaciones }: { publicaciones: unknown[] }) => (
+vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones", () => ({    default: ({ publicaciones }: { publicaciones: unknown[] }) => (
         <div data-testid="contenedor-publicaciones" data-cantidad={publicaciones.length}>
             Publicaciones de productores: {publicaciones.length}
         </div>

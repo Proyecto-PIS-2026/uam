@@ -1,7 +1,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "temporal-polyfill/full/global";
-import { consultarPublicaciones } from "./Publicaciones";
+import { consultarPublicaciones } from "./PublicacionesOperador";
 
 const mocks = vi.hoisted(() => ({
     autorizado: vi.fn(),
@@ -164,6 +164,7 @@ type FilaMock = {
         fecha: Date;
         foto: string | null;
         cantidadUnidades: string | null;
+        tipoPublicacion: "OPERADOR",
         presentacion: {
             nombrePresentacion: string;
             variedad: {
@@ -190,6 +191,7 @@ function crearFilaValida(): FilaMock {
             fecha: new Date("2026-10-16T12:30:00.000Z"),
             foto: "/publicaciones/manzana.jpg",
             cantidadUnidades: "24",
+            tipoPublicacion: "OPERADOR",
             presentacion: {
                 nombrePresentacion: "Caja de 10 kg",
                 variedad: {
@@ -329,6 +331,7 @@ describe("consultarPublicaciones", () => {
                 variedad: "Royal Gala",
                 presentacion: "Caja de 10 kg",
                 cantidadUnidades: 24,
+                tipoPublicacion: "OPERADOR",
                 categoria: "I",
                 calibre: "Grande",
                 codigoCalibre: "G",

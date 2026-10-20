@@ -21,6 +21,7 @@ export type PublicacionProductorListado = {
     calibre: string;
     codigoCalibre: string;
     pais: string;
+    tipoPublicacion: "PRODUCTOR";
     productor: {
         id: number;
         nombreFantasia: string;
@@ -49,7 +50,7 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
     ).where((pp) =>
         pp.pais.some(),
     ).include("publicacion", (p) =>
-        p.select("id", "precio", "fecha", "foto", "cantidadUnidades").include("presentacion", (pr) =>
+        p.select("id", "precio", "fecha", "foto", "cantidadUnidades", "tipoPublicacion").include("presentacion", (pr) =>
             pr.select("nombrePresentacion").include("variedad", (v) =>
                 v.select("nombreVariedad").include("especie", (e) =>
                     e.select("nombreEspecie")
@@ -77,7 +78,8 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
         const especie = variedad?.especie;
         const categoria = p?.categoria;
         const calibre = p?.calibre;
-        if (!p || !productor || !pais || !presentacion || !variedad || !especie || !categoria || !calibre) return [];
+        const tipoPublicacion = p?.tipoPublicacion;
+        if (!p || !productor || !pais || !presentacion || !variedad || !especie || !categoria || !calibre || tipoPublicacion !== "PRODUCTOR") return [];
         return [{
             id: Number(p.id),
             precio: p.precio === null ? null : Number(p.precio),
@@ -91,6 +93,7 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
             calibre: calibre.nombreCalibre,
             codigoCalibre: calibre.codigoCalibre,
             pais: pais.nombrePais,
+            tipoPublicacion,
             productor: {
                 id: Number(productor.id),
                 nombreFantasia: productor.nombreFantasia,

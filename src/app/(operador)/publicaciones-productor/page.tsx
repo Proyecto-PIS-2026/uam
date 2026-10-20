@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
-import ContenedorPublicacionesProductor from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicacionesProductor";
+import ContenedorPublicaciones from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones";
 import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacionProductor.action";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export default async function Page() {
             <main className="contenedor-pagina relative z-10 flex-1">
                 <div className="relative z-10 flex flex-col gap-6">
                     <EncabezadoPagina titulo="Publicaciones" cantidad={publicaciones.length} subtitulo="publicaciones en la plataforma" />
-                    <ContenedorPublicacionesProductor publicaciones={publicaciones}/>
+                    <ContenedorPublicaciones publicaciones={publicaciones} />
                 </div>
             </main>
         </div>
