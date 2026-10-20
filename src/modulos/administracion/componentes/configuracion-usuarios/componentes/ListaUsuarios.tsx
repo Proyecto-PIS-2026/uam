@@ -100,12 +100,18 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
         if (usuario.rol === "OPERADOR") {
             router.push(`/gestion-operadores/${usuario.operadorId}`);
         }
+        if (usuario.rol === "PRODUCTOR") {
+            router.push(`/gestion-productores/${usuario.productorId}`);
+        }
     }
 
     function manejarEditar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
         evento.stopPropagation();
         if (usuario.rol === "OPERADOR") {
             router.push(`/gestion-operadores/${usuario.operadorId}/editar`);
+        }
+        if (usuario.rol === "PRODUCTOR") {
+            router.push(`/gestion-productores/${usuario.productorId}/editar`);
         }
     }
 
