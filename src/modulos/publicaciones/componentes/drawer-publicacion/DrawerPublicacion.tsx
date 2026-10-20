@@ -21,16 +21,17 @@ interface DrawerPublicacionProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     publicacion: PublicacionListado | PublicacionProductorListado | null;
+    esAdmin?: boolean;
 }
 
-export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPublicacionProps) {
+export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = false }: DrawerPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     
     const usuario = publicacion ? publicacion.tipoPublicacion === "PRODUCTOR" ? publicacion.productor : publicacion.operador : null;
     const numeroWhatsApp = usuario?.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-    const enlacePerfil = publicacion && usuario ? `/${publicacion.tipoPublicacion === "PRODUCTOR" ? "productores" : "operadores"}/${encodeURIComponent(usuario.nombreFantasia)}` : "";
+    const enlacePerfil = publicacion && usuario ? publicacion.tipoPublicacion === "OPERADOR" ? esAdmin ? `/gestion-operadores/${publicacion.operador.id}` : `/operadores/${encodeURIComponent(usuario.nombreFantasia)}` : `/productores/${encodeURIComponent(usuario.nombreFantasia)}` : "";    
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";

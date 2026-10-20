@@ -26,6 +26,7 @@ type Publicacion = TiposPublicacion[keyof TiposPublicacion];
 
 type Props = {
     publicaciones: Publicacion[];
+    esAdmin?: boolean;
 };
 
 type GrupoPublicaciones = {
@@ -34,7 +35,7 @@ type GrupoPublicaciones = {
     publicaciones: Publicacion[];
 };
 
-export default function ListadoPublicaciones({ publicaciones }: Props) {
+export default function ListadoPublicaciones({ publicaciones, esAdmin = false }: Props) {
     const [agrupar, setAgrupar] = useState(false);
     const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<Publicacion>();
     const [drawerAbierto, setDrawerAbierto] = useState(false);
@@ -177,6 +178,7 @@ export default function ListadoPublicaciones({ publicaciones }: Props) {
                     publicacion={publicacionSeleccionada}
                     open={drawerAbierto}
                     onOpenChange={setDrawerAbierto}
+                    esAdmin={esAdmin}
                 />
             )}
             {mostrarBotonArriba && (
