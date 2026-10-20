@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./FormularioAltaUsuario.module.css";
 import { useState, useEffect, type FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
+import { altaProductor } from "@/modulos/usuarios/productores/altaProductor";
+
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 const ROLES_VALIDOS = ["operador", "productor", "administrador"];
 
@@ -26,7 +28,14 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const [enviando, setEnviando] = useState(false);
     const [mensajeVisible, setMensajeVisible] = useState(false);
     const [mostrarPopup, setMostrarPopup] = useState(false);
-    const [operadorCreadoId, setOperadorCreadoId] = useState<number | null>(null);
+    const [rolCreado, setRolCreado] = useState("");
+    const [idUsuarioCreado, setIdUsuarioCreado] = useState<number | null>(null);
+
+    const router = useRouter();
+
+    function volver() {
+        router.push("/administracion#usuarios");
+    }
 
     useEffect(() => {
     if (!mensajeExito) return;
@@ -38,6 +47,21 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         clearTimeout(borrar);
     };
     }, [mensajeExito]);
+
+    function limpiarFormulario() {
+        setNombreUsuario("");
+        setContraseña("");
+        setConfirmacionContraseña("");
+        setCodigoPais("+598");
+        setNombre("");
+        settelefono("");
+        setLocales([
+            { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
+        ]);
+        setErrores([]);
+        setMensajeExito("");
+        setMensajeVisible(false);
+    }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -66,23 +90,40 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     return;
                 }
 
-                setOperadorCreadoId(resultado.id);
-
-                setNombreUsuario("");
-                setContraseña("");
-                setConfirmacionContraseña("");
-                setCodigoPais("+598");
-                setNombre("");
-                settelefono("");
-                setLocales([{ numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }]);
-
+                limpiarFormulario();
                 setMensajeExito(resultado.mensaje);
                 setMensajeVisible(true);
+                setIdUsuarioCreado(resultado.id);
+                setRolCreado("operador");
                 setMostrarPopup(true);
                 return;
             }
 
-            // Pendiente: productor y administrador
+            if (rol === "productor") {
+                const resultado = await altaProductor({
+                    rol,
+                    nombreUsuario,
+                    contraseña,
+                    confirmacionContraseña: confirmacioncontraseña,
+                    nombre,
+                    codigoPais,
+                    telefono,
+                });
+
+                if (!resultado.esValido) {
+                    setErrores(resultado.errores);
+                    return;
+                }
+
+                limpiarFormulario();
+                setMensajeExito(resultado.mensaje);
+                setMensajeVisible(true);
+                setIdUsuarioCreado(resultado.id);
+                setRolCreado("productor");
+                setMostrarPopup(true);
+                return;
+            }
+            // Pendiente: administrador
             setErrores(["Esta alta todavía no está disponible para el rol seleccionado."]);
         } finally {
             setEnviando(false);
@@ -109,11 +150,20 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     }
 
     return (
-        <section className="contenedor-pagina flex flex-col gap-6">
+        <section className="contenedor-pagina flex flex-col">
             <EncabezadoPagina
                 titulo="Alta de usuario"
                 subtitulo="Registrar un nuevo usuario en la plataforma"
             />
+
+            <button
+                type="button"
+                className={styles.volver}
+                onClick={volver}
+                disabled={enviando}
+            >
+                ← Volver a la lista de usuarios
+            </button>
 
             <form onSubmit={handleSubmit} className={styles.formulario}>
                 <div className={styles.campo}>
@@ -183,7 +233,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     />
                 </div>
                 
-                {rol === "operador" && (
+                {(rol === "operador" || rol === "productor") && (
                 <>
                     <div className={styles.campo}>
                         <label htmlFor="nombre" className={styles.label}>
@@ -228,7 +278,10 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             />
                         </div>
                     </div>
+                </>
+                )}
 
+                {rol === "operador" && (
                     <div className="flex flex-col gap-3">
                         <label htmlFor="locales" className={styles.label}>
                             Locales <span className="text-red-500">(Mínimo 1)</span>
@@ -327,7 +380,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                             + Agregar local
                         </button>
                     </div>
-                </>
                 )}
 
                 {mensajeExito && (
@@ -350,17 +402,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 <div className="flex justify-end gap-3 pt-6">
                     <button
                         type="button"
-                            onClick={() => {
-                                setNombreUsuario("");
-                                setContraseña("");
-                                setConfirmacionContraseña("");
-                                setNombre("");
-                                settelefono("");
-                                setCodigoPais("+598");
-                                setErrores([]);
-                                setMensajeExito("");
-                                setLocales([{ numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }]);
-                            }}
+                        onClick={limpiarFormulario}
                         className={styles.botonSecundario}
                     >
                         Limpiar
@@ -376,38 +418,43 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 </div>
             </form>
 
-            {mostrarPopup && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-foreground te">
-                Operador creado satisfactoriamente
-            </h2>
+            {mostrarPopup && (rolCreado === "operador" || rolCreado === "productor") && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl">
+                        <h2 className="text-xl font-bold text-foreground">
+                            {rolCreado === "operador"
+                                ? "Operador creado satisfactoriamente"
+                                : "Productor creado satisfactoriamente"}
+                        </h2>
 
-            <p className="mt-3 text-sm text-muted-foreground">
-                ¿Desea precargar productos para este operador?
-            </p>
+                        <p className="mt-3 text-sm text-muted-foreground">
+                            ¿Desea precargar productos para este usuario?
+                        </p>
 
-            <div className="mt-6 flex justify-end gap-3">
-                <button
-                    type="button"
-                    onClick={() => setMostrarPopup(false)}
-                    className={styles.botonSecundario}
-                >
-                    Ahora no
-                </button>
-
-                {operadorCreadoId !== null && (
-                    <Link
-                        href={`/gestion-operadores/${operadorCreadoId}`}
-                        className={styles.botonConfirmar}
-                    >
-                        Precargar productos
-                    </Link>
-                )}
-            </div>
-        </div>
-    </div>
-)}
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setMostrarPopup(false)}
+                                className={styles.botonSecundario}
+                            >
+                                Ahora no
+                            </button>
+                            {idUsuarioCreado !== null && (
+                                <Link
+                                    href={
+                                        rolCreado === "operador"
+                                            ? `/gestion-operadores/${idUsuarioCreado}`
+                                            : `/gestion-productores/${idUsuarioCreado}`
+                                    }
+                                    className={styles.botonConfirmar}
+                                >
+                                    Precargar productos
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }
