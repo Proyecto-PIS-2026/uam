@@ -9,13 +9,14 @@ import styles from "./ListadoOperadores.module.css";
 
 type ListadoOperadoresProps = {
     operadores: OperadorListado[];
+    esAdmin?: boolean;
 };
 
 function normalizarTexto(texto: string) {
     return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, ""); // Busque en internet como ignorar los tildes
 }
 
-export default function ListadoOperadores({ operadores }: ListadoOperadoresProps) {
+export default function ListadoOperadores({ operadores, esAdmin }: ListadoOperadoresProps) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState("a-z");
     const [naveSeleccionada, setNaveSeleccionada] = useState("Todas");
@@ -96,7 +97,7 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
             ) : (
                 <div className={styles.lista}>
                     {operadoresFiltrados.map((operador) => (
-                        <TarjetaOperador key={operador.id} operador={operador}/>
+                        <TarjetaOperador key={operador.id} operador={operador} esAdmin={esAdmin} />
                     ))}
                 </div>
             )}

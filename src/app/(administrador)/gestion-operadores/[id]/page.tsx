@@ -3,6 +3,7 @@ import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/c
 
 import { obtenerPerfilAdminOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-admin";
 import { obtenerOpcionesEdicionPublicacion } from "../../../../modulos/publicaciones/operadores/consultas-edicion-publicacion";
+import { obtenerConfiguracion } from "@/modulos/administracion/ConsultaConfiguracion";
 import PerfilOperadorAdmin from "../../../../modulos/usuarios/operadores/componentes/perfil-admin-operador/PerfilOperadorAdmin";
 
 export const dynamic = "force-dynamic"; // Consultar la base en cada visita, sin cachear la página
@@ -15,9 +16,10 @@ export default async function Page({ params }: PageProps) {
     await requerirAdministrador();
 
     const { id } = await params;
-    const [perfil, opciones] = await Promise.all([
+    const [perfil, opciones, incremento] = await Promise.all([
         obtenerPerfilAdminOperador(Number(id)),
         obtenerOpcionesEdicionPublicacion(),
+        obtenerConfiguracion("incremento_precio"),
     ]);
 
     if (!perfil) {
@@ -26,7 +28,7 @@ export default async function Page({ params }: PageProps) {
 
     return (
         <main>
-            <PerfilOperadorAdmin operador={perfil} opciones={opciones} />
+            <PerfilOperadorAdmin operador={perfil} opciones={opciones} incrementoPrecio={Number(incremento)} />
         </main>
     );
 }

@@ -26,6 +26,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const [enviando, setEnviando] = useState(false);
     const [mensajeVisible, setMensajeVisible] = useState(false);
     const [mostrarPopup, setMostrarPopup] = useState(false);
+    const [operadorCreadoId, setOperadorCreadoId] = useState<number | null>(null);
 
     useEffect(() => {
     if (!mensajeExito) return;
@@ -64,6 +65,8 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     setErrores(resultado.errores);
                     return;
                 }
+
+                setOperadorCreadoId(resultado.id);
 
                 setNombreUsuario("");
                 setContraseña("");
@@ -393,12 +396,14 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     Ahora no
                 </button>
 
-                <Link
-                    href="/precargar-productos"
-                    className={styles.botonConfirmar}
-                >
-                    Precargar productos
-                </Link>
+                {operadorCreadoId !== null && (
+                    <Link
+                        href={`/gestion-operadores/${operadorCreadoId}`}
+                        className={styles.botonConfirmar}
+                    >
+                        Precargar productos
+                    </Link>
+                )}
             </div>
         </div>
     </div>
