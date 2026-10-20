@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { ProductorListado } from "../../acciones/consultas-listado-por-operador";
+import type { ProductorListado } from "../../../acciones/consultas-listado-por-operador";
 import styles from "./TarjetaProductor.module.css";
 
 type TarjetaProductorProps = {

@@ -1,6 +1,6 @@
-import ImagenPublicacion from "../../../../publicaciones/componentes/ImagenPublicacion";
+import ImagenPublicacion from "../../../../../publicaciones/componentes/ImagenPublicacion";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import type { PublicacionPerfil } from "../../consultas-perfil-publico";
+import type { PublicacionPerfilProductor } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
 import styles from "./TarjetaPublicacion.module.css";
 
 const formatoPrecio = new Intl.NumberFormat("es-UY", {
@@ -11,14 +11,14 @@ const formatoPrecio = new Intl.NumberFormat("es-UY", {
 });
 
 type TarjetaPublicacionProps = {
-    publicacion: PublicacionPerfil;
-    onSeleccionar?: (publicacion: PublicacionPerfil) => void;
+    publicacion: PublicacionPerfilProductor;
+    onSeleccionar?: (publicacion: PublicacionPerfilProductor) => void;
 };
 
 export default function TarjetaPublicacion({publicacion, onSeleccionar}: TarjetaPublicacionProps) {
     const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
 
-    return (
+    const contenido = (
         <button type="button" className={styles.tarjeta} onClick={() => onSeleccionar?.(publicacion)} aria-label={`Ver detalles de ${nombreProducto}`} aria-haspopup="dialog">
             <div className={styles.contenedorImagen}>
                 <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 767px) 96px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.imagen} reemplazo={
@@ -29,7 +29,6 @@ export default function TarjetaPublicacion({publicacion, onSeleccionar}: Tarjeta
                     </div>
                 } />
             </div>
-
             <div className={styles.contenido}>
                 <div className={styles.encabezado}>
                     <h3 className={styles.especie} title={nombreProducto}>{nombreProducto}</h3>
@@ -58,4 +57,5 @@ export default function TarjetaPublicacion({publicacion, onSeleccionar}: Tarjeta
             </div>
         </button>
     );
+    return contenido;
 }

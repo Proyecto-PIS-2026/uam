@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
-import CatalogoOperador from "./CatalogoOperador";
+import CatalogoOperador from "./CatalogoProductor";
 
 // Reemplaza Image de Next por un img comun
 vi.mock("next/image", async () => {

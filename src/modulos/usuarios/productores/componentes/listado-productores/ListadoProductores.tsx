@@ -3,8 +3,8 @@
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import { useState } from "react";
 import type { ProductorListado } from "../../acciones/consultas-listado-por-operador";
-import ControlesListadoProductores from "./ControlesListadoProductores";
-import TarjetaProductor from "./TarjetaProductor";
+import ControlesListadoProductores from "./controles-listado/ControlesListadoProductores";
+import TarjetaProductor from "./tarjetas-productores/TarjetaProductor";
 import styles from "./ListadoProductores.module.css";
 
 type ListadoProductoresProps = {
