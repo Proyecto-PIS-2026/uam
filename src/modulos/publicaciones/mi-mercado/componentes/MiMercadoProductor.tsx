@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import HojasDecorativas from "../../../../compartido/HojasDecorativas";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import DrawerPublicacionProductor from "./DrawerPublicacionProductor";
 import TarjetaPublicacionProductor from "./TarjetaPublicacionProductor";
 import styles from "./MiMercado.module.css";
+
+const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
 type Props = {
     publicaciones: PublicacionMiMercadoProductor[];
@@ -30,6 +32,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
         codigoCalibre: publicacion.calibre.codigoCalibre,
         pais: publicacion.pais,
         operador: { id: 0, nombreFantasia: nombreProductor, whatsApp: "" },
+        tipoPublicacion: "OPERADOR",
     })), [publicaciones, nombreProductor]);
     const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
     const publicacionesPorId = new Map(publicaciones.map((publicacion) => [publicacion.id, publicacion]));
@@ -55,7 +58,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                 </header>
                 {publicaciones.length > 0 && (
                     <div className={styles.filtros}>
-                        <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
+                        <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
                     </div>
                 )}
                 <div className={`${styles.encabezadoCatalogo} flex-wrap`}>

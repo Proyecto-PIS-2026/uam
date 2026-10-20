@@ -10,10 +10,12 @@ import NuevaPublicacion from "../../operadores/componentes/NuevaPublicacion";
 import type { OpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
 import type { CambiosPublicacionOperador } from "../../operadores/modificar-publicacion";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../filtros/FiltrosPublicaciones";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
 import styles from "./MiMercado.module.css";
+
+const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
 export type Publicacion = {
     id: number;
@@ -90,6 +92,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         calibre: publicacion.calibre.nombreCalibre,
         codigoCalibre: publicacion.calibre.codigoCalibre,
         pais: "",
+        tipoPublicacion: "OPERADOR",
         operador: { id: operadorId, nombreFantasia: nombreOperador, whatsApp: "" },
     })), [publicacionesVigentes, operadorId, nombreOperador]);
     const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
@@ -336,7 +339,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                 ) : (
                     <>
                         <div className={styles.filtros}>
-                            <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual} />
+                            <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual} />
                         </div>
                         {/* Controles */}
                         <div className={styles.encabezadoCatalogo}>

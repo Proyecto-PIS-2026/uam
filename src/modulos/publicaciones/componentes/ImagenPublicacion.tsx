@@ -9,14 +9,28 @@ type Props = Omit<ImageProps, "src" | "alt"> & {
     reemplazo: ReactNode;
 };
 
-export default function ImagenPublicacion({ src, alt, reemplazo, onError, ...props }: Props) {
+export default function ImagenPublicacion({ src, alt, reemplazo, onLoad, onError, style, ...props }: Props) {
     const [fuenteFallida, setFuenteFallida] = useState<string | null>(null);
+    const [fuenteCargada, setFuenteCargada] = useState<string | null>(null);
     const fuente = src?.trim();
-
-    if (!fuente || fuente === fuenteFallida) return <>{reemplazo}</>;
-
-    return <Image {...props} src={fuente} alt={alt} onError={(evento) => {
-        setFuenteFallida(fuente);
-        onError?.(evento);
-    }} />;
+    if (!fuente || fuente === fuenteFallida) {
+        return <>{reemplazo}</>;
+    }
+    const cargada = fuenteCargada === fuente;
+    const contenido = ( 
+        <>
+            {!cargada && reemplazo}
+            <Image {...props} key={fuente} src={fuente} alt={alt} style={{ ...style, visibility: cargada ? "visible" : "hidden" }}
+                onLoad={(evento) => {
+                    setFuenteCargada(fuente);
+                    onLoad?.(evento);
+                }}
+                onError={(evento) => {
+                    setFuenteFallida(fuente);
+                    onError?.(evento);
+                }}
+            />
+        </>
+    ); 
+    return contenido; 
 }
