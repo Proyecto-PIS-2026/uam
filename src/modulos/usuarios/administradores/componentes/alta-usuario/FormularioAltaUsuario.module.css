@@ -20,6 +20,28 @@
     color: var(--color-foreground);
 }
 
+.volver {
+    display: inline-flex;
+    margin-bottom: 1rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-secondary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    padding-top: 15;
+}
+
+.volver:hover {
+    text-decoration: underline;
+}
+
+.volver:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 .botonSecundario {
     flex-shrink: 0;
     padding: 0.55rem 0.85rem;

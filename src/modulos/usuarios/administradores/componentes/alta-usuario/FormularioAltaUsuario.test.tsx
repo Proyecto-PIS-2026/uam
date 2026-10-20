@@ -2,13 +2,22 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import FormularioAltaUsuario from "./FormularioAltaUsuario";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
+import { altaProductor } from "@/modulos/usuarios/productores/altaProductor";
+import { useRouter, useSearchParams } from "next/navigation";
+
+const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
+    useRouter: vi.fn(),
     useSearchParams: vi.fn(),
 }));
 
 vi.mock("@/modulos/usuarios/operadores/altaOperador", () => ({
     altaOperador: vi.fn(),
+}));
+
+vi.mock("@/modulos/usuarios/productores/altaProductor", () => ({
+    altaProductor: vi.fn(),
 }));
 
 vi.mock("@/compartido/EncabezadoPagina", () => ({
@@ -19,8 +28,6 @@ vi.mock("@/compartido/EncabezadoPagina", () => ({
         </div>
     ),
 }));
-
-import { useSearchParams } from "next/navigation";
 
 const naves = [
     { id: 1, nombre: "Nave Central" },
@@ -72,6 +79,27 @@ describe("FormularioAltaUsuario", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         configurarSearchParams();
+        vi.mocked(useRouter).mockReturnValue({
+            push: mockPush,
+            back: vi.fn(),
+            forward: vi.fn(),
+            refresh: vi.fn(),
+            replace: vi.fn(),
+            prefetch: vi.fn(),
+            bfcacheId: "",
+        });
+    });
+
+    it("vuelve a la lista de usuarios", () => {
+        render(<FormularioAltaUsuario naves={naves} />);
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "← Volver a la lista de usuarios",
+            }),
+        );
+
+        expect(mockPush).toHaveBeenCalledWith("/administracion#usuarios");
     });
 
     it("muestra el formulario de alta de usuario", () => {
@@ -317,11 +345,11 @@ describe("FormularioAltaUsuario", () => {
         ).toHaveLength(1);
     });
 
-    it("muestra error cuando se selecciona un rol todavía no disponible", async () => {
+    it("muestra error cuando se selecciona administrador", async () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
         fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "productor" },
+            target: { value: "administrador" },
         });
 
         fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
@@ -336,8 +364,8 @@ describe("FormularioAltaUsuario", () => {
             target: { value: "clave12345" },
         });
 
-        fireEvent.click(
-            screen.getByRole("button", { name: "Registrar usuario" }),
+        fireEvent.submit(
+            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
         );
 
         expect(
@@ -347,6 +375,7 @@ describe("FormularioAltaUsuario", () => {
         ).toBeInTheDocument();
 
         expect(altaOperador).not.toHaveBeenCalled();
+        expect(altaProductor).not.toHaveBeenCalled();
     });
 
     it("envía correctamente el alta de un operador", async () => {
@@ -399,13 +428,87 @@ describe("FormularioAltaUsuario", () => {
 
         expect(
             screen.getByText(
-                "¿Desea precargar productos para este operador?",
+                "¿Desea precargar productos para este usuario?",
             ),
         ).toBeInTheDocument();
 
         expect(
             screen.getByRole("link", { name: "Precargar productos" }),
         ).toHaveAttribute("href", "/gestion-operadores/25");
+    });
+
+    it("envía correctamente el alta de un productor", async () => {
+        vi.mocked(altaProductor).mockResolvedValue({
+            esValido: true,
+            id: 30,
+            mensaje: "Productor creado correctamente.",
+        });
+
+        render(<FormularioAltaUsuario naves={naves} />);
+
+        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
+            target: { value: "productor" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
+            target: { value: "productor1" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Contraseña*"), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Nombre*"), {
+            target: { value: "Huerta Sur" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Código de país"), {
+            target: { value: "+598" },
+        });
+
+        fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+            target: { value: "99123456" },
+        });
+
+        fireEvent.submit(
+            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
+        );
+
+        await waitFor(() => {
+            expect(altaProductor).toHaveBeenCalledTimes(1);
+        });
+
+        expect(altaProductor).toHaveBeenCalledWith({
+            rol: "productor",
+            nombreUsuario: "productor1",
+            contraseña: "clave12345",
+            confirmacionContraseña: "clave12345",
+            nombre: "Huerta Sur",
+            codigoPais: "+598",
+            telefono: "99123456",
+        });
+
+        expect(
+            await screen.findByRole("status"),
+        ).toHaveTextContent("Productor creado correctamente.");
+
+        expect(
+            screen.getByText("Productor creado satisfactoriamente"),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByText("¿Desea precargar productos para este usuario?"),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("link", { name: "Precargar productos" }),
+        ).toHaveAttribute("href", "/gestion-productores/30");
+
+        expect(altaOperador).not.toHaveBeenCalled();
     });
 
     it("limpia el formulario después de un alta exitosa", async () => {
@@ -484,6 +587,55 @@ describe("FormularioAltaUsuario", () => {
         ).not.toBeInTheDocument();
     });
 
+    it("muestra los errores devueltos por altaProductor", async () => {
+        vi.mocked(altaProductor).mockResolvedValue({
+            esValido: false,
+            errores: [
+                "Ya existe un usuario con ese nombre de usuario.",
+            ],
+        });
+
+        render(<FormularioAltaUsuario naves={naves} />);
+
+        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
+            target: { value: "productor" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
+            target: { value: "productor1" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Contraseña*"), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Nombre*"), {
+            target: { value: "Huerta Sur" },
+        });
+
+        fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+            target: { value: "99123456" },
+        });
+
+        fireEvent.submit(
+            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
+        );
+
+        expect(
+            await screen.findByText(
+                "Ya existe un usuario con ese nombre de usuario.",
+            ),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.queryByText("Productor creado satisfactoriamente"),
+        ).not.toBeInTheDocument();
+    });
+
     it("cierra el popup al seleccionar Ahora no", async () => {
         vi.mocked(altaOperador).mockResolvedValue({
             esValido: true,
@@ -558,5 +710,46 @@ describe("FormularioAltaUsuario", () => {
                 screen.getByRole("button", { name: "Registrar usuario" }),
             ).not.toBeDisabled();
         });
+    });
+
+    it("muestra error cuando ya existe un productor con ese nombre", async () => {
+        vi.mocked(altaProductor).mockResolvedValue({
+            esValido: false,
+            errores: ["Ya existe un productor con ese nombre."],
+        });
+
+        render(<FormularioAltaUsuario naves={naves} />);
+
+        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
+            target: { value: "productor" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
+            target: { value: "productor1" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Contraseña*"), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText("Nombre*"), {
+            target: { value: "Huerta Sur" },
+        });
+
+        fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+            target: { value: "99123456" },
+        });
+
+        fireEvent.submit(
+            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
+        );
+
+        expect(
+            await screen.findByText("Ya existe un productor con ese nombre."),
+        ).toBeInTheDocument();
     });
 });
