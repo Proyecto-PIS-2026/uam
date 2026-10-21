@@ -34,7 +34,7 @@ describe("/mi-mercado/productor", () => {
         expect(screen.getByRole("heading", { name: "Mi Mercado" })).toBeInTheDocument();
         expect(screen.getByText("Mi huerta")).toBeInTheDocument();
         expect(obtenerPublicacionesMiMercadoProductor).toHaveBeenCalledExactlyOnceWith();
-        expect(vi.mocked(MiMercadoProductor).mock.calls[0][0]).toEqual({ publicaciones: [], nombreProductor: "Mi huerta" });
+        expect(vi.mocked(MiMercadoProductor).mock.calls[0][0]).toEqual({ publicaciones: [], nombreProductor: "Mi huerta", productorId: 21 });
         expect(redireccionSimulada).not.toHaveBeenCalled();
     });
 

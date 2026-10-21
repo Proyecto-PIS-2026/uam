@@ -30,6 +30,13 @@ type Formulario = {
     precio: string; cantidad: string; fotografia: string;
 };
 
+type PropsDrawer = {
+    productorId: number;
+    abierto: boolean;
+    alCerrar: () => void;
+    alCrear: (mensaje: string) => void;
+};
+
 function formularioInicial(productorId: number): Formulario {
     return {
         productorId,
@@ -54,6 +61,21 @@ function opciones<T extends Opcion>(opciones: T[]) {
     return ordenarOpcionesPorNombre(opciones);
 }
 
+async function cargarCatalogos() {
+    const respuesta = await fetch("/api/publicaciones/productor");
+    if (!respuesta.ok) throw new Error("No se pudieron cargar los datos.");
+    const datos = await respuesta.json() as Catalogos;
+    return {
+        ...datos,
+        especies: opciones(datos.especies),
+        variedades: opciones(datos.variedades),
+        presentaciones: opciones(datos.presentaciones),
+        categorias: opciones(datos.categorias),
+        calibres: opciones(datos.calibres),
+        paises: opciones(datos.paises),
+    };
+}
+
 function Campo({ nombre, valor, opciones: lista, cambiar, deshabilitado = false }: {
     nombre: string; valor: number; opciones: Opcion[]; cambiar: (id: number) => void; deshabilitado?: boolean;
 }) {
@@ -73,18 +95,7 @@ export default function AltaPublicacionProductor({ productorId }: { productorId:
     const [mensaje, setMensaje] = useState("");
 
     useEffect(() => {
-        fetch("/api/publicaciones/productor").then(async (respuesta) => {
-            if (!respuesta.ok) throw new Error("No se pudieron cargar los datos.");
-            return respuesta.json() as Promise<Catalogos>;
-        }).then((datos) => setCatalogos({
-            ...datos,
-            especies: opciones(datos.especies),
-            variedades: opciones(datos.variedades),
-            presentaciones: opciones(datos.presentaciones),
-            categorias: opciones(datos.categorias),
-            calibres: opciones(datos.calibres),
-            paises: opciones(datos.paises),
-        })).catch((error) => setErrores([error instanceof Error ? error.message : "No se pudieron cargar los datos."]));
+        cargarCatalogos().then(setCatalogos).catch((error) => setErrores([error instanceof Error ? error.message : "No se pudieron cargar los datos."]));
     }, []);
 
     return <main className="contenedor-pagina flex-1 py-10">
@@ -97,6 +108,30 @@ export default function AltaPublicacionProductor({ productorId }: { productorId:
         {catalogos && productorId > 0 && <DrawerProductor key={productorId} catalogos={catalogos} productorId={productorId} abierto={abierto} esWeb={esWeb}
             alCerrar={() => setAbierto(false)} alCrear={(texto) => { setAbierto(false); setMensaje(texto); }} />}
     </main>;
+}
+
+export function DrawerAltaPublicacionProductor({ productorId, abierto, alCerrar, alCrear }: PropsDrawer) {
+    const esWeb = useMediaQuery("(min-width: 768px)");
+    const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        cargarCatalogos().then(setCatalogos).catch((error) => setError(error instanceof Error ? error.message : "No se pudieron cargar los datos."));
+    }, []);
+
+    return catalogos ? <DrawerProductor catalogos={catalogos} productorId={productorId} abierto={abierto} esWeb={esWeb} alCerrar={alCerrar} alCrear={alCrear} /> : (
+        <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={alCerrar}
+            slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
+            <div className={styles.asa} aria-hidden="true" />
+            <header className={styles.encabezado}>
+                <h2 className={styles.titulo}>Nueva publicación</h2>
+                <button className={styles.cerrar} type="button" onClick={alCerrar} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button>
+            </header>
+            <div className={styles.cuerpo}>
+                {error ? <div role="alert" className={styles.error}>{error}</div> : <p role="status">Cargando datos...</p>}
+            </div>
+        </Drawer>
+    );
 }
 
 function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alCrear }: {
