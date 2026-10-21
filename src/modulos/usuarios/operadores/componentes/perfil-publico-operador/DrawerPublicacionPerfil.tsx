@@ -38,6 +38,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
     const drawerVisible = open && publicacion !== null && (!tieneFoto || fotoPreparada === claveFoto);
 
     const contenidoRef = useRef<HTMLDivElement>(null);
+    const elementoAnteriorRef = useRef<HTMLElement | null>(null);
     const [necesitaScroll, setNecesitaScroll] = useState(false);
 
     useEffect(() => {
@@ -62,7 +63,21 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
     }, [drawerVisible, publicacion, esWeb]);
 
     const contenido = (
-        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={drawerVisible} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
+        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={drawerVisible} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }} 
+            ModalProps={{
+                keepMounted: true,
+                disableRestoreFocus: true,
+                onTransitionEnter: () => {const activo = document.activeElement; elementoAnteriorRef.current = activo instanceof HTMLElement ? activo : null},
+                onTransitionExited: () => {
+                    requestAnimationFrame(() => {
+                        const elemento = elementoAnteriorRef.current;
+                        if (elemento?.isConnected) {
+                            elemento.focus();
+                        }
+                    });
+                },
+            }}
+        >
             {publicacion &&  usuario && (
                 <>
                     <div className={styles.tarjeta}>
@@ -84,7 +99,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                                                 </div>
                                             } />
                                             {publicacion.foto && (
-                                                <button type="button" className={styles.ampliarFoto} aria-label={`Ampliar foto de ${publicacion.especie}`} onClick={() => setFotoAmpliada(true)}/>
+                                                <button type="button" className={styles.ampliarFoto} aria-label={`Ampliar foto de ${publicacion.especie}`} onClick={(event) => {event.currentTarget.blur(); setFotoAmpliada(true)}}/>
                                             )}
                                         </div>
                                     </div>
@@ -137,8 +152,14 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                             </div>
                         </div>
                     </div>
-                    <Dialog open={fotoAmpliada && open && Boolean(publicacion?.foto)} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" }  } }}>
-                        <button aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(false)} className={`${styles.cerrar} ${styles.cerrarFoto}`}>
+                    <Dialog open={fotoAmpliada && open && Boolean(publicacion?.foto)} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" 
+                        slotProps={{ 
+                            paper: { className: styles.modalFoto }, 
+                            backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" }  }, 
+                            transition: { onExited: () => {contenidoRef.current ?.querySelector<HTMLButtonElement>('button[aria-label^="Ampliar foto"]') ?.focus()}}
+                        }}
+                    >
+                        <button autoFocus aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(false)} className={`${styles.cerrar} ${styles.cerrarFoto}`}>
                             <CloseIcon fontSize="small" />
                         </button>
                         <div className={styles.fotoAmpliada}>
