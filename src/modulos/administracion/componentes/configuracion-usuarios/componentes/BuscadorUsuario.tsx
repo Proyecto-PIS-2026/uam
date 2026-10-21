@@ -7,12 +7,20 @@ import MenuItem from "@mui/material/MenuItem";
 import type { TipoUsuario } from "../Tipos";
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
+export type FiltroRestablecimiento = "TODOS" | "SOLICITADO";
+
+const opcionesRestablecimiento: { value: FiltroRestablecimiento; label: string }[] = [
+    { value: "TODOS", label: "Todos" },
+    { value: "SOLICITADO", label: "Solicitado" }
+];
 
 type BuscadorUsuarioProps = {
     busqueda: string;
     onBusquedaChange: (nuevoValor: string) => void;
     tipoUsuario: TipoUsuario | "TODOS";
     onTipoUsuarioChange: (nuevoTipo: TipoUsuario | "TODOS") => void;
+    restablecimiento: FiltroRestablecimiento;
+    onRestablecimientoChange: (nuevoValor: FiltroRestablecimiento) => void;
 };
 
 const rolesDisponibles: { value: TipoUsuario | "TODOS"; label: string }[] = [
@@ -22,7 +30,7 @@ const rolesDisponibles: { value: TipoUsuario | "TODOS"; label: string }[] = [
     { value: "PRODUCTOR", label: "Productor" }
 ];
 
-export default function BuscadorUsuario({ busqueda, onBusquedaChange, tipoUsuario, onTipoUsuarioChange }: BuscadorUsuarioProps) {
+export default function BuscadorUsuario({ busqueda, onBusquedaChange, tipoUsuario, onTipoUsuarioChange,restablecimiento, onRestablecimientoChange  }: BuscadorUsuarioProps) {
     let etiquetaRolMasLarga = "Todos";
     for (const rol of rolesDisponibles) {
         if (rol.label.length > etiquetaRolMasLarga.length) etiquetaRolMasLarga = rol.label;
@@ -50,6 +58,15 @@ export default function BuscadorUsuario({ busqueda, onBusquedaChange, tipoUsuari
                 >
                     {rolesDisponibles.map((rol) => (<MenuItem key={rol.value} value={rol.value} className={styles.opcionSelect}> {rol.label} </MenuItem>))}
                 </Select>
+
+                <div className={styles.selectorRol} data-opcion-mas-larga="Solicitado">
+                    <TextField select label="Restablecimiento" value={restablecimiento} onChange={(evento) =>
+                        onRestablecimientoChange(evento.target.value as FiltroRestablecimiento)} size="small" className={styles.selectMui} slotProps={propiedadesMenuSelect}>
+                        {opcionesRestablecimiento.map((opcion) => (
+                            <MenuItem key={opcion.value} value={opcion.value} className={styles.opcionSelect}> {opcion.label} </MenuItem>
+                        ))}
+                    </TextField>
+                </div>
             </div>
         </div>
     );

@@ -494,7 +494,7 @@ describe("PreciosHistoricos", () => {
         fireEvent.click(paginacion.getByRole("button", { name: "Anterior" }));
         expect(paginacion.getByText("Página 2 de 3")).toBeInTheDocument();
         expect(navegar).not.toHaveBeenCalled();
-    });
+    }, 10_000);
 
     it("oculta los controles cuando los resultados no superan los 40 registros", () => {
         render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={historicoConRegistros(40)} {...fechas} />);

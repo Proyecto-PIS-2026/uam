@@ -104,12 +104,18 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
         if (usuario.rol === "OPERADOR") {
             router.push(`/gestion-operadores/${usuario.operadorId}`);
         }
+        if (usuario.rol === "PRODUCTOR") {
+            router.push(`/gestion-productores/${usuario.productorId}`);
+        }
     }
 
     function manejarEditar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
         evento.stopPropagation();
         if (usuario.rol === "OPERADOR") {
             router.push(`/gestion-operadores/${usuario.operadorId}/editar`);
+        }
+        if (usuario.rol === "PRODUCTOR") {
+            router.push(`/gestion-productores/${usuario.productorId}/editar`);
         }
     }
 
@@ -152,7 +158,17 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                         <div key={usuario.id} className={`${styles.fila} ${usuario.id === usuarioSeleccionadoId ? styles.seleccionada : ""}`} onClick={() => 
                             manejarSeleccionar(usuario)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") manejarSeleccionar(usuario) }}
                         >
-                            <span className={styles.username}>{usuario.username}</span>
+                            <span className={styles.username}>
+                                {usuario.username}
+                                {usuario.solicitoRestablecimiento && (
+                                    <span
+                                        title="El usuario solicitó restablecer su contraseña"
+                                        className="ml-2 inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900"
+                                    >
+                                        Restablecimiento solicitado
+                                    </span>
+                                )}
+                            </span>
                             <span className={styles.informacion}>{obtenerInformacion(usuario)}</span>
                             <span className={styles.rol}>{obtenerNombreRol(usuario.rol)}</span>
                             <div className={styles.acciones}>
