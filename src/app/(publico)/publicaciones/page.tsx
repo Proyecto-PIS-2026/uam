@@ -2,8 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { redirigirOperadorAMiMercado } from "@/modulos/identidad-acceso/autorizacion/controles";
-import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacion.action";
+import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacionOperador.action";
 import ContenedorPublicaciones from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones";
+import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 
 type Props = {
     searchParams: Promise<{especie?: string}>;
@@ -11,6 +12,8 @@ type Props = {
 
 export default async function PaginaPublicaciones({searchParams}: Props) {
     await redirigirOperadorAMiMercado();
+    const sesion = await obtenerSesion();
+    const esAdmin = sesion?.rol === "ADMINISTRADOR";
     const parametros = await searchParams;
     const especie = parametros.especie ?? "";
     const resultado = await obtenerPublicaciones();
@@ -20,7 +23,7 @@ export default async function PaginaPublicaciones({searchParams}: Props) {
                 <main className="contenedor-pagina relative z-10 flex-1">
                     <div className="relative z-10 flex flex-col gap-6">
                         <EncabezadoPagina titulo="Publicaciones" cantidad={publicaciones.length} subtitulo="publicaciones en la plataforma" />
-                        <ContenedorPublicaciones key={especie} publicaciones={publicaciones} especie={especie}/>
+                        <ContenedorPublicaciones key={especie} publicaciones={publicaciones} especie={especie} esAdmin={esAdmin} />
                     </div>
                 </main>
             </div>

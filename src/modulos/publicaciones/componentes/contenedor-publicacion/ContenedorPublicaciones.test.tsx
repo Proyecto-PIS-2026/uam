@@ -2,11 +2,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 //import { useEffect } from "react";
 
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
+import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
 import ContenedorPublicaciones from "./ContenedorPublicaciones";
 
+type Publicacion = PublicacionListado | PublicacionProductorListado;
+
 type PropsListadoPublicaciones = {
-  publicaciones: PublicacionListado[];
+    publicaciones: Publicacion[];
 };
 
 /*type PropsFiltrosPublicaciones = {
@@ -27,7 +30,7 @@ const { mockListadoPublicaciones } = vi.hoisted(() => ({
 	})
 }));*/
 
-vi.mock("../listado-publicaciones/ListadoPublicacionesUnificado", () => ({ default: mockListadoPublicaciones }));
+vi.mock("../listado-publicaciones/ListadoPublicaciones", () => ({ default: mockListadoPublicaciones }));
 
 //vi.mock("../../filtros/FiltrosPublicaciones", () => ({ default: mockFiltrosPublicaciones }));
 
@@ -44,6 +47,7 @@ function crearPublicacion(id: number): PublicacionListado {
 		calibre: "Mediano",
 		codigoCalibre: "M",
 		pais: "Uruguay",
+		tipoPublicacion: "OPERADOR",
 		operador: {
 			id: 10,
 			nombreFantasia: "Huerta Sur",
@@ -52,8 +56,8 @@ function crearPublicacion(id: number): PublicacionListado {
 	};
 }
 
-function publicacionesDelListado(): PublicacionListado[] | undefined {
-	return mockListadoPublicaciones.mock.calls.at(-1)?.[0]?.publicaciones;
+function publicacionesDelListado(): Publicacion[] | undefined {
+    return mockListadoPublicaciones.mock.calls.at(-1)?.[0]?.publicaciones;
 }
 
 /*function especieDelFiltro(): string | undefined {
@@ -169,4 +173,23 @@ describe("ContenedorPublicaciones", () => {
 		render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Error"/>);
 		expect(especieDelFiltro()).toBe("");
 	});*/
+
+	it("filtra publicaciones por nombre del productor", () => {
+		const { operador, ...camposComunes } = crearPublicacion(1);
+		const publicacion: PublicacionProductorListado = {
+			...camposComunes,
+			tipoPublicacion: "PRODUCTOR",
+			productor: {
+				...operador,
+				nombreFantasia: "Mercado Verde",
+				fotoPerfil: null,
+			},
+			ubicaciones: [],
+		};
+		render(<ContenedorPublicaciones publicaciones={[publicacion]} />);
+		fireEvent.change(screen.getByLabelText("Buscar publicaciones"), {target: { value: "mercado verde" }});
+		expect(publicacionesDelListado()).toEqual([publicacion]);
+		fireEvent.change(screen.getByLabelText("Buscar publicaciones"), {target: { value: "Otro productor" }});
+		expect(publicacionesDelListado()).toEqual([]);
+	});
 });

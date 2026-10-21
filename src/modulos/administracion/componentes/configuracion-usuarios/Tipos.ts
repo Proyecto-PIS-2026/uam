@@ -7,6 +7,7 @@ export interface UsuarioBase {
     id: number;
     username: string;
     rol: TipoUsuario;
+    solicitoRestablecimiento?: boolean;
 }
 
 export interface AdministradorParaModificar extends UsuarioBase {

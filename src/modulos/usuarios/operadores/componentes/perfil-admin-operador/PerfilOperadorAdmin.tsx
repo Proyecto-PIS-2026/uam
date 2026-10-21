@@ -1,7 +1,14 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
 import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/consultas-edicion-publicacion";
 
+import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
+import NuevaPublicacion from "@/modulos/publicaciones/operadores/componentes/NuevaPublicacion";
 import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
 import Image from "next/image";
@@ -10,6 +17,7 @@ import Link from "next/link";
 type PerfilOperadorAdminProps = {
     operador: PerfilAdminOperador;
     opciones: OpcionesEdicionPublicacion;
+    incrementoPrecio?: number;
 };
 
 function formatearFecha(fecha: string): string {
@@ -17,11 +25,26 @@ function formatearFecha(fecha: string): string {
     return `${dia}/${mes}/${anio}`;
 }
 
-export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperadorAdminProps) {
+export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrecio }: PerfilOperadorAdminProps) {
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
+    const router = useRouter();
+    const [altaAbierta, setAltaAbierta] = useState(false);
+    const [mensaje, setMensaje] = useState("");
+
+    function abrirAlta() {
+        setMensaje("");
+        setAltaAbierta(true);
+    }
+
+    function publicacionCreada(aviso: string) {
+        setAltaAbierta(false);
+        setMensaje(aviso);
+        router.refresh();
+    }
+
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <Link href="/administracion" className={styles.volver}>
+            <Link href="/administracion#usuarios" className={styles.volver}>
                 ← Volver al listado de operadores
             </Link>
             <div className={styles.tarjetaPerfil}>
@@ -91,8 +114,20 @@ export default function PerfilOperadorAdmin({ operador, opciones }: PerfilOperad
                 </div>
             </div>
 
-            <h2 className={styles.subtituloPublicaciones}>Publicaciones ({operador.publicaciones.length})</h2>
-            <CatalogoOperadorAdmin publicaciones={operador.publicaciones} opciones={opciones} />
+            {mensaje && <p className={styles.mensajeExito} role="status">{mensaje}</p>}
+
+            <div className={styles.filaPublicaciones}>
+                <h2 className={styles.subtituloPublicaciones}>Publicaciones ({operador.publicaciones.length})</h2>
+                <Button variant="contained" onClick={abrirAlta} startIcon={<AddIcon />} className={styles.botonAlta}>
+                    Agregar Producto
+                </Button>
+            </div>
+
+            <CatalogoOperadorAdmin operadorId={operador.id} publicaciones={operador.publicaciones} opciones={opciones} incrementoPrecio={incrementoPrecio} />
+
+            {altaAbierta && (
+                <NuevaPublicacion operadorId={operador.id} incrementoPrecio={incrementoPrecio} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={publicacionCreada} />
+            )}
         </section>
     );
 

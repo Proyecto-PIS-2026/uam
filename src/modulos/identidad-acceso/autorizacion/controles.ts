@@ -47,6 +47,13 @@ export async function exigirConsultaMercadoPublico() {
     }
 }
 
+export async function exigirConsultaMercadoOperador() {
+    const sesion = await obtenerSesion();
+    if (sesion?.rol != "OPERADOR") {
+        throw new ErrorAutorizacion(403, "Sólo operadores los pueden consultar las publicaciones de Productores.");
+    }
+}
+
 export function exigirAdministrador() {
     return exigirRol("ADMINISTRADOR");
 }

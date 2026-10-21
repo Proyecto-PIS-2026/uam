@@ -5,15 +5,21 @@ export default async function consultarDatosModificarUsuarios(): Promise<DatosMo
     const [administradores, operadores, productores] = await Promise.all([
         db.orm.public.Administrador
             .select("id", "email")
-            .include("usuario", (usuario) => usuario.select("id", "username", "rol"))
+            .include("usuario", (usuario) =>
+                usuario.select("id", "username", "rol", "solicitoRestablecimiento")
+            )
             .all(),
         db.orm.public.Operador
             .select("id", "nombreFantasia")
-            .include("usuario", (usuario) => usuario.select("id", "username", "rol"))
+            .include("usuario", (usuario) =>
+                usuario.select("id", "username", "rol", "solicitoRestablecimiento")
+            )
             .all(),
         db.orm.public.Productor
             .select("id")
-            .include("usuario", (usuario) => usuario.select("id", "username", "rol"))
+            .include("usuario", (usuario) =>
+                usuario.select("id", "username", "rol", "solicitoRestablecimiento")
+            )
             .all(),
     ]);
 
@@ -24,6 +30,7 @@ export default async function consultarDatosModificarUsuarios(): Promise<DatosMo
             rol: "ADMINISTRADOR" as const,
             administradorId: administrador.id,
             email: administrador.email,
+            solicitoRestablecimiento: administrador.usuario.solicitoRestablecimiento,
         })),
         ...operadores.map((operador) => ({
             id: operador.usuario.id,
@@ -31,12 +38,14 @@ export default async function consultarDatosModificarUsuarios(): Promise<DatosMo
             rol: "OPERADOR" as const,
             operadorId: operador.id,
             nombreFantasia: operador.nombreFantasia,
+            solicitoRestablecimiento: operador.usuario.solicitoRestablecimiento,
         })),
         ...productores.map((productor) => ({
             id: productor.usuario.id,
             username: productor.usuario.username,
             rol: "PRODUCTOR" as const,
             productorId: productor.id,
+            solicitoRestablecimiento: productor.usuario.solicitoRestablecimiento,
         })),
     ];
 

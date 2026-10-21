@@ -35,6 +35,12 @@ const opcionesMenu: OpcionMenu[] = [
         permitido: () => autorizado("operador.publicacion.consultar"),
         ocultarParaOperador: true,
     },
+    // Listado de publicaciones de productores
+    {
+        nombre: "Publicaciones",
+        ruta: "/publicaciones-productor",
+        permitido: (sesion) => autorizado("productor.publicacion.consultar", sesion),
+    },
     {
         nombre: "Operadores",
         ruta: "/operadores",
