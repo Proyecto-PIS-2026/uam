@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import Page from "./page";
 import PaginaPerfil from "./[nombre]/page";
-import ListadoProductores from "@/modulos/usuarios/productores/componentes/ListadoProductores";
-import type { PerfilProductor, ProductorListado } from "@/modulos/usuarios/productores/acciones/consultas-productores";
+import ListadoProductores from "@/modulos/usuarios/productores/componentes/listado-productores/ListadoProductores";
+import type { ProductorListado } from "@/modulos/usuarios/productores/acciones/consultas-productores";
+import type { PerfilProductorPorOperador } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
 
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(), listado: vi.fn(), perfil: vi.fn(),
@@ -12,18 +13,52 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
-vi.mock("@/modulos/usuarios/productores/consultas-productores", () => ({
-    obtenerProductoresDisponibles: mocks.listado, obtenerPerfilProductor: mocks.perfil,
-}));
+vi.mock(
+    "@/modulos/usuarios/productores/acciones/consultas-productores",
+    () => ({
+        obtenerProductoresDisponibles: mocks.listado,
+    })
+);
+
+vi.mock(
+    "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador",
+    () => ({
+        obtenerPerfilProductorPorOperador: mocks.perfil,
+    })
+);
 
 const productores: ProductorListado[] = [
     { id: 1, nombreFantasia: "Zeta", fotoPerfil: "/zeta.webp", cantidadProductos: 2, ubicaciones: ["Salto"] },
     { id: 2, nombreFantasia: "Álamo & Sur", fotoPerfil: null, cantidadProductos: 0, ubicaciones: [] },
 ];
-const perfil: PerfilProductor = {
-    id: 2, nombreFantasia: "Álamo & Sur", fotoPerfil: null, whatsApp: "59899123456", ubicaciones: ["Salto"],
-    publicaciones: [{ id: 10, foto: null, precio: null, fecha: "2026-10-18T12:00:00Z", cantidadUnidades: 20,
-        especie: "Naranja", variedad: "Valencia", presentacion: "KG", categoria: "I", calibre: "M", pais: "Uruguay" }],
+
+const perfil: PerfilProductorPorOperador = {
+    id: 2,
+    nombreFantasia: "Álamo & Sur",
+    fotoPerfil: null,
+    whatsApp: "59899123456",
+    publicaciones: [
+        {
+            id: 10,
+            foto: null,
+            precio: null,
+            fecha: "2026-10-18T12:00:00Z",
+            cantidadUnidades: 20,
+            especie: "Naranja",
+            variedad: "Valencia",
+            presentacion: "KG",
+            categoria: "I",
+            calibre: "M",
+            pais: "Uruguay",
+            ubicaciones: [
+                {
+                    id: 1,
+                    nombreUbicacion: "Salto",
+                    urlMaps: "https://maps.example/salto",
+                },
+            ],
+        },
+    ],
 };
 
 describe("Listado y navegación de productores", () => {
@@ -37,25 +72,25 @@ describe("Listado y navegación de productores", () => {
     it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("impide acceder por URL con la sesión %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
-        await expect(PaginaPerfil({ params: Promise.resolve({ nombre: perfil.nombreFantasia }) })).rejects.toThrow("NEXT_REDIRECT");
+        await expect(PaginaPerfil({ params: Promise.resolve({ nombre: perfil.nombreFantasia }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_REDIRECT");
         expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/inicio" : "/iniciar-sesion");
         expect(mocks.listado).not.toHaveBeenCalled();
         expect(mocks.perfil).not.toHaveBeenCalled();
     });
 
-    it("muestra productores, puntos de retiro y fotos con reemplazo cuando fallan", async () => {
+    it("muestra los productores obtenidos por la consulta", async () => {
         render(await Page());
-        expect(screen.getByRole("heading", { name: "Productores" })).toBeInTheDocument();
-        expect(screen.getByText("Salto")).toBeInTheDocument();
-        expect(screen.getByRole("img", { name: "Foto por defecto de Álamo & Sur" })).toBeInTheDocument();
-        fireEvent.error(screen.getByRole("img", { name: "Foto de Zeta" }));
-        expect(screen.getByRole("img", { name: "Foto por defecto de Zeta" })).toBeInTheDocument();
+        expect(mocks.listado).toHaveBeenCalledTimes(1);
+        expect(screen.getByText("Productores", { exact: true })).toBeInTheDocument();
+        expect(screen.getByText("Zeta")).toBeInTheDocument();
+        expect(screen.getByText("Álamo & Sur")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /Álamo & Sur/ })).toHaveAttribute("href", "/productores/%C3%81lamo%20%26%20Sur?origen=productores");
     });
 
     it("busca por nombre ignorando mayúsculas, tildes y espacios externos", () => {
         render(<ListadoProductores productores={productores} />);
         fireEvent.change(screen.getByRole("searchbox", { name: "Buscar productores" }), { target: { value: " ALAMO " } });
-        expect(screen.getByRole("link")).toHaveAttribute("href", "/productores/%C3%81lamo%20%26%20Sur");
+        expect(screen.getByRole("link")).toHaveAttribute("href", "/productores/%C3%81lamo%20%26%20Sur?origen=productores");
         expect(screen.queryByText("Zeta")).not.toBeInTheDocument();
     });
 
@@ -83,14 +118,16 @@ describe("Listado y navegación de productores", () => {
     it("permite seleccionar un productor del listado y consultar su información y publicaciones", async () => {
         const { unmount } = render(await Page());
         const enlace = screen.getByRole("link", { name: /Álamo & Sur/ });
-        const nombre = decodeURIComponent(enlace.getAttribute("href")!.split("/").at(-1)!);
+        const destino = new URL(enlace.getAttribute("href")!, "http://localhost");
+        const nombre = destino.pathname.split("/").at(-1)!;        
         unmount();
-        render(await PaginaPerfil({ params: Promise.resolve({ nombre }) }));
+        render(await PaginaPerfil({ params: Promise.resolve({ nombre }), searchParams: Promise.resolve({}) }));
         expect(mocks.perfil).toHaveBeenCalledWith(perfil.nombreFantasia);
         expect(screen.getByRole("heading", { name: perfil.nombreFantasia })).toBeInTheDocument();
-        expect(screen.getByRole("heading", { name: "Puntos de retiro" })).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Naranja - Valencia" }));
         const detalle = within(await screen.findByRole("dialog", { name: "Detalle de publicación" }));
+        expect(detalle.getByText("Puntos de retiro")).toBeInTheDocument();
+        expect(detalle.getByRole("link", { name: /Salto/ })).toHaveAttribute("href", "https://maps.example/salto");
         expect(detalle.getByText("Consultar precio")).toBeInTheDocument();
         expect(detalle.getByText("Uruguay")).toBeInTheDocument();
         expect(detalle.getByRole("link", { name: /WhatsApp/ })).toHaveAttribute("href", expect.stringContaining("https://wa.me/59899123456"));
@@ -98,13 +135,27 @@ describe("Listado y navegación de productores", () => {
 
     it("muestra un perfil sin publicaciones ni puntos de retiro", async () => {
         mocks.perfil.mockResolvedValue({ ...perfil, publicaciones: [], ubicaciones: [] });
-        render(await PaginaPerfil({ params: Promise.resolve({ nombre: perfil.nombreFantasia }) }));
+        render(await PaginaPerfil({ params: Promise.resolve({ nombre: perfil.nombreFantasia }), searchParams: Promise.resolve({})}));
         expect(screen.getByText("No hay publicaciones disponibles.")).toBeInTheDocument();
-        expect(screen.getByText("Sin puntos de retiro publicados.")).toBeInTheDocument();
     });
 
     it("devuelve no encontrado para un productor inexistente o no visible", async () => {
         mocks.perfil.mockResolvedValue(null);
-        await expect(PaginaPerfil({ params: Promise.resolve({ nombre: "Oculto" }) })).rejects.toThrow("NEXT_NOT_FOUND");
+        await expect(PaginaPerfil({ params: Promise.resolve({ nombre: "Oculto" }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_NOT_FOUND");
+    });
+
+    it("ofrece volver a publicaciones cuando el perfil se abre desde una publicación", async () => {
+        render(
+            await PaginaPerfil({
+                params: Promise.resolve({
+                    nombre: encodeURIComponent(perfil.nombreFantasia),
+                }),
+                searchParams: Promise.resolve({
+                    origen: "publicaciones",
+                }),
+            })
+        );
+        expect(mocks.perfil).toHaveBeenCalledWith(perfil.nombreFantasia);
+        expect(screen.getByRole("link", {name: "Volver al listado de publicaciones"})).toHaveAttribute("href", "/publicaciones-productor");
     });
 });

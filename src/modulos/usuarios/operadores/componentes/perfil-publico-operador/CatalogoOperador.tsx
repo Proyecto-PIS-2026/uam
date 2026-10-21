@@ -127,7 +127,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
                 </div>
             </section>
 
-            <DrawerPublicacionPerfil publicacion={publicacionParaDrawer} open={drawerAbierto} onOpenChange={setDrawerAbierto} whatsAppOperador={whatsAppOperador}/>
+            <DrawerPublicacionPerfil publicacion={publicacionParaDrawer} open={drawerAbierto} onOpenChange={setDrawerAbierto} />
         </>
     );
 }

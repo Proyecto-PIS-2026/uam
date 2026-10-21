@@ -19,7 +19,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
  
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
  
-vi.mock("../../../../modulos/usuarios/productores/consultas-perfil-productor-admin", () => ({
+vi.mock("@/modulos/usuarios/productores/acciones/consultas-perfil-productor-admin", () => ({
     obtenerPerfilAdminProductor: mocks.obtenerPerfil,
 }));
  

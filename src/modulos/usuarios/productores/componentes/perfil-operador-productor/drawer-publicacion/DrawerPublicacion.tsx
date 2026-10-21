@@ -4,7 +4,6 @@ import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "@/modulos/publicaciones/componentes/ImagenPublicacion";
-import Link from "next/link";
 import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -21,17 +20,15 @@ interface DrawerPublicacionProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     publicacion: PublicacionListado | PublicacionProductorListado | null;
-    esAdmin?: boolean;
 }
 
-export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = false }: DrawerPublicacionProps) {
+export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     
     const usuario = publicacion ? publicacion.tipoPublicacion === "PRODUCTOR" ? publicacion.productor : publicacion.operador : null;
     const numeroWhatsApp = usuario?.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-    const enlacePerfil = publicacion && usuario ? publicacion.tipoPublicacion === "OPERADOR" ? esAdmin ? `/gestion-operadores/${publicacion.operador.id}` : `/operadores/${encodeURIComponent(usuario.nombreFantasia)}` : `/productores/${encodeURIComponent(usuario.nombreFantasia)}` : "";    
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";

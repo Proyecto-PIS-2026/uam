@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
-vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
     db: { orm: { public: { Productor: { select: mocks.select } } } },
 }));
 
