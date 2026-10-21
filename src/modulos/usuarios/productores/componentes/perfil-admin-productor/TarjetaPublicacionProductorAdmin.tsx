@@ -12,9 +12,10 @@ const formatoPrecio = new Intl.NumberFormat("es-UY", {
 
 type TarjetaPublicacionProductorAdminProps = {
     publicacion: PublicacionPerfilAdminProductor;
+    alConsultar: () => void;
 };
 
-export default function TarjetaPublicacionProductorAdmin({ publicacion }: TarjetaPublicacionProductorAdminProps) {
+export default function TarjetaPublicacionProductorAdmin({ publicacion, alConsultar }: TarjetaPublicacionProductorAdminProps) {
     const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
     // const ubicacion = publicacion.ubicaciones.map((lugar) => lugar.nombre).join(" · ");
 
@@ -74,6 +75,13 @@ export default function TarjetaPublicacionProductorAdmin({ publicacion }: Tarjet
                     </div>
                 </div>
             </div>
+            <button
+                type="button"
+                className={styles.consultar}
+                aria-label={`Ver detalles de ${nombreProducto}`}
+                aria-haspopup="dialog"
+                onClick={alConsultar}
+            />
         </article>
     );
 }

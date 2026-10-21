@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';  
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import TarjetaPublicacionProductorAdmin from './TarjetaPublicacionProductorAdmin';
 import type { PublicacionPerfilAdminProductor } from '../../consultas-perfil-productor-admin';
 
@@ -35,9 +35,19 @@ describe ('TarjetaPublicacionProductorAdmin', () => {
         cleanup();
     });
 
+    it("permite consultar la publicación mediante un botón accesible", () => {
+        const alConsultar = vi.fn();
+        render(<TarjetaPublicacionProductorAdmin publicacion={publicacionBase} alConsultar={alConsultar} />);
+
+        const consultar = screen.getByRole("button", { name: "Ver detalles de Manzana - Red Delicious" });
+        expect(consultar).toHaveAttribute("aria-haspopup", "dialog");
+        fireEvent.click(consultar);
+        expect(alConsultar).toHaveBeenCalledOnce();
+    });
+
     // Muestra los datos principales de la publicación
     it('muestra el producto, el calibre, la categoría, la presentación y el precio', () => {
-        render(<TarjetaPublicacionProductorAdmin publicacion={publicacionBase} />);
+        render(<TarjetaPublicacionProductorAdmin publicacion={publicacionBase} alConsultar={() => {}} />);
  
         expect(screen.getByRole("heading", { name: "Manzana - Red Delicious" })).toBeInTheDocument();
         expect(screen.getAllByText(/Grande/).length).toBeGreaterThan(0);
@@ -48,14 +58,14 @@ describe ('TarjetaPublicacionProductorAdmin', () => {
 
     // Si la variedad es "-", el nombre es solo la especie
     it("muestra solo la especie cuando no hay variedad", () => {
-        render(<TarjetaPublicacionProductorAdmin publicacion={{ ...publicacionBase, variedad: "-" }} />);
+        render(<TarjetaPublicacionProductorAdmin publicacion={{ ...publicacionBase, variedad: "-" }} alConsultar={() => {}} />);
 
         expect(screen.getByRole("heading", { name: "Manzana" })).toBeInTheDocument();
     });
 
     // Sin precio cargado se indica explícitamente
     it("muestra 'Sin precio' cuando la publicación no tiene precio", () => {
-        render(<TarjetaPublicacionProductorAdmin publicacion={{ ...publicacionBase, precio: null }} />);
+        render(<TarjetaPublicacionProductorAdmin publicacion={{ ...publicacionBase, precio: null }} alConsultar={() => {}} />);
 
         expect(screen.getByText("Sin precio")).toBeInTheDocument();
     });
@@ -65,7 +75,7 @@ describe ('TarjetaPublicacionProductorAdmin', () => {
         { disponible: true, texto: "Disponible" },
         { disponible: false, texto: "No disponible" },
     ])("muestra la etiqueta '$texto'", ({ disponible, texto }) => {
-        render(<TarjetaPublicacionProductorAdmin publicacion={{ ...publicacionBase, disponible }} />);
+        render(<TarjetaPublicacionProductorAdmin publicacion={{ ...publicacionBase, disponible }} alConsultar={() => {}} />);
 
         expect(screen.getByText(texto)).toBeInTheDocument();
     });
