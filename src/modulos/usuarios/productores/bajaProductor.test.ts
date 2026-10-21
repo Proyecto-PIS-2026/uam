@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { bajaProductor } from "./bajaProductor";
-import { Temporal } from "@js-temporal/polyfill";
+import "temporal-polyfill/full/global";
+import "temporal-polyfill/types/global";
+
+
+type PrecioPublicacion = Parameters<
+	typeof db.orm.public.Publicacion.create
+>[0]["precio"];
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
 	exigirAdministrador: vi.fn(),
@@ -109,29 +115,28 @@ describe("baja de productor", () => {
 		const presentacion = (await db.orm.public.Presentacion.all())[0];
 		const pais = (await db.orm.public.Pais.all())[0];
 
-		expect(calibre).toBeDefined();
-		expect(categoria).toBeDefined();
-		expect(presentacion).toBeDefined();
-		expect(pais).toBeDefined();
-
 		if (!calibre || !categoria || !presentacion || !pais) {
 			throw new Error(
 				"Faltan datos de referencia para crear la publicación de prueba."
 			);
 		}
 
-		const publicacion = await db.orm.public.Publicacion.create({
-			calibreId: calibre.id,
-			categoriaId: categoria.id,
-			fecha: Temporal.Instant.from(new Date().toISOString()),
-			foto: null,
-			precio: 100,
-			presentacionId: presentacion.id,
-			publicacionActiva: true,
-			publicacionDisponible: true,
-			tipoPublicacion: "PRODUCTOR",
-			cantidadUnidades: 10,
-		});
+        const precio = "100.00" as unknown as PrecioPublicacion;
+
+        const publicacion = await db.orm.public.Publicacion.create({
+            calibreId: calibre.id,
+            categoriaId: categoria.id,
+            fecha: Temporal.Instant.fromEpochMilliseconds(
+                new Date("2026-10-03T15:00:00.000Z").getTime()
+            ),
+            foto: null,
+            precio,
+            presentacionId: presentacion.id,
+            publicacionActiva: true,
+            publicacionDisponible: true,
+            tipoPublicacion: "PRODUCTOR",
+            cantidadUnidades: 10,
+        });
 
 		await db.orm.public.PublicacionProductor.create({
 			productorId: productor.id,
