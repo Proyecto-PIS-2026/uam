@@ -1,7 +1,8 @@
 import type { SwipeableDrawerProps } from "@mui/material/SwipeableDrawer";
+import type { DrawerProps } from "@mui/material/Drawer";
 import type { DialogProps } from "@mui/material/Dialog";
 import type { ReactNode } from "react";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
@@ -19,6 +20,15 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@mui/material/useMediaQuery", () => ({ default: mocks.mediaQuery }));
 vi.mock("@mui/material/SwipeableDrawer", () => ({
     default: ({ anchor, open, children, onClose }: SwipeableDrawerProps) => <section role="dialog" aria-label="Detalle de publicación" data-anchor={anchor} hidden={!open} onTouchEnd={onClose}>{children}</section>,
+}));
+vi.mock("@mui/material/Drawer", () => ({
+    default: ({ anchor, open, children, onClose, slotProps }: DrawerProps) => {
+        const papel = slotProps?.paper as { "aria-label"?: string } | undefined;
+        return open ? <section role="dialog" aria-label={papel?.["aria-label"]} data-anchor={anchor}>
+            {children}
+            <button type="button" aria-label="Cerrar edición desde fondo" onClick={(evento) => onClose?.(evento, "backdropClick")} />
+        </section> : null;
+    },
 }));
 vi.mock("@mui/material/Dialog", () => ({
     default: ({ open, children, "aria-label": etiqueta }: DialogProps) => open ? <section role="dialog" aria-label={etiqueta}>{children}</section> : null,
@@ -94,6 +104,16 @@ async function editar() {
     return screen.findByLabelText("Precio en pesos");
 }
 
+async function seleccionar(campo: string, opcion: string) {
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: new RegExp(`^${campo}`) }));
+    fireEvent.click(await screen.findByRole("option", { name: opcion }));
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+}
+
+function editarUbicaciones() {
+    fireEvent.click(screen.getByRole("button", { name: /^(Cambiar ubicación|Seleccionar ubicación de retiro)$/ }));
+}
+
 function solicitudGuardado() {
     const llamada = mocks.fetch.mock.calls.find(([, configuracion]) => configuracion?.method === "PATCH");
     expect(llamada).toBeDefined();
@@ -122,7 +142,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         vi.restoreAllMocks();
     });
 
-    it("habilita la edición en el mismo drawer de consulta sin guardar al cambiar campos", async () => {
+    it("abre un drawer de edición separado con los datos precargados y no guarda al cambiar campos", async () => {
         mostrar();
         const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
         expect(within(detalle).getByText("$100")).toBeInTheDocument();
@@ -131,11 +151,24 @@ describe("DrawerPublicacionProductor: edición", () => {
 
         const precio = await editar();
 
-        expect(screen.getAllByRole("dialog")).toEqual([detalle]);
+        const edicion = screen.getByRole("dialog", { name: "Editar publicación de Productor" });
+        expect(screen.getAllByRole("dialog")).toEqual([edicion]);
+        expect(screen.queryByRole("dialog", { name: "Detalle de publicación" })).not.toBeInTheDocument();
         expect(precio).toHaveValue("100");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toBeEnabled();
-        expect(screen.getByRole("combobox", { name: "Categoría" })).toBeEnabled();
-        expect(screen.getByRole("combobox", { name: "Calibre" })).toBeEnabled();
+        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Cajón");
+        expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent("Primera");
+        expect(screen.getByRole("combobox", { name: /^Calibre/ })).toHaveTextContent("G - Grande");
+        for (const [campo, valor] of [["Especie", "Pera"], ["Variedad", "Williams"], ["País de origen", "Uruguay"]]) {
+            const selector = screen.getByRole("combobox", { name: new RegExp(`^${campo}`) });
+            expect(selector).toHaveTextContent(valor);
+            expect(selector).toHaveAttribute("aria-disabled", "true");
+        }
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeDisabled();
+        expect(screen.getByLabelText("Cantidad (Cajón)")).toHaveValue("12");
+        expect(screen.getByLabelText("Cantidad (Cajón)")).toBeDisabled();
+        expect(screen.queryByLabelText("Nombre del punto de retiro 1")).not.toBeInTheDocument();
+        editarUbicaciones();
         expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Quinta");
         expect(screen.getByLabelText("Enlace de Google Maps 1")).toHaveValue("https://maps.google.com/?q=Salto");
         fireEvent.change(precio, { target: { value: "250" } });
@@ -157,14 +190,14 @@ describe("DrawerPublicacionProductor: edición", () => {
         };
         mocks.fetch.mockResolvedValueOnce(respuesta({ opciones })).mockResolvedValueOnce(respuesta({ publicacion: actualizada }));
         mostrar();
-        const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
         fireEvent.change(await editar(), { target: { value: "250" } });
-        fireEvent.change(screen.getByRole("combobox", { name: "Presentación" }), { target: { value: "112" } });
-        fireEvent.change(screen.getByRole("combobox", { name: "Categoría" }), { target: { value: "5" } });
-        fireEvent.change(screen.getByRole("combobox", { name: "Calibre" }), { target: { value: "8" } });
+        await seleccionar("Presentación", "Bolsa");
+        await seleccionar("Categoría", "Segunda");
+        await seleccionar("Calibre", "M - Mediano");
+        editarUbicaciones();
         fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 1"), { target: { value: "Nuevo retiro" } });
         fireEvent.change(screen.getByLabelText("Enlace de Google Maps 1"), { target: { value: "https://maps.app.goo.gl/retiro" } });
-        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         const { url, datos, cambios } = solicitudGuardado();
@@ -174,19 +207,24 @@ describe("DrawerPublicacionProductor: edición", () => {
             ubicaciones: [{ nombreUbicacion: "Nuevo retiro", urlMaps: "https://maps.app.goo.gl/retiro" }],
         });
         expect(datos.has("foto")).toBe(false);
-        expect(screen.getAllByRole("dialog")).toEqual([detalle]);
+        expect(screen.getAllByRole("dialog")).toEqual([screen.getByRole("dialog", { name: "Detalle de publicación" })]);
+        expect(screen.queryByRole("dialog", { name: "Editar publicación de Productor" })).not.toBeInTheDocument();
         expect(screen.queryByLabelText("Precio en pesos")).not.toBeInTheDocument();
         expect(screen.getByText("$250")).toBeInTheDocument();
         expect(screen.getByText("21/10/2026")).toHaveAttribute("dateTime", actualizada.fecha);
         expect(mocks.cerrar).not.toHaveBeenCalled();
+        expect(await editar()).toHaveValue("250");
+        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Bolsa");
     });
 
-    it("cancela el borrador sin persistir y recupera los valores originales al volver a editar", async () => {
+    it.each(["Cancelar", "Cerrar edición", "Cerrar edición desde fondo"])("descarta el borrador con %s y restaura los datos guardados al reabrir", async (accion) => {
         mostrar();
         fireEvent.change(await editar(), { target: { value: "999" } });
+        await seleccionar("Presentación", "Bolsa");
+        editarUbicaciones();
         fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 1"), { target: { value: "No guardar" } });
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
-        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+        fireEvent.click(screen.getByRole("button", { name: accion }));
 
         expect(screen.getByText("$100")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Quinta" })).toBeInTheDocument();
@@ -194,6 +232,8 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(mocks.guardar).not.toHaveBeenCalled();
         expect(mocks.cerrar).not.toHaveBeenCalled();
         expect(await editar()).toHaveValue("100");
+        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Cajón");
+        editarUbicaciones();
         expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Quinta");
         expect(screen.queryByLabelText("Nombre del punto de retiro 2")).not.toBeInTheDocument();
     });
@@ -214,14 +254,14 @@ describe("DrawerPublicacionProductor: edición", () => {
             .mockResolvedValueOnce(respuesta({ publicacion: actualizada }));
         mostrar();
         fireEvent.change(await editar(), { target: { value: "300" } });
-        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
         expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar la publicación.");
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("300");
-        expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
         expect(mocks.guardar).not.toHaveBeenCalled();
         expect(mocks.cerrar).not.toHaveBeenCalled();
-        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
     });
 
@@ -229,13 +269,14 @@ describe("DrawerPublicacionProductor: edición", () => {
         mocks.fetch.mockResolvedValueOnce(respuesta({ opciones })).mockResolvedValueOnce(respuesta({ publicacion }));
         mostrar();
         await editar();
+        editarUbicaciones();
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
         fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 2"), { target: { value: "Depósito" } });
         fireEvent.change(screen.getByLabelText("Enlace de Google Maps 2"), { target: { value: "https://maps.google.com/?q=Montevideo" } });
         fireEvent.click(screen.getByRole("button", { name: "Eliminar punto de retiro 1" }));
         expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Depósito");
         expect(screen.queryByLabelText("Nombre del punto de retiro 2")).not.toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalled());
         expect(solicitudGuardado().cambios.ubicaciones).toEqual([{ nombreUbicacion: "Depósito", urlMaps: "https://maps.google.com/?q=Montevideo" }]);
@@ -253,28 +294,96 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(await editar()).toHaveValue("100");
     });
 
+    it("no abre la edición si la consulta se cierra mientras carga las opciones", async () => {
+        let resolver!: (valor: ReturnType<typeof respuesta>) => void;
+        mocks.fetch.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+        const { rerender } = mostrar();
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
+        rerender(<DrawerPublicacionProductor publicacion={null} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} />);
+
+        await act(async () => resolver(respuesta({ opciones })));
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        rerender(<DrawerPublicacionProductor publicacion={publicacion} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} />);
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+        expect(screen.queryByLabelText("Precio en pesos")).not.toBeInTheDocument();
+    });
+
+    it("permite editar datos nuevos del mismo id durante una carga pendiente e ignora la respuesta anterior", async () => {
+        let resolverAnterior!: (valor: ReturnType<typeof respuesta>) => void;
+        mocks.fetch.mockReturnValueOnce(new Promise((resolve) => { resolverAnterior = resolve; }))
+            .mockResolvedValueOnce(respuesta({ opciones }));
+        const { rerender } = mostrar();
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        const actualizada = { ...publicacion, precio: "175" };
+
+        rerender(<DrawerPublicacionProductor publicacion={actualizada} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} />);
+
+        expect(screen.getByRole("button", { name: "Editar" })).toBeEnabled();
+        const precio = await editar();
+        expect(precio).toHaveValue("175");
+        fireEvent.change(precio, { target: { value: "250" } });
+        await act(async () => resolverAnterior(respuesta({ opciones })));
+
+        expect(screen.getByRole("dialog", { name: "Editar publicación de Productor" })).toBeInTheDocument();
+        expect(screen.getByLabelText("Precio en pesos")).toHaveValue("250");
+        expect(mocks.fetch).toHaveBeenCalledTimes(2);
+        expect(mocks.guardar).not.toHaveBeenCalled();
+    });
+
+    it("bloquea cambios, cierre y envíos duplicados mientras guarda", async () => {
+        let resolver!: (valor: ReturnType<typeof respuesta>) => void;
+        mocks.fetch.mockResolvedValueOnce(respuesta({ opciones }))
+            .mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+        mostrar();
+        fireEvent.change(await editar(), { target: { value: "150" } });
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+        const guardando = screen.getByRole("button", { name: "Guardando..." });
+        expect(guardando).toBeDisabled();
+        expect(screen.getByLabelText("Precio en pesos")).toBeDisabled();
+        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByLabelText("Fotografía")).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Cerrar edición" })).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar edición desde fondo" }));
+        fireEvent.submit(guardando.closest("form")!);
+        expect(screen.getByRole("dialog", { name: "Editar publicación de Productor" })).toBeInTheDocument();
+        expect(mocks.fetch.mock.calls.filter(([, config]) => config?.method === "PATCH")).toHaveLength(1);
+        expect(mocks.cerrar).not.toHaveBeenCalled();
+
+        await act(async () => resolver(respuesta({ publicacion: { ...publicacion, precio: "150" } })));
+
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+        expect(screen.getByText("$150")).toBeInTheDocument();
+    });
+
     it.each([false, true])("ofrece archivo en web y archivo o cámara en móvil (esWeb=%s)", async (esWeb) => {
         mocks.mediaQuery.mockReturnValue(esWeb);
         mostrar();
         await editar();
-        const archivo = screen.getByLabelText("Seleccionar fotografía");
+        expect(screen.getByRole("dialog", { name: "Editar publicación de Productor" })).toHaveAttribute("data-anchor", esWeb ? "right" : "bottom");
+        const archivo = screen.getByLabelText("Fotografía");
         const abrirArchivo = vi.spyOn(archivo, "click").mockImplementation(() => {});
         expect(archivo).toHaveAttribute("type", "file");
-        expect(archivo).toHaveAttribute("accept", "image/jpeg,image/png,image/webp");
-        expect(archivo).not.toHaveAttribute("capture");
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar archivo" }));
+        expect(archivo).toHaveAttribute("accept", "image/png,image/jpeg,image/webp");
+        fireEvent.click(screen.getByRole("button", { name: esWeb ? "Editar foto" : "Cámara" }));
         expect(abrirArchivo).toHaveBeenCalledOnce();
 
         if (esWeb) {
-            expect(screen.queryByRole("button", { name: "Tomar foto" })).not.toBeInTheDocument();
-            expect(screen.queryByLabelText("Tomar fotografía")).not.toBeInTheDocument();
+            expect(archivo).not.toHaveAttribute("capture");
+            expect(screen.queryByRole("button", { name: "Cámara" })).not.toBeInTheDocument();
+            expect(screen.queryByRole("button", { name: "Galería" })).not.toBeInTheDocument();
+            expect(screen.queryByLabelText("Fotografía desde galería")).not.toBeInTheDocument();
         } else {
-            const camara = screen.getByLabelText("Tomar fotografía");
-            const abrirCamara = vi.spyOn(camara, "click").mockImplementation(() => {});
-            expect(camara).toHaveAttribute("capture", "environment");
-            expect(camara).toHaveAttribute("accept", "image/jpeg,image/png,image/webp");
-            fireEvent.click(screen.getByRole("button", { name: "Tomar foto" }));
-            expect(abrirCamara).toHaveBeenCalledOnce();
+            expect(archivo).toHaveAttribute("capture", "environment");
+            const galeria = screen.getByLabelText("Fotografía desde galería");
+            const abrirGaleria = vi.spyOn(galeria, "click").mockImplementation(() => {});
+            expect(galeria).not.toHaveAttribute("capture");
+            expect(galeria).toHaveAttribute("accept", "image/png,image/jpeg,image/webp");
+            fireEvent.click(screen.getByRole("button", { name: "Galería" }));
+            expect(abrirGaleria).toHaveBeenCalledOnce();
         }
     });
 
@@ -283,12 +392,12 @@ describe("DrawerPublicacionProductor: edición", () => {
         mocks.fetch.mockResolvedValueOnce(respuesta({ opciones })).mockResolvedValueOnce(respuesta({ publicacion: { ...publicacion, foto: "/pera.png" } }));
         mostrar();
         await editar();
-        fireEvent.change(screen.getByLabelText("Seleccionar fotografía"), { target: { files: [foto] } });
+        fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [foto] } });
 
         expect(mocks.crearVistaPrevia).toHaveBeenCalledWith(foto);
         expect(mocks.fetch).toHaveBeenCalledTimes(1);
-        expect(screen.getByAltText("Foto de Pera")).toHaveAttribute("src", "blob:foto-productor");
-        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        expect(screen.getByAltText("Vista previa de la fotografía")).toHaveAttribute("src", "blob:foto-productor");
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalled());
 
         const enviada = solicitudGuardado().datos.get("foto") as File;
@@ -303,8 +412,9 @@ describe("DrawerPublicacionProductor: edición", () => {
         mostrar({ ...publicacion, foto: "/pera.png" });
         fireEvent.load(screen.getByAltText("Foto de Pera"));
         await editar();
-        fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
-        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        expect(screen.getByAltText("Vista previa de la fotografía")).toHaveAttribute("src", "/pera.png");
+        fireEvent.click(screen.getByRole("button", { name: "Borrar foto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalled());
 
         const { datos, cambios } = solicitudGuardado();
@@ -317,7 +427,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         mostrar({ ...publicacion, foto: "/pera.png" });
         fireEvent.load(screen.getByAltText("Foto de Pera"));
         await editar();
-        fireEvent.change(screen.getByLabelText("Seleccionar fotografía"), {
+        fireEvent.change(screen.getByLabelText("Fotografía"), {
             target: { files: [new File(["foto nueva"], "nueva.png", { type: "image/png" })] },
         });
         fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));

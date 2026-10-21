@@ -1,4 +1,5 @@
 import type { SwipeableDrawerProps } from "@mui/material/SwipeableDrawer";
+import type { DrawerProps } from "@mui/material/Drawer";
 import type { DialogProps } from "@mui/material/Dialog";
 import type { ReactNode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -11,6 +12,12 @@ const mocks = vi.hoisted(() => ({ mediaQuery: vi.fn() }));
 vi.mock("@mui/material/useMediaQuery", () => ({ default: mocks.mediaQuery }));
 vi.mock("@mui/material/SwipeableDrawer", () => ({
     default: ({ anchor, open, children, onClose }: SwipeableDrawerProps) => <section role="dialog" aria-label="Detalle de publicación" data-anchor={anchor} hidden={!open} onTouchEnd={onClose}>{children}</section>,
+}));
+vi.mock("@mui/material/Drawer", () => ({
+    default: ({ anchor, open, children, slotProps }: DrawerProps) => {
+        const papel = slotProps?.paper as { "aria-label"?: string } | undefined;
+        return open ? <section role="dialog" aria-label={papel?.["aria-label"]} data-anchor={anchor}>{children}</section> : null;
+    },
 }));
 vi.mock("@mui/material/Dialog", () => ({
     default: ({ open, children, "aria-label": etiqueta }: DialogProps) => open ? <section role="dialog" aria-label={etiqueta}>{children}</section> : null,
@@ -176,12 +183,15 @@ describe("MiMercadoProductor", () => {
         fireEvent.click(screen.getByRole("button", { name: "Ver detalle de Pera" }));
         fireEvent.click(screen.getByRole("button", { name: "Editar" }));
         fireEvent.change(await screen.findByLabelText("Precio en pesos"), { target: { value: "220" } });
-        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        expect(screen.queryByRole("dialog", { name: "Detalle de publicación" })).not.toBeInTheDocument();
+        expect(screen.getByRole("dialog", { name: "Editar publicación de Productor" })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
         await waitFor(() => expect(within(screen.getByRole("button", { name: "Ver detalle de Pera" })).getByText("$220")).toBeInTheDocument());
         expect(within(screen.getByRole("button", { name: "Ver detalle de Manzana" })).getByText("$80")).toBeInTheDocument();
         expect(fetch.mock.calls[1][0]).toBe("/api/publicaciones/productor/101");
         expect(fetch.mock.calls[1][1]).toEqual(expect.objectContaining({ method: "PATCH" }));
+        expect(screen.queryByRole("dialog", { name: "Editar publicación de Productor" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
         fireEvent.click(screen.getByRole("button", { name: "Ver detalle de Pera" }));
         const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
