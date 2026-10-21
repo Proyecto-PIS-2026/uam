@@ -60,6 +60,10 @@ function obtenerNombreRol(rol: UsuarioParaModificar["rol"]) {
     return "Productor";
 }
 
+function puedeEliminar(usuario: UsuarioParaModificar) {
+    return usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR";
+}
+
 function obtenerInformacion(usuario: UsuarioParaModificar) {
     if (usuario.rol === "ADMINISTRADOR") return usuario.email;
     if (usuario.rol === "OPERADOR") return usuario.nombreFantasia;
@@ -117,7 +121,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
 
     function manejarAbrirEliminar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
         evento.stopPropagation();
-        if (usuario.rol !== "OPERADOR" || !onEliminar || eliminando) return;
+        if (!puedeEliminar(usuario) || !onEliminar || eliminando) return;
         setUsuarioAEliminar(usuario);
     }
 
@@ -171,7 +175,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                                 <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} disabled={eliminando || usuario.rol !== "OPERADOR"} title={usuario.rol === "OPERADOR" ? "Editar perfil" : "Edición todavía no disponible"} className={styles.botonEditar}>
                                     <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={eliminando || usuario.rol !== "OPERADOR" || !onEliminar} title={usuario.rol === "OPERADOR" && onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
+                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={eliminando || !puedeEliminar(usuario) || !onEliminar} title={puedeEliminar(usuario) && onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
                                     <DeleteIcon fontSize="small" />
                                 </IconButton>
                             </div>
