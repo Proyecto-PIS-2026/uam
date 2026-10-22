@@ -1,5 +1,5 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import { obtenerProductorActual } from "../../usuarios/productores/productor-actual";
+import { obtenerProductorActual } from "../../usuarios/productores/acciones/productor-actual";
 import type { Publicacion } from "./componentes/MiMercado";
 
 export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperadorId"> & {

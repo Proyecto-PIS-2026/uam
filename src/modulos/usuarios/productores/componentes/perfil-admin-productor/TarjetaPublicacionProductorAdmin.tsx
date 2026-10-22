@@ -1,6 +1,6 @@
 import ImagenPublicacion from "../../../../publicaciones/componentes/ImagenPublicacion";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import type { PublicacionPerfilAdminProductor } from "../../consultas-perfil-productor-admin";
+import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import styles from "./TarjetaPublicacionProductorAdmin.module.css";
 
 const formatoPrecio = new Intl.NumberFormat("es-UY", {

@@ -1,4 +1,4 @@
-import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { db } from "../../../../infraestructura/persistencia/prisma/db";
 
 // Una ubicación donde está el producto, con su enlace a Google Maps
 export type UbicacionPublicacionProductor = {

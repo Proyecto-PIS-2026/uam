@@ -126,12 +126,14 @@ export default function ListadoPublicaciones({ publicaciones, esAdmin = false }:
                         agrupar ? styles.botonAgruparActivo : ""
                     }`}
                 >
-                    {agrupar ? (
-                        <ViewListIcon fontSize="small" />
-                    ) : (
-                        <ViewModuleIcon fontSize="small" />
-                    )}
-                    <span>{agrupar ? "Desagrupar" : "Agrupar"}</span>
+                    <span key={agrupar ? "desagrupar" : "agrupar"} className={styles.textoAgrupar}>
+                        {agrupar ? (
+                            <ViewListIcon fontSize="small" />
+                        ) : (
+                            <ViewModuleIcon fontSize="small" />
+                        )}
+                            {agrupar ? "Desagrupar" : "Agrupar"}
+                    </span>
                 </button>
             </div>
             {agrupar ? (

@@ -1,5 +1,5 @@
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
-import type { PerfilAdminProductor } from "../../consultas-perfil-productor-admin";
+import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 
 import styles from "./PerfilProductorAdmin.module.css";
 import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
