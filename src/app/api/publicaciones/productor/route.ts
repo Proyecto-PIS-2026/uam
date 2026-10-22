@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { altaPublicacionProductor } from "@/modulos/publicaciones/altaPublicacionProductor";
-import { ErrorAutorizacion, exigirProductor } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 
 export const runtime = "nodejs";
 
+async function exigirProductorOAdministrador() {
+    const sesion = await obtenerSesion();
+    if (!sesion) throw new ErrorAutorizacion(401, "Iniciá sesión para continuar.");
+    if (sesion.rol !== "PRODUCTOR" && sesion.rol !== "ADMINISTRADOR") {
+        throw new ErrorAutorizacion(403, "No tenés permiso para realizar esta operación.");
+    }
+    return sesion;
+}
+
 export async function GET() {
     try {
-        await exigirProductor();
+        await exigirProductorOAdministrador();
         const [especies, variedades, presentaciones, categorias, calibres, paises] = await Promise.all([
             db.orm.public.Especie.select("id", "nombreEspecie").where({ especieActiva: true }).all(),
             db.orm.public.Variedad.select("id", "especieId", "nombreVariedad").where({ variedadActiva: true }).all(),
@@ -36,14 +46,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const sesion = await exigirProductor();
-        const productor = await db.orm.public.Productor.where({ usuarioId: sesion.usuarioId }).select("id", "usuarioId").first();
-        if (!productor) {
-            return NextResponse.json({ errores: ["No se encontró el Productor."] }, { status: 404 });
-        }
-        if (!autorizado("productor.publicacion.crear", sesion, productor)) {
-            return NextResponse.json({ errores: ["No tenés permiso para realizar esta operación."] }, { status: 403 });
-        }
+        const sesion = await exigirProductorOAdministrador();
         let datos: unknown;
         try {
             datos = await request.json();
@@ -52,6 +55,27 @@ export async function POST(request: Request) {
         }
         if (typeof datos !== "object" || datos === null || Array.isArray(datos)) {
             return NextResponse.json({ errores: ["Los datos de la publicación no son válidos."] }, { status: 400 });
+        }
+
+        if (autorizado("administracion.publicacion.crear", sesion)) {
+            const productorId = "productorId" in datos ? datos.productorId : undefined;
+            if (typeof productorId !== "number" || !Number.isSafeInteger(productorId) || productorId <= 0) {
+                return NextResponse.json({ errores: ["Debe seleccionar un productor."] }, { status: 400 });
+            }
+            const productor = await db.orm.public.Productor.where({ id: productorId }).select("id").first();
+            if (!productor) {
+                return NextResponse.json({ errores: ["El productor no existe."] }, { status: 404 });
+            }
+            const resultado = await altaPublicacionProductor({ ...datos, productorId: productor.id });
+            return NextResponse.json(resultado, { status: resultado.esValido ? 201 : 400 });
+        }
+
+        const productor = await db.orm.public.Productor.where({ usuarioId: sesion.usuarioId }).select("id", "usuarioId").first();
+        if (!productor) {
+            return NextResponse.json({ errores: ["No se encontró el Productor."] }, { status: 404 });
+        }
+        if (!autorizado("productor.publicacion.crear", sesion, productor)) {
+            return NextResponse.json({ errores: ["No tenés permiso para realizar esta operación."] }, { status: 403 });
         }
         if ("productorId" in datos && datos.productorId !== productor.id) {
             return NextResponse.json({ errores: ["No tenés permiso para publicar para otro Productor."] }, { status: 403 });
