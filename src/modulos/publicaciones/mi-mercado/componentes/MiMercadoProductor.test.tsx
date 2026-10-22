@@ -164,7 +164,7 @@ describe("MiMercadoProductor", () => {
         expect(screen.queryByTitle("Pera")).not.toBeInTheDocument();
     });
 
-    it("actualiza únicamente la tarjeta editada y conserva los cambios al reabrir su consulta", async () => {
+    it("conserva la edición de una tarjeta y permite abrir el alta con campos vacíos", async () => {
         const pera = crearPublicacion(1, "Pera");
         const manzana = crearPublicacion(2, "Manzana", "80");
         const actualizada = { ...pera, precio: "220", fecha: "2026-10-21T15:00:00.000Z" };
@@ -176,10 +176,13 @@ describe("MiMercadoProductor", () => {
             calibres: [{ id: 1, nombre: "G - Grande" }],
             paises: [{ id: 1, nombre: "Uruguay" }],
         };
-        const fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ opciones }) })
+        const fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => opciones })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ opciones }) })
             .mockResolvedValueOnce({ ok: true, json: async () => ({ publicacion: actualizada }) });
         vi.stubGlobal("fetch", fetch);
-        render(<MiMercadoProductor publicaciones={[pera, manzana]} />);
+        render(<MiMercadoProductor publicaciones={[pera, manzana]} productorId={21} />);
+        await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/publicaciones/productor"));
+        expect(screen.getByRole("button", { name: "Nueva publicación" })).toBeEnabled();
         fireEvent.click(screen.getByRole("button", { name: "Ver detalle de Pera" }));
         fireEvent.click(screen.getByRole("button", { name: "Editar" }));
         fireEvent.change(await screen.findByLabelText("Precio en pesos"), { target: { value: "220" } });
@@ -189,14 +192,21 @@ describe("MiMercadoProductor", () => {
 
         await waitFor(() => expect(within(screen.getByRole("button", { name: "Ver detalle de Pera" })).getByText("$220")).toBeInTheDocument());
         expect(within(screen.getByRole("button", { name: "Ver detalle de Manzana" })).getByText("$80")).toBeInTheDocument();
-        expect(fetch.mock.calls[1][0]).toBe("/api/publicaciones/productor/101");
-        expect(fetch.mock.calls[1][1]).toEqual(expect.objectContaining({ method: "PATCH" }));
+        expect(fetch.mock.calls[2][0]).toBe("/api/publicaciones/productor/101");
+        expect(fetch.mock.calls[2][1]).toEqual(expect.objectContaining({ method: "PATCH" }));
         expect(screen.queryByRole("dialog", { name: "Editar publicación de Productor" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
         fireEvent.click(screen.getByRole("button", { name: "Ver detalle de Pera" }));
         const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
         expect(within(detalle).getByText("$220")).toBeInTheDocument();
         expect(within(detalle).getByText("21/10/2026")).toHaveAttribute("dateTime", actualizada.fecha);
+        fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+        const alta = await screen.findByRole("dialog", { name: "Nueva publicación de Productor" });
+        expect(within(alta).getByLabelText("Precio en pesos")).toHaveValue("");
+        fireEvent.click(within(alta).getByRole("button", { name: "Cancelar" }));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(within(screen.getByRole("button", { name: "Ver detalle de Pera" })).getByText("$220")).toBeInTheDocument();
     });
 
     it("muestra el estado vacío sin filtros ni acciones de operador", () => {

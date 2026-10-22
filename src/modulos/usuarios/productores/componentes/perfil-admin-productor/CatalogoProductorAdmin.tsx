@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import DrawerPublicacionProductor from "../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProductor";
 import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
-import type { PublicacionPerfilAdminProductor } from "../../consultas-perfil-productor-admin";
+import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import TarjetaPublicacionProductorAdmin from "./TarjetaPublicacionProductorAdmin";
 
 type CatalogoProductorAdminProps = {

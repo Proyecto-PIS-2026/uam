@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { obtenerSesion, type RolUsuario } from "../autenticacion/sesiones";
 import { obtenerRutaPrincipal } from "./rutas";
+import { autorizado } from "./permisos";
 
 type SesionAutenticada = NonNullable<Awaited<ReturnType<typeof obtenerSesion>>>;
 
@@ -48,10 +49,29 @@ export async function exigirConsultaMercadoPublico() {
 }
 
 export async function exigirConsultaMercadoOperador() {
+    await exigirConsultaProductores("No tenés permiso para consultar las publicaciones de productores.");
+}
+
+export async function exigirConsultaProductores(mensaje = "No tenés permiso para consultar productores y sus publicaciones.") {
     const sesion = await obtenerSesion();
-    if (sesion?.rol != "OPERADOR") {
-        throw new ErrorAutorizacion(403, "Sólo operadores los pueden consultar las publicaciones de Productores.");
+    if (!sesion) {
+        throw new ErrorAutorizacion(401, "Iniciá sesión para continuar.");
     }
+    if (!autorizado("productor.publicacion.consultar", sesion)) {
+        throw new ErrorAutorizacion(403, mensaje);
+    }
+    return sesion;
+}
+
+export async function requerirConsultaProductores() {
+    const sesion = await obtenerSesion();
+    if (!sesion) {
+        redirect("/iniciar-sesion");
+    }
+    if (!autorizado("productor.publicacion.consultar", sesion)) {
+        redirect(obtenerRutaPrincipal(sesion.rol));
+    }
+    return sesion;
 }
 
 export function exigirAdministrador() {
@@ -72,4 +92,8 @@ export function exigirProductor() {
 
 export function requerirOperador() {
     return requerirRol("OPERADOR");
+}
+
+export function requerirProductor() {
+    return requerirRol("PRODUCTOR");
 }

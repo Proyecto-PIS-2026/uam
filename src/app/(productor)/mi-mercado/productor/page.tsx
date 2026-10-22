@@ -16,5 +16,5 @@ export default async function PaginaMiMercadoProductor() {
     if (!autorizado("productor.mercado.acceder", sesion)) redirect("/inicio");
 
     const { productor, publicaciones } = await obtenerPublicacionesMiMercadoProductor();
-    return <MiMercadoProductor key={productor.id} publicaciones={publicaciones} nombreProductor={productor.nombreFantasia} />;
+    return <MiMercadoProductor key={productor.id} publicaciones={publicaciones} nombreProductor={productor.nombreFantasia} productorId={productor.id} />;
 }

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 
 import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
-import type { PublicacionPerfilAdminProductor } from "../../consultas-perfil-productor-admin";
+import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
 
 vi.mock("../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProductor", () => ({

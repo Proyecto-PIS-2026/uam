@@ -15,7 +15,7 @@ export default function TarjetaOperador({ operador, esAdmin }: TarjetaOperadorPr
     }).join(" | ");
     const foto = operador.fotoPerfil?.trim();
     const inicial = operador.nombreFantasia.trim().charAt(0).toLocaleUpperCase("es");
-    const href = esAdmin ? `/gestion-operadores/${operador.id}` : `/operadores/${encodeURIComponent(operador.nombreFantasia)}`;
+    const href = esAdmin ? `/gestion-operadores/${operador.id}` : `/operadores/${encodeURIComponent(operador.nombreFantasia)}?origen=operadores`;
 
     const contenido = (
         <Link href={href} className={styles.tarjeta}>

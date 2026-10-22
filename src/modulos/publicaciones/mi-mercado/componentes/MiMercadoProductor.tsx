@@ -6,6 +6,7 @@ import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publ
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import DrawerPublicacionProductor from "./DrawerPublicacionProductor";
+import { DrawerAltaPublicacionProductor } from "../../productores/AltaPublicacionProductor";
 import TarjetaPublicacionProductor from "./TarjetaPublicacionProductor";
 import styles from "./MiMercado.module.css";
 
@@ -14,10 +15,12 @@ const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.o
 type Props = {
     publicaciones: PublicacionMiMercadoProductor[];
     nombreProductor?: string;
+    productorId?: number;
 };
 
-export default function MiMercadoProductor({ publicaciones, nombreProductor = "" }: Props) {
+export default function MiMercadoProductor({ publicaciones, nombreProductor = "", productorId = 0 }: Props) {
     const [seleccionId, setSeleccionId] = useState<number | null>(null);
+    const [altaAbierta, setAltaAbierta] = useState(false);
     const [cambiosGuardados, setCambiosGuardados] = useState<{ origen: PublicacionMiMercadoProductor[]; porId: Map<number, PublicacionMiMercadoProductor> } | null>(null);
     const publicacionesActuales = useMemo(() => publicaciones.map((publicacion) =>
         cambiosGuardados?.origen === publicaciones ? cambiosGuardados.porId.get(publicacion.id) ?? publicacion : publicacion,
@@ -74,7 +77,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                 )}
                 <div className={`${styles.encabezadoCatalogo} flex-wrap`}>
                     <h2 className={styles.titulo}>Publicaciones</h2>
-                    <button type="button" disabled title="Próximamente" className="rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">Nueva publicación</button>
+                    <button type="button" onClick={() => setAltaAbierta(true)} disabled={!productorId} className="rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">Nueva publicación</button>
                 </div>
                 {publicaciones.length === 0 ? (
                     <div className="rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
@@ -92,6 +95,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                 )}
             </div>
             <DrawerPublicacionProductor publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} alGuardar={guardarPublicacion} />
+            {productorId > 0 && <DrawerAltaPublicacionProductor productorId={productorId} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={() => setAltaAbierta(false)} />}
         </main>
     );
 }
