@@ -62,8 +62,7 @@ function obtenerNombreRol(rol: UsuarioParaModificar["rol"]) {
 
 function obtenerInformacion(usuario: UsuarioParaModificar) {
     if (usuario.rol === "ADMINISTRADOR") return usuario.email;
-    if (usuario.rol === "OPERADOR") return usuario.nombreFantasia;
-    return "-";
+    return usuario.nombreFantasia;
 }
 
 export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSeleccionar, onEliminar }: ListaUsuariosProps) {
@@ -103,6 +102,11 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
         if (usuario.rol === "PRODUCTOR") {
             router.push(`/gestion-productores/${usuario.productorId}`);
         }
+    }
+
+    // Roles que ya tienen su página de modificación
+    function puedeEditar(usuario: UsuarioParaModificar) {
+        return usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR";
     }
 
     function manejarEditar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
@@ -168,7 +172,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                             <span className={styles.informacion}>{obtenerInformacion(usuario)}</span>
                             <span className={styles.rol}>{obtenerNombreRol(usuario.rol)}</span>
                             <div className={styles.acciones}>
-                                <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} disabled={eliminando || usuario.rol !== "OPERADOR"} title={usuario.rol === "OPERADOR" ? "Editar perfil" : "Edición todavía no disponible"} className={styles.botonEditar}>
+                                <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} disabled={eliminando || !puedeEditar(usuario)} title={puedeEditar(usuario) ? "Editar perfil" : "Edición todavía no disponible"} className={styles.botonEditar}>
                                     <EditIcon fontSize="small" />
                                 </IconButton>
                                 <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={eliminando || usuario.rol !== "OPERADOR" || !onEliminar} title={usuario.rol === "OPERADOR" && onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
