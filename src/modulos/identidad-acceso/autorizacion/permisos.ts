@@ -37,6 +37,11 @@ const permisos = {
     "productor.mercado.acceder": (sesion: DatosSesion | null): boolean =>
         sesion?.rol === "PRODUCTOR",
 
+    "productor.publicacion.crear": (sesion: DatosSesion | null, recurso: RecursoConPropietario): boolean =>
+        sesion?.rol === "PRODUCTOR" &&
+        Number.isSafeInteger(recurso.id) && recurso.id > 0 &&
+        sesion.usuarioId === recurso.usuarioId,
+
     // Permisos sin funcionalidad implementada, falta validar
     "operador.licencias.gestionar": (sesion: DatosSesion | null, recurso: RecursoConPropietario): boolean =>
         sesion?.rol === "OPERADOR" &&
@@ -49,10 +54,6 @@ const permisos = {
 
     "productor.publicacion.consultar": (sesion: DatosSesion | null): boolean =>
         sesion?.rol === "OPERADOR",
-    "productor.publicacion.crear": (sesion: DatosSesion | null, recurso: RecursoConPropietario): boolean =>
-        sesion?.rol === "PRODUCTOR" &&
-        Number.isSafeInteger(recurso.id) && recurso.id > 0 &&
-        sesion.usuarioId === recurso.usuarioId,
     "productor.publicacion.modificar": (sesion: DatosSesion | null, recurso: RecursoConPropietario): boolean =>
         sesion?.rol === "PRODUCTOR" &&
         Number.isSafeInteger(recurso.id) && recurso.id > 0 &&

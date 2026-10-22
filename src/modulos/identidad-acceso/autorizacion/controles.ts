@@ -73,3 +73,7 @@ export function exigirProductor() {
 export function requerirOperador() {
     return requerirRol("OPERADOR");
 }
+
+export function requerirProductor() {
+    return requerirRol("PRODUCTOR");
+}
