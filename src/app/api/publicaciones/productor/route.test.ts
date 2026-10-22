@@ -35,7 +35,7 @@ describe("/api/publicaciones/productor", () => {
     afterEach(() => vi.restoreAllMocks());
 
     it.each([
-        { rol: null, status: 401 }, { rol: "OPERADOR", status: 403 }, { rol: "ADMINISTRADOR", status: 403 },
+        { rol: null, status: 401 }, { rol: "OPERADOR", status: 403 },
     ])("rechaza GET y POST para $rol con $status antes de consultar la base", async ({ rol, status }) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
         for (const respuesta of [await GET(), await POST(solicitud({}))]) {
@@ -130,5 +130,38 @@ describe("/api/publicaciones/productor", () => {
         const respuesta = await POST(solicitud({}));
         expect(respuesta.status).toBe(500);
         expect(await respuesta.json()).toEqual({ errores: ["No se pudo guardar la publicación."] });
+    });
+
+    describe("como Administrador (precarga BP-14.2)", () => {
+        beforeEach(() => {
+            mocks.obtenerSesion.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
+            mocks.modelos.Productor.first.mockResolvedValue({ id: 8 });
+        });
+
+        it("carga los catálogos del formulario", async () => {
+            expect((await GET()).status).toBe(200);
+        });
+
+        it("crea la publicación para el Productor indicado", async () => {
+            const respuesta = await POST(solicitud({ productorId: 8, precio: "1250" }));
+            expect(respuesta.status).toBe(201);
+            expect(mocks.modelos.Productor.where).toHaveBeenCalledExactlyOnceWith({ id: 8 });
+            expect(mocks.altaPublicacionProductor).toHaveBeenCalledExactlyOnceWith({ productorId: 8, precio: "1250" });
+        });
+
+        it.each([{}, { productorId: "8" }, { productorId: 0 }])("exige un productor válido: %o", async (datos) => {
+            const respuesta = await POST(solicitud(datos));
+            expect(respuesta.status).toBe(400);
+            expect(await respuesta.json()).toEqual({ errores: ["Debe seleccionar un productor."] });
+            expect(mocks.altaPublicacionProductor).not.toHaveBeenCalled();
+        });
+
+        it("informa cuando el Productor no existe", async () => {
+            mocks.modelos.Productor.first.mockResolvedValue(null);
+            const respuesta = await POST(solicitud({ productorId: 99 }));
+            expect(respuesta.status).toBe(404);
+            expect(await respuesta.json()).toEqual({ errores: ["El productor no existe."] });
+            expect(mocks.altaPublicacionProductor).not.toHaveBeenCalled();
+        });
     });
 });
