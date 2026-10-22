@@ -484,4 +484,20 @@ describe("ListaUsuarios", () => {
 
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
+    it("muestra el indicador solo a usuarios que solicitaron restablecimiento", () => {
+    renderLista({
+        usuarios: [
+            { ...usuarios[1], solicitoRestablecimiento: true },
+            { ...usuarios[2], solicitoRestablecimiento: false },
+        ],
+    });
+
+    expect(
+        within(obtenerFila("beto.operador")).getByText("Restablecimiento solicitado")
+    ).toBeInTheDocument();
+
+    expect(
+        within(obtenerFila("carla.productor")).queryByText("Restablecimiento solicitado")
+    ).not.toBeInTheDocument();
+});
 });
