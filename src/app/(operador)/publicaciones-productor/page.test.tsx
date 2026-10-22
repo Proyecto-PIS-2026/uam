@@ -1,25 +1,14 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { redirect } from "next/navigation";
 import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacionProductor.action";
 import Page, { dynamic } from "./page";
 import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
-
-vi.mock("next/navigation", () => ({
-    redirect: vi.fn((ruta: string) => {
-        throw new Error(`NEXT_REDIRECT:${ruta}`);
-    }),
-}));
+import { requerirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
     requerirOperador: vi.fn(),
-}));
-
-vi.mock("@/modulos/identidad-acceso/autorizacion/permisos", () => ({
-    autorizado: vi.fn(),
 }));
 
 vi.mock("@/modulos/consulta-mercado/acciones/ConsultarPublicacionProductor.action", () => ({
@@ -44,6 +33,10 @@ vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPu
     ),
 }));
 
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
+    requerirConsultaProductores: vi.fn(),
+}));
+
 const sesionOperador = {
     usuarioId: 23,
     rol: "OPERADOR",
@@ -58,9 +51,8 @@ type ResultadoMock = Awaited<ReturnType<typeof obtenerPublicaciones>>;
 
 describe("Page de publicaciones de productores", () => {
     beforeEach(() => {
-        vi.clearAllMocks();
-        vi.mocked(requerirOperador).mockResolvedValue(sesionOperador);
-        vi.mocked(autorizado).mockReturnValue(true);
+        vi.resetAllMocks();
+        vi.mocked(requerirConsultaProductores).mockResolvedValue(sesionOperador);
         vi.mocked(obtenerPublicaciones).mockResolvedValue({ publicaciones: publicacionesEjemplo } as ResultadoMock);
     });
 
@@ -72,12 +64,13 @@ describe("Page de publicaciones de productores", () => {
         expect(dynamic).toBe("force-dynamic");
     });
 
-    it("requiere una sesión de operador para cargar la página", async () => {
-        await Page();
-
-        expect(requerirOperador).toHaveBeenCalledTimes(1);
-        expect(autorizado).toHaveBeenCalledWith("operador.mercado.acceder", sesionOperador);
-        expect(obtenerPublicaciones).toHaveBeenCalledWith(sesionOperador);
+    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite cargar las publicaciones al rol %s", async (rol) => {
+        const sesion = { usuarioId: 23, rol, expiraEn: 2000000000 };
+        vi.mocked(requerirConsultaProductores).mockResolvedValue(sesion);
+        render(await Page());
+        expect(requerirConsultaProductores).toHaveBeenCalledTimes(1);
+        expect(obtenerPublicaciones).toHaveBeenCalledExactlyOnceWith(sesion);
+        expect(screen.getByTestId("contenedor-publicaciones")).toHaveAttribute("data-cantidad", "2");
     });
 
     it("muestra encabezado, cantidad y publicaciones cuando la consulta devuelve resultados", async () => {
@@ -117,21 +110,15 @@ describe("Page de publicaciones de productores", () => {
         expect(screen.getByTestId("contenedor-publicaciones").getAttribute("data-cantidad")).toBe("0");
     });
 
-    it("redirige a /inicio y no consulta publicaciones si el operador no está autorizado", async () => {
-        vi.mocked(autorizado).mockReturnValue(false);
-
-        await expect(Page()).rejects.toThrow("NEXT_REDIRECT:/inicio");
-
-        expect(redirect).toHaveBeenCalledWith("/inicio");
+    it.each(["/inicio", "/iniciar-sesion"])("no consulta publicaciones cuando el control redirige a %s", async (ruta) => {
+        vi.mocked(requerirConsultaProductores).mockRejectedValue(new Error(`NEXT_REDIRECT:${ruta}`));
+        await expect(Page()).rejects.toThrow(`NEXT_REDIRECT:${ruta}`);
         expect(obtenerPublicaciones).not.toHaveBeenCalled();
     });
 
-    it("propaga el error si no se puede obtener la sesión y no continúa con la autorización", async () => {
-        vi.mocked(requerirOperador).mockRejectedValue(new Error("No se pudo validar la sesión"));
-
+    it("propaga el error al obtener la sesión sin consultar publicaciones", async () => {
+        vi.mocked(requerirConsultaProductores).mockRejectedValue(new Error("No se pudo validar la sesión"));
         await expect(Page()).rejects.toThrow("No se pudo validar la sesión");
-
-        expect(autorizado).not.toHaveBeenCalled();
         expect(obtenerPublicaciones).not.toHaveBeenCalled();
     });
 

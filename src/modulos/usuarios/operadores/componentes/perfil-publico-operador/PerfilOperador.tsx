@@ -1,15 +1,20 @@
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 
-import styles from "./PerfilOperador.module.css";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Image from "next/image";
+import Link from "next/link";
+
+import styles from "./PerfilOperador.module.css";
 
 type PerfilOperadorProps = {
     operador: PerfilPublicoOperador;
+    hrefVolver?: string;
+    textoVolver?: string;
 };
 
-export default function PerfilOperador({ operador }: PerfilOperadorProps) {
+export default function PerfilOperador({ operador,  hrefVolver = "/operadores", textoVolver = "Volver al listado de operadores"  }: PerfilOperadorProps) {
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const localesPorNave: Record<string, string[]> = {};
 
@@ -27,6 +32,10 @@ export default function PerfilOperador({ operador }: PerfilOperadorProps) {
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
+            <Link href={hrefVolver} className={styles.volver}>
+                <ArrowBackIcon fontSize="small" aria-hidden="true" />
+                {textoVolver}
+            </Link>
             <div className={styles.tarjetaPerfil}>
                 <header className={styles.encabezado}>
                     <HojasDecorativas />

@@ -17,7 +17,7 @@ const mockDb = vi.hoisted(() => ({
     },
 }));
 
-vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
     db: {
         orm: {
             public: {

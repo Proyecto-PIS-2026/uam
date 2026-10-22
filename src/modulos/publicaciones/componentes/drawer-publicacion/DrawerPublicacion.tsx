@@ -31,7 +31,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
     const numeroWhatsApp = usuario?.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
     const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-    const enlacePerfil = publicacion && usuario ? publicacion.tipoPublicacion === "OPERADOR" ? esAdmin ? `/gestion-operadores/${publicacion.operador.id}` : `/operadores/${encodeURIComponent(usuario.nombreFantasia)}` : `/productores/${encodeURIComponent(usuario.nombreFantasia)}` : "";    
+    const enlacePerfil = publicacion && usuario ? publicacion.tipoPublicacion === "OPERADOR" ? esAdmin ? `/gestion-operadores/${publicacion.operador.id}` : `/operadores/${encodeURIComponent(usuario.nombreFantasia)}?origen=publicaciones` : `/productores/${encodeURIComponent(usuario.nombreFantasia)}?origen=publicaciones` : "";    
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
@@ -41,6 +41,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
     const drawerVisible = open && publicacion !== null && (!tieneFoto || fotoPreparada === claveFoto);
 
     const contenidoRef = useRef<HTMLDivElement>(null);
+    const elementoAnteriorRef = useRef<HTMLElement | null>(null);
     const [necesitaScroll, setNecesitaScroll] = useState(false);
 
     useEffect(() => {
@@ -65,7 +66,21 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
     }, [drawerVisible, publicacion, esWeb]);
 
     const contenido = (
-        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={drawerVisible} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
+        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={drawerVisible} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }} 
+            ModalProps={{
+                keepMounted: true,
+                disableRestoreFocus: true,
+                onTransitionEnter: () => {const activo = document.activeElement; elementoAnteriorRef.current = activo instanceof HTMLElement ? activo : null},
+                onTransitionExited: () => {
+                    requestAnimationFrame(() => {
+                        const elemento = elementoAnteriorRef.current;
+                        if (elemento?.isConnected) {
+                            elemento.focus();
+                        }
+                    });
+                },
+            }}
+        >
             {publicacion &&  usuario && (
                 <>
                     <div className={styles.tarjeta}>
@@ -87,7 +102,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                                                 </div>
                                             } />
                                             {publicacion.foto && (
-                                                <button type="button" className={styles.ampliarFoto} aria-label={`Ampliar foto de ${publicacion.especie}`} onClick={() => setFotoAmpliada(true)}/>
+                                                <button type="button" className={styles.ampliarFoto} aria-label={`Ampliar foto de ${publicacion.especie}`} onClick={(event) => {event.currentTarget.blur(); setFotoAmpliada(true)}}/>
                                             )}
                                         </div>
                                     </div>
@@ -148,12 +163,18 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             </div>
                         </div>
                     </div>
-                    <Dialog open={fotoAmpliada && open && Boolean(publicacion?.foto)} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" }  } }}>
-                        <button aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(false)} className={`${styles.cerrar} ${styles.cerrarFoto}`}>
+                    <Dialog open={fotoAmpliada && open && Boolean(publicacion?.foto)} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" 
+                        slotProps={{ 
+                            paper: { className: styles.modalFoto }, 
+                            backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" }  }, 
+                            transition: { onExited: () => {contenidoRef.current ?.querySelector<HTMLButtonElement>('button[aria-label^="Ampliar foto"]') ?.focus()}}
+                        }}
+                    >
+                        <button autoFocus aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(false)} className={`${styles.cerrar} ${styles.cerrarFoto}`}>
                             <CloseIcon fontSize="small" />
                         </button>
                         <div className={styles.fotoAmpliada}>
-                            <ImagenPublicacion key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="100vw" className={styles.imagenAmpliada}  reemplazo={
+                            <ImagenPublicacion loading="eager" key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="(min-width: 832px) 50rem, (min-width: 768px) calc(100vw - 2rem), (min-width: 536px) 32rem, calc(100vw - 1.5rem)" className={styles.imagenAmpliada}  reemplazo={
                                 <div className={styles.sinFoto}>
                                     <ImageOutlinedIcon className={styles.iconoFoto} />
                                     Foto

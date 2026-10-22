@@ -64,7 +64,7 @@ describe("DrawerPublicacion", () => {
         for (const texto of ["Tomate", "Perita", "Cajón", "Mediano", "Primera", "País", "Uruguay", "Huerta Sur"]) {
             expect(screen.getByText(texto)).toBeInTheDocument();
         }
-        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/operadores/Huerta%20Sur");
+        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/operadores/Huerta%20Sur?origen=publicaciones");
         expect(screen.getByRole("link", { name: "Contactar a Huerta Sur por WhatsApp" })).toBeInTheDocument();
     });
     it("no muestra el detalle cuando está cerrado", () => {
@@ -218,7 +218,7 @@ describe("DrawerPublicacion con productores", () => {
         for (const texto of ["Manzana", "Gala", "$120", "Caja", "Grande", "Primera", "20", "Uruguay", "Huerta Productora"]) {
             expect(screen.getByText(texto, { exact: true })).toBeInTheDocument();
         }
-        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/productores/Huerta%20Productora");
+        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/productores/Huerta%20Productora?origen=publicaciones");
     });
 
     it("construye el enlace de WhatsApp con el teléfono del productor", () => {
@@ -353,7 +353,7 @@ describe("DrawerPublicacion con productores", () => {
         expect(screen.getByText("Williams")).toBeInTheDocument();
         expect(screen.getByText("Quinta Norte")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: /Quinta.*Google Maps/ })).toHaveAttribute("href", "https://maps.example/quinta");
-        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/productores/Quinta%20Norte");
+        expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/productores/Quinta%20Norte?origen=publicaciones");
     });
 
     it("espera a que cargue la foto antes de mostrar el detalle", () => {

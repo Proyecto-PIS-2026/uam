@@ -109,7 +109,8 @@ describe("HeaderPublico", () => {
 
         for (const nombre of ["Navegación principal", "Navegación móvil"]) {
             const menu = within(screen.getByRole("navigation", { name: nombre }));
-            expect(menu.getAllByRole("link")).toHaveLength(3);
+            expect(menu.getAllByRole("link")).toHaveLength(4);
+            expect(menu.getByRole("link", { name: "Productores" })).toHaveAttribute("href", "/productores");
             expect(menu.getByRole("link", { name: "Publicaciones" })).toHaveAttribute("href", "/publicaciones-productor");
             expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado");
             expect(menu.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
@@ -123,7 +124,7 @@ describe("HeaderPublico", () => {
         expect(screen.queryByRole("link", { name: "Ir al inicio" })).not.toBeInTheDocument();
     });
 
-    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)(
+    it.each([null, "PRODUCTOR"] as const)(
         "conserva la navegación pública y el destino del logo para el rol %s",
         (rolUsuario) => {
             render(<HeaderPublico sesion={rolUsuario ? { usuarioId: 10, rol: rolUsuario, expiraEn: 2000000000 } : null} />);
@@ -133,6 +134,7 @@ describe("HeaderPublico", () => {
                 expect(menu.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/inicio");
                 expect(menu.getByRole("link", { name: "Publicaciones" })).toHaveAttribute("href", "/publicaciones");
                 expect(menu.getByRole("link", { name: "Operadores" })).toHaveAttribute("href", "/operadores");
+                expect(menu.queryByRole("link", { name: "Productores" })).not.toBeInTheDocument();
             }
             expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
         },
@@ -285,6 +287,72 @@ describe("HeaderPublico", () => {
         await waitFor(() => {
             expect(cerrarSesionSimulada).toHaveBeenCalledOnce();
         });
+    });
+
+    it.each(["Navegación principal", "Navegación móvil"])("agrupa las publicaciones para el administrador en %s", (nombre) => {
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "ADMINISTRADOR", expiraEn: 2000000000 }} />);
+        const menu = within(screen.getByRole("navigation", { name: nombre }));
+        const boton = menu.getByRole("button", { name: "Publicaciones" });
+        const desplegable = document.getElementById(boton.getAttribute("aria-controls")!)!;
+        expect(boton).toHaveAttribute("aria-expanded", "false");
+        expect(desplegable).toHaveAttribute("inert");
+        fireEvent.click(boton);
+        expect(boton).toHaveAttribute("aria-expanded", "true");
+        expect(desplegable).not.toHaveAttribute("inert");
+        expect(within(desplegable).getByRole("link", { name: "Operadores" })).toHaveAttribute("href", "/publicaciones");
+        expect(within(desplegable).getByRole("link", { name: "Productores" })).toHaveAttribute("href", "/publicaciones-productor");
+        expect(menu.getAllByRole("link", { name: "Productores" }).some((enlace) => enlace.getAttribute("href") === "/productores")).toBe(true);
+        fireEvent.click(boton);
+        expect(boton).toHaveAttribute("aria-expanded", "false");
+        expect(desplegable).toHaveAttribute("inert");
+    });
+
+    it("cierra el desplegable de publicaciones con Escape y devuelve el foco al botón", () => {
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "ADMINISTRADOR", expiraEn: 2000000000 }} />);
+        const menu = within(screen.getByRole("navigation", { name: "Navegación principal" }));
+        const boton = menu.getByRole("button", { name: "Publicaciones" });
+        fireEvent.click(boton);
+        const desplegable = document.getElementById(boton.getAttribute("aria-controls")!)!;
+        const enlace = within(desplegable).getByRole("link", { name: "Operadores" });
+        enlace.focus();
+        fireEvent.keyDown(enlace, { key: "Escape", code: "Escape" });
+        expect(boton).toHaveAttribute("aria-expanded", "false");
+        expect(boton).toHaveFocus();
+        expect(desplegable).toHaveAttribute("inert");
+    });
+
+    it("cierra el desplegable de publicaciones al pulsar fuera", () => {
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "ADMINISTRADOR", expiraEn: 2000000000 }} />);
+        const menu = within(screen.getByRole("navigation", { name: "Navegación principal" }));
+        const boton = menu.getByRole("button", { name: "Publicaciones" });
+        fireEvent.click(boton);
+        fireEvent.pointerDown(document.body);
+        expect(boton).toHaveAttribute("aria-expanded", "false");
+    });
+
+    it.each([{ ruta: "/publicaciones", nombre: "Operadores" }, { ruta: "/publicaciones-productor", nombre: "Productores" }])("marca la opción activa para $ruta", ({ ruta, nombre }) => {
+        consultarRutaSimulada.mockReturnValue(ruta);
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "ADMINISTRADOR", expiraEn: 2000000000 }} />);
+        const menu = within(screen.getByRole("navigation", { name: "Navegación principal" }));
+        const boton = menu.getByRole("button", { name: "Publicaciones" });
+        expect(boton).toHaveClass(estilos.enlaceActivo);
+        fireEvent.click(boton);
+        const desplegable = document.getElementById(boton.getAttribute("aria-controls")!)!;
+        expect(within(desplegable).getByRole("link", { name: nombre })).toHaveAttribute("aria-current", "page");
+    });
+
+    it("cierra el desplegable y el menú móvil al seleccionar publicaciones de productores", () => {
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "ADMINISTRADOR", expiraEn: 2000000000 }} />);
+        fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
+        const menu = within(screen.getByRole("navigation", { name: "Navegación móvil" }));
+        const boton = menu.getByRole("button", { name: "Publicaciones" });
+        fireEvent.click(boton);
+        const desplegable = document.getElementById(boton.getAttribute("aria-controls")!)!;
+        const enlace = within(desplegable).getByRole("link", { name: "Productores" });
+        enlace.addEventListener("click", (evento) => evento.preventDefault());
+        fireEvent.click(enlace);
+        expect(boton).toHaveAttribute("aria-expanded", "false");
+        expect(screen.getByRole("button", { name: "Abrir menú" })).toHaveAttribute("aria-expanded", "false");
     });
 });
 
