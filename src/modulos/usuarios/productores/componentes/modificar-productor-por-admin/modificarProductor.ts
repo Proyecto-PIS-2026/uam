@@ -79,10 +79,11 @@ export async function modificarProductor(
     }
 
     revalidatePath("/administracion");
-    revalidatePath("/productores");
-    revalidatePath("/publicaciones-productor");
     revalidatePath("/gestion-productores/[id]", "page");
-    revalidatePath("/mi-mercado/productor", "page");
+    revalidatePath("/publicaciones-productor");
+    revalidatePath("/productores");
+    revalidatePath("/productores/[nombre]", "page");
+    revalidatePath("/mi-mercado/productor");
 
     return {
         esValido: true,

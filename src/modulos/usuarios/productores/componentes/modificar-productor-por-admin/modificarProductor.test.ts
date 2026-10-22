@@ -188,6 +188,8 @@ describe("modificarProductor", () => {
 
         expect(cache.revalidatePath).toHaveBeenCalledWith("/gestion-productores/[id]", "page");
         expect(cache.revalidatePath).toHaveBeenCalledWith("/publicaciones-productor");
+        expect(cache.revalidatePath).toHaveBeenCalledWith("/productores");
+        expect(cache.revalidatePath).toHaveBeenCalledWith("/productores/[nombre]", "page");
     });
 
     // Si la modificación se rechaza, no hay datos nuevos que mostrar
