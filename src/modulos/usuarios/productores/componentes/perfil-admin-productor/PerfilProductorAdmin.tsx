@@ -1,6 +1,13 @@
+"use client";
+
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 
+import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
+import { DrawerAltaPublicacionProductor } from "@/modulos/publicaciones/productores/AltaPublicacionProductor";
+import { useState } from "react"; 
+import { useRouter } from "next/navigation";
 import styles from "./PerfilProductorAdmin.module.css";
 import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
 import Link from "next/link";
@@ -13,6 +20,21 @@ type PerfilProductorAdminProps = {
 
 export default function PerfilProductorAdmin({ productor }: PerfilProductorAdminProps) {
     const inicialProductor = productor.nombreFantasia.trim()[0]?.toUpperCase();
+    const [altaAbierta, setAltaAbierta] = useState(false);
+    const [mensaje, setMensaje] = useState("");
+    const router = useRouter();
+
+    function abrirAlta() {
+        setMensaje("");
+        setAltaAbierta(true);
+    }
+
+    function publicacionCreada(aviso: string) {
+        setAltaAbierta(false);
+        setMensaje(aviso);
+        router.refresh();
+    }
+
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-productor">
             <Link href="/administracion#usuarios" className={styles.volver}>
@@ -62,8 +84,20 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                 </div>
             </div>
 
-            <h2 className={styles.subtituloPublicaciones}>Publicaciones ({productor.publicaciones.length})</h2>
+            {mensaje && <p className={styles.mensajeExito} role="status">{mensaje}</p>}
+
+            <div className={styles.filaPublicaciones}>
+                <h2 className={styles.subtituloPublicaciones}>Publicaciones ({productor.publicaciones.length})</h2>
+                <Button variant="contained" onClick={abrirAlta} startIcon={<AddIcon />} className={styles.botonAlta}>
+                    Agregar Producto
+                </Button>
+            </div>
+
             <CatalogoProductorAdmin publicaciones={productor.publicaciones} />
+
+            {altaAbierta && (
+                <DrawerAltaPublicacionProductor productorId={productor.id} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={publicacionCreada} />
+            )}
         </section>
     );
 
