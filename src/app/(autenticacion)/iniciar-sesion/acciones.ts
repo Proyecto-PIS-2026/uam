@@ -5,6 +5,7 @@ import { crearSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autenticarUsuario } from "@/modulos/identidad-acceso/autenticacion/autenticarUsuario";
 import { existeUsuarioPorNombre } from "@/modulos/identidad-acceso/autenticacion/consultasAutenticacion";
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
+import { db } from "@/infraestructura/persistencia/prisma/db";
 
 export type EstadoInicioSesion = {
     error?: string;
@@ -19,18 +20,35 @@ export async function solicitarRecuperacion(
     nombreUsuario: string,
 ): Promise<EstadoRecuperacion> {
     const nombreNormalizado = nombreUsuario.trim();
+
     if (!nombreNormalizado) {
-        return { error: "Ingresá tu nombre de usuario para solicitar la recuperación." };
+        return {
+            error: "Ingresá tu nombre de usuario para solicitar la recuperación.",
+        };
     }
 
-    const usuarioExiste = await existeUsuarioPorNombre(nombreNormalizado);
-    if (!usuarioExiste) {
-        return { error: "No existe ningún usuario con ese nombre." };
-    }
+    try {
+        const usuarioExiste = await existeUsuarioPorNombre(nombreNormalizado);
 
-    return {
-        exito: "La solicitud de recuperación fue realizada correctamente.",
-    };
+        if (!usuarioExiste) {
+            return {
+                error: "No existe ningún usuario con ese nombre.",
+            };
+        }
+
+        // Registrar la solicitud en la base de datos.
+        await db.orm.public.Usuario
+            .where({ username: nombreNormalizado })
+            .update({ solicitoRestablecimiento: true });
+
+        return {
+            exito: "La solicitud de recuperación fue realizada correctamente.",
+        };
+    } catch {
+        return {
+            error: "No se pudo registrar la solicitud. Intentá nuevamente.",
+        };
+    }
 }
 
 export async function iniciarSesion(
