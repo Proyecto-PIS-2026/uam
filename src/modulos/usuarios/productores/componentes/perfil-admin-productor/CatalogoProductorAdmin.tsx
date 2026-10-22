@@ -1,4 +1,4 @@
-import type { PublicacionPerfilAdminProductor } from "../../consultas-perfil-productor-admin";
+import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import TarjetaPublicacionProductorAdmin from "./TarjetaPublicacionProductorAdmin";
 
 type CatalogoProductorAdminProps = {

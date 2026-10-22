@@ -70,8 +70,7 @@ test("BP-20 y BP-20.2 muestra el perfil público y el detalle de sus productos",
     await expect(detalle.getByText("Calibre")).toBeVisible();
     await expect(detalle.getByText("Categoría")).toBeVisible();
     await expect(detalle.getByText("País")).toBeVisible();
-    await expect(detalle.getByRole("link", { name: /Consultar por .* por WhatsApp/ })).toBeVisible();
-  } else {
+    await expect(detalle.getByRole("link", { name: `Contactar a ${nombreOperador} por WhatsApp`, exact: true })).toBeVisible();  } else {
     await expect(page.getByText("No hay publicaciones disponibles.")).toBeVisible();
   }
 });

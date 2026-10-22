@@ -1,7 +1,7 @@
 "use client";
 
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
-import type { PerfilAdminProductor } from "../../consultas-perfil-productor-admin";
+import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
