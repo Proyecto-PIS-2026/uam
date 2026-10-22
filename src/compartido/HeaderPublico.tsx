@@ -16,8 +16,6 @@ import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/ru
 import { useId } from "react";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 
 import estilos from "./HeaderPublico.module.css";
 
