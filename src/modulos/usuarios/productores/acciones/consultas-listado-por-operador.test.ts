@@ -57,14 +57,37 @@ describe("obtenerProductoresPorOperador", () => {
         mocks.all.mockResolvedValue([]);
     });
 
-    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("rechaza la consulta con sesión %s antes de acceder a datos",
-        async (rol) => {
+    it.each([null, "PRODUCTOR"] as const)("rechaza la consulta con sesión %s antes de acceder a datos", async (rol) => {
             mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
             await expect(obtenerProductoresPorOperador()).rejects.toThrow("No tiene permisos para consultar productores y sus publicaciones.");
             expect(mocks.select).not.toHaveBeenCalled();
             expect(mocks.all).not.toHaveBeenCalled();
-        }
-    );
+    });
+
+    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite consultar productores al rol %s", async (rol) => {
+        mocks.obtenerSesion.mockResolvedValue({usuarioId: 5, rol, expiraEn: 2000000000});
+        mocks.all.mockResolvedValue([
+            {
+                id: 1,
+                nombreFantasia: "Huerta Sur",
+                fotoPerfil: null,
+                publicacionesProductor: [
+                    crearRelacion(),
+                    crearRelacion(false),
+                    crearRelacion(true, false),
+                ],
+            },
+        ]);
+        await expect(obtenerProductoresPorOperador()).resolves.toEqual([
+            {
+                id: 1,
+                nombreFantasia: "Huerta Sur",
+                fotoPerfil: null,
+                cantidadProductos: 1,
+            },
+        ]);
+        expect(mocks.all).toHaveBeenCalledTimes(1);
+    },);
 
     it("devuelve una lista vacía cuando no hay productores", async () => {
         await expect(obtenerProductoresPorOperador()).resolves.toEqual([]);

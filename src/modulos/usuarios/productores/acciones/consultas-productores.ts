@@ -1,5 +1,5 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { exigirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { exigirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 import type { PublicacionPerfil } from "../../operadores/consultas-perfil-publico";
 
 export type ProductorListado = {
@@ -24,7 +24,7 @@ function publicacionVisible(publicacion: {
 }
 
 export async function obtenerProductoresDisponibles(): Promise<ProductorListado[]> {
-    await exigirOperador();
+    await exigirConsultaProductores("No tenés permiso para consultar productores.",);
     const productores = await db.orm.public.Productor
         .select("id", "nombreFantasia", "fotoPerfil")
         .include("usuario", (usuario) => usuario.select("rol"))
@@ -46,7 +46,7 @@ export async function obtenerProductoresDisponibles(): Promise<ProductorListado[
 }
 
 export async function obtenerPerfilProductor(nombreFantasia: string): Promise<PerfilProductor | null> {
-    await exigirOperador();
+    await exigirConsultaProductores("No tenés permiso para consultar el perfil del productor.",);
     if (!nombreFantasia.trim()) return null;
 
     const productor = await db.orm.public.Productor

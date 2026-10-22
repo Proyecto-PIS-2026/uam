@@ -9,6 +9,9 @@ import {
     redirigirOperadorAMiMercado,
     requerirAdministrador,
     requerirOperador,
+    exigirConsultaProductores,
+    requerirConsultaProductores,
+    exigirConsultaMercadoOperador,
 } from "./controles";
 
 vi.mock("../autenticacion/sesiones", () => ({ obtenerSesion: vi.fn() }));
@@ -124,5 +127,56 @@ describe("acceso del productor a su mercado", () => {
         sesionMock.mockResolvedValue(sesion);
 
         await expect(exigirProductor()).resolves.toBe(sesion);
+    });
+});
+
+describe("consulta de productores y sus publicaciones", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        sesionMock.mockResolvedValue(null);
+    });
+
+    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite consultar al rol %s", async (rol) => {
+            const sesion = {usuarioId: 10, rol, expiraEn: 2000000000};
+            sesionMock.mockResolvedValue(sesion);
+            await expect(exigirConsultaProductores()).resolves.toBe(sesion);
+            await expect(requerirConsultaProductores()).resolves.toBe(sesion);
+            await expect(exigirConsultaMercadoOperador()).resolves.toBeUndefined();
+            expect(redirect).not.toHaveBeenCalled();
+        },
+    );
+
+    it("rechaza consultas sin sesión con estado 401", async () => {
+        await expect(exigirConsultaProductores()).rejects.toMatchObject({status: 401, message: "Iniciá sesión para continuar."});
+        expect(redirect).not.toHaveBeenCalled();
+    });
+
+    it("redirige a iniciar sesión al acceder a una página sin sesión", async () => {
+        await expect(requerirConsultaProductores()).rejects.toThrow("NEXT_REDIRECT");
+        expect(redirect).toHaveBeenCalledExactlyOnceWith("/iniciar-sesion");
+    });
+
+    it.each([ "No tenés permiso para consultar productores.", "No tenés permiso para consultar el perfil del productor."])("rechaza al Productor con el mensaje: %s", async (mensaje) => {
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000});
+        await expect(exigirConsultaProductores(mensaje)).rejects.toMatchObject({ status: 403, message: mensaje});
+        expect(redirect).not.toHaveBeenCalled();
+    });
+
+    it("redirige al Productor al inicio al acceder a una página", async () => {
+        sesionMock.mockResolvedValue({usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000});
+        await expect(requerirConsultaProductores()).rejects.toThrow("NEXT_REDIRECT");
+        expect(redirect).toHaveBeenCalledExactlyOnceWith("/inicio");
+    });
+
+    it("rechaza la consulta de publicaciones con su mensaje específico", async () => {
+        sesionMock.mockResolvedValue({usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000});
+        await expect(exigirConsultaMercadoOperador()).rejects.toMatchObject({status: 403, message: "No tenés permiso para consultar las publicaciones de productores."});
+    });
+
+    it("propaga errores al obtener la sesión", async () => {
+        sesionMock.mockRejectedValue(new Error("Sesión no disponible"),);
+        await expect(exigirConsultaProductores()).rejects.toThrow("Sesión no disponible");
+        await expect(requerirConsultaProductores()).rejects.toThrow("Sesión no disponible");
+        expect(redirect).not.toHaveBeenCalled();
     });
 });

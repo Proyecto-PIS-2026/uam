@@ -1,10 +1,10 @@
-import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { requerirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerProductoresDisponibles } from "@/modulos/usuarios/productores/acciones/consultas-productores";
 import ListadoProductores from "@/modulos/usuarios/productores/componentes/listado-productores/ListadoProductores";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-    await requerirOperador();
+    await requerirConsultaProductores();
     const productores = await obtenerProductoresDisponibles();
     
     const contenido = (

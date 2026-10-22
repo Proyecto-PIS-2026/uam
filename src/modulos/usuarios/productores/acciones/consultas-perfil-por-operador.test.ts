@@ -98,14 +98,40 @@ describe("obtenerPerfilProductorPorOperador", () => {
         mocks.all.mockResolvedValue([]);
     });
 
-    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("rechaza la consulta con sesión %s antes de acceder a datos",
-        async (rol) => {
-            mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
-            await expect(obtenerPerfilProductorPorOperador("Huerta Norte")).rejects.toThrow("No tiene permisos para consultar las publicaciones del productor.");
-            expect(mocks.productorSelect).not.toHaveBeenCalled();
-            expect(mocks.where).not.toHaveBeenCalled();
-        }
-    );
+    it.each([null, "PRODUCTOR"] as const)("rechaza la consulta con sesión %s antes de acceder a datos", async (rol) => {
+        mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
+        await expect(obtenerPerfilProductorPorOperador("Huerta Norte")).rejects.toThrow("No tiene permisos para consultar las publicaciones del productor.");
+        expect(mocks.productorSelect).not.toHaveBeenCalled();
+        expect(mocks.where).not.toHaveBeenCalled();
+    });
+
+    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite consultar el perfil y sus publicaciones al rol %s", async (rol) => {
+        mocks.obtenerSesion.mockResolvedValue({usuarioId: 5, rol, expiraEn: 2000000000});
+        const fila = crearFila();
+        mocks.all.mockResolvedValue([fila]);
+        await expect(obtenerPerfilProductorPorOperador(productor.nombreFantasia)).
+            resolves.toEqual({
+                ...productor,
+                publicaciones: [
+                    {
+                        id: 20,
+                        foto: "/tomate.jpg",
+                        precio: "150",
+                        fecha: fila.publicacion.fecha.toString(),
+                        cantidadUnidades: 25,
+                        especie: "Tomate",
+                        variedad: "Perita",
+                        presentacion: "Caja",
+                        categoria: "Primera",
+                        calibre: "M",
+                        pais: "Uruguay",
+                        ubicaciones: fila.ubicaciones,
+                    },
+                ],
+        });
+        expect(mocks.first).toHaveBeenCalledWith({nombreFantasia: productor.nombreFantasia});
+        expect(mocks.where).toHaveBeenCalledWith({productorId: productor.id});
+    });
 
     it.each(["", "   "])("devuelve null cuando el nombre está vacío: %s",
         async (nombre) => {

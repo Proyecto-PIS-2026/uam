@@ -48,7 +48,7 @@ const permisos = {
         sesion.usuarioId === recurso.usuarioId,
 
     "productor.publicacion.consultar": (sesion: DatosSesion | null): boolean =>
-        sesion?.rol === "OPERADOR",
+        sesion?.rol === "OPERADOR" || sesion?.rol === "ADMINISTRADOR",
     "productor.publicacion.crear": (sesion: DatosSesion | null, recurso: RecursoConPropietario): boolean =>
         sesion?.rol === "PRODUCTOR" &&
         Number.isSafeInteger(recurso.id) && recurso.id > 0 &&

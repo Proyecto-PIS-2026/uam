@@ -69,13 +69,23 @@ describe("Listado y navegación de productores", () => {
         mocks.perfil.mockResolvedValue(perfil);
     });
 
-    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("impide acceder por URL con la sesión %s", async (rol) => {
+    it.each([null, "PRODUCTOR"] as const)("impide acceder por URL con la sesión %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
         await expect(PaginaPerfil({ params: Promise.resolve({ nombre: perfil.nombreFantasia }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_REDIRECT");
         expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/inicio" : "/iniciar-sesion");
         expect(mocks.listado).not.toHaveBeenCalled();
         expect(mocks.perfil).not.toHaveBeenCalled();
+    });
+
+    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite acceder al listado y al perfil al rol %s", async (rol) => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 5, rol, expiraEn: 2000000000 });
+        expect(await Page()).toBeTruthy();
+        expect(await PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(perfil.nombreFantasia) }), searchParams: Promise.resolve({}) })).toBeTruthy();
+        expect(mocks.listado).toHaveBeenCalledTimes(1);
+        expect(mocks.perfil).toHaveBeenCalledExactlyOnceWith(perfil.nombreFantasia);
+        expect(mocks.redirect).not.toHaveBeenCalled();
+        expect(mocks.notFound).not.toHaveBeenCalled();
     });
 
     it("muestra los productores obtenidos por la consulta", async () => {

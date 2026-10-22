@@ -40,11 +40,36 @@ describe("Consultas de productores para operadores", () => {
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 5, rol: "OPERADOR", expiraEn: 2000000000 });
     });
 
-    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("rechaza la sesión %s antes de acceder a datos", async (rol) => {
-        mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
-        await expect(obtenerProductoresDisponibles()).rejects.toMatchObject({ status: rol ? 403 : 401 });
-        await expect(obtenerPerfilProductor(productor.nombreFantasia)).rejects.toMatchObject({ status: rol ? 403 : 401 });
-        expect(mocks.select).not.toHaveBeenCalled();
+    it.each([null, "PRODUCTOR"] as const)("rechaza la sesión %s antes de acceder a datos", async (rol) => {
+            mocks.obtenerSesion.mockResolvedValue(rol? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
+            await expect(obtenerProductoresDisponibles()).rejects.toMatchObject({status: rol ? 403 : 401, message: rol ? "No tenés permiso para consultar productores." : "Iniciá sesión para continuar."});
+            await expect(obtenerPerfilProductor(productor.nombreFantasia)).rejects.toMatchObject({status: rol ? 403 : 401, message: rol ? "No tenés permiso para consultar el perfil del productor." : "Iniciá sesión para continuar."});
+            expect(mocks.select).not.toHaveBeenCalled();
+        },
+    );
+
+    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite consultar listado y perfil al rol %s",async (rol) => {
+        mocks.obtenerSesion.mockResolvedValue({usuarioId: 5, rol, expiraEn: 2000000000});
+        mocks.all.mockResolvedValue([productor]);
+        mocks.first.mockResolvedValue({
+            ...productor,
+            publicacionesProductor: [relacion()],
+        });
+        await expect(obtenerProductoresDisponibles()).resolves.toEqual([
+            {
+                id: productor.id,
+                nombreFantasia: productor.nombreFantasia,
+                fotoPerfil: null,
+                cantidadProductos: 0,
+                ubicaciones: [],
+            },
+        ]);
+        await expect(obtenerPerfilProductor(productor.nombreFantasia)).
+            resolves.toMatchObject({
+                id: productor.id,
+                nombreFantasia: productor.nombreFantasia,
+                publicaciones: [expect.objectContaining({id: 10, especie: "Naranja"})],
+        });
     });
 
     it("devuelve un listado vacío cuando no existen productores", async () => {
