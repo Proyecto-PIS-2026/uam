@@ -163,5 +163,13 @@ describe("/api/publicaciones/productor", () => {
             expect(await respuesta.json()).toEqual({ errores: ["El productor no existe."] });
             expect(mocks.altaPublicacionProductor).not.toHaveBeenCalled();
         });
+        
+        it("devuelve los errores de validación con estado 400", async () => {
+            const resultado = { esValido: false, errores: ["El producto ya existe."] };
+            mocks.altaPublicacionProductor.mockResolvedValue(resultado);
+            const respuesta = await POST(solicitud({ productorId: 8 }));
+            expect(respuesta.status).toBe(400);
+            expect(await respuesta.json()).toEqual(resultado);
+        });
     });
 });
