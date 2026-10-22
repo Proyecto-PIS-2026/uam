@@ -51,7 +51,7 @@ describe("PerfilProductorAdmin", () => {
         cleanup();
     });
 
-        // Muestra la identidad del productor: nombre de fantasía, inicial y WhatsApp
+    // Muestra la identidad del productor: nombre de fantasía, inicial y WhatsApp
     it("muestra el nombre de fantasía, la inicial y el WhatsApp del productor", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
