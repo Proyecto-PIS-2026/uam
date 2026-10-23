@@ -25,6 +25,7 @@ export interface OperadorParaModificar extends UsuarioBase {
 export interface ProductorParaModificar extends UsuarioBase {
     rol: "PRODUCTOR";
     productorId: number;
+    nombreFantasia: string;
 }
 
 export type UsuarioParaModificar =

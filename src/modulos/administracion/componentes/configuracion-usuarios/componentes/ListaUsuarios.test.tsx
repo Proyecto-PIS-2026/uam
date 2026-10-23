@@ -22,7 +22,7 @@ vi.mock("react", async (importOriginal) => {
         ) => {
             if (estadoTest.simularServidor) {
                 const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
-                let desuscribir = () => {};
+                let desuscribir = () => { };
 
                 try {
                     Object.defineProperty(globalThis, "window", {
@@ -30,7 +30,7 @@ vi.mock("react", async (importOriginal) => {
                         writable: true,
                         value: undefined,
                     });
-                    desuscribir = subscribe(() => {});
+                    desuscribir = subscribe(() => { });
                 } finally {
                     if (descriptor) {
                         Object.defineProperty(globalThis, "window", descriptor);
@@ -43,7 +43,7 @@ vi.mock("react", async (importOriginal) => {
                 return getServerSnapshot();
             }
 
-            const desuscribir = subscribe(() => {});
+            const desuscribir = subscribe(() => { });
             desuscribir();
             return getSnapshot();
         },
@@ -216,6 +216,7 @@ const usuarios: UsuarioParaModificar[] = [
         username: "carla.productor",
         rol: "PRODUCTOR",
         productorId: 301,
+        nombreFantasia: "Granja Carla",
     },
 ];
 
@@ -330,7 +331,7 @@ describe("ListaUsuarios", () => {
         expect(within(filaOperador).getByText("La Huerta")).toBeInTheDocument();
         expect(within(filaOperador).getByText("Operador")).toBeInTheDocument();
 
-        expect(within(filaProductor).getByText("-")).toBeInTheDocument();
+        expect(within(filaProductor).getByText("Granja Carla")).toBeInTheDocument();
         expect(within(filaProductor).getByText("Productor")).toBeInTheDocument();
 
         // Una tecla diferente no selecciona al usuario.
@@ -352,18 +353,18 @@ describe("ListaUsuarios", () => {
 
     });
 
-    it("navega a la edición del operador y deshabilita las acciones todavía no disponibles", () => {
+    it("navega a la edición del operador y del productor y deshabilita las acciones todavía no disponibles", () => {
         renderLista();
 
         expect(within(obtenerFila("ana.admin")).getByTitle("Edición todavía no disponible")).toBeDisabled();
         hacerClickEnAccion("beto.operador", "Editar perfil");
-        expect(within(obtenerFila("carla.productor")).getByTitle("Edición todavía no disponible")).toBeDisabled();
-
+        hacerClickEnAccion("carla.productor", "Editar perfil");
         expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-operadores/201/editar");
+        expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-productores/301/editar");
 
         fireEvent.click(obtenerFila("ana.admin"));
 
-        expect(estadoTest.routerPush).toHaveBeenCalledOnce();
+        expect(estadoTest.routerPush).toHaveBeenCalledTimes(2);
     });
 
     it("navega a editar sin propagar el click a la fila", () => {
@@ -485,19 +486,19 @@ describe("ListaUsuarios", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
     it("muestra el indicador solo a usuarios que solicitaron restablecimiento", () => {
-    renderLista({
-        usuarios: [
-            { ...usuarios[1], solicitoRestablecimiento: true },
-            { ...usuarios[2], solicitoRestablecimiento: false },
-        ],
+        renderLista({
+            usuarios: [
+                { ...usuarios[1], solicitoRestablecimiento: true },
+                { ...usuarios[2], solicitoRestablecimiento: false },
+            ],
+        });
+
+        expect(
+            within(obtenerFila("beto.operador")).getByText("Restablecimiento solicitado")
+        ).toBeInTheDocument();
+
+        expect(
+            within(obtenerFila("carla.productor")).queryByText("Restablecimiento solicitado")
+        ).not.toBeInTheDocument();
     });
-
-    expect(
-        within(obtenerFila("beto.operador")).getByText("Restablecimiento solicitado")
-    ).toBeInTheDocument();
-
-    expect(
-        within(obtenerFila("carla.productor")).queryByText("Restablecimiento solicitado")
-    ).not.toBeInTheDocument();
-});
 });
