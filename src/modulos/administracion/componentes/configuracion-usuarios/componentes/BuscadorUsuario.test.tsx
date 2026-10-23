@@ -146,12 +146,13 @@ describe("BuscadorUsuario", () => {
             "aria-hidden",
             "true",
         );
-        expect(screen.getByTestId("icono-filtro")).toHaveAttribute(
-            "aria-hidden",
-            "true",
-        );
+        expect(screen.getAllByTestId("icono-filtro")).toHaveLength(2);
 
-        expect(screen.getAllByRole("option")).toHaveLength(10);
+        screen.getAllByTestId("icono-filtro").forEach((icono) => {
+            expect(icono).toHaveAttribute("aria-hidden", "true");
+        });
+
+        expect(screen.getAllByRole("option")).toHaveLength(12);
 
         for (const rol of [
             "Todos",
@@ -160,7 +161,7 @@ describe("BuscadorUsuario", () => {
             "Productor",
         ]) {
             expect(screen.getAllByRole("option", { name: rol })).toHaveLength(
-                rol === "Todos" ? 3 : 2,
+                rol === "Todos" ? 4 : 2,
             );
         }
 
@@ -168,9 +169,15 @@ describe("BuscadorUsuario", () => {
             document.querySelector("[data-opcion-mas-larga]"),
         ).toHaveAttribute("data-opcion-mas-larga", "Administrador");
 
-        expect(
-            screen.getByTestId("valor-selector-movil"),
-        ).toContainElement(screen.getByTestId("icono-filtro"));
+        const selectoresMoviles = screen.getAllByTestId("valor-selector-movil");
+        const iconosFiltro = screen.getAllByTestId("icono-filtro");
+
+        expect(selectoresMoviles).toHaveLength(2);
+        expect(iconosFiltro).toHaveLength(2);
+
+        selectoresMoviles.forEach((selector, indice) => {
+        expect(selector).toContainElement(iconosFiltro[indice]);
+});
     });
 
     it("notifica los cambios en el texto de búsqueda", () => {
