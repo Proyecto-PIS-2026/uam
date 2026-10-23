@@ -5,14 +5,17 @@ import BotonVolver from "@/compartido/BotonVolver";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlined";
 import { MenuItem, TextField } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import FuentePrecios from "../FuentePrecios";
-import type { ProductoSeleccionado, HistoricoProducto, EspecieHistorica } from "./tipos";
-import { fechaActualMontevideo } from "./parametros-consulta";
+import type { ProductoSeleccionado, HistoricoProducto, EspecieHistorica, OpcionesFiltrosHistoricos } from "./tipos";
+import { esFechaISO, fechaActualMontevideo } from "./parametros-consulta";
+import { textoValorHistorico } from "./valores-historicos";
+import GraficaPreciosHistoricos from "./GraficaPreciosHistoricos";
 import styles from "./PreciosHistoricos.module.css";
 
 type Props = {
@@ -23,6 +26,7 @@ type Props = {
     error?: string;
     cargando?: boolean;
     especies?: EspecieHistorica[];
+    opcionesFiltros?: OpcionesFiltrosHistoricos;
 };
 const LIMITE = 40;
 const comparar = new Intl.Collator("es", { sensitivity: "base", numeric: true }).compare;
@@ -36,12 +40,21 @@ function formatoNumero(valor: number): string {
         .join("");
 }
 
-function formatoVolumen(valor: number | null | undefined): string {
-    return valor == null ? "—" : `${formatoNumero(valor)} kg`;
+function formatoPrecio(valor: unknown): string {
+    return typeof valor === "number" ? formatoNumero(valor) : textoValorHistorico(valor);
 }
 
-function opciones(valores: string[], seleccionado: string) {
-    return [...new Set(seleccionado ? [...valores, seleccionado] : valores)].sort(comparar);
+function formatoVolumen(valor: unknown): string {
+    return valor == null ? "—" : `${formatoPrecio(valor)} kg`;
+}
+
+function formatoFechaRegistro(valor: unknown): string {
+    return esFechaISO(valor) ? formatoFecha.format(new Date(`${valor}T00:00:00Z`)) : textoValorHistorico(valor);
+}
+
+function opciones(valores: unknown[], seleccionado: string) {
+    const textos = valores.map(textoValorHistorico);
+    return [...new Set(seleccionado ? [...textos, seleccionado] : textos)].sort(comparar);
 }
 
 function identificadorEspecie(producto: Pick<ProductoSeleccionado, "id">): string {
@@ -59,7 +72,7 @@ function identificadorEspecie(producto: Pick<ProductoSeleccionado, "id">): strin
     return "";
 }
 
-export default function PreciosHistoricos({ producto, historico, desde, hasta, error, cargando = false, especies = [] }: Props) {
+export default function PreciosHistoricos({ producto, historico, desde, hasta, error, cargando = false, especies = [], opcionesFiltros }: Props) {
     const router = useRouter();
     const idProducto = identificadorEspecie(producto);
     const [pendiente, iniciarConsulta] = useTransition();
@@ -114,8 +127,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     const registros = useMemo(() => {
         if (!historico || error) return [];
         return historico.series
-            .filter((dia) => dia.date >= desde && dia.date <= hasta)
-            .sort((a, b) => b.date.localeCompare(a.date))
+            .filter((dia) => !esFechaISO(dia.date) || dia.date >= desde && dia.date <= hasta)
+            .sort((a, b) => textoValorHistorico(b.date).localeCompare(textoValorHistorico(a.date)))
             .flatMap((dia) => dia.presentations.flatMap((presentacion) =>
                 presentacion.prices.map((precio) => ({ dia, presentacion, precio }))));
     }, [historico, desde, hasta, error]);
@@ -123,23 +136,23 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         if (cambioEspecie) return { variedades: [], paises: [], categorias: [], calibres: [] };
         const presentaciones = historico && !error ? historico.series.flatMap((dia) => dia.presentations) : [];
         return {
-            variedades: opciones(presentaciones.map((presentacion) => presentacion.variety), variedad),
-            paises: opciones(presentaciones.map((presentacion) => presentacion.country), pais).sort(compararPaisesPorPrioridad),
-            categorias: opciones(presentaciones.flatMap((presentacion) => presentacion.prices.map((precio) => precio.category)), categoria),
-            calibres: opciones(presentaciones.map((presentacion) => presentacion.caliber), calibre),
+            variedades: opciones(opcionesFiltros?.variedades ?? presentaciones.map((presentacion) => presentacion.variety), variedad),
+            paises: opciones(opcionesFiltros?.paises ?? presentaciones.map((presentacion) => presentacion.country), pais).sort(compararPaisesPorPrioridad),
+            categorias: opciones(opcionesFiltros?.categorias ?? presentaciones.flatMap((presentacion) => presentacion.prices.map((precio) => precio.category)), categoria),
+            calibres: opciones(opcionesFiltros?.calibres ?? presentaciones.map((presentacion) => presentacion.caliber), calibre),
         };
-    }, [historico, error, cambioEspecie, variedad, pais, categoria, calibre]);
+    }, [historico, opcionesFiltros, error, cambioEspecie, variedad, pais, categoria, calibre]);
     const variedadSeleccionada = variedad;
     const paisSeleccionado = pais;
     const categoriaSeleccionada = categoria;
     const calibreSeleccionado = calibre;
     const filas = useMemo(() => {
         return registros.filter(({ dia, presentacion, precio }) => {
-            if (dia.date < periodoVisible.desde || dia.date > periodoVisible.hasta) return false;
-            if (variedadSeleccionada && presentacion.variety !== variedadSeleccionada) return false;
-            if (paisSeleccionado && presentacion.country !== paisSeleccionado) return false;
-            if (categoriaSeleccionada && precio.category !== categoriaSeleccionada) return false;
-            if (calibreSeleccionado && presentacion.caliber !== calibreSeleccionado) return false;
+            if (esFechaISO(dia.date) && (dia.date < periodoVisible.desde || dia.date > periodoVisible.hasta)) return false;
+            if (variedadSeleccionada && textoValorHistorico(presentacion.variety) !== variedadSeleccionada) return false;
+            if (paisSeleccionado && textoValorHistorico(presentacion.country) !== paisSeleccionado) return false;
+            if (categoriaSeleccionada && textoValorHistorico(precio.category) !== categoriaSeleccionada) return false;
+            if (calibreSeleccionado && textoValorHistorico(presentacion.caliber) !== calibreSeleccionado) return false;
             return true;
         });
     }, [registros, periodoVisible, variedadSeleccionada, paisSeleccionado, categoriaSeleccionada, calibreSeleccionado]);
@@ -178,18 +191,14 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     function cambiar(accion: () => void, cambios: Record<string, string>) {
         accion();
         setPagina(1);
-        actualizarUrl(cambios);
+        if (cambioEspecie) return;
+        iniciarConsulta(() => router.push(urlConsulta(cambios), { scroll: false }));
     }
 
     function cambiarEspecie(id: string) {
         if (id === especieId) return;
         setEspecieId(id);
-        setVariedad("");
-        setPais("");
-        setCategoria("");
-        setCalibre("");
         setPagina(1);
-        actualizarUrl({ variedad: "", pais: "", calibre: "", categoria: "" });
     }
 
     function limpiar() {
@@ -202,13 +211,21 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         setFechaHasta(hasta);
         setPeriodoVisible({ desde, hasta });
         setPagina(1);
-        actualizarUrl({ from: desde, to: hasta, variedad: "", pais: "", calibre: "", categoria: "" });
+        const cambios = { from: desde, to: hasta, variedad: "", pais: "", calibre: "", categoria: "" };
+        if (producto.variedad || producto.pais || producto.calibre || producto.categoria
+            || variedad || pais || calibre || categoria) {
+            iniciarConsulta(() => router.push(urlConsulta(cambios), { scroll: false }));
+        } else {
+            actualizarUrl(cambios);
+        }
     }
 
     function consultar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (cargandoTabla || rangoInvalido || !fechaDesde || !fechaHasta) return;
-        if (!cambioEspecie && fechaDesde >= desde && fechaHasta <= hasta && historico && !error) {
+        const mismosFiltros = variedad === producto.variedad && pais === producto.pais
+            && calibre === producto.calibre && categoria === producto.categoria;
+        if (!cambioEspecie && mismosFiltros && fechaDesde >= desde && fechaHasta <= hasta && historico && !error) {
             setPeriodoVisible({ desde: fechaDesde, hasta: fechaHasta });
             setPagina(1);
             actualizarUrl({ from: fechaDesde, to: fechaHasta });
@@ -217,6 +234,9 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         const parametros: Record<string, string> = {};
         for (const [nombre, valor] of new FormData(evento.currentTarget)) {
             if (typeof valor === "string") parametros[nombre] = valor;
+        }
+        if (cambioEspecie) {
+            Object.assign(parametros, { variedad: "", pais: "", calibre: "", categoria: "" });
         }
         const url = urlConsulta(parametros);
         setPagina(1);
@@ -246,7 +266,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                         </TextField>
                         <TextField
                             className={`${styles.campo} ${styles.filtroVariedad}`}
-                            select label="Variedad" name="variedad" size="small" value={variedadSeleccionada} disabled={cargandoTabla || cambioEspecie}
+                            select label="Variedad" name="variedad" size="small" value={cambioEspecie ? "" : variedadSeleccionada} disabled={cargandoTabla || cambioEspecie}
                             onChange={(evento) => cambiar(() => setVariedad(evento.target.value), { variedad: evento.target.value })} slotProps={menu}
                         >
                             <MenuItem value="" className={styles.opcionSelect}>Todas las variedades</MenuItem>
@@ -266,7 +286,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             <div ref={contenidoFiltrosRef} className={styles.contenidoAdicional}>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroPais}`}
-                                    select label="País" name="pais" size="small" value={paisSeleccionado} disabled={cargandoTabla || cambioEspecie}
+                                    select label="País" name="pais" size="small" value={cambioEspecie ? "" : paisSeleccionado} disabled={cargandoTabla || cambioEspecie}
                                     onChange={(evento) => cambiar(() => setPais(evento.target.value), { pais: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todos los países</MenuItem>
@@ -276,7 +296,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </TextField>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroCalibre}`}
-                                    select label="Calibre" name="calibre" size="small" value={calibreSeleccionado} disabled={cargandoTabla || cambioEspecie}
+                                    select label="Calibre" name="calibre" size="small" value={cambioEspecie ? "" : calibreSeleccionado} disabled={cargandoTabla || cambioEspecie}
                                     onChange={(evento) => cambiar(() => setCalibre(evento.target.value), { calibre: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todos los calibres</MenuItem>
@@ -286,7 +306,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </TextField>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroCategoria}`}
-                                    select label="Categoría" name="categoria" size="small" value={categoriaSeleccionada} disabled={cargandoTabla || cambioEspecie}
+                                    select label="Categoría" name="categoria" size="small" value={cambioEspecie ? "" : categoriaSeleccionada} disabled={cargandoTabla || cambioEspecie}
                                     onChange={(evento) => cambiar(() => setCategoria(evento.target.value), { categoria: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todas las categorías</MenuItem>
@@ -322,20 +342,19 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                     </div>
                 </form>
                 {rangoInvalido && <p className={styles.vacio} role="alert">La fecha de inicio debe ser anterior o igual a la fecha de fin.</p>}
-                {!cargandoTabla && !error && filas.length === 0 && <p className={styles.vacio} role="status">No hay registros históricos para la selección y el período indicados.</p>}
             </section>
+
+            <GraficaPreciosHistoricos
+                registros={filas}
+                desde={periodoVisible.desde}
+                hasta={periodoVisible.hasta}
+                producto={producto.especie}
+                cargando={cargandoTabla}
+                error={Boolean(error)}
+            />
 
             <section className={styles.tablaPanel} aria-label={`Histórico de ${producto.especie}`}>
                 <div className={styles.tablaCabecera}><h2>Histórico de precios</h2></div>
-                {/* TODO: Eliminar a futuro la visualización pública de estos errores; es temporal durante la construcción para consultar los datos incorrectos con el cliente. */}
-                {!cargandoTabla && !error && !!historico?.erroresValidacion?.length && (
-                    <details className={styles.erroresValidacion}>
-                        <summary>Ver errores del histórico ({historico.erroresValidacion.length})</summary>
-                        <ul>
-                            {historico.erroresValidacion.map((mensaje, indice) => <li key={indice}>{mensaje}</li>)}
-                        </ul>
-                    </details>
-                )}
                 <div className={styles.tablaContenedor}>
                     <table className={styles.tabla} aria-busy={cargandoTabla} aria-describedby={cargandoTabla ? `${idCarga}-tabla` : undefined}>
                         <thead><tr>
@@ -357,11 +376,11 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                     </div>
                                 </td></tr>
                             ) : visibles.map(({ dia, presentacion, precio }, indice) => (
-                                <tr key={`${dia.date}-${presentacion.country}-${presentacion.caliber}-${precio.category}-${indice}`} className={precio.is_reference ? styles.filaReferencia : undefined}>
-                                    <td>{formatoFecha.format(new Date(`${dia.date}T00:00:00Z`))}</td>
-                                    <td>{presentacion.variety}</td><td>{presentacion.country}</td><td>{presentacion.caliber}</td><td>{precio.category}</td>
-                                    <td className={styles.referencia}>{precio.is_reference && <span className={styles.insignia}>Referencia</span>}</td>
-                                    <td className={styles.precio}>${formatoNumero(precio.min_kg)} - ${formatoNumero(precio.max_kg)}</td>
+                                <tr key={`${textoValorHistorico(dia.date)}-${textoValorHistorico(presentacion.country)}-${textoValorHistorico(presentacion.caliber)}-${textoValorHistorico(precio.category)}-${indice}`} className={precio.is_reference === true ? styles.filaReferencia : undefined}>
+                                    <td>{formatoFechaRegistro(dia.date)}</td>
+                                    <td>{textoValorHistorico(presentacion.variety)}</td><td>{textoValorHistorico(presentacion.country)}</td><td>{textoValorHistorico(presentacion.caliber)}</td><td>{textoValorHistorico(precio.category)}</td>
+                                    <td className={styles.referencia}>{precio.is_reference === true ? <span className={styles.insignia}>Referencia</span> : precio.is_reference === false ? "" : textoValorHistorico(precio.is_reference)}</td>
+                                    <td className={styles.precio}>${formatoPrecio(precio.min_kg)} - ${formatoPrecio(precio.max_kg)}</td>
                                     <td>{formatoVolumen(dia.volume_kg)}</td>
                                 </tr>
                             ))}
@@ -379,15 +398,15 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             <p>{error}</p>
                         </div>
                     ) : visibles.map(({ dia, presentacion, precio }, indice) => {
-                        const nombre = `${producto.especie} · ${presentacion.variety}`;
-                        const atributos = `${presentacion.country} · Cal. ${presentacion.caliber} · Cat. ${precio.category}`;
+                        const nombre = `${producto.especie} · ${textoValorHistorico(presentacion.variety)}`;
+                        const atributos = `${textoValorHistorico(presentacion.country)} · Cal. ${textoValorHistorico(presentacion.caliber)} · Cat. ${textoValorHistorico(precio.category)}`;
                         const volumen = formatoVolumen(dia.volume_kg);
-                        const precioKg = `$${formatoNumero(precio.min_kg)} - $${formatoNumero(precio.max_kg)} / kg`;
+                        const precioKg = `$${formatoPrecio(precio.min_kg)} - $${formatoPrecio(precio.max_kg)} / kg`;
                         return (
-                            <article className={`${styles.filaMobile} ${precio.is_reference ? styles.filaMobileReferencia : ""}`} key={`${dia.date}-${presentacion.country}-${presentacion.caliber}-${precio.category}-${indice}`}>
+                            <article className={`${styles.filaMobile} ${precio.is_reference === true ? styles.filaMobileReferencia : ""}`} key={`${textoValorHistorico(dia.date)}-${textoValorHistorico(presentacion.country)}-${textoValorHistorico(presentacion.caliber)}-${textoValorHistorico(precio.category)}-${indice}`}>
                                 <header>
-                                    <time dateTime={dia.date}>{formatoFecha.format(new Date(`${dia.date}T00:00:00Z`))}</time>
-                                    <span className={styles.referenciaMobile} title={precio.is_reference ? "Referencia" : undefined}>{precio.is_reference && <span className={styles.insignia}>Referencia</span>}</span>
+                                    <time dateTime={textoValorHistorico(dia.date)}>{formatoFechaRegistro(dia.date)}</time>
+                                    <span className={styles.referenciaMobile} title={precio.is_reference === true ? "Referencia" : precio.is_reference === false ? undefined : textoValorHistorico(precio.is_reference)}>{precio.is_reference === true ? <span className={styles.insignia}>Referencia</span> : precio.is_reference === false ? "" : textoValorHistorico(precio.is_reference)}</span>
                                     <strong className={styles.precioMobile} title={precioKg}>{precioKg}</strong>
                                 </header>
                                 <p className={styles.nombreProductoMobile} title={nombre}>{nombre}</p>
@@ -399,6 +418,12 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                         );
                     })}
                 </div>
+                {!cargandoTabla && !error && filas.length === 0 && (
+                    <div className={styles.estadoVacio} role="status">
+                        <PlaylistRemoveOutlinedIcon className={styles.iconoVacio} aria-hidden="true" />
+                        <p>No hay registros históricos para los filtros y el período seleccionados.</p>
+                    </div>
+                )}
                 {!cargandoTabla && filas.length > LIMITE && (
                     <nav className={styles.paginacion} aria-label="Páginas de precios históricos">
                         <span>{inicio + 1}-{Math.min(inicio + LIMITE, filas.length)} de {filas.length}</span>

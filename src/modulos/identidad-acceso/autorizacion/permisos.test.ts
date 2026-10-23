@@ -16,11 +16,12 @@ describe("matriz de autorización BP-04.4", () => {
         expect(autorizado(permiso)).toBe(true);
     });
 
-    it.each(roles)("limita el acceso a mercados y catálogo de Productores para %s", (rol) => {
-        const sesion = sesionDe(rol);
-        expect(autorizado("operador.mercado.acceder", sesion)).toBe(rol === "OPERADOR");
-        expect(autorizado("productor.mercado.acceder", sesion)).toBe(rol === "PRODUCTOR");
-        expect(autorizado("productor.publicacion.consultar", sesion)).toBe(rol === "OPERADOR");
+    it.each(roles)("limita el acceso a mercados y catálogo de Productores para %s",
+        (rol) => {
+            const sesion = sesionDe(rol);
+            expect(autorizado("operador.mercado.acceder", sesion)).toBe(rol === "OPERADOR");
+            expect(autorizado("productor.mercado.acceder", sesion)).toBe(rol === "PRODUCTOR");
+            expect(autorizado("productor.publicacion.consultar", sesion),).toBe(rol === "OPERADOR" || rol === "ADMINISTRADOR");
     });
 
     it.each([
@@ -56,6 +57,9 @@ describe("matriz de autorización BP-04.4", () => {
         "usuarios.cuentas.gestionar",
         "usuarios.restablecimientos.gestionar",
         "administracion.configuracion.gestionar",
+        "administracion.publicacion.crear",
+        "administracion.publicacion.modificar",
+        "administracion.publicacion.eliminar",
     ] as const)("%s es exclusivo de Administradores", (permiso) => {
         for (const rol of roles) {
             expect(autorizado(permiso, sesionDe(rol))).toBe(rol === "ADMINISTRADOR");

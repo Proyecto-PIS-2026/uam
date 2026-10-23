@@ -7,6 +7,7 @@ const bajaPublicacionOperadorMock = vi.hoisted(() => vi.fn());
 const obtenerSesionMock = vi.hoisted(() => vi.fn<() => Promise<DatosSesion | null>>(() => Promise.resolve({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 })));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: obtenerSesionMock }));
 const obtenerOperadorAutorizadoMock = vi.hoisted(() => vi.fn());
+const obtenerOperadorPorIdMock = vi.hoisted(() => vi.fn());
 const vinculoPublicacionMock = vi.hoisted(() => ({
 	select: vi.fn(),
 	where: vi.fn(),
@@ -16,6 +17,7 @@ const vinculoPublicacionMock = vi.hoisted(() => ({
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
 	obtenerOperadorAutorizado: obtenerOperadorAutorizadoMock,
+	obtenerOperadorPorId: obtenerOperadorPorIdMock,
 }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 	db: { orm: { public: { PublicacionOperador: vinculoPublicacionMock } } },
@@ -423,7 +425,7 @@ describe("autorización de cambios de publicaciones", () => {
         expect(modificarPublicacionOperador).not.toHaveBeenCalled();
     });
 
-    it.each(["PRODUCTOR", "ADMINISTRADOR"] as const)("rechaza ambos cambios para %s", async (rol) => {
+    it.each(["PRODUCTOR"] as const)("rechaza ambos cambios para %s", async (rol) => {
         obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
         for (const handler of [DELETE, PATCH]) {
             const respuesta = await handler(handler === PATCH ? solicitudEdicion() : new Request("http://localhost/api/publicaciones/15"), {
@@ -449,4 +451,66 @@ describe("autorización de cambios de publicaciones", () => {
         expect(modificarPublicacionOperador).not.toHaveBeenCalled();
         expect(vinculoPublicacionMock.first).not.toHaveBeenCalled();
     });
+});
+
+describe("gestión de publicaciones como administrador", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		obtenerSesionMock.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
+		obtenerOperadorPorIdMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
+		vinculoPublicacionMock.select.mockReturnThis();
+		vinculoPublicacionMock.where.mockReturnThis();
+		vinculoPublicacionMock.first.mockResolvedValue({ id: 12 });
+		vi.mocked(modificarPublicacionOperador).mockResolvedValue({ publicacionOperadorId: 12, publicacionId: 20 });
+		bajaPublicacionOperadorMock.mockResolvedValue(true);
+	});
+
+	it("modifica la publicación del operador indicado usando el usuario de ese operador", async () => {
+		const respuesta = await PATCH(solicitudEdicion(cambiosEdicion, undefined, "7"), contextoEdicion);
+
+		expect(respuesta.status).toBe(200);
+		expect(obtenerOperadorPorIdMock).toHaveBeenCalledExactlyOnceWith(7);
+		expect(obtenerOperadorAutorizado).not.toHaveBeenCalled();
+		expect(vinculoPublicacionMock.where).toHaveBeenCalledWith({ publicacionId: 20, operadorId: 7 });
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(70, 12, cambiosEdicion, null);
+		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
+	});
+
+	it("elimina la publicación del operador indicado", async () => {
+		const respuesta = await DELETE(new Request("http://localhost/api/publicaciones/15?operadorId=7", { method: "DELETE" }), {
+			params: Promise.resolve({ id: "15" }),
+		});
+
+		expect(respuesta.status).toBe(200);
+		expect(await respuesta.json()).toEqual({ mensaje: "Publicación eliminada." });
+		expect(obtenerOperadorPorIdMock).toHaveBeenCalledExactlyOnceWith(7);
+		expect(obtenerOperadorAutorizado).not.toHaveBeenCalled();
+		expect(bajaPublicacionOperadorMock).toHaveBeenCalledExactlyOnceWith(15, 7);
+		expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
+	});
+
+	it.each(["DELETE", "PATCH"] as const)("%s devuelve 400 si el administrador no indica el operador", async (metodo) => {
+		const respuesta = metodo === "PATCH"
+			? await PATCH(solicitudEdicion(), contextoEdicion)
+			: await DELETE(new Request("http://localhost/api/publicaciones/15", { method: "DELETE" }), { params: Promise.resolve({ id: "15" }) });
+
+		expect(respuesta.status).toBe(400);
+		expect(await respuesta.json()).toEqual({ errores: ["Debe seleccionar un operador."] });
+		expect(obtenerOperadorPorIdMock).not.toHaveBeenCalled();
+		expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+		expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+	});
+
+	it.each(["DELETE", "PATCH"] as const)("%s devuelve 404 si el operador indicado no existe", async (metodo) => {
+		obtenerOperadorPorIdMock.mockResolvedValue(null);
+		const respuesta = metodo === "PATCH"
+			? await PATCH(solicitudEdicion(cambiosEdicion, undefined, "99"), contextoEdicion)
+			: await DELETE(new Request("http://localhost/api/publicaciones/15?operadorId=99", { method: "DELETE" }), { params: Promise.resolve({ id: "15" }) });
+
+		expect(respuesta.status).toBe(404);
+		expect(await respuesta.json()).toEqual({ errores: ["El operador no existe."] });
+		expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+		expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+		expect(revalidatePath).not.toHaveBeenCalled();
+	});
 });

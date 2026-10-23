@@ -11,6 +11,7 @@ import type { Contract } from "./contract.d";
 import contractJson from "./contract.json" with { type: "json" };
 import { cargarConsultaUam, type ConsultaUam } from "./catalogo-consulta";
 import { crearOfertasDemo, type OfertaDemo } from "./ofertas-demo";
+import { crearOfertasProductoresDemo } from "./ofertas-productores-demo";
 
 const prisma = postgres<Contract>({
   contractJson,
@@ -61,10 +62,6 @@ type ProductorDemo = {
   pais: string;
   ubicacionNombre: string;
   ubicacionUrl: string;
-  publicaciones: {
-    precio: number;
-    cantidad: number;
-  }[];
 };
 
 // Cuentas ficticias para operadores
@@ -176,67 +173,62 @@ const operadores: OperadorDemo[] = [
   },
 ];
 
-// 6 Productores nuevos (5 en Uruguay, 1 en Ecuador con un total exacto de 50 publicaciones distribuidas)
+// Cuentas ficticias de productores: cinco de Uruguay y una de Ecuador.
+// Contrase?a de demostraci?n de cada cuenta: su username seguido de 123.
 const productores: ProductorDemo[] = [
   {
     username: "productor_norte_salto",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$qoZy4RNCNVrcdz5XTj7oVQ$BB8zUvWynyJOKlkYOayu93P/2F357FCG5JnntUDRR7Q",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$r8FWOPWH8przF2hXAjO0qw$SmSPTM6BPmSA0jkdENdN8uJQpQLYhJawXXgwALnyhdA",
     nombreFantasia: "Citrícola Salto Norte",
     whatsApp: "+5989201",
     pais: "URUGUAY",
     ubicacionNombre: "Ruta 3 km 500, Salto",
     ubicacionUrl: "https://goo.gl/maps/salto1",
-    publicaciones: Array.from({ length: 9 }, (_, i) => ({ precio: 45 + i, cantidad: 200 + i * 10 })),
   },
   {
     username: "productor_canelones_verde",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$8kuGWD4vwNjKdRIqe+olFQ$jjXylOQtK5tbBmwz6LIM6fsqqY2h8IAvci9uRes+oEE",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$SLF1W8e9+mVlRQsuPDn/KA$sG1U78dT2h9T7r/bBmJGxujpgDb0ekWNRS+MFPw3ONU",
     nombreFantasia: "Finca Canelones Verde",
     whatsApp: "+5989202",
     pais: "URUGUAY",
     ubicacionNombre: "Camino Vecinal s/n, Canelones",
     ubicacionUrl: "https://goo.gl/maps/canelones1",
-    publicaciones: Array.from({ length: 9 }, (_, i) => ({ precio: 30 + i, cantidad: 150 + i * 5 })),
   },
   {
     username: "productor_san_jose_agro",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$ibPWvwk23j0DcJ839kJbCA$SRrZLg1UukNZmAoDYCZlA/DJkJe6cLAqpa0yJN6k/50",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$syrG2rc/YnqA5GWdrQ1LwQ$Jbuqy5uyTh+gpVJ7iK/SlhtQnrGXbxf5u9X632o61AQ",
     nombreFantasia: "Agro San José",
     whatsApp: "+5989203",
     pais: "URUGUAY",
     ubicacionNombre: "Ruta 1 km 45, San José",
     ubicacionUrl: "https://goo.gl/maps/sanjose1",
-    publicaciones: Array.from({ length: 8 }, (_, i) => ({ precio: 25 + i, cantidad: 300 })),
   },
   {
     username: "productor_tacuarembo_frut",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$s/tJmTFhqgoLLVSerY0/uQ$IRGzM/96Z/Hv479Ehdp0/7jL9mWFaFh40kmdG9b0HvM",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$hSBPTiyItcVXUrDBo6Ri0w$oJdYxOiaT/bxbqV0VJfmIsGIFn1Ct9CNhYovoIDY8fk",
     nombreFantasia: "Frutas Tacuarembó",
     whatsApp: "+5989204",
     pais: "URUGUAY",
     ubicacionNombre: "Ruta 5 km 380, Tacuarembó",
     ubicacionUrl: "https://goo.gl/maps/tacuarembo1",
-    publicaciones: Array.from({ length: 8 }, (_, i) => ({ precio: 60 + i, cantidad: 100 })),
   },
   {
     username: "productor_maldonado_organico",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$cEA05xUnAtO8XVj2QcSr9w$88hDMm4BhNpj00sH6JG1j++s+KQaaVqtS9EWiezAnFw",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$0CDoB3lRSSvd8YobFcr/8A$tTMwF0CFe1r1pinmCypzlL0u9IGbVQ/KD7xoTvrkkgQ",
     nombreFantasia: "Orgánicos Maldonado",
     whatsApp: "+5989205",
     pais: "URUGUAY",
     ubicacionNombre: "Camino de los Raudales, Maldonado",
     ubicacionUrl: "https://goo.gl/maps/maldonado1",
-    publicaciones: Array.from({ length: 8 }, (_, i) => ({ precio: 55 + i, cantidad: 120 })),
   },
   {
     username: "bananera_ecuatoriana_sa",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$TMmigWv06+Qfpv1bxHmq6A$MjIMGIDYAfta6dqwmaaPAI3R88r7OXrwBN4xZGk7ZQk",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$AU1enfjMXPLU8l2Fu7vQFw$sMLxeZn0bNe1NgR4jJ16w/OToxsGjKwUwnwcbePGQAE",
     nombreFantasia: "Bananera Ecuatoriana S.A.",
     whatsApp: "+593991234567",
     pais: "ECUADOR",
     ubicacionNombre: "Km 14 Vía a Daule, Guayaquil, Ecuador",
     ubicacionUrl: "https://goo.gl/maps/ecuadorbananas",
-    publicaciones: Array.from({ length: 8 }, (_, i) => ({ precio: 20 + i, cantidad: 1000 })),
   },
 ];
 
@@ -432,6 +424,7 @@ async function limpiarBase() {
   await prisma.orm.public.Presentacion.where(() => all()).deleteAll();
   await prisma.orm.public.Variedad.where(() => all()).deleteAll();
   await prisma.orm.public.Categoria.where(() => all()).deleteAll();
+  await prisma.orm.public.HistoricoPrecios.where(() => all()).deleteAll();
   await prisma.orm.public.Especie.where(() => all()).deleteAll();
   await prisma.orm.public.Calibre.where(() => all()).deleteAll();
   await prisma.orm.public.Pais.where(() => all()).deleteAll();
@@ -592,6 +585,7 @@ async function main() {
   const consulta = cargarConsultaUam();
   const conversiones = validarFuente(consulta);
   const ofertas = crearOfertasDemo(consulta);
+  const ofertasProductores = crearOfertasProductoresDemo(consulta);
   validarOperadores(ofertas);
   const fotosPublicaciones = fotosPublicacionesDemo(consulta, ofertas);
   const archivos = archivosGenericos();
@@ -648,7 +642,7 @@ async function main() {
   // Obtener IDs de productores creados para asociar sus publicaciones y ubicaciones
   const productoresDb = await prisma.orm.public.Productor.all();
   const usuariosDb = await prisma.orm.public.Usuario.all();
-  
+
   // Crear un mapa para buscar el username de cada usuario por su ID rápidamente
   const usuarioUsernameMap = new Map<number, string>(
     usuariosDb.map((u) => [u.id, u.username])
@@ -662,49 +656,67 @@ async function main() {
     }
   }
 
-  const primeraEspecie = consulta.types[0].products[0];
-  const primeraVariedadNombre = primeraEspecie.varieties[0].variety;
-  const presentacionEjemploId = presentacionIds.get(clave(primeraEspecie.species_id, primeraVariedadNombre, "KG")) 
-    ?? Array.from(presentacionIds.values())[0];
-  const categoriaEjemploId = categoriaIds.get(clave(primeraEspecie.species_id, "Cat I")) 
-    ?? Array.from(categoriaIds.values())[0];
-  const calibreEjemploId = calibreIds.get("G") ?? Array.from(calibreIds.values())[0];
-  const fotoEjemplo = fotoGenerica(primeraEspecie.species, archivos) ?? "/generico/manzana.webp";
+  const productoresPorUsername = new Map(productores.map((productor) => [productor.username, productor]));
+  const ubicacionesDemo = [
+    {
+        nombreUbicacion: "Depósito Central - Salto",
+        latitud: -31.388,
+        longitud: -57.960,
+    },
+    {
+        nombreUbicacion: "Chacra Los Naranjos - Zona Norte",
+        latitud: -31.365,
+        longitud: -57.955,
+    },
+    {
+        nombreUbicacion: "Empaque Las Quintas - Zona Este",
+        latitud: -31.390,
+        longitud: -57.930,
+    },
+    {
+        nombreUbicacion: "Depósito El Ombú - Zona Sur",
+        latitud: -31.410,
+        longitud: -57.950,
+    },
+  ];
 
-  // Insertar publicaciones y ubicaciones de los 6 productores (Total: 50 publicaciones)
-  for (const prodDemo of productores) {
-    const productorId = productorIdsMap.get(prodDemo.username);
-    if (!productorId) continue;
-    const paisId = idRequerido(paisIds, prodDemo.pais, `país ${prodDemo.pais}`);
+  for (const [indice, oferta] of ofertasProductores.entries()) {
+    const prodDemo = productoresPorUsername.get(oferta.producerUsername);
+    if (!prodDemo) throw new Error(`Productor de demostración inexistente: ${oferta.producerUsername}`);
+    const productorId = idRequerido(productorIdsMap, oferta.producerUsername, `productor ${oferta.producerUsername}`);
+    const presentacionId = idRequerido(presentacionIds,
+      clave(oferta.speciesId, oferta.variety, oferta.measureUnit), "presentación de productor");
+    const categoriaId = idRequerido(categoriaIds,
+      clave(oferta.speciesId, oferta.category), "categoría de productor");
+    const calibreId = idRequerido(calibreIds, oferta.caliber, `calibre ${oferta.caliber}`);
+    const paisId = idRequerido(paisIds, oferta.country, `país ${oferta.country}`);
+    const precio = oferta.price === null
+      ? null
+      : oferta.price.toFixed(2) as unknown as PrecioPublicacion;
 
-    for (let i = 0; i < prodDemo.publicaciones.length; i++) {
-      const pubInfo = prodDemo.publicaciones[i];
-      const precioPub = pubInfo.precio.toFixed(2) as unknown as PrecioPublicacion;
+    const publicacion = await prisma.orm.public.Publicacion.create({
+      fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 12) * 36_000_000),
+      publicacionDisponible: oferta.available,
+      publicacionActiva: true,
+      precio,
+      cantidadUnidades: oferta.quantity,
+      foto: fotoGenerica(oferta.speciesName, archivos),
+      tipoPublicacion: "PRODUCTOR",
+      presentacionId,
+      categoriaId,
+      calibreId,
+    });
 
-      const publicacion = await prisma.orm.public.Publicacion.create({
-        fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (i * 36_000_000)),
-        publicacionDisponible: true,
-        publicacionActiva: true,
-        precio: precioPub,
-        cantidadUnidades: pubInfo.cantidad,
-        foto: fotoEjemplo,
-        tipoPublicacion: "PRODUCTOR",
-        presentacionId: presentacionEjemploId,
-        categoriaId: categoriaEjemploId,
-        calibreId: calibreEjemploId,
-      });
-
-      const publicacionProductor = await prisma.orm.public.PublicacionProductor.create({
-        publicacionId: publicacion.id,
-        productorId,
-        paisId,
-      });
-
-      // Crear la ubicación correspondiente de pickup para la publicación
+    const publicacionProductor = await prisma.orm.public.PublicacionProductor.create({
+      publicacionId: publicacion.id,
+      productorId,
+      paisId,
+    });
+    for (const punto of ubicacionesDemo.slice(0, oferta.cantidadUbicaciones)) {
       await prisma.orm.public.Ubicacion.create({
-        nombreUbicacion: prodDemo.ubicacionNombre,
-        urlMaps: prodDemo.ubicacionUrl,
-        publicacionId: publicacionProductor.id,
+          nombreUbicacion: punto.nombreUbicacion,
+          urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${punto.latitud},${punto.longitud}`)}`,
+          publicacionId: publicacionProductor.id,
       });
     }
   }
@@ -722,7 +734,7 @@ async function main() {
     operadores: operadorIds.size,
     productores: productores.length,
     publicacionesOperadores: ofertas.length,
-    publicacionesProductores: productores.reduce((acc, p) => acc + p.publicaciones.length, 0),
+    publicacionesProductores: ofertasProductores.length,
     conPrecio,
     sinPrecio,
     noDisponibles,

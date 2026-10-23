@@ -52,7 +52,7 @@ describe("TarjetaOperador", () => {
     it("Enlaza al detalle del operador", () => {
         render(<TarjetaOperador operador={operador} />);
         const link = screen.getByRole("link");
-        expect(link).toHaveAttribute("href","/operadores/Nombre%201");
+        expect(link).toHaveAttribute("href","/operadores/Nombre%201?origen=operadores");
     });
 
     it("Mostrar inicial si no tiene foto", () => {
@@ -81,5 +81,9 @@ describe("TarjetaOperador", () => {
         expect(screen.getByText("1")).toBeInTheDocument();
         expect(screen.getByText("producto")).toBeInTheDocument();
     });
-    
+   
+    it("Enlaza a la gestión del operador si es administrador", () => {
+        render(<TarjetaOperador operador={operador} puedeGestionar />);
+        expect(screen.getByRole("link")).toHaveAttribute("href", "/gestion-operadores/1");
+    });
 });

@@ -3,6 +3,7 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 // Datos de una publicación tal como los ve el administrador
 export type PublicacionPerfilAdmin = {
     id: number;
+    version: number;
     publicacionOperadorId: number;
     especieId: number;
     variedadId: number;
@@ -86,6 +87,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         .include("publicacion", (consultaPublicacion) => {
             const camposPublicacion = consultaPublicacion.select(
                 "id",
+                "version",
                 "foto",
                 "precio",
                 "cantidadUnidades",
@@ -120,6 +122,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,
+                version: publicacion.version,
                 publicacionOperadorId: completa.id,
                 especieId: publicacion.presentacion.variedad.especieId,
                 variedadId: publicacion.presentacion.variedad.id,

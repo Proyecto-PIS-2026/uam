@@ -25,7 +25,7 @@ vi.mock("next/image", async () => {
 
 // Reemplaza el Drawer real para probar solamente el comportamiento del catalogo
 vi.mock("./DrawerPublicacionPerfil", () => ({
-    default: ({publicacion, open}: {publicacion: PublicacionPerfil | null; open: boolean}) =>
+    DrawerPublicacionPerfil: ({publicacion, open}: {publicacion: PublicacionPerfil | null; open: boolean}) =>
         open && publicacion ? <div data-testid="drawer">{publicacion.especie} {publicacion.precio}</div> : null,
 }));
 

@@ -1,0 +1,159 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
+import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
+import ContenedorPublicaciones from "./ContenedorPublicaciones";
+
+vi.mock("../../../consulta-mercado/acciones/ConsultarPublicacionOperador.action", () => ({ default: vi.fn() }));
+vi.mock("../../tiempo-real/use-actualizaciones-publicaciones", () => ({ useActualizacionesPublicaciones: vi.fn() }));
+
+type Publicacion = PublicacionListado | PublicacionProductorListado;
+
+type PropsListadoPublicaciones = {
+    publicaciones: Publicacion[];
+};
+
+
+
+const { mockListadoPublicaciones } = vi.hoisted(() => ({
+  mockListadoPublicaciones: vi.fn<(props: PropsListadoPublicaciones) => null>(() => null),
+}));
+
+
+
+vi.mock("../listado-publicaciones/ListadoPublicaciones", () => ({ default: mockListadoPublicaciones }));
+
+
+function crearPublicacion(id: number): PublicacionListado {
+	return {
+		id,
+		especie: `Producto ${id}`,
+		variedad: "-",
+		precio: 150,
+		fecha: "2026-10-03T15:00:00.000Z",
+		foto: null,
+		presentacion: "Cajón",
+		categoria: "Primera",
+		calibre: "Mediano",
+		codigoCalibre: "M",
+		pais: "Uruguay",
+		tipoPublicacion: "OPERADOR",
+		operador: {
+			id: 10,
+			nombreFantasia: "Huerta Sur",
+			whatsApp: "099123456",
+		},
+	};
+}
+
+function publicacionesDelListado(): Publicacion[] | undefined {
+    return mockListadoPublicaciones.mock.calls.at(-1)?.[0]?.publicaciones;
+}
+
+
+
+describe("ContenedorPublicaciones", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("entrega primero las especies prioritarias y luego las demás en orden alfabético", () => {
+		const publicaciones = [
+			{...crearPublicacion(1), especie: "Pera"},
+			{...crearPublicacion(2), especie: "Manzana"},
+			{...crearPublicacion(3), especie: "Acelga"},
+			{...crearPublicacion(4), especie: "Papa"},
+		];
+		render(<ContenedorPublicaciones publicaciones={publicaciones}/>);
+		expect(publicacionesDelListado()).toEqual([publicaciones[3], publicaciones[1], publicaciones[2], publicaciones[0]]);
+	});
+
+	it("entrega una lista vacía cuando no hay publicaciones", () => {
+		render(<ContenedorPublicaciones publicaciones={[]}/>);
+		expect(publicacionesDelListado()).toEqual([]);
+	});
+
+	it("actualiza el listado cuando recibe nuevas publicaciones", () => {
+		const { rerender } = render(<ContenedorPublicaciones publicaciones={[crearPublicacion(7)]}/>);
+		const publicaciones = [crearPublicacion(2), crearPublicacion(9)];
+		rerender(<ContenedorPublicaciones publicaciones={publicaciones}/>);
+		expect(publicacionesDelListado()).toEqual(publicaciones);
+	});
+
+	it("actualiza los datos aunque la publicación conserve el mismo ID", () => {
+		const publicacion = crearPublicacion(7);
+		const { rerender } = render(<ContenedorPublicaciones publicaciones={[publicacion]}/>);
+		const actualizada = {...publicacion, precio: 80, foto: "/tomate.jpg"};
+		rerender(<ContenedorPublicaciones publicaciones={[actualizada]}/>);
+		expect(publicacionesDelListado()).toEqual([actualizada]);
+	});
+
+
+	it("quita la especie de la URL al limpiar filtros y conserva los demás parámetros", async () => {
+		const urlAnterior = window.location.href;
+		window.history.replaceState(window.history.state, "", "/publicaciones?especie=Manzana&orden=asc#lista");
+
+		try {
+			const publicaciones = [
+				{ ...crearPublicacion(1), especie: "Manzana" },
+				{ ...crearPublicacion(2), especie: "Pera" },
+			];
+			render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana" />);
+			expect(publicacionesDelListado()).toEqual([publicaciones[0]]);
+
+			fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+
+			await waitFor(() => expect(publicacionesDelListado()).toEqual(publicaciones));
+			expect(window.location.pathname).toBe("/publicaciones");
+			expect(window.location.search).toBe("?orden=asc");
+			expect(window.location.hash).toBe("#lista");
+		} finally {
+			window.history.replaceState(window.history.state, "", urlAnterior);
+		}
+	});
+
+	it("sincroniza la especie elegida en la URL y permite volver a todas", async () => {
+		const urlAnterior = window.location.href;
+		window.history.replaceState(window.history.state, "", "/publicaciones?especie=Manzana&orden=asc#lista");
+		try {
+			const publicaciones = [
+				{ ...crearPublicacion(1), especie: "Manzana" },
+				{ ...crearPublicacion(2), especie: "Pera" },
+			];
+			render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana" />);
+			fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+			fireEvent.click(screen.getByRole("option", { name: "Pera" }));
+			await waitFor(() => expect(publicacionesDelListado()).toEqual([publicaciones[1]]));
+			expect(new URL(window.location.href).searchParams.get("especie")).toBe("Pera");
+			expect(new URL(window.location.href).searchParams.get("orden")).toBe("asc");
+			expect(window.location.hash).toBe("#lista");
+			fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+			fireEvent.click(screen.getByRole("option", { name: "Todas" }));
+			await waitFor(() => expect(publicacionesDelListado()).toEqual(publicaciones));
+			expect(window.location.search).toBe("?orden=asc");
+		} finally {
+			window.history.replaceState(window.history.state, "", urlAnterior);
+		}
+	});
+
+
+
+	it("filtra publicaciones por nombre del productor", () => {
+		const { operador, ...camposComunes } = crearPublicacion(1);
+		const publicacion: PublicacionProductorListado = {
+			...camposComunes,
+			tipoPublicacion: "PRODUCTOR",
+			productor: {
+				...operador,
+				nombreFantasia: "Mercado Verde",
+				fotoPerfil: null,
+			},
+			ubicaciones: [],
+		};
+		render(<ContenedorPublicaciones publicaciones={[publicacion]} />);
+		fireEvent.change(screen.getByLabelText("Buscar publicaciones"), {target: { value: "mercado verde" }});
+		expect(publicacionesDelListado()).toEqual([publicacion]);
+		fireEvent.change(screen.getByLabelText("Buscar publicaciones"), {target: { value: "Otro productor" }});
+		expect(publicacionesDelListado()).toEqual([]);
+	});
+});

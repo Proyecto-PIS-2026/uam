@@ -56,15 +56,46 @@ describe("acceso a imágenes", () => {
         expect(mocks.leer).not.toHaveBeenCalled();
     });
 
-    it.each([null, { rol: "OPERADOR", usuarioId: 88 }, { rol: "ADMINISTRADOR", usuarioId: 1 }])("oculta fotografías de productores a otras personas", async (sesion) => {
-        mocks.publicacion.mockResolvedValue({ foto: URL, tipoPublicacion: "PRODUCTOR" });
+    it("oculta fotografías de productores a visitantes", async () => {
+        mocks.publicacion.mockResolvedValue({ foto: URL, tipoPublicacion: "PRODUCTOR", publicacionActiva: true, publicacionDisponible: true });
+        expect((await pedir()).status).toBe(404);
+        expect(mocks.leer).not.toHaveBeenCalled();
+    });
+
+    it.each(["OPERADOR", "ADMINISTRADOR"])("permite consultar la fotografía visible de un Productor como %s", async (rol) => {
+        mocks.publicacion.mockResolvedValue({ foto: URL, tipoPublicacion: "PRODUCTOR", publicacionActiva: true, publicacionDisponible: true });
+        mocks.sesion.mockResolvedValue({ rol, usuarioId: 88 });
+        expect((await pedir()).status).toBe(200);
+        expect(mocks.leer).toHaveBeenCalledExactlyOnceWith("publicaciones", 42, ARCHIVO);
+    });
+
+    it.each([
+        { publicacionActiva: false, publicacionDisponible: true },
+        { publicacionActiva: true, publicacionDisponible: false },
+        { publicacionActiva: false, publicacionDisponible: false },
+    ])("no entrega a un Operador una publicación de Productor oculta: %o", async (estado) => {
+        mocks.publicacion.mockResolvedValue({ foto: URL, tipoPublicacion: "PRODUCTOR", ...estado });
+        mocks.sesion.mockResolvedValue({ rol: "OPERADOR", usuarioId: 88 });
+        expect((await pedir()).status).toBe(404);
+        expect(mocks.leer).not.toHaveBeenCalled();
+    });
+
+    it("permite al Administrador consultar fotografías de productores en cualquier estado", async () => {
+        mocks.publicacion.mockResolvedValue({ foto: URL, tipoPublicacion: "PRODUCTOR", publicacionActiva: false, publicacionDisponible: false });
+        mocks.sesion.mockResolvedValue({ rol: "ADMINISTRADOR", usuarioId: 1 });
+        expect((await pedir()).status).toBe(200);
+    });
+
+    it.each(["OPERADOR", "ADMINISTRADOR"])("no entrega fotos reemplazadas de productores a %s", async (rol) => {
+        mocks.publicacion.mockResolvedValue({ foto: URL.replace(ARCHIVO, "otra.webp"), tipoPublicacion: "PRODUCTOR", publicacionActiva: true, publicacionDisponible: true });
+        const sesion = { rol, usuarioId: 88 };
         mocks.sesion.mockResolvedValue(sesion);
         expect((await pedir()).status).toBe(404);
         expect(mocks.leer).not.toHaveBeenCalled();
     });
 
     it("un productor solo accede al archivo de su publicación", async () => {
-        mocks.publicacion.mockResolvedValue({ foto: URL, tipoPublicacion: "PRODUCTOR" });
+        mocks.publicacion.mockResolvedValue({ foto: URL, tipoPublicacion: "PRODUCTOR", publicacionActiva: false, publicacionDisponible: false });
         mocks.sesion.mockResolvedValue({ rol: "PRODUCTOR", usuarioId: 20 });
         mocks.productor.mockResolvedValue({ id: 9 });
         mocks.relacionProductor.mockImplementation((filtro) => filtro.productorId === 9 ? { id: 1 } : null);
@@ -142,6 +173,29 @@ describe("acceso a imágenes", () => {
         expect(mocks.productor).toHaveBeenCalledWith({ id: 9, usuarioId: 20 });
         mocks.productor.mockResolvedValue(null);
         expect((await pedirPerfil("productores")).status).toBe(404);
+    });
+
+    it.each(["OPERADOR", "ADMINISTRADOR"])("sirve la foto de perfil vigente de un Productor al %s", async (rol) => {
+        mocks.sesion.mockResolvedValue({ rol, usuarioId: 88 });
+        mocks.productor.mockResolvedValue({ fotoPerfil: `/api/imagenes/productores/9/${ARCHIVO}` });
+        expect((await pedirPerfil("productores")).status).toBe(200);
+        expect(mocks.productor).toHaveBeenCalledWith({ id: 9 });
+    });
+
+    it.each([null, { rol: "PRODUCTOR", usuarioId: 88 }])("oculta la foto de perfil a visitantes y productores ajenos: %o", async (sesion) => {
+        mocks.sesion.mockResolvedValue(sesion);
+        mocks.productor.mockResolvedValue(null);
+        expect((await pedirPerfil("productores")).status).toBe(404);
+        expect(mocks.leer).not.toHaveBeenCalled();
+        if (sesion) expect(mocks.productor).toHaveBeenCalledWith({ id: 9, usuarioId: 88 });
+        else expect(mocks.productor).not.toHaveBeenCalled();
+    });
+
+    it.each(["OPERADOR", "ADMINISTRADOR"])("no sirve al %s una foto de perfil reemplazada de Productor", async (rol) => {
+        mocks.sesion.mockResolvedValue({ rol, usuarioId: 88 });
+        mocks.productor.mockResolvedValue({ fotoPerfil: "/otra.webp" });
+        expect((await pedirPerfil("productores")).status).toBe(404);
+        expect(mocks.leer).not.toHaveBeenCalled();
     });
 
     it("sirve las fotos vigentes de especies y operadores desde el mismo almacenamiento", async () => {

@@ -5,6 +5,7 @@ import type { PublicacionPerfilAdmin } from '../../consultas-perfil-admin';
 
 const publicacionBase: PublicacionPerfilAdmin = {
     id: 101,
+    version: 7,
     publicacionOperadorId: 15,
     especieId: 1,
     variedadId: 11,

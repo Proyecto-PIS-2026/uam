@@ -120,6 +120,7 @@ describe("BuscadorUsuario", () => {
     it("renderiza el buscador, los selectores y todos los roles disponibles", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -127,6 +128,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="TODOS"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -148,7 +151,7 @@ describe("BuscadorUsuario", () => {
             "true",
         );
 
-        expect(screen.getAllByRole("option")).toHaveLength(8);
+        expect(screen.getAllByRole("option")).toHaveLength(10);
 
         for (const rol of [
             "Todos",
@@ -156,7 +159,9 @@ describe("BuscadorUsuario", () => {
             "Operador",
             "Productor",
         ]) {
-            expect(screen.getAllByRole("option", { name: rol })).toHaveLength(2);
+            expect(screen.getAllByRole("option", { name: rol })).toHaveLength(
+                rol === "Todos" ? 3 : 2,
+            );
         }
 
         expect(
@@ -171,6 +176,7 @@ describe("BuscadorUsuario", () => {
     it("notifica los cambios en el texto de búsqueda", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -178,6 +184,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="TODOS"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -199,6 +207,7 @@ describe("BuscadorUsuario", () => {
     it("notifica los cambios de rol desde el selector de escritorio", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -206,6 +215,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="TODOS"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -236,6 +247,7 @@ describe("BuscadorUsuario", () => {
     it("notifica los cambios de rol desde el selector móvil", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -243,6 +255,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="OPERADOR"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 

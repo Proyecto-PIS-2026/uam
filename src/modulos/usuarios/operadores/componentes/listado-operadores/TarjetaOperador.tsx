@@ -17,7 +17,7 @@ export default function TarjetaOperador({ operador, puedeGestionar = false }: Ta
     const inicial = operador.nombreFantasia.trim().charAt(0).toLocaleUpperCase("es");
     const href = puedeGestionar
         ? `/gestion-operadores/${operador.id}`
-        : `/operadores/${encodeURIComponent(operador.nombreFantasia)}`;
+        : `/operadores/${encodeURIComponent(operador.nombreFantasia)}?origen=operadores`;
 
     const contenido = (
         <Link href={href} className={styles.tarjeta}>

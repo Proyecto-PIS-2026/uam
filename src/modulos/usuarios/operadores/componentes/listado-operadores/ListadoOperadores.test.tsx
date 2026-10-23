@@ -54,7 +54,7 @@ describe("ListadoOperadores", () => {
         for (const operador of listaOperadores) {
             expect(screen.getByText(operador.nombreFantasia).closest("a")).toHaveAttribute(
                 "href",
-                puedeGestionar ? `/gestion-operadores/${operador.id}` : `/operadores/${encodeURIComponent(operador.nombreFantasia)}`,
+                puedeGestionar ? `/gestion-operadores/${operador.id}` : `/operadores/${encodeURIComponent(operador.nombreFantasia)}?origen=operadores`,
             );
         }
     });

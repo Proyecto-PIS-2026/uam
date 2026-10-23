@@ -1,17 +1,5 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import type { Publicacion } from "../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
@@ -21,6 +9,19 @@ vi.mock("../acciones", () => ({
   incrementarPrecio: vi.fn(),
 }));
 
+vi.mock("next/image", async () => {
+    const { createElement } = await import("react");
+    return {
+        default: ({src, alt, onLoad, onError, style}: {
+            src: string;
+            alt: string;
+            onLoad?: React.ReactEventHandler<HTMLImageElement>;
+            onError?: React.ReactEventHandler<HTMLImageElement>;
+            style?: React.CSSProperties;
+        }) => createElement("img", {src, alt, onLoad, onError, style})
+    };
+});
+  
 function crearPublicacion(): Publicacion {
   return {
     id: 1,
@@ -158,29 +159,18 @@ describe("TarjetaPublicacion", () => {
 
   it("muestra la fotografía propia de la publicación cuando existe", () => {
     const pub = crearPublicacion();
-
     pub.foto = "/producto.jpg";
-    pub.presentacion.variedad.especie.fotoEspecie =
-      "/especie.jpg";
-
-    render(
-      <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
-    );
-
-    expect(
-      screen.getByRole("img", {
-        name: "Manzana · Red Delicious",
-      }),
-    ).toHaveAttribute("src", expect.stringContaining("/producto.jpg"));
+    pub.presentacion.variedad.especie.fotoEspecie = "/especie.jpg";
+    render(<TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />);
+    fireEvent.load(screen.getByAltText("Manzana · Red Delicious"));
+    expect(screen.getByRole("img", { name: "Manzana · Red Delicious" })).toHaveAttribute("src", expect.stringContaining("/producto.jpg"));
   });
 
   it("muestra el reemplazo si la URL de la foto ya no existe", () => {
     const pub = crearPublicacion();
     pub.foto = "/api/publicaciones/imagenes/1/foto-perdida.jpg";
     render(<TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />);
-
-    fireEvent.error(screen.getByRole("img", { name: "Manzana · Red Delicious" }));
-
+    fireEvent.error(screen.getByAltText("Manzana · Red Delicious"));
     expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Manzana · Red Delicious" })).not.toBeInTheDocument();
   });

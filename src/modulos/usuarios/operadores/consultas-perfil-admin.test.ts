@@ -47,6 +47,7 @@ const operadorBase = {
 
 const publicacionBase = {
     id: 101,
+    version: 7,
     foto: null,
     precio: "120.00",
     cantidadUnidades: 20,
@@ -186,6 +187,8 @@ describe("obtenerPerfilAdminOperador", () => {
             { id: 102, disponible: false },
         ]);
         expect(resultado?.publicaciones.map((p) => p.cantidadUnidades)).toEqual([20, 20]);
+        expect(resultado?.publicaciones.map((p) => p.version)).toEqual([7, 7]);
+        expect(mockDb.publicaciones.select.mock.calls.some((campos) => campos.includes("version"))).toBe(true);
     });
 
     // Los locales se ordenan por nave y, dentro de cada nave, por número de local

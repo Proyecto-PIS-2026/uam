@@ -852,4 +852,13 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("200");
     });
 
+    it("mantiene disponible compartir por WhatsApp después de una actualización remota en consulta", () => {
+        const compartir = vi.fn();
+        const vista = render(<DrawerEditarPublicacion {...props} modoInicial="consulta" alCompartir={compartir} />);
+        vista.rerender(<DrawerEditarPublicacion {...props} modoInicial="consulta" alCompartir={compartir} publicacion={{ ...publicacionInicial, precio: "200", version: 2 }} />);
+        fireEvent.click(screen.getByRole("button", { name: "Compartir en WhatsApp" }));
+        expect(compartir).toHaveBeenCalledOnce();
+        expect(screen.getByLabelText("Precio en pesos")).toHaveValue("200");
+    });
+
 });

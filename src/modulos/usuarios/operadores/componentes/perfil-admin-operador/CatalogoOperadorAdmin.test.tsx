@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
 import type { PublicacionPerfilAdmin } from "../../consultas-perfil-admin";
@@ -7,15 +8,42 @@ import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/opera
 
 const mocks = vi.hoisted(() => ({
     propsDrawer: vi.fn(),
+    refresh: vi.fn(),
+    suscribir: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({ refresh: mocks.refresh }),
+}));
+
+vi.mock("@/modulos/publicaciones/tiempo-real/use-actualizaciones-publicaciones", () => ({
+    useActualizacionesPublicaciones: mocks.suscribir,
 }));
 
 vi.mock("../../../../publicaciones/operadores/componentes/DrawerEditarPublicacion", () => ({
-    default: (props: { abierto: boolean; publicacion: { especie: string } | null }) => {
+    default: (props: { abierto: boolean; publicacion: { especie: string } | null; children?: ReactNode }) => {
         mocks.propsDrawer(props);
         return props.abierto && props.publicacion ? (
-            <div role="dialog" aria-label="Detalle de publicación">{props.publicacion.especie}</div>
+            <div role="dialog" aria-label="Detalle de publicación">
+                {props.publicacion.especie}
+                {props.children}
+            </div>
         ) : null;
     },
+}));
+
+vi.mock("../../../../../compartido/componentes/ConfirmModal", () => ({
+    ConfirmModal: ({ abierto, alConfirmar, alCancelar, procesando }: {
+        abierto: boolean;
+        alConfirmar: () => void;
+        alCancelar: () => void;
+        procesando: boolean;
+    }) => abierto ? (
+        <div role="alertdialog" aria-label="Confirmar eliminación">
+            <button type="button" onClick={alConfirmar} disabled={procesando}>Confirmar baja</button>
+            <button type="button" onClick={alCancelar} disabled={procesando}>Cancelar baja</button>
+        </div>
+    ) : null,
 }));
 
 // Devuelve las props de la última vez que se dibujó el drawer
@@ -23,8 +51,15 @@ function ultimasPropsDrawer() {
     return mocks.propsDrawer.mock.lastCall?.[0];
 }
 
+function responderFetch(cuerpo: unknown, status = 200) {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(cuerpo), { status })));
+}
+
+const operadorId = 12;
+
 const publicacionBase: PublicacionPerfilAdmin = {
     id: 101,
+    version: 7,
     publicacionOperadorId: 15,
     especieId: 1,
     variedadId: 11,
@@ -55,6 +90,23 @@ const opciones: OpcionesEdicionPublicacion = {
     paises: [{ id: 44, nombre: "Uruguay" }],
 };
 
+const cambios = {
+    version: 7,
+    precio: "130",
+    cantidadUnidades: 20,
+    categoriaId: 3,
+    calibreId: 4,
+    presentacionId: 111,
+    paisId: 44,
+    disponible: true,
+};
+
+// Dibuja el catálogo con una publicación y abre su drawer
+function abrirPublicacion() {
+    render(<CatalogoOperadorAdmin operadorId={operadorId} publicaciones={[publicacionBase]} opciones={opciones} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Tomate - Perita" }));
+}
+
 describe("CatalogoOperadorAdmin", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -62,11 +114,12 @@ describe("CatalogoOperadorAdmin", () => {
 
     afterEach(() => {
         cleanup();
+        vi.unstubAllGlobals();
     });
 
     // Sin publicaciones se informa y no hay tarjetas
     it("informa cuando el operador no tiene publicaciones", () => {
-        render(<CatalogoOperadorAdmin publicaciones={[]} opciones={opciones} />);
+        render(<CatalogoOperadorAdmin operadorId={operadorId} publicaciones={[]} opciones={opciones} />);
 
         expect(screen.getByText("El operador no tiene publicaciones.")).toBeInTheDocument();
         expect(screen.queryByRole("button")).not.toBeInTheDocument();
@@ -76,6 +129,7 @@ describe("CatalogoOperadorAdmin", () => {
     it("muestra una tarjeta por cada publicación", () => {
         render(
             <CatalogoOperadorAdmin
+                operadorId={operadorId}
                 publicaciones={[publicacionBase, { ...publicacionBase, id: 102, especie: "Lechuga", variedad: "-" }]}
                 opciones={opciones}
             />
@@ -85,28 +139,32 @@ describe("CatalogoOperadorAdmin", () => {
         expect(screen.getByRole("button", { name: "Ver detalles de Lechuga" })).toBeInTheDocument();
     });
 
-    // El drawer arranca cerrado
     it("no muestra el drawer hasta que se toca una tarjeta", () => {
-        render(<CatalogoOperadorAdmin publicaciones={[publicacionBase]} opciones={opciones} />);
+        render(<CatalogoOperadorAdmin operadorId={operadorId} publicaciones={[publicacionBase]} opciones={opciones} />);
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(ultimasPropsDrawer()?.abierto).toBe(false);
     });
 
-    // Al tocar una tarjeta se abre el drawer con esa publicación, en consulta y sin acciones
-    it("abre el drawer en consulta con la publicación tocada y sin editar ni eliminar", () => {
-        render(<CatalogoOperadorAdmin publicaciones={[publicacionBase]} opciones={opciones} />);
+    it("recarga el perfil con avisos públicos sin solicitar un canal privado", () => {
+        abrirPublicacion();
+        expect(mocks.suscribir.mock.lastCall?.[1]).toEqual({ operadorPublicoId: operadorId });
+        mocks.suscribir.mock.lastCall?.[0]();
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
 
-        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Tomate - Perita" }));
+    it("abre el drawer en consulta con la publicación tocada y permite editar y eliminar", () => {
+        abrirPublicacion();
 
         expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toHaveTextContent("Tomate");
 
         const props = ultimasPropsDrawer();
         expect(props.abierto).toBe(true);
         expect(props.modoInicial).toBe("consulta");
-        expect(props.alGuardar).toBeUndefined();
-        expect(props.alEliminar).toBeUndefined();
+        expect(props.alGuardar).toEqual(expect.any(Function));
+        expect(props.alEliminar).toEqual(expect.any(Function));
         expect(props.publicacion).toEqual(expect.objectContaining({
+            version: 7,
             publicacionOperadorId: 15,
             publicacionId: 101,
             especieId: 1,
@@ -122,10 +180,8 @@ describe("CatalogoOperadorAdmin", () => {
         expect(props.paises).toBe(opciones.paises);
     });
 
-    // Al cerrarlo, el drawer desaparece
     it("cierra el drawer cuando se llama a alCerrar", () => {
-        render(<CatalogoOperadorAdmin publicaciones={[publicacionBase]} opciones={opciones} />);
-        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Tomate - Perita" }));
+        abrirPublicacion();
 
         act(() => {
             ultimasPropsDrawer().alCerrar();
@@ -133,5 +189,85 @@ describe("CatalogoOperadorAdmin", () => {
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(ultimasPropsDrawer().abierto).toBe(false);
+    });
+
+    it("guarda los cambios con PATCH para el operador y refresca la página", async () => {
+        responderFetch({ mensaje: "Publicación modificada correctamente." });
+        abrirPublicacion();
+
+        await ultimasPropsDrawer().alGuardar(15, cambios, null);
+
+        expect(fetch).toHaveBeenCalledExactlyOnceWith(
+            "/api/publicaciones/101?operadorId=12",
+            expect.objectContaining({ method: "PATCH" }),
+        );
+        const cuerpo = vi.mocked(fetch).mock.calls[0][1]?.body as FormData;
+        expect(cuerpo.get("cambios")).toBe(JSON.stringify(cambios));
+        expect(cuerpo.get("fotografia")).toBeNull();
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("devuelve el error de la API al guardar sin refrescar la página", async () => {
+        responderFetch({ errores: ["Los cambios no son válidos."] }, 400);
+        abrirPublicacion();
+
+        await expect(ultimasPropsDrawer().alGuardar(15, cambios, null)).rejects.toThrow("Los cambios no son válidos.");
+        expect(mocks.refresh).not.toHaveBeenCalled();
+    });
+
+    it("recarga la versión actual si otra persona modificó la publicación", async () => {
+        responderFetch({ errores: ["La publicación fue modificada por otra persona."] }, 409);
+        abrirPublicacion();
+
+        await expect(ultimasPropsDrawer().alGuardar(15, cambios, null)).rejects.toThrow("La publicación fue modificada por otra persona.");
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("pide confirmación y elimina con DELETE para el operador", async () => {
+        responderFetch({ mensaje: "Publicación eliminada." });
+        abrirPublicacion();
+
+        act(() => {
+            ultimasPropsDrawer().alEliminar();
+        });
+
+        expect(screen.getByRole("alertdialog", { name: "Confirmar eliminación" })).toBeInTheDocument();
+        expect(fetch).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
+
+        await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
+        expect(fetch).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/101?operadorId=12", { method: "DELETE" });
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    // Cancelar la confirmación no elimina nada
+    it("cancela la baja sin llamar a la API", () => {
+        responderFetch({ mensaje: "Publicación eliminada." });
+        abrirPublicacion();
+
+        act(() => {
+            ultimasPropsDrawer().alEliminar();
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar baja" }));
+
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("muestra el error de la baja y mantiene el drawer abierto", async () => {
+        responderFetch({ errores: ["La publicación no pertenece al operador seleccionado."] }, 404);
+        abrirPublicacion();
+
+        act(() => {
+            ultimasPropsDrawer().alEliminar();
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
+
+        await waitFor(() => expect(ultimasPropsDrawer().errorConsulta).toBe("La publicación no pertenece al operador seleccionado."));
+        expect(ultimasPropsDrawer().abierto).toBe(true);
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        expect(mocks.refresh).not.toHaveBeenCalled();
     });
 });

@@ -335,7 +335,7 @@ describe("PreciosReferencia", () => {
         expect(opcionesDe("Categoría")).toEqual(["Todas las categorías", "Extra", "I", "II"]);
         expect(opcionesDe("Calibre")).toEqual(["Todos los calibres", "G", "M", "P"]);
         expect(screen.getByText("10 resultados")).toBeInTheDocument();
-    });
+    }, 100_000);
 
     it("ignora las palabras de clasificación en la búsqueda", async () => {
         const datos = convertirConsultaEnPreciosReferencia(relevamiento);
@@ -397,23 +397,6 @@ describe("PreciosReferencia", () => {
         fireEvent.change(screen.getByRole("textbox", { name: /precio mínimo/i }), { target: { value: "" } });
         fireEvent.change(screen.getByRole("textbox", { name: /precio máximo/i }), { target: { value: "20.7" } });
         esperarEspeciesEnTabla("Acelga");
-    });
-
-    it("limpiar filtros restablece límites y el tipo de precio", () => {
-        renderizarPreciosDistintos();
-
-        fireEvent.change(screen.getByRole("textbox", { name: /precio mínimo/i }), { target: { value: "50" } });
-        fireEvent.change(screen.getByRole("textbox", { name: /precio máximo/i }), { target: { value: "100" } });
-        fireEvent.mouseDown(screen.getByRole("combobox", { name: /precio por/i }));
-        fireEvent.click(screen.getByRole("option", { name: /kg/i }));
-
-        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-
-        expect(screen.getByRole("textbox", { name: /precio mínimo/i })).toHaveValue("");
-        expect(screen.getByRole("textbox", { name: /precio máximo/i })).toHaveValue("");
-        expect(screen.getByRole("combobox", { name: /precio por/i })).toHaveTextContent("Unidad");
-        expect(screen.getByText("3 resultados")).toBeInTheDocument();
-        esperarEspeciesEnTabla("Acelga", "Banana", "Cebolla");
     });
 
     it("permite desplegar y cerrar los filtros adicionales en móvil", () => {

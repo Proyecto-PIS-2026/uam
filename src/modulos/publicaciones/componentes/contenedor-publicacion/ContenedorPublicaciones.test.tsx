@@ -1,14 +1,14 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
 import type { FiltrosConsulta } from "../../../consulta-mercado/acciones/filtros-consulta";
-import type { ResultadoPublicaciones } from "../../../consulta-mercado/acciones/Publicaciones";
+import type { ResultadoPublicaciones } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import ContenedorPublicaciones from "./ContenedorPublicaciones";
 
 const { cargar, escuchar } = vi.hoisted(() => ({ cargar: vi.fn(), escuchar: vi.fn() }));
 
-vi.mock("../../../consulta-mercado/acciones/ConsultarPublicacion.action", () => ({ default: cargar }));
+vi.mock("../../../consulta-mercado/acciones/ConsultarPublicacionOperador.action", () => ({ default: cargar }));
 vi.mock("../../tiempo-real/use-actualizaciones-publicaciones", () => ({ useActualizacionesPublicaciones: escuchar }));
-vi.mock("../listado-publicaciones/ListadoPublicacionesUnificado", () => ({ default: ({ publicaciones }: ResultadoPublicaciones) => <div data-testid="listado">{publicaciones.map((p) => <span key={p.id}>{p.especie} {p.precio}</span>)}</div> }));
+vi.mock("../listado-publicaciones/ListadoPublicaciones", () => ({ default: ({ publicaciones }: ResultadoPublicaciones) => <div data-testid="listado">{publicaciones.map((p) => <span key={p.id}>{p.especie} {p.precio}</span>)}</div> }));
 vi.mock("../../filtros/FiltrosPublicaciones", () => ({
     default: function FiltrosSimulados({ alConsultar, especieFiltro }: { alConsultar: (consulta: FiltrosConsulta) => void; especieFiltro: string }) {
         useEffect(() => { alConsultar({ especie: especieFiltro, orden: "prioridad" }); }, [alConsultar, especieFiltro]);
@@ -18,7 +18,7 @@ vi.mock("../../filtros/FiltrosPublicaciones", () => ({
 
 function resultado(pagina = 1, precio = 100): ResultadoPublicaciones {
     return {
-        publicaciones: [{ id: pagina, especie: "Tomate", precio, fecha: "2026-10-16T10:00:00Z", foto: null, variedad: "Perita", presentacion: "KG", categoria: "I", calibre: "M", codigoCalibre: "M", pais: "Uruguay", operador: { id: 1, nombreFantasia: "Huerta", whatsApp: "" } }],
+        publicaciones: [{ id: pagina, especie: "Tomate", precio, fecha: "2026-10-16T10:00:00Z", foto: null, variedad: "Perita", presentacion: "KG", categoria: "I", calibre: "M", codigoCalibre: "M", pais: "Uruguay", tipoPublicacion: "OPERADOR", operador: { id: 1, nombreFantasia: "Huerta", whatsApp: "" } }],
         opciones: [], total: 35, totalCatalogo: 35, pagina, tamanoPagina: 30,
     };
 }

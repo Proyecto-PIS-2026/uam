@@ -32,7 +32,8 @@ function ultimoRelevamientoGuardado(registros: { claveCache: string; estadoCache
 }
 
 export async function obtenerUltimoRelevamientoGuardado(): Promise<ConsultaPreciosReferencia | null> {
-    const registros = await db.orm.public.CachePreciosReferencia.all();
+    const registros = await db.orm.public.CachePreciosReferencia
+        .where((cache) => cache.claveCache.like(`${PREFIJO_CACHE}%`)).all();
     return ultimoRelevamientoGuardado(registros)?.consulta ?? null;
 }
 
@@ -89,7 +90,8 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
     const estadoInicial = leerEstadoCacheDiaria(registroInicial?.estadoCache ?? null);
     if (estadoInicial?.ultimoIntento === fechaActualMontevideo()) {
         if (estadoInicial.consulta) return estadoInicial.consulta;
-        const respaldo = ultimoRelevamientoGuardado(await db.orm.public.CachePreciosReferencia.all());
+        const respaldo = ultimoRelevamientoGuardado(await db.orm.public.CachePreciosReferencia
+            .where((cache) => cache.claveCache.like(`${PREFIJO_CACHE}%`)).all());
         if (!respaldo) throw new Error("Todavía no hay un relevamiento de precios disponible en la caché.");
     }
 
@@ -97,7 +99,8 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
         const registro = await db.orm.public.CachePreciosReferencia.where({ claveCache }).first();
         const estado = leerEstadoCacheDiaria(registro?.estadoCache ?? null);
         const hoy = fechaActualMontevideo();
-        const ultimoGuardado = ultimoRelevamientoGuardado(await db.orm.public.CachePreciosReferencia.all());
+        const ultimoGuardado = ultimoRelevamientoGuardado(await db.orm.public.CachePreciosReferencia
+            .where((cache) => cache.claveCache.like(`${PREFIJO_CACHE}%`)).all());
 
         let estadoConRespaldo = estado;
         const datoActual = estado?.consulta && estado.ultimoExito ? { consulta: estado.consulta, ultimoExito: estado.ultimoExito } : null;

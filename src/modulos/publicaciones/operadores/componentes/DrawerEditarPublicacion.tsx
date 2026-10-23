@@ -22,6 +22,7 @@ type DrawerEditarPublicacionProps = {
     puedeModificar?: boolean;
     puedeEliminar?: boolean;
     alEliminar?: () => void;
+    alCompartir?: () => void;
     eliminando?: boolean;
     actualizando?: boolean;
     errorConsulta?: string;
@@ -45,7 +46,7 @@ function precioParaEdicion(precio: string | null) {
     return Number.isInteger(valor) ? String(valor) : precio;
 }
 
-function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
+function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
     const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
     const [baseEdicion, setBaseEdicion] = useState(recibida);
     const [guardada, setGuardada] = useState<{ origen: PublicacionParaEditar; datos: PublicacionParaEditar } | null>(null);
@@ -398,6 +399,16 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                         </>
                     ) : (
                         <>
+                        {alCompartir && (
+                            <button
+                                type="button"
+                                className={styles.cancelar}
+                                onClick={alCompartir}
+                                disabled={ocupado}
+                            >
+                                Compartir en WhatsApp
+                            </button>
+                        )}
                             <button className={`${styles.cancelar} ${styles.eliminar}`} type="button" onClick={alEliminar} disabled={ocupado || !puedeEliminar || !alEliminar}>{eliminando ? "Eliminando..." : "Eliminar"}</button>
                             <button className={styles.guardar} type="button" onClick={(evento) => { evento.preventDefault(); prepararEdicion(); setEditando(true); }} disabled={ocupado || !puedeModificar || !alGuardar}>Editar</button>
                         </>
@@ -408,7 +419,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     );
 }
 
-export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
+export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
     function cerrar() {
@@ -417,7 +428,7 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
     return (
         <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
             )}
             {publicacion && children}
         </Drawer>

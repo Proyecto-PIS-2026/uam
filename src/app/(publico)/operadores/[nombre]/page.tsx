@@ -12,17 +12,18 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
     params: Promise<{ nombre: string; }>;
+    searchParams: Promise<{ origen?: string | string[] }>; 
 };
 
-export default async function Page({ params }: PageProps) {
+export default async function Page({ params, searchParams }: PageProps) {
     const sesion = await obtenerSesion();
-    const { nombre: nombreCodificado } = await params;
-    let nombre: string;
-    try {
-        nombre = decodeURIComponent(nombreCodificado);
-    } catch {
-        notFound();
-    }
+    // Next entrega los parámetros de ruta ya decodificados.
+    const { nombre } = await params;
+
+    const { origen } = await searchParams;
+    const desdePublicaciones = origen === "publicaciones";
+    const hrefVolver = desdePublicaciones ? "/publicaciones" : "/operadores";
+    const textoVolver = desdePublicaciones ? "Volver al listado de publicaciones" : "Volver al listado de operadores";
 
     if (sesion?.rol === "OPERADOR") {
         const operador = await obtenerOperadorActual();
@@ -44,7 +45,7 @@ export default async function Page({ params }: PageProps) {
     const contenido = (
         <main className={styles.pagina}>
             <div className={styles.contenido}>
-                <PerfilOperador operador={ perfil } />
+                <PerfilOperador operador={perfil} hrefVolver={hrefVolver} textoVolver={textoVolver}/>
                 <CatalogoOperador key={perfil.id} publicaciones={perfil.publicaciones} whatsAppOperador={perfil.whatsApp} idOperador={perfil.id} nombreOperador={perfil.nombreFantasia} />
             </div>
         </main>

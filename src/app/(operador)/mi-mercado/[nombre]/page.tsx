@@ -4,13 +4,8 @@ import VistaMiMercado from "../../../../modulos/publicaciones/mi-mercado/compone
 export const dynamic = "force-dynamic";
 
 export default async function Page({ params }: { params: Promise<{ nombre: string }> }) {
-    const { nombre: nombreCodificado } = await params;
-    let nombre: string;
-    try {
-        nombre = decodeURIComponent(nombreCodificado);
-    } catch {
-        notFound();
-    }
+    // Next entrega los parámetros de ruta ya decodificados.
+    const { nombre } = await params;
     if (!nombre.trim()) notFound();
 
     return <VistaMiMercado operadorNombre={nombre} />;

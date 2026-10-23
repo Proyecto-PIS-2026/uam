@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import type { PublicacionListado, ResultadoPublicaciones } from "@/modulos/consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado, ResultadoPublicaciones } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
 import PaginaPublicaciones from "./page";
 
 const consultarPublicacionesMock = vi.hoisted(() => vi.fn());
@@ -14,7 +14,7 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
 
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 
-vi.mock("@/modulos/consulta-mercado/acciones/Publicaciones", () => ({
+vi.mock("@/modulos/consulta-mercado/acciones/PublicacionesOperador", () => ({
     consultarPublicaciones: consultarPublicacionesMock,
 }));
 
@@ -41,6 +41,7 @@ function crearPublicacion(id: number): PublicacionListado {
         calibre: "Mediano",
         codigoCalibre: "M",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 10,
             nombreFantasia: "Huerta Sur",

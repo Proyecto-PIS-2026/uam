@@ -10,11 +10,14 @@ import type { Publicacion } from "../tipos";
 import type { PublicacionParaEditar, OpcionesEdicionPublicacion, CambiosPublicacionOperador } from "../../operadores/tipos";
 import NuevaPublicacion from "../../operadores/componentes/NuevaPublicacion";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../filtros/FiltrosPublicaciones";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
 import { useActualizacionesPublicaciones } from "../../tiempo-real/use-actualizaciones-publicaciones";
 import styles from "./MiMercado.module.css";
+import CompartirEstadoWhatsApp from "./CompartirEstadoWhatsApp";
+
+const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
 type Props = {
     operadorId: number;
@@ -34,6 +37,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(true);
     const [ordenActual, setOrdenActual] = useState<OrdenPublicaciones>("prioridad");
     const [seleccion, setSeleccion] = useState<{ publicacion: Publicacion; listado: Publicacion[] } | null>(null);
+    const [publicacionACompartir, setPublicacionACompartir] = useState<Publicacion | null>(null);
     const [listadoRecargado, setListadoRecargado] = useState<{ origen: Publicacion[]; datos: Publicacion[] } | null>(null);
     const [sincronizando, setSincronizando] = useState(false);
     const ultimaRecarga = useRef(0);
@@ -57,6 +61,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         calibre: publicacion.calibre.nombreCalibre,
         codigoCalibre: publicacion.calibre.codigoCalibre,
         pais: "",
+        tipoPublicacion: "OPERADOR",
         operador: { id: operadorId, nombreFantasia: nombreOperador, whatsApp: "" },
     })), [publicacionesVigentes, operadorId, nombreOperador]);
     const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
@@ -309,7 +314,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                 ) : (
                     <>
                         <div className={styles.filtros}>
-                            <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual} />
+                            <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual} />
                         </div>
                         {/* Controles */}
                         <div className={styles.encabezadoCatalogo}>
@@ -394,9 +399,25 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                 )}
             </div>
             {puedeCrear && altaAbierta && <NuevaPublicacion operadorId={operadorId} incrementoPrecio={incrementoPrecio} abierto={altaAbierta} alCerrar={cerrarAlta} alCrear={publicacionCreada} />}
-            <DrawerEditarPublicacion incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }} eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
+            <DrawerEditarPublicacion incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }}
+            alCompartir={() => {
+                if (publicacionSeleccionada) {
+                    setPublicacionACompartir(publicacionSeleccionada);
+                    setSeleccion(null);
+                }
+            }}
+            eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
+
                 <ConfirmModal abierto={publicacionPendiente !== null} titulo="Eliminar publicación" descripcion={publicacionPendiente ? `¿Querés eliminar la publicación de ${publicacionPendiente.presentacion.variedad.especie.nombreEspecie}? Esta acción no se puede deshacer.` : ""} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setPublicacionPendiente(null); }} alConfirmar={() => void eliminarPublicacion()} />
-            </DrawerEditarPublicacion>
+
+                </DrawerEditarPublicacion>
+                {publicacionACompartir && (
+                    <CompartirEstadoWhatsApp
+                        publicacion={publicacionACompartir}
+                        nombreOperador={nombreOperador}
+                        alCerrar={() => setPublicacionACompartir(null)}
+                    />
+                )}
         </main>
     );
 }

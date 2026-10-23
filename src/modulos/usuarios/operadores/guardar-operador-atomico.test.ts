@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { guardarOperadorAtomico } from "./guardar-operador-atomico";
+import { guardarUsuarioAtomico } from "../guardar-usuario-atomico";
 
 const mocks = vi.hoisted(() => ({ transaction: vi.fn(), consultas: [] as string[] }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: {
@@ -54,6 +55,30 @@ describe("guardado atómico de operadores", () => {
         const segundo = guardarOperadorAtomico(async () => 9);
         await expect(primero).rejects.toThrow("Guardado fallido");
         await expect(segundo).resolves.toBe(9);
+    });
+
+    it("serializa una reserva de nombre de usuario entre operador y productor", async () => {
+        let usado = false;
+        const guardar = async () => {
+            if (usado) return "Ya existe un usuario con ese nombre de usuario.";
+            await Promise.resolve();
+            usado = true;
+            return 7;
+        };
+        const resultados = await Promise.all([
+            guardarOperadorAtomico(guardar),
+            guardarUsuarioAtomico(guardar, "productor"),
+        ]);
+        expect(resultados).toEqual([7, "Ya existe un usuario con ese nombre de usuario."]);
+    });
+
+    it.each([
+        ["23505", "productor_nombreFantasia_key", "Ya existe un productor con ese nombre."],
+        ["23505", "usuario_username_key", "Ya existe un usuario con ese nombre de usuario."],
+        ["23503", undefined, "Los datos seleccionados cambiaron mientras se guardaba el productor. Actualizá el formulario."],
+    ])("devuelve el conflicto %s de un productor sin perder el error de negocio", async (code, constraint, mensaje) => {
+        mocks.transaction.mockRejectedValueOnce(new Error("Transacción fallida", { cause: { code, constraint } }));
+        await expect(guardarUsuarioAtomico(async () => 7, "productor")).resolves.toBe(mensaje);
     });
 
     it("comparte el bloqueo por operador con la baja antes de modificar", async () => {

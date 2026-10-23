@@ -1,5 +1,6 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { type CategoriaImagen, urlImagen } from "./almacenamiento-imagenes";
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -26,8 +27,11 @@ export async function puedeLeerImagen(categoria: CategoriaImagen, id: number, ar
     }
     if (categoria === "productores") {
         const sesion = await obtenerSesion();
-        if (sesion?.rol !== "PRODUCTOR") return false;
-        const productor = await db.orm.public.Productor.select("fotoPerfil").where({ id, usuarioId: sesion.usuarioId }).first();
+        if (!sesion) return false;
+        const consultaGeneral = autorizado("productor.publicacion.consultar", sesion);
+        if (!consultaGeneral && sesion.rol !== "PRODUCTOR") return false;
+        const filtro = consultaGeneral ? { id } : { id, usuarioId: sesion.usuarioId };
+        const productor = await db.orm.public.Productor.select("fotoPerfil").where(filtro).first();
         return productor?.fotoPerfil === url;
     }
 
@@ -37,6 +41,9 @@ export async function puedeLeerImagen(categoria: CategoriaImagen, id: number, ar
     if (!publicacion || publicacion.foto !== url) return false;
     const sesion = await obtenerSesion();
     if (publicacion.tipoPublicacion === "PRODUCTOR") {
+        if (autorizado("productor.publicacion.consultar", sesion)) {
+            return sesion?.rol === "ADMINISTRADOR" || publicacion.publicacionActiva && publicacion.publicacionDisponible;
+        }
         if (sesion?.rol !== "PRODUCTOR") return false;
         const productor = await db.orm.public.Productor.select("id").where({ usuarioId: sesion.usuarioId }).first();
         if (!productor) return false;

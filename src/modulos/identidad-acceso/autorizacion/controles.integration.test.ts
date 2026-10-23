@@ -97,7 +97,7 @@ describe.sequential("autorización contra datos reales", () => {
         await expect(cargarPublicacionesMiMercado(ajeno.id)).rejects.toMatchObject({ status: 403 });
     });
 
-    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("no elimina publicaciones con sesión %s", async (rol) => {
+    it.each([null, "PRODUCTOR"] as const)("no elimina publicaciones con sesión %s", async (rol) => {
         const antes = await leerPublicacion();
         sesionMock.mockResolvedValue(rol ? { ...sesion, rol } : null);
         const respuesta = await DELETE(new Request(`http://localhost/api/publicaciones/${publicacionAjena.id}?operadorId=${ajeno.id}`), {

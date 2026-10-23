@@ -22,7 +22,7 @@ const {
 } = vi.hoisted(() => {
     type Registro = { id: number; claveCache: string; estadoCache: string };
     type Filtro = { claveCache?: string; id?: number };
-
+    type FiltroPorPrefijo = (cache: { claveCache: { like: (patron: string) => string } }) => string;
     const registros = new Map<string, Registro>();
     let siguienteId = 1;
     type Plan = { texto: string; valores: unknown[] };
@@ -60,7 +60,12 @@ const {
             : [...registros.values()].find((valor) => valor.id === filtro.id);
         return registro ? { ...registro } : null;
     });
-    const listados = vi.fn(async (): Promise<Registro[]> => [...registros.values()].map((registro) => ({ ...registro })));
+    const listados = vi.fn(async (patron: string): Promise<Registro[]> => {
+        if (patron !== "precios-referencia:latest:%") throw new Error("Se debe filtrar el prefijo de precios de referencia en la BD");
+        return [...registros.values()]
+            .filter((registro) => registro.claveCache.startsWith(patron.slice(0, -1)))
+            .map((registro) => ({ ...registro }));
+    });
     const creaciones = vi.fn(async (valores: Omit<Registro, "id">) => {
         if (registros.has(valores.claveCache)) throw new Error("Registro duplicado en el mock");
         registros.set(valores.claveCache, { id: siguienteId++, ...valores });
@@ -72,11 +77,16 @@ const {
     });
     const bloqueos = vi.fn(async () => undefined);
     const tabla = {
-        all: listados,
-        where: (filtro: Filtro) => ({
-            first: () => lecturas(filtro),
-            update: (valores: Pick<Registro, "estadoCache">) => actualizaciones(filtro, valores),
-        }),
+        where: (filtro: Filtro | FiltroPorPrefijo) => {
+            if (typeof filtro === "function") {
+                const patron = filtro({ claveCache: { like: (valor) => valor } });
+                return { all: () => listados(patron) };
+            }
+            return {
+                first: () => lecturas(filtro),
+                update: (valores: Pick<Registro, "estadoCache">) => actualizaciones(filtro, valores),
+            };
+        },
         create: creaciones,
     };
     const configuracion = {
@@ -248,6 +258,7 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(lecturas).toHaveBeenCalledOnce();
         expect(transacciones).not.toHaveBeenCalled();
         expect(consultar).not.toHaveBeenCalled();
+        expect(listados).toHaveBeenCalledExactlyOnceWith("precios-referencia:latest:%");
     });
 
     it("tras el primer acceso usa la lectura rápida y renueva el dato al día siguiente", async () => {
@@ -356,6 +367,7 @@ describe("obtenerConsultaDiariaWebservice", () => {
         const ultimo = dato("2026-10-01");
         sembrar("precios-referencia:latest:fuente-antigua", JSON.stringify(estado("2026-10-01", anterior)));
         sembrar("incremento_precio", "10");
+        sembrar("precios-historicos:v2:60", "Un histórico grande que no debe transferirse en esta consulta");
         sembrar("precios-referencia:latest:fuente-reciente", JSON.stringify(estado("2026-10-01", ultimo)));
         consultar.mockRejectedValue(new Error("Servicio no disponible"));
 
@@ -370,6 +382,7 @@ describe("obtenerConsultaDiariaWebservice", () => {
         });
         expect(consultar).toHaveBeenCalledOnce();
         expect(listados).toHaveBeenCalledOnce();
+        expect(listados).toHaveBeenCalledWith("precios-referencia:latest:%");
     });
 
     it("prefiere un relevamiento más nuevo de otra fila e ignora los registros inválidos", async () => {
@@ -408,6 +421,7 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(consultar).not.toHaveBeenCalled();
         expect(actualizaciones).toHaveBeenCalledOnce();
         expect(listados).toHaveBeenCalledTimes(2);
+        expect(listados.mock.calls).toEqual([["precios-referencia:latest:%"], ["precios-referencia:latest:%"]]);
     });
 
     it("descarta un JSON inválido aunque diga que hubo un intento hoy", async () => {
