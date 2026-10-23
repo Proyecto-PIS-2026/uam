@@ -5,17 +5,28 @@ import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
 import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
 
+const mocks = vi.hoisted(() => ({ refresh: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({ refresh: mocks.refresh }),
+}));
+
 vi.mock("../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProductor", () => ({
-    default: ({ publicacion, alCerrar, alGuardar }: {
+    default: ({ publicacion, alCerrar, alGuardar, alEliminada }: {
         publicacion: PublicacionMiMercadoProductor | null;
         alCerrar: () => void;
         alGuardar?: (publicacion: PublicacionMiMercadoProductor) => void;
+        alEliminada?: (mensaje: string) => void;
     }) => publicacion ? (
         <section role="dialog" aria-label="Detalle de publicación">
             <h2>{publicacion.presentacion.variedad.especie.nombreEspecie}</h2>
             <p>{publicacion.pais}</p>
             {publicacion.ubicaciones.map((ubicacion) => <p key={ubicacion.id}>{ubicacion.nombreUbicacion}</p>)}
             <button type="button" onClick={alCerrar}>Cerrar consulta</button>
+            <button type="button" onClick={() => {
+                alCerrar();
+                alEliminada?.("Publicación eliminada correctamente.");
+            }}>Eliminar publicación</button>
             <button type="button" onClick={() => alGuardar?.({
                 ...publicacion,
                 precio: "125.50",
@@ -57,6 +68,7 @@ const publicacionBase: PublicacionPerfilAdminProductor = {
 describe("CatalogoProductorAdmin", () => {
     beforeEach(() => {
         cleanup();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
@@ -115,6 +127,47 @@ describe("CatalogoProductorAdmin", () => {
         fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
         fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Manzana - Red Delicious" }));
         expect(within(screen.getByRole("dialog")).getByText("Nuevo punto de retiro")).toBeInTheDocument();
+    });
+
+    it("retira la publicación eliminada y conserva los cambios de las demás publicaciones", () => {
+        render(<CatalogoProductorAdmin publicaciones={[
+            publicacionBase,
+            { ...publicacionBase, id: 202, publicacionProductorId: 302, especie: "Lechuga", variedad: "-" },
+        ]} />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Manzana - Red Delicious" }));
+        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Lechuga" }));
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar publicación" }));
+
+        expect(screen.queryByRole("article", { name: "Ver detalles de Lechuga" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación eliminada correctamente.");
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+        const tarjeta = screen.getByRole("article", { name: "Ver detalles de Manzana - Red Delicious" });
+        expect(within(tarjeta).getByText(/125,5/)).toBeInTheDocument();
+        expect(within(tarjeta).getByText("No disponible")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Manzana - Red Delicious" }));
+        expect(within(screen.getByRole("dialog")).getByText("Nuevo punto de retiro")).toBeInTheDocument();
+    });
+
+    it("muestra el catálogo vacío al eliminar la última publicación y acepta nuevas publicaciones del servidor", () => {
+        const { rerender } = render(<CatalogoProductorAdmin publicaciones={[publicacionBase]} />);
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Manzana - Red Delicious" }));
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar publicación" }));
+
+        expect(screen.getByText("El productor no tiene publicaciones.")).toBeInTheDocument();
+        expect(screen.queryByRole("article")).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+        rerender(<CatalogoProductorAdmin publicaciones={[
+            { ...publicacionBase, id: 202, publicacionProductorId: 302, especie: "Lechuga", variedad: "-" },
+        ]} />);
+
+        expect(screen.getByRole("article", { name: "Ver detalles de Lechuga" })).toBeInTheDocument();
+        expect(screen.queryByRole("article", { name: "Ver detalles de Manzana - Red Delicious" })).not.toBeInTheDocument();
     });
 
     it("incorpora nuevas publicaciones del servidor después de una edición local", () => {

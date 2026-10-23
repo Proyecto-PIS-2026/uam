@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import DrawerPublicacionProductor from "../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProductor";
 import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
 import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import TarjetaPublicacionProductorAdmin from "./TarjetaPublicacionProductorAdmin";
+import styles from "./PerfilProductorAdmin.module.css";
 
 type CatalogoProductorAdminProps = {
     publicaciones: PublicacionPerfilAdminProductor[];
@@ -75,6 +77,8 @@ function paraTarjeta(publicacion: PublicacionMiMercadoProductor): PublicacionPer
 }
 
 export default function CatalogoProductorAdmin({ publicaciones }: CatalogoProductorAdminProps) {
+    const router = useRouter();
+    const [mensaje, setMensaje] = useState("");
     const publicacionesConsulta = useMemo(() => publicaciones.map(paraConsulta), [publicaciones]);
     const [seleccionId, setSeleccionId] = useState<number | null>(null);
     const [actualizadas, setActualizadas] = useState<{
@@ -94,8 +98,22 @@ export default function CatalogoProductorAdmin({ publicaciones }: CatalogoProduc
         });
     }
 
+    function eliminarPublicacion(aviso: string) {
+        setActualizadas((anteriores) => {
+            const actuales = anteriores?.origen === publicaciones ? anteriores.datos : publicacionesConsulta;
+            return {
+                origen: publicaciones,
+                datos: actuales.filter((publicacion) => publicacion.id !== seleccionId),
+            };
+        });
+        setSeleccionId(null);
+        setMensaje(aviso);
+        router.refresh();
+    }
+
     return (
         <>
+            {mensaje && <p className={styles.mensajeExito} role="status">{mensaje}</p>}
             {publicacionesActuales.length === 0 ? (
                 <p>El productor no tiene publicaciones.</p>
             ) : (
@@ -114,6 +132,7 @@ export default function CatalogoProductorAdmin({ publicaciones }: CatalogoProduc
                 publicacion={seleccionada}
                 alCerrar={() => setSeleccionId(null)}
                 alGuardar={actualizarPublicacion}
+                alEliminada={eliminarPublicacion}
             />
         </>
     );

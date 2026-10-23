@@ -13,13 +13,14 @@ const mocks = vi.hoisted(() => ({
     fetch: vi.fn(),
     cerrar: vi.fn(),
     guardar: vi.fn(),
+    eliminada: vi.fn(),
     crearVistaPrevia: vi.fn(),
     borrarVistaPrevia: vi.fn(),
 }));
 
 vi.mock("@mui/material/useMediaQuery", () => ({ default: mocks.mediaQuery }));
 vi.mock("@mui/material/SwipeableDrawer", () => ({
-    default: ({ anchor, open, children, onClose }: SwipeableDrawerProps) => <section role="dialog" aria-label="Detalle de publicación" data-anchor={anchor} hidden={!open} onTouchEnd={onClose}>{children}</section>,
+    default: ({ anchor, open, children, onClose }: SwipeableDrawerProps) => <section role="dialog" aria-label="Detalle de publicación" data-anchor={anchor} hidden={!open} onTouchEnd={onClose} onKeyDown={(evento) => { if (evento.key === "Escape") onClose?.(evento); }}>{children}</section>,
 }));
 vi.mock("@mui/material/Drawer", () => ({
     default: ({ anchor, open, children, onClose, slotProps }: DrawerProps) => {
@@ -35,6 +36,16 @@ vi.mock("@mui/material/Dialog", () => ({
 }));
 vi.mock("../../componentes/drawer-publicacion/TextoAjustable", () => ({
     default: ({ children }: { children: ReactNode }) => <span>{children}</span>,
+}));
+vi.mock("../../../../compartido/componentes/ConfirmModal", () => ({
+    ConfirmModal: ({ abierto, descripcion, textoConfirmar, procesando, alConfirmar, alCancelar }: {
+        abierto: boolean; descripcion: string; textoConfirmar: string; procesando: boolean;
+        alConfirmar: () => void; alCancelar: () => void;
+    }) => <dialog open={abierto} role="alertdialog" aria-label="Confirmar baja">
+        <p>{descripcion}</p>
+        <button type="button" disabled={procesando} onClick={alCancelar}>Cancelar baja</button>
+        <button type="button" disabled={procesando} onClick={alConfirmar}>{procesando ? "Eliminando..." : textoConfirmar}</button>
+    </dialog>,
 }));
 vi.mock("next/image", async () => {
     const { createElement } = await import("react");
@@ -91,12 +102,12 @@ const opciones: OpcionesEdicionPublicacion = {
     paises: [{ id: 1, nombre: "Uruguay" }],
 };
 
-function respuesta(datos: object, ok = true) {
-    return { ok, json: async () => datos };
+function respuesta(datos: object, ok = true, status = ok ? 200 : 400) {
+    return { ok, status, json: async () => datos };
 }
 
 function mostrar(publicacionInicial = publicacion) {
-    return render(<DrawerPublicacionProductor publicacion={publicacionInicial} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} />);
+    return render(<DrawerPublicacionProductor publicacion={publicacionInicial} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} alEliminada={mocks.eliminada} />);
 }
 
 async function editar() {
@@ -436,5 +447,82 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(mocks.borrarVistaPrevia).toHaveBeenCalledWith("blob:foto-productor");
         expect(mocks.fetch.mock.calls.some(([, config]) => config?.method === "PATCH")).toBe(false);
         expect(mocks.guardar).not.toHaveBeenCalled();
+    });
+
+    it("bloquea la baja mientras carga las opciones de edición", async () => {
+        let resolver!: (valor: ReturnType<typeof respuesta>) => void;
+        mocks.fetch.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+        mostrar();
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+
+        const eliminar = screen.getByRole("button", { name: "Eliminar" });
+        expect(eliminar).toBeDisabled();
+        fireEvent.click(eliminar);
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        expect(mocks.fetch).toHaveBeenCalledOnce();
+
+        await act(async () => resolver(respuesta({ opciones })));
+
+        expect(screen.getByRole("dialog", { name: "Editar publicación de Productor" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
+    });
+
+    it("permite cancelar la confirmación y volver a editar", () => {
+        mostrar();
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+        expect(screen.getByRole("button", { name: "Editar" })).toBeDisabled();
+
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar baja" }));
+
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Editar" })).toBeEnabled();
+        expect(mocks.cerrar).not.toHaveBeenCalled();
+        expect(mocks.fetch).not.toHaveBeenCalled();
+    });
+
+    it("bloquea Escape, cierre y edición durante la baja y cierra al terminar", async () => {
+        let resolver!: (valor: ReturnType<typeof respuesta>) => void;
+        mocks.fetch.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+        mostrar();
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
+        const procesando = screen.getByRole("button", { name: "Eliminando..." });
+
+        expect(procesando).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Editar" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Eliminar" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Cerrar consulta" })).toBeDisabled();
+        fireEvent.keyDown(procesando, { key: "Escape" });
+        fireEvent.touchEnd(screen.getByRole("dialog", { name: "Detalle de publicación" }));
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.click(procesando);
+        expect(mocks.cerrar).not.toHaveBeenCalled();
+        expect(mocks.fetch).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/productor/1042", { method: "DELETE" });
+
+        await act(async () => resolver(respuesta({ mensaje: "Publicación eliminada correctamente." })));
+
+        expect(mocks.cerrar).toHaveBeenCalledOnce();
+        expect(mocks.eliminada).toHaveBeenCalledExactlyOnceWith("Publicación eliminada correctamente.");
+        expect(mocks.guardar).not.toHaveBeenCalled();
+    });
+
+    it.each([true, false])("una baja anterior no cierra ni muestra errores en otra publicación (éxito=%s)", async (ok) => {
+        let resolver!: (valor: ReturnType<typeof respuesta>) => void;
+        mocks.fetch.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+        const { rerender } = mostrar();
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
+        const otra = { ...publicacion, id: 43, publicacionProductorId: 1043, precio: "175" };
+        rerender(<DrawerPublicacionProductor publicacion={otra} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} alEliminada={mocks.eliminada} />);
+
+        await act(async () => resolver(respuesta({ errores: ["No se pudo eliminar la publicación anterior."] }, ok)));
+
+        expect(mocks.cerrar).not.toHaveBeenCalled();
+        expect(screen.getByText("$175")).toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Editar" })).toBeEnabled();
+        expect(mocks.eliminada).toHaveBeenCalledTimes(ok ? 1 : 0);
     });
 });
