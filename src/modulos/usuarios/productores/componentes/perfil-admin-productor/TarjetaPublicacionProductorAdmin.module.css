@@ -1,4 +1,5 @@
 .tarjeta {
+    position: relative;
     display: flex;
     width: 100%;
     min-width: 0;
@@ -14,9 +15,19 @@
     cursor: pointer;
 }
 
-.tarjeta:focus-visible {
+.consultar {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    cursor: pointer;
+}
+
+.consultar:focus-visible {
     outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline-offset: -3px;
 }
 
 .contenedorImagen {

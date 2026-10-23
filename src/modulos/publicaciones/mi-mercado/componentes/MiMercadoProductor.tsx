@@ -24,7 +24,11 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
     const [mensaje, setMensaje] = useState("");
     const [seleccionId, setSeleccionId] = useState<number | null>(null);
     const [altaAbierta, setAltaAbierta] = useState(false);
-    const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicaciones.map((publicacion) => ({
+    const [cambiosGuardados, setCambiosGuardados] = useState<{ origen: PublicacionMiMercadoProductor[]; porId: Map<number, PublicacionMiMercadoProductor> } | null>(null);
+    const publicacionesActuales = useMemo(() => publicaciones.map((publicacion) =>
+        cambiosGuardados?.origen === publicaciones ? cambiosGuardados.porId.get(publicacion.id) ?? publicacion : publicacion,
+    ), [publicaciones, cambiosGuardados]);
+    const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicacionesActuales.map((publicacion) => ({
         id: publicacion.id,
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
         fecha: publicacion.fecha,
@@ -39,14 +43,21 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
         pais: publicacion.pais,
         operador: { id: 0, nombreFantasia: nombreProductor, whatsApp: "" },
         tipoPublicacion: "OPERADOR",
-    })), [publicaciones, nombreProductor]);
+    })), [publicacionesActuales, nombreProductor]);
     const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
-    const publicacionesPorId = new Map(publicaciones.map((publicacion) => [publicacion.id, publicacion]));
+    const publicacionesPorId = new Map(publicacionesActuales.map((publicacion) => [publicacion.id, publicacion]));
     const publicacionesVisibles = publicacionesFiltradas.flatMap((publicacion) => {
         const actual = publicacionesPorId.get(publicacion.id);
         return actual ? [actual] : [];
     });
     const publicacionSeleccionada = publicacionesPorId.get(seleccionId ?? -1) ?? null;
+
+    function guardarPublicacion(publicacion: PublicacionMiMercadoProductor) {
+        setCambiosGuardados((actual) => ({
+            origen: publicaciones,
+            porId: new Map(actual?.origen === publicaciones ? actual.porId : []).set(publicacion.id, publicacion),
+        }));
+    }
 
     return (
         <main className="relative isolate min-h-screen bg-background">
@@ -87,7 +98,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                     </div>
                 )}
             </div>
-            <DrawerPublicacionProductor publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} alEliminada={(aviso) => { setMensaje(aviso); router.refresh(); }} />
+            <DrawerPublicacionProductor publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} alGuardar={guardarPublicacion} alEliminada={(aviso) => { setMensaje(aviso); router.refresh(); }} />
             {productorId > 0 && <DrawerAltaPublicacionProductor productorId={productorId} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={() => setAltaAbierta(false)} />}
         </main>
     );

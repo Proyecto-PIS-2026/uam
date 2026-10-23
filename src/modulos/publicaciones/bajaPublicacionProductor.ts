@@ -6,6 +6,10 @@ export async function bajaPublicacionProductor(publicacionId: number, productorI
         await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1720, ${productorId})`
             .returnsRow({ locked: "pg/int4@1" }).build());
 
+        // Usa el mismo orden de bloqueo que la edición: relación antes de publicación.
+        await tx.execute(db.raw.sql`SELECT id FROM "publicacionProductor" WHERE "publicacionId" = ${publicacionId} AND "productorId" = ${productorId} FOR UPDATE`
+            .returnsRow({ id: "pg/int4@1" }).build());
+
         const relacion = await tx.orm.public.PublicacionProductor.where({ publicacionId, productorId }).first();
         const publicacion = await tx.orm.public.Publicacion.where({ id: publicacionId }).first();
         if (!relacion) return { eliminada: !publicacion, foto: null };

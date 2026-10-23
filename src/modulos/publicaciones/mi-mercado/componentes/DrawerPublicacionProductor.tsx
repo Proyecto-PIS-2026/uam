@@ -13,12 +13,15 @@ import TextoAjustable from "../../componentes/drawer-publicacion/TextoAjustable"
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
 import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
+import type { OpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
+import DrawerEditarPublicacionProductor from "./DrawerEditarPublicacionProductor";
 import styles from "./DrawerPublicacionProductor.module.css";
 
 type Props = {
     publicacion: PublicacionMiMercadoProductor | null;
     alCerrar: () => void;
     alEliminada?: (mensaje: string) => void;
+    alGuardar?: (publicacion: PublicacionMiMercadoProductor) => void;
 };
 
 function enlaceMapa(url: string) {
@@ -30,17 +33,28 @@ function enlaceMapa(url: string) {
     }
 }
 
-export default function DrawerPublicacionProductor({ publicacion, alCerrar, alEliminada }: Props) {
+export default function DrawerPublicacionProductor({ publicacion: recibida, alCerrar, alGuardar, alEliminada }: Props) {
     const esWeb = useMediaQuery("(min-width: 768px)");
-    const [confirmando, setConfirmando] = useState(false);
+    const [confirmacionPara, setConfirmacionPara] = useState<PublicacionMiMercadoProductor | null>(null);
     const [eliminando, setEliminando] = useState(false);
     const [errorBaja, setErrorBaja] = useState("");
+    const eliminandoRef = useRef(false);
+    const [guardada, setGuardada] = useState<{ original: PublicacionMiMercadoProductor; nueva: PublicacionMiMercadoProductor } | null>(null);
+    const publicacion = guardada?.original === recibida ? guardada.nueva : recibida;
+    const confirmando = publicacion !== null && confirmacionPara === publicacion;
+    const [formulario, setFormulario] = useState<{ original: PublicacionMiMercadoProductor; opciones: OpcionesEdicionPublicacion } | null>(null);
+    const edicion = formulario?.original === publicacion ? formulario : null;
+    const [cargaPara, setCargaPara] = useState<PublicacionMiMercadoProductor | null>(null);
+    const cargando = publicacion !== null && cargaPara === publicacion;
+    const [errores, setErrores] = useState<string[]>([]);
+    const [aviso, setAviso] = useState("");
+    const solicitudRef = useRef(0);
     const [fotoPreparada, setFotoPreparada] = useState<string | null>(null);
     const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
     const contenidoRef = useRef<HTMLDivElement>(null);
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
     const tieneFoto = Boolean(publicacion?.foto?.trim());
-    const abierto = publicacion !== null && (!tieneFoto || fotoPreparada === claveFoto);
+    const abierto = publicacion !== null && !edicion && (!tieneFoto || fotoPreparada === claveFoto);
     const tituloId = publicacion ? `publicacion-productor-${publicacion.id}-titulo` : undefined;
     const especie = publicacion?.presentacion.variedad.especie.nombreEspecie ?? "";
     const variedad = publicacion?.presentacion.variedad.nombreVariedad ?? "";
@@ -60,16 +74,35 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar, alEl
         contenido.scrollTop = 0;
     }, [abierto, publicacion?.id, esWeb]);
 
+    useEffect(() => () => { solicitudRef.current++; }, [recibida]);
+
     function cerrar() {
+        solicitudRef.current++;
+        setFormulario(null);
+        setCargaPara(null);
+        setErrores([]);
+        setAviso("");
+        setGuardada(null);
         setFotoAmpliada(null);
         setFotoPreparada(null);
-        setConfirmando(false);
+        setConfirmacionPara(null);
         setErrorBaja("");
         alCerrar();
     }
 
+    function solicitarCierre() {
+        if (eliminandoRef.current) return;
+        if (confirmando) {
+            setConfirmacionPara(null);
+            return;
+        }
+        cerrar();
+    }
+
     async function eliminar() {
-        if (!publicacion || eliminando) return;
+        if (!publicacion || eliminandoRef.current || cargando || edicion) return;
+        const solicitud = ++solicitudRef.current;
+        eliminandoRef.current = true;
         setEliminando(true);
         setErrorBaja("");
         try {
@@ -81,31 +114,66 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar, alEl
             const mensaje = respuesta.ok
                 ? (resultado.mensaje ?? "Publicación eliminada correctamente.")
                 : "La publicación ya había sido eliminada.";
-            cerrar();
+            if (solicitud === solicitudRef.current) cerrar();
             alEliminada?.(mensaje);
         } catch (error) {
-            setConfirmando(false);
-            setErrorBaja(error instanceof Error ? error.message : "No se pudo conectar con el servidor.");
+            if (solicitud === solicitudRef.current) {
+                setConfirmacionPara(null);
+                setErrorBaja(error instanceof Error ? error.message : "No se pudo conectar con el servidor.");
+            }
         } finally {
+            eliminandoRef.current = false;
             setEliminando(false);
         }
     }
 
-    return (
-        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={cerrar} onOpen={() => {}} disableSwipeToOpen slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-modal": true, "aria-labelledby": tituloId } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
-            {publicacion && (
+    async function comenzarEdicion() {
+        if (!publicacion || cargando || eliminandoRef.current || confirmando) return;
+        const solicitud = ++solicitudRef.current;
+        setCargaPara(publicacion);
+        setErrores([]);
+        setAviso("");
+        setErrorBaja("");
+        try {
+            const respuesta = await fetch(`/api/publicaciones/productor/${publicacion.publicacionProductorId}`, { cache: "no-store" });
+            const resultado = await respuesta.json();
+            if (solicitud !== solicitudRef.current) return;
+            if (!respuesta.ok) {
+                setErrores(resultado.errores ?? ["No se pudo cargar la edición."]);
+                return;
+            }
+            setFormulario({ original: publicacion, opciones: resultado.opciones });
+        } catch {
+            if (solicitud === solicitudRef.current) setErrores(["No se pudo cargar la edición. Intentá nuevamente."]);
+        } finally {
+            if (solicitud === solicitudRef.current) setCargaPara(null);
+        }
+    }
+
+    function guardar(nueva: PublicacionMiMercadoProductor) {
+        if (!recibida) return;
+        setFotoPreparada(`${nueva.id}-${nueva.foto ?? ""}`);
+        setGuardada({ original: recibida, nueva });
+        setFormulario(null);
+        setAviso("Cambios guardados.");
+        alGuardar?.(nueva);
+    }
+
+    return (<>
+        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={solicitarCierre} onOpen={() => {}} disableSwipeToOpen slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-modal": true, "aria-labelledby": tituloId } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
+            {publicacion && !edicion && (
                 <>
                     <div className={styles.tarjeta}>
                         <div className={styles.encabezado}>
                             <h2 className={styles.titulo} id={tituloId}>Detalle de publicación</h2>
-                            <button className={styles.cerrar} type="button" onClick={cerrar} aria-label="Cerrar consulta"><CloseIcon fontSize="small" /></button>
+                            <button className={styles.cerrar} type="button" onClick={solicitarCierre} disabled={eliminando} aria-label="Cerrar consulta"><CloseIcon fontSize="small" /></button>
                         </div>
                         <div ref={contenidoRef} className={styles.contenidoScrollable}>
                             <div className={styles.cabecera}>
                                 <div className={styles.bloqueSuperior}>
                                     <div className={styles.marcoImagen}>
                                         <div className={styles.contenedorImagen}>
-                                            <ImagenPublicacion key={claveFoto} src={publicacion.foto} alt={`Foto de ${especie}`} fill sizes="(min-width: 768px) 400px, 160px" loading="eager" unoptimized className={styles.imagen} reemplazo={reemplazoFoto} onLoad={() => setFotoPreparada(claveFoto)} onError={() => setFotoPreparada(claveFoto)} />
+                                            <ImagenPublicacion key={publicacion.foto} src={publicacion.foto} alt={`Foto de ${especie}`} fill sizes="(min-width: 768px) 400px, 160px" loading="eager" unoptimized className={styles.imagen} reemplazo={reemplazoFoto} onLoad={() => setFotoPreparada(claveFoto)} onError={() => setFotoPreparada(claveFoto)} />
                                             {tieneFoto && <button type="button" className={styles.ampliarFoto} aria-label={`Ampliar foto de ${especie}`} onClick={() => setFotoAmpliada(claveFoto)} />}
                                         </div>
                                     </div>
@@ -121,12 +189,10 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar, alEl
                                 </div>
                             </div>
                             <dl className={styles.bloqueMedio}>
-                                {campos.map(([nombre, valor]) => (
-                                    <div key={nombre} className={styles.informacionDetallada}>
-                                        <dt className={styles.nombreInformacion}>{nombre}</dt>
-                                        <dd className={styles.valorInformacion}>{valor === "" ? "-" : valor}</dd>
-                                    </div>
-                                ))}
+                                {campos.map(([nombre, valor]) => <div key={nombre} className={styles.informacionDetallada}>
+                                    <dt className={styles.nombreInformacion}>{nombre}</dt>
+                                    <dd className={styles.valorInformacion}>{valor === "" ? "-" : valor}</dd>
+                                </div>)}
                                 <div className={styles.informacionDetallada}>
                                     <dt className={styles.nombreInformacion}>Actualización</dt>
                                     <dd className={styles.valorInformacion}><time dateTime={publicacion.fecha}>{fechaFormateada}</time></dd>
@@ -163,14 +229,17 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar, alEl
                                     </ul>
                                 )}
                             </section>
+                            {cargando && <p className={styles.ayuda} role="status">Cargando edición...</p>}
+                            {aviso && <p className={styles.aviso} role="status">{aviso}</p>}
+                            {errores.length > 0 && <div className={styles.error} role="alert">{errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}
                         </div>
                         {errorBaja && <p className="px-4 pb-2 text-sm text-red-800" role="alert">{errorBaja}</p>}
                         <div className={estilosAcciones.pie}>
-                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled={eliminando} onClick={() => { setErrorBaja(""); setConfirmando(true); }}>Eliminar</button>
-                            <button className={estilosAcciones.guardar} type="button" disabled title="Próximamente">Editar</button>
+                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled={eliminando || cargando} onClick={() => { setErrorBaja(""); setErrores([]); setAviso(""); setConfirmacionPara(publicacion); }}>Eliminar</button>
+                            <button className={estilosAcciones.guardar} type="button" disabled={cargando || eliminando || confirmando} onClick={comenzarEdicion}>Editar</button>
                         </div>
                     </div>
-                    <ConfirmModal abierto={confirmando} titulo="Eliminar publicación" descripcion={`¿Querés eliminar la publicación de ${especie}? Esta acción no se puede deshacer.`} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setConfirmando(false); }} alConfirmar={() => void eliminar()} />
+                    <ConfirmModal abierto={confirmando} titulo="Eliminar publicación" descripcion={`¿Querés eliminar la publicación de ${especie}? Esta acción no se puede deshacer.`} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminandoRef.current) setConfirmacionPara(null); }} alConfirmar={() => void eliminar()} />
                     <Dialog open={abierto && fotoAmpliada === claveFoto && tieneFoto} onClose={() => setFotoAmpliada(null)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" } } }}>
                         <button type="button" aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(null)} className={`${styles.cerrar} ${styles.cerrarFoto}`}><CloseIcon fontSize="small" /></button>
                         <div className={styles.fotoAmpliada}>
@@ -180,5 +249,6 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar, alEl
                 </>
             )}
         </SwipeableDrawer>
-    );
+        {publicacion && edicion && <DrawerEditarPublicacionProductor key={publicacion.id} publicacion={publicacion} opciones={edicion.opciones} alCerrar={() => setFormulario(null)} alGuardar={guardar} />}
+    </>);
 }

@@ -24,8 +24,8 @@ import { bajaPublicacionProductor } from "./bajaPublicacionProductor";
 const urlFoto = "/api/publicaciones/imagenes/15/12345678-1234-4234-8234-123456789abc.png";
 
 function prepararTransaccion() {
-    consultaSql.mockImplementation(() => ({
-        returnsRow: () => ({ build: () => "bloqueo del productor" }),
+    consultaSql.mockImplementation((consulta: TemplateStringsArray) => ({
+        returnsRow: () => ({ build: () => consulta.join("").includes("pg_advisory_xact_lock") ? "bloqueo del productor" : "bloqueo de la publicación" }),
     }));
     ejecutarTransaccion.mockImplementation(async (operacion: (tx: unknown) => Promise<unknown>) => operacion({
         execute: ejecutarSql,
@@ -55,9 +55,22 @@ describe("bajaPublicacionProductor", () => {
         expect(resultado).toBe(true);
         expect(consultaSql).toHaveBeenCalledWith(expect.any(Array), 3);
         expect(consultaSql.mock.calls[0][0].join("")).toContain("pg_advisory_xact_lock(1720, ");
-        expect(ejecutarSql).toHaveBeenCalledExactlyOnceWith("bloqueo del productor");
+        expect(ejecutarSql).toHaveBeenNthCalledWith(1, "bloqueo del productor");
         expect(ejecutarSql.mock.invocationCallOrder[0]).toBeLessThan(buscarRelacion.mock.invocationCallOrder[0]);
         expect(eliminarPublicacion).toHaveBeenCalledOnce();
+    });
+
+    it("bloquea la relación antes de leer la foto y borrar para serializarse con una edición", async () => {
+        buscarRelacion.mockResolvedValue({ publicacionId: 15, productorId: 3 });
+
+        await bajaPublicacionProductor(15, 3);
+
+        expect(consultaSql).toHaveBeenNthCalledWith(2, expect.any(Array), 15, 3);
+        expect(consultaSql.mock.calls[1][0].join("?")).toBe('SELECT id FROM "publicacionProductor" WHERE "publicacionId" = ? AND "productorId" = ? FOR UPDATE');
+        expect(ejecutarSql).toHaveBeenNthCalledWith(2, "bloqueo de la publicación");
+        expect(ejecutarSql.mock.invocationCallOrder[1]).toBeLessThan(buscarRelacion.mock.invocationCallOrder[0]);
+        expect(ejecutarSql.mock.invocationCallOrder[1]).toBeLessThan(buscarPublicacion.mock.invocationCallOrder[0]);
+        expect(buscarPublicacion.mock.invocationCallOrder[0]).toBeLessThan(eliminarPublicacion.mock.invocationCallOrder[0]);
     });
 
     it("limpia la imagen sólo después de confirmar la transacción", async () => {
@@ -105,7 +118,7 @@ describe("bajaPublicacionProductor", () => {
         expect(await bajaPublicacionProductor(15, 3)).toBe(true);
         expect(await bajaPublicacionProductor(15, 3)).toBe(true);
         expect(eliminarPublicacion).toHaveBeenCalledOnce();
-        expect(ejecutarSql).toHaveBeenCalledTimes(2);
+        expect(ejecutarSql).toHaveBeenCalledTimes(4);
     });
 
     it("acepta una publicación inexistente sin intentar eliminarla", async () => {
