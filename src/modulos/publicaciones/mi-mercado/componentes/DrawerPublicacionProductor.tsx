@@ -12,11 +12,14 @@ import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import TextoAjustable from "../../componentes/drawer-publicacion/TextoAjustable";
 import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
+import type { OpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
+import DrawerEditarPublicacionProductor from "./DrawerEditarPublicacionProductor";
 import styles from "./DrawerPublicacionProductor.module.css";
 
 type Props = {
     publicacion: PublicacionMiMercadoProductor | null;
     alCerrar: () => void;
+    alGuardar?: (publicacion: PublicacionMiMercadoProductor) => void;
 };
 
 function enlaceMapa(url: string) {
@@ -28,14 +31,23 @@ function enlaceMapa(url: string) {
     }
 }
 
-export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Props) {
+export default function DrawerPublicacionProductor({ publicacion: recibida, alCerrar, alGuardar }: Props) {
     const esWeb = useMediaQuery("(min-width: 768px)");
+    const [guardada, setGuardada] = useState<{ original: PublicacionMiMercadoProductor; nueva: PublicacionMiMercadoProductor } | null>(null);
+    const publicacion = guardada?.original === recibida ? guardada.nueva : recibida;
+    const [formulario, setFormulario] = useState<{ original: PublicacionMiMercadoProductor; opciones: OpcionesEdicionPublicacion } | null>(null);
+    const edicion = formulario?.original === publicacion ? formulario : null;
+    const [cargaPara, setCargaPara] = useState<PublicacionMiMercadoProductor | null>(null);
+    const cargando = publicacion !== null && cargaPara === publicacion;
+    const [errores, setErrores] = useState<string[]>([]);
+    const [aviso, setAviso] = useState("");
+    const solicitudRef = useRef(0);
     const [fotoPreparada, setFotoPreparada] = useState<string | null>(null);
     const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
     const contenidoRef = useRef<HTMLDivElement>(null);
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
     const tieneFoto = Boolean(publicacion?.foto?.trim());
-    const abierto = publicacion !== null && (!tieneFoto || fotoPreparada === claveFoto);
+    const abierto = publicacion !== null && !edicion && (!tieneFoto || fotoPreparada === claveFoto);
     const tituloId = publicacion ? `publicacion-productor-${publicacion.id}-titulo` : undefined;
     const especie = publicacion?.presentacion.variedad.especie.nombreEspecie ?? "";
     const variedad = publicacion?.presentacion.variedad.nombreVariedad ?? "";
@@ -55,15 +67,54 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
         contenido.scrollTop = 0;
     }, [abierto, publicacion?.id, esWeb]);
 
+    useEffect(() => () => { solicitudRef.current++; }, [recibida]);
+
     function cerrar() {
+        solicitudRef.current++;
+        setFormulario(null);
+        setCargaPara(null);
+        setErrores([]);
+        setAviso("");
+        setGuardada(null);
         setFotoAmpliada(null);
         setFotoPreparada(null);
         alCerrar();
     }
 
-    return (
+    async function comenzarEdicion() {
+        if (!publicacion || cargando) return;
+        const solicitud = ++solicitudRef.current;
+        setCargaPara(publicacion);
+        setErrores([]);
+        setAviso("");
+        try {
+            const respuesta = await fetch(`/api/publicaciones/productor/${publicacion.publicacionProductorId}`, { cache: "no-store" });
+            const resultado = await respuesta.json();
+            if (solicitud !== solicitudRef.current) return;
+            if (!respuesta.ok) {
+                setErrores(resultado.errores ?? ["No se pudo cargar la edición."]);
+                return;
+            }
+            setFormulario({ original: publicacion, opciones: resultado.opciones });
+        } catch {
+            if (solicitud === solicitudRef.current) setErrores(["No se pudo cargar la edición. Intentá nuevamente."]);
+        } finally {
+            if (solicitud === solicitudRef.current) setCargaPara(null);
+        }
+    }
+
+    function guardar(nueva: PublicacionMiMercadoProductor) {
+        if (!recibida) return;
+        setFotoPreparada(`${nueva.id}-${nueva.foto ?? ""}`);
+        setGuardada({ original: recibida, nueva });
+        setFormulario(null);
+        setAviso("Cambios guardados.");
+        alGuardar?.(nueva);
+    }
+
+    return (<>
         <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={cerrar} onOpen={() => {}} disableSwipeToOpen slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-modal": true, "aria-labelledby": tituloId } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
-            {publicacion && (
+            {publicacion && !edicion && (
                 <>
                     <div className={styles.tarjeta}>
                         <div className={styles.encabezado}>
@@ -75,7 +126,7 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                                 <div className={styles.bloqueSuperior}>
                                     <div className={styles.marcoImagen}>
                                         <div className={styles.contenedorImagen}>
-                                            <ImagenPublicacion key={claveFoto} src={publicacion.foto} alt={`Foto de ${especie}`} fill sizes="(min-width: 768px) 400px, 160px" loading="eager" unoptimized className={styles.imagen} reemplazo={reemplazoFoto} onLoad={() => setFotoPreparada(claveFoto)} onError={() => setFotoPreparada(claveFoto)} />
+                                            <ImagenPublicacion key={publicacion.foto} src={publicacion.foto} alt={`Foto de ${especie}`} fill sizes="(min-width: 768px) 400px, 160px" loading="eager" unoptimized className={styles.imagen} reemplazo={reemplazoFoto} onLoad={() => setFotoPreparada(claveFoto)} onError={() => setFotoPreparada(claveFoto)} />
                                             {tieneFoto && <button type="button" className={styles.ampliarFoto} aria-label={`Ampliar foto de ${especie}`} onClick={() => setFotoAmpliada(claveFoto)} />}
                                         </div>
                                     </div>
@@ -91,12 +142,10 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                                 </div>
                             </div>
                             <dl className={styles.bloqueMedio}>
-                                {campos.map(([nombre, valor]) => (
-                                    <div key={nombre} className={styles.informacionDetallada}>
-                                        <dt className={styles.nombreInformacion}>{nombre}</dt>
-                                        <dd className={styles.valorInformacion}>{valor === "" ? "-" : valor}</dd>
-                                    </div>
-                                ))}
+                                {campos.map(([nombre, valor]) => <div key={nombre} className={styles.informacionDetallada}>
+                                    <dt className={styles.nombreInformacion}>{nombre}</dt>
+                                    <dd className={styles.valorInformacion}>{valor === "" ? "-" : valor}</dd>
+                                </div>)}
                                 <div className={styles.informacionDetallada}>
                                     <dt className={styles.nombreInformacion}>Actualización</dt>
                                     <dd className={styles.valorInformacion}><time dateTime={publicacion.fecha}>{fechaFormateada}</time></dd>
@@ -133,10 +182,13 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                                     </ul>
                                 )}
                             </section>
+                            {cargando && <p className={styles.ayuda} role="status">Cargando edición...</p>}
+                            {aviso && <p className={styles.aviso} role="status">{aviso}</p>}
+                            {errores.length > 0 && <div className={styles.error} role="alert">{errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}
                         </div>
                         <div className={estilosAcciones.pie}>
                             <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled title="Próximamente">Eliminar</button>
-                            <button className={estilosAcciones.guardar} type="button" disabled title="Próximamente">Editar</button>
+                            <button className={estilosAcciones.guardar} type="button" disabled={cargando} onClick={comenzarEdicion}>Editar</button>
                         </div>
                     </div>
                     <Dialog open={abierto && fotoAmpliada === claveFoto && tieneFoto} onClose={() => setFotoAmpliada(null)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" } } }}>
@@ -148,5 +200,6 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                 </>
             )}
         </SwipeableDrawer>
-    );
+        {publicacion && edicion && <DrawerEditarPublicacionProductor key={publicacion.id} publicacion={publicacion} opciones={edicion.opciones} alCerrar={() => setFormulario(null)} alGuardar={guardar} />}
+    </>);
 }
