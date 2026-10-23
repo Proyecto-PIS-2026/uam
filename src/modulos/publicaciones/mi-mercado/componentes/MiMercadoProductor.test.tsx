@@ -6,7 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import MiMercadoProductor from "./MiMercadoProductor";
 
-const mocks = vi.hoisted(() => ({ mediaQuery: vi.fn() }));
+const mocks = vi.hoisted(() => ({ mediaQuery: vi.fn(), refrescar: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({ refresh: mocks.refrescar, push: vi.fn(), replace: vi.fn() }),
+}));
 
 vi.mock("@mui/material/useMediaQuery", () => ({ default: mocks.mediaQuery }));
 vi.mock("@mui/material/SwipeableDrawer", () => ({
@@ -29,6 +33,18 @@ vi.mock("next/image", async () => {
         }) => createElement("img", { src, alt, onLoad, onError }),
     };
 });
+vi.mock("../../../../compartido/componentes/ConfirmModal", () => ({
+    ConfirmModal: ({ abierto, descripcion, textoConfirmar, textoCancelar = "Cancelar", alConfirmar, alCancelar }: {
+        abierto: boolean; descripcion: string; textoConfirmar?: string; textoCancelar?: string;
+        alConfirmar: () => void; alCancelar: () => void;
+    }) => abierto ? (
+        <section role="alertdialog" aria-label="Confirmar baja">
+            <p>{descripcion}</p>
+            <button type="button" onClick={alCancelar}>{textoCancelar}</button>
+            <button type="button" onClick={alConfirmar}>{textoConfirmar ?? "Confirmar"}</button>
+        </section>
+    ) : null,
+}));
 
 function crearPublicacion(id: number, especie: string, precio: string | null = "100"): PublicacionMiMercadoProductor {
     return {
@@ -65,6 +81,7 @@ describe("MiMercadoProductor", () => {
     afterEach(() => {
         cleanup();
         vi.clearAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it("muestra las publicaciones propias sin agrupar y el botón de alta junto al listado", () => {
@@ -95,7 +112,7 @@ describe("MiMercadoProductor", () => {
     it.each([
         { esWeb: false, anchor: "bottom" },
         { esWeb: true, anchor: "right" },
-    ])("abre el detalle desde $anchor con edición y eliminación deshabilitadas", ({ esWeb, anchor }) => {
+        ])("abre el detalle desde $anchor con edición deshabilitada y eliminación habilitada", ({ esWeb, anchor }) => {
         mocks.mediaQuery.mockReturnValue(esWeb);
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
 
@@ -107,7 +124,7 @@ describe("MiMercadoProductor", () => {
         expect(within(detalle).getByRole("link", { name: "Quinta del productor" })).toHaveAttribute("href", "https://maps.google.com/?q=Montevideo");
         expect(within(detalle).queryByRole("textbox")).not.toBeInTheDocument();
         expect(within(detalle).getByRole("button", { name: "Editar" })).toBeDisabled();
-        expect(within(detalle).getByRole("button", { name: "Eliminar" })).toBeDisabled();
+        expect(within(detalle).getByRole("button", { name: "Eliminar" })).toBeEnabled();
         expect(within(detalle).queryByRole("button", { name: /Guardar|^Cerrar$/ })).not.toBeInTheDocument();
         expect(within(detalle).queryByRole("link", { name: "Ver Perfil" })).not.toBeInTheDocument();
         fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));
@@ -245,5 +262,73 @@ describe("MiMercadoProductor", () => {
         const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
         expect(within(detalle).getByRole("img", { name: "Foto de Pera" })).toHaveAttribute("src", "/pera-actualizada.jpg");
         expect(within(detalle).getByText("$125")).toBeInTheDocument();
+    });
+        describe("baja de una publicación", () => {
+        function abrirDetalle() {
+            fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Pera" })[0]);
+            return screen.getByRole("dialog", { name: "Detalle de publicación" });
+        }
+
+        it("pide confirmación y permite cancelar sin enviar ninguna solicitud", () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
+            render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
+            const detalle = abrirDetalle();
+
+            fireEvent.click(within(detalle).getByRole("button", { name: "Eliminar" }));
+            expect(screen.getByRole("alertdialog", { name: "Confirmar baja" })).toHaveTextContent("¿Querés eliminar la publicación de Pera?");
+            fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+            expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+            expect(fetchMock).not.toHaveBeenCalled();
+            expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+        });
+
+        it("da de baja al confirmar, cierra el detalle e informa el éxito", async () => {
+            const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ mensaje: "Publicación eliminada correctamente." }) });
+            vi.stubGlobal("fetch", fetchMock);
+            render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
+            fireEvent.click(within(abrirDetalle()).getByRole("button", { name: "Eliminar" }));
+
+            fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
+
+            expect(await screen.findByRole("status")).toHaveTextContent("Publicación eliminada correctamente.");
+            expect(fetchMock).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/productor/101", { method: "DELETE" });
+            expect(mocks.refrescar).toHaveBeenCalledOnce();
+            expect(screen.queryByRole("dialog", { name: "Detalle de publicación" })).not.toBeInTheDocument();
+        });
+
+        it("informa que ya estaba eliminada si el servidor responde 404", async () => {
+            vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({ errores: ["La publicación no existe o ya fue eliminada."] }) }));
+            render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
+            fireEvent.click(within(abrirDetalle()).getByRole("button", { name: "Eliminar" }));
+
+            fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
+
+            expect(await screen.findByRole("status")).toHaveTextContent("La publicación ya había sido eliminada.");
+            expect(mocks.refrescar).toHaveBeenCalledOnce();
+        });
+
+        it("conserva la consulta y muestra el error si el servidor rechaza la baja", async () => {
+            vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({ errores: ["No tenés permiso para eliminar esta publicación."] }) }));
+            render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
+            fireEvent.click(within(abrirDetalle()).getByRole("button", { name: "Eliminar" }));
+
+            fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
+
+            expect(await screen.findByRole("alert")).toHaveTextContent("No tenés permiso para eliminar esta publicación.");
+            expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+            expect(mocks.refrescar).not.toHaveBeenCalled();
+        });
+
+        it("muestra un error de conexión si falla la solicitud", async () => {
+            vi.stubGlobal("fetch", vi.fn().mockRejectedValue("sin red"));
+            render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
+            fireEvent.click(within(abrirDetalle()).getByRole("button", { name: "Eliminar" }));
+
+            fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
+
+            expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo conectar con el servidor.");
+        });
     });
 });

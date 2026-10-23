@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
@@ -19,6 +20,8 @@ type Props = {
 };
 
 export default function MiMercadoProductor({ publicaciones, nombreProductor = "", productorId = 0 }: Props) {
+    const router = useRouter();
+    const [mensaje, setMensaje] = useState("");
     const [seleccionId, setSeleccionId] = useState<number | null>(null);
     const [altaAbierta, setAltaAbierta] = useState(false);
     const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicaciones.map((publicacion) => ({
@@ -59,6 +62,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                         <p className="text-sm font-semibold text-white/80">{publicaciones.length} {publicaciones.length === 1 ? "publicación" : "publicaciones"}</p>
                     </div>
                 </header>
+                {mensaje && <p className="rounded-lg bg-primary-soft p-4 text-sm text-secondary" role="status">{mensaje}</p>}
                 {publicaciones.length > 0 && (
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
@@ -83,7 +87,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                     </div>
                 )}
             </div>
-            <DrawerPublicacionProductor publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} />
+            <DrawerPublicacionProductor publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} alEliminada={(aviso) => { setMensaje(aviso); router.refresh(); }} />
             {productorId > 0 && <DrawerAltaPublicacionProductor productorId={productorId} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={() => setAltaAbierta(false)} />}
         </main>
     );

@@ -10,6 +10,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import TextoAjustable from "../../componentes/drawer-publicacion/TextoAjustable";
+import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
 import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import styles from "./DrawerPublicacionProductor.module.css";
@@ -17,6 +18,7 @@ import styles from "./DrawerPublicacionProductor.module.css";
 type Props = {
     publicacion: PublicacionMiMercadoProductor | null;
     alCerrar: () => void;
+    alEliminada?: (mensaje: string) => void;
 };
 
 function enlaceMapa(url: string) {
@@ -28,8 +30,11 @@ function enlaceMapa(url: string) {
     }
 }
 
-export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Props) {
+export default function DrawerPublicacionProductor({ publicacion, alCerrar, alEliminada }: Props) {
     const esWeb = useMediaQuery("(min-width: 768px)");
+    const [confirmando, setConfirmando] = useState(false);
+    const [eliminando, setEliminando] = useState(false);
+    const [errorBaja, setErrorBaja] = useState("");
     const [fotoPreparada, setFotoPreparada] = useState<string | null>(null);
     const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
     const contenidoRef = useRef<HTMLDivElement>(null);
@@ -58,7 +63,32 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
     function cerrar() {
         setFotoAmpliada(null);
         setFotoPreparada(null);
+        setConfirmando(false);
+        setErrorBaja("");
         alCerrar();
+    }
+
+    async function eliminar() {
+        if (!publicacion || eliminando) return;
+        setEliminando(true);
+        setErrorBaja("");
+        try {
+            const respuesta = await fetch(`/api/publicaciones/productor/${publicacion.publicacionProductorId}`, { method: "DELETE" });
+            const resultado = await respuesta.json().catch(() => ({}));
+            if (!respuesta.ok && respuesta.status !== 404) {
+                throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
+            }
+            const mensaje = respuesta.ok
+                ? (resultado.mensaje ?? "Publicación eliminada correctamente.")
+                : "La publicación ya había sido eliminada.";
+            cerrar();
+            alEliminada?.(mensaje);
+        } catch (error) {
+            setConfirmando(false);
+            setErrorBaja(error instanceof Error ? error.message : "No se pudo conectar con el servidor.");
+        } finally {
+            setEliminando(false);
+        }
     }
 
     return (
@@ -134,11 +164,13 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                                 )}
                             </section>
                         </div>
+                        {errorBaja && <p className="px-4 pb-2 text-sm text-red-800" role="alert">{errorBaja}</p>}
                         <div className={estilosAcciones.pie}>
-                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled title="Próximamente">Eliminar</button>
+                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled={eliminando} onClick={() => { setErrorBaja(""); setConfirmando(true); }}>Eliminar</button>
                             <button className={estilosAcciones.guardar} type="button" disabled title="Próximamente">Editar</button>
                         </div>
                     </div>
+                    <ConfirmModal abierto={confirmando} titulo="Eliminar publicación" descripcion={`¿Querés eliminar la publicación de ${especie}? Esta acción no se puede deshacer.`} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setConfirmando(false); }} alConfirmar={() => void eliminar()} />
                     <Dialog open={abierto && fotoAmpliada === claveFoto && tieneFoto} onClose={() => setFotoAmpliada(null)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" } } }}>
                         <button type="button" aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(null)} className={`${styles.cerrar} ${styles.cerrarFoto}`}><CloseIcon fontSize="small" /></button>
                         <div className={styles.fotoAmpliada}>
