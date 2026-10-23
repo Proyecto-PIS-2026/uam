@@ -1,7 +1,8 @@
 import type { SwipeableDrawerProps } from "@mui/material/SwipeableDrawer";
+import type { DrawerProps } from "@mui/material/Drawer";
 import type { DialogProps } from "@mui/material/Dialog";
 import type { ReactNode } from "react";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import MiMercadoProductor from "./MiMercadoProductor";
@@ -11,6 +12,12 @@ const mocks = vi.hoisted(() => ({ mediaQuery: vi.fn() }));
 vi.mock("@mui/material/useMediaQuery", () => ({ default: mocks.mediaQuery }));
 vi.mock("@mui/material/SwipeableDrawer", () => ({
     default: ({ anchor, open, children, onClose }: SwipeableDrawerProps) => <section role="dialog" aria-label="Detalle de publicación" data-anchor={anchor} hidden={!open} onTouchEnd={onClose}>{children}</section>,
+}));
+vi.mock("@mui/material/Drawer", () => ({
+    default: ({ anchor, open, children, slotProps }: DrawerProps) => {
+        const papel = slotProps?.paper as { "aria-label"?: string } | undefined;
+        return open ? <section role="dialog" aria-label={papel?.["aria-label"]} data-anchor={anchor}>{children}</section> : null;
+    },
 }));
 vi.mock("@mui/material/Dialog", () => ({
     default: ({ open, children, "aria-label": etiqueta }: DialogProps) => open ? <section role="dialog" aria-label={etiqueta}>{children}</section> : null,
@@ -65,6 +72,7 @@ describe("MiMercadoProductor", () => {
     afterEach(() => {
         cleanup();
         vi.clearAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it("muestra las publicaciones propias sin agrupar y el botón de alta junto al listado", () => {
@@ -95,7 +103,7 @@ describe("MiMercadoProductor", () => {
     it.each([
         { esWeb: false, anchor: "bottom" },
         { esWeb: true, anchor: "right" },
-    ])("abre el detalle desde $anchor con edición y eliminación deshabilitadas", ({ esWeb, anchor }) => {
+    ])("abre el detalle desde $anchor y permite editar la publicación", ({ esWeb, anchor }) => {
         mocks.mediaQuery.mockReturnValue(esWeb);
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
 
@@ -106,7 +114,7 @@ describe("MiMercadoProductor", () => {
         expect(within(detalle).getByText("0")).toBeInTheDocument();
         expect(within(detalle).getByRole("link", { name: "Quinta del productor" })).toHaveAttribute("href", "https://maps.google.com/?q=Montevideo");
         expect(within(detalle).queryByRole("textbox")).not.toBeInTheDocument();
-        expect(within(detalle).getByRole("button", { name: "Editar" })).toBeDisabled();
+        expect(within(detalle).getByRole("button", { name: "Editar" })).toBeEnabled();
         expect(within(detalle).getByRole("button", { name: "Eliminar" })).toBeDisabled();
         expect(within(detalle).queryByRole("button", { name: /Guardar|^Cerrar$/ })).not.toBeInTheDocument();
         expect(within(detalle).queryByRole("link", { name: "Ver Perfil" })).not.toBeInTheDocument();
@@ -154,6 +162,51 @@ describe("MiMercadoProductor", () => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(screen.getByTitle("Manzana")).toBeInTheDocument();
         expect(screen.queryByTitle("Pera")).not.toBeInTheDocument();
+    });
+
+    it("conserva la edición de una tarjeta y permite abrir el alta con campos vacíos", async () => {
+        const pera = crearPublicacion(1, "Pera");
+        const manzana = crearPublicacion(2, "Manzana", "80");
+        const actualizada = { ...pera, precio: "220", fecha: "2026-10-21T15:00:00.000Z" };
+        const opciones = {
+            especies: [{ id: 1, nombre: "Pera" }],
+            variedades: [{ id: 1, nombre: "-", especieId: 1 }],
+            presentaciones: [{ id: 1, nombre: "Cajón", variedadId: 1 }],
+            categorias: [{ id: 1, nombre: "Primera", especieId: null }],
+            calibres: [{ id: 1, nombre: "G - Grande" }],
+            paises: [{ id: 1, nombre: "Uruguay" }],
+        };
+        const fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => opciones })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ opciones }) })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ publicacion: actualizada }) });
+        vi.stubGlobal("fetch", fetch);
+        render(<MiMercadoProductor publicaciones={[pera, manzana]} productorId={21} />);
+        await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/publicaciones/productor"));
+        expect(screen.getByRole("button", { name: "Nueva publicación" })).toBeEnabled();
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalle de Pera" }));
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.change(await screen.findByLabelText("Precio en pesos"), { target: { value: "220" } });
+        expect(screen.queryByRole("dialog", { name: "Detalle de publicación" })).not.toBeInTheDocument();
+        expect(screen.getByRole("dialog", { name: "Editar publicación de Productor" })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+
+        await waitFor(() => expect(within(screen.getByRole("button", { name: "Ver detalle de Pera" })).getByText("$220")).toBeInTheDocument());
+        expect(within(screen.getByRole("button", { name: "Ver detalle de Manzana" })).getByText("$80")).toBeInTheDocument();
+        expect(fetch.mock.calls[2][0]).toBe("/api/publicaciones/productor/101");
+        expect(fetch.mock.calls[2][1]).toEqual(expect.objectContaining({ method: "PATCH" }));
+        expect(screen.queryByRole("dialog", { name: "Editar publicación de Productor" })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalle de Pera" }));
+        const detalle = screen.getByRole("dialog", { name: "Detalle de publicación" });
+        expect(within(detalle).getByText("$220")).toBeInTheDocument();
+        expect(within(detalle).getByText("21/10/2026")).toHaveAttribute("dateTime", actualizada.fecha);
+        fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+        const alta = await screen.findByRole("dialog", { name: "Nueva publicación de Productor" });
+        expect(within(alta).getByLabelText("Precio en pesos")).toHaveValue("");
+        fireEvent.click(within(alta).getByRole("button", { name: "Cancelar" }));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(within(screen.getByRole("button", { name: "Ver detalle de Pera" })).getByText("$220")).toBeInTheDocument();
     });
 
     it("muestra el estado vacío sin filtros ni acciones de operador", () => {
