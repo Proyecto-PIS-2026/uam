@@ -117,6 +117,7 @@ describe("consultarDatosModificarUsuarios", () => {
         mocks.productorAll.mockResolvedValue([
             {
                 id: 301,
+                nombreFantasia: "Granja Carla",
                 usuario: {
                     id: 3,
                     username: "carla.productor",
@@ -138,7 +139,7 @@ describe("consultarDatosModificarUsuarios", () => {
         );
 
         expect(mocks.productorSelect).toHaveBeenCalledTimes(1);
-        expect(mocks.productorSelect).toHaveBeenCalledWith("id");
+        expect(mocks.productorSelect).toHaveBeenCalledWith("id", "nombreFantasia");
 
         expect(mocks.administradorInclude).toHaveBeenCalledWith(
             "usuario",
@@ -208,6 +209,7 @@ describe("consultarDatosModificarUsuarios", () => {
                     username: "carla.productor",
                     rol: "PRODUCTOR",
                     productorId: 301,
+                    nombreFantasia: "Granja Carla",
                     solicitoRestablecimiento: false,
                 },
             ],
