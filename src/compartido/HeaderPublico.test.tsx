@@ -124,21 +124,36 @@ describe("HeaderPublico", () => {
         expect(screen.queryByRole("link", { name: "Ir al inicio" })).not.toBeInTheDocument();
     });
 
-    it.each([null, "PRODUCTOR"] as const)(
-        "conserva la navegación pública y el destino del logo para el rol %s",
-        (rolUsuario) => {
-            render(<HeaderPublico sesion={rolUsuario ? { usuarioId: 10, rol: rolUsuario, expiraEn: 2000000000 } : null} />);
+    it("conserva la navegación pública y el destino del logo sin sesión", () => {
+        render(<HeaderPublico sesion={null} />);
 
-            for (const nombre of ["Navegación principal", "Navegación móvil"]) {
-                const menu = within(screen.getByRole("navigation", { name: nombre }));
-                expect(menu.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/inicio");
-                expect(menu.getByRole("link", { name: "Publicaciones" })).toHaveAttribute("href", "/publicaciones");
-                expect(menu.getByRole("link", { name: "Operadores" })).toHaveAttribute("href", "/operadores");
-                expect(menu.queryByRole("link", { name: "Productores" })).not.toBeInTheDocument();
-            }
-            expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
-        },
-    );
+        for (const nombre of ["Navegación principal", "Navegación móvil"]) {
+            const menu = within(screen.getByRole("navigation", { name: nombre }));
+            expect(menu.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/inicio");
+            expect(menu.getByRole("link", { name: "Publicaciones" })).toHaveAttribute("href", "/publicaciones");
+            expect(menu.getByRole("link", { name: "Operadores" })).toHaveAttribute("href", "/operadores");
+            expect(menu.queryByRole("link", { name: "Productores" })).not.toBeInTheDocument();
+        }
+        expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
+    });
+
+    it("ofrece solo Mi mercado, precios de referencia e histórico al productor en ambos menús", () => {
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 }} />);
+        fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
+
+        for (const nombre of ["Navegación principal", "Navegación móvil"]) {
+            const menu = within(screen.getByRole("navigation", { name: nombre }));
+            expect(menu.getAllByRole("link")).toHaveLength(3);
+            expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado/productor");
+            expect(menu.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
+            expect(menu.getByRole("link", { name: "Histórico de precios" })).toHaveAttribute("href", "/precios-historicos");
+        }
+        expect(screen.getByRole("link", { name: "Ir a Mi mercado" })).toHaveAttribute("href", "/mi-mercado/productor");
+        expect(screen.queryByRole("link", { name: "Ir al inicio" })).not.toBeInTheDocument();
+
+        fireEvent.click(within(screen.getByRole("navigation", { name: "Navegación móvil" })).getByRole("link", { name: "Histórico de precios" }));
+        expect(screen.getByRole("button", { name: "Abrir menú" })).toHaveAttribute("aria-expanded", "false");
+    });
 
     it.each([
         { rol: "OPERADOR" as const, ruta: "/mi-mercado" },
@@ -161,7 +176,7 @@ describe("HeaderPublico", () => {
         },
     );
 
-    it.each(["OPERADOR", "PRODUCTOR", "ADMINISTRADOR"] as RolUsuario[])(
+    it.each(["OPERADOR", "ADMINISTRADOR"] as RolUsuario[])(
         "muestra Mi perfil y Cerrar sesion en el desplegable de %s",
         (rolUsuario) => {
             render(<HeaderPublico sesion={rolUsuario ? { usuarioId: 10, rol: rolUsuario, expiraEn: 2000000000 } : null} />);
@@ -176,11 +191,27 @@ describe("HeaderPublico", () => {
         },
     );
 
-    it("marca Mi mercado como activo en la pagina del productor", () => {
-        consultarRutaSimulada.mockReturnValue("/mi-mercado/productor");
+    it("omite Mi perfil del productor y mantiene Cerrar sesión en escritorio y móvil", () => {
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 }} />);
+        fireEvent.click(screen.getByRole("button", { name: "Abrir menú de usuario" }));
+        fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
+
+        const menuUsuario = within(screen.getByRole("menu"));
+        expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(1);
+        expect(menuUsuario.getByRole("menuitem", { name: "Cerrar sesión" })).toBeInTheDocument();
+        expect(within(screen.getByRole("navigation", { name: "Navegación móvil" })).getByRole("button", { name: "Cerrar sesión" })).toBeInTheDocument();
+        expect(screen.queryByText("Mi perfil")).not.toBeInTheDocument();
+    });
+
+    it.each([
+        { ruta: "/mi-mercado/productor", nombre: "Mi mercado" },
+        { ruta: "/precios-referencia", nombre: "Precios de referencia" },
+        { ruta: "/precios-historicos", nombre: "Histórico de precios" },
+    ])("marca $nombre como activo en la navegación del productor", ({ ruta, nombre }) => {
+        consultarRutaSimulada.mockReturnValue(ruta);
         render(<HeaderPublico sesion={{ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 }} />);
 
-        for (const enlace of screen.getAllByRole("link", { name: "Mi mercado" })) {
+        for (const enlace of screen.getAllByRole("link", { name: nombre })) {
             expect(enlace).toHaveAttribute("aria-current", "page");
         }
     });
@@ -266,8 +297,8 @@ describe("HeaderPublico", () => {
         expect(boton).toHaveAttribute("aria-expanded", "false");
     });
 
-    it("cierra la sesión al elegir la opción del menú de usuario", async () => {
-        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 }} />);
+    it.each(["OPERADOR", "PRODUCTOR"] as const)("cierra la sesión del %s al elegir la opción del menú de usuario", async (rol) => {
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol, expiraEn: 2000000000 }} />);
         fireEvent.click(screen.getByRole("button", { name: "Abrir menú de usuario" }));
 
         fireEvent.click(screen.getByRole("menuitem", { name: "Cerrar sesión" }));
@@ -277,8 +308,8 @@ describe("HeaderPublico", () => {
         });
     });
 
-    it("cierra la sesión desde el botón del menú móvil", async () => {
-        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 }} />);
+    it.each(["OPERADOR", "PRODUCTOR"] as const)("cierra la sesión del %s desde el botón del menú móvil", async (rol) => {
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol, expiraEn: 2000000000 }} />);
         fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
         const menuMobile = within(screen.getByRole("navigation", { name: "Navegación móvil" }));
 
@@ -361,10 +392,9 @@ describe("permisos de navegación", () => {
         const regla = vi.spyOn(autorizacion, "autorizado").mockReturnValue(false);
         try {
             render(<HeaderPublico sesion={{ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 }} />);
-            for (const nombre of ["Publicaciones", "Operadores", "Precios de referencia", "Mi mercado", "Administración"]) {
+            for (const nombre of ["Inicio", "Publicaciones", "Operadores", "Precios de referencia", "Histórico de precios", "Mi mercado", "Administración"]) {
                 expect(screen.queryByRole("link", { name: nombre })).not.toBeInTheDocument();
             }
-            expect(screen.getAllByRole("link", { name: "Inicio" })).toHaveLength(2);
         } finally {
             regla.mockRestore();
         }

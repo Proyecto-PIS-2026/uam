@@ -1,21 +1,21 @@
 .contenedor {
-    margin-top: 1rem;
+    margin-top: var(--espacio-secciones);
     margin-bottom: 0;
     min-width: 0;
 }
 
 .titulo {
-    margin: 0 0 0.5rem;
-    color: black; 
-    font-size: 1rem;
+    margin: 0 0 var(--espacio-inline);
+    color: var(--color-foreground);
+    font-size: var(--tamano-titulo-panel);
     font-weight: 600;
-    line-height: 1.4;
+    line-height: var(--interlineado-texto);
 }
 
 .lista {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: var(--espacio-controles);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -24,11 +24,11 @@
 .ubicacion {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     min-height: 5rem;
-    padding: 0.75rem;
+    padding: var(--espacio-controles);
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-panel);
     background-color: var(--color-surface);
     color: var(--color-secondary);
     text-decoration: none;
@@ -63,20 +63,20 @@
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: var(--espacio-textos);
     min-width: 0;
     overflow-wrap: anywhere;
 }
 
 .nombre {
-    font-size: 0.95rem;
+    font-size: var(--tamano-texto);
     font-weight: 600;
 }
 
 .descripcion {
     margin: 0;
     color: var(--color-muted);
-    font-size: 0.85rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .flecha {

@@ -20,12 +20,18 @@ async function abrirMapa(coordenadas: typeof ubicacion | null = null) {
 }
 
 async function marcar(latitud = -34.9, longitud = -56.2) {
-    const escuchar = mocks.mapa.on.mock.calls.find(([nombre]) => nombre === "click")![1] as (evento: { latlng: { lat: number; lng: number } }) => void;
+    const escuchar = mocks.mapa.on.mock.calls.filter(([nombre]) => nombre === "click").at(-1)![1] as (evento: { latlng: { lat: number; lng: number } }) => void;
     await act(async () => escuchar({ latlng: { lat: latitud, lng: longitud } }));
 }
 
 function respuesta(datos: unknown, status = 200) {
     return Promise.resolve(new Response(JSON.stringify(datos), { status }));
+}
+
+function respuestaPendiente() {
+    let resolver!: (respuesta: Response) => void;
+    const promesa = new Promise<Response>((resolve) => { resolver = resolve; });
+    return { promesa, resolver };
 }
 
 describe("LeafletLocationPicker", () => {
@@ -57,6 +63,94 @@ describe("LeafletLocationPicker", () => {
         await abrirMapa(ubicacion);
         expect(mocks.mapa.setView).toHaveBeenCalledWith([-34.9, -56.2], 14);
         expect(screen.getByText("Ruta 5, Montevideo")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Usar esta ubicación" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
+    });
+
+    it("conserva la selección provisional al recibir otro objeto con la misma ubicación confirmada", async () => {
+        const vista = await abrirMapa(ubicacion);
+        vi.mocked(fetch).mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }));
+        await marcar(-34.8, -56.1);
+        vista.rerender(<LeafletLocationPicker abierto coordenadas={{ ...ubicacion }} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        expect(screen.getByText("Ruta 8, Canelones")).toBeInTheDocument();
+        expect(mocks.crearMapa).toHaveBeenCalledOnce();
+        expect(mocks.mapa.remove).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Usar esta ubicación" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ latitud: -34.8, longitud: -56.1, departamento: "Canelones", nombreLugar: "Ruta 8" });
+    });
+
+    it("restaura una ubicación confirmada distinta y descarta la identificación que estaba pendiente", async () => {
+        const pendiente = respuestaPendiente();
+        vi.mocked(fetch).mockReturnValueOnce(pendiente.promesa);
+        const vista = await abrirMapa(ubicacion);
+        await marcar(-34.8, -56.1);
+        const actualizada = { latitud: -34.7, longitud: -56, departamento: "Canelones", nombreLugar: "Ruta 8" };
+        vista.rerender(<LeafletLocationPicker abierto coordenadas={actualizada} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        await waitFor(() => expect(mocks.crearMapa).toHaveBeenCalledTimes(2));
+        await act(async () => pendiente.resolver(await respuesta({ address: { country_code: "uy", state: "Montevideo", road: "Ruta 1" } })));
+        expect(screen.getByText("Ruta 8, Canelones")).toBeInTheDocument();
+        expect(mocks.mapa.setView).toHaveBeenLastCalledWith([-34.7, -56], 14);
+        expect(mocks.marcador.setLatLng).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Usar esta ubicación" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(actualizada);
+    });
+
+    it.each(["Cancelar", "Cerrar mapa"])("descarta la selección provisional al %s y reabrir", async (nombre) => {
+        const vista = await abrirMapa(ubicacion);
+        vi.mocked(fetch).mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }));
+        await marcar(-34.8, -56.1);
+        expect(screen.getByText("Ruta 8, Canelones")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: nombre }));
+        vista.rerender(<LeafletLocationPicker abierto={false} coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        await waitFor(() => expect(mocks.crearMapa).toHaveBeenCalledTimes(2));
+        expect(screen.getByText("Ruta 5, Montevideo")).toBeInTheDocument();
+        expect(screen.queryByText("Ruta 8, Canelones")).not.toBeInTheDocument();
+        expect(mocks.mapa.setView).toHaveBeenLastCalledWith([-34.9, -56.2], 14);
+        fireEvent.click(screen.getByRole("button", { name: "Usar esta ubicación" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
+    });
+
+    it("reabre sin selección cuando nunca se confirmó una ubicación", async () => {
+        const vista = await abrirMapa();
+        await marcar();
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+        vista.rerender(<LeafletLocationPicker abierto={false} coordenadas={null} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto coordenadas={null} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        await waitFor(() => expect(mocks.crearMapa).toHaveBeenCalledTimes(2));
+        expect(screen.queryByText("Ruta 5, Montevideo")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Usar esta ubicación" })).toBeDisabled();
+    });
+
+    it.each([200, 500])("descarta una respuesta anterior (%s) cuando ya se eligió otro punto", async (status) => {
+        const anterior = respuestaPendiente();
+        const reciente = respuestaPendiente();
+        vi.mocked(fetch).mockReturnValueOnce(anterior.promesa).mockReturnValueOnce(reciente.promesa);
+        await abrirMapa(ubicacion);
+        await marcar(-34.8, -56.1);
+        expect(screen.getByRole("button", { name: "Usar esta ubicación" })).toBeDisabled();
+        await marcar(-34.7, -56);
+        await act(async () => reciente.resolver(await respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } })));
+        await act(async () => anterior.resolver(await respuesta({ address: { country_code: "uy", state: "Montevideo", road: "Ruta 1" } }, status)));
+        expect(screen.getByText("Ruta 8, Canelones")).toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(mocks.marcador.setLatLng).toHaveBeenCalledExactlyOnceWith([-34.7, -56]);
+        fireEvent.click(screen.getByRole("button", { name: "Usar esta ubicación" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ latitud: -34.7, longitud: -56, departamento: "Canelones", nombreLugar: "Ruta 8" });
+    });
+
+    it.each([200, 500])("descarta una identificación pendiente (%s) después de cerrar y reabrir", async (status) => {
+        const pendiente = respuestaPendiente();
+        vi.mocked(fetch).mockReturnValueOnce(pendiente.promesa);
+        const vista = await abrirMapa(ubicacion);
+        await marcar(-34.8, -56.1);
+        vista.rerender(<LeafletLocationPicker abierto={false} coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        await waitFor(() => expect(mocks.crearMapa).toHaveBeenCalledTimes(2));
+        await act(async () => pendiente.resolver(await respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }, status)));
+        expect(screen.getByText("Ruta 5, Montevideo")).toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(mocks.marcador.setLatLng).not.toHaveBeenCalled();
         fireEvent.click(screen.getByRole("button", { name: "Usar esta ubicación" }));
         expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
     });
@@ -126,6 +220,37 @@ describe("LeafletLocationPicker", () => {
         fireEvent.change(screen.getByRole("searchbox"), { target: { value: "  " } });
         fireEvent.submit(screen.getByRole("searchbox").closest("form")!);
         expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it.each([200, 500])("descarta una búsqueda pendiente (%s) después de cerrar y reabrir", async (status) => {
+        const pendiente = respuestaPendiente();
+        vi.mocked(fetch).mockReturnValueOnce(pendiente.promesa);
+        const vista = await abrirMapa(ubicacion);
+        fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Mercado" } });
+        fireEvent.submit(screen.getByRole("searchbox").closest("form")!);
+        vista.rerender(<LeafletLocationPicker abierto={false} coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        await waitFor(() => expect(mocks.crearMapa).toHaveBeenCalledTimes(2));
+        await act(async () => pendiente.resolver(await respuesta([{ place_id: 1, display_name: "Mercado Modelo", lat: "-34.8", lon: "-56.1" }], status)));
+        expect(screen.getByRole("searchbox")).toHaveValue("");
+        expect(screen.queryByRole("list")).not.toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Usar esta ubicación" })).toBeEnabled();
+    });
+
+    it("descarta el error de una búsqueda anterior después de marcar otro punto", async () => {
+        const pendiente = respuestaPendiente();
+        vi.mocked(fetch).mockReturnValueOnce(pendiente.promesa);
+        await abrirMapa();
+        fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Mercado" } });
+        fireEvent.submit(screen.getByRole("searchbox").closest("form")!);
+        await marcar();
+        await act(async () => pendiente.resolver(await respuesta([], 500)));
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Usar esta ubicación" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Buscar" })).toBeEnabled();
+        fireEvent.click(screen.getByRole("button", { name: "Usar esta ubicación" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
     });
 
     it.each([

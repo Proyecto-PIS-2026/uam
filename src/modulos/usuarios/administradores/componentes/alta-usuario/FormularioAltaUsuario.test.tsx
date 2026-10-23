@@ -624,6 +624,21 @@ describe("FormularioAltaUsuario", () => {
         ).not.toBeInTheDocument();
     });
 
+    it("avisa si falla el alta sin borrar los datos ni abrir la precarga", async () => {
+        vi.mocked(altaOperador).mockRejectedValueOnce(new Error("Sin conexión"));
+        render(<FormularioAltaUsuario naves={naves} />);
+        seleccionarOpcion("Rol del usuario", "Operador");
+        completarFormulario();
+
+        fireEvent.submit(screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!);
+
+        expect(await screen.findByRole("alert"))
+            .toHaveTextContent("No se pudo registrar el usuario. Intentá de nuevo.");
+        expect(screen.getByLabelText(/^Nombre de Usuario\s*\*$/)).toHaveValue("usuario1");
+        expect(screen.getByRole("button", { name: "Registrar usuario" })).not.toBeDisabled();
+        expect(screen.queryByText("Operador creado satisfactoriamente")).not.toBeInTheDocument();
+    });
+
     it("muestra Registrando mientras el alta está en proceso", async () => {
         let resolver: (
             resultado: {

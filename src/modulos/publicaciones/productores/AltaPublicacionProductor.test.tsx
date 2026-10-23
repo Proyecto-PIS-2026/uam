@@ -176,6 +176,10 @@ describe("AltaPublicacionProductor", () => {
         await abrirAlta(); completarFormulario();
         fetchMock.mockRejectedValueOnce(new Error("Sin conexión")); enviarFormulario();
         expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo conectar con el servidor.");
+        expect(screen.getByRole("alert").closest('[role="dialog"]')).toBeNull();
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
     });
 
     it("impide envíos repetidos mientras guarda", async () => {

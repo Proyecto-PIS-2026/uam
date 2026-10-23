@@ -3,6 +3,7 @@
     flex-direction: column;
     gap: var(--espacio-secciones);
     min-width: 0;
+    line-height: var(--interlineado-texto);
 }
 
 .contexto {
@@ -10,9 +11,9 @@
     flex-wrap: wrap;
     flex-shrink: 0;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
     color: var(--color-muted-foreground);
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .contexto strong {
@@ -28,9 +29,9 @@
 .filtrosPanel, .tablaPanel {
     min-width: 0;
     border: 1px solid var(--color-border);
-    border-radius: 0.875rem;
+    border-radius: var(--radio-panel);
     background: var(--color-surface);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+    box-shadow: var(--sombra-panel);
 }
 
 .filtrosPanel {
@@ -38,22 +39,21 @@
     margin: 0;
     padding: var(--padding-panel);
     box-sizing: border-box;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
 }
 
 .tablaCabecera {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
 }
 
 .tablaCabecera h2 {
     margin: 0;
     color: var(--color-secondary);
-    font-size: 1.125rem;
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
-    line-height: 1.5;
+    line-height: var(--interlineado-texto);
 }
 
 .filtros {
@@ -83,13 +83,13 @@
     display: inline-flex;
     align-items: center;
     justify-self: start;
-    gap: 0.2rem;
+    gap: var(--espacio-textos);
     grid-column: 1 / -1;
     padding: 0;
     border: 0;
     background: none;
     color: var(--color-primary);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -136,14 +136,17 @@
 }
 .errorPrecio {
     margin: 0;
-    color: #b42332;
-    font-size: 0.75rem;
+    color: var(--color-danger);
+    font-size: var(--tamano-texto-auxiliar);
 }
 .busqueda :global(input[type="search"])::-webkit-search-cancel-button {
     filter: invert(94.63%) sepia(94%) saturate(1606%) hue-rotate(73.59deg) brightness(50.79%) contrast(173.72%);
 }
 .campo :global(.MuiOutlinedInput-root) {
+    min-height: var(--alto-control);
+    border-radius: var(--radio-control);
     background: var(--color-surface);
+    font-size: var(--tamano-texto-secundario);
 }
 .campo :global(.MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-border);
@@ -176,9 +179,9 @@
 .soloReferencias {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
     color: var(--color-foreground);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
     cursor: pointer;
 }
 
@@ -194,6 +197,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--espacio-controles);
     width: 100%;
     min-width: 0;
     margin-top: var(--espacio-controles);
@@ -204,7 +208,7 @@
 
 .resultadosFiltros {
     color: var(--color-foreground);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .limpiarFiltros {
@@ -212,7 +216,7 @@
     border: 0;
     background: none;
     color: var(--color-primary);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -229,9 +233,9 @@
     padding: var(--padding-panel);
 }
 .tablaCabecera p {
-    margin: 0.15rem 0 0;
+    margin: var(--espacio-textos) 0 0;
     color: var(--color-muted-foreground);
-    font-size: 0.8125rem;
+    font-size: var(--tamano-texto-secundario);
 }
 .tablaContenedor {
     width: 100%;
@@ -242,17 +246,17 @@
     width: 100%;
     min-width: 58rem;
     border-collapse: collapse;
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-variant-numeric: tabular-nums;
 }
 
 .tabla th {
-    padding: 0.75rem;
+    padding: var(--espacio-controles);
     border-top: 1px solid var(--color-border);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-primary-soft);
     color: var(--color-secondary);
-    font-size: 0.75rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
     text-align: left;
     white-space: nowrap;
@@ -260,25 +264,25 @@
 
 .tabla td {
     height: 3.25rem;
-    padding: 0.75rem;
-    border-bottom: 1px solid #e9e9e9;
+    padding: var(--espacio-controles);
+    border-bottom: 1px solid var(--color-border-soft);
     vertical-align: middle;
 }
 .tabla th + th,
 .tabla td + td {
-    border-left: 1px solid #eef0ec;
+    border-left: 1px solid var(--color-border-soft);
 }
 .tabla tbody tr:nth-child(even) {
-    background: #fafbf9;
+    background: var(--color-surface-muted);
 }
 .tabla tbody tr.filaReferencia {
-    background: #f0f7f0;
+    background: var(--color-primary-soft);
 }
 .tabla tbody tr.filaReferencia td:first-child {
     box-shadow: inset 3px 0 var(--color-primary);
 }
 .tabla tbody tr:hover {
-    background: #eaf3e9;
+    background: var(--color-primary-soft);
 }
 
 .producto {
@@ -294,15 +298,15 @@
 }
 .insignia {
     display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.4rem;
-    background: #d9ebdc;
+    padding: var(--espacio-textos) var(--espacio-inline);
+    border-radius: var(--radio-control);
+    background: var(--color-primary-soft);
     color: var(--color-secondary);
-    font-size: 0.6875rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
 }
 .sinReferencia {
-    color: #a2aaa1;
+    color: var(--color-muted-foreground);
 }
 .precio {
     white-space: nowrap;
@@ -312,9 +316,9 @@
     font-weight: 700;
 }
 .precio small {
-    margin-left: 0.15rem;
+    margin-left: var(--espacio-textos);
     color: var(--color-muted-foreground);
-    font-size: 0.6875rem;
+    font-size: var(--tamano-texto-auxiliar);
 }
 .etiquetaMobile {
     display: none;
@@ -323,11 +327,11 @@
     min-width: 8rem;
     max-width: 14rem;
     color: var(--color-muted-foreground);
-    font-size: 0.8125rem;
+    font-size: var(--tamano-texto-secundario);
 }
 .pais {
     color: var(--color-foreground);
-    font-size: 0.8125rem;
+    font-size: var(--tamano-texto-secundario);
 }
 .detalle {
     color: var(--color-foreground);
@@ -335,7 +339,7 @@
 }
 .vacio {
     margin: 0;
-    padding: 2.5rem 1rem;
+    padding: var(--espacio-amplio) var(--padding-panel);
     border-top: 1px solid var(--color-border);
     color: var(--color-muted-foreground);
     text-align: center;
@@ -348,24 +352,25 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
+    gap: var(--espacio-secciones);
+    padding: var(--espacio-controles) var(--padding-panel);
     color: var(--color-muted-foreground);
-    font-size: 0.8125rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .paginacion > div {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 .paginacion button {
-    padding: 0.45rem 0.75rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
     border: 1px solid var(--color-border);
-    border-radius: 0.45rem;
-    background: white;
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
     color: var(--color-secondary);
-    font-size: 0.8125rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -374,7 +379,7 @@
     background: var(--color-primary-soft);
 }
 .paginacion button:disabled {
-    color: #9a9a9a;
+    color: var(--color-disabled);
     cursor: default;
 }
 
@@ -520,8 +525,8 @@
         flex-direction: column;
         flex-wrap: nowrap;
         align-items: center;
-        gap: 0.5rem;
-        line-height: 1.4;
+        gap: var(--espacio-inline);
+        line-height: var(--interlineado-texto);
         text-align: center;
     }
     .contexto p {
@@ -539,15 +544,15 @@
         border-top: 1px solid var(--color-border);
     }
     .filaMobile {
-        padding: 0.625rem 0.875rem;
+        padding: var(--espacio-controles) var(--padding-panel);
         border-bottom: 1px solid var(--color-border);
         background: var(--color-surface);
     }
     .filaMobile:nth-child(even) {
-        background: #fafbf9;
+        background: var(--color-surface-muted);
     }
     .filaMobile.filaMobileReferencia {
-        background: #f2f8f2;
+        background: var(--color-primary-soft);
         box-shadow: inset 3px 0 var(--color-primary);
     }
     .filaMobileCabecera {
@@ -555,52 +560,52 @@
         grid-template-columns: minmax(0, 1fr) 4.5rem;
         min-height: 1.5rem;
         align-items: start;
-        gap: 0.5rem;
+        gap: var(--espacio-inline);
     }
     .filaMobileProducto {
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
-        gap: 0 0.35rem;
+        gap: 0 var(--espacio-inline);
         min-width: 0;
-        line-height: 1.25;
+        line-height: var(--interlineado-texto);
     }
     .filaMobileProducto strong {
-        font-size: 0.875rem;
+        font-size: var(--tamano-texto-secundario);
         font-weight: 700;
     }
     .filaMobileProducto span {
         color: var(--color-muted-foreground);
-        font-size: 0.8125rem;
+        font-size: var(--tamano-texto-secundario);
     }
     .filaMobileCabecera .insignia {
         justify-self: end;
         flex-shrink: 0;
-        padding: 0.2rem 0.4rem;
-        font-size: 0.625rem;
+        padding: var(--espacio-textos);
+        font-size: var(--tamano-texto-auxiliar);
     }
     .filaMobilePrecios {
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
         justify-content: space-between;
-        gap: 0.125rem 0.75rem;
-        margin-top: 0.35rem;
+        gap: var(--espacio-textos) var(--espacio-controles);
+        margin-top: var(--espacio-textos);
     }
     .filaMobilePrecios > div {
         display: flex;
         align-items: baseline;
-        gap: 0.3rem;
+        gap: var(--espacio-textos);
         min-width: 0;
     }
     .filaMobilePrecios span {
         color: var(--color-muted-foreground);
-        font-size: 0.75rem;
+        font-size: var(--tamano-texto-auxiliar);
         white-space: nowrap;
     }
     .filaMobilePrecios strong {
         color: var(--color-secondary);
-        font-size: 0.8125rem;
+        font-size: var(--tamano-texto-secundario);
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
@@ -609,11 +614,11 @@
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
-        gap: 0 0.3rem;
-        margin: 0.35rem 0 0;
+        gap: 0 var(--espacio-textos);
+        margin: var(--espacio-textos) 0 0;
         color: var(--color-muted-foreground);
-        font-size: 0.71875rem;
-        line-height: 1.35;
+        font-size: var(--tamano-texto-auxiliar);
+        line-height: var(--interlineado-texto);
     }
 }
 

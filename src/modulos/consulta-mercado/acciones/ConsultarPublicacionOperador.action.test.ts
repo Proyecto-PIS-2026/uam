@@ -17,10 +17,10 @@ describe("obtenerPublicaciones", () => {
         obtenerSesionMock.mockResolvedValue(null);
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("devuelve las publicaciones obtenidas para %s", async (rol) => {
+    it.each([null, "ADMINISTRADOR"] as const)("devuelve las publicaciones obtenidas para %s", async (rol) => {
         obtenerSesionMock.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
         const resultado = {
-            opciones: [], total: 1, totalCatalogo: 1, pagina: 1, tamanoPagina: 30,
+            opciones: [], total: 1, totalCatalogo: 1,
             publicaciones: [
                 {
                     id: 1,
@@ -52,8 +52,8 @@ describe("obtenerPublicaciones", () => {
         expect(consultarPublicaciones).toHaveBeenCalledTimes(1);
     });
 
-    it("rechaza la consulta de un operador antes de cargar publicaciones ajenas", async () => {
-        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+    it.each(["OPERADOR", "PRODUCTOR"] as const)("rechaza la consulta de %s antes de cargar publicaciones ajenas", async (rol) => {
+        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
 
         await expect(obtenerPublicaciones()).rejects.toMatchObject({ name: "ErrorAutorizacion", status: 403 });
         expect(consultarPublicaciones).not.toHaveBeenCalled();

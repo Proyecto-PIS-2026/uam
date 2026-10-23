@@ -34,7 +34,7 @@ export default function TarjetaPublicacionProductor({ publicacion, alConsultar }
                     </span>
                 </span>
                 <span className={styles.contenedorPrecio}>
-                    <span className="text-xl font-extrabold text-foreground">{publicacion.precio === null ? "Sin precio" : `$${Number(publicacion.precio).toFixed(0)}`}</span>
+                    <span className={styles.precio}>{publicacion.precio === null ? "Sin precio" : `$${Number(publicacion.precio).toFixed(0)}`}</span>
                     <span className={styles.botonDetalle} aria-hidden="true">›</span>
                 </span>
             </span>

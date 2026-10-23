@@ -150,6 +150,32 @@ describe("PreciosHistoricos", () => {
     });
     afterEach(() => window.history.replaceState(estadoInicial, "", urlInicial));
 
+    it("permite elegir una especie al entrar desde el menú sin una selección previa", () => {
+        window.history.replaceState(null, "", "/precios-historicos");
+        render(<PreciosHistoricos
+            producto={{ ...productoSinFiltros, id: "", especie: "Producto" }}
+            historico={null}
+            especies={[{ id: "60", especie: "Banana" }]}
+            {...fechas}
+        />);
+
+        expect(screen.getByRole("heading", { name: "Histórico de precios", level: 1 })).toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeDisabled();
+        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+        expect(navegar).not.toHaveBeenCalled();
+
+        seleccionarFiltro("Especie", "Banana");
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
+        fireEvent.click(screen.getByRole("button", { name: "Consultar" }));
+
+        expect(navegar).toHaveBeenCalledOnce();
+        const destino = new URL(navegar.mock.calls[0][0], window.location.origin);
+        expect(destino.pathname).toBe("/precios-historicos");
+        expect(destino.searchParams.get("species_id")).toBe("60");
+        expect(destino.searchParams.get("producto")).toBe("Banana");
+    });
+
     it("reúne fechas y filtros en un único panel de consulta antes de la gráfica y el listado", () => {
         render(<PreciosHistoricos producto={producto} historico={historico} {...fechas} />);
         abrirFiltrosAdicionales();

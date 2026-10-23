@@ -1,9 +1,11 @@
 "use client";
+
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import Link from "next/link";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import styles from "./FormularioAltaUsuario.module.css";
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import BotonVolver from "@/compartido/BotonVolver";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
@@ -27,24 +29,12 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
     ]);
     const [codigoPais, setCodigoPais] = useState("+598");
-    const [mensajeExito, setMensajeExito] = useState("");
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [errores, setErrores] = useState<string[]>([]);
     const [enviando, setEnviando] = useState(false);
-    const [mensajeVisible, setMensajeVisible] = useState(false);
     const [mostrarPopup, setMostrarPopup] = useState(false);
     const [rolCreado, setRolCreado] = useState("");
     const [idUsuarioCreado, setIdUsuarioCreado] = useState<number | null>(null);
-
-    useEffect(() => {
-    if (!mensajeExito) return;
-    
-    const ocultar = setTimeout(() => setMensajeVisible(false), 3500);
-    const borrar = setTimeout(() => setMensajeExito(""), 4000);
-    return () => {
-        clearTimeout(ocultar);
-        clearTimeout(borrar);
-    };
-    }, [mensajeExito]);
 
     function limpiarFormulario() {
         setNombreUsuario("");
@@ -57,13 +47,13 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
             { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
         ]);
         setErrores([]);
-        setMensajeExito("");
-        setMensajeVisible(false);
+        cerrarNotificacion();
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setErrores([]);
+        cerrarNotificacion();
         setEnviando(true);
 
         try {
@@ -89,8 +79,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 }
 
                 limpiarFormulario();
-                setMensajeExito(resultado.mensaje);
-                setMensajeVisible(true);
+                notificar(resultado.mensaje, "success");
                 setIdUsuarioCreado(resultado.id);
                 setRolCreado("operador");
                 setMostrarPopup(true);
@@ -114,8 +103,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 }
 
                 limpiarFormulario();
-                setMensajeExito(resultado.mensaje);
-                setMensajeVisible(true);
+                notificar(resultado.mensaje, "success");
                 setIdUsuarioCreado(resultado.id);
                 setRolCreado("productor");
                 setMostrarPopup(true);
@@ -123,6 +111,8 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
             }
             // Pendiente: administrador
             setErrores(["Esta alta todavía no está disponible para el rol seleccionado."]);
+        } catch {
+            notificar("No se pudo registrar el usuario. Intentá de nuevo.", "error");
         } finally {
             setEnviando(false);
         }
@@ -149,6 +139,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
 
     return (
         <section className="contenedor-pagina secciones-pagina">
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <BotonVolver href="/administracion#usuarios">Volver al panel administrativo</BotonVolver>
             <EncabezadoPagina
                 titulo="Alta de usuario"
@@ -253,7 +244,8 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 type="tel"
                                 value={telefono}
                                 required
-                                onChange={(e) => settelefono(e.target.value)}
+                                onChange={(e) => settelefono(e.target.value.replace(/\D/g, ""))}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
                                 placeholder="Ej: 99123456"
                                 fullWidth
                                 size="small"
@@ -356,14 +348,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     </>
                 )}
 
-                {mensajeExito && (
-                    <p
-                        className={`text-sm text-green-600 transition-opacity duration-500 ${mensajeVisible ? "opacity-100" : "opacity-0"}`}
-                        role="status"
-                    >
-                        {mensajeExito}
-                    </p>
-                )}
                 {errores.length > 0 && (
                     <ul className={styles.errores} role="alert">
                         {errores.map((error) => <li key={error}>{error}</li>)}
@@ -384,15 +368,15 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
             </form>
 
             {mostrarPopup && (rolCreado === "operador" || rolCreado === "productor") && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-md rounded-2xl bg-surface p-[var(--padding-panel)] shadow-xl">
-                        <h2 className="text-xl font-bold text-foreground">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-[var(--padding-exterior-pagina)]">
+                    <div className="w-full max-w-md rounded-[var(--radio-panel)] bg-surface p-[var(--padding-panel)] shadow-xl">
+                        <h2 className={styles.subtitulo}>
                             {rolCreado === "operador"
                                 ? "Operador creado satisfactoriamente"
                                 : "Productor creado satisfactoriamente"}
                         </h2>
 
-                        <p className="mt-3 text-sm text-muted-foreground">
+                        <p className={styles.descripcionPopup}>
                             ¿Desea precargar productos para este usuario?
                         </p>
 

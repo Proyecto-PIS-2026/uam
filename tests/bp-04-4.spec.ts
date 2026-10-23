@@ -33,7 +33,8 @@ async function iniciarSesion(page: Page, rol: "PRODUCTOR" | "ADMINISTRADOR") {
   await page.getByLabel("Correo electrónico o nombre de usuario").fill(usuario);
   await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
   await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
-  await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+  const destino = rol === "PRODUCTOR" ? "/mi-mercado/productor" : "/inicio";
+  await expect(page).toHaveURL((url) => url.pathname === destino);
   expect((await page.context().cookies()).some((cookie) => cookie.name === "uam_sesion")).toBe(true);
 }
 
@@ -200,6 +201,12 @@ test("BP-04.4 CA-3 CP-06: funcionalidades de otros roles para el Productor", asy
   await expect(enlaceAdministracion(page)).toHaveCount(0);
 
   const rutas = [
+    "/inicio",
+    "/publicaciones",
+    "/operadores",
+    `/operadores/${encodeURIComponent(operador.nombre)}`,
+    "/productores",
+    "/publicaciones-productor",
     "/mi-mercado",
     `/mi-mercado/${encodeURIComponent(operador.nombre)}`,
     "/publicaciones/nueva",
@@ -208,7 +215,7 @@ test("BP-04.4 CA-3 CP-06: funcionalidades de otros roles para el Productor", asy
   for (const ruta of rutas) {
     await test.step(`Rechazar ${ruta} para el Productor`, async () => {
       await page.goto(ruta);
-      await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+      await expect(page).toHaveURL((url) => url.pathname === "/mi-mercado/productor");
     });
   }
 });

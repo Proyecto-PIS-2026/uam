@@ -4,7 +4,7 @@
     inset: 0;
     display: grid;
     place-items: center;
-    padding: 1rem;
+    padding: var(--espacio-secciones);
     background: rgb(0 0 0 / 45%);
 }
 
@@ -13,10 +13,10 @@
     width: min(46rem, 100%);
     max-height: min(42rem, 100%);
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     overflow: hidden;
-    padding: 1rem;
-    border-radius: 1rem;
+    padding: var(--padding-panel);
+    border-radius: var(--radio-panel);
     background: var(--color-surface);
     color: var(--color-foreground);
     box-shadow: 0 1rem 3rem rgb(0 0 0 / 25%);
@@ -28,7 +28,7 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
 }
 
 .contenido {
@@ -36,7 +36,7 @@
     min-height: 0;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     overflow-y: auto;
 }
 
@@ -47,7 +47,7 @@
 }
 
 .encabezado h2 {
-    font-size: 1.25rem;
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
 }
 
@@ -58,7 +58,7 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--color-secondary);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     color: var(--color-secondary);
     font-size: 1.5rem;
@@ -70,40 +70,40 @@
 .coordenadas,
 .estado {
     color: var(--color-muted);
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .buscador {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: var(--espacio-textos);
 }
 
 .controlesBusqueda {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
 }
 
 .controlesBusqueda input {
     min-width: 0;
     flex: 1;
-    min-height: 2.75rem;
-    padding: 0.625rem 0.75rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     color: var(--color-foreground);
     font: inherit;
 }
 
 .controlesBusqueda button {
-    min-height: 2.75rem;
-    padding: 0.625rem 1rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
     border: 0;
-    border-radius: 0.75rem;
+    border-radius: var(--radio-control);
     background: var(--color-secondary);
-    color: white;
+    color: var(--color-surface);
     font: inherit;
     font-weight: 600;
     cursor: pointer;
@@ -121,11 +121,11 @@
     right: 0;
     left: 0;
     max-height: 12rem;
-    margin: 0.25rem 0 0;
+    margin: var(--espacio-textos) 0 0;
     padding: 0;
     overflow-y: auto;
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-panel);
     background: var(--color-surface);
     box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 18%);
     list-style: none;
@@ -133,7 +133,7 @@
 
 .resultados button {
     width: 100%;
-    padding: 0.75rem;
+    padding: var(--espacio-controles);
     border: 0;
     border-bottom: 1px solid var(--color-border);
     background: transparent;
@@ -156,7 +156,7 @@
     inset: 0;
     height: 100%;
     overflow: hidden;
-    border-radius: 0.75rem;
+    border-radius: var(--radio-panel);
     background: var(--color-primary-soft);
 }
 
@@ -193,14 +193,14 @@
 }
 
 .error {
-    color: #b42332;
+    color: var(--color-danger);
 }
 
 .cancelar,
 .confirmar {
-    min-height: 2.75rem;
-    padding: 0.625rem 1rem;
-    border-radius: 0.75rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
+    border-radius: var(--radio-control);
     font: inherit;
     font-weight: 600;
     cursor: pointer;
@@ -215,7 +215,7 @@
 .confirmar {
     border: 0;
     background: var(--color-secondary);
-    color: white;
+    color: var(--color-surface);
 }
 
 .confirmar:disabled {

@@ -4,7 +4,7 @@
     gap: var(--espacio-secciones);
     padding: var(--padding-panel);
     border: 1px solid var(--color-border);
-    border-radius: 1rem;
+    border-radius: var(--radio-panel);
     background: var(--color-surface);
 }
 
@@ -27,12 +27,12 @@
 }
 
 .control :global(.MuiOutlinedInput-root) {
-    height: 3rem;
-    border-radius: 0.75rem;
+    height: var(--alto-control);
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     color: var(--color-foreground);
     font-family: var(--font-geist-sans), sans-serif;
-    font-size: 1rem;
+    font-size: var(--tamano-texto);
 }
 
 .control :global(.MuiOutlinedInput-notchedOutline) {
@@ -50,7 +50,7 @@
     min-height: 0;
     padding-top: 0;
     padding-bottom: 0;
-    line-height: 3rem;
+    line-height: var(--alto-control);
 }
 
 .control :global(.MuiInputLabel-root) {
@@ -68,7 +68,7 @@
 }
 
 .control :global(.MuiFormLabel-asterisk) {
-    color: #b42332;
+    color: var(--color-danger);
 }
 
 .control :global(.MuiSelect-icon) {
@@ -90,7 +90,7 @@
 .locales {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
 }
 
 .encabezadoLocales,
@@ -103,15 +103,24 @@
 
 .subtitulo {
     margin: 0;
-    font-size: 1.125rem;
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 600;
+    color: var(--color-secondary);
 }
 
 .ayuda {
-    margin: 0.25rem 0 0;
+    margin: var(--espacio-textos) 0 0;
     color: var(--color-muted);
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
 }
+
+.descripcionPopup {
+    margin: var(--espacio-controles) 0 0;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+}
+
 
 .local {
     display: flex;
@@ -119,13 +128,13 @@
     gap: var(--espacio-secciones);
     padding: var(--padding-panel);
     border: 1px solid var(--color-border);
-    border-radius: 0.875rem;
-    background: var(--color-background);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface-muted);
 }
 
 .tituloLocal {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
 }
 
@@ -137,7 +146,7 @@
 .contrato {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     min-width: 0;
 }
 
@@ -147,11 +156,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 3rem;
-    padding: 0.625rem 1rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
     border: 1px solid var(--color-secondary);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-control);
     font: inherit;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     line-height: 1.25;
     text-align: center;
@@ -171,7 +181,7 @@
 
 .botonConfirmar {
     background: var(--color-secondary);
-    color: white;
+    color: var(--color-surface);
 }
 
 .botonConfirmar:hover:not(:disabled) {
@@ -180,14 +190,14 @@
 }
 
 .botonEliminar {
-    min-height: 2.75rem;
-    border-color: #f2c4cc;
-    background: #fbeaec;
-    color: #b42332;
+    min-height: var(--alto-control);
+    border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-surface));
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
 }
 
 .botonEliminar:hover:not(:disabled) {
-    background: #f8dadd;
+    background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
 }
 
 .botonSecundario:focus-visible,
@@ -216,12 +226,12 @@
 
 .errores {
     margin: 0;
-    padding: 1rem 1rem 1rem 2rem;
-    border: 1px solid #f2c4cc;
-    border-radius: 0.75rem;
-    background: #fbeaec;
-    color: #b42332;
-    font-size: 0.875rem;
+    padding: var(--padding-panel) var(--padding-panel) var(--padding-panel) var(--espacio-amplio);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-surface));
+    border-radius: var(--radio-panel);
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-size: var(--tamano-texto-secundario);
 }
 
 @media (max-width: 700px) {

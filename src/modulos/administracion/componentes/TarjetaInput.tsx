@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, Fade, IconButton, Snackbar, TextField } from "@mui/material";
+import { IconButton, TextField } from "@mui/material";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 
 import styles from "./TarjetaInput.module.css";
 
@@ -19,9 +20,7 @@ interface TarjetaInputProps {
 export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "numero", onChangeValor, onGuardarValor }: TarjetaInputProps) {
     const [guardando, setGuardando] = useState(false);
     const [valorInicialGuardado, setValorInicialGuardado] = useState(valor);
-    const [mensajeAlerta, setMensajeAlerta] = useState("");
-    const [tipoAlerta, setTipoAlerta] = useState<"success" | "error">("success");
-    const [mostrarSnackbar, setMostrarSnackbar] = useState(false);
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
 
     // Mantenemos referencia para resincronizar si cambia desde el servidor/padre
     const [valorPropAnterior, setValorPropAnterior] = useState(valor);
@@ -44,13 +43,9 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
         try {
             await onGuardarValor?.(valor);
             setValorInicialGuardado(valor);
-            setTipoAlerta("success");
-            setMensajeAlerta("La configuración se guardó correctamente.");
-            setMostrarSnackbar(true);
+            notificar("La configuración se guardó correctamente.", "success");
         } catch (error) {
-            setTipoAlerta("error");
-            setMensajeAlerta(error instanceof Error ? error.message : "Ocurrió un error al guardar la configuración.");
-            setMostrarSnackbar(true);
+            notificar(error instanceof Error ? error.message : "Ocurrió un error al guardar la configuración.", "error");
         } finally {
             setGuardando(false);
         }
@@ -96,24 +91,7 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
                     </IconButton>
                 </div>
             </div>
-            <Snackbar 
-                className={styles.avisoSnackbar} 
-                open={mostrarSnackbar} 
-                autoHideDuration={4000} 
-                slots={{ transition: Fade }} 
-                transitionDuration={{ enter: 350, exit: 600 }} 
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                onClose={(_, reason) => {
-                    if (reason === "clickaway") {
-                        return;
-                    }
-                    setMostrarSnackbar(false);
-                }}
-            >
-                <Alert className={styles.avisoAlerta} severity={tipoAlerta} variant="filled" onClose={() => setMostrarSnackbar(false)}>
-                    {mensajeAlerta}
-                </Alert>
-            </Snackbar>
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </div>
     );
 }

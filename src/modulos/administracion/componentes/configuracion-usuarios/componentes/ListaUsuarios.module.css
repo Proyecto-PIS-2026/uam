@@ -11,21 +11,21 @@
     flex-direction: column;
     width: 100%;
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-panel);
     overflow: hidden;
-    background-color: white;
+    background-color: var(--color-surface);
 }
 
 .encabezado {
     display: grid;
     grid-template-columns: var(--columnas-usuarios);
-    gap: 1rem;
+    gap: var(--espacio-secciones);
     align-items: center;
     padding: var(--espacio-controles) var(--padding-panel);
     border-bottom: 2px solid var(--color-primary);
     background-color: var(--color-primary-soft);
     color: var(--color-secondary);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
     box-sizing: border-box;
 }
@@ -38,16 +38,16 @@
     display: grid;
     grid-template-columns: var(--columnas-usuarios);
     align-items: center;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
     width: 100%;
     min-height: 3.25rem;
     padding: 0.5rem 1rem;
     border: 0;
     border-bottom: 1px solid var(--color-border);
-    background-color: white;
+    background-color: var(--color-surface);
     color: var(--color-foreground);
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: var(--tamano-texto-secundario);
     text-align: left;
     cursor: pointer;
     box-sizing: border-box;
@@ -112,7 +112,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.25rem;
+    gap: var(--espacio-textos);
 }
 
 .botonEditar {
@@ -120,14 +120,14 @@
 }
 
 .botonEliminar {
-    color: #d32f2f !important;
+    color: var(--color-danger) !important;
 }
 
 .sinResultados {
     margin: 0;
     padding: var(--espacio-secciones) 0;
     color: var(--color-muted);
-    font-size: 0.9rem;
+    font-size: var(--tamano-texto-secundario);
     text-align: center;
 }
 
@@ -143,7 +143,7 @@
 
 .paginacion :global(.MuiPaginationItem-root.Mui-selected) {
     background-color: var(--color-primary);
-    color: white;
+    color: var(--color-surface);
 }
 
 .paginacion :global(.MuiPaginationItem-root.Mui-selected:hover) {
@@ -161,7 +161,7 @@
 .modalTitulo {
     padding: var(--padding-panel) !important;
     color: var(--color-secondary);
-    font-size: 1.1rem !important;
+    font-size: var(--tamano-titulo-seccion) !important;
 }
 
 .modalContenido {
@@ -187,7 +187,7 @@
 .textoConfirmacion {
     margin: 0;
     color: var(--color-foreground);
-    font-size: 0.9rem;
+    font-size: var(--tamano-texto-secundario);
     line-height: 1.4;
 }
 
@@ -197,9 +197,9 @@
     }
 
     .encabezado {
-        gap: 0.75rem;
+        gap: var(--espacio-controles);
         padding: var(--espacio-controles);
-        font-size: 0.75rem;
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .encabezado span:nth-child(2),
@@ -212,10 +212,10 @@
     }
 
     .fila {
-        gap: 0.75rem;
+        gap: var(--espacio-controles);
         min-height: 3rem;
         padding: var(--espacio-controles);
-        font-size: 0.8rem;
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .username {

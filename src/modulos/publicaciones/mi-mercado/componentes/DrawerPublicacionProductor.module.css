@@ -1,7 +1,7 @@
 .drawer.drawer {
     display: flex;
     flex-direction: column;
-    width: min(26rem, 100vw);
+    width: min(var(--ancho-drawer-web), 100vw);
     height: 100dvh;
     max-height: 100dvh;
     border-radius: 0;
@@ -23,14 +23,14 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.875rem 1.25rem 1rem;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
     border-bottom: 1px solid var(--color-border);
 }
 
 .titulo {
     margin: 0;
-    font-size: 1.375rem;
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
     line-height: 1.3;
 }
@@ -43,7 +43,7 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--color-secondary);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     color: var(--color-secondary);
     cursor: pointer;
@@ -63,16 +63,16 @@
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior-y: contain;
-    padding: 1rem;
+    padding: var(--padding-panel);
     scrollbar-width: thin;
-    scrollbar-color: #a8b8ac transparent;
+    scrollbar-color: var(--color-border) transparent;
 }
 
 .bloqueSuperior {
     display: flex;
     height: auto;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
 }
 
 .marcoImagen {
@@ -80,7 +80,7 @@
     height: clamp(11rem, 26dvh, 15rem);
     padding: 0;
     flex-shrink: 0;
-    border-radius: 1rem;
+    border-radius: var(--radio-panel);
     overflow: hidden;
     background: transparent;
 }
@@ -91,7 +91,7 @@
     height: 100%;
     overflow: hidden;
     border-radius: inherit;
-    box-shadow: none;
+    box-shadow: var(--sombra-panel);
     background-color: var(--color-primary-soft);
 }
 
@@ -107,9 +107,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
+    gap: var(--espacio-textos);
     color: var(--color-secondary);
-    font-size: 0.9rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 500;
 }
 
@@ -121,14 +121,14 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     width: 100%;
 }
 
 .nombrePublicacion {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--espacio-textos);
     min-width: 0;
     text-align: left;
 }
@@ -153,7 +153,7 @@
 .precio {
     align-self: center;
     color: var(--color-secondary);
-    font-size: 2.25rem;
+    font-size: calc(var(--tamano-texto) * 2);
     font-weight: 700;
     line-height: 1.1;
     white-space: nowrap;
@@ -167,7 +167,7 @@
     max-width: 100%;
     padding: 0;
     color: var(--color-secondary);
-    font-size: 1.125rem;
+    font-size: var(--tamano-texto);
     font-weight: 500;
     line-height: 1.25;
     white-space: normal;
@@ -179,9 +179,9 @@
     flex-direction: column;
     min-width: 0;
     gap: 0;
-    margin: 1rem 0 0;
+    margin: var(--espacio-secciones) 0 0;
     border: 1px solid var(--color-primary-soft);
-    border-radius: 0.85rem;
+    border-radius: var(--radio-panel);
     overflow: hidden;
 }
 
@@ -189,8 +189,8 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
-    gap: 1rem;
-    padding: 0.65rem 1rem;
+    gap: var(--espacio-secciones);
+    padding: var(--espacio-controles) var(--espacio-secciones);
     border: none;
 }
 
@@ -205,14 +205,14 @@
 .nombreInformacion,
 .valorInformacion {
     min-width: 0;
-    font-size: 1rem;
-    line-height: 1.4;
+    font-size: var(--tamano-texto);
+    line-height: var(--interlineado-texto);
     white-space: normal;
     overflow-wrap: anywhere;
 }
 
 .nombreInformacion {
-    color: black;
+    color: var(--color-foreground);
     font-weight: 400;
 }
 
@@ -240,9 +240,9 @@
 .modalFoto.modalFoto {
     position: relative;
     width: min(50rem, calc(100vw - 2rem));
-    margin: 1rem;
+    margin: var(--espacio-secciones);
     padding: 0;
-    border-radius: 1rem;
+    border-radius: var(--radio-panel);
     overflow: hidden;
     background-color: var(--color-surface);
 }
@@ -275,23 +275,23 @@
 }
 
 .ubicaciones {
-    margin-top: 1rem;
+    margin-top: var(--espacio-secciones);
     margin-bottom: 0;
     min-width: 0;
 }
 
 .tituloUbicaciones {
-    margin: 0 0 0.5rem;
-    color: black;
-    font-size: 1rem;
+    margin: 0 0 var(--espacio-inline);
+    color: var(--color-foreground);
+    font-size: var(--tamano-titulo-panel);
     font-weight: 600;
-    line-height: 1.4;
+    line-height: var(--interlineado-texto);
 }
 
 .listaUbicaciones {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: var(--espacio-controles);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -300,11 +300,11 @@
 .ubicacion {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     min-height: 5rem;
-    padding: 0.75rem;
+    padding: var(--espacio-controles);
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-panel);
     background-color: var(--color-surface);
     color: var(--color-secondary);
     text-decoration: none;
@@ -339,20 +339,20 @@
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: var(--espacio-textos);
     min-width: 0;
     overflow-wrap: anywhere;
 }
 
 .nombreUbicacion {
-    font-size: 0.95rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
 }
 
 .descripcionUbicacion {
     margin: 0;
     color: var(--color-muted);
-    font-size: 0.85rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .flechaUbicacion {
@@ -364,7 +364,7 @@
         width: 100%;
         height: auto;
         max-height: 90dvh;
-        border-radius: 1.5rem 1.5rem 0 0;
+        border-radius: var(--radio-panel) var(--radio-panel) 0 0;
     }
 
     .tarjeta {
@@ -391,7 +391,7 @@
         left: 0;
         right: 0;
         height: 6rem;
-        border-radius: 1.5rem 1.5rem 0.75rem 0.75rem;
+        border-radius: var(--radio-panel) var(--radio-panel) var(--radio-panel) var(--radio-panel);
         background: var(--color-primary-soft);
     }
 
@@ -403,14 +403,14 @@
         left: 4rem;
         right: 0;
         height: 3.5rem;
-        border-radius: 0.75rem;
+        border-radius: var(--radio-panel);
         background: var(--color-primary-soft);
     }
 
     .bloqueSuperior {
         height: 11rem;
         flex-direction: row;
-        gap: 0.5rem;
+        gap: var(--espacio-inline);
     }
 
     .marcoImagen {
@@ -423,13 +423,13 @@
         flex-shrink: 0;
         align-self: center;
         border-radius: 50%;
-        border: 0.4rem solid white;
-        box-shadow: 0 0.5rem 1rem #0002;
+        border: 0.4rem solid var(--color-surface);
+        box-shadow: var(--sombra-panel);
     }
 
     .sinFoto {
-        gap: 0.15rem;
-        font-size: 0.75rem;
+        gap: var(--espacio-textos);
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .iconoFoto {
@@ -450,7 +450,7 @@
     .nombrePublicacion {
         height: 6rem;
         justify-content: center;
-        padding-right: 1rem;
+        padding-right: var(--espacio-secciones);
         gap: 0;
     }
 
@@ -469,9 +469,9 @@
         box-sizing: border-box;
         align-items: center;
         justify-content: flex-end;
-        padding-right: 1rem;
-        padding-bottom: 0.5rem;
-        font-size: 2rem;
+        padding-right: var(--espacio-secciones);
+        padding-bottom: var(--espacio-inline);
+        font-size: calc(var(--tamano-texto) * 2);
         font-weight: 650;
         line-height: inherit;
     }
@@ -479,17 +479,17 @@
     .precioSinValor {
         width: auto;
         max-width: 100%;
-        font-size: clamp(0.875rem, 4.3vw, 1.25rem);
+        font-size: clamp(var(--tamano-texto-secundario), 4.3vw, var(--tamano-titulo-seccion));
         white-space: nowrap;
     }
 
     .bloqueMedio {
-        margin-top: 0.75rem;
+        margin-top: var(--espacio-controles);
     }
 
     .modalFoto.modalFoto {
         width: min(32rem, calc(100vw - 1.5rem));
-        margin: 0.75rem;
+        margin: var(--espacio-controles);
     }
 
     .fotoAmpliada {

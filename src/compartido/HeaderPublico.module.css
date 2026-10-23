@@ -4,7 +4,7 @@
     width: 100%;
     border-bottom: 1px solid var(--color-border);
     background-color: var(--color-surface);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+    box-shadow: var(--sombra-panel);
 }
 
 .contenido {
@@ -16,7 +16,7 @@
     padding: 0 var(--padding-exterior-pagina);
     align-items: center;
     justify-content: flex-start;
-    gap: 2rem;
+    gap: var(--espacio-amplio);
 }
 
 .marca {
@@ -35,7 +35,7 @@
 .navegacion {
     display: flex;
     align-items: stretch;
-    gap: 0.25rem;
+    gap: var(--espacio-textos);
     align-self: stretch;
     margin-left: auto;
 }
@@ -90,7 +90,7 @@
     padding: 0.35rem;
     flex-direction: column;
     border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     box-shadow: 0 8px 20px rgb(0 0 0 / 12%);
 }
@@ -136,7 +136,7 @@
     align-items: center;
     padding-inline: 0.75rem;
     color: var(--color-muted-foreground);
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
@@ -289,7 +289,7 @@
         padding: 0.75rem;
         align-items: center;
         color: var(--color-foreground);
-        font-size: 0.9rem;
+        font-size: var(--tamano-texto-secundario);
         font-weight: 500;
         text-decoration: none;
         transition:
@@ -307,7 +307,7 @@
             justify-content: space-between;
             background: transparent;
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: var(--tamano-texto-secundario);
             font-weight: 500;
             text-align: left;
             cursor: pointer;
@@ -341,7 +341,7 @@
 
 .botonPublicaciones {
     width: 100%;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
     justify-content: space-between;
     padding: 0 0.75rem;
     border: 0;
@@ -411,7 +411,7 @@
     padding: 0.65rem 0.75rem;
     color: var(--color-muted-foreground);
     font-family: inherit;
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 500;
     text-decoration: none;
     transition:

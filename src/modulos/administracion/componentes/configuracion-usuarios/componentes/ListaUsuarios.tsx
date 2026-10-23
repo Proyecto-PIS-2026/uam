@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Pagination from "@mui/material/Pagination";
 import IconButton from "@mui/material/IconButton";
@@ -9,8 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -23,12 +22,6 @@ interface ListaUsuariosProps {
     usuarioSeleccionadoId: number | null;
     onSeleccionar?: (usuario: UsuarioParaModificar) => void;
     onEliminar?: (usuario: UsuarioParaModificar) => void | Promise<void>;
-}
-
-interface Notificacion {
-    mensaje: string;
-    tipo: "error" | "success";
-    key: number;
 }
 
 function subscribeMediaQuery(callback: () => void) {
@@ -74,10 +67,9 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
     const [idsEliminados, setIdsEliminados] = useState<number[]>([]);
     const [pagina, setPagina] = useState(1);
     const [usuarioAEliminar, setUsuarioAEliminar] = useState<UsuarioParaModificar | null>(null);
-    const [notificacion, setNotificacion] = useState<Notificacion | null>(null);
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [eliminando, setEliminando] = useState(false);
 
-    const contadorNotificacion = useRef(0);
     const esMobile = useEsMobileSSR();
 
     const usuariosPorPagina = esMobile ? 7 : 8;
@@ -88,11 +80,6 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
     const paginaActual = Math.min(pagina, Math.max(1, cantidadPaginas));
     const indiceInicio = (paginaActual - 1) * usuariosPorPagina;
     const usuariosPagina = usuariosVisibles.slice(indiceInicio, indiceInicio + usuariosPorPagina);
-
-    function mostrarNotificacion(mensaje: string, tipo: "error" | "success") {
-        contadorNotificacion.current += 1;
-        setNotificacion({ mensaje, tipo, key: contadorNotificacion.current });
-    }
 
     function cambiarPagina(_: React.ChangeEvent<unknown>, nuevaPagina: number) {
         setPagina(nuevaPagina);
@@ -136,9 +123,9 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
         try {
             await onEliminar(usuarioAEliminar);
             setIdsEliminados((prev) => [...prev, idAEliminar]);
-            mostrarNotificacion(`El usuario ${usuarioAEliminar.username} fue eliminado correctamente.`, "success");
+            notificar(`El usuario ${usuarioAEliminar.username} fue eliminado correctamente.`, "success");
         } catch (error) {
-            mostrarNotificacion(error instanceof Error ? error.message : `Ocurrió un error al intentar eliminar a ${usuarioAEliminar.username}.`, "error");
+            notificar(error instanceof Error ? error.message : `Ocurrió un error al intentar eliminar a ${usuarioAEliminar.username}.`, "error");
         } finally {
             setUsuarioAEliminar(null);
             setEliminando(false);
@@ -159,7 +146,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                     </div>
 
                     {usuariosPagina.map((usuario) => (
-                        <div key={usuario.id} className={`${styles.fila} ${usuario.id === usuarioSeleccionadoId ? styles.seleccionada : ""}`} onClick={() => 
+                        <div key={usuario.id} className={`${styles.fila} ${usuario.id === usuarioSeleccionadoId ? styles.seleccionada : ""}`} onClick={() =>
                             manejarSeleccionar(usuario)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") manejarSeleccionar(usuario) }}
                         >
                             <span className={styles.username}>
@@ -167,7 +154,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                                 {usuario.solicitoRestablecimiento && (
                                     <span
                                         title="El usuario solicitó restablecer su contraseña"
-                                        className="ml-2 inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900"
+                                        className="ml-2 inline-block rounded bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning"
                                     >
                                         Restablecimiento solicitado
                                     </span>
@@ -211,13 +198,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                 </DialogActions>
             </Dialog>
 
-            <Snackbar key={notificacion?.key} open={Boolean(notificacion)} autoHideDuration={4000} onClose={() => setNotificacion(null)} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
-                {notificacion ? (
-                    <Alert onClose={() => setNotificacion(null)} severity={notificacion.tipo} variant="filled" sx={{ width: "100%" }}>
-                        {notificacion.mensaje}
-                    </Alert>
-                ) : undefined}
-            </Snackbar>
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </div>
     );
 }

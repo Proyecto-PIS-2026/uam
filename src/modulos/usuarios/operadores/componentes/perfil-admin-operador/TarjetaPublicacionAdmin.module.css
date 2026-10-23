@@ -3,12 +3,12 @@
     width: 100%;
     min-width: 0;
     gap: 0.875rem;
-    padding: 0.75rem;
+    padding: var(--espacio-controles);
     border: 1px solid var(--color-border);
-    border-radius: 0.875rem;
+    border-radius: var(--radio-panel);
     background-color: var(--color-surface);
     color: var(--color-foreground);
-    box-shadow: 0 2px 5px rgb(0 0 0 / 8%);
+    box-shadow: var(--sombra-panel);
     text-align: left;
     font: inherit;
     cursor: pointer;
@@ -26,7 +26,7 @@
     flex-shrink: 0;
     align-self: center;
     overflow: hidden;
-    border-radius: 0.65rem;
+    border-radius: var(--radio-control);
     background-color: var(--color-primary-soft);
 }
 
@@ -41,8 +41,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #5f5f5f;
-    font-size: 0.75rem;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 500;
 }
 
@@ -76,7 +76,7 @@
     color: var(--color-foreground);
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 1rem;
+    font-size: var(--tamano-texto);
     font-weight: 700;
     line-height: 1.2;
 }
@@ -96,7 +96,7 @@
     display: grid;
     width: 100%;
     min-width: 0;
-    padding-right: 0.25rem;
+    padding-right: var(--espacio-textos);
     align-items: center;
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -111,7 +111,7 @@
 }
 
 .etiqueta {
-    color: #5f5f5f;
+    color: var(--color-muted);
     font-size: 0.7rem;
     line-height: 1;
 }
@@ -123,7 +123,7 @@
     padding: 0 0.6rem;
     align-items: center;
     justify-content: center;
-    border-radius: 0.45rem;
+    border-radius: var(--radio-control);
     background-color: var(--color-primary-soft);
     color: var(--color-primary);
     font-size: 0.8rem;
@@ -136,7 +136,7 @@
     width: 100%;
     min-width: 0;
     height: 100%;
-    padding: 0 0.5rem;
+    padding: 0 var(--espacio-inline);
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -154,7 +154,7 @@
 
 .consultarPrecio {
     color: var(--color-primary);
-    font-size: 0.75rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
     line-height: 1.2;
     text-align: center;
@@ -177,7 +177,7 @@
 
 @media (max-width: 380px) {
     .tarjeta {
-        gap: 0.5rem;
+        gap: var(--espacio-inline);
         padding: 0.6rem;
     }
 
@@ -233,13 +233,13 @@
 
 @media (min-width: 381px) and (max-width: 419px) {
     .tarjeta {
-        gap: 0.75rem;
+        gap: var(--espacio-controles);
     }
 }
 
 @media (min-width: 420px) and (max-width: 700px) {
     .tarjeta {
-        gap: 1rem;
+        gap: var(--espacio-secciones);
         padding: 0.875rem;
     }
 
@@ -257,19 +257,19 @@
     }
 
     .informacionMobile {
-        padding-right: 0.25rem;
+        padding-right: var(--espacio-textos);
     }
 
     .contenedorPrecio {
-        padding: 0 0.75rem;
+        padding: 0 var(--espacio-controles);
     }
 
     .precio {
-        font-size: 1.25rem;
+        font-size: var(--tamano-titulo-seccion);
     }
 
     .presentacionPrecio {
-        font-size: 0.75rem;
+        font-size: var(--tamano-texto-auxiliar);
     }
 }
 
@@ -280,8 +280,8 @@
         gap: 0;
         padding: 0;
         overflow: hidden;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgb(26 26 26 / 5%);
+        border-radius: var(--radio-panel);
+        box-shadow: var(--sombra-panel);
         transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     }
 
@@ -304,9 +304,9 @@
     }
 
     .sinFoto {
-        gap: 6px;
+        gap: var(--espacio-inline);
         color: var(--color-secondary);
-        font-size: 0.75rem;
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .iconoFoto {
@@ -323,12 +323,12 @@
     }
 
     .contenido {
-        padding: 14px 12px 12px;
+        padding: var(--espacio-secciones) var(--espacio-controles) var(--espacio-controles);
     }
 
     .encabezado {
         display: block;
-        padding-bottom: 14px;
+        padding-bottom: var(--espacio-secciones);
         border-bottom: 0;
     }
 
@@ -337,16 +337,16 @@
         text-overflow: initial;
         white-space: normal;
         overflow-wrap: anywhere;
-        font-size: 1.0625rem;
+        font-size: var(--tamano-titulo-panel);
     }
 
     .informacionWeb {
         display: block;
-        margin: 6px 0 0;
+        margin: var(--espacio-inline) 0 0;
         color: var(--color-secondary);
-        font-size: 0.8125rem;
+        font-size: var(--tamano-texto-secundario);
         font-weight: 500;
-        line-height: 1.4;
+        line-height: var(--interlineado-texto);
         overflow-wrap: anywhere;
     }
 
@@ -365,7 +365,7 @@
         width: 100%;
         min-width: 0;
         height: auto;
-        padding: 12px 0 0;
+        padding: var(--espacio-controles) 0 0;
         flex: 0 1 auto;
         align-items: flex-end;
         border-top: 1px solid var(--color-border);
@@ -381,15 +381,33 @@
 
     .consultarPrecio {
         color: var(--color-primary);
-        font-size: 1rem;
+        font-size: var(--tamano-texto);
         font-weight: 700;
     }
 
     .presentacionPrecio {
-        margin-top: 4px;
+        margin-top: var(--espacio-textos);
         color: var(--color-muted);
-        font-size: 0.75rem;
+        font-size: var(--tamano-texto-auxiliar);
         text-align: right;
     }
 
+}
+.estado {
+    flex-shrink: 0;
+    border-radius: 9999px;
+    padding: var(--espacio-textos) var(--espacio-inline);
+    font-size: var(--tamano-texto-auxiliar);
+    font-weight: 700;
+    line-height: var(--interlineado-texto);
+}
+
+.estadoDisponible {
+    background: var(--color-primary-soft);
+    color: var(--color-secondary);
+}
+
+.estadoOculto {
+    background: var(--color-surface-muted);
+    color: var(--color-muted);
 }

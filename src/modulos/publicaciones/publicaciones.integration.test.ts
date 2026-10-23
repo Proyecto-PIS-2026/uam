@@ -102,7 +102,7 @@ function ejecutarYEsperarNotificacion(cliente: Client, payload: string, ejecutar
     });
 }
 
-describe("publicaciones: SQL paginado, versiones y notificaciones con PostgreSQL real", () => {
+describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQL real", () => {
     let fixture: Fixture | undefined;
     let cliente: Client | undefined;
 
@@ -132,20 +132,17 @@ describe("publicaciones: SQL paginado, versiones y notificaciones con PostgreSQL
         return cliente;
     }
 
-    it("pagina 30 + 5 sin duplicados y excluye bajas, no disponibles, contratos vencidos y productores", async () => {
+    it("devuelve las 35 coincidencias sin recortes y excluye bajas, no disponibles, contratos vencidos y productores", async () => {
         const consulta = { especie: fixture!.nombreEspecie, orden: "precioAsc" as const };
-        const primera = await consultarPublicaciones(consulta);
-        const segunda = await consultarPublicaciones({ ...consulta, pagina: 2 });
-        const fueraDeRango = await consultarPublicaciones({ ...consulta, pagina: 99 });
-        expect(primera).toMatchObject({ total: 35, pagina: 1, tamanoPagina: 30 });
-        expect(segunda).toMatchObject({ total: 35, pagina: 2, tamanoPagina: 30 });
-        expect(primera.publicaciones.map((publicacion) => publicacion.id)).toEqual(fixture!.visibles.slice(0, 30));
-        expect(segunda.publicaciones.map((publicacion) => publicacion.id)).toEqual(fixture!.visibles.slice(30));
-        expect(fueraDeRango.publicaciones).toEqual(segunda.publicaciones);
-        expect(fueraDeRango.pagina).toBe(2);
-        expect(primera.totalCatalogo).toBeGreaterThanOrEqual(35);
-        expect(primera.publicaciones.every((publicacion) => publicacion.tipoPublicacion === "OPERADOR")).toBe(true);
-        expect(primera.opciones).toContainEqual({ especie: fixture!.nombreEspecie, variedad: "Criollo", presentacion: "Caja", categoria: "Primera", calibre: "Mediano" });
+        const resultado = await consultarPublicaciones(consulta);
+        expect(resultado.total).toBe(35);
+        expect(resultado.publicaciones).toHaveLength(35);
+        expect(resultado.publicaciones.map((publicacion) => publicacion.id)).toEqual(fixture!.visibles);
+        expect(resultado).not.toHaveProperty("pagina");
+        expect(resultado).not.toHaveProperty("tamanoPagina");
+        expect(resultado.totalCatalogo).toBeGreaterThanOrEqual(35);
+        expect(resultado.publicaciones.every((publicacion) => publicacion.tipoPublicacion === "OPERADOR")).toBe(true);
+        expect(resultado.opciones).toContainEqual({ especie: fixture!.nombreEspecie, variedad: "Criollo", presentacion: "Caja", categoria: "Primera", calibre: "Mediano" });
     });
 
     it("ejecuta búsqueda sin tildes, filtros numéricos y orden descendente en SQL real", async () => {

@@ -77,7 +77,7 @@ export default function ListadoOperadores({ operadores, puedeGestionar = false }
             />
 
             {operadoresFiltrados.length === 0 ? (
-                <p role="status" className="py-8 text-center text-muted">
+                <p role="status" className="py-[var(--espacio-amplio)] text-center text-muted">
                     {operadores.length === 0 ? "No hay operadores disponibles." : "No se encontraron operadores que coincidan con la búsqueda y la nave seleccionada."}
                 </p>
             ) : (

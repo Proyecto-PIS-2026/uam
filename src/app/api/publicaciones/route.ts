@@ -14,6 +14,9 @@ export async function GET() {
 	}
 	try {
 		const sesion = await obtenerSesion();
+		if (sesion?.rol === "PRODUCTOR") {
+			return NextResponse.json({ errores: ["No tiene permisos para consultar el catálogo de Operadores."] }, { status: 403 });
+		}
 		const operadoresAutorizados = sesion?.rol === "OPERADOR"
 			? [await obtenerOperadorAutorizado()]
 			: db.orm.public.Operador.all();

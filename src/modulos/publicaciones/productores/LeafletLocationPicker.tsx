@@ -33,22 +33,34 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
     const mapaInstanciaRef = useRef<LeafletMap | null>(null);
     const marcadorRef = useRef<CircleMarker | null>(null);
     const seleccionarCoordenadasRef = useRef<((latitud: number, longitud: number) => Promise<void>) | null>(null);
+    const solicitudBusquedaRef = useRef(0);
     const [seleccion, setSeleccion] = useState<UbicacionSeleccionada | null>(coordenadas);
     const [error, setError] = useState("");
     const [busqueda, setBusqueda] = useState("");
     const [resultados, setResultados] = useState<ResultadoBusqueda[]>([]);
     const [buscando, setBuscando] = useState(false);
+    const latitudInicial = coordenadas?.latitud ?? null;
+    const longitudInicial = coordenadas?.longitud ?? null;
+    const departamentoInicial = coordenadas?.departamento ?? "";
+    const nombreLugarInicial = coordenadas?.nombreLugar ?? null;
 
     useEffect(() => {
         if (!abierto || !mapaRef.current) return;
         const elementoMapa = mapaRef.current;
+        const inicial = latitudInicial !== null && longitudInicial !== null
+            ? { latitud: latitudInicial, longitud: longitudInicial, departamento: departamentoInicial, nombreLugar: nombreLugarInicial }
+            : null;
         let activo = true;
+        let solicitudSeleccion = 0;
         let temporizadorTamano: ReturnType<typeof setTimeout> | undefined;
+        setSeleccion(inicial);
         setError("");
+        setBusqueda("");
+        setResultados([]);
+        setBuscando(false);
 
         void import("leaflet").then((leaflet) => {
             if (!activo || !elementoMapa.isConnected) return;
-            const inicial = coordenadas;
             const centro: [number, number] = inicial ? [inicial.latitud, inicial.longitud] : CENTRO_URUGUAY;
             const mapa = leaflet.map(elementoMapa).setView(centro, inicial ? 14 : 6);
             mapaInstanciaRef.current = mapa;
@@ -60,11 +72,17 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
             }, 250);
 
             const marcar = async (latitud: number, longitud: number) => {
+                const solicitud = ++solicitudSeleccion;
+                solicitudBusquedaRef.current += 1;
+                setBuscando(false);
+                setResultados([]);
+                setSeleccion(null);
                 setError("");
                 try {
                     const respuesta = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitud)}&lon=${encodeURIComponent(longitud)}&zoom=18&addressdetails=1`, { headers: { "Accept-Language": "es" } });
                     if (!respuesta.ok) throw new Error("No se pudo identificar la ubicación.");
                     const datos = await respuesta.json() as { display_name?: string; address?: { country_code?: string; state?: string; county?: string; city?: string; town?: string; village?: string; suburb?: string; neighbourhood?: string; road?: string } };
+                    if (!activo || solicitud !== solicitudSeleccion) return;
                     if (datos.address?.country_code?.toLowerCase() !== "uy") throw new Error("La ubicación debe estar dentro de Uruguay.");
                     const departamento = datos.address?.state ?? datos.address?.county;
                     if (!departamento) throw new Error("No se pudo identificar el departamento.");
@@ -74,6 +92,7 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
                     if (marcadorRef.current) marcadorRef.current.setLatLng([latitud, longitud]);
                     else marcadorRef.current = leaflet.circleMarker([latitud, longitud], { radius: 8, color: "#176b58", fillColor: "#176b58", fillOpacity: 0.9 }).addTo(mapa);
                 } catch (razon) {
+                    if (!activo || solicitud !== solicitudSeleccion) return;
                     setSeleccion(null);
                     setError(razon instanceof Error ? razon.message : "No se pudo identificar la ubicación.");
                 }
@@ -88,18 +107,20 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
 
         return () => {
             activo = false;
+            solicitudBusquedaRef.current += 1;
             if (temporizadorTamano !== undefined) clearTimeout(temporizadorTamano);
             marcadorRef.current = null;
             seleccionarCoordenadasRef.current = null;
             mapaInstanciaRef.current?.remove();
             mapaInstanciaRef.current = null;
         };
-    }, [abierto, coordenadas]);
+    }, [abierto, latitudInicial, longitudInicial, departamentoInicial, nombreLugarInicial]);
 
     async function buscarLugar(evento: React.FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         const consulta = busqueda.trim();
         if (!consulta) return;
+        const solicitud = ++solicitudBusquedaRef.current;
         setBuscando(true);
         setError("");
         try {
@@ -108,13 +129,15 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
             });
             if (!respuesta.ok) throw new Error("No se pudo buscar el lugar.");
             const datos = await respuesta.json() as ResultadoBusqueda[];
+            if (solicitud !== solicitudBusquedaRef.current) return;
             setResultados(datos);
             if (datos.length === 0) setError("No se encontraron lugares para esa búsqueda.");
         } catch (razon) {
+            if (solicitud !== solicitudBusquedaRef.current) return;
             setResultados([]);
             setError(razon instanceof Error ? razon.message : "No se pudo buscar el lugar.");
         } finally {
-            setBuscando(false);
+            if (solicitud === solicitudBusquedaRef.current) setBuscando(false);
         }
     }
 

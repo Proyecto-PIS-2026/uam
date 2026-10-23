@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
@@ -18,39 +19,50 @@ export default function FormularioInicioSesion() {
     const [modalRecuperacionAbierto, cambiarModalRecuperacionAbierto] = useState(false);
     const [usuarioRecuperacion, cambiarUsuarioRecuperacion] = useState("");
     const [errorRecuperacion, cambiarErrorRecuperacion] = useState("");
-    const [mensajeRecuperacion, cambiarMensajeRecuperacion] = useState("");
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [solicitudPendiente, cambiarSolicitudPendiente] = useState(false);
 
     function abrirModalRecuperacion() {
         cambiarErrorRecuperacion("");
-        cambiarMensajeRecuperacion("");
+        cerrarNotificacion();
         cambiarModalRecuperacionAbierto(true);
     }
 
     function cerrarModalRecuperacion() {
         cambiarErrorRecuperacion("");
-        cambiarMensajeRecuperacion("");
         cambiarModalRecuperacionAbierto(false);
     }
 
     async function aceptarSolicitudRecuperacion() {
+        if (solicitudPendiente) return;
         if (!usuarioRecuperacion.trim()) {
             cambiarErrorRecuperacion("Ingresá tu nombre de usuario para solicitar la recuperación.");
             return;
         }
 
         cambiarSolicitudPendiente(true);
-        const resultado = await solicitarRecuperacion(usuarioRecuperacion);
-        cambiarSolicitudPendiente(false);
-        cambiarErrorRecuperacion(resultado.error ?? "");
-        cambiarMensajeRecuperacion(resultado.exito ?? "");
+        cambiarErrorRecuperacion("");
+        cerrarNotificacion();
+        try {
+            const resultado = await solicitarRecuperacion(usuarioRecuperacion);
+            if (resultado.tipoError === "operacion" && resultado.error) {
+                notificar(resultado.error, "error");
+            } else {
+                cambiarErrorRecuperacion(resultado.error ?? "");
+            }
+            if (resultado.exito) notificar(resultado.exito, "success");
+        } catch {
+            notificar("No se pudo registrar la solicitud. Intentá nuevamente.", "error");
+        } finally {
+            cambiarSolicitudPendiente(false);
+        }
     }
 
     return (
         <>
             <form
                 action={accion}
-                className="w-full max-w-md secciones-pagina rounded-lg bg-[var(--color-surface)] p-[var(--padding-panel)] shadow-sm"
+                className="w-full max-w-md secciones-pagina rounded-[var(--radio-panel)] border border-border bg-surface p-[var(--padding-panel)] shadow-[var(--sombra-panel)]"
             >
                 <div>
                     <label htmlFor="identificador" className="mb-2 block text-sm font-medium">
@@ -64,7 +76,7 @@ export default function FormularioInicioSesion() {
                         autoComplete="username"
                         value={identificador}
                         onChange={(evento) => cambiarIdentificador(evento.target.value)}
-                        className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2"
+                        className="campo-formulario"
                     />
                 </div>
                 <div>
@@ -78,27 +90,27 @@ export default function FormularioInicioSesion() {
                             type={mostrarContrasena ? "text" : "password"}
                             required
                             autoComplete="current-password"
-                            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 pr-11"
+                            className="campo-formulario campo-formulario-con-icono"
                         />
                         <button
                             type="button"
                             aria-label={mostrarContrasena ? "Ocultar contraseña" : "Mostrar contraseña"}
                             onClick={() => cambiarMostrarContrasena((mostrar) => !mostrar)}
-                            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-black"
+                            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground"
                         >
                             {mostrarContrasena ? <VisibilityIcon /> : <VisibilityOffIcon />}
                         </button>
                     </div>
                 </div>
                 {estado.error && (
-                    <p role="alert" className="text-sm text-red-700">
+                    <p role="alert" className="text-sm text-danger">
                         {estado.error}
                     </p>
                 )}
                 <button
                     type="submit"
                     disabled={pendiente}
-                    className="w-full rounded-md bg-[var(--color-primary)] px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    className="boton-primario w-full"
                 >
                     {pendiente ? "Ingresando..." : "Iniciar sesión"}
                 </button>
@@ -122,9 +134,9 @@ export default function FormularioInicioSesion() {
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="titulo-recuperacion-contrasena"
-                        className="w-full max-w-md rounded-lg bg-[var(--color-surface)] p-[var(--padding-panel)] shadow-xl"
+                        className="w-full max-w-md rounded-[var(--radio-panel)] bg-surface p-[var(--padding-panel)] shadow-xl"
                     >
-                        <h2 id="titulo-recuperacion-contrasena" className="mb-3 text-xl font-semibold">
+                        <h2 id="titulo-recuperacion-contrasena" className="titulo-seccion mb-[var(--espacio-controles)]">
                             Solicitar recuperación de contraseña
                         </h2>
                         <p className="mb-4 text-sm text-[var(--color-foreground)]">
@@ -142,23 +154,18 @@ export default function FormularioInicioSesion() {
                                 cambiarUsuarioRecuperacion(evento.target.value);
                                 if (errorRecuperacion) cambiarErrorRecuperacion("");
                             }}
-                            className="mb-2 w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2"
+                            className="mb-2 campo-formulario"
                         />
                         {errorRecuperacion && (
-                            <p role="alert" className="mb-4 text-sm text-red-700">
+                            <p role="alert" className="mb-4 text-sm text-danger">
                                 {errorRecuperacion}
                             </p>
                         )}
-                        {mensajeRecuperacion && (
-                            <p role="status" className="mb-4 text-sm text-[var(--color-primary)]">
-                                {mensajeRecuperacion}
-                            </p>
-                        )}
-                        <div className="mx-auto flex w-full max-w-[15rem] items-center justify-between">
+                        <div className="flex w-full items-center justify-end gap-[var(--espacio-controles)]">
                             <button
                                 type="button"
                                 onClick={cerrarModalRecuperacion}
-                                className="rounded-md border border-[var(--color-border)] px-4 py-2 font-medium"
+                                className="boton-secundario"
                             >
                                 Cancelar
                             </button>
@@ -166,7 +173,7 @@ export default function FormularioInicioSesion() {
                                 type="button"
                                 onClick={aceptarSolicitudRecuperacion}
                                 disabled={solicitudPendiente}
-                                className="rounded-md bg-[var(--color-primary)] px-4 py-2 font-medium text-white"
+                                className="boton-primario"
                             >
                                 {solicitudPendiente ? "Enviando..." : "Aceptar"}
                             </button>
@@ -174,6 +181,7 @@ export default function FormularioInicioSesion() {
                     </div>
                 </div>
             )}
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </>
     );
 }

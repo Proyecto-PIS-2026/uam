@@ -33,17 +33,15 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
 
             <div className={styles.contenido}>
                 <div className={styles.encabezado}>
-                    <div className="flex w-full min-w-0 items-start justify-between gap-2">
+                    <div className="flex w-full min-w-0 items-start justify-between gap-[var(--espacio-inline)]">
                         <h3 className={`${styles.especie} min-w-0 flex-1`} title={nombreProducto}>{nombreProducto}</h3>
                         <span
                             className={`
-                                shrink-0 rounded-full
-                                px-2 py-0.5
-                                text-[10px] font-bold
+                                ${styles.estado}
                                 ${
                                     publicacion.disponible
-                                        ? "bg-primary-soft text-secondary"
-                                        : "bg-gray-100 text-muted"
+                                        ? styles.estadoDisponible
+                                        : styles.estadoOculto
                                 }
                             `}
                         >

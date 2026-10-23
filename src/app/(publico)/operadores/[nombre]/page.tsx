@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
-import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { decodificarParametroRuta } from "@/compartido/decodificar-parametro-ruta";
+import { redirigirProductorAMiMercado } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerOperadorActual } from "@/modulos/usuarios/operadores/operador-actual";
 
 import { obtenerPerfilPublicoOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-publico";
@@ -12,13 +13,14 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
     params: Promise<{ nombre: string; }>;
-    searchParams: Promise<{ origen?: string | string[] }>; 
+    searchParams: Promise<{ origen?: string | string[] }>;
 };
 
 export default async function Page({ params, searchParams }: PageProps) {
-    const sesion = await obtenerSesion();
-    // Next entrega los parámetros de ruta ya decodificados.
-    const { nombre } = await params;
+    const sesion = await redirigirProductorAMiMercado();
+    const { nombre: parametroNombre } = await params;
+    const nombre = decodificarParametroRuta(parametroNombre);
+    if (nombre === null || !nombre.trim()) notFound();
 
     const { origen } = await searchParams;
     const desdePublicaciones = origen === "publicaciones";
@@ -30,10 +32,6 @@ export default async function Page({ params, searchParams }: PageProps) {
         if (operador.nombreFantasia !== nombre) {
             redirect("/mi-mercado");
         }
-    }
-
-    if (!nombre.trim()) {
-        notFound();
     }
 
     const perfil = await obtenerPerfilPublicoOperador(nombre);

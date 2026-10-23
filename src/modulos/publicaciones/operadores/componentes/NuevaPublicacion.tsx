@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import Drawer from "@mui/material/Drawer";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
@@ -51,6 +52,7 @@ function CampoSelect({ nombre, valor, opciones, cambiar, deshabilitado = false }
 }
 
 export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, abierto, alCerrar, alCrear }: NuevaPublicacionProps) {
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
     const [datos, setDatos] = useState<Formulario>({
@@ -147,6 +149,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
     async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (guardando || leyendoFoto) return;
+        cerrarNotificacion();
         setErrores([]);
         setGuardando(true);
         try {
@@ -163,12 +166,14 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
             });
             const resultado = await respuesta.json();
             if (!respuesta.ok) {
-                setErrores(resultado.errores ?? ["No se pudo guardar la publicación."]);
+                const mensajes = resultado.errores ?? ["No se pudo guardar la publicación."];
+                if (respuesta.status === 400 || respuesta.status === 422) setErrores(mensajes);
+                else notificar(mensajes.join(" "), "error");
                 return;
             }
             alCrear(resultado.mensaje ?? "Publicación creada correctamente.");
         } catch {
-            setErrores(["No se pudo conectar con el servidor."]);
+            notificar("No se pudo conectar con el servidor.", "error");
         } finally {
             setGuardando(false);
         }
@@ -180,6 +185,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
     const deshabilitado = cargando || guardando || !catalogos;
 
     return (
+        <>
         <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} slotProps={{ paper: { className: drawerStyles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": "titulo-nueva-publicacion" } }}>
             <div className={drawerStyles.asa} aria-hidden="true" />
             <header className={drawerStyles.encabezado}>
@@ -280,5 +286,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                 </div>
             </form>
         </Drawer>
+        <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
+        </>
     );
 }

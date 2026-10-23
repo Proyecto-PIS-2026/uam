@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
@@ -25,6 +26,7 @@ export default function TarjetaPublicacion({
     alPrecioActualizado,
     alPublicacionEliminada,
 }: Props) {
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const recibido = { precio: Number(pub.precio ?? 0), version: pub.version, fecha: pub.fecha };
     const [confirmado, setConfirmado] = useState(recibido);
     const actual = confirmado.version > recibido.version ? confirmado : recibido;
@@ -47,6 +49,7 @@ export default function TarjetaPublicacion({
             setErrorPrecio("El precio debe ser un entero positivo de hasta 10 dígitos.");
             return;
         }
+        cerrarNotificacion();
         guardandoRef.current = true;
         setGuardandoPrecio(true);
         setGuardandoManual(true);
@@ -61,9 +64,9 @@ export default function TarjetaPublicacion({
             const precioActual = Number(resultado.precio ?? 0);
             setConfirmado({ precio: precioActual, version: resultado.version, fecha: resultado.fecha });
             alPrecioActualizado?.(pub.id, precioActual, resultado.fecha, resultado.version);
-            if (resultado.conflicto) setErrorPrecio("El precio cambió en otra sesión. Se muestra el valor actual. Revisalo antes de volver a guardar.");
+            if (resultado.conflicto) notificar("El precio cambió en otra sesión. Se muestra el valor actual. Revisalo antes de volver a guardar.", "warning");
         } catch (error) {
-            setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
+            notificar(error instanceof Error ? error.message : "No se pudo guardar el precio.", "error");
         } finally {
             guardandoRef.current = false;
             setGuardandoPrecio(false);
@@ -74,6 +77,7 @@ export default function TarjetaPublicacion({
 
     async function guardarIncrementos() {
         if (guardandoRef.current) return;
+        cerrarNotificacion();
         guardandoRef.current = true;
         setGuardandoPrecio(true);
         setErrorPrecio("");
@@ -92,14 +96,14 @@ export default function TarjetaPublicacion({
                 alPrecioActualizado?.(pub.id, precioActual, resultado.fecha, resultado.version);
                 if (resultado.conflicto) {
                     incrementosPendientesRef.current = 0;
-                    setErrorPrecio("La publicación cambió en otra sesión. Revisá el precio actualizado y volvé a intentar.");
+                    notificar("La publicación cambió en otra sesión. Revisá el precio actualizado y volvé a intentar.", "warning");
                 }
                 precioVisibleRef.current = precioActual + incrementosPendientesRef.current;
                 setOptimista(precioVisibleRef.current);
             }
         } catch (error) {
             incrementosPendientesRef.current = 0;
-            setErrorPrecio(error instanceof Error ? error.message : "No se pudo guardar el precio.");
+            notificar(error instanceof Error ? error.message : "No se pudo guardar el precio.", "error");
         } finally {
             guardandoRef.current = false;
             setGuardandoPrecio(false);
@@ -228,5 +232,5 @@ export default function TarjetaPublicacion({
             </div>
         </div>
     );
-    return contenido; 
+    return <>{contenido}<NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;
 }

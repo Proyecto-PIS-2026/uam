@@ -337,6 +337,10 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "Texto copiado al portapapeles",
     );
+    expect(screen.getByRole("status").closest('[role="dialog"]')).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(obtenerMensaje()).toHaveValue("Mi promoción de acelga");
   });
 
   it("CP-10: permite cerrar la ventana sin compartir", () => {

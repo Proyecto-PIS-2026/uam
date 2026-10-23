@@ -63,9 +63,13 @@ describe("iniciarSesion", () => {
         expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
     });
 
-    it.each(["ADMINISTRADOR", "OPERADOR", "PRODUCTOR"] as const)(
+    it.each([
+        ["ADMINISTRADOR", "/inicio"],
+        ["OPERADOR", "/mi-mercado"],
+        ["PRODUCTOR", "/mi-mercado/productor"],
+    ] as const)(
         "inicia la sesion de %s usando el rol de la base",
-        async (rol) => {
+        async (rol, destino) => {
             funcionesSimuladas.autenticarUsuario.mockResolvedValue({ usuarioId: 4, rol });
             const formulario = crearFormulario("  identificador  ", " clave con espacios ");
             formulario.set("rol", "ADMINISTRADOR");
@@ -77,7 +81,7 @@ describe("iniciarSesion", () => {
                 contrasena: " clave con espacios ",
             });
             expect(funcionesSimuladas.crearSesion).toHaveBeenCalledWith(4, rol);
-            expect(funcionesSimuladas.redirect).toHaveBeenCalledWith(rol === "OPERADOR" ? "/mi-mercado" : "/inicio");
+            expect(funcionesSimuladas.redirect).toHaveBeenCalledWith(destino);
         },
     );
 

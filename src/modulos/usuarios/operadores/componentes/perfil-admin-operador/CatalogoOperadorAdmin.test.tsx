@@ -265,7 +265,8 @@ describe("CatalogoOperadorAdmin", () => {
         });
         fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
 
-        await waitFor(() => expect(ultimasPropsDrawer().errorConsulta).toBe("La publicación no pertenece al operador seleccionado."));
+        expect(await screen.findByRole("alert")).toHaveTextContent("La publicación no pertenece al operador seleccionado.");
+        expect(ultimasPropsDrawer().errorConsulta).toBeUndefined();
         expect(ultimasPropsDrawer().abierto).toBe(true);
         expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
         expect(mocks.refresh).not.toHaveBeenCalled();

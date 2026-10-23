@@ -1,5 +1,7 @@
 "use client";
 
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
@@ -28,6 +30,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
         useState("");
 
     const [errores, setErrores] = useState<string[]>([]);
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
 
     function cancelar() {
@@ -42,6 +45,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
         if (guardando) return;
 
         setErrores([]);
+        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -66,9 +70,10 @@ export default function FormularioModificarProductor({ productor }: Props) {
                 error,
             );
 
-            setErrores([
+            notificar(
                 "No se pudieron guardar los cambios. Intentá de nuevo.",
-            ]);
+                "error",
+            );
         } finally {
             setGuardando(false);
         }
@@ -76,6 +81,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
 
     return (
         <div className={styles.pagina}>
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <div className={styles.contenedor}>
                 <button
                     type="button"

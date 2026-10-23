@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import FormularioModificarOperador from "./FormularioModificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
@@ -108,7 +108,7 @@ describe("FormularioModificarOperador", () => {
         expect(valorDe(elementoEn(numeros, 0))).toBe("105");
     });
 
-    it("no permite eliminar el único local y muestra el aviso", () => {
+    it("conserva el último local y avisa fuera de las validaciones del formulario", () => {
         renderizar();
 
         fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
@@ -116,6 +116,25 @@ describe("FormularioModificarOperador", () => {
         const alerta = screen.getByRole("alert");
         expect(alerta.textContent).toContain("Debe haber al menos un local.");
         expect(screen.getAllByLabelText("Número de local")).toHaveLength(1);
+        expect(valorDe(screen.getByLabelText("Número de local"))).toBe("022");
+        const formulario = screen.getByRole("button", { name: "Guardar cambios" }).closest("form")!;
+        expect(within(formulario).queryByRole("alert")).not.toBeInTheDocument();
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
+    });
+
+    it("permite cerrar y volver a mostrar el aviso al reintentar eliminar el último local", async () => {
+        renderizar();
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+        expect(screen.getByRole("alert")).toHaveTextContent("Debe haber al menos un local.");
+
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+        await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Debe haber al menos un local.");
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
+        expect(screen.getAllByLabelText("Número de local")).toHaveLength(1);
+        expect(valorDe(screen.getByLabelText("Número de local"))).toBe("022");
     });
 
     it("envía los datos modificados y vuelve al perfil cuando la modificación es válida", async () => {

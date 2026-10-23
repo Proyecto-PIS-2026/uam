@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import PreciosReferencia from "@/modulos/informacion-uam/precios-referencia/PreciosReferencia";
 import { obtenerPreciosReferencia, type ResultadoPreciosReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 
@@ -23,9 +24,9 @@ export default async function PaginaPreciosReferencia() {
                 {consulta ? (
                     <PreciosReferencia fechaRelevamiento={consulta.fechaRelevamiento} filas={consulta.filas} />
                 ) : (
-                    <section>
-                        <h1 className="text-2xl font-semibold">Precios de referencia</h1>
-                        <p role="status" className="mt-4">No hay precios de referencia disponibles en este momento.</p>
+                    <section className="secciones-pagina">
+                        <EncabezadoPagina titulo="Precios de referencia" subtitulo="Consulta los precios relevados de la UAM" />
+                        <p role="status" className="rounded-[var(--radio-panel)] border border-border bg-surface p-[var(--padding-panel)] text-sm text-muted">No hay precios de referencia disponibles en este momento.</p>
                     </section>
                 )}
             </div>

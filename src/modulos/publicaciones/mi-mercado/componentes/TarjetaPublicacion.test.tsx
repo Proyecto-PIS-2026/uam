@@ -21,7 +21,7 @@ vi.mock("next/image", async () => {
         }) => createElement("img", {src, alt, onLoad, onError, style})
     };
 });
-  
+
 function crearPublicacion(): Publicacion {
   return {
     id: 1,
@@ -709,6 +709,9 @@ describe("TarjetaPublicacion", () => {
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Editar precio" }), { key: "Enter" });
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("cambió en otra sesión"));
     expect(actualizarPrecio).toHaveBeenCalledExactlyOnceWith(1, 150, 37, 1);
+    expect(screen.getByText("$120")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByText("$120")).toBeInTheDocument();
   });
 

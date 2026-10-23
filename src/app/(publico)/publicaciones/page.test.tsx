@@ -56,19 +56,23 @@ describe("PaginaPublicaciones", () => {
         obtenerSesionMock.mockResolvedValue(null);
     });
 
-    it("redirige al operador antes de esperar los filtros o consultar las publicaciones", async () => {
-        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+    it.each([
+        { rol: "OPERADOR", destino: "/mi-mercado" },
+        { rol: "PRODUCTOR", destino: "/mi-mercado/productor" },
+    ] as const)("redirige a $rol antes de esperar los filtros o consultar las publicaciones", async ({ rol, destino }) => {
+        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
         const esperarParametros = vi.fn((resolver: (valor: { especie: string }) => void) => resolver({ especie: "Manzana" }));
         const searchParams = { then: esperarParametros } as unknown as Promise<{ especie: string }>;
 
         await expect(PaginaPublicaciones({ searchParams })).rejects.toThrow("NEXT_REDIRECT");
 
-        expect(redirectMock).toHaveBeenCalledWith("/mi-mercado");
+        expect(redirectMock).toHaveBeenCalledExactlyOnceWith(destino);
+        expect(obtenerSesionMock).toHaveBeenCalledOnce();
         expect(esperarParametros).not.toHaveBeenCalled();
         expect(consultarPublicacionesMock).not.toHaveBeenCalled();
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("conserva el catálogo público para la sesión %s", async (rol) => {
+    it.each([null, "ADMINISTRADOR"] as const)("conserva el catálogo público para la sesión %s", async (rol) => {
         obtenerSesionMock.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
         consultarPublicacionesMock.mockResolvedValue({ publicaciones: [crearPublicacion(1)], totalCatalogo: 1 });
 

@@ -12,7 +12,7 @@ const { query, sql, autorizado } = vi.hoisted(() => ({
 vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({ db: { raw: { sql }, runtime: () => ({ query }) } }));
 vi.mock("../../identidad-acceso/autorizacion/permisos", () => ({ autorizado }));
 
-const resultado = { publicaciones: [], opciones: [], total: 0, totalCatalogo: 0, pagina: 1, tamanoPagina: 30 };
+const resultado = { publicaciones: [], opciones: [], total: 0, totalCatalogo: 0 };
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -20,11 +20,11 @@ beforeEach(() => {
     query.mockResolvedValue([{ resultado: JSON.stringify(resultado) }]);
 });
 
-it("devuelve la página y sus metadatos sin cargar el catálogo entero", async () => {
+it("consulta todas las publicaciones coincidentes sin limitar ni desplazar resultados", async () => {
     expect(await consultarPublicaciones()).toEqual(resultado);
     expect(query).toHaveBeenCalledOnce();
     const plan = query.mock.calls[0][0];
-    expect(plan.texto).toContain("LIMIT ? OFFSET");
+    expect(plan.texto).not.toMatch(/\b(?:LIMIT|OFFSET)\b/);
     expect(plan.texto).toContain('p."publicacionActiva" = true');
     expect(plan.texto).toContain("p.\"tipoPublicacion\" = 'OPERADOR'");
     expect(plan.texto).toContain('p."publicacionDisponible" = true');
@@ -35,7 +35,7 @@ it("devuelve la página y sus metadatos sin cargar el catálogo entero", async (
 
 it("parametriza filtros y orden sin interpolar SQL recibido del cliente", async () => {
     const busqueda = "tomate '; drop table publicacion; --";
-    await consultarPublicaciones({ busqueda, especie: "Tomate", precioMinimo: "12.50", precioMaximo: "80", pagina: 2, orden: "precioDesc" });
+    await consultarPublicaciones({ busqueda, especie: "Tomate", precioMinimo: "12.50", precioMaximo: "80", orden: "precioDesc" });
     const plan = query.mock.calls[0][0];
     expect(plan.texto).not.toContain(busqueda);
     expect(plan.valores).toContain(busqueda);
@@ -46,7 +46,7 @@ it("parametriza filtros y orden sin interpolar SQL recibido del cliente", async 
 });
 
 it("rechaza filtros inválidos antes de consultar la base", async () => {
-    await expect(consultarPublicaciones({ pagina: -1 })).rejects.toThrow("página");
+    await expect(consultarPublicaciones({ precioMinimo: "-1" })).rejects.toThrow("precio");
     expect(query).not.toHaveBeenCalled();
 });
 
@@ -62,9 +62,9 @@ it("no oculta una falla de la base como si fuera un catálogo vacío", async () 
 });
 
 it("normaliza tildes, filtros vacíos y valores por defecto", () => {
-    expect(normalizarFiltros({ busqueda: "  LIMÓN Ñandú ", especie: "Todas" })).toMatchObject({ busqueda: "limon nandu", especie: "", pagina: 1, orden: "prioridad", precioMinimo: null });
+    expect(normalizarFiltros({ busqueda: "  LIMÓN Ñandú ", especie: "Todas" })).toMatchObject({ busqueda: "limon nandu", especie: "", orden: "prioridad", precioMinimo: null });
 });
 
-it.each([{ pagina: 1.5 }, { pagina: NaN }, { precioMinimo: "-1" }, { precioMaximo: "1e9" }, { busqueda: "x".repeat(201) }, { orden: "SQL" }])("rechaza parámetros fuera de contrato %j", (entrada) => {
+it.each([{ precioMinimo: "-1" }, { precioMaximo: "1e9" }, { busqueda: "x".repeat(201) }, { orden: "SQL" }])("rechaza parámetros fuera de contrato %j", (entrada) => {
     expect(() => normalizarFiltros(entrada as Parameters<typeof normalizarFiltros>[0])).toThrow();
 });

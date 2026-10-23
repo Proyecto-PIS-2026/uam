@@ -14,6 +14,7 @@ export type EstadoInicioSesion = {
 export type EstadoRecuperacion = {
     error?: string;
     exito?: string;
+    tipoError?: "operacion";
 };
 
 export async function solicitarRecuperacion(
@@ -47,6 +48,7 @@ export async function solicitarRecuperacion(
     } catch {
         return {
             error: "No se pudo registrar la solicitud. Intentá nuevamente.",
+            tipoError: "operacion",
         };
     }
 }

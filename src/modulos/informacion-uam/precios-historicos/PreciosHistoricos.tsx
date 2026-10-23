@@ -118,11 +118,14 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
             const id = identificadorEspecie(especie);
             return [id, { ...especie, id }] as const;
         }));
-        catalogo.set(idProducto, { id: idProducto, especie: producto.especie });
+        if (idProducto) catalogo.set(idProducto, { id: idProducto, especie: producto.especie });
         return [...catalogo.values()].sort((a, b) => comparar(a.especie, b.especie));
     }, [especies, idProducto, producto.especie]);
     const especieSeleccionada = especiesDisponibles.find((especie) => especie.id === especieId) ?? producto;
     const especieConsulta = identificadorEspecie(especieSeleccionada);
+    const mensajeSinSeleccion = especiesDisponibles.length > 0
+        ? "Seleccioná una especie para consultar su histórico de precios."
+        : "No hay especies disponibles para consultar el histórico. Podés volver a precios de referencia.";
     const cambioEspecie = especieId !== idProducto;
     const registros = useMemo(() => {
         if (!historico || error) return [];
@@ -222,7 +225,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
 
     function consultar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
-        if (cargandoTabla || rangoInvalido || !fechaDesde || !fechaHasta) return;
+        if (cargandoTabla || rangoInvalido || !fechaDesde || !fechaHasta || !especieConsulta) return;
         const mismosFiltros = variedad === producto.variedad && pais === producto.pais
             && calibre === producto.calibre && categoria === producto.categoria;
         if (!cambioEspecie && mismosFiltros && fechaDesde >= desde && fechaHasta <= hasta && historico && !error) {
@@ -248,7 +251,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     return (
         <div className={styles.pagina}>
             <BotonVolver href="/precios-referencia">Volver a precios de referencia</BotonVolver>
-            <EncabezadoPagina titulo={`Histórico de ${producto.especie}`} cantidad={filas.length} subtitulo="registros históricos" />
+            <EncabezadoPagina titulo={idProducto ? `Histórico de ${producto.especie}` : "Histórico de precios"} cantidad={filas.length} subtitulo="registros históricos" />
 
             <section className={styles.filtrosPanel} aria-label="Filtros de precios históricos">
                 <form action="/precios-historicos" method="get" aria-label="Consultar período histórico" onSubmit={consultar}>
@@ -257,9 +260,10 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                     <div className={styles.filtros}>
                         <TextField
                             className={`${styles.campo} ${styles.filtroEspecie}`}
-                            select label="Especie" size="small" value={especieId} disabled={cargandoTabla}
+                            select label="Especie" size="small" value={especieId} disabled={cargandoTabla || especiesDisponibles.length === 0}
                             onChange={(evento) => cambiarEspecie(evento.target.value)} slotProps={menu}
                         >
+                            {!idProducto && <MenuItem value="" disabled>Seleccioná una especie</MenuItem>}
                             {especiesDisponibles.map((especie) => (
                                 <MenuItem key={especie.id} value={especie.id} className={styles.opcionSelect}>{especie.especie}</MenuItem>
                             ))}
@@ -337,7 +341,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                         <span className={styles.resultadosFiltros}>{filas.length} resultados</span>
                         <div className={styles.accionesFiltros}>
                             <button type="button" className={styles.limpiarFiltros} disabled={cargandoTabla} onClick={limpiar}>Limpiar filtros</button>
-                            <button className={styles.consultar} type="submit" disabled={cargandoTabla || rangoInvalido || !fechaDesde || !fechaHasta}>Consultar</button>
+                            <button className={styles.consultar} type="submit" disabled={cargandoTabla || rangoInvalido || !fechaDesde || !fechaHasta || !especieConsulta}>Consultar</button>
                         </div>
                     </div>
                 </form>
@@ -421,7 +425,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                 {!cargandoTabla && !error && filas.length === 0 && (
                     <div className={styles.estadoVacio} role="status">
                         <PlaylistRemoveOutlinedIcon className={styles.iconoVacio} aria-hidden="true" />
-                        <p>No hay registros históricos para los filtros y el período seleccionados.</p>
+                        <p>{idProducto ? "No hay registros históricos para los filtros y el período seleccionados." : mensajeSinSeleccion}</p>
                     </div>
                 )}
                 {!cargandoTabla && filas.length > LIMITE && (

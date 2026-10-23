@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import Drawer from "@mui/material/Drawer";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
@@ -92,21 +93,21 @@ export default function AltaPublicacionProductor({ productorId }: { productorId:
     const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
     const [abierto, setAbierto] = useState(false);
     const [errores, setErrores] = useState<string[]>([]);
-    const [mensaje, setMensaje] = useState("");
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
 
     useEffect(() => {
         cargarCatalogos().then(setCatalogos).catch((error) => setErrores([error instanceof Error ? error.message : "No se pudieron cargar los datos."]));
     }, []);
 
-    return <main className="contenedor-pagina flex-1 py-10">
-        <h1 className="mb-4 text-3xl font-bold">Alta de publicación de Productor</h1>
+    return <main className="contenedor-pagina secciones-pagina flex-1">
+        <header className="encabezado-pagina"><h1 className="titulo-pagina">Alta de publicación de Productor</h1></header>
         {errores.length > 0 && <div role="alert" className={styles.error}>{errores.map((error) => <p key={error}>{error}</p>)}</div>}
         {!catalogos ? <p role="status">Cargando datos...</p> : <>
-            <button type="button" className={styles.guardar} onClick={() => { setErrores([]); setMensaje(""); setAbierto(true); }} disabled={!productorId}>Agregar producto</button>
-            {mensaje && <p role="status">{mensaje}</p>}
+            <button type="button" className={styles.guardar} onClick={() => { setErrores([]); cerrarNotificacion(); setAbierto(true); }} disabled={!productorId}>Agregar producto</button>
         </>}
         {catalogos && productorId > 0 && <DrawerProductor key={productorId} catalogos={catalogos} productorId={productorId} abierto={abierto} esWeb={esWeb}
-            alCerrar={() => setAbierto(false)} alCrear={(texto) => { setAbierto(false); setMensaje(texto); }} />}
+            alCerrar={() => setAbierto(false)} alCrear={(texto) => { setAbierto(false); notificar(texto, "success"); }} />}
+        <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
     </main>;
 }
 
@@ -137,6 +138,7 @@ export function DrawerAltaPublicacionProductor({ productorId, abierto, alCerrar,
 function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alCrear }: {
     catalogos: Catalogos; productorId: number; abierto: boolean; esWeb: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void;
 }) {
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [datos, setDatos] = useState<Formulario>(() => formularioInicial(productorId));
     const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
@@ -166,7 +168,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
         } catch { setErrores(["No se pudo leer la fotografía."]); } finally { setLeyendoFoto(false); }
     }
     async function enviar(evento: FormEvent) {
-        evento.preventDefault(); if (guardando || leyendoFoto) return; setErrores([]); setGuardando(true);
+        evento.preventDefault(); if (guardando || leyendoFoto) return; cerrarNotificacion(); setErrores([]); setGuardando(true);
         try {
             const { cantidad, ...datosSinCantidad } = datos;
             const datosParaGuardar = {
@@ -175,11 +177,16 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
             };
             const respuesta = await fetch("/api/publicaciones/productor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datosParaGuardar) });
             const resultado = await respuesta.json();
-            if (!respuesta.ok) { setErrores(resultado.errores ?? ["No se pudo guardar la publicación."]); return; }
+            if (!respuesta.ok) {
+                const mensajes = resultado.errores ?? ["No se pudo guardar la publicación."];
+                if (respuesta.status === 400 || respuesta.status === 422) setErrores(mensajes);
+                else notificar(mensajes.join(" "), "error");
+                return;
+            }
             alCrear(resultado.mensaje ?? "Publicación creada correctamente.");
-        } catch { setErrores(["No se pudo conectar con el servidor."]); } finally { setGuardando(false); }
+        } catch { notificar("No se pudo conectar con el servidor.", "error"); } finally { setGuardando(false); }
     }
-    return <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }}
+    return <><Drawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }}
         slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
         <div className={styles.asa} aria-hidden="true" /><header className={styles.encabezado}><h2 className={styles.titulo}>Nueva publicación</h2><button className={styles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button></header>
         <form className={styles.formulario} onSubmit={enviar}><div className={styles.cuerpo}>
@@ -197,7 +204,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
                 </button>
                 {datos.departamento && <small className={styles.ayuda}>{datos.nombreLugar ? `${datos.nombreLugar}, ` : ""}{datos.departamento}</small>}
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-[var(--espacio-controles)] sm:grid-cols-2">
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><input className={styles.entrada} id="productor-precio" inputMode="numeric" maxLength={10} placeholder="Ingrese precio aqui" value={datos.precio} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>Dejalo vacío si el producto no tiene precio.</small></div>
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Cantidad (kg)</label><input className={styles.entrada} id="productor-cantidad" inputMode="numeric" maxLength={10} placeholder="Ingrese cantidad aqui" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small></div>
             </div>
@@ -212,5 +219,5 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
         </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={guardando || leyendoFoto || datos.latitud === null || datos.longitud === null}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
         <LeafletLocationPicker key={`${datos.latitud ?? "sin"}-${datos.longitud ?? "sin"}`} abierto={mapaAbierto} coordenadas={datos.latitud === null || datos.longitud === null || !datos.departamento ? null : { latitud: datos.latitud, longitud: datos.longitud, departamento: datos.departamento, nombreLugar: datos.nombreLugar }}
             alCerrar={() => setMapaAbierto(false)} alConfirmar={(ubicacion: UbicacionSeleccionada) => { cambiar(ubicacion); setMapaAbierto(false); }} />
-    </Drawer>;
+    </Drawer><NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;
 }

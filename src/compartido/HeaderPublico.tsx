@@ -73,12 +73,6 @@ const opcionesMenu: OpcionMenu[] = [
     },
 
     {
-        nombre: "Mi mercado",
-        ruta: "/mi-mercado/productor",
-        permitido: (sesion) => autorizado("productor.mercado.acceder", sesion),
-    },
-
-    {
         nombre: "Iniciar sesión",
         ruta: "/iniciar-sesion",
         soloSinSesion: true,
@@ -89,6 +83,24 @@ const opcionesMenu: OpcionMenu[] = [
         ruta: "/administracion",
         permitido: (sesion) => autorizado("usuarios.cuentas.gestionar", sesion),
     }
+];
+
+const opcionesMenuProductor: OpcionMenu[] = [
+    {
+        nombre: "Mi mercado",
+        ruta: "/mi-mercado/productor",
+        permitido: (sesion) => autorizado("productor.mercado.acceder", sesion),
+    },
+    {
+        nombre: "Precios de referencia",
+        ruta: "/precios-referencia",
+        permitido: () => autorizado("preciosReferencia.consultar"),
+    },
+    {
+        nombre: "Histórico de precios",
+        ruta: "/precios-historicos",
+        permitido: () => autorizado("preciosReferencia.consultar"),
+    },
 ];
 
 type PropiedadesEncabezado = {
@@ -218,13 +230,14 @@ function MenuPublicaciones({
 
 export default function HeaderPublico({ sesion, fotoPerfil = null }: PropiedadesEncabezado) {
     const rolUsuario = sesion?.rol ?? null;
+    const esProductor = rolUsuario === "PRODUCTOR";
     const [menuAbierto, cambiarMenuAbierto] = useState(false);
     const [menuUsuarioAbierto, cambiarMenuUsuarioAbierto] = useState(false);
     const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
     const referenciaMenuUsuario = useRef<HTMLDivElement>(null);
     const rutaActual = usePathname() ?? "";
     const rutaPrincipal = obtenerRutaPrincipal(rolUsuario);
-    const opcionesVisibles = opcionesMenu.filter(
+    const opcionesVisibles = (esProductor ? opcionesMenuProductor : opcionesMenu).filter(
         (opcion) =>
             (!opcion.permitido || opcion.permitido(sesion)) &&
             (!opcion.soloSinSesion || rolUsuario === null) &&
@@ -292,9 +305,11 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
             </button>
             {menuUsuarioAbierto && (
                 <div className={estilos.desplegableOperador} role="menu">
-                    <span className={estilos.opcionDesplegable} role="menuitem">
-                        Mi perfil
-                    </span>
+                    {!esProductor && (
+                        <span className={estilos.opcionDesplegable} role="menuitem">
+                            Mi perfil
+                        </span>
+                    )}
                     <form action={cerrarSesionYVolverAlInicio}>
                         <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
                             Cerrar sesión
@@ -305,7 +320,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
         </div>
     );
 
-    const menuPerfilMobile = rolUsuario && (
+    const menuPerfilMobile = rolUsuario && !esProductor && (
         <button type="button" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`}>
             <span>Mi perfil</span>
             {fotoPerfil && !fotoPerfilFallida ? (
@@ -339,7 +354,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     <Link
                         href={rutaPrincipal}
                         className={estilos.marca}
-                        aria-label={rolUsuario === "OPERADOR" ? "Ir a Mi mercado" : "Ir al inicio"}
+                        aria-label={rolUsuario === "OPERADOR" || esProductor ? "Ir a Mi mercado" : "Ir al inicio"}
                         onClick={() => cambiarMenuAbierto(false)}
                     >
                         <Image

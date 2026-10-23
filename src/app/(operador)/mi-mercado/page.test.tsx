@@ -63,10 +63,13 @@ describe("/mi-mercado", () => {
 describe("acceso no autorizado a Mi Mercado", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it.each(["PRODUCTOR", "ADMINISTRADOR"] as const)("rechaza el acceso del rol %s", async (rol) => {
+    it.each([
+        { rol: "PRODUCTOR", destino: "/mi-mercado/productor" },
+        { rol: "ADMINISTRADOR", destino: "/inicio" },
+    ] as const)("rechaza el acceso del rol $rol", async ({ rol, destino }) => {
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/inicio");
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith(destino);
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
     });
 

@@ -34,9 +34,17 @@ async function requerirRol(rol: RolUsuario): Promise<SesionAutenticada> {
     return sesion;
 }
 
-export async function redirigirOperadorAMiMercado() {
+export async function redirigirAMercadoPropio() {
     const sesion = await obtenerSesion();
-    if (sesion?.rol === "OPERADOR") {
+    if (sesion?.rol === "OPERADOR" || sesion?.rol === "PRODUCTOR") {
+        redirect(obtenerRutaPrincipal(sesion.rol));
+    }
+    return sesion;
+}
+
+export async function redirigirProductorAMiMercado() {
+    const sesion = await obtenerSesion();
+    if (sesion?.rol === "PRODUCTOR") {
         redirect(obtenerRutaPrincipal(sesion.rol));
     }
     return sesion;
@@ -46,6 +54,9 @@ export async function exigirConsultaMercadoPublico() {
     const sesion = await obtenerSesion();
     if (sesion?.rol === "OPERADOR") {
         throw new ErrorAutorizacion(403, "Los operadores sólo pueden consultar su propio mercado.");
+    }
+    if (sesion?.rol === "PRODUCTOR") {
+        throw new ErrorAutorizacion(403, "Los productores sólo pueden consultar su propio mercado.");
     }
 }
 

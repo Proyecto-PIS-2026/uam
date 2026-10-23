@@ -1,5 +1,7 @@
 "use client";
 
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/compartido/componentes/ConfirmModal";
@@ -52,13 +54,13 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
     const [drawerAbierto, setDrawerAbierto] = useState(false);
     const [bajaPendiente, setBajaPendiente] = useState(false);
     const [eliminando, setEliminando] = useState(false);
-    const [error, setError] = useState("");
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
 
     // Se busca en las props para que, después de router.refresh(), el drawer muestre los datos guardados
     const publicacionSeleccionada = publicaciones.find((publicacion) => publicacion.id === seleccionadaId) ?? null;
 
     function abrirDrawer(publicacion: PublicacionPerfilAdmin) {
-        setError("");
+        cerrarNotificacion();
         setSeleccionadaId(publicacion.id);
         setDrawerAbierto(true);
     }
@@ -89,7 +91,7 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
     async function eliminarPublicacion() {
         if (!publicacionSeleccionada || eliminando) return;
         setEliminando(true);
-        setError("");
+        cerrarNotificacion();
         try {
             const respuesta = await fetch(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "DELETE" });
             const resultado = await respuesta.json();
@@ -99,7 +101,7 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
             cerrarDrawer();
             router.refresh();
         } catch (error) {
-            setError(error instanceof Error ? error.message : "No se pudo conectar con el servidor.");
+            notificar(error instanceof Error ? error.message : "No se pudo conectar con el servidor.", "error");
             setBajaPendiente(false);
         } finally {
             setEliminando(false);
@@ -108,10 +110,11 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
 
     return (
         <>
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             {publicaciones.length == 0 ? (
                 <p>El operador no tiene publicaciones.</p>
             ) : (
-                <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas">
+                <ul className="grid grid-cols-1 gap-[var(--espacio-secciones)] md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas">
                     {publicaciones.map((publicacion) => (
                         <li key={publicacion.id}>
                             <TarjetaPublicacionAdmin publicacion={publicacion} onSeleccionar={abrirDrawer} />
@@ -127,9 +130,8 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
                 publicacion={publicacionSeleccionada ? paraDrawer (publicacionSeleccionada) : null}
                 incrementoPrecio={incrementoPrecio}
                 alGuardar={guardarCambios}
-                alEliminar={() => { setError(""); setBajaPendiente(true); }}
+                alEliminar={() => { cerrarNotificacion(); setBajaPendiente(true); }}
                 eliminando={eliminando}
-                errorConsulta={error}
                 {...opciones}
             >
                 <ConfirmModal

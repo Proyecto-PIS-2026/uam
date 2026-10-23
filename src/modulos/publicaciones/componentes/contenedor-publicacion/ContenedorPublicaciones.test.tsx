@@ -16,10 +16,10 @@ vi.mock("../../filtros/FiltrosPublicaciones", () => ({
     },
 }));
 
-function resultado(pagina = 1, precio = 100): ResultadoPublicaciones {
+function resultado(precio = 100, cantidad = 1): ResultadoPublicaciones {
     return {
-        publicaciones: [{ id: pagina, especie: "Tomate", precio, fecha: "2026-10-16T10:00:00Z", foto: null, variedad: "Perita", presentacion: "KG", categoria: "I", calibre: "M", codigoCalibre: "M", pais: "Uruguay", tipoPublicacion: "OPERADOR", operador: { id: 1, nombreFantasia: "Huerta", whatsApp: "" } }],
-        opciones: [], total: 35, totalCatalogo: 35, pagina, tamanoPagina: 30,
+        publicaciones: Array.from({ length: cantidad }, (_, indice) => ({ id: indice + 1, especie: "Tomate", precio, fecha: "2026-10-16T10:00:00Z", foto: null, variedad: "Perita", presentacion: "KG", categoria: "I", calibre: "M", codigoCalibre: "M", pais: "Uruguay", tipoPublicacion: "OPERADOR", operador: { id: 1, nombreFantasia: "Huerta", whatsApp: "" } })),
+        opciones: [], total: cantidad, totalCatalogo: cantidad,
     };
 }
 
@@ -28,30 +28,26 @@ beforeEach(() => {
     cargar.mockResolvedValue(resultado());
 });
 
-it("muestra la página inicial sin pedir de nuevo el catálogo al montar", () => {
-    render(<ContenedorPublicaciones resultado={resultado()} />);
-    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Anterior" })).toBeDisabled();
+it("muestra todas las publicaciones sin paginación ni una consulta adicional al montar", () => {
+    render(<ContenedorPublicaciones resultado={resultado(100, 35)} />);
+    expect(screen.getByTestId("listado").children).toHaveLength(35);
+    expect(screen.queryByRole("navigation", { name: "Páginas de publicaciones" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Anterior" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Siguiente" })).not.toBeInTheDocument();
     expect(cargar).not.toHaveBeenCalled();
 });
 
-it("pide la página siguiente y actualiza el listado", async () => {
-    cargar.mockResolvedValue(resultado(2, 200));
-    render(<ContenedorPublicaciones resultado={resultado()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-    await waitFor(() => expect(screen.getByText("Página 2 de 2")).toBeInTheDocument());
-    expect(cargar).toHaveBeenCalledWith({ especie: "", orden: "prioridad", pagina: 2 });
+it("consulta los filtros y muestra todos los resultados coincidentes", async () => {
+    cargar.mockResolvedValue(resultado(200, 36));
+    render(<ContenedorPublicaciones resultado={resultado(100, 40)} />);
+    fireEvent.click(screen.getByText("Filtrar limón"));
+    await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc" }));
+    expect(screen.getByTestId("listado").children).toHaveLength(36);
     expect(screen.getByTestId("listado")).toHaveTextContent("200");
 });
 
-it("consulta los filtros sobre el catálogo completo y vuelve a la primera página", async () => {
-    render(<ContenedorPublicaciones resultado={resultado(2)} />);
-    fireEvent.click(screen.getByText("Filtrar limón"));
-    await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc", pagina: 1 }));
-});
-
 it("agrupa las notificaciones de tiempo real en una sola recarga", async () => {
-    cargar.mockResolvedValue(resultado(1, 250));
+    cargar.mockResolvedValue(resultado(250, 35));
     render(<ContenedorPublicaciones resultado={resultado()} />);
     act(() => {
         escuchar.mock.calls.at(-1)![0]();
@@ -59,21 +55,22 @@ it("agrupa las notificaciones de tiempo real en una sola recarga", async () => {
         escuchar.mock.calls.at(-1)![0]();
     });
     await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("250"));
+    expect(screen.getByTestId("listado").children).toHaveLength(35);
     expect(cargar).toHaveBeenCalledOnce();
 });
 
 it("no reemplaza datos nuevos con una respuesta vieja", async () => {
     let resolverAntigua: (dato: ResultadoPublicaciones) => void = () => {};
-    cargar.mockImplementationOnce(() => new Promise((resolve) => { resolverAntigua = resolve; })).mockResolvedValue(resultado(1, 400));
+    cargar.mockImplementationOnce(() => new Promise((resolve) => { resolverAntigua = resolve; })).mockResolvedValue(resultado(400));
     render(<ContenedorPublicaciones resultado={resultado()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    act(() => escuchar.mock.calls.at(-1)![0]());
+    await waitFor(() => expect(cargar).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByText("Filtrar limón"));
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)); });
     expect(cargar).toHaveBeenCalledOnce();
-    await act(async () => resolverAntigua(resultado(2, 99)));
+    await act(async () => resolverAntigua(resultado(99)));
     await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("400"));
-    expect(screen.getByTestId("listado")).toHaveTextContent("400");
-    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+    expect(cargar).toHaveBeenLastCalledWith({ especie: "Limón", orden: "precioAsc" });
 });
 
 it("reconsulta los filtros vigentes cuando cambia la respuesta del servidor", async () => {
@@ -81,14 +78,14 @@ it("reconsulta los filtros vigentes cuando cambia la respuesta del servidor", as
     fireEvent.click(screen.getByText("Filtrar limón"));
     await waitFor(() => expect(cargar).toHaveBeenCalledOnce());
     cargar.mockClear();
-    vista.rerender(<ContenedorPublicaciones resultado={resultado(1, 999)} />);
-    await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc", pagina: 1 }));
+    vista.rerender(<ContenedorPublicaciones resultado={resultado(999)} />);
+    await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc" }));
 });
 
 it("mantiene los datos disponibles y permite reintentar un error", async () => {
-    cargar.mockRejectedValueOnce(new Error("sin red")).mockResolvedValue(resultado(2, 300));
+    cargar.mockRejectedValueOnce(new Error("sin red")).mockResolvedValue(resultado(300));
     render(<ContenedorPublicaciones resultado={resultado()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    act(() => escuchar.mock.calls.at(-1)![0]());
     expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron actualizar");
     expect(screen.getByTestId("listado")).toHaveTextContent("100");
     fireEvent.click(screen.getByText("Reintentar"));

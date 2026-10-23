@@ -97,9 +97,10 @@ export default async function PaginaPreciosHistoricos({
         hasta,
     };
 
-    if (!identificadorValido(parametros.species_id)) {
+    const sinSeleccion = parametros.species_id === undefined;
+    if (!sinSeleccion && !identificadorValido(parametros.species_id)) {
         error = "Seleccioná un producto válido desde precios de referencia para consultar su histórico.";
-    } else {
+    } else if (!sinSeleccion) {
         try {
             if (Array.isArray(parametros.from) || Array.isArray(parametros.to)) throw new Error("Fechas repetidas");
             validarParametrosConsulta(consulta);
@@ -109,11 +110,12 @@ export default async function PaginaPreciosHistoricos({
         }
     }
     const claveConsulta = JSON.stringify([producto, desde, hasta]);
+    const especies = sinSeleccion ? await obtenerCatalogoEspeciesHistoricas() : undefined;
 
     return (
         <main className="flex-1 bg-background text-foreground">
             <div className="contenedor-pagina">
-                {error ? (
+                {error || sinSeleccion ? (
                     <PreciosHistoricos
                         key={claveConsulta}
                         producto={producto}
@@ -121,6 +123,7 @@ export default async function PaginaPreciosHistoricos({
                         desde={desde}
                         hasta={hasta}
                         error={error}
+                        especies={especies}
                     />
                 ) : (
                     <Suspense

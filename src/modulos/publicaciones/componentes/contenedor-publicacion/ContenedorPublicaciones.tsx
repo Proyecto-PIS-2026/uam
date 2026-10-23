@@ -38,7 +38,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
     const [datos, setDatos] = useState(resultado);
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState("");
-    const consulta = useRef<FiltrosConsulta>({ especie, orden: "prioridad", pagina: resultado.pagina });
+    const consulta = useRef<FiltrosConsulta>({ especie, orden: "prioridad" });
     const ultimoPedido = useRef(0);
     const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
     const montado = useRef(true);
@@ -63,7 +63,6 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
             if (!respuesta) throw new Error("No se pudieron cargar las publicaciones.");
             if (montado.current && pedido === ultimoPedido.current) {
                 setDatos(respuesta);
-                consulta.current.pagina = respuesta.pagina;
             }
         } catch {
             if (montado.current && pedido === ultimoPedido.current) setError("No se pudieron actualizar las publicaciones. Intentá nuevamente.");
@@ -101,7 +100,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
     }, [invalidarPeticiones]);
 
     const cambiarConsulta = useCallback((nuevaConsulta: FiltrosConsulta) => {
-        consulta.current = { ...nuevaConsulta, pagina: 1 };
+        consulta.current = { ...nuevaConsulta };
         if (!filtrosInicializados.current) {
             filtrosInicializados.current = true;
             return;
@@ -111,14 +110,6 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
         programarCarga();
     }, [programarCarga]);
 
-    function cambiarPagina(pagina: number) {
-        consulta.current.pagina = pagina;
-        ultimoPedido.current++;
-        if (temporizador.current) clearTimeout(temporizador.current);
-        temporizador.current = null;
-        void cargar();
-    }
-
     function actualizarEspecieEnUrl(nuevaEspecie: string) {
         const url = new URL(window.location.href);
         if (nuevaEspecie === "Todas") url.searchParams.delete("especie");
@@ -126,18 +117,11 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
         window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
     }
 
-    const paginas = Math.max(1, Math.ceil(datos.total / datos.tamanoPagina));
-
     return (
         <div className="secciones-pagina" aria-busy={cargando}>
             <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} totalRemoto={datos.total} especieFiltro={especie} ordenInicial="prioridad" alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
             {error && <p role="alert">{error} <button type="button" onClick={() => void cargar()}>Reintentar</button></p>}
             <ListadoPublicaciones publicaciones={datos.publicaciones} esAdmin={esAdmin} />
-            <nav aria-label="Páginas de publicaciones" className="flex items-center justify-center gap-4">
-                <button type="button" disabled={cargando || datos.pagina <= 1} onClick={() => cambiarPagina(datos.pagina - 1)} className="rounded-lg border border-border px-4 py-2 disabled:opacity-50">Anterior</button>
-                <span role="status">Página {datos.pagina} de {paginas}</span>
-                <button type="button" disabled={cargando || datos.pagina >= paginas} onClick={() => cambiarPagina(datos.pagina + 1)} className="rounded-lg border border-border px-4 py-2 disabled:opacity-50">Siguiente</button>
-            </nav>
         </div>
     );
 }

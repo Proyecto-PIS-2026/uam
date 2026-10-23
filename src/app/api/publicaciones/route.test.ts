@@ -61,7 +61,7 @@ describe("GET /api/publicaciones", () => {
         mocks.paises.mockResolvedValue([]);
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("devuelve los catálogos de publicaciones para %s", async (rol) => {
+    it.each([null, "ADMINISTRADOR"] as const)("devuelve los catálogos de publicaciones para %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
         mocks.operadores.mockResolvedValue([
         { id: 1, nombreFantasia: "Operador 1" },
@@ -91,6 +91,18 @@ describe("GET /api/publicaciones", () => {
         ]);
         expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
         expect(mocks.operadores).toHaveBeenCalledOnce();
+    });
+
+    it("rechaza al productor antes de consultar los catálogos de operadores", async () => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 });
+
+        const respuesta = await GET();
+
+        expect(respuesta.status).toBe(403);
+        expect(await respuesta.json()).toEqual({ errores: ["No tiene permisos para consultar el catálogo de Operadores."] });
+        for (const consulta of [mocks.operadores, mocks.especies, mocks.variedades, mocks.presentaciones, mocks.categorias, mocks.calibres, mocks.paises, mocks.obtenerOperadorAutorizado]) {
+            expect(consulta).not.toHaveBeenCalled();
+        }
     });
 
     it("mantiene los catálogos del alta y devuelve solamente el operador propio", async () => {

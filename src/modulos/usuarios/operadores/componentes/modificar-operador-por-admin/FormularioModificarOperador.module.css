@@ -18,9 +18,9 @@
     overflow: hidden;
     margin-bottom: var(--espacio-secciones);
     padding: var(--padding-titulo-pagina);
-    border-radius: 0.9rem;
+    border-radius: var(--radio-panel);
     background: var(--color-secondary);
-    color: white;
+    color: var(--color-surface);
 }
 
 .encabezado::before {
@@ -60,7 +60,7 @@
 .descripcion {
     position: relative;
     z-index: 1;
-    margin: 0.25rem 0 0;
+    margin: var(--espacio-textos) 0 0;
     color: var(--color-subtitulo-pagina);
     font-size: var(--tamano-subtitulo-pagina);
     font-weight: 400;
@@ -80,38 +80,39 @@
 .seccion {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
     padding: var(--padding-panel);
     border: 1px solid var(--color-border);
-    border-radius: 1rem;
+    border-radius: var(--radio-panel);
     background: var(--color-surface);
 }
 
 .subtitulo {
     margin: 0;
-    font-size: 1.125rem;
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 600;
+    color: var(--color-secondary);
 }
 
 .campo {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
     min-width: 0;
 }
 
 .etiqueta {
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
 }
 
 .entrada {
     box-sizing: border-box;
     width: 100%;
-    min-height: 3rem;
-    padding: 0.625rem 0.75rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     color: var(--color-foreground);
     font: inherit;
@@ -131,69 +132,70 @@
 .filaTelefono {
     display: grid;
     grid-template-columns: 8rem minmax(0, 1fr);
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 
 .encabezadoSeccion {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
 }
 
 .ayuda {
     margin: 0;
     color: var(--color-muted);
-    font-size: 0.875rem;
-    line-height: 1.4;
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
 }
 
 .listaLocales {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
 }
 
 .local {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
     border: 1px solid var(--color-border);
-    border-radius: 0.875rem;
-    background: var(--color-background);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface-muted);
 }
 
 .encabezadoLocal {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
 }
 
 .grillaLocal {
     display: grid;
     grid-template-columns:
-        minmax(0, 1fr)
-        minmax(0, 1fr)
-        minmax(0, 1fr);
-    gap: 0.75rem;
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+    gap: var(--espacio-controles);
 }
 
 .grillaContraseña {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 
 .agregarLocal,
 .eliminarLocal,
 .cancelar,
 .guardar {
-    min-height: 2.75rem;
-    padding: 0.625rem 1rem;
-    border-radius: 0.75rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
+    border-radius: var(--radio-control);
     font: inherit;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -209,13 +211,13 @@
 }
 
 .eliminarLocal {
-    border: 1px solid #f2c4cc;
-    background: #fbeaec;
-    color: #b42332;
+    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-surface));
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
 }
 
 .eliminarLocal:hover:not(:disabled) {
-    background: #f8dadd;
+    background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
 }
 
 .acciones {
@@ -255,13 +257,13 @@
 }
 
 .error {
-    padding: 1rem;
-    border: 1px solid #f2c4cc;
-    border-radius: 0.75rem;
-    background: #fbeaec;
-    color: #b42332;
-    font-size: 0.875rem;
-    line-height: 1.4;
+    padding: var(--padding-panel);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-surface));
+    border-radius: var(--radio-panel);
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
 }
 
 .error p {
@@ -269,7 +271,7 @@
 }
 
 .error p + p {
-    margin-top: 0.375rem;
+    margin-top: var(--espacio-textos);
 }
 
 @media (max-width: 700px) {

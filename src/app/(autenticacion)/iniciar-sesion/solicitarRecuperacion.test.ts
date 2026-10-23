@@ -77,5 +77,6 @@ describe("BP-16.1 - Solicitar restablecimiento", () => {
 
         expect(resultado.error).toBeDefined();
         expect(resultado.exito).toBeUndefined();
+        expect(resultado.tipoError).toBe("operacion");
     });
 });

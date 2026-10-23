@@ -72,8 +72,8 @@ describe("Listado y navegación de productores", () => {
     it.each([null, "PRODUCTOR"] as const)("impide acceder por URL con la sesión %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
-        await expect(PaginaPerfil({ params: Promise.resolve({ nombre: perfil.nombreFantasia }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/inicio" : "/iniciar-sesion");
+        await expect(PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(perfil.nombreFantasia) }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/mi-mercado/productor" : "/iniciar-sesion");
         expect(mocks.listado).not.toHaveBeenCalled();
         expect(mocks.perfil).not.toHaveBeenCalled();
     });
@@ -81,16 +81,16 @@ describe("Listado y navegación de productores", () => {
     it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite acceder al listado y al perfil al rol %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 5, rol, expiraEn: 2000000000 });
         expect(await Page()).toBeTruthy();
-        expect(await PaginaPerfil({ params: Promise.resolve({ nombre: perfil.nombreFantasia }), searchParams: Promise.resolve({}) })).toBeTruthy();
+        expect(await PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(perfil.nombreFantasia) }), searchParams: Promise.resolve({}) })).toBeTruthy();
         expect(mocks.listado).toHaveBeenCalledTimes(1);
         expect(mocks.perfil).toHaveBeenCalledExactlyOnceWith(perfil.nombreFantasia);
         expect(mocks.redirect).not.toHaveBeenCalled();
         expect(mocks.notFound).not.toHaveBeenCalled();
     });
 
-    it.each(["Huerta 100%", "Huerta %20", "%", "Álamo & Sur"])("conserva el nombre decodificado por Next: %s", async (nombre) => {
+    it.each(["Huerta 100%", "Huerta %20", "%", "Álamo & Sur"])("recupera el nombre original del segmento codificado: %s", async (nombre) => {
         mocks.perfil.mockResolvedValue({ ...perfil, nombreFantasia: nombre });
-        await PaginaPerfil({ params: Promise.resolve({ nombre }), searchParams: Promise.resolve({}) });
+        await PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(nombre) }), searchParams: Promise.resolve({}) });
         expect(mocks.perfil).toHaveBeenCalledExactlyOnceWith(nombre);
         expect(mocks.notFound).not.toHaveBeenCalled();
     });
@@ -136,9 +136,9 @@ describe("Listado y navegación de productores", () => {
         const { unmount } = render(await Page());
         const enlace = screen.getByRole("link", { name: /Álamo & Sur/ });
         const destino = new URL(enlace.getAttribute("href")!, "http://localhost");
-        const nombre = decodeURIComponent(destino.pathname.split("/").at(-1)!);
+        const nombreCodificado = destino.pathname.split("/").at(-1)!;
         unmount();
-        render(await PaginaPerfil({ params: Promise.resolve({ nombre }), searchParams: Promise.resolve({}) }));
+        render(await PaginaPerfil({ params: Promise.resolve({ nombre: nombreCodificado }), searchParams: Promise.resolve({}) }));
         expect(mocks.perfil).toHaveBeenCalledWith(perfil.nombreFantasia);
         expect(screen.getByRole("heading", { name: perfil.nombreFantasia })).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Naranja - Valencia" }));
@@ -152,7 +152,7 @@ describe("Listado y navegación de productores", () => {
 
     it("muestra un perfil sin publicaciones ni puntos de retiro", async () => {
         mocks.perfil.mockResolvedValue({ ...perfil, publicaciones: [], ubicaciones: [] });
-        render(await PaginaPerfil({ params: Promise.resolve({ nombre: perfil.nombreFantasia }), searchParams: Promise.resolve({})}));
+        render(await PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(perfil.nombreFantasia) }), searchParams: Promise.resolve({})}));
         expect(screen.getByText("No hay publicaciones disponibles.")).toBeInTheDocument();
     });
 
@@ -165,7 +165,7 @@ describe("Listado y navegación de productores", () => {
         render(
             await PaginaPerfil({
                 params: Promise.resolve({
-                    nombre: perfil.nombreFantasia,
+                    nombre: encodeURIComponent(perfil.nombreFantasia),
                 }),
                 searchParams: Promise.resolve({
                     origen: "publicaciones",

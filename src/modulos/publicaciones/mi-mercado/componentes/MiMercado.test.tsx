@@ -513,7 +513,10 @@ describe("MiMercado", () => {
     fireEvent.click(screen.getByRole("button", { name: "Eliminar desde consulta" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
 
-    await waitFor(() => expect(within(screen.getByRole("dialog", { name: "Publicación seleccionada" })).getByRole("alert")).toHaveTextContent("No se pudo eliminar la publicación."));
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo eliminar la publicación.");
+    expect(within(screen.getByRole("dialog", { name: "Publicación seleccionada" })).queryByRole("alert")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog", { name: "Confirmar eliminación" })).not.toBeInTheDocument();
     expect(mocks.refrescar).not.toHaveBeenCalled();
@@ -570,7 +573,7 @@ describe("MiMercado", () => {
     ).toBeInTheDocument();
   });
 
-  it("agrupa inicialmente por prioridad sin mostrar especies sin publicaciones", () => {
+  it("ordena inicialmente por prioridad y ofrece solo especies con publicaciones", () => {
     renderMiMercado([
       crearPublicacion(1, 20, "Pera"),
       crearPublicacion(2, 30, "Sandía"),
@@ -583,13 +586,12 @@ describe("MiMercado", () => {
     expect(screen.getByRole("textbox", { name: "Precio Máximo" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Más filtros" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ordenar por" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Desagrupar" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Manzana", "Sandía", "Pera"]);
+    expect(idsTarjetas()).toEqual(["publicacion-3", "publicacion-2", "publicacion-1"]);
     fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
     expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Manzana", "Sandía", "Pera"]);
   });
 
-  it("mantiene la prioridad al desagrupar y respeta A-Z cuando se elige", () => {
+  it("mantiene la prioridad inicial y respeta A-Z cuando se elige", () => {
     renderMiMercado([
       crearPublicacion(1, 20, "Pera"),
       crearPublicacion(2, 30, "Manzana"),
@@ -597,14 +599,10 @@ describe("MiMercado", () => {
       crearPublicacion(4, 50, "Acelga"),
     ]);
 
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Papa", "Manzana", "Acelga", "Pera"]);
-    fireEvent.click(screen.getByRole("button", { name: "Desagrupar" }));
     expect(idsTarjetas()).toEqual(["publicacion-3", "publicacion-2", "publicacion-4", "publicacion-1"]);
 
     elegirOrden("A-Z");
     expect(idsTarjetas()).toEqual(["publicacion-4", "publicacion-2", "publicacion-3", "publicacion-1"]);
-    fireEvent.click(screen.getByRole("button", { name: "Agrupar por especie" }));
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Acelga", "Manzana", "Papa", "Pera"]);
   });
 
   it("filtra al escribir sin distinguir mayúsculas ni tildes y restaura las tarjetas al limpiar", () => {
@@ -617,7 +615,6 @@ describe("MiMercado", () => {
 
     fireEvent.change(buscador, { target: { value: "SANDIA" } });
     expect(idsTarjetas()).toEqual(["publicacion-2"]);
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía"]);
 
     fireEvent.change(buscador, { target: { value: "sin coincidencias" } });
     expect(screen.queryAllByTestId(/^publicacion-/)).toHaveLength(0);
@@ -646,27 +643,9 @@ describe("MiMercado", () => {
 
     fireEvent.change(screen.getByRole("textbox", { name: "Precio Máximo" }), { target: { value: "90" } });
     expect(idsTarjetas()).toEqual(["publicacion-1"]);
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Pera"]);
   });
 
-  it("ordena por precio dentro de cada especie y conserva la prioridad entre grupos", () => {
-    renderMiMercado([
-      crearPublicacionConPrecio(1, 20, "Pera", "80"),
-      crearPublicacionConPrecio(2, 10, "Sandía", "70"),
-      crearPublicacionConPrecio(3, 20, "Pera", "20"),
-      crearPublicacionConPrecio(4, 10, "Sandía", "150"),
-    ]);
-
-    elegirOrden("Menor Precio");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía", "Pera"]);
-    expect(idsTarjetas()).toEqual(["publicacion-2", "publicacion-4", "publicacion-3", "publicacion-1"]);
-
-    elegirOrden("Mayor Precio");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía", "Pera"]);
-    expect(idsTarjetas()).toEqual(["publicacion-4", "publicacion-2", "publicacion-1", "publicacion-3"]);
-  });
-
-  it("invierte el orden de los grupos al elegir Z-A", () => {
+  it("ordena las tarjetas por especie al elegir Z-A", () => {
     renderMiMercado([
       crearPublicacion(1, 20, "Pera"),
       crearPublicacion(2, 30, "Sandía"),
@@ -674,10 +653,10 @@ describe("MiMercado", () => {
     ]);
 
     elegirOrden("Z-A");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía", "Pera", "Manzana"]);
+    expect(idsTarjetas()).toEqual(["publicacion-2", "publicacion-1", "publicacion-3"]);
   });
 
-  it("ordena globalmente las tarjetas desagrupadas por especie o precio", () => {
+  it("ordena globalmente por precio las tarjetas de distintas especies", () => {
     renderMiMercado([
       crearPublicacionConPrecio(1, 20, "Pera", "80"),
       crearPublicacionConPrecio(2, 10, "Manzana", "70"),
@@ -685,8 +664,6 @@ describe("MiMercado", () => {
       crearPublicacionConPrecio(4, 10, "Manzana", "150"),
     ]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Desagrupar" }));
-    expect(screen.getByRole("button", { name: "Agrupar por especie" })).toHaveAttribute("aria-pressed", "false");
     expect(idsTarjetas()).toEqual(["publicacion-2", "publicacion-4", "publicacion-1", "publicacion-3"]);
 
     elegirOrden("Menor Precio");
@@ -697,148 +674,16 @@ describe("MiMercado", () => {
   });
 
 
-  it("muestra las tarjetas directamente cuando no está agrupado", () => {
-    renderMiMercado([
-      crearPublicacion(1, 10, "Manzana"),
-      crearPublicacion(2, 20, "Pera"),
-    ]);
-
-    const boton = screen.getByRole(
-      "button",
-      {
-        name: "Desagrupar",
-      },
-    );
-
-    fireEvent.click(boton);
-
-    expect(
-      screen.getByTestId("publicacion-1"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByTestId("publicacion-2"),
-    ).toBeInTheDocument();
-  });
-
-
-  it("agrupa las publicaciones por especie", () => {
+  it("conserva todas las tarjetas sin controles de agrupación, incluso cuando comparten especie", () => {
     renderMiMercado([
       crearPublicacion(1, 10, "Manzana"),
       crearPublicacion(2, 10, "Manzana"),
       crearPublicacion(3, 20, "Pera"),
     ]);
 
-    expect(
-      screen.getAllByText("Manzana"),
-    ).toHaveLength(1);
-
-    expect(
-      screen.getAllByText("Pera"),
-    ).toHaveLength(1);
-
-    expect(
-      screen.getByText("· 2 publicaciones"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText("· 1 publicación"),
-    ).toBeInTheDocument();
-  });
-
-
-  it("permite desagrupar y volver a agrupar publicaciones por especie", () => {
-    renderMiMercado([
-      crearPublicacion(1, 10, "Manzana"),
-      crearPublicacion(2, 10, "Manzana"),
-      crearPublicacion(3, 20, "Pera"),
-    ]);
-
-    const botonDesagrupar =
-      screen.getByRole(
-        "button",
-        {
-          name: "Desagrupar",
-        },
-      );
-
-    expect(
-      botonDesagrupar,
-    ).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-
-    fireEvent.click(
-      botonDesagrupar,
-    );
-
-
-    const botonAgrupar =
-      screen.getByRole(
-        "button",
-        {
-          name: "Agrupar por especie",
-        },
-      );
-
-    expect(
-      botonAgrupar,
-    ).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-
-    fireEvent.click(
-      botonAgrupar,
-    );
-
-
-    expect(
-      screen.getByRole(
-        "button",
-        {
-          name: "Desagrupar",
-        },
-      ),
-    ).toBeInTheDocument();
-  });
-
-
-  it("mantiene todas las publicaciones al agrupar por especie", () => {
-    renderMiMercado([
-      crearPublicacion(1, 10, "Manzana"),
-      crearPublicacion(2, 10, "Manzana"),
-      crearPublicacion(3, 20, "Pera"),
-    ]);
-
-    expect(
-      screen.getByTestId("publicacion-1"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByTestId("publicacion-2"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByTestId("publicacion-3"),
-    ).toBeInTheDocument();
-  });
-
-
-  it("mantiene grupos separados cuando las especies son diferentes", () => {
-    renderMiMercado([
-      crearPublicacion(1, 10, "Manzana"),
-      crearPublicacion(2, 20, "Pera"),
-    ]);
-
-    expect(
-      screen.getByText("Manzana"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText("Pera"),
-    ).toBeInTheDocument();
+    expect(idsTarjetas()).toEqual(["publicacion-1", "publicacion-2", "publicacion-3"]);
+    expect(screen.queryByRole("button", { name: "Desagrupar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Agrupar por especie" })).not.toBeInTheDocument();
   });
 
 

@@ -4,9 +4,9 @@
     padding: var(--padding-panel);
     box-sizing: border-box;
     border: 1px solid var(--color-border);
-    border-radius: 0.875rem;
+    border-radius: var(--radio-panel);
     background-color: var(--color-surface);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
+    box-shadow: var(--sombra-panel);
 }
 
 .layoutFiltros {
@@ -19,11 +19,11 @@
     grid-column: 1 / -1;
     grid-row: 4;
     width: 100%;
-    margin-top: -0.35rem;
-    padding-left: 0.1rem;
+    margin-top: calc(-1 * var(--espacio-textos));
+    padding-left: var(--espacio-textos);
     box-sizing: border-box;
-    color: #d32f2f;
-    font-size: 0.75rem;
+    color: var(--color-danger);
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 500;
     line-height: 1.2;
     text-align: left;
@@ -91,7 +91,7 @@
 
 .resultados {
     color: var(--color-foreground);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .layoutFiltros.filtrosAbiertos + .pie {
@@ -103,7 +103,7 @@
     border: 0;
     background: none;
     color: var(--color-primary);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -114,7 +114,7 @@
 
 .filtrosExtendidos {
     display: grid;
-    grid-template-rows: calc(2.5rem + var(--espacio-controles) + 1px) 2.5rem;
+    grid-template-rows: calc(var(--alto-control) + var(--espacio-controles) + 1px) var(--alto-control);
     gap: var(--espacio-controles);
     grid-column: 1 / -1;
     grid-row: 5;
@@ -125,13 +125,12 @@
     margin-top: calc(-1 * var(--espacio-controles));
     box-sizing: border-box;
     overflow: hidden;
-    transition:
-        height 0.25s ease,
+    transition: height 0.25s ease,
         margin-top 0.25s ease;
 }
 
 .layoutFiltros.filtrosAbiertos .filtrosExtendidos {
-    height: calc(5rem + 2 * var(--espacio-controles) + 1px);
+    height: calc(2 * var(--alto-control) + 2 * var(--espacio-controles) + 1px);
     margin-top: 0;
 }
 
@@ -208,12 +207,12 @@
 .botonExtendidos {
     display: flex;
     align-items: center;
-    gap: 0.2rem;
+    gap: var(--espacio-textos);
     padding: 0;
     border: 0;
     background: none;
     color: var(--color-primary);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -236,15 +235,14 @@
     flex-direction: column;
     width: 160px;
     max-height: 0;
-    padding: 0 0.25rem;
+    padding: 0 var(--espacio-textos);
     overflow: hidden;
     opacity: 0;
     border: 0 solid var(--color-border);
-    border-radius: 0.5rem;
+    border-radius: var(--radio-panel);
     background-color: var(--color-surface);
     box-shadow: 0 0 0 rgb(0 0 0 / 0%);
-    transition:
-        max-height 0.25s ease,
+    transition: max-height 0.25s ease,
         padding 0.25s ease,
         opacity 0.2s ease,
         border-width 0.25s ease,
@@ -253,7 +251,7 @@
 
 .listaOrdenamientoAbierta {
     max-height: 250px;
-    padding: 0.25rem;
+    padding: var(--espacio-textos);
     opacity: 1;
     border-width: 1px;
     box-shadow: 0 3px 10px rgb(0 0 0 / 12%);
@@ -261,13 +259,13 @@
 
 .opcionOrdenamiento {
     width: 100%;
-    padding: 0.4rem 0.55rem;
+    padding: var(--padding-control);
     border: 0;
-    border-radius: 0.3rem;
+    border-radius: var(--radio-control);
     background: transparent;
     color: var(--color-foreground);
     text-align: left;
-    font-size: 0.75rem;
+    font-size: var(--tamano-texto-secundario);
     line-height: 1.1;
     cursor: pointer;
 }
@@ -382,15 +380,14 @@
         overflow: hidden;
         border-top: 0 solid var(--color-border);
         box-sizing: border-box;
-        transition:
-            height 0.25s ease,
+        transition: height 0.25s ease,
             margin-top 0.25s ease,
             padding-top 0.25s ease,
             border-top-width 0.25s ease;
     }
 
     .layoutFiltros.filtrosAbiertos .filtrosCategoriaCalibre {
-        height: calc(2.5rem + var(--espacio-controles) + 1px);
+        height: calc(var(--alto-control) + var(--espacio-controles) + 1px);
         margin-top: 0;
         padding-top: var(--espacio-controles);
         border-top-width: 1px;
@@ -482,7 +479,7 @@
 
     .rangoInvalido .mensajeError {
         grid-row: 3;
-        padding-top: 10px;
+        padding-top: var(--espacio-controles);
     }
 
     .barraOpciones .botonExtendidos:first-child {

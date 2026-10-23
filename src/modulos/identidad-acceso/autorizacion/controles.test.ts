@@ -6,7 +6,8 @@ import {
     exigirOperador,
     exigirProductor,
     exigirConsultaMercadoPublico,
-    redirigirOperadorAMiMercado,
+    redirigirAMercadoPropio,
+    redirigirProductorAMiMercado,
     requerirAdministrador,
     requerirOperador,
     exigirConsultaProductores,
@@ -50,7 +51,8 @@ describe.each([
             } else {
                 await expect(exigir()).rejects.toMatchObject({ status: 403 });
                 await expect(requerir()).rejects.toThrow("NEXT_REDIRECT");
-                expect(redirect).toHaveBeenCalledWith(rolSesion === "OPERADOR" ? "/mi-mercado" : "/inicio");
+                const destinos = { OPERADOR: "/mi-mercado", PRODUCTOR: "/mi-mercado/productor", ADMINISTRADOR: "/inicio" };
+                expect(redirect).toHaveBeenCalledWith(destinos[rolSesion]);
             }
         },
     );
@@ -73,27 +75,31 @@ describe("acceso al mercado público", () => {
         sesionMock.mockResolvedValue(null);
     });
 
-    it("redirige al operador a su mercado al abrir una página pública restringida", async () => {
-        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+    it.each([
+        { rol: "OPERADOR", destino: "/mi-mercado" },
+        { rol: "PRODUCTOR", destino: "/mi-mercado/productor" },
+    ] as const)("redirige a $rol a su mercado al abrir una página pública restringida", async ({ rol, destino }) => {
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
 
-        await expect(redirigirOperadorAMiMercado()).rejects.toThrow("NEXT_REDIRECT");
-        expect(redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado");
+        await expect(redirigirAMercadoPropio()).rejects.toThrow("NEXT_REDIRECT");
+        expect(redirect).toHaveBeenCalledExactlyOnceWith(destino);
+        expect(sesionMock).toHaveBeenCalledOnce();
     });
 
-    it("rechaza consultas públicas del operador con 403 sin redirigir la API", async () => {
-        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+    it.each(["OPERADOR", "PRODUCTOR"] as const)("rechaza consultas públicas de %s con 403 sin redirigir la API", async (rol) => {
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
 
         await expect(exigirConsultaMercadoPublico()).rejects.toMatchObject({ name: "ErrorAutorizacion", status: 403 });
         expect(redirect).not.toHaveBeenCalled();
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)(
+    it.each([null, "ADMINISTRADOR"] as const)(
         "conserva las consultas y páginas públicas para %s",
         async (rol) => {
             const sesion = rol === null ? null : { usuarioId: 10, rol, expiraEn: 2000000000 };
             sesionMock.mockResolvedValue(sesion);
 
-            await expect(redirigirOperadorAMiMercado()).resolves.toBe(sesion);
+            await expect(redirigirAMercadoPropio()).resolves.toBe(sesion);
             await expect(exigirConsultaMercadoPublico()).resolves.toBeUndefined();
             expect(redirect).not.toHaveBeenCalled();
         },
@@ -103,8 +109,26 @@ describe("acceso al mercado público", () => {
         sesionMock.mockRejectedValue(new Error("Sesión no disponible"));
 
         await expect(exigirConsultaMercadoPublico()).rejects.toThrow("Sesión no disponible");
-        await expect(redirigirOperadorAMiMercado()).rejects.toThrow("Sesión no disponible");
+        await expect(redirigirAMercadoPropio()).rejects.toThrow("Sesión no disponible");
+        await expect(redirigirProductorAMiMercado()).rejects.toThrow("Sesión no disponible");
         expect(redirect).not.toHaveBeenCalled();
+    });
+
+    it("redirige al productor desde las páginas que conservan el acceso del operador", async () => {
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 });
+
+        await expect(redirigirProductorAMiMercado()).rejects.toThrow("NEXT_REDIRECT");
+        expect(redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado/productor");
+        expect(sesionMock).toHaveBeenCalledOnce();
+    });
+
+    it.each([null, "ADMINISTRADOR", "OPERADOR"] as const)("la guarda exclusiva de productor conserva la sesión %s", async (rol) => {
+        const sesion = rol === null ? null : { usuarioId: 10, rol, expiraEn: 2000000000 };
+        sesionMock.mockResolvedValue(sesion);
+
+        await expect(redirigirProductorAMiMercado()).resolves.toBe(sesion);
+        expect(redirect).not.toHaveBeenCalled();
+        expect(sesionMock).toHaveBeenCalledOnce();
     });
 });
 
@@ -165,10 +189,10 @@ describe("consulta de productores y sus publicaciones", () => {
         expect(redirect).not.toHaveBeenCalled();
     });
 
-    it("redirige al Productor al inicio al acceder a una página", async () => {
+    it("redirige al Productor a su mercado al acceder a una página restringida", async () => {
         sesionMock.mockResolvedValue({usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000});
         await expect(requerirConsultaProductores()).rejects.toThrow("NEXT_REDIRECT");
-        expect(redirect).toHaveBeenCalledExactlyOnceWith("/inicio");
+        expect(redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado/productor");
     });
 
     it("rechaza la consulta de publicaciones con su mensaje específico", async () => {

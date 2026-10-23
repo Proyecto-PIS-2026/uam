@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import Dialog from "@mui/material/Dialog";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "../tipos";
@@ -41,10 +42,12 @@ export default function CompartirEstadoWhatsApp({
         ].join("\n")
     );
 
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [error, setError] = useState("");
     const [compartiendo, setCompartiendo] = useState(false);
 
     async function compartir() {
+        cerrarNotificacion();
         setError("");
         setCompartiendo(true);
 
@@ -96,7 +99,7 @@ export default function CompartirEstadoWhatsApp({
             }
         } catch (error) {
             if (error instanceof Error && error.name !== "AbortError") {
-                setError("No se pudo compartir el producto.");
+                notificar("No se pudo compartir el producto.", "error");
             }
         } finally {
             setCompartiendo(false);
@@ -104,23 +107,25 @@ export default function CompartirEstadoWhatsApp({
     }
 
     async function copiarMensaje() {
+        cerrarNotificacion();
         try {
             await navigator.clipboard.writeText(mensaje);
-            setError("Texto copiado al portapapeles.");
+            notificar("Texto copiado al portapapeles.", "success");
         } catch {
-            setError("No se pudo copiar el texto.");
+            notificar("No se pudo copiar el texto.", "error");
         }
     }
 
     return (
+        <>
         <Dialog open onClose={alCerrar} fullWidth maxWidth="sm">
-            <div className="flex flex-col gap-4 p-6">
-                <h2 className="text-xl font-bold">
+            <div className="secciones-pagina p-[var(--padding-panel)]">
+                <h2 className="titulo-seccion">
                     Compartir producto en WhatsApp
                 </h2>
 
                 {publicacion.foto && (
-                    <div className="relative h-48 w-full overflow-hidden rounded-lg">
+                    <div className="relative h-48 w-full overflow-hidden rounded-[var(--radio-panel)]">
                         <ImagenPublicacion
                             src={publicacion.foto}
                             alt={nombreProducto}
@@ -132,7 +137,7 @@ export default function CompartirEstadoWhatsApp({
                     </div>
                 )}
 
-                <label htmlFor="mensaje-compartir" className="font-semibold">
+                <label htmlFor="mensaje-compartir" className="text-[length:var(--tamano-texto-secundario)] font-semibold">
                     Editá el texto que querés compartir
                 </label>
 
@@ -141,21 +146,21 @@ export default function CompartirEstadoWhatsApp({
                     value={mensaje}
                     onChange={(evento) => setMensaje(evento.target.value)}
                     rows={9}
-                    className="w-full rounded-lg border border-gray-300 p-3 text-sm"
+                    className="campo-formulario"
                 />
 
                 {error && (
-                    <p role="status" className="text-sm">
+                    <p role="status" className="text-[length:var(--tamano-texto-secundario)] text-muted">
                         {error}
                     </p>
                 )}
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-[var(--espacio-inline)]">
                     <button
                         type="button"
                         onClick={() => void compartir()}
                         disabled={compartiendo}
-                        className="rounded-lg bg-green-700 px-4 py-2 text-white"
+                        className="boton-primario"
                     >
                         {compartiendo ? "Preparando..." : "Compartir"}
                     </button>
@@ -163,7 +168,7 @@ export default function CompartirEstadoWhatsApp({
                     <button
                         type="button"
                         onClick={() => void copiarMensaje()}
-                        className="rounded-lg border px-4 py-2"
+                        className="boton-secundario"
                     >
                         Copiar texto
                     </button>
@@ -173,7 +178,7 @@ export default function CompartirEstadoWhatsApp({
                             href={publicacion.foto}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-lg border px-4 py-2"
+                            className="boton-secundario"
                         >
                             Abrir foto
                         </a>
@@ -182,12 +187,14 @@ export default function CompartirEstadoWhatsApp({
                     <button
                         type="button"
                         onClick={alCerrar}
-                        className="rounded-lg border px-4 py-2"
+                        className="boton-secundario"
                     >
                         Cerrar
                     </button>
                 </div>
             </div>
         </Dialog>
+        <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
+        </>
     );
 }

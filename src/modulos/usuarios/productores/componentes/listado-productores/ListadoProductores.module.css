@@ -4,7 +4,7 @@
     max-width: 48rem;
     margin: 0 auto;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 
 @media (min-width: 768px) {
@@ -12,7 +12,7 @@
         display: grid;
         max-width: none;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1rem;
+        gap: var(--espacio-secciones);
     }
 }
 

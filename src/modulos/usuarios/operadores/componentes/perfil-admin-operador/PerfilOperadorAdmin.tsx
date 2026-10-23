@@ -1,5 +1,7 @@
 "use client";
 
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
@@ -31,21 +33,22 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(false);
-    const [mensaje, setMensaje] = useState("");
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
 
     function abrirAlta() {
-        setMensaje("");
+        cerrarNotificacion();
         setAltaAbierta(true);
     }
 
     function publicacionCreada(aviso: string) {
         setAltaAbierta(false);
-        setMensaje(aviso);
+        notificar(aviso, "success");
         router.refresh();
     }
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <BotonVolver href="/administracion#usuarios" className={styles.volver}>
                 Volver al listado de operadores
             </BotonVolver>
@@ -105,7 +108,6 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                 </div>
             </div>
 
-            {mensaje && <p className={styles.mensajeExito} role="status">{mensaje}</p>}
 
             <div className={styles.filaPublicaciones}>
                 <h2 className={styles.subtituloPublicaciones}>Publicaciones ({operador.publicaciones.length})</h2>

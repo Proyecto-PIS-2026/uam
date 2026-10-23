@@ -1,5 +1,7 @@
 "use client";
 
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import BotonVolver from "@/compartido/BotonVolver";
@@ -48,6 +50,7 @@ export default function FormularioModificarOperador({
     );
 
     const [errores, setErrores] = useState<string[]>([]);
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
 
     function actualizarLocal(
@@ -80,7 +83,7 @@ export default function FormularioModificarOperador({
 
     function eliminarLocal(indice: number) {
         if (locales.length === 1) {
-            setErrores(["Debe haber al menos un local."]);
+            notificar("Debe haber al menos un local.", "warning");
             return;
         }
 
@@ -103,6 +106,7 @@ export default function FormularioModificarOperador({
         if (guardando) return;
 
         setErrores([]);
+        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -128,9 +132,10 @@ export default function FormularioModificarOperador({
                 error,
             );
 
-            setErrores([
+            notificar(
                 "No se pudieron guardar los cambios. Intentá de nuevo.",
-            ]);
+                "error",
+            );
         } finally {
             setGuardando(false);
         }
@@ -138,6 +143,7 @@ export default function FormularioModificarOperador({
 
     return (
         <div className={styles.pagina}>
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <div className={styles.contenedor}>
                 <BotonVolver
                     className={styles.volver}

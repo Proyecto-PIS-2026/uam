@@ -2,7 +2,7 @@ import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { Temporal } from "temporal-polyfill";
 import { especiesPrioritarias } from "@/compartido/prioridad-especies";
-import { normalizarFiltros, TAMANO_PAGINA, type FiltrosConsulta, type OpcionProducto } from "./filtros-consulta";
+import { normalizarFiltros, type FiltrosConsulta, type OpcionProducto } from "./filtros-consulta";
 
 export type PublicacionListado = {
     id: number;
@@ -30,8 +30,6 @@ export type ResultadoPublicaciones = {
     opciones: OpcionProducto[];
     total: number;
     totalCatalogo: number;
-    pagina: number;
-    tamanoPagina: number;
 };
 
 export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Promise<ResultadoPublicaciones> {
@@ -90,26 +88,18 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
                 CASE WHEN ${consulta.orden} = 'alfabeticoDesc' THEN translate(lower(variedad), 'áéíóúüñ', 'aeiouun') END DESC,
                 id
             ) AS posicion FROM filtradas
-        ), limites AS (
-            SELECT count(*)::int AS total,
-                least(${consulta.pagina}, greatest(1, ceil(count(*)::numeric / ${TAMANO_PAGINA})::int)) AS pagina
-            FROM filtradas
-        ), pagina AS (
-            SELECT ordenadas.* FROM ordenadas
-            ORDER BY posicion LIMIT ${TAMANO_PAGINA} OFFSET (SELECT (pagina - 1) * ${TAMANO_PAGINA} FROM limites)
         )
         SELECT jsonb_build_object(
             'publicaciones', coalesce((SELECT jsonb_agg(jsonb_build_object(
-                'tipoPublicacion', 'OPERADOR', 'id', pagina.id, 'precio', pagina.precio, 'fecha', pagina.fecha, 'foto', p.foto,
-                'cantidadUnidades', pagina."cantidadUnidades", 'especie', pagina.especie, 'variedad', pagina.variedad,
-                'presentacion', pagina.presentacion, 'categoria', pagina.categoria, 'calibre', pagina.calibre,
-                'codigoCalibre', pagina."codigoCalibre", 'pais', pagina.pais,
-                'operador', jsonb_build_object('id', pagina."operadorId", 'nombreFantasia', pagina."operadorNombreFantasia", 'whatsApp', pagina."operadorWhatsApp")
-            ) ORDER BY pagina.posicion) FROM pagina JOIN publicacion p ON p.id = pagina.id), '[]'::jsonb),
+                'tipoPublicacion', 'OPERADOR', 'id', ordenadas.id, 'precio', ordenadas.precio, 'fecha', ordenadas.fecha, 'foto', p.foto,
+                'cantidadUnidades', ordenadas."cantidadUnidades", 'especie', ordenadas.especie, 'variedad', ordenadas.variedad,
+                'presentacion', ordenadas.presentacion, 'categoria', ordenadas.categoria, 'calibre', ordenadas.calibre,
+                'codigoCalibre', ordenadas."codigoCalibre", 'pais', ordenadas.pais,
+                'operador', jsonb_build_object('id', ordenadas."operadorId", 'nombreFantasia', ordenadas."operadorNombreFantasia", 'whatsApp', ordenadas."operadorWhatsApp")
+            ) ORDER BY ordenadas.posicion) FROM ordenadas JOIN publicacion p ON p.id = ordenadas.id), '[]'::jsonb),
             'opciones', coalesce((SELECT jsonb_agg(opcion ORDER BY especie, variedad, presentacion, categoria, calibre)
                 FROM (SELECT DISTINCT especie, variedad, presentacion, categoria, calibre FROM visibles) AS opcion), '[]'::jsonb),
-            'total', (SELECT total FROM limites), 'totalCatalogo', (SELECT count(*)::int FROM visibles),
-            'pagina', (SELECT pagina FROM limites), 'tamanoPagina', ${TAMANO_PAGINA}::int
+            'total', (SELECT count(*)::int FROM filtradas), 'totalCatalogo', (SELECT count(*)::int FROM visibles)
         )::text AS resultado
     `.returnsRow({ resultado: "pg/text@1" }).build();
     const filas = await db.runtime().query(plan);

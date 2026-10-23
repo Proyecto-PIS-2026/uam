@@ -226,8 +226,19 @@ describe("Página de precios históricos", () => {
         expect(obtenerHistoricoPreciosMock).not.toHaveBeenCalled();
     });
 
+    it("carga el selector existente al entrar al histórico sin un producto elegido", async () => {
+        const componente = await cargarPagina({});
+
+        expect(obtenerHistoricoPreciosMock).not.toHaveBeenCalled();
+        expect(obtenerCatalogoMock).toHaveBeenCalledOnce();
+        expect(componente.props.historico).toBeNull();
+        expect(componente.props.producto.id).toBe("");
+        expect(componente.props.especies).toEqual([{ id: "60", especie: "Banana" }]);
+        expect(componente.props.error).toBeUndefined();
+    });
+
     it.each([
-        {},
+        { species_id: "" },
         { species_id: "-60" },
         { species_id: "0" },
         { species_id: "0x60" },

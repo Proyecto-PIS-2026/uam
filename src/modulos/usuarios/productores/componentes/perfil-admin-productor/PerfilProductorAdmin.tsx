@@ -1,5 +1,7 @@
 "use client";
 
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 
@@ -21,22 +23,23 @@ type PerfilProductorAdminProps = {
 export default function PerfilProductorAdmin({ productor }: PerfilProductorAdminProps) {
     const inicialProductor = productor.nombreFantasia.trim()[0]?.toUpperCase();
     const [altaAbierta, setAltaAbierta] = useState(false);
-    const [mensaje, setMensaje] = useState("");
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const router = useRouter();
 
     function abrirAlta() {
-        setMensaje("");
+        cerrarNotificacion();
         setAltaAbierta(true);
     }
 
     function publicacionCreada(aviso: string) {
         setAltaAbierta(false);
-        setMensaje(aviso);
+        notificar(aviso, "success");
         router.refresh();
     }
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-productor">
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <Link href="/administracion#usuarios" className={styles.volver}>
                 ← Volver al listado de productores
             </Link>
@@ -84,7 +87,6 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                 </div>
             </div>
 
-            {mensaje && <p className={styles.mensajeExito} role="status">{mensaje}</p>}
 
             <div className={styles.filaPublicaciones}>
                 <h2 className={styles.subtituloPublicaciones}>Publicaciones ({productor.publicaciones.length})</h2>

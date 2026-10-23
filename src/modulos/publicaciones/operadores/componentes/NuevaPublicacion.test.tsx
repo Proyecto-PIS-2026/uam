@@ -195,6 +195,26 @@ describe("NuevaPublicacion", () => {
         if (!formulario) throw new Error("No se encontró el formulario de publicación.");
         fireEvent.submit(formulario);
         expect(await screen.findByRole("alert")).toHaveTextContent("La publicación no es válida.");
+        expect(within(formulario).getByRole("alert")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Cerrar notificación" })).not.toBeInTheDocument();
+    });
+
+    it("muestra los fallos técnicos en un toast y conserva el formulario para reintentar", async () => {
+        prepararFetch({ errores: ["No se pudo guardar la publicación."] }, 500);
+        renderDrawer();
+        const boton = screen.getByRole("button", { name: "Confirmar" });
+        await waitFor(() => expect(boton).toBeEnabled());
+        const formulario = boton.closest("form")!;
+        completarFormulario(formulario);
+        fireEvent.submit(formulario);
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar la publicación.");
+        expect(within(formulario).queryByRole("alert")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByLabelText("Precio en pesos")).toHaveValue("1250");
+        expect(boton).toBeEnabled();
+        expect(mocks.alCrear).not.toHaveBeenCalled();
     });
 
     it("envía la publicación y comunica el alta sin navegar a otra página", async () => {

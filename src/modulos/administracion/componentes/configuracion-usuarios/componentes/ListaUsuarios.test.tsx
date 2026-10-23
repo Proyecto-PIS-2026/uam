@@ -83,24 +83,6 @@ vi.mock("@mui/material/Pagination", () => ({
     ),
 }));
 
-vi.mock("@mui/material/IconButton", () => ({
-    default: ({
-        children,
-        title,
-        onClick,
-        disabled,
-    }: {
-        children?: ReactNode;
-        title?: string;
-        onClick?: (evento: MouseEvent<HTMLButtonElement>) => void;
-        disabled?: boolean;
-    }) => (
-        <button type="button" title={title} onClick={onClick} disabled={disabled}>
-            {children}
-        </button>
-    ),
-}));
-
 vi.mock("@mui/material/Dialog", () => ({
     default: ({
         open,
@@ -147,44 +129,6 @@ vi.mock("@mui/material/Button", () => ({
         <button type={type} onClick={onClick} disabled={disabled}>
             {children}
         </button>
-    ),
-}));
-
-vi.mock("@mui/material/Snackbar", () => ({
-    default: ({
-        open,
-        onClose,
-        children,
-    }: {
-        open: boolean;
-        onClose: () => void;
-        children?: ReactNode;
-    }) => (
-        <div data-testid="snackbar" hidden={!open}>
-            {open ? children : undefined}
-            <button type="button" aria-label="Cerrar snackbar" onClick={onClose}>
-                Cerrar
-            </button>
-        </div>
-    ),
-}));
-
-vi.mock("@mui/material/Alert", () => ({
-    default: ({
-        severity,
-        onClose,
-        children,
-    }: {
-        severity: "error" | "success";
-        onClose: () => void;
-        children?: ReactNode;
-    }) => (
-        <div role="alert" data-severity={severity}>
-            {children}
-            <button type="button" aria-label="Cerrar alerta" onClick={onClose}>
-                Cerrar
-            </button>
-        </div>
     ),
 }));
 
@@ -440,7 +384,7 @@ describe("ListaUsuarios", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
-    it("espera a onEliminar antes de mostrar el éxito y permite cerrar el snackbar", async () => {
+    it("espera a onEliminar antes de mostrar el éxito y permite cerrar la notificación", async () => {
         const onEliminar = vi.fn().mockResolvedValue(undefined);
 
         renderLista({ onEliminar });
@@ -450,7 +394,7 @@ describe("ListaUsuarios", () => {
 
         await waitFor(() => {
             expect(onEliminar).toHaveBeenCalledWith(usuarios[1]);
-            expect(screen.getByRole("alert")).toHaveTextContent(
+            expect(screen.getByRole("status")).toHaveTextContent(
                 "El usuario beto.operador fue eliminado correctamente.",
             );
         });
@@ -458,9 +402,9 @@ describe("ListaUsuarios", () => {
         expect(screen.queryByText("beto.operador")).not.toBeInTheDocument();
         expect(screen.getByTestId("dialog")).not.toBeVisible();
 
-        fireEvent.click(screen.getByRole("button", { name: "Cerrar snackbar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
 
-        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
     it("mantiene al usuario y muestra un error cuando onEliminar falla", async () => {
@@ -477,11 +421,10 @@ describe("ListaUsuarios", () => {
             );
         });
 
-        expect(screen.getByRole("alert")).toHaveAttribute("data-severity", "error");
         expect(screen.getByText("beto.operador")).toBeInTheDocument();
         expect(screen.getByTestId("dialog")).not.toBeVisible();
 
-        fireEvent.click(screen.getByRole("button", { name: "Cerrar snackbar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
 
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });

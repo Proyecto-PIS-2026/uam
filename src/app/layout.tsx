@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import '@/estilos/globals.css';
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import EncabezadoOperador from "@/compartido/EncabezadoOperador";
+import PiePagina from "@/compartido/PiePagina";
+import TemaAplicacion from "@/compartido/TemaAplicacion";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,8 +34,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AppRouterCacheProvider>
-          <EncabezadoOperador />
-          {children}
+          <TemaAplicacion>
+            <EncabezadoOperador />
+            {children}
+            <PiePagina />
+          </TemaAplicacion>
         </AppRouterCacheProvider>
       </body>
     </html>

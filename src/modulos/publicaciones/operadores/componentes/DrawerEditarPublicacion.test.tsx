@@ -441,7 +441,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         fireEvent.click(disponibilidad);
         expect(disponibilidad).not.toBeChecked();
         expect(screen.getByText("No disponible")).toBeInTheDocument();
-    
+
         const inputUnidades = screen.getByPlaceholderText("Ingresar cantidad aquí") as HTMLInputElement;
         fireEvent.change(inputUnidades, { target: { value: "abc" } });
         expect(inputUnidades.value).toBe("");
@@ -451,12 +451,12 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, {
             version: 1,
-            precio: "150", 
-            foto: undefined, 
-            categoriaId: 3, 
-            calibreId: 4, 
-            presentacionId: 111, 
-            paisId: 44, 
+            precio: "150",
+            foto: undefined,
+            categoriaId: 3,
+            calibreId: 4,
+            presentacionId: 111,
+            paisId: 44,
             disponible: false,
             cantidadUnidades: null
         }, null));
@@ -573,6 +573,10 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         fireEvent.change(screen.getByLabelText("Precio en pesos"), {target: { value: "101" }});
         guardarDesdeBoton();
         expect(await screen.findByRole("alert")).toHaveTextContent("La publicación no está disponible para editar.");
+        expect(screen.getByRole("alert").closest('[role="dialog"]')).toBeNull();
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByLabelText("Precio en pesos")).toHaveValue("101");
         expect(mocks.cerrar).not.toHaveBeenCalled();
         expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
     });
