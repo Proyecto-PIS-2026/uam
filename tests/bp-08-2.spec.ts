@@ -87,7 +87,7 @@ for (const pantalla of [
     await expect(detalle.getByText(nombreOperador, { exact: true })).toBeVisible();
 
     const enlacePerfil = detalle.getByRole("link", { name: "Ver Perfil", exact: true });
-    await expect(enlacePerfil).toHaveAttribute("href", `/operadores/${encodeURIComponent(nombreOperador)}`);
+    await expect(enlacePerfil).toHaveAttribute("href", `/operadores/${encodeURIComponent(nombreOperador)}?origen=publicaciones`);
     await enlacePerfil.click();
 
     await expect(page).toHaveURL((url) =>

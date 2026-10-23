@@ -1,0 +1,84 @@
+.contenedor {
+    margin-top: 1rem;
+    margin-bottom: 0;
+    min-width: 0;
+}
+
+.titulo {
+    margin: 0 0 0.5rem;
+    color: black; 
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ubicacion {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background-color: var(--color-surface);
+    color: var(--color-secondary);
+    text-decoration: none;
+    transition: background-color 150ms, border-color 150ms;
+    box-sizing: border-box;
+}
+
+.ubicacion:hover,
+.ubicacion:focus-visible {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+}
+
+.ubicacion:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+}
+
+.icono {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.informacion {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.nombre {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.descripcion {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.85rem;
+}
+
+.flecha {
+    flex-shrink: 0;
+}

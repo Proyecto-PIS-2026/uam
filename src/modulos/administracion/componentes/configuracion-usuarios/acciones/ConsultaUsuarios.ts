@@ -16,7 +16,7 @@ export default async function consultarDatosModificarUsuarios(): Promise<DatosMo
             )
             .all(),
         db.orm.public.Productor
-            .select("id")
+            .select("id", "nombreFantasia")
             .include("usuario", (usuario) =>
                 usuario.select("id", "username", "rol", "solicitoRestablecimiento")
             )
@@ -45,6 +45,7 @@ export default async function consultarDatosModificarUsuarios(): Promise<DatosMo
             username: productor.usuario.username,
             rol: "PRODUCTOR" as const,
             productorId: productor.id,
+            nombreFantasia: productor.nombreFantasia,
             solicitoRestablecimiento: productor.usuario.solicitoRestablecimiento,
         })),
     ];

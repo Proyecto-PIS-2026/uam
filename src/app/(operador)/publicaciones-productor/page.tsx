@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
-import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
+import { requerirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import ContenedorPublicaciones from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones";
 import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacionProductor.action";
@@ -8,8 +6,7 @@ import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarP
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-    const sesion = await requerirOperador();
-    if (!autorizado("operador.mercado.acceder", sesion)) redirect("/inicio");
+    const sesion = await requerirConsultaProductores();
     const resultado = await obtenerPublicaciones(sesion);
     const publicaciones = resultado?.publicaciones ?? [];
     return (
