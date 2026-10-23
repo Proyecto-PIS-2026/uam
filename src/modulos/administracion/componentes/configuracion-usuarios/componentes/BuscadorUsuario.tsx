@@ -59,6 +59,14 @@ export default function BuscadorUsuario({ busqueda, onBusquedaChange, tipoUsuari
                     {rolesDisponibles.map((rol) => (<MenuItem key={rol.value} value={rol.value} className={styles.opcionSelect}> {rol.label} </MenuItem>))}
                 </Select>
 
+                <Select value={restablecimiento} onChange={(evento) =>
+                    onRestablecimientoChange( evento.target.value as FiltroRestablecimiento )} className={styles.selectorRolMovil} displayEmpty renderValue={() => <FilterListIcon aria-hidden="true" />}
+                    aria-label="Filtrar por restablecimiento"
+                    MenuProps={{ slotProps: {paper: {sx: {maxHeight: "min(20rem, 50dvh)",overflowY: "auto"}}}}}
+                >
+                    {opcionesRestablecimiento.map((opcion) => (<MenuItem key={opcion.value}value={opcion.value} className={styles.opcionSelect} > {opcion.label} </MenuItem>))}
+                </Select>
+                
                 <div className={styles.selectorRol} data-opcion-mas-larga="Solicitado">
                     <TextField select label="Restablecimiento" value={restablecimiento} onChange={(evento) =>
                         onRestablecimientoChange(evento.target.value as FiltroRestablecimiento)} size="small" className={styles.selectMui} slotProps={propiedadesMenuSelect}>
