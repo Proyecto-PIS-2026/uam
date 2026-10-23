@@ -31,7 +31,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
             if (!texto) return true;
             if (usuario.username.toLowerCase().includes(texto)) return true;
             if (usuario.rol === "ADMINISTRADOR" && usuario.email.toLowerCase().includes(texto)) return true;
-            if (usuario.rol === "OPERADOR" && usuario.nombreFantasia.toLowerCase().includes(texto)) return true;
+            if (usuario.rol !== "ADMINISTRADOR" && usuario.nombreFantasia.toLowerCase().includes(texto)) return true;
             return false;
         });
     }, [datos, busqueda, tipoUsuario, restablecimiento]);

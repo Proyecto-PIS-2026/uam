@@ -129,6 +129,7 @@ const usuarios: UsuarioParaModificar[] = [
         username: "carla.productor",
         rol: "PRODUCTOR",
         productorId: 301,
+        nombreFantasia: "Granja Carla",
         solicitoRestablecimiento: false,
     },
 ];
