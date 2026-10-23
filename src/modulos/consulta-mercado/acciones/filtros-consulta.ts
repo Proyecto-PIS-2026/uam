@@ -7,6 +7,7 @@ export type FiltrosConsulta = {
     presentacion?: string;
     categoria?: string;
     calibre?: string;
+    nave?: string;
     precioMinimo?: string;
     precioMaximo?: string;
     orden?: OrdenConsulta;
@@ -40,7 +41,7 @@ export function normalizarFiltros(valor: FiltrosConsulta = {}) {
     return {
         busqueda: texto("busqueda", 200).toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
         especie: texto("especie"), variedad: texto("variedad"), presentacion: texto("presentacion"),
-        categoria: texto("categoria"), calibre: texto("calibre"),
+        categoria: texto("categoria"), calibre: texto("calibre"), nave: texto("nave"),
         precioMinimo: precio("precioMinimo"), precioMaximo: precio("precioMaximo"), orden,
     };
 }

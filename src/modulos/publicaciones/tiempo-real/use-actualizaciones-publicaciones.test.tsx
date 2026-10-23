@@ -8,6 +8,13 @@ class FuenteEventos extends EventTarget {
     constructor(public url: string) { super(); FuenteEventos.instancias.push(this); }
 }
 
+async function notificar(fuente: FuenteEventos, tipo: "conectado" | "cambio", version: string, espera = 200) {
+    await act(async () => {
+        fuente.dispatchEvent(new MessageEvent(tipo, { lastEventId: version }));
+        await vi.advanceTimersByTimeAsync(espera);
+    });
+}
+
 describe("actualizaciones de publicaciones", () => {
     beforeEach(() => {
         FuenteEventos.instancias = [];
@@ -16,7 +23,7 @@ describe("actualizaciones de publicaciones", () => {
     });
     afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
-    it("agrupa eventos y vuelve a consultar al conectarse o reconectarse", async () => {
+    it("conserva la recarga conservadora y el debounce para eventos sin versión", async () => {
         const actualizar = vi.fn();
         const hook = renderHook(() => useActualizacionesPublicaciones(actualizar, 7));
         const fuente = FuenteEventos.instancias[0];
@@ -32,6 +39,131 @@ describe("actualizaciones de publicaciones", () => {
         expect(actualizar).toHaveBeenCalledTimes(2);
         hook.unmount();
         expect(fuente.close).toHaveBeenCalledOnce();
+    });
+
+    it("sincroniza una vez al conectar y omite la misma versión en reconexiones y cambios repetidos", async () => {
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+
+        expect(actualizar).not.toHaveBeenCalled();
+        await notificar(fuente, "conectado", "epoca:0", 199);
+        expect(actualizar).not.toHaveBeenCalled();
+        await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+        expect(actualizar).toHaveBeenCalledOnce();
+
+        for (let intento = 0; intento < 3; intento++) await notificar(fuente, "conectado", "epoca:0");
+        await notificar(fuente, "cambio", "epoca:0");
+        expect(actualizar).toHaveBeenCalledOnce();
+        hook.unmount();
+    });
+
+    it("recupera cambios durante una desconexión y reconoce una nueva época aunque su contador sea menor", async () => {
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+        await notificar(fuente, "conectado", "arranque-a:8");
+        await notificar(fuente, "conectado", "arranque-a:12");
+        expect(actualizar).toHaveBeenCalledTimes(2);
+
+        await notificar(fuente, "conectado", "arranque-b:1");
+        await notificar(fuente, "conectado", "arranque-b:1");
+        expect(actualizar).toHaveBeenCalledTimes(3);
+        hook.unmount();
+    });
+
+    it("agrupa una ráfaga y aplica la última versión recibida", async () => {
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+        await act(async () => {
+            fuente.dispatchEvent(new MessageEvent("conectado", { lastEventId: "a" }));
+            fuente.dispatchEvent(new MessageEvent("cambio", { lastEventId: "b" }));
+            fuente.dispatchEvent(new MessageEvent("cambio", { lastEventId: "c" }));
+            await vi.advanceTimersByTimeAsync(200);
+        });
+        expect(actualizar).toHaveBeenCalledOnce();
+        await notificar(fuente, "conectado", "c");
+        expect(actualizar).toHaveBeenCalledOnce();
+        hook.unmount();
+    });
+
+    it("no agrega otra carga por duplicados de una versión que se está sincronizando", async () => {
+        let terminar!: () => void;
+        const actualizar = vi.fn().mockImplementationOnce(() => new Promise<void>((resolve) => { terminar = resolve; }));
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+        await notificar(fuente, "conectado", "a");
+        await notificar(fuente, "cambio", "a");
+        await notificar(fuente, "conectado", "a");
+        expect(actualizar).toHaveBeenCalledOnce();
+
+        await act(async () => { terminar(); await vi.advanceTimersByTimeAsync(1000); });
+        await notificar(fuente, "conectado", "a");
+        expect(actualizar).toHaveBeenCalledOnce();
+        hook.unmount();
+    });
+
+    it("serializa la consulta y conserva la última versión nueva llegada durante la carga", async () => {
+        let terminar!: () => void;
+        const actualizar = vi.fn().mockImplementationOnce(() => new Promise<void>((resolve) => { terminar = resolve; }));
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+        await notificar(fuente, "conectado", "a");
+        await notificar(fuente, "cambio", "b");
+        await notificar(fuente, "cambio", "c");
+        await notificar(fuente, "conectado", "c");
+        expect(actualizar).toHaveBeenCalledOnce();
+
+        await act(async () => { terminar(); await vi.advanceTimersByTimeAsync(199); });
+        expect(actualizar).toHaveBeenCalledOnce();
+        await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+        expect(actualizar).toHaveBeenCalledTimes(2);
+        await notificar(fuente, "conectado", "c");
+        expect(actualizar).toHaveBeenCalledTimes(2);
+        hook.unmount();
+    });
+
+    it.each(["rechazo", "false"])("reintenta la misma versión en la próxima conexión cuando la sincronización devuelve %s", async (fallo) => {
+        const actualizar = vi.fn()
+            .mockImplementationOnce(() => fallo === "rechazo" ? Promise.reject(new Error("Sin conexión")) : Promise.resolve(false))
+            .mockResolvedValue(undefined);
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+        await notificar(fuente, "conectado", "a");
+        await act(async () => { await vi.advanceTimersByTimeAsync(10000); });
+        expect(actualizar).toHaveBeenCalledOnce();
+
+        await notificar(fuente, "conectado", "a");
+        expect(actualizar).toHaveBeenCalledTimes(2);
+        await notificar(fuente, "conectado", "a");
+        expect(actualizar).toHaveBeenCalledTimes(2);
+        hook.unmount();
+    });
+
+    it("no pierde una versión nueva pendiente si la consulta en curso rechaza", async () => {
+        let rechazar!: (razon: Error) => void;
+        const actualizar = vi.fn().mockImplementationOnce(() => new Promise<void>((_, reject) => { rechazar = reject; }));
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+        await notificar(fuente, "conectado", "a");
+        await notificar(fuente, "cambio", "b");
+        await act(async () => { rechazar(new Error("Sin conexión")); await vi.advanceTimersByTimeAsync(200); });
+        expect(actualizar).toHaveBeenCalledTimes(2);
+        await notificar(fuente, "conectado", "b");
+        expect(actualizar).toHaveBeenCalledTimes(2);
+        hook.unmount();
+    });
+
+    it("trata también los MessageEvent con lastEventId vacío como avisos sin versión", async () => {
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+        await notificar(fuente, "conectado", "a");
+        await notificar(fuente, "cambio", "");
+        await notificar(fuente, "conectado", "");
+        expect(actualizar).toHaveBeenCalledTimes(3);
+        hook.unmount();
     });
 
     it("espera la consulta en curso y conserva una actualización pendiente", async () => {
@@ -55,16 +187,18 @@ describe("actualizaciones de publicaciones", () => {
         });
         const primera = FuenteEventos.instancias[0];
         expect(primera.url).toBe("/api/publicaciones/eventos?operadorPublicoId=7");
+        await notificar(primera, "conectado", "misma-version");
         hook.rerender({ operadorPublicoId: 7 });
         expect(FuenteEventos.instancias).toHaveLength(1);
         hook.rerender({ operadorPublicoId: 8 });
         expect(primera.close).toHaveBeenCalledOnce();
         expect(FuenteEventos.instancias[1].url).toBe("/api/publicaciones/eventos?operadorPublicoId=8");
         await act(async () => {
-            FuenteEventos.instancias[1].dispatchEvent(new Event("cambio"));
+            primera.dispatchEvent(new MessageEvent("cambio", { lastEventId: "fuente-cerrada" }));
+            FuenteEventos.instancias[1].dispatchEvent(new MessageEvent("conectado", { lastEventId: "misma-version" }));
             await vi.advanceTimersByTimeAsync(200);
         });
-        expect(actualizar).toHaveBeenCalledOnce();
+        expect(actualizar).toHaveBeenCalledTimes(2);
         hook.unmount();
     });
 
@@ -72,24 +206,96 @@ describe("actualizaciones de publicaciones", () => {
         const primera = vi.fn();
         const segunda = vi.fn();
         const hook = renderHook(({ actualizar }) => useActualizacionesPublicaciones(actualizar), { initialProps: { actualizar: primera } });
+        await notificar(FuenteEventos.instancias[0], "cambio", "a", 0);
         hook.rerender({ actualizar: segunda });
-        await act(async () => { FuenteEventos.instancias[0].dispatchEvent(new Event("cambio")); await vi.advanceTimersByTimeAsync(200); });
+        await act(async () => { await vi.advanceTimersByTimeAsync(200); });
         expect(primera).not.toHaveBeenCalled();
         expect(segunda).toHaveBeenCalledOnce();
         expect(FuenteEventos.instancias).toHaveLength(1);
         hook.unmount();
     });
 
-    it("suspende la conexión cuando la pestaña queda oculta y recupera al volver", () => {
+    it("suspende la conexión oculta, conserva la versión aplicada e ignora eventos de la fuente cerrada", async () => {
         let visible = "visible";
         vi.spyOn(document, "visibilityState", "get").mockImplementation(() => visible as DocumentVisibilityState);
-        const hook = renderHook(() => useActualizacionesPublicaciones(vi.fn()));
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const primera = FuenteEventos.instancias[0];
+        await notificar(primera, "conectado", "a");
         visible = "hidden";
         act(() => document.dispatchEvent(new Event("visibilitychange")));
-        expect(FuenteEventos.instancias[0].close).toHaveBeenCalledOnce();
+        expect(primera.close).toHaveBeenCalledOnce();
+        await notificar(primera, "cambio", "oculta");
         visible = "visible";
         act(() => document.dispatchEvent(new Event("visibilitychange")));
         expect(FuenteEventos.instancias).toHaveLength(2);
+        await notificar(FuenteEventos.instancias[1], "conectado", "a");
+        await notificar(primera, "cambio", "tardia");
+        expect(actualizar).toHaveBeenCalledOnce();
+
+        await notificar(FuenteEventos.instancias[1], "conectado", "b");
+        expect(actualizar).toHaveBeenCalledTimes(2);
+        hook.unmount();
+    });
+
+    it("cancela el debounce al ocultarse y recupera ese cambio al volver a conectar", async () => {
+        let visible = "visible";
+        vi.spyOn(document, "visibilityState", "get").mockImplementation(() => visible as DocumentVisibilityState);
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        await notificar(FuenteEventos.instancias[0], "conectado", "a", 100);
+        visible = "hidden";
+        act(() => document.dispatchEvent(new Event("visibilitychange")));
+        await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+        expect(actualizar).not.toHaveBeenCalled();
+
+        visible = "visible";
+        act(() => document.dispatchEvent(new Event("visibilitychange")));
+        await notificar(FuenteEventos.instancias[1], "conectado", "a");
+        expect(actualizar).toHaveBeenCalledOnce();
+        hook.unmount();
+    });
+
+    it("espera a que una pestaña inicialmente oculta se vuelva visible", async () => {
+        let visible = "hidden";
+        vi.spyOn(document, "visibilityState", "get").mockImplementation(() => visible as DocumentVisibilityState);
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        expect(FuenteEventos.instancias).toHaveLength(0);
+        visible = "visible";
+        act(() => document.dispatchEvent(new Event("visibilitychange")));
+        await notificar(FuenteEventos.instancias[0], "conectado", "a");
+        expect(actualizar).toHaveBeenCalledOnce();
+        hook.unmount();
+    });
+
+    it("descarta el debounce y los eventos tardíos al desmontar", async () => {
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+        await notificar(fuente, "conectado", "a", 0);
+        hook.unmount();
+        await notificar(fuente, "cambio", "b");
+        expect(actualizar).not.toHaveBeenCalled();
+        expect(fuente.close).toHaveBeenCalledOnce();
+    });
+
+    it("descarta actualizaciones pendientes aunque una carga termine después del desmontaje", async () => {
+        let terminar!: () => void;
+        const actualizar = vi.fn().mockImplementationOnce(() => new Promise<void>((resolve) => { terminar = resolve; }));
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar));
+        const fuente = FuenteEventos.instancias[0];
+        await notificar(fuente, "conectado", "a");
+        await notificar(fuente, "cambio", "b");
+        hook.unmount();
+        await act(async () => { terminar(); await vi.advanceTimersByTimeAsync(1000); });
+        expect(actualizar).toHaveBeenCalledOnce();
+    });
+
+    it("no intenta conectar cuando EventSource no está disponible", () => {
+        vi.stubGlobal("EventSource", undefined);
+        const hook = renderHook(() => useActualizacionesPublicaciones(vi.fn()));
+        expect(FuenteEventos.instancias).toHaveLength(0);
         hook.unmount();
     });
 });

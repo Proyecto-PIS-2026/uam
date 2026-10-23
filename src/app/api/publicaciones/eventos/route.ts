@@ -3,6 +3,7 @@ import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
+import { Temporal } from "temporal-polyfill";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,16 +62,23 @@ export async function GET(solicitud: Request) {
                 }
                 controlador.enqueue(codificador.encode(contenido));
             };
-            desuscribir = escuchaPublicaciones.suscribir((cambio) => {
-                const operadorFiltrado = operadorId ?? operadorPublicoId;
-                if (cambio && operadorFiltrado !== undefined && cambio.operadorId !== operadorFiltrado) return;
-                enviar(`event: ${cambio ? "cambio" : "conectado"}\ndata: ${JSON.stringify(operadorId === undefined || !cambio ? {} : { publicacionId: cambio.publicacionId })}\n\n`);
-            });
-            enviar("retry: 3000\nevent: conectado\ndata: {}\n\n");
             const pulso = setInterval(() => enviar(": pulso\n\n"), 15000);
             const temporizador = setTimeout(cerrar, duracion);
             solicitud.signal.addEventListener("abort", abortar, { once: true });
-            if (solicitud.signal.aborted) cerrar();
+            if (solicitud.signal.aborted) {
+                cerrar();
+                return;
+            }
+            desuscribir = escuchaPublicaciones.suscribir((cambio) => {
+                const operadorFiltrado = operadorId ?? operadorPublicoId;
+                if (cambio && operadorFiltrado !== undefined && cambio.operadorId !== operadorFiltrado) return;
+                const version = escuchaPublicaciones.obtenerVersion(operadorFiltrado);
+                const fecha = Temporal.Now.plainDateISO("America/Montevideo").toString();
+                const datos = operadorId === undefined || cambio?.publicacionId === undefined ? {} : { publicacionId: cambio.publicacionId };
+                enviar(`${cambio ? "" : "retry: 3000\n"}id: ${version}:${fecha}\nevent: ${cambio ? "cambio" : "conectado"}\ndata: ${JSON.stringify(datos)}\n\n`);
+            });
+            // Un callback síncrono puede cerrar por backpressure antes de devolver la desuscripción.
+            if (cerrado) desuscribir();
         },
         cancel() { cerrar(true); },
     });

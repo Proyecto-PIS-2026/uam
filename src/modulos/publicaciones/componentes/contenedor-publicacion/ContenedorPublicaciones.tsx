@@ -45,6 +45,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
     const filtrosInicializados = useRef(false);
     const cargaEnCurso = useRef(false);
     const recargaPendiente = useRef(false);
+    const esperasDeCarga = useRef<Array<(actualizado: boolean) => void>>([]);
     const origen = useRef(resultado);
     const invalidarPeticiones = useCallback(() => { ultimoPedido.current++; }, []);
 
@@ -55,6 +56,13 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
             return;
         }
         cargaEnCurso.current = true;
+        if (temporizador.current) {
+            clearTimeout(temporizador.current);
+            temporizador.current = null;
+        }
+        const esperas = esperasDeCarga.current;
+        esperasDeCarga.current = [];
+        let actualizado = false;
         const pedido = ++ultimoPedido.current;
         setCargando(true);
         setError("");
@@ -63,12 +71,19 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
             if (!respuesta) throw new Error("No se pudieron cargar las publicaciones.");
             if (montado.current && pedido === ultimoPedido.current) {
                 setDatos(respuesta);
+                actualizado = true;
             }
         } catch {
             if (montado.current && pedido === ultimoPedido.current) setError("No se pudieron actualizar las publicaciones. Intentá nuevamente.");
         } finally {
             cargaEnCurso.current = false;
             if (montado.current && pedido === ultimoPedido.current) setCargando(false);
+            // Una respuesta descartada espera la consulta de los filtros vigentes.
+            if (montado.current && pedido !== ultimoPedido.current && (recargaPendiente.current || temporizador.current)) {
+                esperasDeCarga.current.push(...esperas);
+            } else {
+                for (const resolver of esperas) resolver(actualizado);
+            }
             if (recargaPendiente.current && montado.current) {
                 recargaPendiente.current = false;
                 void cargarActual();
@@ -77,8 +92,12 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
     }, []);
 
     const programarCarga = useCallback(() => {
-        if (temporizador.current) return;
-        temporizador.current = setTimeout(() => { temporizador.current = null; void cargar(); }, 250);
+        if (!montado.current) return Promise.resolve(false);
+        const finalizacion = new Promise<boolean>((resolver) => esperasDeCarga.current.push(resolver));
+        if (!temporizador.current) {
+            temporizador.current = setTimeout(() => { temporizador.current = null; void cargar(); }, 250);
+        }
+        return finalizacion;
     }, [cargar]);
 
     useActualizacionesPublicaciones(programarCarga);
@@ -96,6 +115,9 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
             montado.current = false;
             invalidarPeticiones();
             if (temporizador.current) clearTimeout(temporizador.current);
+            temporizador.current = null;
+            for (const resolver of esperasDeCarga.current) resolver(false);
+            esperasDeCarga.current = [];
         };
     }, [invalidarPeticiones]);
 
@@ -119,7 +141,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
 
     return (
         <div className="secciones-pagina" aria-busy={cargando}>
-            <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} totalRemoto={datos.total} especieFiltro={especie} ordenInicial="prioridad" alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
+            <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} navesDisponibles={datos.naves} totalRemoto={datos.total} especieFiltro={especie} ordenInicial="prioridad" alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
             {error && <p role="alert">{error} <button type="button" onClick={() => void cargar()}>Reintentar</button></p>}
             <ListadoPublicaciones publicaciones={datos.publicaciones} esAdmin={esAdmin} />
         </div>

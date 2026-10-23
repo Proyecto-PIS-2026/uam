@@ -216,6 +216,101 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.click(screen.getByRole("option", { name: valor }));
     };
 
+    it("ofrece las naves disponibles y consulta por su nombre exacto", () => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} opcionesRemotas={publicaciones} especieFiltro="" navesDisponibles={["B", "Tinglado", "A", "A"]} alConsultar={alConsultar} />);
+
+        expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Todas");
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Todas" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Nave A", "Nave B", "Tinglado"]);
+        fireEvent.click(screen.getByRole("option", { name: "Nave B" }));
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "B" }));
+
+        seleccionarFiltro("Nave", "Tinglado");
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Tinglado" }));
+        seleccionarFiltro("Nave", "Todas");
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Todas" }));
+    });
+
+    it("combina nave con los demás filtros y la restablece al limpiar", () => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} opcionesRemotas={publicacionesPrueba} especieFiltro="" navesDisponibles={["A", "B"]} alConsultar={alConsultar} />);
+
+        seleccionarFiltro("Nave", "Nave A");
+        seleccionarFiltro("Especie", "Manzana");
+        seleccionarFiltro("Variedad", "Gala");
+        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Categoría", "I");
+        seleccionarFiltro("Calibre", "Grande");
+        fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Frutas del Sur" } });
+        fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "50" } });
+        fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "200" } });
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
+
+        expect(alConsultar).toHaveBeenLastCalledWith({
+            busqueda: "Frutas del Sur", especie: "Manzana", variedad: "Gala", presentacion: "Caja",
+            categoria: "I", calibre: "Grande", precioMinimo: "50", precioMaximo: "200", orden: "precioDesc", nave: "A",
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Todas");
+        expect(alConsultar).toHaveBeenLastCalledWith({
+            busqueda: "", especie: "Todas", variedad: "Todas", presentacion: "Todas",
+            categoria: "Todas", calibre: "Todas", precioMinimo: "", precioMaximo: "", orden: "ninguno", nave: "Todas",
+        });
+    });
+
+    it.each([false, true])("omite Nave y su parámetro cuando no se habilita el filtro (consulta remota: %s)", (remota) => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} opcionesRemotas={remota ? publicaciones : undefined} especieFiltro="" alConsultar={alConsultar} />);
+
+        expect(screen.queryByRole("combobox", { name: "Nave" })).not.toBeInTheDocument();
+        expect(alConsultar.mock.calls.at(-1)?.[0]).not.toHaveProperty("nave");
+        fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Manzana" } });
+        expect(alConsultar.mock.calls.at(-1)?.[0]).not.toHaveProperty("nave");
+    });
+
+    it("conserva la nave seleccionada durante recargas sin resultados ni la opción original", () => {
+        const alConsultar = vi.fn();
+        const advertencia = vi.spyOn(console, "warn").mockImplementation(() => {});
+        try {
+            const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} opcionesRemotas={publicaciones} especieFiltro="" totalRemoto={1} navesDisponibles={["A", "B"]} alConsultar={alConsultar} />);
+            seleccionarFiltro("Nave", "Nave B");
+            alConsultar.mockClear();
+
+            vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={[]} opcionesRemotas={[]} especieFiltro="" totalRemoto={0} navesDisponibles={["A"]} alConsultar={alConsultar} />);
+
+            expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
+            expect(screen.getByText("0 publicaciones")).toBeInTheDocument();
+            expect(alConsultar).not.toHaveBeenCalled();
+            fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
+            expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Nave A", "Nave B"]);
+            fireEvent.click(screen.getByRole("option", { name: "Nave B" }));
+            fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Sin coincidencias" } });
+            expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ busqueda: "Sin coincidencias", nave: "B" }));
+
+            vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={[]} opcionesRemotas={[]} especieFiltro="" totalRemoto={0} navesDisponibles={[]} alConsultar={alConsultar} />);
+            expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
+            seleccionarFiltro("Nave", "Todas");
+            expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Todas" }));
+            expect(advertencia).not.toHaveBeenCalled();
+        } finally {
+            advertencia.mockRestore();
+        }
+    });
+
+    it("mantiene visible la opción Todas aunque todavía no haya naves disponibles", () => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={[]} opcionesRemotas={[]} especieFiltro="" navesDisponibles={[]} alConsultar={alConsultar} />);
+
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
+        expect(screen.getAllByRole("option")).toHaveLength(1);
+        expect(screen.getByRole("option", { name: "Todas" })).toBeInTheDocument();
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Todas" }));
+    });
+
     it("descarta categoría y calibre desaparecidos al editar las publicaciones", () => {
         const alFiltrar = vi.fn();
         const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro="" alFiltrar={alFiltrar}/>);
@@ -1150,6 +1245,7 @@ describe("FiltrosPublicaciones", () => {
                 alFiltrar={alFiltrar}
             />
         );
+        expect(screen.queryByRole("combobox", { name: "Nave" })).not.toBeInTheDocument();
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), {target: { value: "mercado verde" }});
         expect(alFiltrar).toHaveBeenLastCalledWith([base]);
     });

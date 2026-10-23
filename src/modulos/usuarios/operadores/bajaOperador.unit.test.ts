@@ -108,6 +108,11 @@ describe("baja de operador con autorización y múltiples dependencias", () => {
         expect(usuarioExiste).toBe(false);
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/administracion");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/publicaciones");
+        expect(mocks.bloquear).toHaveBeenLastCalledWith({
+            texto: "SELECT pg_notify('uam_publicaciones', ?)::text AS notificado",
+            valores: [JSON.stringify({ operadorId: 14 })],
+        });
+        expect(mocks.bloquear.mock.invocationCallOrder.at(-1)).toBeGreaterThan(mocks.usuario.delete.mock.invocationCallOrder.at(-1)!);
     });
 
     it("incluye las publicaciones confirmadas mientras esperaba el bloqueo del operador", async () => {
@@ -143,6 +148,19 @@ describe("baja de operador con autorización y múltiples dependencias", () => {
         mocks.usuario.delete.mockRejectedValueOnce(new Error("Fallo de base"));
 
         await expect(bajaOperador({ operadorId: 14 })).rejects.toThrow("Fallo de base");
+        expect(locales).toEqual([10, 11, 12]);
+        expect(publicaciones).toEqual([20, 21]);
+        expect(operadorExiste).toBe(true);
+        expect(usuarioExiste).toBe(true);
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+        expect(mocks.bloquear.mock.calls.some(([plan]) => plan.texto.includes("pg_notify"))).toBe(false);
+    });
+
+    it("revierte la baja si no se puede notificar el cambio de catálogo", async () => {
+        mocks.bloquear.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("Fallo al notificar el catálogo"));
+
+        await expect(bajaOperador({ operadorId: 14 })).rejects.toThrow("Fallo al notificar el catálogo");
         expect(locales).toEqual([10, 11, 12]);
         expect(publicaciones).toEqual([20, 21]);
         expect(operadorExiste).toBe(true);
@@ -197,5 +215,6 @@ describe("baja de operador con autorización y múltiples dependencias", () => {
         operadorExiste = false;
         expect(await bajaOperador({ operadorId: 14 })).toEqual({ esValido: false, errores: ["El operador seleccionado ya no existe."] });
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
+        expect(mocks.bloquear.mock.calls.some(([plan]) => plan.texto.includes("pg_notify"))).toBe(false);
     });
 });

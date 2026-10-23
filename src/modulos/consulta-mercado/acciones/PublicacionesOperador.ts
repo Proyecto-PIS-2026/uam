@@ -28,6 +28,7 @@ export type PublicacionListado = {
 export type ResultadoPublicaciones = {
     publicaciones: PublicacionListado[];
     opciones: OpcionProducto[];
+    naves: string[];
     total: number;
     totalCatalogo: number;
 };
@@ -40,7 +41,11 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
     const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
     const prioridades = especiesPrioritarias.map((nombre) => nombre.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "")).join("|");
     const plan = db.raw.sql`
-        WITH visibles AS (
+        WITH locales_vigentes AS (
+            SELECT l."operadorId", n."nombreNave"
+            FROM local l JOIN nave n ON n.id = l."naveId"
+            WHERE l."finContrato" IS NULL OR (l."finContrato" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date
+        ), visibles AS (
             SELECT p.id, p.precio, p.fecha, p."cantidadUnidades",
                 e."nombreEspecie" AS especie, v."nombreVariedad" AS variedad,
                 pr."nombrePresentacion" AS presentacion, c."nombreCategoria" AS categoria,
@@ -58,8 +63,7 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
             JOIN operador o ON o.id = po."operadorId"
             WHERE p."tipoPublicacion" = 'OPERADOR' AND p."publicacionActiva" = true AND p."publicacionDisponible" = true
               AND EXISTS (
-                SELECT 1 FROM local l WHERE l."operadorId" = o.id
-                AND (l."finContrato" IS NULL OR (l."finContrato" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date)
+                SELECT 1 FROM locales_vigentes l WHERE l."operadorId" = o.id
               )
         ), filtradas AS (
             SELECT * FROM visibles
@@ -68,6 +72,10 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
               AND (${consulta.presentacion} = '' OR presentacion = ${consulta.presentacion})
               AND (${consulta.categoria} = '' OR categoria = ${consulta.categoria})
               AND (${consulta.calibre} = '' OR calibre = ${consulta.calibre})
+              AND (${consulta.nave} = '' OR EXISTS (
+                SELECT 1 FROM locales_vigentes l
+                WHERE l."operadorId" = visibles."operadorId" AND l."nombreNave" = ${consulta.nave}
+              ))
               AND (nullif(${consulta.precioMinimo ?? ""}::text, '')::numeric IS NULL OR precio >= nullif(${consulta.precioMinimo ?? ""}::text, '')::numeric)
               AND (nullif(${consulta.precioMaximo ?? ""}::text, '')::numeric IS NULL OR precio <= nullif(${consulta.precioMaximo ?? ""}::text, '')::numeric)
               AND NOT EXISTS (
@@ -99,6 +107,9 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
             ) ORDER BY ordenadas.posicion) FROM ordenadas JOIN publicacion p ON p.id = ordenadas.id), '[]'::jsonb),
             'opciones', coalesce((SELECT jsonb_agg(opcion ORDER BY especie, variedad, presentacion, categoria, calibre)
                 FROM (SELECT DISTINCT especie, variedad, presentacion, categoria, calibre FROM visibles) AS opcion), '[]'::jsonb),
+            'naves', coalesce((SELECT jsonb_agg("nombreNave" ORDER BY "nombreNave")
+                FROM (SELECT DISTINCT l."nombreNave" FROM locales_vigentes l
+                    WHERE EXISTS (SELECT 1 FROM visibles v WHERE v."operadorId" = l."operadorId")) AS naves), '[]'::jsonb),
             'total', (SELECT count(*)::int FROM filtradas), 'totalCatalogo', (SELECT count(*)::int FROM visibles)
         )::text AS resultado
     `.returnsRow({ resultado: "pg/text@1" }).build();

@@ -10,23 +10,28 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
         if (typeof EventSource === "undefined") return;
         let fuente: EventSource | null = null;
         let temporizador: ReturnType<typeof setTimeout> | undefined;
-        let actualizando = false;
-        let pendiente = false;
+        let versionAplicada: string | null = null;
+        let enCurso: { version: string | null } | null = null;
+        let pendiente: { version: string | null } | null = null;
         let cerrado = false;
         const recargar = async () => {
-            if (cerrado) return;
-            if (actualizando) { pendiente = true; return; }
-            actualizando = true;
-            try { await actualizar(); } catch {} finally {
-                actualizando = false;
-                if (pendiente && !cerrado) {
-                    pendiente = false;
-                    programar();
-                }
+            if (cerrado || enCurso || !pendiente || document.visibilityState === "hidden") return;
+            const solicitud = pendiente;
+            pendiente = null;
+            enCurso = solicitud;
+            try {
+                const resultado = await actualizar();
+                // Una consulta fallida no consume la versión: otra conexión puede reintentarla.
+                if (!cerrado && resultado !== false) versionAplicada = solicitud.version;
+            } catch {
+                // El próximo evento vuelve a intentar la versión pendiente de aplicar.
+            } finally {
+                enCurso = null;
+                programar();
             }
         };
         const programar = () => {
-            if (temporizador || cerrado) return;
+            if (temporizador !== undefined || cerrado || enCurso || !pendiente || document.visibilityState === "hidden") return;
             temporizador = setTimeout(() => {
                 temporizador = undefined;
                 void recargar();
@@ -35,12 +40,25 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
         const conectar = () => {
             fuente?.close();
             fuente = null;
+            clearTimeout(temporizador);
+            temporizador = undefined;
+            pendiente = null;
             if (document.visibilityState === "hidden") return;
             const parametros = operadorId !== undefined ? `?operadorId=${operadorId}`
                 : operadorPublicoId !== undefined ? `?operadorPublicoId=${operadorPublicoId}` : "";
-            fuente = new EventSource(`/api/publicaciones/eventos${parametros}`);
-            fuente.addEventListener("cambio", programar);
-            fuente.addEventListener("conectado", programar);
+            const nuevaFuente = new EventSource(`/api/publicaciones/eventos${parametros}`);
+            fuente = nuevaFuente;
+            const recibir = (evento: Event) => {
+                if (cerrado || fuente !== nuevaFuente || document.visibilityState === "hidden") return;
+                const identificador = (evento as MessageEvent).lastEventId;
+                const version = typeof identificador === "string" && identificador !== "" ? identificador : null;
+                if (version !== null && (version === versionAplicada || version === enCurso?.version)) return;
+                // Las versiones son opacas; importa el último aviso recibido, no un orden numérico.
+                pendiente = { version };
+                programar();
+            };
+            nuevaFuente.addEventListener("cambio", recibir);
+            nuevaFuente.addEventListener("conectado", recibir);
         };
         conectar();
         document.addEventListener("visibilitychange", conectar);

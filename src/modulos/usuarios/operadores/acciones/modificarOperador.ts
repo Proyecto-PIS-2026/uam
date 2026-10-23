@@ -6,6 +6,7 @@ import argon2 from "argon2";
 import { validarModificacionOperador } from "../validaciones/validarModificacionOperador";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { notificarCambioCatalogoOperador } from "@/infraestructura/tiempo-real/publicaciones";
 
 export type ResultadoModificacionOperador =
     | { esValido: false; errores: string[] }
@@ -139,6 +140,7 @@ export async function modificarOperador(
             });
         }
 
+        await notificarCambioCatalogoOperador(tx, datos.operadorId);
         return datos.operadorId;
     }, datos.operadorId);
 

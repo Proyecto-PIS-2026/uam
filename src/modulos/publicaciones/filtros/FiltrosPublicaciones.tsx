@@ -23,6 +23,7 @@ type PublicacionFiltrable = {
 type FiltrosPublicacionesProps<T extends PublicacionFiltrable> = {
     publicaciones: T[];
     opcionesRemotas?: OpcionProducto[];
+    navesDisponibles?: string[];
     totalRemoto?: number;
     alConsultar?: (consulta: FiltrosConsulta) => void;
     especieFiltro: string;
@@ -63,8 +64,9 @@ export function compararPublicacionesPorPrioridad(a: Pick<PublicacionFiltrable, 
     return especie !== 0 ? especie : compararOpciones(a.variedad, b.variedad);
 }
 
-export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({publicaciones, especieFiltro, obtenerNombreFantasia, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, totalRemoto, alConsultar}: FiltrosPublicacionesProps<T>) {
+export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({publicaciones, especieFiltro, obtenerNombreFantasia, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, navesDisponibles, totalRemoto, alConsultar}: FiltrosPublicacionesProps<T>) {
     const opciones: OpcionProducto[] = opcionesRemotas ?? publicaciones;
+    const mostrarNave = navesDisponibles !== undefined;
     // Hooks useState para los filtros
     const [busqueda, setBusqueda] = useState("");                                           // Barra de busqueda
     const [precioMinimo, setPrecioMinimo] = useState("");                                   // Precio Minimo
@@ -77,6 +79,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     const [presentacion, setPresentacion] = useState("Todas");                              // Filtro Presentacion
     const [categoria, setCategoria] = useState("Todas");                                    // Filtro Categoria
     const [calibre, setCalibre] = useState("Todas");                                        // Filtro Calibre
+    const [nave, setNave] = useState("Todas");
 
     const [ultimaFaceta, setUltimaFaceta] = useState<"categoria" | "calibre" | null>(null);
 
@@ -132,6 +135,13 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         const nombres = [...new Set(opciones.map((publicacion) => publicacion.especie))];
         return nombres.sort(ordenInicial === "prioridad" ? compararEspeciesPorPrioridad : compararOpciones);
     }, [opciones, ordenInicial]);
+
+    const naves = useMemo(() => {
+        const disponibles = new Set(navesDisponibles ?? []);
+        // Una recarga sin opciones no debe borrar el filtro ni invalidar el selector.
+        if (nave !== "Todas") disponibles.add(nave);
+        return [...disponibles].sort(compararOpciones);
+    }, [navesDisponibles, nave]);
 
     // Opciones de Variedad disponibles segun Especie
     const variedades = useMemo(() => {
@@ -266,8 +276,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     }, [publicaciones, opcionesRemotas, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden, obtenerNombreFantasia]);
 
     useEffect(() => {
-        alConsultar?.({ busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden });
-    }, [alConsultar, busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden]);
+        alConsultar?.({ busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden, ...(mostrarNave ? { nave } : {}) });
+    }, [alConsultar, busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden, mostrarNave, nave]);
 
     const cantidadResultados = totalRemoto ?? publicacionesFiltradas.length;
 
@@ -295,6 +305,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         setPresentacion("Todas");
         setCategoria("Todas");
         setCalibre("Todas");
+        setNave("Todas");
 
         if (ordenInicial !== "prioridad") {
             setOrden(ordenInicial);
@@ -358,7 +369,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
 
     return (
         <div className={styles.contenedor}>
-            <div className={`${styles.layoutFiltros} ${mostrarFiltros ? styles.filtrosAbiertos : ""} ${rangoPrecioInvalido ? styles.rangoInvalido : ""}`}>
+            <div className={`${styles.layoutFiltros} ${mostrarFiltros ? styles.filtrosAbiertos : ""} ${rangoPrecioInvalido ? styles.rangoInvalido : ""} ${mostrarNave ? styles.conFiltroNave : ""}`}>
                 {/* Barra de busqueda */}
                 <TextField fullWidth size="small" label="Buscar publicaciones" type="search" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} className={`${styles.selectMui} ${styles.filtroBuscador}`}
                     slotProps={{input: {startAdornment: (<SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }}/>)}}}
@@ -374,6 +385,16 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                         </MenuItem>
                     ))}
                 </TextField>
+                {mostrarNave && (
+                    <TextField select fullWidth label="Nave" value={nave} onChange={(evento) => setNave(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroNave}`} slotProps={propiedadesMenuSelect}>
+                        <MenuItem value="Todas" className={styles.opcionSelect}>Todas</MenuItem>
+                        {naves.map((opcion) => (
+                            <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}>
+                                {opcion === "Tinglado" ? opcion : `Nave ${opcion}`}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                )}
                 {/* Precio minimo */}
                 <div className={styles.filtroPrecioMinimo}>
                     <TextField fullWidth size="small" id="precio-minimo" label="Precio Mínimo" type="text" value={precioMinimo} placeholder="$ 0" className={styles.selectMui}

@@ -20,7 +20,7 @@ describe("obtenerPublicaciones", () => {
     it.each([null, "ADMINISTRADOR"] as const)("devuelve las publicaciones obtenidas para %s", async (rol) => {
         obtenerSesionMock.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
         const resultado = {
-            opciones: [], total: 1, totalCatalogo: 1,
+            opciones: [], naves: [], total: 1, totalCatalogo: 1,
             publicaciones: [
                 {
                     id: 1,

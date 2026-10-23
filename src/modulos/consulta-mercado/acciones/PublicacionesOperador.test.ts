@@ -12,7 +12,7 @@ const { query, sql, autorizado } = vi.hoisted(() => ({
 vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({ db: { raw: { sql }, runtime: () => ({ query }) } }));
 vi.mock("../../identidad-acceso/autorizacion/permisos", () => ({ autorizado }));
 
-const resultado = { publicaciones: [], opciones: [], total: 0, totalCatalogo: 0 };
+const resultado = { publicaciones: [], opciones: [], naves: [], total: 0, totalCatalogo: 0 };
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -35,14 +35,24 @@ it("consulta todas las publicaciones coincidentes sin limitar ni desplazar resul
 
 it("parametriza filtros y orden sin interpolar SQL recibido del cliente", async () => {
     const busqueda = "tomate '; drop table publicacion; --";
-    await consultarPublicaciones({ busqueda, especie: "Tomate", precioMinimo: "12.50", precioMaximo: "80", orden: "precioDesc" });
+    const nave = "A' OR 1=1 --";
+    await consultarPublicaciones({ busqueda, especie: "Tomate", nave, precioMinimo: "12.50", precioMaximo: "80", orden: "precioDesc" });
     const plan = query.mock.calls[0][0];
     expect(plan.texto).not.toContain(busqueda);
     expect(plan.valores).toContain(busqueda);
+    expect(plan.texto).not.toContain(nave);
+    expect(plan.valores).toContain(nave);
     expect(plan.valores).toContain(12.5);
     expect(plan.valores).toContain("Tomate");
     expect(plan.valores).toContain("precioDesc");
     expect(plan.valores).not.toContain(null);
+});
+
+it("conserva las naves disponibles al devolver un catálogo filtrado vacío", async () => {
+    const vacio = { ...resultado, naves: ["A", "B"], totalCatalogo: 2 };
+    query.mockResolvedValue([{ resultado: JSON.stringify(vacio) }]);
+
+    expect(await consultarPublicaciones({ nave: "Desconocida" })).toEqual(vacio);
 });
 
 it("rechaza filtros inválidos antes de consultar la base", async () => {
@@ -62,9 +72,17 @@ it("no oculta una falla de la base como si fuera un catálogo vacío", async () 
 });
 
 it("normaliza tildes, filtros vacíos y valores por defecto", () => {
-    expect(normalizarFiltros({ busqueda: "  LIMÓN Ñandú ", especie: "Todas" })).toMatchObject({ busqueda: "limon nandu", especie: "", orden: "prioridad", precioMinimo: null });
+    expect(normalizarFiltros({ busqueda: "  LIMÓN Ñandú ", especie: "Todas" })).toMatchObject({ busqueda: "limon nandu", especie: "", nave: "", orden: "prioridad", precioMinimo: null });
 });
 
-it.each([{ precioMinimo: "-1" }, { precioMaximo: "1e9" }, { busqueda: "x".repeat(201) }, { orden: "SQL" }])("rechaza parámetros fuera de contrato %j", (entrada) => {
+it.each([undefined, "", "   ", "Todas"])("interpreta nave %j como todas las naves", (nave) => {
+    expect(normalizarFiltros({ nave }).nave).toBe("");
+});
+
+it("recorta la nave sin alterar el nombre exacto", () => {
+    expect(normalizarFiltros({ nave: "  Nave A  " }).nave).toBe("Nave A");
+});
+
+it.each([{ precioMinimo: "-1" }, { precioMaximo: "1e9" }, { busqueda: "x".repeat(201) }, { orden: "SQL" }, { nave: "x".repeat(101) }, { nave: 1 }])("rechaza parámetros fuera de contrato %j", (entrada) => {
     expect(() => normalizarFiltros(entrada as Parameters<typeof normalizarFiltros>[0])).toThrow();
 });

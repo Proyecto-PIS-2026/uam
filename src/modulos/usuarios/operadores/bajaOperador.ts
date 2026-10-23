@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { eliminarImagenPublicacionGestionada } from "@/modulos/publicaciones/operadores/imagenes-publicacion";
 import { imagenes } from "@/infraestructura/imagenes/imagenes";
+import { notificarCambioCatalogoOperador } from "@/infraestructura/tiempo-real/publicaciones";
 
 export type ResultadoBajaOperador =
 	| { esValido: false; errores: string[] }
@@ -38,6 +39,7 @@ export async function bajaOperador(valor: unknown): Promise<ResultadoBajaOperado
 		await tx.orm.public.Local.where({ operadorId }).deleteAll();
 		await tx.orm.public.Operador.where({ id: operadorId }).delete();
 		await tx.orm.public.Usuario.where({ id: operador.usuarioId }).delete();
+		await notificarCambioCatalogoOperador(tx, operadorId);
 		return { error: null, fotos, fotoPerfil: operador.fotoPerfil };
 	});
 

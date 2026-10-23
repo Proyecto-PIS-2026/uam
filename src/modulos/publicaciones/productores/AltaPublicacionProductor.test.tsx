@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import type { UbicacionSeleccionada } from "./LeafletLocationPicker";
@@ -16,7 +16,7 @@ vi.mock("./LeafletLocationPicker", () => ({
     </section> : null,
 }));
 
-import AltaPublicacionProductor from "./AltaPublicacionProductor";
+import AltaPublicacionProductor, { DrawerAltaPublicacionProductor } from "./AltaPublicacionProductor";
 
 const catalogos = {
     especies: [{ id: 2, nombre: "Manzana" }, { id: 8, nombre: "Pera" }],
@@ -52,6 +52,28 @@ function completarFormulario() {
 
 function enviarFormulario() {
     fireEvent.submit(screen.getByRole("button", { name: "Confirmar" }).closest("form")!);
+}
+
+function comprobarFormularioVacio() {
+    for (const campo of ["Especie", "Variedad", "Presentación", "Categoría", "Calibre", "País de origen"]) {
+        const selector = screen.getByRole("combobox", { name: new RegExp(`^${campo}`) });
+        expect(selector.parentElement!.querySelector("input")).toHaveValue("");
+    }
+    for (const campo of ["Variedad", "Presentación", "Categoría"]) {
+        expect(screen.getByRole("combobox", { name: new RegExp(`^${campo}`) })).toHaveAttribute("aria-disabled", "true");
+    }
+    expect(screen.getByLabelText("Precio en pesos")).toHaveValue("");
+    expect(screen.getByLabelText("Cantidad (kg)")).toHaveValue("");
+    expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" })).toBeInTheDocument();
+    expect(screen.queryByText("Ruta 5, Montevideo")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Seleccionar ubicación" })).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Vista previa de la fotografía")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Fotografía")).toHaveValue("");
+    const galeria = screen.queryByLabelText("Fotografía desde galería");
+    if (galeria) expect(galeria).toHaveValue("");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
 }
 
 describe("AltaPublicacionProductor", () => {
@@ -133,6 +155,59 @@ describe("AltaPublicacionProductor", () => {
         enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         expect(JSON.parse(fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")![1]!.body as string)).toMatchObject({ precio: "25", cantidadUnidades: 25, disponibilidad: false });
+    });
+
+    it.each([true, false])("abre un formulario limpio después de crear con todos los datos en escritorio=%s", async (esWeb) => {
+        mocks.esWeb = esWeb;
+        const fetchMock = prepararFetch({ esValido: true, id: 99, mensaje: "Publicación creada correctamente." });
+        await abrirAlta(); completarFormulario();
+        fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "120" } });
+        fireEvent.change(screen.getByLabelText("Cantidad (kg)"), { target: { value: "35" } });
+        fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
+        const entradaFoto = esWeb ? "Fotografía" : "Fotografía desde galería";
+        fireEvent.change(screen.getByLabelText(entradaFoto), { target: { files: [new File(["foto"], "foto.png", { type: "image/png" })] } });
+        await screen.findByAltText("Vista previa de la fotografía");
+        enviarFormulario();
+
+        expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({ precio: "120", cantidadUnidades: 35, disponibilidad: false, fotografia: expect.stringContaining("data:image/png;base64,") });
+        expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
+        comprobarFormularioVacio();
+    });
+
+    it("conserva el formulario rechazado y lo limpia al completar un reintento exitoso", async () => {
+        const fetchMock = prepararFetch({ esValido: false, errores: ["Revisá los datos de la publicación."] }, 422);
+        const alCrear = vi.fn();
+        const alCerrar = vi.fn();
+        render(<DrawerAltaPublicacionProductor productorId={4} abierto alCrear={alCrear} alCerrar={alCerrar} />);
+        await screen.findByRole("combobox", { name: /^Especie/ });
+        completarFormulario();
+        fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "120" } });
+        fireEvent.change(screen.getByLabelText("Cantidad (kg)"), { target: { value: "35" } });
+        fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
+        fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [new File(["foto"], "foto.png", { type: "image/png" })] } });
+        await screen.findByAltText("Vista previa de la fotografía");
+        enviarFormulario();
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("Revisá los datos de la publicación.");
+        expect(alCrear).not.toHaveBeenCalled();
+        expect(alCerrar).not.toHaveBeenCalled();
+        for (const [campo, opcion] of [["Especie", "Manzana"], ["Variedad", "Royal"], ["Presentación", "Caja"], ["Categoría", "Primera"], ["Calibre", "Grande"], ["País de origen", "Uruguay"]]) {
+            expect(screen.getByRole("combobox", { name: new RegExp(`^${campo}`) })).toHaveTextContent(opcion);
+        }
+        expect(screen.getByLabelText("Precio en pesos")).toHaveValue("120");
+        expect(screen.getByLabelText("Cantidad (kg)")).toHaveValue("35");
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
+        expect(screen.getByText("Ruta 5, Montevideo")).toBeInTheDocument();
+        expect(screen.getByAltText("Vista previa de la fotografía")).toBeInTheDocument();
+
+        fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ esValido: true, id: 99, mensaje: "Publicación creada correctamente." }), { status: 201 }));
+        enviarFormulario();
+        await waitFor(() => expect(alCrear).toHaveBeenCalledExactlyOnceWith("Publicación creada correctamente."));
+        expect(alCerrar).not.toHaveBeenCalled();
+        comprobarFormularioVacio();
     });
 
     it("cancelar limpia los datos sin crear una publicación", async () => {

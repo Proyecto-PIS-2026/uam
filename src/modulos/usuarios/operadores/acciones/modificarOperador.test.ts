@@ -1,6 +1,7 @@
 import "temporal-polyfill/global";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { modificarOperador } from "./modificarOperador";
+import { revalidatePath } from "next/cache";
 
 const autorizacion = vi.hoisted(() => ({ exigirAdministrador: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => autorizacion);
@@ -103,6 +104,7 @@ describe("modificarOperador", () => {
  
     beforeEach(() => {
         vi.clearAllMocks();
+        mockDb.execute.mockReset().mockResolvedValue(undefined);
         autorizacion.exigirAdministrador.mockResolvedValue(undefined);
         prepararBase();
         mockArgon2.hash.mockResolvedValue("hash-falso");
@@ -167,6 +169,7 @@ describe("modificarOperador", () => {
             errores: ["El operador ya no existe."],
         });
         expect(mockDb.operador.update).not.toHaveBeenCalled();
+        expect(mockDb.execute.mock.calls.some(([plan]) => plan.texto.includes("pg_notify"))).toBe(false);
     });
 
     it("rechaza la modificación si otro operador ya usa ese nombre", async () => {
@@ -179,6 +182,7 @@ describe("modificarOperador", () => {
             errores: ["Ya existe un operador con ese nombre."],
         });
         expect(mockDb.operador.update).not.toHaveBeenCalled();
+        expect(mockDb.execute.mock.calls.some(([plan]) => plan.texto.includes("pg_notify"))).toBe(false);
     });
 
     it("rechaza la modificación si un local ya pertenece a otro operador", async () => {
@@ -191,6 +195,7 @@ describe("modificarOperador", () => {
             errores: ["El local 18 ya existe en la nave seleccionada."],
         });
         expect(mockDb.operador.update).not.toHaveBeenCalled();
+        expect(mockDb.execute.mock.calls.some(([plan]) => plan.texto.includes("pg_notify"))).toBe(false);
     });
 
     it("guarda los datos del operador y reemplaza sus locales", async () => {
@@ -213,6 +218,28 @@ describe("modificarOperador", () => {
             numeroLocal: "18",
             finContrato: null,
         });
+        expect(mockDb.execute).toHaveBeenLastCalledWith({
+            texto: "SELECT pg_notify('uam_publicaciones', ?)::text AS notificado",
+            valores: [JSON.stringify({ operadorId: 13 })],
+        });
+        expect(mockDb.execute.mock.invocationCallOrder.at(-1)).toBeGreaterThan(mockDb.local.create.mock.invocationCallOrder.at(-1)!);
+    });
+
+    it("no notifica cuando falla el reemplazo de los locales", async () => {
+        mockDb.local.create.mockRejectedValueOnce(new Error("Fallo al guardar el local"));
+
+        await expect(modificarOperador(datosValidos)).rejects.toThrow("Fallo al guardar el local");
+        expect(mockDb.execute.mock.calls.some(([plan]) => plan.texto.includes("pg_notify"))).toBe(false);
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("propaga el fallo de la notificación para que no se confirme la transacción", async () => {
+        mockDb.execute.mockImplementation(async (plan: { texto: string }) => {
+            if (plan.texto.includes("pg_notify")) throw new Error("Fallo al notificar el catálogo");
+        });
+
+        await expect(modificarOperador(datosValidos)).rejects.toThrow("Fallo al notificar el catálogo");
+        expect(revalidatePath).not.toHaveBeenCalled();
     });
 
     it("no cambia la contraseña si los campos quedan vacíos", async () => {

@@ -6,8 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import MiMercadoProductor from "./MiMercadoProductor";
 
-const mocks = vi.hoisted(() => ({ mediaQuery: vi.fn() }));
+const mocks = vi.hoisted(() => ({ mediaQuery: vi.fn(), refresh: vi.fn() }));
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
+vi.mock("../../productores/AltaPublicacionProductor", () => ({
+    DrawerAltaPublicacionProductor: ({ abierto, alCerrar, alCrear }: { abierto: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void }) => abierto ? (
+        <section role="dialog" aria-label="Nueva publicación de Productor">
+            <button onClick={alCerrar}>Cancelar alta</button>
+            <button onClick={() => alCrear("Publicación creada correctamente.")}>Confirmar alta</button>
+        </section>
+    ) : null,
+}));
 vi.mock("@mui/material/useMediaQuery", () => ({ default: mocks.mediaQuery }));
 vi.mock("@mui/material/SwipeableDrawer", () => ({
     default: ({ anchor, open, children, onClose }: SwipeableDrawerProps) => <section role="dialog" aria-label="Detalle de publicación" data-anchor={anchor} hidden={!open} onTouchEnd={onClose}>{children}</section>,
@@ -163,6 +172,43 @@ describe("MiMercadoProductor", () => {
         expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Nueva publicación" })).toBeDisabled();
         expect(screen.queryByRole("button", { name: /Editar|Eliminar|Aumentar precio|Disminuir precio/ })).not.toBeInTheDocument();
+    });
+
+    it("actualiza el listado y el contador después de la primera alta, sin recargar al cancelar", () => {
+        const { rerender } = render(<MiMercadoProductor publicaciones={[]} productorId={4} />);
+        expect(mocks.refresh).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar alta" }));
+        expect(mocks.refresh).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar alta" }));
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+        expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+
+        rerender(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} productorId={4} />);
+        expect(screen.getByTitle("Pera")).toBeInTheDocument();
+        const encabezado = screen.getByRole("heading", { name: "Mi Mercado" }).closest("header")!;
+        expect(within(encabezado).getByText("1 publicación", { exact: true })).toBeInTheDocument();
+        expect(screen.queryByRole("heading", { name: "No tenés publicaciones" })).not.toBeInTheDocument();
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("mantiene los filtros al recibir el listado actualizado después del alta", () => {
+        const publicaciones = [crearPublicacion(1, "Pera"), crearPublicacion(2, "Manzana")];
+        const { rerender } = render(<MiMercadoProductor publicaciones={publicaciones} productorId={4} />);
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar publicaciones" }), { target: { value: "Pera" } });
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar alta" }));
+
+        rerender(<MiMercadoProductor publicaciones={[...publicaciones, crearPublicacion(3, "Pera", "200")]} productorId={4} />);
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+        expect(screen.getByRole("searchbox", { name: "Buscar publicaciones" })).toHaveValue("Pera");
+        expect(screen.getAllByTitle("Pera")).toHaveLength(2);
+        expect(screen.getByText("$200", { exact: true })).toBeInTheDocument();
+        expect(screen.queryByTitle("Manzana")).not.toBeInTheDocument();
+        expect(screen.getByText("3 publicaciones", { exact: true })).toBeInTheDocument();
     });
 
     it("muestra precios ausentes y ubicaciones sin enlaces inseguros", () => {

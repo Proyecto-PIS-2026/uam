@@ -21,27 +21,46 @@ async function crearFixture() {
         const operador = await tx.orm.public.Operador.create({ usuarioId: usuario.id, nombreFantasia: prefijo, whatsApp: "+59899123456" });
         const usuarioVencido = await tx.orm.public.Usuario.create({ username: `${prefijo}-vencido`, passwordHash: "fixture", rol: "OPERADOR" });
         const operadorVencido = await tx.orm.public.Operador.create({ usuarioId: usuarioVencido.id, nombreFantasia: `${prefijo}-vencido`, whatsApp: "+59899123456" });
+        const usuarioSoloB = await tx.orm.public.Usuario.create({ username: `${prefijo}-solo-b`, passwordHash: "fixture", rol: "OPERADOR" });
+        const operadorSoloB = await tx.orm.public.Operador.create({ usuarioId: usuarioSoloB.id, nombreFantasia: `${prefijo}-solo-b`, whatsApp: "+59899123456" });
         const usuarioProductor = await tx.orm.public.Usuario.create({ username: `${prefijo}-productor`, passwordHash: "fixture", rol: "PRODUCTOR" });
         const productor = await tx.orm.public.Productor.create({ usuarioId: usuarioProductor.id, nombreFantasia: `${prefijo}-productor`, whatsApp: "+59899123456" });
-        const nave = await tx.orm.public.Nave.create({ nombreNave: prefijo });
-        await tx.orm.public.Local.create({ operadorId: operador.id, naveId: nave.id, numeroLocal: "1", finContrato: null });
-        await tx.orm.public.Local.create({ operadorId: operadorVencido.id, naveId: nave.id, numeroLocal: "2", finContrato: Temporal.Instant.from("2000-01-01T00:00:00Z") });
+        const naveA = await tx.orm.public.Nave.create({ nombreNave: `${prefijo} A` });
+        const naveB = await tx.orm.public.Nave.create({ nombreNave: `${prefijo} B` });
+        const naveVencida = await tx.orm.public.Nave.create({ nombreNave: `${prefijo} Vencida` });
+        const naveHoy = await tx.orm.public.Nave.create({ nombreNave: `${prefijo} Hoy` });
+        const naveSinPublicaciones = await tx.orm.public.Nave.create({ nombreNave: `${prefijo} Sin publicaciones` });
+        await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveA.id, numeroLocal: "1", finContrato: null });
+        await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveA.id, numeroLocal: "2", finContrato: null });
+        await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveB.id, numeroLocal: "1", finContrato: null });
+        await tx.orm.public.Local.create({ operadorId: operadorSoloB.id, naveId: naveB.id, numeroLocal: "2", finContrato: null });
+        const vencido = Temporal.Instant.from("2000-01-01T00:00:00Z");
+        await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveVencida.id, numeroLocal: "1", finContrato: vencido });
+        await tx.orm.public.Local.create({ operadorId: operadorVencido.id, naveId: naveVencida.id, numeroLocal: "2", finContrato: vencido });
+        const inicioHoy = Temporal.Now.plainDateISO("America/Montevideo").toZonedDateTime("America/Montevideo").toInstant();
+        await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveHoy.id, numeroLocal: "1", finContrato: inicioHoy });
         const especie = await tx.orm.public.Especie.create({ nombreEspecie: `${prefijo} Limón` });
         const variedad = await tx.orm.public.Variedad.create({ especieId: especie.id, nombreVariedad: "Criollo" });
         const presentacion = await tx.orm.public.Presentacion.create({ variedadId: variedad.id, nombrePresentacion: "Caja" });
         const categoria = await tx.orm.public.Categoria.create({ especieId: especie.id, nombreCategoria: "Primera" });
+        const otraEspecie = await tx.orm.public.Especie.create({ nombreEspecie: `${prefijo} Pera` });
+        const otraVariedad = await tx.orm.public.Variedad.create({ especieId: otraEspecie.id, nombreVariedad: "Williams" });
+        const otraPresentacion = await tx.orm.public.Presentacion.create({ variedadId: otraVariedad.id, nombrePresentacion: "Caja" });
+        const otraCategoria = await tx.orm.public.Categoria.create({ especieId: otraEspecie.id, nombreCategoria: "Primera" });
         const calibre = await tx.orm.public.Calibre.create({ codigoCalibre: prefijo, nombreCalibre: "Mediano" });
         const pais = await tx.orm.public.Pais.create({ codigoPais: prefijo, nombrePais: prefijo });
         const publicacionIds: number[] = [];
         const visibles: number[] = [];
 
-        for (let indice = 0; indice < 39; indice++) {
+        for (let indice = 0; indice < 41; indice++) {
             const esProductor = indice === 38;
+            const esSoloB = indice === 39;
+            const esOtraEspecie = indice === 40;
             const publicacion = await tx.orm.public.Publicacion.create({
                 tipoPublicacion: esProductor ? "PRODUCTOR" : "OPERADOR",
-                precio: String(100 + indice) as Precio,
-                presentacionId: presentacion.id,
-                categoriaId: categoria.id,
+                precio: String(esSoloB ? 210 : esOtraEspecie ? 111 : 100 + indice) as Precio,
+                presentacionId: esOtraEspecie ? otraPresentacion.id : presentacion.id,
+                categoriaId: esOtraEspecie ? otraCategoria.id : categoria.id,
                 calibreId: calibre.id,
                 publicacionActiva: indice !== 35,
                 publicacionDisponible: indice !== 36,
@@ -50,12 +69,20 @@ async function crearFixture() {
             if (esProductor) {
                 await tx.orm.public.PublicacionProductor.create({ publicacionId: publicacion.id, productorId: productor.id, paisId: pais.id });
             } else {
-                await tx.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId: indice === 37 ? operadorVencido.id : operador.id, paisId: pais.id });
+                await tx.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId: indice === 37 ? operadorVencido.id : esSoloB ? operadorSoloB.id : operador.id, paisId: pais.id });
                 if (indice < 35) visibles.push(publicacion.id);
             }
         }
 
-        return { prefijo, usuarioId: usuario.id, operadorId: operador.id, usuarioVencidoId: usuarioVencido.id, operadorVencidoId: operadorVencido.id, usuarioProductorId: usuarioProductor.id, productorId: productor.id, naveId: nave.id, especieId: especie.id, nombreEspecie: especie.nombreEspecie, variedadId: variedad.id, presentacionId: presentacion.id, categoriaId: categoria.id, calibreId: calibre.id, paisId: pais.id, publicacionIds, visibles };
+        return {
+            prefijo, usuarioId: usuario.id, operadorId: operador.id, usuarioVencidoId: usuarioVencido.id, operadorVencidoId: operadorVencido.id,
+            usuarioSoloBId: usuarioSoloB.id, operadorSoloBId: operadorSoloB.id, usuarioProductorId: usuarioProductor.id, productorId: productor.id,
+            naveIds: [naveA.id, naveB.id, naveVencida.id, naveHoy.id, naveSinPublicaciones.id],
+            naveA: naveA.nombreNave, naveB: naveB.nombreNave, naveVencida: naveVencida.nombreNave, naveHoy: naveHoy.nombreNave, naveSinPublicaciones: naveSinPublicaciones.nombreNave,
+            especieId: especie.id, nombreEspecie: especie.nombreEspecie, variedadId: variedad.id, presentacionId: presentacion.id, categoriaId: categoria.id,
+            otraEspecieId: otraEspecie.id, otraVariedadId: otraVariedad.id, otraPresentacionId: otraPresentacion.id, otraCategoriaId: otraCategoria.id,
+            calibreId: calibre.id, paisId: pais.id, publicacionIds, visibles, publicacionSoloBId: publicacionIds[39], publicacionOtraEspecieId: publicacionIds[40],
+        };
     });
 }
 
@@ -65,19 +92,23 @@ async function borrarFixture(fixture: Fixture) {
     await db.transaction(async (tx) => {
         // Todos los identificadores pertenecen a este fixture. No se vacían tablas compartidas.
         for (const id of fixture.publicacionIds) await tx.orm.public.Publicacion.where({ id }).delete();
-        for (const operadorId of [fixture.operadorId, fixture.operadorVencidoId]) {
+        for (const operadorId of [fixture.operadorId, fixture.operadorVencidoId, fixture.operadorSoloBId]) {
             await tx.orm.public.Local.where({ operadorId }).deleteAll();
             await tx.orm.public.Operador.where({ id: operadorId }).delete();
         }
         await tx.orm.public.Productor.where({ id: fixture.productorId }).delete();
-        for (const id of [fixture.usuarioId, fixture.usuarioVencidoId, fixture.usuarioProductorId]) await tx.orm.public.Usuario.where({ id }).delete();
+        for (const id of [fixture.usuarioId, fixture.usuarioVencidoId, fixture.usuarioSoloBId, fixture.usuarioProductorId]) await tx.orm.public.Usuario.where({ id }).delete();
         await tx.orm.public.Presentacion.where({ id: fixture.presentacionId }).delete();
         await tx.orm.public.Variedad.where({ id: fixture.variedadId }).delete();
         await tx.orm.public.Categoria.where({ id: fixture.categoriaId }).delete();
         await tx.orm.public.Especie.where({ id: fixture.especieId }).delete();
+        await tx.orm.public.Presentacion.where({ id: fixture.otraPresentacionId }).delete();
+        await tx.orm.public.Variedad.where({ id: fixture.otraVariedadId }).delete();
+        await tx.orm.public.Categoria.where({ id: fixture.otraCategoriaId }).delete();
+        await tx.orm.public.Especie.where({ id: fixture.otraEspecieId }).delete();
         await tx.orm.public.Calibre.where({ id: fixture.calibreId }).delete();
         await tx.orm.public.Pais.where({ id: fixture.paisId }).delete();
-        await tx.orm.public.Nave.where({ id: fixture.naveId }).delete();
+        for (const id of fixture.naveIds) await tx.orm.public.Nave.where({ id }).delete();
     });
 }
 
@@ -132,15 +163,15 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
         return cliente;
     }
 
-    it("devuelve las 35 coincidencias sin recortes y excluye bajas, no disponibles, contratos vencidos y productores", async () => {
+    it("devuelve las 36 coincidencias sin recortes y excluye bajas, no disponibles, contratos vencidos y productores", async () => {
         const consulta = { especie: fixture!.nombreEspecie, orden: "precioAsc" as const };
         const resultado = await consultarPublicaciones(consulta);
-        expect(resultado.total).toBe(35);
-        expect(resultado.publicaciones).toHaveLength(35);
-        expect(resultado.publicaciones.map((publicacion) => publicacion.id)).toEqual(fixture!.visibles);
+        expect(resultado.total).toBe(36);
+        expect(resultado.publicaciones).toHaveLength(36);
+        expect(resultado.publicaciones.map((publicacion) => publicacion.id)).toEqual([...fixture!.visibles, fixture!.publicacionSoloBId]);
         expect(resultado).not.toHaveProperty("pagina");
         expect(resultado).not.toHaveProperty("tamanoPagina");
-        expect(resultado.totalCatalogo).toBeGreaterThanOrEqual(35);
+        expect(resultado.totalCatalogo).toBeGreaterThanOrEqual(37);
         expect(resultado.publicaciones.every((publicacion) => publicacion.tipoPublicacion === "OPERADOR")).toBe(true);
         expect(resultado.opciones).toContainEqual({ especie: fixture!.nombreEspecie, variedad: "Criollo", presentacion: "Caja", categoria: "Primera", calibre: "Mediano" });
     });
@@ -150,6 +181,64 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
         expect(resultado.total).toBe(3);
         expect(resultado.publicaciones.map((publicacion) => publicacion.precio)).toEqual([112, 111, 110]);
         expect(resultado.publicaciones.map((publicacion) => publicacion.id)).toEqual(fixture!.visibles.slice(10, 13).reverse());
+    });
+
+    it("filtra por nave sin duplicar publicaciones de un operador con dos locales en A y otro en B", async () => {
+        const resultadoA = await consultarPublicaciones({ nave: fixture!.naveA, orden: "ninguno" });
+        const publicacionesOperador = [...fixture!.visibles, fixture!.publicacionOtraEspecieId];
+        expect(resultadoA.publicaciones.map((publicacion) => publicacion.id)).toEqual(publicacionesOperador);
+        expect(resultadoA.total).toBe(36);
+        expect(resultadoA.publicaciones.every((publicacion) => publicacion.operador.id === fixture!.operadorId)).toBe(true);
+        expect(resultadoA.publicaciones.map((publicacion) => publicacion.id)).not.toContain(fixture!.publicacionSoloBId);
+
+        const resultadoB = await consultarPublicaciones({ nave: fixture!.naveB, orden: "ninguno" });
+        expect(resultadoB.publicaciones.map((publicacion) => publicacion.id)).toEqual([
+            ...fixture!.visibles, fixture!.publicacionSoloBId, fixture!.publicacionOtraEspecieId,
+        ]);
+        expect(resultadoB.total).toBe(37);
+    });
+
+    it("combina nave, especie y rango de precios manteniendo las naves globales disponibles", async () => {
+        const resultado = await consultarPublicaciones({
+            nave: fixture!.naveA, especie: fixture!.nombreEspecie, precioMinimo: "110", precioMaximo: "112", orden: "precioDesc",
+        });
+        expect(resultado.publicaciones.map((publicacion) => publicacion.id)).toEqual(fixture!.visibles.slice(10, 13).reverse());
+        expect(resultado.total).toBe(3);
+        expect(resultado.naves.filter((nave) => nave.startsWith(fixture!.prefijo))).toEqual([fixture!.naveA, fixture!.naveB, fixture!.naveHoy]);
+    });
+
+    it.each([undefined, "", "Todas"])("consulta todas las naves con el filtro %j", async (nave) => {
+        const resultado = await consultarPublicaciones({ busqueda: fixture!.prefijo, nave, orden: "ninguno" });
+        expect(resultado.publicaciones.map((publicacion) => publicacion.id)).toEqual([
+            ...fixture!.visibles, fixture!.publicacionSoloBId, fixture!.publicacionOtraEspecieId,
+        ]);
+        expect(resultado.total).toBe(37);
+    });
+
+    it("devuelve vacío para nave desconocida o distinta en mayúsculas sin perder opciones globales", async () => {
+        for (const nave of [`${fixture!.prefijo} Desconocida`, fixture!.naveA.toLowerCase()]) {
+            const resultado = await consultarPublicaciones({ nave });
+            expect(resultado.publicaciones).toEqual([]);
+            expect(resultado.total).toBe(0);
+            expect(resultado.naves.filter((opcion) => opcion.startsWith(fixture!.prefijo))).toEqual([fixture!.naveA, fixture!.naveB, fixture!.naveHoy]);
+        }
+
+        const sinCoincidencias = await consultarPublicaciones({ nave: fixture!.naveA, especie: `${fixture!.prefijo} Inexistente`, precioMinimo: "999" });
+        expect(sinCoincidencias.publicaciones).toEqual([]);
+        expect(sinCoincidencias.naves.filter((nave) => nave.startsWith(fixture!.prefijo))).toEqual([fixture!.naveA, fixture!.naveB, fixture!.naveHoy]);
+    });
+
+    it("excluye los locales vencidos y conserva el día final del contrato en Montevideo", async () => {
+        const vencidas = await consultarPublicaciones({ nave: fixture!.naveVencida });
+        expect(vencidas.publicaciones).toEqual([]);
+        expect(vencidas.total).toBe(0);
+        expect(vencidas.naves).not.toContain(fixture!.naveVencida);
+        expect(vencidas.naves).not.toContain(fixture!.naveSinPublicaciones);
+
+        const venceHoy = await consultarPublicaciones({ nave: fixture!.naveHoy, orden: "ninguno" });
+        expect(venceHoy.publicaciones.map((publicacion) => publicacion.id)).toEqual([...fixture!.visibles, fixture!.publicacionOtraEspecieId]);
+        expect(venceHoy.total).toBe(36);
+        expect(venceHoy.naves).toContain(fixture!.naveHoy);
     });
 
     it("acumula dos incrementos simultáneos sin perder escrituras y avanza dos versiones", async () => {

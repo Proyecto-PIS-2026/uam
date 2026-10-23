@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import Drawer from "@mui/material/Drawer";
 import MenuItem from "@mui/material/MenuItem";
@@ -143,17 +143,22 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
     const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
     const [leyendoFoto, setLeyendoFoto] = useState(false);
-    const [fotoInput, setFotoInput] = useState<HTMLInputElement | null>(null);
-    const [galeriaInput, setGaleriaInput] = useState<HTMLInputElement | null>(null);
+    const fotoInput = useRef<HTMLInputElement>(null);
+    const galeriaInput = useRef<HTMLInputElement>(null);
     const [mapaAbierto, setMapaAbierto] = useState(false);
     const variedades = catalogos.variedades.filter((item) => item.especieId === datos.especieId);
     const presentaciones = catalogos.presentaciones.filter((item) => item.variedadId === datos.variedadId);
     const categorias = catalogos.categorias.filter((item) => item.especieId === null || item.especieId === datos.especieId);
     const cambiar = (cambio: Partial<Formulario>) => { setDatos((actual) => ({ ...actual, ...cambio })); setErrores([]); };
-    function cancelar() {
+    function limpiarFormulario() {
         setDatos(formularioInicial(productorId));
         setErrores([]);
         setMapaAbierto(false);
+        if (fotoInput.current) fotoInput.current.value = "";
+        if (galeriaInput.current) galeriaInput.current.value = "";
+    }
+    function cancelar() {
+        limpiarFormulario();
         alCerrar();
     }
     async function seleccionarFoto(evento: ChangeEvent<HTMLInputElement>) {
@@ -183,6 +188,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
                 else notificar(mensajes.join(" "), "error");
                 return;
             }
+            limpiarFormulario();
             alCrear(resultado.mensaje ?? "Publicación creada correctamente.");
         } catch { notificar("No se pudo conectar con el servidor.", "error"); } finally { setGuardando(false); }
     }
@@ -210,10 +216,10 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
             </div>
             <label className={styles.disponibilidad} htmlFor="productor-disponibilidad" data-disponible={datos.disponibilidad}><span className={styles.textoDisponibilidad}><span className={styles.etiqueta}>Disponibilidad</span><span className={styles.estadoDisponibilidad}>{datos.disponibilidad ? "Disponible" : "No disponible"}</span></span><Switch checked={datos.disponibilidad} onChange={(_, valor) => cambiar({ disponibilidad: valor })} disabled={guardando} slotProps={{ input: { id: "productor-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} /></label>
             <div className={styles.seccionFoto}><div className={styles.marcoFoto}>{datos.fotografia ? <Image className={styles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill unoptimized /> : <div className={styles.sinFoto}><PhotoCameraOutlinedIcon /><span>Sin foto</span></div>}{datos.fotografia && <button type="button" className={`${styles.botonFoto} ${styles.borrarFoto}`} onClick={() => cambiar({ fotografia: "" })} disabled={guardando}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
-                <button type="button" className={styles.botonFoto} onClick={() => fotoInput?.click()} disabled={guardando}>{esWeb ? "Editar foto" : "Cámara"}</button>
-                {!esWeb && <button type="button" className={`${styles.botonFoto} ${styles.botonGaleria}`} onClick={() => galeriaInput?.click()} disabled={guardando}>Galería</button>}
-                <input ref={setFotoInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={guardando} aria-label="Fotografía" />
-                {!esWeb && <input ref={setGaleriaInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFoto} disabled={guardando} aria-label="Fotografía desde galería" />}
+                <button type="button" className={styles.botonFoto} onClick={() => fotoInput.current?.click()} disabled={guardando}>{esWeb ? "Editar foto" : "Cámara"}</button>
+                {!esWeb && <button type="button" className={`${styles.botonFoto} ${styles.botonGaleria}`} onClick={() => galeriaInput.current?.click()} disabled={guardando}>Galería</button>}
+                <input ref={fotoInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={guardando} aria-label="Fotografía" />
+                {!esWeb && <input ref={galeriaInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFoto} disabled={guardando} aria-label="Fotografía desde galería" />}
             </div></div>
             {errores.length > 0 && <div role="alert" className={styles.error}>{errores.map((error) => <p key={error}>{error}</p>)}</div>}
         </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={guardando || leyendoFoto || datos.latitud === null || datos.longitud === null}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>

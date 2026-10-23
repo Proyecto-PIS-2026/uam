@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import HojasDecorativas from "../../../../compartido/HojasDecorativas";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export default function MiMercadoProductor({ publicaciones, nombreProductor = "", productorId = 0 }: Props) {
+    const router = useRouter();
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [seleccionId, setSeleccionId] = useState<number | null>(null);
     const [altaAbierta, setAltaAbierta] = useState(false);
@@ -86,7 +88,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                 )}
             </div>
             <DrawerPublicacionProductor publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} />
-            {productorId > 0 && <DrawerAltaPublicacionProductor productorId={productorId} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={(mensaje) => { setAltaAbierta(false); notificar(mensaje, "success"); }} />}
+            {productorId > 0 && <DrawerAltaPublicacionProductor productorId={productorId} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={(mensaje) => { setAltaAbierta(false); notificar(mensaje, "success"); router.refresh(); }} />}
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </main>
     );
