@@ -345,6 +345,12 @@
     outline-offset: -4px;
 }
 
+@media (max-width: 767px) {
+    .encabezado {
+        padding-top: 0;
+    }
+}
+
 @media (min-width: 768px) {
     .drawer.drawer {
         width: min(var(--ancho-drawer-web), 100vw);

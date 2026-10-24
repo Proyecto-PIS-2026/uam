@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import Drawer from "@mui/material/Drawer";
+import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -12,8 +12,10 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import Image from "next/image";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
+import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import type { DatosAltaPublicacionOperador } from "../../validarAltaPublicacionOperador";
 import { ordenarOpcionesPorNombre } from "../ordenar-opciones";
+import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import drawerStyles from "./DrawerEditarPublicacion.module.css";
 
 type Opcion = { id: number; nombre: string };
@@ -86,7 +88,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
             .then((resultado) => {
                 if (!activo) return;
                 setCatalogos({
-                    especies: ordenarOpcionesPorNombre(resultado.especies),
+                    especies: [...resultado.especies].sort((primera, segunda) => compararEspeciesPorPrioridad(primera.nombre, segunda.nombre)),
                     variedades: ordenarOpcionesPorNombre(resultado.variedades),
                     presentaciones: ordenarOpcionesPorNombre(resultado.presentaciones),
                     categorias: ordenarOpcionesPorNombre(resultado.categorias),
@@ -107,7 +109,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
     function cambiarPrecio(cantidad: number) {
         const precioActual = Number(datos.precio || "0");
         if (!Number.isInteger(precioActual)) return;
-        const nuevoPrecio = Math.min(9999999999, Math.max(0, precioActual + cantidad));
+        const nuevoPrecio = Math.min(MAXIMO_PRECIO_PUBLICACION, precioActual + cantidad);
+        if (nuevoPrecio <= 0) return;
         actualizar({ precio: String(nuevoPrecio) });
     }
 
@@ -151,12 +154,17 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
         if (guardando || leyendoFoto) return;
         cerrarNotificacion();
         setErrores([]);
+        if (!precioPublicacionValido(datos.precio)) {
+            setErrores([PRECIO_PUBLICACION_INVALIDO]);
+            return;
+        }
         setGuardando(true);
         try {
             const datosProcesados = {
                 ...datos,
-                cantidadUnidades: datos.cantidadUnidades.trim() !== "" 
-                    ? parseInt(datos.cantidadUnidades, 10) 
+                precio: normalizarPrecioPublicacion(datos.precio),
+                cantidadUnidades: datos.cantidadUnidades.trim() !== ""
+                    ? parseInt(datos.cantidadUnidades, 10)
                     : null
             };
             const respuesta = await fetch("/api/publicaciones", {
@@ -186,9 +194,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
 
     return (
         <>
-        <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} slotProps={{ paper: { className: drawerStyles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": "titulo-nueva-publicacion" } }}>
-            <div className={drawerStyles.asa} aria-hidden="true" />
-            <header className={drawerStyles.encabezado}>
+        <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} arrastreDeshabilitado={guardando} slotProps={{ paper: { className: drawerStyles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": "titulo-nueva-publicacion" } }}>
+            <header className={`${drawerStyles.encabezado} ${drawerStyles.encabezadoConAsa}`}>
                 <h1 id="titulo-nueva-publicacion" className={drawerStyles.titulo}>Nueva publicación</h1>
                 <button className={drawerStyles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta">
                     <CloseIcon fontSize="small" />
@@ -224,10 +231,10 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                         <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-precio">Precio en pesos</label>
                         <div className={drawerStyles.controlesPrecio}>
                             <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={guardando} aria-label={`Disminuir precio en ${incrementoPrecio}`}>−</button>
-                            <input className={drawerStyles.entrada} id="nueva-publicacion-precio" type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar precio aquí" value={datos.precio} onChange={(evento) => actualizar({ precio: evento.target.value.replace(/\D/g, "") })} disabled={guardando} />
+                            <input className={drawerStyles.entrada} id="nueva-publicacion-precio" type="text" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder="Ingresar precio aquí" value={datos.precio} onChange={(evento) => { if (esEntradaPrecioPublicacion(evento.target.value)) actualizar({ precio: evento.target.value }); }} disabled={guardando} />
                             <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={guardando} aria-label={`Aumentar precio en ${incrementoPrecio}`}>+</button>
                         </div>
-                        <small className={drawerStyles.ayuda}>Dejalo vacío si el producto no tiene precio.</small>
+                        <small className={drawerStyles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>
                     </div>
 
                     {(() => {
@@ -240,7 +247,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                                     Unidades {textoPresentacion}
                                 </label>
                                 <div className={drawerStyles.controlesPrecio} data-editando={false}>
-                                    <input className={`${drawerStyles.entrada} w-full`} id="nueva-publicacion-cantidadUnidades" type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar cantidad aquí" value={datos.cantidadUnidades} 
+                                    <input className={`${drawerStyles.entrada} w-full`} id="nueva-publicacion-cantidadUnidades" type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar cantidad aquí" value={datos.cantidadUnidades}
                                         onChange={(evento) => {
                                             const valorOriginal = evento.target.value;
                                             if (valorOriginal === "") {
@@ -285,7 +292,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                     <button className={drawerStyles.guardar} type="submit" disabled={deshabilitado || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button>
                 </div>
             </form>
-        </Drawer>
+        </DrawerDeslizable>
         <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </>
     );

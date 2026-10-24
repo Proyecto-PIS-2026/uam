@@ -4,16 +4,13 @@ import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Pub
 import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
 import { DrawerPublicacionPerfil  } from "./DrawerPublicacionPerfil";
 
-vi.mock("@mui/material/SwipeableDrawer", () => ({
-    default: ({ open, onOpen, onClose, children }: { open: boolean; onOpen: () => void; onClose: () => void; children: ReactNode }) => (
-        <>
-            <button onClick={onOpen}>Abrir detalle</button>
-            <div role="dialog" aria-label="Detalle de publicación" hidden={!open}>
-                <button onClick={onClose}>Cerrar detalle</button>
-                {children}
-            </div>
-        </>
-    ),
+vi.mock("@/compartido/componentes/DrawerDeslizable", () => ({
+    default: ({ open, onClose, children, ModalProps }: { open: boolean; onClose: () => void; children: ReactNode; ModalProps?: { keepMounted?: boolean } }) => open || ModalProps?.keepMounted ? (
+        <div role="dialog" aria-label="Detalle de publicación" hidden={!open}>
+            <button onClick={onClose}>Cerrar detalle</button>
+            {children}
+        </div>
+    ) : null,
 }));
 
 vi.mock("next/image", async () => {
@@ -110,17 +107,11 @@ describe("DrawerPublicacion", () => {
         },
     );
 
-    it("notifica la apertura y el cierre y respeta el estado recibido", () => {
+    it("respeta la apertura controlada y notifica el cierre", () => {
         const onOpenChange = vi.fn();
         const publicacion = crearPublicacion();
         const { rerender } = render(<DrawerPublicacionPerfil  publicacion={publicacion} open={false} onOpenChange={onOpenChange} />,);
         expect(onOpenChange).not.toHaveBeenCalled();
-        fireEvent.click(
-            screen.getByRole("button", {
-                name: "Abrir detalle",
-            }),
-        );
-        expect(onOpenChange).toHaveBeenNthCalledWith(1, true);
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         rerender(<DrawerPublicacionPerfil  publicacion={publicacion} open onOpenChange={onOpenChange} />);
         fireEvent.click(
@@ -128,8 +119,7 @@ describe("DrawerPublicacion", () => {
                 name: "Cerrar detalle",
             }),
         );
-        expect(onOpenChange).toHaveBeenNthCalledWith(2, false);
-        expect(onOpenChange).toHaveBeenCalledTimes(2);
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
         rerender(<DrawerPublicacionPerfil  publicacion={publicacion} open={false} onOpenChange={onOpenChange} />,);
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });

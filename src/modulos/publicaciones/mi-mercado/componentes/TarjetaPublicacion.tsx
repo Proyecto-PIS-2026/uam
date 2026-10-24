@@ -5,6 +5,7 @@ import NotificacionToast, { useNotificacionToast } from "@/compartido/componente
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
+import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import styles from "./TarjetaPublicacion.module.css";
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
     puedeModificar: boolean;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
-    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number, fecha?: string, version?: number) => void;
+    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number | null, fecha?: string, version?: number) => void;
     alPublicacionEliminada?: () => void;
 };
 
@@ -27,26 +28,26 @@ export default function TarjetaPublicacion({
     alPublicacionEliminada,
 }: Props) {
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
-    const recibido = { precio: Number(pub.precio ?? 0), version: pub.version, fecha: pub.fecha };
+    const recibido = { precio: pub.precio === null ? null : Number(pub.precio), version: pub.version, fecha: pub.fecha };
     const [confirmado, setConfirmado] = useState(recibido);
     const actual = confirmado.version > recibido.version ? confirmado : recibido;
-    const [optimista, setOptimista] = useState<number | null>(null);
-    const precio = optimista ?? actual.precio;
+    const [optimista, setOptimista] = useState<number | null | undefined>(undefined);
+    const precio = optimista === undefined ? actual.precio : optimista;
     const [errorPrecio, setErrorPrecio] = useState("");
     const guardandoRef = useRef(false);
     const incrementosPendientesRef = useRef(0);
-    const precioVisibleRef = useRef(recibido.precio);
+    const precioVisibleRef = useRef(recibido.precio ?? 0);
     const versionEdicionRef = useRef(pub.version);
     const [guardandoPrecio, setGuardandoPrecio] = useState(false);
     const [guardandoManual, setGuardandoManual] = useState(false);
     const [editandoPrecio, setEditandoPrecio] = useState(false);
-    const [precioTemporal, setPrecioTemporal] = useState(String(precio));
+    const [precioTemporal, setPrecioTemporal] = useState(precio === null ? "" : String(precio));
 
-    async function guardar(valor: number) {
+    async function guardar(valor: number | null) {
         if (guardandoRef.current) return;
         const nuevoPrecio = valor;
-        if (!Number.isSafeInteger(nuevoPrecio) || nuevoPrecio <= 0 || nuevoPrecio > 9_999_999_999) {
-            setErrorPrecio("El precio debe ser un entero positivo de hasta 10 dígitos.");
+        if (!precioPublicacionValido(nuevoPrecio === null ? null : String(nuevoPrecio))) {
+            setErrorPrecio(PRECIO_PUBLICACION_INVALIDO);
             return;
         }
         cerrarNotificacion();
@@ -61,7 +62,7 @@ export default function TarjetaPublicacion({
                 alPublicacionEliminada?.();
                 return;
             }
-            const precioActual = Number(resultado.precio ?? 0);
+            const precioActual = resultado.precio;
             setConfirmado({ precio: precioActual, version: resultado.version, fecha: resultado.fecha });
             alPrecioActualizado?.(pub.id, precioActual, resultado.fecha, resultado.version);
             if (resultado.conflicto) notificar("El precio cambió en otra sesión. Se muestra el valor actual. Revisalo antes de volver a guardar.", "warning");
@@ -71,7 +72,7 @@ export default function TarjetaPublicacion({
             guardandoRef.current = false;
             setGuardandoPrecio(false);
             setGuardandoManual(false);
-            setOptimista(null);
+            setOptimista(undefined);
         }
     }
 
@@ -91,15 +92,15 @@ export default function TarjetaPublicacion({
                     alPublicacionEliminada?.();
                     return;
                 }
-                const precioActual = Number(resultado.precio ?? 0);
+                const precioActual = resultado.precio;
                 setConfirmado({ precio: precioActual, version: resultado.version, fecha: resultado.fecha });
                 alPrecioActualizado?.(pub.id, precioActual, resultado.fecha, resultado.version);
                 if (resultado.conflicto) {
                     incrementosPendientesRef.current = 0;
                     notificar("La publicación cambió en otra sesión. Revisá el precio actualizado y volvé a intentar.", "warning");
                 }
-                precioVisibleRef.current = precioActual + incrementosPendientesRef.current;
-                setOptimista(precioVisibleRef.current);
+                precioVisibleRef.current = (precioActual ?? 0) + incrementosPendientesRef.current;
+                setOptimista(incrementosPendientesRef.current === 0 ? precioActual : precioVisibleRef.current);
             }
         } catch (error) {
             incrementosPendientesRef.current = 0;
@@ -107,15 +108,15 @@ export default function TarjetaPublicacion({
         } finally {
             guardandoRef.current = false;
             setGuardandoPrecio(false);
-            setOptimista(null);
+            setOptimista(undefined);
         }
     }
 
     function cambiarPorIncremento(incremento: number) {
         if (guardandoManual) return;
-        const precioActual = guardandoRef.current ? precioVisibleRef.current : actual.precio;
+        const precioActual = guardandoRef.current ? precioVisibleRef.current : actual.precio ?? 0;
         const siguiente = precioActual + incremento;
-        if (!Number.isSafeInteger(siguiente) || siguiente <= 0 || siguiente > 9_999_999_999) return;
+        if (!Number.isSafeInteger(siguiente) || siguiente <= 0 || siguiente > MAXIMO_PRECIO_PUBLICACION) return;
         incrementosPendientesRef.current += incremento;
         precioVisibleRef.current = siguiente;
         setOptimista(siguiente);
@@ -123,7 +124,7 @@ export default function TarjetaPublicacion({
     }
 
     function consultarPublicacion() {
-        alConsultar?.({ ...pub, precio: pub.precio === null && precio === 0 ? null : String(precio), version: actual.version, fecha: actual.fecha });
+        alConsultar?.({ ...pub, precio: precio === null ? null : String(precio), version: actual.version, fecha: actual.fecha });
     }
 
     function restar() {
@@ -136,20 +137,25 @@ export default function TarjetaPublicacion({
 
     function comenzarEdicionPrecio() {
         versionEdicionRef.current = actual.version;
-        setPrecioTemporal(String(precio));
+        setPrecioTemporal(precio === null ? "" : String(precio));
         setEditandoPrecio(true);
     }
 
     function guardarPrecioManual() {
         if (!editandoPrecio) return;
         setEditandoPrecio(false);
-        const texto = precioTemporal.trim();
-        if (texto === "" || Number(texto) === precio) return;
-        void guardar(Number(texto));
+        if (!precioPublicacionValido(precioTemporal)) {
+            setErrorPrecio(PRECIO_PUBLICACION_INVALIDO);
+            return;
+        }
+        const normalizado = normalizarPrecioPublicacion(precioTemporal);
+        const nuevoPrecio = normalizado === null ? null : Number(normalizado);
+        if (nuevoPrecio === precio) return;
+        void guardar(nuevoPrecio);
     }
 
     function cancelarEdicionPrecio() {
-        setPrecioTemporal(String(precio));
+        setPrecioTemporal(precio === null ? "" : String(precio));
         setEditandoPrecio(false);
     }
 
@@ -196,12 +202,14 @@ export default function TarjetaPublicacion({
                                 autoFocus
                                 type="text"
                                 inputMode="numeric"
-                                maxLength={10}
+                                maxLength={MAXIMO_DIGITOS_PRECIO}
+                                placeholder="Sin precio"
                                 value={precioTemporal}
                                 className={styles.inputPrecio}
                                 aria-label="Editar precio"
+                                title={AYUDA_PRECIO_PUBLICACION}
                                 onChange={(e) => {
-                                    if (/^\d{0,10}$/.test(e.target.value)) setPrecioTemporal(e.target.value);
+                                    if (esEntradaPrecioPublicacion(e.target.value)) setPrecioTemporal(e.target.value);
                                 }}
                                 onBlur={guardarPrecioManual}
                                 onKeyDown={(e) => {
@@ -217,7 +225,7 @@ export default function TarjetaPublicacion({
                             />
                         ) : (
                             <button type="button" onClick={comenzarEdicionPrecio} className={styles.precio} title="Editar precio" disabled={guardandoPrecio || !puedeModificar}>
-                                {precio === 0 ? "Sin precio" : `$${precio}`}
+                                {precio === null ? "Sin precio" : `$${precio}`}
                             </button>
                         )}
                         <button type="button" className={styles.botonPrecio} onClick={sumar} disabled={guardandoManual || editandoPrecio || !puedeModificar} aria-label="Aumentar precio">

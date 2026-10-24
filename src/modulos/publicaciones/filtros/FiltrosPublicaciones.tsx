@@ -6,6 +6,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
+import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 import styles from "./FiltrosPublicaciones.module.css";
 
 import type { FiltrosConsulta, OpcionProducto } from "../../consulta-mercado/acciones/filtros-consulta";
@@ -133,8 +134,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     // Opciones de Filtros disponibles
     const especies = useMemo(() => {
         const nombres = [...new Set(opciones.map((publicacion) => publicacion.especie))];
-        return nombres.sort(ordenInicial === "prioridad" ? compararEspeciesPorPrioridad : compararOpciones);
-    }, [opciones, ordenInicial]);
+        return nombres.sort(compararEspeciesPorPrioridad);
+    }, [opciones]);
 
     const naves = useMemo(() => {
         const disponibles = new Set(navesDisponibles ?? []);
@@ -397,16 +398,17 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                 )}
                 {/* Precio minimo */}
                 <div className={styles.filtroPrecioMinimo}>
-                    <TextField fullWidth size="small" id="precio-minimo" label="Precio Mínimo" type="text" value={precioMinimo} placeholder="$ 0" className={styles.selectMui}
+                    <TextField fullWidth size="small" id="precio-minimo" label="Precio Mínimo" type="text" value={precioMinimo} placeholder="Sin mínimo" className={styles.selectMui}
                         slotProps={{
                             htmlInput: {
                                 inputMode: "numeric",
-                                pattern: "[0-9]*",
+                                pattern: "0*[1-9][0-9]*",
+                                maxLength: MAXIMO_DIGITOS_PRECIO,
                             },
                         }}
                         onChange={(evento) => {
                             const valor = evento.target.value;
-                            if (/^[0-9]*$/.test(valor)) setPrecioMinimo(valor);
+                            if (esEntradaPrecioPublicacion(valor)) setPrecioMinimo(valor);
                         }}
                     />
                 </div>
@@ -416,12 +418,13 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                         slotProps={{
                             htmlInput: {
                                 inputMode: "numeric",
-                                pattern: "[0-9]*",
+                                pattern: "0*[1-9][0-9]*",
+                                maxLength: MAXIMO_DIGITOS_PRECIO,
                             },
                         }}
                         onChange={(evento) => {
                             const valor = evento.target.value;
-                            if (/^[0-9]*$/.test(valor)) setPrecioMaximo(valor);
+                            if (esEntradaPrecioPublicacion(valor)) setPrecioMaximo(valor);
                         }}
                     />
                 </div>

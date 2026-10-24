@@ -1,0 +1,28 @@
+.asa {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: var(--alto-control);
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: grab;
+}
+
+.asa:active {
+    cursor: grabbing;
+}
+
+.asa[data-disabled="true"] {
+    cursor: default;
+}
+
+.asa span {
+    width: 2.75rem;
+    height: 0.3rem;
+    border-radius: 999px;
+    background: var(--color-border);
+    pointer-events: none;
+}

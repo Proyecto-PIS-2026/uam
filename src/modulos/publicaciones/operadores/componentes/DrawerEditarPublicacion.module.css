@@ -12,18 +12,6 @@
     box-shadow: 0 -0.5rem 2rem rgb(0 0 0 / 12%);
 }
 
-.asa {
-    position: relative;
-    z-index: 1;
-    width: 2.75rem;
-    height: 0.3rem;
-    flex: 0 0 auto;
-    align-self: center;
-    margin: var(--espacio-controles) 0 var(--espacio-textos);
-    border-radius: 999px;
-    background: var(--color-border);
-}
-
 .encabezado {
     position: relative;
     z-index: 1;
@@ -186,6 +174,10 @@
 }
 
 @media (max-width: 767px) {
+    .encabezadoConAsa {
+        padding-top: 0;
+    }
+
     .botonFoto:not(.botonGaleria):not(.borrarFoto) {
         right: auto;
         left: 0.75rem;
@@ -207,6 +199,28 @@
 
 .borrarFoto:hover {
     background: var(--color-danger-soft);
+}
+
+.accionesPublicacion {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: var(--espacio-inline);
+}
+
+.accionesPublicacion > :only-child {
+    grid-column: 1 / -1;
+}
+
+.accionesPublicacion > .disponibilidad {
+    min-height: var(--alto-control);
+}
+
+.compartirConsulta {
+    min-width: 0;
+    padding-inline: var(--espacio-inline);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
 }
 
 .disponibilidad {
@@ -241,6 +255,13 @@
     line-height: 1rem;
 }
 
+.estadoDisponibilidadConsulta {
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+    white-space: nowrap;
+}
+
 .disponibilidad[data-disponible="true"] .estadoDisponibilidad {
     color: var(--color-secondary);
 }
@@ -252,6 +273,20 @@
 
 .disponibilidad[data-editando="false"] {
     cursor: default;
+}
+
+@media (max-width: 767px) {
+    .accionesPublicacion[data-editando="true"] > .disponibilidad {
+        gap: var(--espacio-inline);
+        padding-block: 0;
+    }
+
+    .accionesPublicacion[data-editando="true"] .textoDisponibilidad {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--espacio-inline);
+        white-space: nowrap;
+    }
 }
 
 .interruptorDisponibilidad {
@@ -524,10 +559,6 @@
         max-height: 100dvh;
         border-radius: 0;
         box-shadow: -0.5rem 0 2rem rgb(0 0 0 / 12%);
-    }
-
-    .asa {
-        display: none;
     }
 
     .cuerpo > * {

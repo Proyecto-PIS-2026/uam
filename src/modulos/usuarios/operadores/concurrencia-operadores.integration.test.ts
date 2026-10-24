@@ -9,11 +9,14 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 describe("concurrencia de altas y modificaciones de operadores", () => {
     let prefijo: string;
+    let prefijoNumeroLocal: string;
     let naveId: number;
     const usuariosCreados = new Set<string>();
 
     beforeEach(async () => {
-        prefijo = `test-concurrencia-${randomUUID()}`;
+        const identificador = randomUUID();
+        prefijo = `test-concurrencia-${identificador}`;
+        prefijoNumeroLocal = BigInt(`0x${identificador.replaceAll("-", "")}`).toString();
         const nave = (await db.orm.public.Nave.all())[0];
         if (!nave) throw new Error("La base de pruebas debe contener una nave.");
         naveId = nave.id;
@@ -39,7 +42,7 @@ describe("concurrencia de altas y modificaciones de operadores", () => {
         return {
             rol: "operador", nombreUsuario, contraseña: "clave12345", confirmacionContraseña: "clave12345",
             nombre: `${prefijo}-nombre-${numero}`, codigoPais: "+598", telefono: "099123456",
-            locales: [{ numeroLocal: `${prefijo}-local-${numero}`, naveId, contrato: "" }],
+            locales: [{ numeroLocal: `${prefijoNumeroLocal}${numero}`, naveId, contrato: "" }],
         };
     }
 

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import Drawer from "@mui/material/Drawer";
+import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../precio-publicacion";
+import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -11,6 +12,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import Image from "next/image";
+import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { ordenarOpcionesPorNombre } from "../operadores/ordenar-opciones";
 import styles from "../operadores/componentes/DrawerEditarPublicacion.module.css";
 import LeafletLocationPicker from "./LeafletLocationPicker";
@@ -68,7 +70,7 @@ async function cargarCatalogos() {
     const datos = await respuesta.json() as Catalogos;
     return {
         ...datos,
-        especies: opciones(datos.especies),
+        especies: [...datos.especies].sort((primera, segunda) => compararEspeciesPorPrioridad(primera.nombre, segunda.nombre)),
         variedades: opciones(datos.variedades),
         presentaciones: opciones(datos.presentaciones),
         categorias: opciones(datos.categorias),
@@ -121,17 +123,16 @@ export function DrawerAltaPublicacionProductor({ productorId, abierto, alCerrar,
     }, []);
 
     return catalogos ? <DrawerProductor catalogos={catalogos} productorId={productorId} abierto={abierto} esWeb={esWeb} alCerrar={alCerrar} alCrear={alCrear} /> : (
-        <Drawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={alCerrar}
+        <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={alCerrar}
             slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
-            <div className={styles.asa} aria-hidden="true" />
-            <header className={styles.encabezado}>
+            <header className={`${styles.encabezado} ${styles.encabezadoConAsa}`}>
                 <h2 className={styles.titulo}>Nueva publicación</h2>
                 <button className={styles.cerrar} type="button" onClick={alCerrar} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button>
             </header>
             <div className={styles.cuerpo}>
                 {error ? <div role="alert" className={styles.error}>{error}</div> : <p role="status">Cargando datos...</p>}
             </div>
-        </Drawer>
+        </DrawerDeslizable>
     );
 }
 
@@ -173,11 +174,17 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
         } catch { setErrores(["No se pudo leer la fotografía."]); } finally { setLeyendoFoto(false); }
     }
     async function enviar(evento: FormEvent) {
-        evento.preventDefault(); if (guardando || leyendoFoto) return; cerrarNotificacion(); setErrores([]); setGuardando(true);
+        evento.preventDefault(); if (guardando || leyendoFoto) return; cerrarNotificacion(); setErrores([]);
+        if (!precioPublicacionValido(datos.precio)) {
+            setErrores([PRECIO_PUBLICACION_INVALIDO]);
+            return;
+        }
+        setGuardando(true);
         try {
             const { cantidad, ...datosSinCantidad } = datos;
             const datosParaGuardar = {
                 ...datosSinCantidad,
+                precio: normalizarPrecioPublicacion(datos.precio),
                 cantidadUnidades: cantidad === "" ? null : Number(cantidad),
             };
             const respuesta = await fetch("/api/publicaciones/productor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datosParaGuardar) });
@@ -192,9 +199,9 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
             alCrear(resultado.mensaje ?? "Publicación creada correctamente.");
         } catch { notificar("No se pudo conectar con el servidor.", "error"); } finally { setGuardando(false); }
     }
-    return <><Drawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }}
+    return <><DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} arrastreDeshabilitado={guardando}
         slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
-        <div className={styles.asa} aria-hidden="true" /><header className={styles.encabezado}><h2 className={styles.titulo}>Nueva publicación</h2><button className={styles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button></header>
+        <header className={`${styles.encabezado} ${styles.encabezadoConAsa}`}><h2 className={styles.titulo}>Nueva publicación</h2><button className={styles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button></header>
         <form className={styles.formulario} onSubmit={enviar}><div className={styles.cuerpo}>
             <div className={styles.datosProducto}>
                 <Campo nombre="Especie" valor={datos.especieId} opciones={catalogos.especies} cambiar={(id) => cambiar({ especieId: id, variedadId: 0, presentacionId: 0, categoriaId: 0 })} deshabilitado={guardando} />
@@ -211,7 +218,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
                 {datos.departamento && <small className={styles.ayuda}>{datos.nombreLugar ? `${datos.nombreLugar}, ` : ""}{datos.departamento}</small>}
             </div>
             <div className="grid grid-cols-1 gap-[var(--espacio-controles)] sm:grid-cols-2">
-                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><input className={styles.entrada} id="productor-precio" inputMode="numeric" maxLength={10} placeholder="Ingrese precio aqui" value={datos.precio} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>Dejalo vacío si el producto no tiene precio.</small></div>
+                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><input className={styles.entrada} id="productor-precio" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder="Ingrese precio aqui" value={datos.precio} onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small></div>
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Cantidad (kg)</label><input className={styles.entrada} id="productor-cantidad" inputMode="numeric" maxLength={10} placeholder="Ingrese cantidad aqui" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small></div>
             </div>
             <label className={styles.disponibilidad} htmlFor="productor-disponibilidad" data-disponible={datos.disponibilidad}><span className={styles.textoDisponibilidad}><span className={styles.etiqueta}>Disponibilidad</span><span className={styles.estadoDisponibilidad}>{datos.disponibilidad ? "Disponible" : "No disponible"}</span></span><Switch checked={datos.disponibilidad} onChange={(_, valor) => cambiar({ disponibilidad: valor })} disabled={guardando} slotProps={{ input: { id: "productor-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} /></label>
@@ -225,5 +232,5 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
         </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={guardando || leyendoFoto || datos.latitud === null || datos.longitud === null}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
         <LeafletLocationPicker key={`${datos.latitud ?? "sin"}-${datos.longitud ?? "sin"}`} abierto={mapaAbierto} coordenadas={datos.latitud === null || datos.longitud === null || !datos.departamento ? null : { latitud: datos.latitud, longitud: datos.longitud, departamento: datos.departamento, nombreLugar: datos.nombreLugar }}
             alCerrar={() => setMapaAbierto(false)} alConfirmar={(ubicacion: UbicacionSeleccionada) => { cambiar(ubicacion); setMapaAbierto(false); }} />
-    </Drawer><NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;
+    </DrawerDeslizable><NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;
 }

@@ -1,3 +1,5 @@
+import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
+
 export type DatosAltaPublicacionProductor = {
     productorId: number;
     especieId: number;
@@ -11,7 +13,7 @@ export type DatosAltaPublicacionProductor = {
     departamento: string;
     nombreLugar: string | null;
     disponibilidad: boolean;
-    precio?: string;
+    precio?: string | null;
     cantidadUnidades?: number | null;
     fotografia?: string;
 };
@@ -61,8 +63,8 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
         errores.push("El nombre de la ubicación no es válido.");
     }
     if (typeof datos.disponibilidad !== "boolean") errores.push("La disponibilidad no es válida.");
-    if (datos.precio !== undefined && (typeof datos.precio !== "string" || (datos.precio.trim() !== "" && !/^\d{1,10}$/.test(datos.precio.trim())))) {
-        errores.push("El precio debe ser un número entero.");
+    if (datos.precio !== undefined && !precioPublicacionValido(datos.precio)) {
+        errores.push(PRECIO_PUBLICACION_INVALIDO);
     }
     if (datos.fotografia !== undefined && (typeof datos.fotografia !== "string" || !fotografiaValida(datos.fotografia))) {
         errores.push("La fotografía debe ser PNG, JPEG o WebP y pesar hasta 10 MB.");

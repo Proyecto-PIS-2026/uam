@@ -1,6 +1,6 @@
 "use client";
 
-import SwipeableDrawer from "@mui/material/SwipeableDrawer";
+import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "@/modulos/publicaciones/componentes/ImagenPublicacion";
@@ -63,7 +63,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
     }, [drawerVisible, publicacion, esWeb]);
 
     const contenido = (
-        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={drawerVisible} onClose={() => onOpenChange(false)} onOpen={() => { if (publicacion) onOpenChange(true); }} disableSwipeToOpen={publicacion === null} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }} 
+        <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={drawerVisible} onClose={() => onOpenChange(false)} slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-label": "Detalle de publicación" } }} transitionDuration={{ enter: 400, exit: 400 }}
             ModalProps={{
                 keepMounted: true,
                 disableRestoreFocus: true,
@@ -173,7 +173,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                     </Dialog>
                 </>
             )}
-        </SwipeableDrawer>
+        </DrawerDeslizable>
     );
     return contenido;
 }

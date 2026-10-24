@@ -20,6 +20,7 @@ let sesionPropietario: DatosSesion;
 let sesionAdministrador: DatosSesion;
 let paisId: number;
 let cambiosIniciales: CambiosPublicacionProductor;
+let catalogoAlternativo: { especieId: number; variedadId: number; presentacionId: number; categoriaId: number; paisId: number };
 let elegida: PublicacionCreada;
 let otraPropia: PublicacionCreada;
 let ajena: PublicacionCreada;
@@ -99,6 +100,15 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
             calibreId: calibresCreados[0],
             ubicaciones: [{ nombreUbicacion: "Retiro de prueba", urlMaps: "https://maps.google.com/?q=Salto" }],
         };
+        catalogoAlternativo = await db.transaction(async (tx) => {
+            const identificador = randomUUID();
+            const especie = await tx.orm.public.Especie.create({ nombreEspecie: `Especie de edición ${identificador}` });
+            const variedad = await tx.orm.public.Variedad.create({ nombreVariedad: "Variedad de edición", especieId: especie.id });
+            const presentacion = await tx.orm.public.Presentacion.create({ nombrePresentacion: "Cajón de edición", variedadId: variedad.id });
+            const categoria = await tx.orm.public.Categoria.create({ nombreCategoria: "Categoría de edición", especieId: especie.id });
+            const pais = await tx.orm.public.Pais.create({ codigoPais: `edicion-${identificador}`, nombrePais: `País de edición ${identificador}` });
+            return { especieId: especie.id, variedadId: variedad.id, presentacionId: presentacion.id, categoriaId: categoria.id, paisId: pais.id };
+        });
     });
 
     beforeEach(async () => {
@@ -139,6 +149,13 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
 
     afterAll(async () => {
         for (const id of calibresCreados) await db.orm.public.Calibre.where({ id }).delete();
+        if (catalogoAlternativo) {
+            await db.orm.public.Presentacion.where({ id: catalogoAlternativo.presentacionId }).delete();
+            await db.orm.public.Categoria.where({ id: catalogoAlternativo.categoriaId }).delete();
+            await db.orm.public.Variedad.where({ id: catalogoAlternativo.variedadId }).delete();
+            await db.orm.public.Especie.where({ id: catalogoAlternativo.especieId }).delete();
+            await db.orm.public.Pais.where({ id: catalogoAlternativo.paisId }).delete();
+        }
     });
 
     it("el propietario guarda su publicación y renueva su fecha sin cambiar otras publicaciones ni ubicaciones", async () => {
@@ -160,6 +177,7 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         expect(Temporal.Instant.compare(despues.publicacion.fecha, antes.publicacion.fecha)).toBe(1);
         expect(resultado.publicacion.fecha).toBe(despues.publicacion.fecha);
         expect(despues.publicacion).toMatchObject({ cantidadUnidades: 12, publicacionActiva: true, publicacionDisponible: true });
+        expect(despues.paisId).toBe(antes.paisId);
         expect(await leer(otraPropia)).toEqual(otraAntes);
         expect(await leer(ajena)).toEqual(ajenaAntes);
     });
@@ -183,10 +201,10 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         const [antes, otraAntes, ajenaAntes] = await Promise.all([leer(elegida), leer(otraPropia), leer(ajena)]);
         expect(sesionAdministrador.usuarioId).not.toBe(sesionPropietario.usuarioId);
 
-        await modificarPublicacionProductor(sesionAdministrador, elegida.publicacionProductorId, { ...cambiosIniciales, precio: "0", ubicaciones: [] });
+        await modificarPublicacionProductor(sesionAdministrador, elegida.publicacionProductorId, { ...cambiosIniciales, precio: null, ubicaciones: [] });
 
         const despues = await leer(elegida);
-        expect(Number(despues.publicacion.precio)).toBe(0);
+        expect(despues.publicacion.precio).toBeNull();
         expect(despues.ubicaciones).toEqual([]);
         expect(Temporal.Instant.compare(despues.publicacion.fecha, antes.publicacion.fecha)).toBe(1);
         expect(await leer(otraPropia)).toEqual(otraAntes);
@@ -205,6 +223,65 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         expect(await leer(ajena)).toEqual(ajenaAntes);
     });
 
+    it("cambia a otra especie y variedad con su categoría, país, cero unidades y disponibilidad desactivada", async () => {
+        const [otraAntes, ajenaAntes] = await Promise.all([leer(otraPropia), leer(ajena)]);
+        const cambios = {
+            ...cambiosIniciales,
+            presentacionId: catalogoAlternativo.presentacionId,
+            categoriaId: catalogoAlternativo.categoriaId,
+            paisId: catalogoAlternativo.paisId,
+            cantidadUnidades: 0,
+            disponible: false,
+        };
+
+        const resultado = await modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, cambios);
+
+        const despues = await leer(elegida);
+        expect(despues).toMatchObject({
+            paisId: catalogoAlternativo.paisId,
+            publicacion: {
+                presentacionId: catalogoAlternativo.presentacionId, categoriaId: catalogoAlternativo.categoriaId,
+                cantidadUnidades: 0, publicacionDisponible: false, publicacionActiva: true,
+            },
+        });
+        expect(resultado.publicacion).toMatchObject({
+            paisId: catalogoAlternativo.paisId, cantidadUnidades: 0, publicacionDisponible: false,
+            presentacion: {
+                id: catalogoAlternativo.presentacionId,
+                variedad: { id: catalogoAlternativo.variedadId, especie: { id: catalogoAlternativo.especieId } },
+            },
+        });
+        expect(await leer(otraPropia)).toEqual(otraAntes);
+        expect(await leer(ajena)).toEqual(ajenaAntes);
+    });
+
+    it("permite quitar la cantidad y volver a activar la disponibilidad sin cambiar el país omitido", async () => {
+        await modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
+            ...cambiosIniciales, paisId: catalogoAlternativo.paisId, cantidadUnidades: 0, disponible: false,
+        });
+
+        const resultado = await modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
+            ...cambiosIniciales, cantidadUnidades: null, disponible: true,
+        });
+
+        expect(await leer(elegida)).toMatchObject({
+            paisId: catalogoAlternativo.paisId,
+            publicacion: { cantidadUnidades: null, publicacionDisponible: true },
+        });
+        expect(resultado.publicacion).toMatchObject({ cantidadUnidades: null, publicacionDisponible: true, paisId: catalogoAlternativo.paisId });
+    });
+
+    it("rechaza una categoría de otra especie sin guardar país, cantidad, disponibilidad ni ubicaciones", async () => {
+        const antes = await leer(elegida);
+
+        await expect(modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
+            ...cambiosIniciales, categoriaId: catalogoAlternativo.categoriaId,
+            paisId: catalogoAlternativo.paisId, cantidadUnidades: 0, disponible: false, ubicaciones: [],
+        })).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
+
+        expect(await leer(elegida)).toEqual(antes);
+    });
+
     it("rechaza una combinación ya publicada por el mismo productor sin modificar ninguna", async () => {
         const [antes, otraAntes] = await Promise.all([leer(elegida), leer(otraPropia)]);
 
@@ -216,7 +293,12 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
     });
 
     it("serializa dos ediciones que intentan crear la misma combinación", async () => {
-        const cambios = { ...cambiosIniciales, calibreId: calibresCreados[2] };
+        const cambios = {
+            ...cambiosIniciales,
+            presentacionId: catalogoAlternativo.presentacionId, categoriaId: catalogoAlternativo.categoriaId,
+            paisId: catalogoAlternativo.paisId, cantidadUnidades: 0, disponible: false,
+            calibreId: calibresCreados[2],
+        };
         const resultados = await Promise.allSettled([
             modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, cambios),
             modificarPublicacionProductor(sesionPropietario, otraPropia.publicacionProductorId, cambios),

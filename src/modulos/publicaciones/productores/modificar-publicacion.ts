@@ -5,9 +5,11 @@ import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { mapearPublicacionMiMercadoProductor } from "../mi-mercado/consultas-mi-mercado-productor";
 import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarImagenPublicacion } from "../operadores/imagenes-publicacion";
 import { limpiarImagenPublicacionNoReferenciada } from "../operadores/limpiar-imagen-publicacion";
+import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
 
 type Cliente = Pick<typeof db, "orm">;
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
+type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
 
 export type CambiosPublicacionProductor = {
     precio: string | null;
@@ -15,6 +17,9 @@ export type CambiosPublicacionProductor = {
     presentacionId: number;
     categoriaId: number;
     calibreId: number;
+    paisId?: number;
+    cantidadUnidades?: number | null;
+    disponible?: boolean;
     ubicaciones: { nombreUbicacion: string; urlMaps: string }[];
 };
 
@@ -52,8 +57,18 @@ function validarCambios(entrada: unknown): CambiosPublicacionProductor {
             datosInvalidos("La presentación, categoría y calibre deben ser válidos.");
         }
     }
-    if (datos.precio !== null && (typeof datos.precio !== "string" || !/^(0|[1-9]\d{0,9})$/.test(datos.precio.trim()))) {
-        datosInvalidos("El precio debe ser un número entero de hasta 10 dígitos, sin decimales.");
+    if (datos.paisId !== undefined && (typeof datos.paisId !== "number" || !Number.isSafeInteger(datos.paisId) || datos.paisId <= 0 || datos.paisId > 2147483647)) {
+        datosInvalidos("El país no es válido.");
+    }
+    if (datos.cantidadUnidades !== undefined && datos.cantidadUnidades !== null &&
+        (typeof datos.cantidadUnidades !== "number" || !Number.isSafeInteger(datos.cantidadUnidades) || datos.cantidadUnidades < 0 || datos.cantidadUnidades > 2147483647)) {
+        datosInvalidos("La cantidad de unidades debe ser un número entero entre 0 y 2147483647, o quedar sin informar.");
+    }
+    if (datos.disponible !== undefined && typeof datos.disponible !== "boolean") {
+        datosInvalidos("La disponibilidad no es válida.");
+    }
+    if (!precioPublicacionValido(datos.precio)) {
+        datosInvalidos(PRECIO_PUBLICACION_INVALIDO);
     }
     if (datos.foto !== undefined && datos.foto !== null && typeof datos.foto !== "string") datosInvalidos("La fotografía no es válida.");
     if (!Array.isArray(datos.ubicaciones)) datosInvalidos("Las ubicaciones no son válidas.");
@@ -65,8 +80,10 @@ function validarCambios(entrada: unknown): CambiosPublicacionProductor {
         if (typeof urlMaps !== "string" || urlMaps.trim().length > 2048 || !esUrlGoogleMaps(urlMaps.trim())) datosInvalidos("Cada ubicación debe incluir un enlace válido de Google Maps de hasta 2048 caracteres.");
         return { nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim() };
     });
-    return { precio: datos.precio === null ? null : (datos.precio as string).trim(), foto: datos.foto as string | null | undefined,
-        presentacionId: datos.presentacionId as number, categoriaId: datos.categoriaId as number, calibreId: datos.calibreId as number, ubicaciones };
+    return { precio: normalizarPrecioPublicacion(datos.precio), foto: datos.foto as string | null | undefined,
+        presentacionId: datos.presentacionId as number, categoriaId: datos.categoriaId as number, calibreId: datos.calibreId as number,
+        paisId: datos.paisId as number | undefined, cantidadUnidades: datos.cantidadUnidades as number | null | undefined,
+        disponible: datos.disponible as boolean | undefined, ubicaciones };
 }
 
 async function consultarPublicacion(publicacionProductorId: number, cliente: Cliente) {
@@ -119,12 +136,14 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             if (!presentacion || !presentacion.presentacionActiva || !presentacion.variedad.variedadActiva || !presentacion.variedad.especie.especieActiva) {
                 datosInvalidos("La presentación seleccionada no está activa.");
             }
-            if (presentacion.variedadId !== publicacion.presentacion.variedadId) datosInvalidos("La presentación debe pertenecer a la misma variedad.");
             const categoria = await tx.orm.public.Categoria.where({ id: cambios.categoriaId }).first();
             if (!categoria || (categoria.especieId !== null && categoria.especieId !== presentacion.variedad.especieId)) {
                 datosInvalidos("La categoría no corresponde a la especie de la publicación.");
             }
             if (!await tx.orm.public.Calibre.where({ id: cambios.calibreId }).first()) datosInvalidos("El calibre no existe.");
+            if (cambios.paisId !== undefined && !await tx.orm.public.Pais.where({ id: cambios.paisId }).select("id").first()) {
+                datosInvalidos("El país no existe.");
+            }
 
             const propias = await tx.orm.public.PublicacionProductor.where({ productorId: relacion.productor.id })
                 .include("publicacion", (publicacion) => publicacion.select("presentacionId", "categoriaId", "calibreId"))
@@ -144,7 +163,12 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             await tx.orm.public.Publicacion.where({ id: publicacion.id }).update({
                 precio: cambios.precio as PrecioDb, foto, presentacionId: cambios.presentacionId,
                 categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,
+                ...(cambios.cantidadUnidades !== undefined ? { cantidadUnidades: cambios.cantidadUnidades as CantidadUnidadesDb } : {}),
+                ...(cambios.disponible !== undefined ? { publicacionDisponible: cambios.disponible } : {}),
             });
+            if (cambios.paisId !== undefined) {
+                await tx.orm.public.PublicacionProductor.where({ id: relacion.id }).update({ paisId: cambios.paisId });
+            }
             await tx.orm.public.Ubicacion.where({ publicacionId: relacion.id }).deleteAll();
             for (const ubicacion of cambios.ubicaciones) {
                 await tx.orm.public.Ubicacion.create({ ...ubicacion, publicacionId: relacion.id });

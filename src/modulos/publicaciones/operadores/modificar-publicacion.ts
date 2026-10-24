@@ -3,6 +3,7 @@ import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/public
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarImagenPublicacion } from "./imagenes-publicacion";
 import type { CambiosPublicacionOperador } from "./tipos";
+import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
@@ -36,19 +37,13 @@ export async function modificarPublicacionOperador(
         throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El país no es válido.");
     }
 
-    let precioParaGuardar: PrecioDb = null;
-
-    if (cambios.precio !== null) {
-        if (typeof cambios.precio !== "string") {
-            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El precio no es válido.");
-        }
-        const precio = cambios.precio.trim();
-        const formatoValido = /^(0|[1-9]\d{0,9})$/.test(precio);
-        if (!formatoValido) {
-            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El precio debe ser un número entero de hasta 10 dígitos, sin decimales.");
-        }
-        precioParaGuardar = precio as PrecioDb;
+    if (cambios.precio !== null && typeof cambios.precio !== "string") {
+        throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El precio no es válido.");
     }
+    if (!precioPublicacionValido(cambios.precio)) {
+        throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", PRECIO_PUBLICACION_INVALIDO);
+    }
+    const precioParaGuardar = normalizarPrecioPublicacion(cambios.precio) as PrecioDb;
 
     let cantidadUnidadesParaGuardar: CantidadUnidadesDb | undefined = undefined;
 

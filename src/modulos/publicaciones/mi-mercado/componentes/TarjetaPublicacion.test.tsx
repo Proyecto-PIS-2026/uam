@@ -387,7 +387,7 @@ describe("TarjetaPublicacion", () => {
     );
   });
 
-  it.each(["125,5", "125.5"])("rechaza el precio decimal %s al escribirlo", (precioDecimal) => {
+  it.each(["0", "00", "125,5", "125.5", "+125", "1e3"])("rechaza el precio inválido %s al escribirlo", (precioDecimal) => {
     render(
       <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
@@ -452,12 +452,16 @@ describe("TarjetaPublicacion", () => {
     expect(actualizarPrecio).not.toHaveBeenCalled();
   });
 
-  it("descarta un precio manual vacío", () => {
+  it.each(["blur", "Enter"])("guarda null al confirmar un precio manual vacío con %s", async (accion) => {
+    const alPrecioActualizado = vi.fn();
+    const alConsultar = vi.fn();
     render(
       <TarjetaPublicacion puedeModificar={true}
         pub={crearPublicacion()}
         incrementoPrecio={10}
         operadorId={37}
+        alPrecioActualizado={alPrecioActualizado}
+        alConsultar={alConsultar}
       />,
     );
 
@@ -477,11 +481,41 @@ describe("TarjetaPublicacion", () => {
 
     expect(input).toHaveValue("");
 
-    fireEvent.blur(input);
+    if (accion === "blur") fireEvent.blur(input);
+    else fireEvent.keyDown(input, { key: "Enter" });
 
-    expect(screen.getByText("$100")).toBeInTheDocument();
+    await waitFor(() => expect(alPrecioActualizado).toHaveBeenCalledExactlyOnceWith(1, null, "2026-10-10T16:30:00Z", 2));
+    expect(actualizarPrecio).toHaveBeenCalledExactlyOnceWith(1, null, 37, 1);
+    expect(screen.getByText("Sin precio")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Manzana · Red Delicious" })[0]);
+    expect(alConsultar).toHaveBeenCalledWith(expect.objectContaining({ precio: null, version: 2 }));
+  });
 
+  it("edita un precio nulo como vacío y permite aumentarlo con el incremento configurado", async () => {
+    const pub = { ...crearPublicacion(), precio: null };
+    vi.mocked(incrementarPrecio).mockResolvedValueOnce({ publicacionEliminada: false, precio: 10, version: 2, fecha: pub.fecha });
+    render(<TarjetaPublicacion puedeModificar pub={pub} incrementoPrecio={10} operadorId={37} />);
+    fireEvent.click(screen.getByTitle("Editar precio"));
+    expect(screen.getByRole("textbox", { name: "Editar precio" })).toHaveValue("");
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Editar precio" }), { key: "Enter" });
     expect(actualizarPrecio).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Disminuir precio" }));
+    expect(incrementarPrecio).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar precio" }));
+    await waitFor(() => expect(screen.getByTitle("Editar precio")).toBeEnabled());
+    expect(incrementarPrecio).toHaveBeenCalledExactlyOnceWith(1, 10, 37);
+    expect(screen.getByText("$10")).toBeInTheDocument();
+  });
+
+  it("restaura el precio anterior cuando falla el guardado de null", async () => {
+    vi.mocked(actualizarPrecio).mockRejectedValueOnce(new Error("No se pudo quitar el precio."));
+    render(<TarjetaPublicacion puedeModificar pub={crearPublicacion()} incrementoPrecio={10} operadorId={37} />);
+    fireEvent.click(screen.getByTitle("Editar precio"));
+    const input = screen.getByRole("textbox", { name: "Editar precio" });
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.blur(input);
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo quitar el precio."));
+    expect(screen.getByText("$100")).toBeInTheDocument();
   });
 
   it("impide escribir un precio manual negativo", () => {

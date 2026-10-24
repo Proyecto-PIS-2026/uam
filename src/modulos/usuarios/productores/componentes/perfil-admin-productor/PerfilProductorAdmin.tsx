@@ -3,10 +3,12 @@
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
+import BotonVolver from "@/compartido/BotonVolver";
 import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
 import { DrawerAltaPublicacionProductor } from "@/modulos/publicaciones/productores/AltaPublicacionProductor";
 import { useState } from "react"; 
 import { useRouter } from "next/navigation";
@@ -40,9 +42,9 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-productor">
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
-            <Link href="/administracion#usuarios" className={styles.volver}>
-                ← Volver al listado de productores
-            </Link>
+            <BotonVolver href="/administracion#usuarios" className={styles.volver}>
+                Volver al listado de productores
+            </BotonVolver>
             <div className={styles.tarjetaPerfil}>
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
@@ -64,19 +66,8 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                         aria-label="Editar productor"
                         title="Editar productor"
                     >
-                        <svg
-                            aria-hidden="true"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <path d="M12 20h9" />
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                        </svg>
-                        <span className={styles.textoEditar}>Editar</span>
+                        <EditIcon aria-hidden="true" className={styles.iconoEditar} />
+                        <span>Editar</span>
                     </Link>
                 </header>
 

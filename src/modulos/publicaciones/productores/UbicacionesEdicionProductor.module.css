@@ -4,26 +4,28 @@
     display: flex;
     min-width: 0;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 
 .resumen {
     margin: 0;
     color: var(--color-muted);
-    font-size: 0.875rem;
-    line-height: 1.4;
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
     overflow-wrap: anywhere;
 }
 
 .ubicacion {
     margin: 0;
-    padding: 0.75rem;
+    padding: var(--padding-panel);
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
+    color: var(--color-foreground);
 }
 
 .acciones {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
 }

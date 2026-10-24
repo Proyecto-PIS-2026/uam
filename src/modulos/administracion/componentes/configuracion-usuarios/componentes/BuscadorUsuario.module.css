@@ -54,8 +54,7 @@
 
 .selectorRolMovil {
     display: none !important;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: var(--alto-control);
 }
 
 .selectorRolMovil :global(.MuiSelect-select) {
@@ -88,15 +87,36 @@
 .selectorRolMovil :global(svg) {
     display: block;
     margin: 0;
-    color: var(--color-border);
+    color: var(--color-muted);
 }
 
 .selectorRolMovil:global(.Mui-focused) :global(svg) {
     color: var(--color-primary);
 }
 
-.selectMui :global(.MuiOutlinedInput-root) {
+.selectMui :global(.MuiOutlinedInput-root),
+.selectorRolMovil.selectorRolMovil {
+    height: var(--alto-control);
+    border-radius: var(--radio-control);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: var(--tamano-texto);
+    line-height: var(--interlineado-texto);
     background-color: var(--color-surface);
+}
+
+.selectorRolMovil.selectorActivo {
+    background-color: var(--color-primary-soft);
+}
+
+.selectorRolMovil.selectorActivo :global(svg) {
+    color: var(--color-secondary);
+}
+
+.selectMui :global(.MuiInputLabel-root),
+.opcionSelect.opcionSelect {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: var(--tamano-texto);
+    line-height: var(--interlineado-texto);
 }
 
 .selectMui :global(.MuiOutlinedInput-notchedOutline) {

@@ -13,6 +13,7 @@ import NotificacionToast, { useNotificacionToast } from "@/compartido/componente
 
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 import type { UsuarioParaModificar } from "../Tipos";
 import styles from "./ListaUsuarios.module.css";
@@ -134,6 +135,12 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
 
     return (
         <div className={styles.contenedor}>
+            {usuariosVisibles.some((usuario) => usuario.solicitoRestablecimiento) && (
+                <p className={styles.leyendaRestablecimiento}>
+                    <WarningAmberIcon fontSize="small" />
+                    Solicitaron reestablecimiento
+                </p>
+            )}
             {usuariosVisibles.length === 0 ? (
                 <p className={styles.sinResultados}>No se encontraron usuarios.</p>
             ) : (
@@ -146,7 +153,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                     </div>
 
                     {usuariosPagina.map((usuario) => (
-                        <div key={usuario.id} className={`${styles.fila} ${usuario.id === usuarioSeleccionadoId ? styles.seleccionada : ""}`} onClick={() =>
+                        <div key={usuario.id} className={`${styles.fila} ${usuario.id === usuarioSeleccionadoId ? styles.seleccionada : ""} ${usuario.solicitoRestablecimiento ? styles.restablecimientoSolicitado : ""}`} onClick={() =>
                             manejarSeleccionar(usuario)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") manejarSeleccionar(usuario) }}
                         >
                             <span className={styles.username}>
@@ -154,7 +161,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                                 {usuario.solicitoRestablecimiento && (
                                     <span
                                         title="El usuario solicitó restablecer su contraseña"
-                                        className="ml-2 inline-block rounded bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning"
+                                        className={`${styles.indicadorRestablecimiento} ml-2 inline-block rounded bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning`}
                                     >
                                         Restablecimiento solicitado
                                     </span>

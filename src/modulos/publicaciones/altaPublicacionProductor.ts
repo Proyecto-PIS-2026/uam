@@ -2,6 +2,7 @@ import { db } from "../../infraestructura/persistencia/prisma/db";
 import { ErrorImagenProductor, guardarImagenProductor } from "./imagenes-productor";
 import { limpiarImagenPublicacionNoReferenciada } from "./operadores/limpiar-imagen-publicacion";
 import { validarAltaPublicacionProductor } from "./validarAltaPublicacionProductor";
+import { normalizarPrecioPublicacion } from "./precio-publicacion";
 
 export type ResultadoAltaPublicacionProductor =
     | { esValido: false; errores: string[] }
@@ -27,7 +28,7 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
     }
 
     type Precio = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
-    const precio = (datos.precio?.trim().replace(",", ".") || null) as Precio;
+    const precio = normalizarPrecioPublicacion(datos.precio) as Precio;
     let imagenCreada: { url: string; publicacionId: number } | undefined;
     let resultado: ResultadoAltaPublicacionProductor;
     try {

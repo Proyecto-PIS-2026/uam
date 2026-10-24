@@ -111,6 +111,11 @@ describe("altaPublicacionProductor", () => {
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
     });
 
+    it.each([null, "", "   "])("persiste null cuando el precio es %j", async (precio) => {
+        expect((await altaPublicacionProductor({ ...datos, precio })).esValido).toBe(true);
+        expect(mocks.crearPublicacion).toHaveBeenCalledWith(expect.objectContaining({ precio: null }));
+    });
+
     it("conserva precio, cantidad, disponibilidad y nombre de retiro", async () => {
         mocks.categoria.mockResolvedValue({ id: 5, especieId: null });
         await altaPublicacionProductor({ ...datos, precio: " 1250 ", cantidadUnidades: 0, disponibilidad: false, nombreLugar: " Ruta 5 " });

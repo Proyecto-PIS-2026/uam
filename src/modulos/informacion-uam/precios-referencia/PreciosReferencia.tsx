@@ -7,7 +7,9 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
+import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 import type { PrecioReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 import FuentePrecios from "../FuentePrecios";
 import styles from "./PreciosReferencia.module.css";
@@ -72,7 +74,7 @@ function ajustarSeleccion(filas: PrecioReferencia[], seleccion: SeleccionFiltros
 
 function leerPrecio(valor: string): number | null {
     if (valor === "") return null;
-    const precio = Number(valor.replace(",", "."));
+    const precio = Number(valor);
     return Number.isFinite(precio) ? precio : null;
 }
 
@@ -109,7 +111,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     }, []);
 
     const disponibles = useMemo(() => ({
-        especies: opciones(filas.map((fila) => fila.especie)),
+        especies: opciones(filas.map((fila) => fila.especie)).sort(compararEspeciesPorPrioridad),
         variedades: especie ? opciones(filasCompatibles(filas, seleccion, ["variedad", "unidad"]).map((fila) => fila.variedad)) : [],
         unidades: variedad ? opciones(filasCompatibles(filas, seleccion, ["unidad"]).map((fila) => fila.unidad)) : [],
         paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)).sort(compararPaisesPorPrioridad),
@@ -187,7 +189,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     }
 
     function cambiarPrecio(valor: string, actualizar: (valor: string) => void) {
-        if (valor === "" || /^\d+(?:[.,]\d*)?$/.test(valor)) cambiar(() => actualizar(valor));
+        if (esEntradaPrecioPublicacion(valor)) cambiar(() => actualizar(valor));
     }
 
     function limpiar() {
@@ -340,9 +342,9 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 type="text"
                                 size="small"
                                 value={precioMinimo}
-                                placeholder="$ 0"
+                                placeholder="Sin mínimo"
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMinimo)}
-                                slotProps={{ htmlInput: { inputMode: "decimal", pattern: "[0-9]+([.,][0-9]*)?" } }}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                             />
                             <TextField
                                 className={`${styles.campo} ${styles.filtroPrecioMaximo}`}
@@ -353,7 +355,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 placeholder="Sin límite"
                                 error={rangoPrecioInvalido}
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMaximo)}
-                                slotProps={{ htmlInput: { inputMode: "decimal", pattern: "[0-9]+([.,][0-9]*)?" } }}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                             />
                             {rangoPrecioInvalido && <p className={styles.errorPrecio} role="alert">El precio máximo no puede ser menor al mínimo.</p>}
                         </div>

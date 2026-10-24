@@ -44,7 +44,7 @@ describe("concurrencia de productores con otros usuarios", () => {
         if (!nave) throw new Error("La base de pruebas debe contener una nave.");
         const operador = {
             ...productor, rol: "operador",
-            locales: [{ numeroLocal: prefijo, naveId: nave.id, contrato: "" }],
+            locales: [{ numeroLocal: BigInt(`0x${randomUUID().replaceAll("-", "")}`).toString(), naveId: nave.id, contrato: "" }],
         };
 
         const resultados = await Promise.all([altaOperador(operador), altaProductor(productor)]);

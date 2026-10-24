@@ -36,13 +36,13 @@ it("consulta todas las publicaciones coincidentes sin limitar ni desplazar resul
 it("parametriza filtros y orden sin interpolar SQL recibido del cliente", async () => {
     const busqueda = "tomate '; drop table publicacion; --";
     const nave = "A' OR 1=1 --";
-    await consultarPublicaciones({ busqueda, especie: "Tomate", nave, precioMinimo: "12.50", precioMaximo: "80", orden: "precioDesc" });
+    await consultarPublicaciones({ busqueda, especie: "Tomate", nave, precioMinimo: "12", precioMaximo: "80", orden: "precioDesc" });
     const plan = query.mock.calls[0][0];
     expect(plan.texto).not.toContain(busqueda);
     expect(plan.valores).toContain(busqueda);
     expect(plan.texto).not.toContain(nave);
     expect(plan.valores).toContain(nave);
-    expect(plan.valores).toContain(12.5);
+    expect(plan.valores).toContain(12);
     expect(plan.valores).toContain("Tomate");
     expect(plan.valores).toContain("precioDesc");
     expect(plan.valores).not.toContain(null);
@@ -83,6 +83,10 @@ it("recorta la nave sin alterar el nombre exacto", () => {
     expect(normalizarFiltros({ nave: "  Nave A  " }).nave).toBe("Nave A");
 });
 
-it.each([{ precioMinimo: "-1" }, { precioMaximo: "1e9" }, { busqueda: "x".repeat(201) }, { orden: "SQL" }, { nave: "x".repeat(101) }, { nave: 1 }])("rechaza parámetros fuera de contrato %j", (entrada) => {
+it.each([{ precioMinimo: "0" }, { precioMinimo: "000" }, { precioMaximo: "12.50" }, { precioMinimo: "-1" }, { precioMaximo: "1e9" }, { busqueda: "x".repeat(201) }, { orden: "SQL" }, { nave: "x".repeat(101) }, { nave: 1 }])("rechaza parámetros fuera de contrato %j", (entrada) => {
     expect(() => normalizarFiltros(entrada as Parameters<typeof normalizarFiltros>[0])).toThrow();
+});
+
+it("interpreta ambos límites vacíos como ausencia de restricción de precio", () => {
+    expect(normalizarFiltros({ precioMinimo: "", precioMaximo: "   " })).toMatchObject({ precioMinimo: null, precioMaximo: null });
 });

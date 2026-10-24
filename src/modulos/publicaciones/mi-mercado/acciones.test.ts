@@ -55,6 +55,13 @@ describe("actualizarPrecio", () => {
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 
+    it("conserva el precio ausente al guardar desde la edición rápida", async () => {
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Frutas & Más" });
+        mocks.actualizarPrecioPublicacion.mockResolvedValue({ fecha: "2026-10-10T16:30:00Z", precio: null, version: 2 });
+        expect(await actualizarPrecio(5, null, 13, 1)).toEqual({ publicacionEliminada: false, fecha: "2026-10-10T16:30:00Z", precio: null, version: 2 });
+        expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(13, 5, null, 1);
+    });
+
     it("usa el operador autenticado cuando no se indica un ID", async () => {
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Frutas & Más" });
 

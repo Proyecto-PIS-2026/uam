@@ -58,6 +58,7 @@ export default function FormularioModificarOperador({
         campo: keyof LocalFormulario,
         valor: string | number,
     ) {
+        if (campo === "nombre" && (typeof valor !== "string" || !/^[0-9]*$/.test(valor))) return;
         setLocales((actuales) =>
             actuales.map((local, i) =>
                 i === indice
@@ -400,6 +401,10 @@ export default function FormularioModificarOperador({
                                                     value={
                                                         local.nombre
                                                     }
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    pattern="[0-9]*"
+                                                    required
                                                     onChange={(
                                                         evento,
                                                     ) =>

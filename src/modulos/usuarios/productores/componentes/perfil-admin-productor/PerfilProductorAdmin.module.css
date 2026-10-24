@@ -7,16 +7,7 @@
 }
 
 .volver {
-    display: inline-block;
     margin-bottom: var(--espacio-secciones);
-    color: var(--color-primary-hover);
-    font-size: var(--tamano-texto-secundario);
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.volver:hover {
-    text-decoration: underline;
 }
 
 .tarjetaPerfil {
@@ -30,7 +21,8 @@
 }
 
 .encabezado {
-    display: flex;
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
     position: relative;
     isolation: isolate;
     width: 100%;
@@ -131,25 +123,33 @@
 }
 
 .botonEditar {
-    display: flex;
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
+    display: inline-flex;
+    position: relative;
     z-index: 1;
-    width: 2.25rem;
-    height: 2.25rem;
+    grid-column: 1 / -1;
+    justify-self: end;
+    min-height: 3rem;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    background-color: var(--color-surface);
+    gap: var(--espacio-inline);
+    padding: 0.625rem var(--padding-panel);
+    border: 1px solid var(--color-secondary);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
     color: var(--color-secondary);
-    transition: background-color 0.15s ease;
-    text-decoration: None;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 150ms, border-color 150ms;
 }
 
-.botonEditar svg {
-    width: 1.125rem;
-    height: 1.125rem;
+.botonEditar .iconoEditar {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
 }
 
 .botonEditar:hover {
@@ -161,8 +161,17 @@
     outline-offset: 2px;
 }
 
-.textoEditar {
-    display: none;
+.estadoVacio {
+    margin: 0;
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+    text-align: center;
+    box-shadow: var(--sombra-panel);
 }
 
 
@@ -194,6 +203,16 @@
     background-color: var(--color-primary-hover) !important;
 }
 
+@media (min-width: 701px) {
+    .encabezado {
+        grid-template-columns: 6rem minmax(0, 1fr) auto;
+    }
+
+    .botonEditar {
+        grid-column: auto;
+    }
+}
+
 @media (min-width: 768px) {
     .lista {
         grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
@@ -210,29 +229,6 @@
 
     .finContrato {
         margin-left: 0;
-    }
-
-    .botonEditar {
-        top: 1rem;
-        right: 1rem;
-        width: auto;
-        height: auto;
-        padding: var(--espacio-inline) 1.125rem var(--espacio-inline) 0.875rem;
-        gap: var(--espacio-inline);
-        border-radius: 999px;
-        font-size: var(--tamano-texto-secundario);
-        font-weight: 600;
-        line-height: 1.2;
-        white-space: nowrap;
-    }
-
-    .botonEditar svg {
-        width: 1.125rem;
-        height: 1.125rem;
-    }
-
-    .textoEditar {
-        display: inline;
     }
 
     .filaPublicaciones {

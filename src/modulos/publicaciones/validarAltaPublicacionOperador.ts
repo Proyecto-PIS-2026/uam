@@ -1,3 +1,5 @@
+import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
+
 export type DatosAltaPublicacionOperador = {
 	operadorId: number;
 	especieId: number;
@@ -7,7 +9,7 @@ export type DatosAltaPublicacionOperador = {
 	categoriaId: number;
 	paisId: number;
 	disponibilidad: boolean;
-	precio?: string;
+	precio?: string | null;
 	cantidadUnidades?: number | null;
 	fotografia?: string;
 };
@@ -51,9 +53,8 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 		errores.push("La disponibilidad no es válida.");
 	}
 
-	if (datos.precio !== undefined && (typeof datos.precio !== "string" ||
-		(datos.precio.trim() !== "" && !/^\d{1,10}$/.test(datos.precio.trim())))) {
-		errores.push("El precio debe ser un número entero.");
+	if (datos.precio !== undefined && !precioPublicacionValido(datos.precio)) {
+		errores.push(PRECIO_PUBLICACION_INVALIDO);
 	}
 
 	if (datos.fotografia !== undefined && (typeof datos.fotografia !== "string" || !fotografiaValida(datos.fotografia))) {

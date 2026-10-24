@@ -3,6 +3,7 @@ import styles from "./FiltrosPublicaciones.module.css";
 import FiltrosPublicaciones from "./FiltrosPublicaciones";
 import type { PublicacionListado } from "../../consulta-mercado/acciones/PublicacionesOperador";
 import type { PublicacionProductorListado } from "../../consulta-mercado/acciones/PublicacionesProductor";
+import { MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 const obtenerNombreProductor = (publicacion: PublicacionProductorListado) => publicacion.productor.nombreFantasia;
@@ -494,11 +495,11 @@ describe("FiltrosPublicaciones", () => {
         expect(buscador).toHaveAttribute("type", "search");
         expect(precioMinimo).toHaveAttribute("type", "text");
         expect(precioMinimo).toHaveAttribute("inputmode", "numeric");
-        expect(precioMinimo).toHaveAttribute("pattern", "[0-9]*");
-        expect(precioMinimo).toHaveAttribute("placeholder", "$ 0");
+        expect(precioMinimo).toHaveAttribute("pattern", "0*[1-9][0-9]*");
+        expect(precioMinimo).toHaveAttribute("placeholder", "Sin mínimo");
         expect(precioMaximo).toHaveAttribute("type", "text");
         expect(precioMaximo).toHaveAttribute("inputmode", "numeric");
-        expect(precioMaximo).toHaveAttribute("pattern", "[0-9]*");
+        expect(precioMaximo).toHaveAttribute("pattern", "0*[1-9][0-9]*");
         expect(precioMaximo).toHaveAttribute("placeholder", "Sin límite");
     });
 
@@ -560,7 +561,7 @@ describe("FiltrosPublicaciones", () => {
         }
     });
 
-    it("ordena también las especies con tildes", () => {
+    it("prioriza las especies UAM y ordena las restantes con tildes según el alfabeto español", () => {
         const publicacionesConEspecies = ["Zanahoria", "Árbol", "Berro"].map((especie, indice) => ({
             ...publicaciones[0],
             id: indice + 1,
@@ -569,16 +570,16 @@ describe("FiltrosPublicaciones", () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConEspecies} especieFiltro=""/>);
 
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
-        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Árbol", "Berro", "Zanahoria"]);
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Zanahoria", "Árbol", "Berro"]);
     });
 
-    it("muestra las especies prioritarias primero en el selector del listado público", () => {
+    it.each(["ninguno", "prioridad", "alfabeticoAsc", "precioDesc"] as const)("prioriza las especies del selector aunque el listado use el orden %s", (ordenInicial) => {
         const publicacionesConEspecies = ["Pera", "Morrón", "Banana", "Acelga", "Papa"].map((especie, indice) => ({
             ...publicaciones[0],
             id: indice + 1,
             especie,
         }));
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConEspecies} especieFiltro="" ordenInicial="prioridad"/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConEspecies} especieFiltro="" ordenInicial={ordenInicial}/>);
 
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
         expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Papa", "Banana", "Morrón", "Acelga", "Pera"]);
@@ -839,6 +840,45 @@ describe("FiltrosPublicaciones", () => {
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(2);
         expect(resultado.every((publicacion) => publicacion.precio !== null && publicacion.precio >= 150 && publicacion.precio <= 350)).toBe(true)
+    });
+
+    it.each(["Precio Mínimo", "Precio Máximo"])("acepta sólo un entero positivo o vacío en %s", (campo) => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} opcionesRemotas={publicacionesPrueba} especieFiltro="" alConsultar={alConsultar}/>);
+        const entrada = screen.getByLabelText(campo);
+        expect(entrada).toHaveAttribute("inputmode", "numeric");
+        expect(entrada).toHaveAttribute("maxlength", String(MAXIMO_DIGITOS_PRECIO));
+        expect(screen.getByLabelText("Precio Mínimo")).toHaveAttribute("placeholder", "Sin mínimo");
+
+        fireEvent.change(entrada, { target: { value: "9".repeat(MAXIMO_DIGITOS_PRECIO) } });
+        expect(entrada).toHaveValue("9".repeat(MAXIMO_DIGITOS_PRECIO));
+        fireEvent.change(entrada, { target: { value: "0250" } });
+        expect(entrada).toHaveValue("0250");
+        alConsultar.mockClear();
+        for (const valor of ["0", "000", "-1", "1.5", "1,5", "1e3", "+1", "texto", " ", "9".repeat(MAXIMO_DIGITOS_PRECIO + 1)]) {
+            fireEvent.change(entrada, { target: { value: valor } });
+            expect(entrada).toHaveValue("0250");
+        }
+        expect(alConsultar).not.toHaveBeenCalled();
+
+        fireEvent.change(entrada, { target: { value: "" } });
+        expect(entrada).toHaveValue("");
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ precioMinimo: "", precioMaximo: "" }));
+    });
+
+    it("quitar ambos límites restaura publicaciones con y sin precio", () => {
+        const alFiltrar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo);
+
+        fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "1" } });
+        fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "300" } });
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo.filter((publicacion) => publicacion.precio !== null));
+
+        fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "" } });
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo.filter((publicacion) => publicacion.precio !== null));
+        fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "" } });
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo);
     });
 
     it("no devuelve publicaciones cuando el rango de precio es inválido", () => {

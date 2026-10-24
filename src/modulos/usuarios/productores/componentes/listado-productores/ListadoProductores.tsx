@@ -9,13 +9,14 @@ import styles from "./ListadoProductores.module.css";
 
 type ListadoProductoresProps = {
     productores: ProductorListado[];
+    puedeGestionar?: boolean;
 };
 
 function normalizarTexto(texto: string) {
     return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, "");
 }
 
-export default function ListadoProductores({ productores }: ListadoProductoresProps) {
+export default function ListadoProductores({ productores, puedeGestionar = false }: ListadoProductoresProps) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState("a-z");
     const textoBuscado = normalizarTexto(busqueda.trim());
@@ -39,7 +40,7 @@ export default function ListadoProductores({ productores }: ListadoProductoresPr
             ) : (
                 <div className={styles.lista}>
                     {productoresFiltrados.map((productor) => (
-                        <TarjetaProductor key={productor.id} productor={productor}/>
+                        <TarjetaProductor key={productor.id} productor={productor} puedeGestionar={puedeGestionar}/>
                     ))}
                 </div>
             )}

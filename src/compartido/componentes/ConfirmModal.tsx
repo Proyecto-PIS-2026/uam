@@ -65,12 +65,12 @@ export function ConfirmModal({
 			onClick={(evento) => { if (evento.target === evento.currentTarget && !procesando) alCancelar(); }}
 		>
             <div className="p-[var(--padding-panel)]">
-				<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger" aria-hidden="true">
+				<div className="mb-[var(--espacio-secciones)] flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger" aria-hidden="true">
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6" /></svg>
 				</div>
 				<h2 id={tituloId} className="titulo-seccion">{titulo}</h2>
-				<p id={descripcionId} className="mt-2 text-sm leading-6 text-muted">{descripcion}</p>
-                <div className="mt-[var(--espacio-secciones)] flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+				<p id={descripcionId} className="mt-[var(--espacio-inline)] text-[length:var(--tamano-texto-secundario)] leading-[var(--interlineado-texto)] text-muted">{descripcion}</p>
+                <div className="mt-[var(--espacio-secciones)] flex flex-col-reverse gap-[var(--espacio-controles)] sm:flex-row sm:justify-end">
 					<button ref={cancelarRef} type="button" onClick={alCancelar} disabled={procesando} className="boton-secundario">{textoCancelar}</button>
 					<button type="button" onClick={alConfirmar} disabled={procesando} className="boton-peligro">{procesando ? "Eliminando..." : textoConfirmar}</button>
 				</div>

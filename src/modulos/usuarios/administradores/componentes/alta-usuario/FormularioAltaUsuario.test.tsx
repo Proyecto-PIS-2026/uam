@@ -151,6 +151,49 @@ describe("FormularioAltaUsuario", () => {
         ).toBeInTheDocument();
     });
 
+    it.each(["A22", "22B", "-22", "+22", "2.2", "2,2", "2e2"])(
+        "rechaza el número de local inválido %s sin cambiar lo escrito",
+        (valor) => {
+            configurarSearchParams("operador");
+            render(<FormularioAltaUsuario naves={naves} />);
+            const campo = screen.getByPlaceholderText("Número de local");
+
+            fireEvent.change(campo, { target: { value: "022" } });
+            fireEvent.change(campo, { target: { value: valor } });
+
+            expect(campo).toHaveValue("022");
+            expect(altaOperador).not.toHaveBeenCalled();
+        },
+    );
+
+    it("rechaza un pegado inválido y permite vaciar y reescribir el local con ceros iniciales", () => {
+        configurarSearchParams("operador");
+        render(<FormularioAltaUsuario naves={naves} />);
+        const campo = screen.getByPlaceholderText("Número de local") as HTMLInputElement;
+
+        expect(campo).toHaveAttribute("type", "text");
+        expect(campo).toHaveAttribute("inputmode", "numeric");
+        fireEvent.change(campo, { target: { value: "022" } });
+        fireEvent.input(campo, {
+            target: { value: "12 A34" },
+            inputType: "insertFromPaste",
+            data: "12 A34",
+        });
+        expect(campo).toHaveValue("022");
+
+        fireEvent.change(campo, { target: { value: "" } });
+        expect(campo).toHaveValue("");
+        expect(campo.validity.valueMissing).toBe(true);
+
+        fireEvent.input(campo, {
+            target: { value: "0022" },
+            inputType: "insertFromPaste",
+            data: "0022",
+        });
+        expect(campo).toHaveValue("0022");
+        expect(campo.checkValidity()).toBe(true);
+    });
+
     it("permite cambiar el código de país", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
@@ -347,7 +390,7 @@ describe("FormularioAltaUsuario", () => {
         expect(altaProductor).not.toHaveBeenCalled();
     });
 
-    it("envía correctamente el alta de un operador", async () => {
+    it("envía correctamente el alta de un operador conservando ceros iniciales del local", async () => {
         vi.mocked(altaOperador).mockResolvedValue({
             esValido: true,
             id: 25,
@@ -359,6 +402,10 @@ describe("FormularioAltaUsuario", () => {
         seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
+
+        fireEvent.change(screen.getByPlaceholderText("Número de local"), {
+            target: { value: "022" },
+        });
 
         fireEvent.submit(
             screen.getByRole("button", { name: "Registrar usuario" }),
@@ -378,7 +425,7 @@ describe("FormularioAltaUsuario", () => {
             telefono: "99123456",
             locales: [
                 {
-                    numeroLocal: "101",
+                    numeroLocal: "022",
                     naveId: 1,
                     contrato: "",
                 },

@@ -85,6 +85,46 @@ describe("FormularioModificarOperador", () => {
         expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
     });
 
+    it.each(["A22", "22B", "-22", "+22", "2.2", "2,2", "2e2"])(
+        "rechaza el número de local inválido %s sin cambiar lo escrito",
+        (valor) => {
+            renderizar();
+            const campo = screen.getByLabelText("Número de local");
+
+            fireEvent.change(campo, { target: { value: valor } });
+
+            expect(campo).toHaveValue("022");
+            expect(modificarOperadorMock).not.toHaveBeenCalled();
+        },
+    );
+
+    it("rechaza un pegado inválido y permite vaciar y reescribir el local con ceros iniciales", () => {
+        renderizar();
+        const campo = screen.getByLabelText("Número de local") as HTMLInputElement;
+
+        expect(campo).toHaveAttribute("type", "text");
+        expect(campo).toHaveAttribute("inputmode", "numeric");
+        fireEvent.input(campo, {
+            target: { value: "12 A34" },
+            inputType: "insertFromPaste",
+            data: "12 A34",
+        });
+        expect(campo).toHaveValue("022");
+
+        fireEvent.change(campo, { target: { value: "" } });
+        expect(campo).toHaveValue("");
+        expect(campo.validity.valueMissing).toBe(true);
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
+
+        fireEvent.input(campo, {
+            target: { value: "0022" },
+            inputType: "insertFromPaste",
+            data: "0022",
+        });
+        expect(campo).toHaveValue("0022");
+        expect(campo.checkValidity()).toBe(true);
+    });
+
     it("agrega un local vacío con la primera nave seleccionada", () => {
         renderizar();
 

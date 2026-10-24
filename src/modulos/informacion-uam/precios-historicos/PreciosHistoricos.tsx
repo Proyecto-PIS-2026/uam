@@ -10,6 +10,7 @@ import { MenuItem, TextField } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import FuentePrecios from "../FuentePrecios";
 import type { ProductoSeleccionado, HistoricoProducto, EspecieHistorica, OpcionesFiltrosHistoricos } from "./tipos";
@@ -119,7 +120,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
             return [id, { ...especie, id }] as const;
         }));
         if (idProducto) catalogo.set(idProducto, { id: idProducto, especie: producto.especie });
-        return [...catalogo.values()].sort((a, b) => comparar(a.especie, b.especie));
+        return [...catalogo.values()].sort((a, b) => compararEspeciesPorPrioridad(a.especie, b.especie));
     }, [especies, idProducto, producto.especie]);
     const especieSeleccionada = especiesDisponibles.find((especie) => especie.id === especieId) ?? producto;
     const especieConsulta = identificadorEspecie(especieSeleccionada);

@@ -255,19 +255,19 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.publicacion.update).toHaveBeenCalledOnce();
     });
 
-    it.each(["12.50", "12,50", "1.00", "0.00", "9999999999.99", "-1", "10000000000", "1.234", "1e2", "+1", "01", ""])(
+    it.each(["0", "000", "12.50", "12,50", "1.00", "0.00", "9999999999.99", "-1", "10000000000", "1.234", "1e2", "+1"])(
         "rechaza el precio inválido %s antes de abrir la transacción",
         async (precio) => {
             await expect(modificarPublicacionOperador(9, 12, { ...cambios, precio })).rejects.toMatchObject({
                 codigo: "DATOS_INVALIDOS",
-                message: "El precio debe ser un número entero de hasta 10 dígitos, sin decimales.",
+                message: "El precio debe ser un número entero positivo de hasta 10 dígitos, sin decimales.",
             });
             expect(mocks.transaction).not.toHaveBeenCalled();
         },
     );
 
-    it("permite guardar sin precio", async () => {
-        await modificarPublicacionOperador(9, 12, { ...cambios, precio: null });
+    it.each([null, "", "   "])("permite guardar sin precio con %j", async (precio) => {
+        await modificarPublicacionOperador(9, 12, { ...cambios, precio });
         expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ precio: null }));
     });
 
@@ -291,7 +291,7 @@ describe("modificarPublicacionOperador", () => {
 
     it.each([
         { entrada: " 125 ", esperado: "125" },
-        { entrada: "0", esperado: "0" },
+        { entrada: "00125", esperado: "125" },
         { entrada: "9999999999", esperado: "9999999999" },
     ])("normaliza y permite el precio $entrada", async ({ entrada, esperado }) => {
         await modificarPublicacionOperador(9, 12, { ...cambios, precio: entrada });

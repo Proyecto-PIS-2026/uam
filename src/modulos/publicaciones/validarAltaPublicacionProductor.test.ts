@@ -13,13 +13,13 @@ describe("validarAltaPublicacionProductor", () => {
         expect(validarAltaPublicacionProductor(datosValidos)).toEqual({ esValido: true, datos: datosValidos });
     });
 
-    it.each(["", "0", "1250", " 1250 ", "9999999999"])("acepta el precio entero %j", (precio) => {
+    it.each(["", null, "001250", "1250", " 1250 ", "9999999999"])("acepta el precio entero o ausente %j", (precio) => {
         expect(validarAltaPublicacionProductor({ ...datosValidos, precio }).esValido).toBe(true);
     });
 
-    it.each(["1.5", "1,5", "-1", "texto", "10000000000", 25, null])("rechaza el precio inválido %j", (precio) => {
+    it.each(["0", "000", "1.5", "1,5", "-1", "texto", "10000000000", 25])("rechaza el precio inválido %j", (precio) => {
         expect(validarAltaPublicacionProductor({ ...datosValidos, precio })).toEqual({
-            esValido: false, errores: ["El precio debe ser un número entero."],
+            esValido: false, errores: ["El precio debe ser un número entero positivo de hasta 10 dígitos, sin decimales."],
         });
     });
 
@@ -76,6 +76,6 @@ describe("validarAltaPublicacionProductor", () => {
 
     it("informa todos los campos que deben corregirse", () => {
         const resultado = validarAltaPublicacionProductor({ ...datosValidos, precio: "texto", latitud: null, disponibilidad: null });
-        expect(resultado).toEqual({ esValido: false, errores: ["La latitud no es válida.", "La disponibilidad no es válida.", "El precio debe ser un número entero."] });
+        expect(resultado).toEqual({ esValido: false, errores: ["La latitud no es válida.", "La disponibilidad no es válida.", "El precio debe ser un número entero positivo de hasta 10 dígitos, sin decimales."] });
     });
 });

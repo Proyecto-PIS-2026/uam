@@ -25,7 +25,7 @@ const sesion = { usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 };
 const contexto = { params: Promise.resolve({ id: "12" }) };
 const publicacion = { id: 20, publicacionProductorId: 12, precio: "125", fecha: "2026-10-21T12:00:00Z" };
 
-function solicitud(cambios = { precio: "125", presentacionId: 8, categoriaId: 4, calibreId: 2, ubicaciones: [] }) {
+function solicitud(cambios: unknown = { precio: "125", presentacionId: 8, categoriaId: 4, calibreId: 2, ubicaciones: [] }) {
     const formulario = new FormData();
     formulario.set("cambios", JSON.stringify(cambios));
     return new Request("http://localhost/api/publicaciones/productor/12", { method: "PATCH", body: formulario });
@@ -64,8 +64,18 @@ describe("API de edición de publicaciones del productor", () => {
     });
 
     it("ofrece los catálogos sólo después de comprobar el dueño en el servidor", async () => {
+        const opciones = {
+            especies: [{ id: 1, nombre: "Manzana" }, { id: 2, nombre: "Pera" }],
+            variedades: [{ id: 21, nombre: "Williams", especieId: 2 }],
+            presentaciones: [{ id: 31, nombre: "Cajón", variedadId: 21 }],
+            categorias: [{ id: 41, nombre: "Primera", especieId: 2 }],
+            calibres: [{ id: 51, nombre: "Grande" }],
+            paises: [{ id: 61, nombre: "Uruguay" }, { id: 62, nombre: "Argentina" }],
+        };
+        mocks.opciones.mockResolvedValue(opciones);
         const respuesta = await GET(solicitud(), contexto);
         expect(respuesta.status).toBe(200);
+        expect(await respuesta.json()).toEqual({ opciones });
         expect(mocks.editable).toHaveBeenCalledExactlyOnceWith(sesion, 12);
         expect(mocks.editable.mock.invocationCallOrder[0]).toBeLessThan(mocks.opciones.mock.invocationCallOrder[0]);
         mocks.editable.mockRejectedValue(new ErrorAutorizacion(403, "Publicación ajena"));
@@ -81,6 +91,23 @@ describe("API de edición de publicaciones del productor", () => {
         expect(mocks.modificar).toHaveBeenCalledWith(sesion, 12, expect.objectContaining({ precio: "125" }), null);
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/mi-mercado/productor");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/gestion-productores/3");
+        expect(mocks.revalidatePath).toHaveBeenCalledWith("/publicaciones-productor");
+        expect(mocks.revalidatePath).toHaveBeenCalledWith("/inicio");
+    });
+
+    it.each([0, 25, null])("transfiere país, cantidad %s y disponibilidad sin perder valores falsos o nulos", async (cantidadUnidades) => {
+        const cambios = {
+            precio: null, presentacionId: 31, categoriaId: 41, calibreId: 51,
+            paisId: 62, cantidadUnidades, disponible: false, ubicaciones: [],
+        };
+        const guardada = { ...publicacion, precio: null, paisId: 62, cantidadUnidades, publicacionDisponible: false };
+        mocks.modificar.mockResolvedValue({ publicacion: guardada, productorId: 3 });
+
+        const respuesta = await PATCH(solicitud(cambios), contexto);
+
+        expect(respuesta.status).toBe(200);
+        expect(mocks.modificar).toHaveBeenCalledExactlyOnceWith(sesion, 12, cambios, null);
+        expect(await respuesta.json()).toEqual({ publicacion: guardada });
     });
 
     it("transfiere al servicio la sesión de administrador sin aceptar otra identidad del formulario", async () => {

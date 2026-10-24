@@ -47,6 +47,20 @@ describe("precios de Mi Mercado", () => {
         expect(mocks.notificar.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.publicacion.update.mock.invocationCallOrder[0]);
     });
 
+    it("guarda y devuelve null al quitar el precio, conservando revisión y notificación", async () => {
+        expect(await actualizarPrecioPublicacion(10, 20, null, 1)).toEqual({ precio: null, version: 2, fecha: fila.fecha });
+        expect(fila).toMatchObject({ precio: null, version: 2 });
+        expect(mocks.notificar).toHaveBeenCalledWith(expect.anything(), { operadorId: 10, publicacionId: 20 });
+        await expect(actualizarPrecioPublicacion(10, 20, 125, 1)).rejects.toMatchObject({ actual: { precio: null, version: 2 } });
+        expect(fila.precio).toBeNull();
+    });
+
+    it("incrementa desde un precio ausente sin persistir cero", async () => {
+        fila.precio = null;
+        expect(await incrementarPrecioPublicacion(10, 20, 10)).toMatchObject({ precio: 10, version: 2 });
+        expect(fila.precio).toBe("10.00");
+    });
+
     it("rechaza la segunda edición de la misma revisión sin sobrescribir", async () => {
         const resultados = await Promise.allSettled([actualizarPrecioPublicacion(10, 20, 125, 1), actualizarPrecioPublicacion(10, 20, 200, 1)]);
         expect(resultados[0].status).toBe("fulfilled");

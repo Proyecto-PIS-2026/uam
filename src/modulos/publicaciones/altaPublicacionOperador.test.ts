@@ -74,6 +74,12 @@ describe("altaPublicacionOperador", () => {
         expect(mocks.operador).not.toHaveBeenCalled();
     });
 
+    it.each([undefined, null, "", "   "])("persiste null cuando el precio es %j", async (precio) => {
+        mocks.validar.mockReturnValue({ esValido: true, datos: { ...DATOS, precio } });
+        expect((await altaPublicacionOperador({ ...DATOS, precio })).esValido).toBe(true);
+        expect(mocks.crear).toHaveBeenCalledWith(expect.objectContaining({ precio: null }));
+    });
+
     it("rechaza catálogos inactivos antes de guardar la imagen", async () => {
         mocks.variedad.mockResolvedValue({ id: 20, especieId: 10, variedadActiva: false });
         expect((await altaPublicacionOperador(DATOS)).esValido).toBe(false);

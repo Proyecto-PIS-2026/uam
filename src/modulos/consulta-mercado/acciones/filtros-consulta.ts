@@ -1,3 +1,5 @@
+import { esEntradaPrecioPublicacion } from "@/modulos/publicaciones/precio-publicacion";
+
 export type OrdenConsulta = "ninguno" | "prioridad" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
 
 export type FiltrosConsulta = {
@@ -33,7 +35,7 @@ export function normalizarFiltros(valor: FiltrosConsulta = {}) {
         const dato = texto(campo, 15);
         if (dato === "") return null;
         const numero = Number(dato);
-        if (!/^\d+(\.\d{1,2})?$/.test(dato) || !Number.isFinite(numero) || numero > 9_999_999_999) throw new Error("El precio del filtro no es válido.");
+        if (!esEntradaPrecioPublicacion(dato)) throw new Error("El precio del filtro debe ser un número entero positivo de hasta 10 dígitos.");
         return numero;
     };
     const orden = valor.orden ?? "prioridad";

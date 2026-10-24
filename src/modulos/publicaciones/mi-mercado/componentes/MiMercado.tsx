@@ -15,7 +15,7 @@ import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
 import { useActualizacionesPublicaciones } from "../../tiempo-real/use-actualizaciones-publicaciones";
 import styles from "./MiMercado.module.css";
-import CompartirEstadoWhatsApp from "./CompartirEstadoWhatsApp";
+import { crearEnlaceWhatsApp } from "../enlace-whatsapp";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
@@ -35,7 +35,6 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(abrirAltaInicial && puedeCrear);
     const [seleccion, setSeleccion] = useState<{ publicacion: Publicacion; listado: Publicacion[] } | null>(null);
-    const [publicacionACompartir, setPublicacionACompartir] = useState<Publicacion | null>(null);
     const [listadoRecargado, setListadoRecargado] = useState<{ origen: Publicacion[]; datos: Publicacion[] } | null>(null);
     const [sincronizando, setSincronizando] = useState(false);
     const ultimaRecarga = useRef(0);
@@ -224,12 +223,12 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         }
     }
 
-    function actualizarPrecioLocal(publicacionId: number, nuevoPrecio: number, fecha?: string, version?: number) {
+    function actualizarPrecioLocal(publicacionId: number, nuevoPrecio: number | null, fecha?: string, version?: number) {
         setListadoRecargado((actual) => {
             const datosActuales = actual?.origen === publicaciones ? actual.datos : publicaciones;
             return {
                 origen: publicaciones,
-                datos: datosActuales.map((publicacion) => publicacion.id === publicacionId && (version === undefined || version >= publicacion.version) ? { ...publicacion, precio: String(nuevoPrecio), fecha: fecha ?? publicacion.fecha, version: version ?? publicacion.version } : publicacion),
+                datos: datosActuales.map((publicacion) => publicacion.id === publicacionId && (version === undefined || version >= publicacion.version) ? { ...publicacion, precio: nuevoPrecio === null ? null : String(nuevoPrecio), fecha: fecha ?? publicacion.fecha, version: version ?? publicacion.version } : publicacion),
             };
         });
     }
@@ -308,22 +307,14 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
             <DrawerEditarPublicacion incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }}
             alCompartir={() => {
                 if (publicacionSeleccionada) {
-                    setPublicacionACompartir(publicacionSeleccionada);
-                    setSeleccion(null);
+                    window.open(crearEnlaceWhatsApp(publicacionSeleccionada, nombreOperador, window.location.origin), "_blank", "noopener,noreferrer");
                 }
             }}
             eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
 
                 <ConfirmModal abierto={publicacionPendiente !== null} titulo="Eliminar publicación" descripcion={publicacionPendiente ? `¿Querés eliminar la publicación de ${publicacionPendiente.presentacion.variedad.especie.nombreEspecie}? Esta acción no se puede deshacer.` : ""} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setPublicacionPendiente(null); }} alConfirmar={() => void eliminarPublicacion()} />
 
-                </DrawerEditarPublicacion>
-                {publicacionACompartir && (
-                    <CompartirEstadoWhatsApp
-                        publicacion={publicacionACompartir}
-                        nombreOperador={nombreOperador}
-                        alCerrar={() => setPublicacionACompartir(null)}
-                    />
-                )}
+            </DrawerEditarPublicacion>
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </main>
     );

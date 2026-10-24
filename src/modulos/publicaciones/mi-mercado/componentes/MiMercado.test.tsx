@@ -16,6 +16,7 @@ type DrawerMockProps = {
   abierto: boolean;
   alCerrar: () => void;
   alEliminar?: () => void;
+  alCompartir?: () => void;
   alGuardar: (publicacionOperadorId: number, cambios: CambiosPublicacionOperador, fotoNueva: File | null) => void | Promise<void>;
   publicacion: PublicacionParaEditar | null;
   modoInicial?: "consulta" | "edicion";
@@ -29,6 +30,7 @@ const mocks = vi.hoisted(() => ({
   refrescar: vi.fn(),
   reemplazar: vi.fn(),
   solicitud: vi.fn(),
+  abrirWhatsApp: vi.fn(),
   drawer: vi.fn<(props: DrawerMockProps) => void>(),
   cargarPublicaciones: vi.fn(),
 }));
@@ -47,6 +49,7 @@ vi.mock("../../operadores/componentes/DrawerEditarPublicacion", () => ({
         {props.errorConsulta && <p role="alert">{props.errorConsulta}</p>}
         <button type="button" onClick={props.alCerrar}>Cerrar consulta</button>
         {props.alEliminar && <button type="button" onClick={props.alEliminar} disabled={props.eliminando}>Eliminar desde consulta</button>}
+        {props.alCompartir && <button type="button" onClick={props.alCompartir}>Compartir en WhatsApp</button>}
         {props.children}
       </div>
     );
@@ -98,7 +101,7 @@ vi.mock("./TarjetaPublicacion", () => ({
     operadorId: number;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
-    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number, fecha?: string) => void;
+    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number | null, fecha?: string) => void;
   }) => (
     <div
       data-testid={`publicacion-${pub.id}`}
@@ -108,6 +111,7 @@ vi.mock("./TarjetaPublicacion", () => ({
       {pub.presentacion.variedad.nombreVariedad}
       <button type="button" onClick={() => alConsultar?.(pub)}>Consultar publicación {pub.id}</button>
       <button type="button" onClick={() => alPrecioActualizado?.(pub.id, Number(pub.precio) + incrementoPrecio, "2026-10-10T16:30:00Z")}>Confirmar precio rápido {pub.id}</button>
+      <button type="button" onClick={() => alPrecioActualizado?.(pub.id, null, "2026-10-10T16:30:00Z")}>Quitar precio {pub.id}</button>
     </div>
   ),
 }));
@@ -166,11 +170,13 @@ function crearPublicacionConPrecio(
 function renderMiMercado(
   publicaciones: Publicacion[],
   incrementoPrecio = 5,
+  nombreOperador = "",
 ) {
   return render(
     <MiMercado
       puedeCrear={true} puedeModificar={true} puedeEliminar={true}
       operadorId={9}
+      nombreOperador={nombreOperador}
       publicaciones={publicaciones}
       incrementoPrecio={incrementoPrecio}
       opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
@@ -199,10 +205,37 @@ describe("MiMercado", () => {
     mocks.solicitud.mockReset();
     mocks.cargarPublicaciones.mockReset();
     vi.stubGlobal("fetch", mocks.solicitud);
+    vi.stubGlobal("open", mocks.abrirWhatsApp);
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ["Confirmar precio rápido 52", "💰 Precio: $105"],
+    ["Quitar precio 52", "💰 Precio: Consultar"],
+  ])("abre WhatsApp directamente con los datos actuales después de %s", (accion, precioEsperado) => {
+    const publicacion = crearPublicacion(52, 10, "Manzana");
+    publicacion.foto = "/api/imagenes/publicaciones/52";
+    renderMiMercado([publicacion], 5, "Mercado Pérez & Hijos");
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+    fireEvent.click(screen.getByRole("button", { name: accion }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Compartir en WhatsApp" }));
+
+    expect(mocks.abrirWhatsApp).toHaveBeenCalledOnce();
+    const [destino, ventana, opciones] = mocks.abrirWhatsApp.mock.calls[0];
+    const enlace = new URL(destino);
+    expect(enlace.origin).toBe("https://wa.me");
+    expect(enlace.searchParams.get("text")).toContain(precioEsperado);
+    expect(enlace.searchParams.get("text")).toContain(`${window.location.origin}/operadores/Mercado%20P%C3%A9rez%20%26%20Hijos`);
+    expect(ventana).toBe("_blank");
+    expect(opciones).toBe("noopener,noreferrer");
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toBeInTheDocument();
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    expect(mocks.solicitud).not.toHaveBeenCalled();
+    expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
   });
 
   it("actualiza la fecha del detalle abierto con la fecha guardada por el precio rápido", () => {
@@ -265,6 +298,14 @@ describe("MiMercado", () => {
     expect(screen.queryByRole("dialog", { name: "Publicación seleccionada" })).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toHaveAttribute("data-operador", "9");
+  });
+
+  it("conserva null al quitar el precio desde la tarjeta y abrir el detalle", () => {
+    renderMiMercado([crearPublicacion(52, 10, "Manzana")]);
+    fireEvent.click(screen.getByRole("button", { name: "Quitar precio 52" }));
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+
+    expect(obtenerPropsDrawer().publicacion).toEqual(expect.objectContaining({ precio: null }));
   });
 
   it("permite cancelar la baja sin cerrar la consulta ni enviar una solicitud", () => {

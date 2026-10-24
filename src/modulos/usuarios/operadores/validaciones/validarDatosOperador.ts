@@ -43,6 +43,7 @@ export function validarDatosOperador(
         const contrato = textoOperador(local.contrato);
         const naveId = local.naveId;
         if (!numeroLocal) errores.push(`Local ${indice + 1}: falta el número.`);
+        else if (!/^[0-9]+$/.test(numeroLocal)) errores.push(`Local ${indice + 1}: el número debe contener solo dígitos.`);
         if (contrato) {
             try {
                 Temporal.PlainDate.from(contrato);

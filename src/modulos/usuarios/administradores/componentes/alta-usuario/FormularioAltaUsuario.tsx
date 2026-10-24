@@ -17,7 +17,7 @@ const ROLES_VALIDOS = ["operador", "productor", "administrador"];
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
 export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }) {
-    const searchParams = useSearchParams();    
+    const searchParams = useSearchParams();
     const rolInicial = searchParams.get("rol") ?? "";
     const [rol, setRol] = useState(ROLES_VALIDOS.includes(rolInicial) ? rolInicial : "");
     const [nombreUsuario, setNombreUsuario] = useState("");
@@ -126,9 +126,10 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     }
 
     function actualizarLocal(index: number, campo: "numeroLocal" | "nave" | "contrato", valor: string) {
+        if (campo === "numeroLocal" && !/^[0-9]*$/.test(valor)) return;
         setLocales(locales.map((l, i) => (i === index ? { ...l, [campo]: valor } : l)));
-    }       
-        
+    }
+
     function eliminarLocal(index: number) {
         if (locales.length === 1) {
             return;
@@ -281,8 +282,10 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                             id={`numero-local-${index}`}
                                             label="Número de local"
                                             placeholder="Número de local"
+                                            type="text"
                                             value={local.numeroLocal}
                                             required
+                                            slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
                                             onChange={(e) => actualizarLocal(index, "numeroLocal", e.target.value)}
                                             fullWidth
                                             size="small"

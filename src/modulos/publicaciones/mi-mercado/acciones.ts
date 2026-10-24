@@ -26,7 +26,7 @@ type ResultadoActualizarPrecio =
     | { publicacionEliminada: true }
     | { publicacionEliminada: false; fecha: string; precio: number | null; version: number; conflicto?: boolean };
 
-export async function actualizarPrecio(publicacionId: number, nuevoPrecio: number, operadorId?: number, versionEsperada?: number): Promise<ResultadoActualizarPrecio> {
+export async function actualizarPrecio(publicacionId: number, nuevoPrecio: number | null, operadorId?: number, versionEsperada?: number): Promise<ResultadoActualizarPrecio> {
     return cambiarPrecio(publicacionId, nuevoPrecio, operadorId, false, versionEsperada);
 }
 
@@ -34,7 +34,7 @@ export async function incrementarPrecio(publicacionId: number, incremento: numbe
     return cambiarPrecio(publicacionId, incremento, operadorId, true);
 }
 
-async function cambiarPrecio(publicacionId: number, valor: number, operadorId: number | undefined, incrementar: boolean, versionEsperada?: number): Promise<ResultadoActualizarPrecio> {
+async function cambiarPrecio(publicacionId: number, valor: number | null, operadorId: number | undefined, incrementar: boolean, versionEsperada?: number): Promise<ResultadoActualizarPrecio> {
     const sesion = await obtenerSesion();
     if (!sesion) throw new ErrorAutorizacion(401, "Debe iniciar sesión.");
 
@@ -51,7 +51,7 @@ async function cambiarPrecio(publicacionId: number, valor: number, operadorId: n
     let resultado;
     try {
         resultado = incrementar
-            ? await incrementarPrecioPublicacion(operador.id, publicacionId, valor)
+            ? await incrementarPrecioPublicacion(operador.id, publicacionId, valor as number)
             : await actualizarPrecioPublicacion(operador.id, publicacionId, valor, versionEsperada);
     } catch (error) {
         if (error instanceof ConflictoPublicacionError) return { publicacionEliminada: false, conflicto: true, ...error.actual };

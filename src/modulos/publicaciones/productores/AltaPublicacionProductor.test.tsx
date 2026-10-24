@@ -6,7 +6,7 @@ import type { UbicacionSeleccionada } from "./LeafletLocationPicker";
 const mocks = vi.hoisted(() => ({ esWeb: true }));
 vi.mock("@mui/material/useMediaQuery", () => ({ default: () => mocks.esWeb }));
 vi.mock("@mui/material/Drawer", () => ({
-    default: ({ open, anchor, children, onClose }: { open: boolean; anchor: string; children: ReactNode; onClose: () => void }) => open ? <section role="dialog" aria-label="Nueva publicación de Productor" data-anchor={anchor}>{children}<button onClick={onClose}>Cerrar panel</button></section> : null,
+    default: ({ open, anchor, children, onClose }: { open: boolean; anchor: string; children: ReactNode; onClose: () => void }) => open ? <section className="MuiDrawer-paper" role="dialog" aria-label="Nueva publicación de Productor" data-anchor={anchor}>{children}<button onClick={onClose}>Cerrar panel</button></section> : null,
 }));
 vi.mock("./LeafletLocationPicker", () => ({
     default: ({ abierto, alConfirmar, alCerrar }: { abierto: boolean; alConfirmar: (ubicacion: UbicacionSeleccionada) => void; alCerrar: () => void }) => abierto ? <section role="dialog" aria-label="Seleccionar ubicación">
@@ -89,6 +89,22 @@ describe("AltaPublicacionProductor", () => {
         expect(await screen.findByRole("button", { name: "Agregar producto" })).toBeEnabled();
     });
 
+    it("prioriza las especies UAM presentes y ordena el resto sin modificar el catálogo recibido", async () => {
+        const especies = [
+            catalogos.especies[1], { id: 20, nombre: "Tomate" }, { id: 21, nombre: "Ajo" },
+            { id: 22, nombre: "Banana" }, catalogos.especies[0], { id: 23, nombre: "Papa" },
+        ];
+        Object.freeze(especies);
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...catalogos, especies }) }));
+        await abrirAlta();
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Especie/ }));
+        expect(screen.getAllByRole("option").filter((opcion) => opcion.getAttribute("aria-disabled") !== "true").map((opcion) => opcion.textContent))
+            .toEqual(["Papa", "Banana", "Manzana", "Tomate", "Ajo", "Pera"]);
+        expect(especies.map((opcion) => opcion.nombre)).toEqual(["Pera", "Tomate", "Ajo", "Banana", "Manzana", "Papa"]);
+        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
+        expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Manzana");
+    });
+
     it.each([new Response("{}", { status: 500 }), new Error("Sin conexión")])("informa cuando no puede cargar los datos", async (respuesta) => {
         vi.stubGlobal("fetch", vi.fn(() => respuesta instanceof Error ? Promise.reject(respuesta) : Promise.resolve(respuesta)));
         render(<AltaPublicacionProductor productorId={4} />);
@@ -138,7 +154,7 @@ describe("AltaPublicacionProductor", () => {
         completarFormulario(); enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
-        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6, paisId: 7, latitud: -34.9, longitud: -56.2, departamento: "Montevideo", nombreLugar: "Ruta 5", disponibilidad: true, precio: "", fotografia: "", cantidadUnidades: null });
+        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6, paisId: 7, latitud: -34.9, longitud: -56.2, departamento: "Montevideo", nombreLugar: "Ruta 5", disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null });
         expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
     });
 
@@ -150,6 +166,11 @@ describe("AltaPublicacionProductor", () => {
             fireEvent.change(entrada, { target: { value: "25" } });
             for (const valor of ["2.5", "-1", "texto"]) fireEvent.change(entrada, { target: { value: valor } });
             expect(entrada).toHaveValue("25");
+        }
+        const precio = screen.getByLabelText("Precio en pesos");
+        for (const valor of ["0", "00", "+25", "1e3", "25,5", "10000000000"]) {
+            fireEvent.change(precio, { target: { value: valor } });
+            expect(precio).toHaveValue("25");
         }
         fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
         enviarFormulario();
@@ -257,7 +278,23 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
     });
 
-    it("impide envíos repetidos mientras guarda", async () => {
+    it("permite cerrar el drawer móvil mientras se cargan los catálogos", async () => {
+        mocks.esWeb = false;
+        let resolver!: (respuesta: Response) => void;
+        vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { resolver = resolve; })));
+        const alCerrar = vi.fn();
+        render(<DrawerAltaPublicacionProductor productorId={4} abierto alCrear={vi.fn()} alCerrar={alCerrar} />);
+
+        expect(screen.getByRole("status")).toHaveTextContent("Cargando datos...");
+        expect(document.querySelector("[data-drawer-handle]")).toHaveAttribute("data-disabled", "false");
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar panel" }));
+        expect(alCerrar).toHaveBeenCalledOnce();
+
+        await act(async () => resolver(new Response(JSON.stringify(catalogos))));
+    });
+
+    it("impide envíos repetidos y bloquea el asa y cierre móvil mientras guarda", async () => {
+        mocks.esWeb = false;
         const fetchMock = prepararFetch();
         await abrirAlta(); completarFormulario();
         let resolver!: (respuesta: Response) => void;
@@ -265,6 +302,9 @@ describe("AltaPublicacionProductor", () => {
         enviarFormulario();
         const boton = screen.getByRole("button", { name: "Guardando..." });
         expect(boton).toBeDisabled();
+        expect(document.querySelector("[data-drawer-handle]")).toHaveAttribute("data-disabled", "true");
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar panel" }));
+        expect(screen.getByRole("dialog", { name: "Nueva publicación de Productor" })).toBeInTheDocument();
         fireEvent.submit(boton.closest("form")!);
         expect(fetchMock.mock.calls.filter(([, opciones]) => opciones?.method === "POST")).toHaveLength(1);
         await act(async () => resolver(new Response(JSON.stringify({ mensaje: "Publicación creada correctamente." }))));

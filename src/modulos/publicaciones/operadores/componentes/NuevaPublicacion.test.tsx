@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({ alCerrar: vi.fn(), alCrear: vi.fn(), esWeb: fa
 
 vi.mock("@mui/material/useMediaQuery", () => ({ default: () => mocks.esWeb }));
 vi.mock("@mui/material/Drawer", () => ({
-    default: ({ open, anchor, children }: { open: boolean; anchor: string; children: ReactNode }) => open ? <section role="dialog" aria-label="Nueva publicación" data-anchor={anchor}>{children}</section> : null,
+    default: ({ open, anchor, children, onClose }: { open: boolean; anchor: string; children: ReactNode; onClose: () => void }) => open ? <section className="MuiDrawer-paper" role="dialog" aria-label="Nueva publicación" data-anchor={anchor}>{children}<button type="button" onClick={onClose}>Cerrar desde fondo</button></section> : null,
 }));
 
 import NuevaPublicacion from "./NuevaPublicacion";
@@ -66,6 +66,23 @@ describe("NuevaPublicacion", () => {
         await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
     });
 
+    it("prioriza las especies UAM presentes y ordena el resto sin modificar el catálogo recibido", async () => {
+        const especies = [
+            { id: 8, nombre: "Pera" }, { id: 9, nombre: "Tomate" }, { id: 10, nombre: "Ajo" },
+            { id: 11, nombre: "Banana" }, catalogos.especies[0], { id: 12, nombre: "Papa" },
+        ];
+        Object.freeze(especies);
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...catalogos, especies }) }));
+        renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Especie/ }));
+        expect(screen.getAllByRole("option").filter((opcion) => opcion.getAttribute("aria-disabled") !== "true").map((opcion) => opcion.textContent))
+            .toEqual(["Papa", "Banana", "Manzana", "Tomate", "Ajo", "Pera"]);
+        expect(especies.map((opcion) => opcion.nombre)).toEqual(["Pera", "Tomate", "Ajo", "Banana", "Manzana", "Papa"]);
+        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
+        expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Manzana");
+    });
+
     it("ajusta el precio con el incremento configurado", async () => {
         render(<NuevaPublicacion operadorId={9} incrementoPrecio={25} abierto alCerrar={mocks.alCerrar} alCrear={mocks.alCrear} />);
         await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
@@ -75,13 +92,23 @@ describe("NuevaPublicacion", () => {
         expect(precio).toHaveValue("125");
         fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 25" }));
         expect(precio).toHaveValue("100");
+        fireEvent.change(precio, { target: { value: "" } });
+        fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 25" }));
+        expect(precio).toHaveValue("");
+        fireEvent.click(screen.getByRole("button", { name: "Aumentar precio en 25" }));
+        expect(precio).toHaveValue("25");
+        fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 25" }));
+        expect(precio).toHaveValue("25");
     });
 
-    it("conserva únicamente dígitos en el precio", () => {
+    it("rechaza cero y entradas inválidas sin transformarlas en otro precio", () => {
         renderDrawer();
         const precio = screen.getByLabelText("Precio en pesos");
-        fireEvent.change(precio, { target: { value: "12a.50" } });
-        expect(precio).toHaveValue("1250");
+        fireEvent.change(precio, { target: { value: "1250" } });
+        for (const valor of ["0", "00", "12a.50", "12.5", "12,5", "1e3", "+2", "-2", "10000000000"]) {
+            fireEvent.change(precio, { target: { value: valor } });
+            expect(precio).toHaveValue("1250");
+        }
     });
 
     it("ofrece cámara primero y también galería en mobile", () => {
@@ -217,19 +244,45 @@ describe("NuevaPublicacion", () => {
         expect(mocks.alCrear).not.toHaveBeenCalled();
     });
 
-    it("envía la publicación y comunica el alta sin navegar a otra página", async () => {
+    it.each(["", "1250"])("envía el precio %s y comunica el alta sin navegar a otra página", async (precio) => {
         renderDrawer();
         const boton = screen.getByRole("button", { name: "Confirmar" });
         await waitFor(() => expect(boton).toBeEnabled());
         const formulario = boton.closest("form");
         if (!formulario) throw new Error("No se encontró el formulario de publicación.");
         completarFormulario(formulario);
+        fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: precio } });
         fireEvent.submit(formulario);
         await waitFor(() => expect(mocks.alCrear).toHaveBeenCalledWith("Publicación creada correctamente."));
         expect(fetch).toHaveBeenCalledWith("/api/publicaciones", expect.objectContaining({
             method: "POST",
             body: expect.stringContaining('"operadorId":9'),
         }));
+        const envio = vi.mocked(fetch).mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string).precio).toBe(precio || null);
+    });
+
+    it("bloquea el asa móvil y el cierre desde el fondo mientras guarda", async () => {
+        renderDrawer();
+        const boton = screen.getByRole("button", { name: "Confirmar" });
+        await waitFor(() => expect(boton).toBeEnabled());
+        const formulario = boton.closest("form")!;
+        completarFormulario(formulario);
+        const asa = document.querySelector("[data-drawer-handle]");
+        expect(asa).toHaveAttribute("data-disabled", "false");
+
+        let terminar!: (respuesta: Response) => void;
+        vi.mocked(fetch).mockImplementationOnce(() => new Promise<Response>((resolve) => { terminar = resolve; }));
+        fireEvent.submit(formulario);
+
+        expect(asa).toHaveAttribute("data-disabled", "true");
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar desde fondo" }));
+        expect(mocks.alCerrar).not.toHaveBeenCalled();
+
+        await act(async () => terminar(new Response(JSON.stringify({ mensaje: "Publicación creada correctamente." }), { status: 201 })));
+        expect(asa).toHaveAttribute("data-disabled", "false");
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar desde fondo" }));
+        expect(mocks.alCerrar).toHaveBeenCalledOnce();
     });
 
     it("permite cancelar el alta sin enviar el formulario", () => {

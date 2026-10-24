@@ -153,18 +153,7 @@
 }
 
 .volver {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--espacio-inline);
     margin-bottom: var(--espacio-secciones);
-    color: var(--color-primary-hover);
-    font-size: var(--tamano-texto-secundario);
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.volver:hover {
-    text-decoration: underline;
 }
 
 @media (min-width: 768px) {

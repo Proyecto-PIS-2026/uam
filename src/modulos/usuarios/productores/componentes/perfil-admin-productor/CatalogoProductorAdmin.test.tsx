@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
 import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
 
-const mocks = vi.hoisted(() => ({ refresh: vi.fn() }));
+const mocks = vi.hoisted(() => ({ refresh: vi.fn(), bajaPendiente: vi.fn<(completar: () => void) => void>() }));
 
 vi.mock("next/navigation", () => ({
     useRouter: () => ({ refresh: mocks.refresh }),
@@ -27,6 +27,7 @@ vi.mock("../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProdu
                 alCerrar();
                 alEliminada?.("Publicación eliminada correctamente.");
             }}>Eliminar publicación</button>
+            <button type="button" onClick={() => mocks.bajaPendiente(() => alEliminada?.("Publicación eliminada correctamente."))}>Iniciar baja pendiente</button>
             <button type="button" onClick={() => alGuardar?.({
                 ...publicacion,
                 precio: "125.50",
@@ -153,6 +154,26 @@ describe("CatalogoProductorAdmin", () => {
         expect(within(screen.getByRole("dialog")).getByText("Nuevo punto de retiro")).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
         await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+    });
+
+    it("conserva la selección nueva cuando termina la baja de otra publicación", () => {
+        render(<CatalogoProductorAdmin publicaciones={[
+            publicacionBase,
+            { ...publicacionBase, id: 202, publicacionProductorId: 302, especie: "Lechuga", variedad: "-" },
+        ]} />);
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Manzana - Red Delicious" }));
+        fireEvent.click(screen.getByRole("button", { name: "Iniciar baja pendiente" }));
+        const completarBajaAnterior = mocks.bajaPendiente.mock.calls[0][0];
+
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Lechuga" }));
+        expect(within(screen.getByRole("dialog")).getByRole("heading", { name: "Lechuga" })).toBeInTheDocument();
+        act(() => completarBajaAnterior());
+
+        expect(screen.queryByRole("article", { name: "Ver detalles de Manzana - Red Delicious" })).not.toBeInTheDocument();
+        expect(screen.getByRole("article", { name: "Ver detalles de Lechuga" })).toBeInTheDocument();
+        expect(within(screen.getByRole("dialog")).getByRole("heading", { name: "Lechuga" })).toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación eliminada correctamente.");
+        expect(mocks.refresh).toHaveBeenCalledOnce();
     });
 
     it("muestra el catálogo vacío al eliminar la última publicación y acepta nuevas publicaciones del servidor", () => {

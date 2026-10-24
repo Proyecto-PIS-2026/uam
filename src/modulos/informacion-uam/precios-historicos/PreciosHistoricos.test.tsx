@@ -150,6 +150,24 @@ describe("PreciosHistoricos", () => {
     });
     afterEach(() => window.history.replaceState(estadoInicial, "", urlInicial));
 
+    it("prioriza las especies UAM al completar el catálogo con la selección del enlace", () => {
+        const nombres = ["Pera", "Lechuga", "Acelga", "MORRON", "papa", "Manzana", "Sandía"];
+        const especies = nombres.map((especie, indice) => ({ id: String(100 + indice), especie }));
+        render(<PreciosHistoricos producto={producto} historico={historico} especies={especies} {...fechas} />);
+
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
+        const lista = screen.getByRole("listbox");
+        expect(within(lista).getAllByRole("option").map((opcion) => opcion.textContent)).toEqual([
+            "papa", "Banana", "Manzana", "MORRON", "Sandía", "Lechuga", "Acelga", "Pera",
+        ]);
+        expect(within(lista).getByRole("option", { name: "Banana" })).toHaveAttribute("aria-selected", "true");
+        fireEvent.keyDown(lista, { key: "Escape", code: "Escape", keyCode: 27 });
+
+        expect(screen.getByRole("combobox", { name: "Especie" })).toHaveTextContent("Banana");
+        expect(especies.map((especie) => especie.especie)).toEqual(nombres);
+        expect(navegar).not.toHaveBeenCalled();
+    });
+
     it("permite elegir una especie al entrar desde el menú sin una selección previa", () => {
         window.history.replaceState(null, "", "/precios-historicos");
         render(<PreciosHistoricos

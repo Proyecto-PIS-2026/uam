@@ -1,9 +1,8 @@
 import HojasDecorativas from "../../../../../../compartido/HojasDecorativas";
 import type { PerfilProductorPorOperador } from "../../../acciones/consultas-perfil-por-operador";
+import BotonVolver from "@/compartido/BotonVolver";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Image from "next/image";
-import Link from "next/link";
 
 import styles from "./PerfilProductor.module.css";
 
@@ -22,10 +21,9 @@ export default function PerfilProductor({ productor, hrefVolver = "/productores"
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <Link href={hrefVolver} className={styles.volver}>
-                <ArrowBackIcon fontSize="small" aria-hidden="true" />
+            <BotonVolver href={hrefVolver} className={styles.volver}>
                 {textoVolver}
-            </Link>
+            </BotonVolver>
             <div className={styles.tarjetaPerfil}>
                 <header className={styles.encabezado}>
                     <HojasDecorativas />

@@ -7,6 +7,7 @@ import DrawerPublicacionProductor from "../../../../publicaciones/mi-mercado/com
 import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
 import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import TarjetaPublicacionProductorAdmin from "./TarjetaPublicacionProductorAdmin";
+import styles from "./PerfilProductorAdmin.module.css";
 
 type CatalogoProductorAdminProps = {
     publicaciones: PublicacionPerfilAdminProductor[];
@@ -106,7 +107,7 @@ export default function CatalogoProductorAdmin({ publicaciones }: CatalogoProduc
                 datos: actuales.filter((publicacion) => publicacion.id !== seleccionId),
             };
         });
-        setSeleccionId(null);
+        setSeleccionId((actual) => actual === seleccionId ? null : actual);
         notificar(aviso, "success");
         router.refresh();
     }
@@ -115,9 +116,9 @@ export default function CatalogoProductorAdmin({ publicaciones }: CatalogoProduc
         <>
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             {publicacionesActuales.length === 0 ? (
-                <p>El productor no tiene publicaciones.</p>
+                <p className={styles.estadoVacio}>El productor no tiene publicaciones.</p>
             ) : (
-                <ul className="grid grid-cols-1 gap-[var(--espacio-secciones)] md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                <ul className="grid grid-cols-1 gap-[var(--espacio-secciones)] md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas">
                     {publicacionesActuales.map((publicacion) => (
                         <li key={publicacion.id}>
                             <TarjetaPublicacionProductorAdmin
