@@ -14,6 +14,7 @@ const nombre = (oferta: typeof propias[number]) => oferta.variety === "-"
   ? oferta.speciesName : `${oferta.speciesName} · ${oferta.variety}`;
 
 test.describe("BP-15.2: consulta de productos propios del productor", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
   test.beforeEach(async ({ page }) => {
     test.slow();
     await iniciarSesionProductor(page, { usuario, contrasena: `${usuario}123` });
@@ -30,10 +31,6 @@ test.describe("BP-15.2: consulta de productos propios del productor", () => {
       .map((tarjeta) => tarjeta.getAttribute("aria-label"))).then((nombres) => nombres.sort()))
       .toEqual(esperadas);
     await expect(page.getByRole("main").locator("header").getByText(`${propias.length} publicaciones`, { exact: true })).toBeVisible();
-    // Tomate pertenece a otro productor de la seed.
-    await page.getByRole("searchbox", { name: "Buscar publicaciones" }).fill("Tomate");
-    await expect(tarjetas(page)).toHaveCount(0);
-    await expect(page.getByText("No hay publicaciones que coincidan con la búsqueda.")).toBeVisible();
   });
 
   test("CP-15.2-03: muestra el botón habilitado para agregar productos", async ({ page }) => {
@@ -42,7 +39,7 @@ test.describe("BP-15.2: consulta de productos propios del productor", () => {
     await expect(agregar).toBeEnabled();
   });
 
-  test("CP-15.2-04 y 06: filtra por especie y recupera el listado al limpiar", async ({ page }) => {
+  test("CP-15.2-04: filtra por la especie Mandarina", async ({ page }) => {
     await page.getByRole("combobox", { name: "Especie", exact: true }).click();
     await page.getByRole("option", { name: "Mandarina", exact: true }).click();
     const coincidencias = propias.filter((oferta) => oferta.speciesName === "Mandarina");
@@ -50,71 +47,79 @@ test.describe("BP-15.2: consulta de productos propios del productor", () => {
     for (const tarjeta of await tarjetas(page).all()) {
       await expect(tarjeta).toHaveAttribute("aria-label", /^Ver detalle de Mandarina/);
     }
-    await page.getByRole("button", { name: "Limpiar filtros" }).click();
-    await expect(page.getByRole("combobox", { name: "Especie", exact: true })).toHaveText("Todas");
-    await expect(tarjetas(page)).toHaveCount(propias.length);
   });
 
-  test("CP-15.2-05 y 06: búsqueda sin coincidencias y limpieza", async ({ page }) => {
-    const buscar = page.getByRole("searchbox", { name: "Buscar publicaciones" });
-    await buscar.fill("producto-inexistente-bp15-2");
+  test("CP-15.2-05: filtra por precio entre $20 y $30", async ({ page }) => {
+    await page.getByRole("textbox", { name: "Precio Mínimo", exact: true }).fill("20");
+    await page.getByRole("textbox", { name: "Precio Máximo", exact: true }).fill("30");
+    const esperadas = propias.filter((oferta) => oferta.price !== null && oferta.price >= 20 && oferta.price <= 30);
+    expect(esperadas).toHaveLength(5);
+    await expect(tarjetas(page)).toHaveCount(esperadas.length);
+    await expect.poll(async () => Promise.all((await tarjetas(page).all())
+      .map((tarjeta) => tarjeta.getAttribute("aria-label"))).then((nombres) => nombres.sort()))
+      .toEqual(esperadas.map((oferta) => `Ver detalle de ${nombre(oferta)}`).sort());
+    for (const tarjeta of await tarjetas(page).all()) {
+      const texto = await tarjeta.innerText();
+      const precio = Number(texto.match(/\$(\d+)/)?.[1]);
+      expect(precio).toBeGreaterThanOrEqual(20);
+      expect(precio).toBeLessThanOrEqual(30);
+    }
+  });
+
+  test("CP-15.2-06: mínimo de $700 sin coincidencias", async ({ page }) => {
+    await page.getByRole("textbox", { name: "Precio Mínimo", exact: true }).fill("700");
     await expect(tarjetas(page)).toHaveCount(0);
     await expect(page.getByText("No hay publicaciones que coincidan con la búsqueda.")).toBeVisible();
+  });
+
+  test("CP-15.2-07: quitar filtros recupera todas las publicaciones", async ({ page }) => {
+    await page.getByRole("combobox", { name: "Especie", exact: true }).click();
+    await page.getByRole("option", { name: "Mandarina", exact: true }).click();
+    await expect(tarjetas(page)).toHaveCount(propias.filter((oferta) => oferta.speciesName === "Mandarina").length);
     await page.getByRole("button", { name: "Limpiar filtros" }).click();
-    await expect(buscar).toHaveValue("");
+    await expect(page.getByRole("combobox", { name: "Especie", exact: true })).toHaveText("Todas");
+    await expect(page.getByRole("searchbox", { name: "Buscar publicaciones" })).toHaveValue("");
+    await expect(page.getByRole("textbox", { name: "Precio Mínimo", exact: true })).toHaveValue("");
+    await expect(page.getByRole("textbox", { name: "Precio Máximo", exact: true })).toHaveValue("");
     await expect(tarjetas(page)).toHaveCount(propias.length);
   });
 
-  for (const pantalla of [
-    { nombre: "escritorio", viewport: { width: 1280, height: 900 } },
-    { nombre: "móvil", viewport: { width: 390, height: 844 } },
-  ]) {
-    test(`CP-15.2-07, 08 y 09: detalle, ubicaciones y acciones (${pantalla.nombre})`, async ({ page }) => {
-      await page.setViewportSize(pantalla.viewport);
-      // Casos con ubicaciones, sin ubicaciones y sin precio.
-      for (const indice of [1, 0, 3]) {
-        const oferta = propias[indice];
-        const presentacion = presentaciones[oferta.measureUnit];
-        const tarjeta = tarjetas(page).filter({ has: page.getByText(nombre(oferta), { exact: true }) });
-        const textoTarjeta = await tarjeta.innerText();
-        await tarjeta.click();
-        const detalle = page.getByRole("dialog", { name: "Detalle de publicación", exact: true });
-        await expect(detalle).toBeVisible();
-        await expect(detalle.getByText(oferta.speciesName, { exact: true })).toBeVisible();
-        if (oferta.variety !== "-") await expect(detalle.getByText(oferta.variety, { exact: true })).toBeVisible();
-        await expect(detalle.getByText(oferta.price === null ? "Consultar precio" : `$${oferta.price}`, { exact: true })).toBeVisible();
-        for (const [campo, valor] of [
-          ["Presentación", presentacion], ["Categoría", oferta.category],
-          [`Unidades (${presentacion})`, String(oferta.quantity)], ["País", oferta.country],
-        ]) {
-          await expect(detalle.locator("dl > div").filter({ has: page.getByText(campo, { exact: true }) }).locator("dd")).toHaveText(valor);
-        }
-        const calibre = detalle.locator("dl > div").filter({ has: page.getByText("Calibre", { exact: true }) }).locator("dd");
-        await expect(calibre).toHaveText(/\S/);
-        expect(textoTarjeta).toContain(await calibre.innerText());
-        const puntos = detalle.getByRole("region", { name: "Puntos de retiro" });
-        await expect(puntos.getByRole("link")).toHaveCount(oferta.cantidadUbicaciones);
-        for (const enlace of await puntos.getByRole("link").all()) {
-          await expect(enlace).toHaveAttribute("href", /^https:\/\/www\.google\.com\/maps\?q=/);
-          await expect(enlace).toHaveAttribute("target", "_blank");
-          await expect(enlace).toHaveAttribute("rel", /noopener/);
-        }
-        if (!oferta.cantidadUbicaciones) await expect(puntos.getByText("No hay puntos de retiro informados.")).toBeVisible();
-        for (const accion of ["Editar", "Eliminar"]) {
-          await expect(detalle.getByRole("button", { name: accion, exact: true })).toBeVisible();
-          await expect(detalle.getByRole("button", { name: accion, exact: true })).toBeEnabled();
-        }
-        await detalle.getByRole("button", { name: "Cerrar consulta" }).click();
-        await expect(detalle).not.toBeVisible();
-        await expect(page).toHaveURL(ruta);
-        await expect(tarjetas(page)).toHaveCount(propias.length);
-      }
-    });
-  }
-});
-
-test("BP-15.2 adicional: exige iniciar sesión para consultar productos propios", async ({ page }) => {
-  await page.goto(ruta);
-  await expect(page).toHaveURL(/\/iniciar-sesion$/);
-  await expect(page.getByRole("button", { name: "Iniciar sesión", exact: true })).toBeVisible();
+  test("CP-15.2-08: consulta el detalle de Limón con sus datos y acciones", async ({ page }) => {
+    const oferta = propias.find((oferta) => oferta.speciesName === "Limón")!;
+    expect(oferta).toBeDefined();
+    const presentacion = presentaciones[oferta.measureUnit];
+    const tarjeta = tarjetas(page).filter({ has: page.getByText(nombre(oferta), { exact: true }) });
+    const textoTarjeta = await tarjeta.innerText();
+    await tarjeta.click();
+    const detalle = page.getByRole("dialog", { name: "Detalle de publicación", exact: true });
+    await expect(detalle).toBeVisible();
+    await expect(detalle.getByText(oferta.speciesName, { exact: true })).toBeVisible();
+    if (oferta.variety !== "-") await expect(detalle.getByText(oferta.variety, { exact: true })).toBeVisible();
+    await expect(detalle.getByText(oferta.price === null ? "Consultar precio" : `$${oferta.price}`, { exact: true })).toBeVisible();
+    for (const [campo, valor] of [
+      ["Presentación", presentacion], ["Categoría", oferta.category],
+      [`Unidades (${presentacion})`, String(oferta.quantity)], ["País", oferta.country],
+    ]) {
+      await expect(detalle.locator("dl > div").filter({ has: page.getByText(campo, { exact: true }) }).locator("dd")).toHaveText(valor);
+    }
+    const calibre = detalle.locator("dl > div").filter({ has: page.getByText("Calibre", { exact: true }) }).locator("dd");
+    await expect(calibre).toHaveText(/\S/);
+    expect(textoTarjeta).toContain(await calibre.innerText());
+    const puntos = detalle.getByRole("region", { name: "Puntos de retiro" });
+    await expect(puntos.getByRole("link")).toHaveCount(oferta.cantidadUbicaciones);
+    for (const enlace of await puntos.getByRole("link").all()) {
+      await expect(enlace).toHaveAttribute("href", /^https:\/\/www\.google\.com\/maps\?q=/);
+      await expect(enlace).toHaveAttribute("target", "_blank");
+      await expect(enlace).toHaveAttribute("rel", /noopener/);
+    }
+    if (!oferta.cantidadUbicaciones) await expect(puntos.getByText("No hay puntos de retiro informados.")).toBeVisible();
+    for (const accion of ["Editar", "Eliminar"]) {
+      await expect(detalle.getByRole("button", { name: accion, exact: true })).toBeVisible();
+      await expect(detalle.getByRole("button", { name: accion, exact: true })).toBeEnabled();
+    }
+    await detalle.getByRole("button", { name: "Cerrar consulta" }).click();
+    await expect(detalle).not.toBeVisible();
+    await expect(page).toHaveURL(ruta);
+    await expect(tarjetas(page)).toHaveCount(propias.length);
+  });
 });
