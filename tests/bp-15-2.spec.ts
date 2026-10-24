@@ -14,7 +14,7 @@ const nombre = (oferta: typeof propias[number]) => oferta.variety === "-"
   ? oferta.speciesName : `${oferta.speciesName} · ${oferta.variety}`;
 
 test.describe("BP-15.2: consulta de productos propios del productor", () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  test.use({ viewport: { width: 1280, height: 900 } });
   test.beforeEach(async ({ page }) => {
     test.slow();
     await iniciarSesionProductor(page, { usuario, contrasena: `${usuario}123` });
