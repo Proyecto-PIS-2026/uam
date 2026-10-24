@@ -1,10 +1,26 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ComponentProps } from "react";
 import PreciosHistoricos from "./PreciosHistoricos";
-import type { HistoricoProducto, ProductoSeleccionado } from "./tipos";
+import type GraficaPreciosHistoricos from "./GraficaPreciosHistoricos";
+import type { HistoricoProducto, ProductoSeleccionado, ValorHistorico } from "./tipos";
 
-const { navegar } = vi.hoisted(() => ({ navegar: vi.fn() }));
+type PropsGrafica = ComponentProps<typeof GraficaPreciosHistoricos>;
+const { navegar, renderizarGrafica } = vi.hoisted(() => ({
+    navegar: vi.fn(),
+    renderizarGrafica: vi.fn<(props: PropsGrafica) => void>(),
+}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: navegar }) }));
+vi.mock("./GraficaPreciosHistoricos", () => ({
+    default: (props: PropsGrafica) => {
+        renderizarGrafica(props);
+        return <div data-testid="grafica-historico" />;
+    },
+}));
+
+function propsGrafica(): PropsGrafica {
+    return renderizarGrafica.mock.calls.at(-1)![0];
+}
 
 const urlInicial = window.location.href;
 const estadoInicial = window.history.state;
@@ -42,6 +58,15 @@ const fechas = { desde: "2025-11-01", hasta: "2025-11-08" };
 const productoSinFiltros: ProductoSeleccionado = {
     ...producto, variedad: "", pais: "", calibre: "", categoria: "",
 };
+
+const valoresInesperados: { valor: ValorHistorico; texto: string }[] = [
+    { valor: true, texto: "true" },
+    { valor: false, texto: "false" },
+    { valor: { dato: "Ñ" }, texto: '{"dato":"Ñ"}' },
+    { valor: ["Ñ", false], texto: '["Ñ",false]' },
+    { valor: null, texto: "—" },
+    { valor: "true", texto: "true" },
+];
 
 const historicoConFiltros: HistoricoProducto = {
     ...historico,
@@ -119,8 +144,33 @@ function historicoConRegistros(cantidad: number): HistoricoProducto {
 }
 
 describe("PreciosHistoricos", () => {
-    beforeEach(() => navegar.mockReset());
+    beforeEach(() => {
+        navegar.mockReset().mockImplementation((url: string) => window.history.replaceState(null, "", url));
+        renderizarGrafica.mockClear();
+    });
     afterEach(() => window.history.replaceState(estadoInicial, "", urlInicial));
+
+    it("reúne fechas y filtros en un único panel de consulta antes de la gráfica y el listado", () => {
+        render(<PreciosHistoricos producto={producto} historico={historico} {...fechas} />);
+        abrirFiltrosAdicionales();
+        const formulario = screen.getByRole("form", { name: "Consultar período histórico" });
+        const grafica = screen.getByTestId("grafica-historico");
+        const filtros = screen.getByRole("region", { name: "Filtros de precios históricos" });
+        const tabla = screen.getByRole("table");
+
+        expect(document.querySelectorAll("form")).toHaveLength(1);
+        for (const nombre of ["Especie", "Variedad", "País", "Calibre", "Categoría"]) {
+            expect(formulario).toContainElement(within(filtros).getByRole("combobox", { name: nombre }));
+        }
+        expect(formulario).toContainElement(within(filtros).getByLabelText(/^Desde/));
+        expect(formulario).toContainElement(within(filtros).getByLabelText(/^Hasta/));
+        expect(formulario).not.toContainElement(grafica);
+        expect(filtros.compareDocumentPosition(grafica) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(grafica.compareDocumentPosition(tabla) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(document.querySelectorAll('button[type="submit"]')).toHaveLength(1);
+        expect(within(filtros).getByRole("button", { name: "Consultar" })).toHaveAttribute("type", "submit");
+        expect(propsGrafica()).toMatchObject({ ...fechas, producto: "Banana", cargando: false, error: false });
+    });
 
     it.each([
         ["País", "BRASIL", 1, "pais"],
@@ -131,7 +181,7 @@ describe("PreciosHistoricos", () => {
         ["Desde", "2025-11-04", 5, null],
         ["Hasta", "2025-11-02", 5, null],
         ["Limpiar", "", 5, null],
-    ] as const)("conserva la consulta aplicada y los parámetros ajenos al cambiar %s sin navegar", (campo, valor, cantidad, parametro) => {
+    ] as const)("conserva la consulta aplicada y los parámetros ajenos al cambiar %s", (campo, valor, cantidad, parametro) => {
         const estadoRuta = { __NA: true, arbol: { producto: "Banana", datosCargados: true } };
         window.history.replaceState(
             estadoRuta,
@@ -169,7 +219,7 @@ describe("PreciosHistoricos", () => {
         expect(window.location.hash).toBe("#tabla");
         expect(firmasFilasVisibles()).toHaveLength(cantidad);
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledTimes(parametro ? 1 : 0);
     });
 
     it("elimina la clasificación de una URL antigua al montar y conserva especie, filtros y parámetros ajenos", () => {
@@ -232,7 +282,7 @@ describe("PreciosHistoricos", () => {
         });
         expect(parametros.getAll("extra")).toEqual(["anterior", "segundo"]);
         expect(window.location.hash).toBe("#tabla");
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledTimes(4);
         unmount();
 
         const productoRecargado: ProductoSeleccionado = {
@@ -260,7 +310,7 @@ describe("PreciosHistoricos", () => {
         expect(screen.getByLabelText(/^Hasta/)).toHaveValue(fechas.hasta);
         expect(firmasFilasVisibles()).toEqual(filasAntesDeRecargar);
         expect(document.querySelectorAll("article")).toHaveLength(filasAntesDeRecargar.length);
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledTimes(4);
     });
 
     it("conserva filtros literales con guion y la presentación seleccionada al recargar", () => {
@@ -313,7 +363,7 @@ describe("PreciosHistoricos", () => {
         expect(Object.fromEntries(new FormData(screen.getByRole("form") as HTMLFormElement))).toMatchObject({
             variedad: "-", pais: "-", calibre: "-", categoria: "-",
         });
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledTimes(4);
     });
 
     it.each([undefined, null])("muestra los precios y un guion cuando no hay volumen: %s", (volumen) => {
@@ -338,6 +388,38 @@ describe("PreciosHistoricos", () => {
         expect(within(screen.getByRole("table")).getByRole("cell", { name: "0 kg" })).toBeInTheDocument();
         const tarjeta = within(document.querySelector("article")!);
         expect(tarjeta.getByLabelText("Volumen: 0 kg")).toHaveTextContent(/^0 kg$/);
+    });
+
+    it.each(["Ñ", "002000.50"])("muestra el volumen de texto recibido literalmente en tabla y móvil: %s", (volumen) => {
+        const datos: HistoricoProducto = { ...historico, series: [{ ...historico.series[0], volume_kg: volumen }] };
+        render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
+
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: `${volumen} kg` })).toBeInTheDocument();
+        expect(within(document.querySelector("article")!).getByLabelText(`Volumen: ${volumen} kg`)).toHaveTextContent(`${volumen} kg`);
+        expect(datos.series[0].volume_kg).toBe(volumen);
+        expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it.each(["2025-11-00", "2025-11-31"])("muestra una fecha recibida inválida literalmente sin impedir la consulta: %s", (date) => {
+        const datos: HistoricoProducto = { ...historico, series: [{ ...historico.series[0], date }] };
+        render(<PreciosHistoricos producto={producto} historico={datos} desde="2025-10-01" hasta="2025-12-01" />);
+
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: date })).toBeInTheDocument();
+        expect(within(document.querySelector("article")!).getByText(date)).toHaveAttribute("datetime", date);
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it.each(valoresInesperados)("conserva y muestra una fecha inesperada dentro de un registro: $texto", ({ valor, texto }) => {
+        const datos: HistoricoProducto = { ...historico, series: [{ ...historico.series[0], date: valor }] };
+        render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
+
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: texto })).toBeInTheDocument();
+        expect(document.querySelector("article time")).toHaveTextContent(texto);
+        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-04" } });
+        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: texto })).toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
     it("muestra primero las fechas más nuevas en tabla y móvil antes de paginar sin modificar los datos originales", () => {
@@ -382,7 +464,9 @@ describe("PreciosHistoricos", () => {
         render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={historicoConRegistros(83)} {...fechas} />);
         const tabla = screen.getByRole("table");
         const paginacion = within(screen.getByRole("navigation", { name: "Páginas de precios históricos" }));
+        const registrosGrafica = propsGrafica().registros;
 
+        expect(registrosGrafica).toHaveLength(83);
         expect(within(tabla).getAllByRole("row")).toHaveLength(41);
         expect(document.querySelectorAll("article")).toHaveLength(40);
         expect(within(tabla).getByRole("cell", { name: "Variedad 1" })).toBeInTheDocument();
@@ -393,12 +477,14 @@ describe("PreciosHistoricos", () => {
         expect(paginacion.getByRole("button", { name: "Anterior" })).toBeDisabled();
 
         fireEvent.click(paginacion.getByRole("button", { name: "Siguiente" }));
+        expect(propsGrafica().registros).toBe(registrosGrafica);
         expect(paginacion.getByText("41-80 de 83")).toBeInTheDocument();
         expect(within(tabla).getByRole("cell", { name: "Variedad 41" })).toBeInTheDocument();
         expect(within(tabla).getAllByRole("row")).toHaveLength(41);
         expect(document.querySelectorAll("article")).toHaveLength(40);
 
         fireEvent.click(paginacion.getByRole("button", { name: "Siguiente" }));
+        expect(propsGrafica().registros).toBe(registrosGrafica);
         expect(paginacion.getByText("81-83 de 83")).toBeInTheDocument();
         expect(paginacion.getByText("Página 3 de 3")).toBeInTheDocument();
         expect(within(tabla).getAllByRole("row")).toHaveLength(4);
@@ -408,7 +494,7 @@ describe("PreciosHistoricos", () => {
         fireEvent.click(paginacion.getByRole("button", { name: "Anterior" }));
         expect(paginacion.getByText("Página 2 de 3")).toBeInTheDocument();
         expect(navegar).not.toHaveBeenCalled();
-    });
+    }, 10_000);
 
     it("oculta los controles cuando los resultados no superan los 40 registros", () => {
         render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={historicoConRegistros(40)} {...fechas} />);
@@ -416,7 +502,7 @@ describe("PreciosHistoricos", () => {
         expect(screen.queryByRole("navigation", { name: "Páginas de precios históricos" })).not.toBeInTheDocument();
     });
 
-    it("aplica el filtro local antes de paginar y vuelve al inicio cuando los resultados se reducen", () => {
+    it("solicita el filtro al backend y vuelve al inicio cuando los resultados se reducen", () => {
         const datos = historicoConRegistros(83);
         render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={datos} {...fechas} />);
         fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
@@ -426,7 +512,7 @@ describe("PreciosHistoricos", () => {
         expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
         expect(within(screen.getByRole("table")).getByRole("cell", { name: "Variedad 83" })).toBeInTheDocument();
         expect(screen.queryByRole("navigation", { name: "Páginas de precios históricos" })).not.toBeInTheDocument();
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledOnce();
     });
 
     it("vuelve a la primera página al consultar otro período", () => {
@@ -522,10 +608,11 @@ describe("PreciosHistoricos", () => {
         expect(consultar).toBeEnabled();
         fireEvent.click(consultar);
 
-        expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(1);
+        expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(3);
         expect(hasta).toHaveValue("2025-11-02");
         expect(masFiltros).toHaveAttribute("aria-expanded", "false");
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledTimes(2);
+        expect(new URL(navegar.mock.calls[1][0], "https://app.example.test").searchParams.get("to")).toBe("2025-11-02");
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     });
 
@@ -534,17 +621,20 @@ describe("PreciosHistoricos", () => {
         ["País", "BRASIL", ["Cavendish|BRASIL|G|I"]],
         ["Categoría", "II", ["Cavendish|ECUADOR|M|II", "Orgánica|ECUADOR|G|II"]],
         ["Variedad", "Orgánica", ["Orgánica|URUGUAY|P|III", "Orgánica|ECUADOR|G|II"]],
-    ] as const)("filtra por %s sobre el histórico cargado sin navegar", (nombre, opcion, esperadas) => {
+    ] as const)("solicita el filtro por %s al backend y actualiza los registros visibles", (nombre, opcion, esperadas) => {
         render(<PreciosHistoricos producto={productoSinFiltros} historico={historicoConFiltros} {...fechas} />);
         abrirFiltrosAdicionales();
         seleccionarFiltro(nombre, opcion);
 
         expect(firmasFilasVisibles()).toEqual(esperadas);
         expect(document.querySelectorAll("article")).toHaveLength(esperadas.length);
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledOnce();
+        const parametros = new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams;
+        const parametro = { Calibre: "calibre", País: "pais", Categoría: "categoria", Variedad: "variedad" }[nombre];
+        expect(parametros.get(parametro)).toBe(opcion);
     });
 
-    it("mantiene las opciones de la respuesta completa al cambiar filtros y reducir el período visible", () => {
+    it("permite ampliar un filtro usando las opciones del backend aunque el JSON recibido esté filtrado", () => {
         const registro = historicoConFiltros.series[0];
         const datos: HistoricoProducto = {
             ...historicoConFiltros,
@@ -553,7 +643,17 @@ describe("PreciosHistoricos", () => {
                 { ...registro, date: "2025-11-07", presentations: registro.presentations.slice(1) },
             ],
         };
-        render(<PreciosHistoricos producto={productoSinFiltros} historico={datos} {...fechas} />);
+        const datosFiltrados: HistoricoProducto = {
+            ...datos,
+            series: [{ ...datos.series[1], presentations: datos.series[1].presentations.filter((presentacion) => presentacion.caliber === "G") }],
+        };
+        const opcionesFiltros = {
+            variedades: ["Cavendish", "Orgánica"], paises: ["BRASIL", "ECUADOR", "URUGUAY"],
+            calibres: ["G", "M", "P"], categorias: ["I", "II", "III"],
+        };
+        const { unmount } = render(
+            <PreciosHistoricos producto={{ ...productoSinFiltros, calibre: "G" }} historico={datosFiltrados} opcionesFiltros={opcionesFiltros} {...fechas} />,
+        );
         abrirFiltrosAdicionales();
         const opcionesEsperadas = {
             Variedad: ["Cavendish", "Orgánica"],
@@ -567,9 +667,7 @@ describe("PreciosHistoricos", () => {
             }
         };
         comprobarOpciones();
-        seleccionarFiltro("Calibre", "G");
         expect(firmasFilasVisibles()).toHaveLength(2);
-        comprobarOpciones();
 
         fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: "2025-11-03" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
@@ -577,8 +675,21 @@ describe("PreciosHistoricos", () => {
         expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(1);
         comprobarOpciones();
         seleccionarFiltro("Calibre", "M");
-        expect(firmasFilasVisibles()).toHaveLength(2);
-        expect(navegar).not.toHaveBeenCalled();
+        expect(firmasFilasVisibles()).toHaveLength(0);
+        expect(navegar).toHaveBeenCalledOnce();
+        const parametros = new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams;
+        expect(Object.fromEntries(parametros)).toMatchObject({ calibre: "M", from: fechas.desde, to: "2025-11-03" });
+        unmount();
+
+        render(
+            <PreciosHistoricos
+                producto={{ ...productoSinFiltros, calibre: "M" }}
+                historico={{ ...datos, to: "2025-11-03", series: datos.series.slice(0, 1) }}
+                opcionesFiltros={opcionesFiltros}
+                desde={fechas.desde} hasta="2025-11-03"
+            />,
+        );
+        expect(firmasFilasVisibles()).toEqual(["Cavendish|ECUADOR|M|I", "Cavendish|ECUADOR|M|II"]);
     }, 10_000);
 
     it("conserva filtros iniciales ausentes en la respuesta y muestra cero resultados", () => {
@@ -608,7 +719,7 @@ describe("PreciosHistoricos", () => {
         expect(navegar).not.toHaveBeenCalled();
     });
 
-    it("mantiene un filtro sin coincidencias después de recargar un período reducido localmente", () => {
+    it("mantiene el filtro seleccionado cuando el backend devuelve un período sin coincidencias", () => {
         window.history.replaceState(
             estadoInicial,
             "",
@@ -629,19 +740,20 @@ describe("PreciosHistoricos", () => {
         fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: "2025-11-03" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
-        expect(firmasFilasVisibles()).toHaveLength(0);
+        expect(firmasFilasVisibles()).toHaveLength(1);
         const parametros = new URL(window.location.href).searchParams;
         expect(Object.fromEntries(parametros)).toMatchObject({
             species_id: "60", calibre: "G",
             from: fechas.desde, to: "2025-11-03", extra: "anterior",
         });
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledTimes(2);
         unmount();
 
         render(
             <PreciosHistoricos
                 producto={{ ...productoSinFiltros, calibre: parametros.get("calibre")! }}
-                historico={{ ...datos, to: parametros.get("to")!, series: datos.series.slice(0, 1) }}
+                historico={{ ...datos, to: parametros.get("to")!, series: [] }}
+                opcionesFiltros={{ variedades: ["Cavendish"], paises: ["ECUADOR"], calibres: ["M"], categorias: ["I", "II"] }}
                 desde={parametros.get("from")!}
                 hasta={parametros.get("to")!}
             />,
@@ -652,7 +764,7 @@ describe("PreciosHistoricos", () => {
         expect(firmasFilasVisibles()).toHaveLength(0);
         expect(document.querySelectorAll("article")).toHaveLength(0);
         expect(screen.getByRole("status")).toHaveTextContent("No hay registros históricos");
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledTimes(2);
     });
 
     it("muestra precios de referencia y otros registros del histórico sin un filtro oculto", () => {
@@ -690,7 +802,7 @@ describe("PreciosHistoricos", () => {
         }
     });
 
-    it("limpia los filtros locales y vuelve a mostrar todas las presentaciones del histórico", () => {
+    it("consulta el backend al limpiar filtros y recupera las presentaciones del histórico", () => {
         window.history.replaceState(
             estadoInicial,
             "",
@@ -711,7 +823,7 @@ describe("PreciosHistoricos", () => {
             from: fechas.desde, to: fechas.hasta, extra: "anterior",
         });
         expect(window.location.hash).toBe("#tabla");
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledOnce();
     });
 
     it("muestra siempre precios por kg en tabla y móvil sin selectores de presentación ni precio por", () => {
@@ -746,22 +858,149 @@ describe("PreciosHistoricos", () => {
         expect(tarjeta).not.toBeNull();
         expect(within(tarjeta!).getByText("$1 250,5 - $900,25 / kg")).toBeInTheDocument();
         expect(precioRecibido).toEqual(precioOriginal);
+        expect(propsGrafica().registros[0].precio).toBe(precioRecibido);
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
-    it("navega con los filtros actuales y las fechas únicamente al presionar Consultar", () => {
+    it.each(valoresInesperados)("muestra precios, volumen y referencia inesperados sin convertir el registro: $texto", ({ valor, texto }) => {
+        const precioRecibido = {
+            ...historico.series[0].presentations[0].prices[0],
+            min_kg: valor, max_kg: valor, min_un: valor, max_un: valor, is_reference: valor,
+        };
+        const datos: HistoricoProducto = {
+            ...historico,
+            series: [{
+                ...historico.series[0], volume_kg: valor,
+                presentations: [{ ...historico.series[0].presentations[0], prices: [precioRecibido] }],
+            }],
+        };
+        const originales = JSON.stringify(datos);
+        render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
+
+        const fila = within(screen.getByRole("table")).getAllByRole("row")[1];
+        const celdas = within(fila).getAllByRole("cell");
+        expect(celdas[6]).toHaveTextContent(`$${texto} - $${texto}`);
+        expect(celdas[7]).toHaveTextContent(valor === null ? "—" : `${texto} kg`);
+        const tarjeta = document.querySelector("article")!;
+        expect(within(tarjeta).getByText(`$${texto} - $${texto} / kg`)).toBeInTheDocument();
+        expect(within(tarjeta).getByLabelText(`Volumen: ${valor === null ? "—" : `${texto} kg`}`)).toBeInTheDocument();
+        if (valor === true) {
+            expect(within(celdas[5]).getByText("Referencia")).toBeInTheDocument();
+            expect(within(tarjeta).getByText("Referencia")).toBeInTheDocument();
+        } else if (valor === false) {
+            expect(celdas[5]).toBeEmptyDOMElement();
+            expect(tarjeta.querySelector("header span")).toBeEmptyDOMElement();
+        } else {
+            expect(celdas[5]).toHaveTextContent(texto);
+            expect(tarjeta.querySelector("header span")).toHaveTextContent(texto);
+            expect(within(tarjeta).queryByText("Referencia")).not.toBeInTheDocument();
+        }
+        expect(JSON.stringify(datos)).toBe(originales);
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("muestra atributos inesperados como texto y permite filtrarlos sin modificar el JSON recibido", () => {
+        const variedad = { nombre: "Ñ" };
+        const pais = ["UY", null];
+        const calibre = false;
+        const categoria = { codigo: ["I", false] };
+        const datos: HistoricoProducto = {
+            ...historico,
+            series: [{
+                ...historico.series[0],
+                presentations: [{
+                    variety: variedad, country: pais, caliber: calibre, measure_unit: { unidad: ["kg", null] },
+                    prices: [{ ...historico.series[0].presentations[0].prices[0], category: categoria }],
+                }, {
+                    variety: null, country: true, caliber: ["M"], measure_unit: false,
+                    prices: [{ ...historico.series[0].presentations[0].prices[0], category: null }],
+                }],
+            }],
+        };
+        const originales = JSON.stringify(datos);
+        render(<PreciosHistoricos producto={productoSinFiltros} historico={datos} {...fechas} />);
+        expect(firmasFilasVisibles()).toEqual(['{"nombre":"Ñ"}|["UY",null]|false|{"codigo":["I",false]}', '—|true|["M"]|—']);
+        const tarjeta = document.querySelector("article")!;
+        expect(tarjeta).toHaveTextContent('Banana · {"nombre":"Ñ"}');
+        expect(tarjeta).toHaveTextContent('["UY",null] · Cal. false · Cat. {"codigo":["I",false]}');
+        abrirFiltrosAdicionales();
+        seleccionarFiltro("Variedad", JSON.stringify(variedad));
+        seleccionarFiltro("País", JSON.stringify(pais));
+        seleccionarFiltro("Calibre", "false");
+        seleccionarFiltro("Categoría", JSON.stringify(categoria));
+
+        expect(firmasFilasVisibles()).toEqual(['{"nombre":"Ñ"}|["UY",null]|false|{"codigo":["I",false]}']);
+        expect(navegar).toHaveBeenCalledTimes(4);
+        const parametros = new URL(navegar.mock.calls[3][0], "https://app.example.test").searchParams;
+        expect(Object.fromEntries(parametros)).toMatchObject({
+            variedad: JSON.stringify(variedad), pais: JSON.stringify(pais), calibre: "false", categoria: JSON.stringify(categoria),
+        });
+        expect(JSON.stringify(datos)).toBe(originales);
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("redondea los valores numéricos a dos decimales sin cambiar los valores recibidos", () => {
+        const precioRecibido = { ...historico.series[0].presentations[0].prices[0], min_kg: 10.666666, max_kg: 20.666666 };
+        const datos: HistoricoProducto = {
+            ...historico,
+            series: [{
+                ...historico.series[0], volume_kg: 1666.666666,
+                presentations: [{ ...historico.series[0].presentations[0], prices: [precioRecibido] }],
+            }],
+        };
+        render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
+
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: "$10,67 - $20,67" })).toBeInTheDocument();
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: "1 666,67 kg" })).toBeInTheDocument();
+        expect(within(document.querySelector("article")!).getByText("$10,67 - $20,67 / kg")).toBeInTheDocument();
+        expect(precioRecibido.min_kg).toBe(10.666666);
+        expect(precioRecibido.max_kg).toBe(20.666666);
+        expect(datos.series[0].volume_kg).toBe(1666.666666);
+    });
+
+    it.each([
+        { min_kg: "Ñ", max_kg: 60, texto: "$Ñ - $60" },
+        { min_kg: 50, max_kg: "Ñ", texto: "$50 - $Ñ" },
+        { min_kg: "0012.50", max_kg: "0090.25", texto: "$0012.50 - $0090.25" },
+        { min_kg: null, max_kg: 60, texto: "$— - $60" },
+    ])("muestra valores de precio recibidos en tabla y móvil sin convertirlos: $texto", ({ min_kg, max_kg, texto }) => {
+        const precioRecibido = { ...historico.series[0].presentations[0].prices[0], min_kg, max_kg };
+        const datos: HistoricoProducto = {
+            ...historico,
+            series: [{
+                ...historico.series[0],
+                presentations: [{ ...historico.series[0].presentations[0], prices: [precioRecibido] }],
+            }],
+        };
+        render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
+
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: texto })).toBeInTheDocument();
+        expect(within(document.querySelector("article")!).getByText(`${texto} / kg`)).toBeInTheDocument();
+        expect(precioRecibido).toMatchObject({ min_kg, max_kg });
+        expect(propsGrafica().registros[0].precio).toBe(precioRecibido);
+        expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("consulta los filtros al cambiarlos y aplica las fechas al presionar Consultar", () => {
         render(<PreciosHistoricos producto={productoSinFiltros} historico={historicoConFiltros} {...fechas} />);
+        expect(propsGrafica().registros).toHaveLength(5);
         seleccionarFiltro("Variedad", "Orgánica");
+        expect(propsGrafica().registros).toHaveLength(2);
+        expect(propsGrafica().registros.map(({ precio }) => precio)).toEqual([
+            historicoConFiltros.series[0].presentations[2].prices[0],
+            historicoConFiltros.series[0].presentations[3].prices[0],
+        ]);
         abrirFiltrosAdicionales();
         seleccionarFiltro("País", "URUGUAY");
         seleccionarFiltro("Calibre", "P");
         seleccionarFiltro("Categoría", "III");
         fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledTimes(4);
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
-        expect(navegar).toHaveBeenCalledOnce();
-        const [destino, opciones] = navegar.mock.calls[0];
+        expect(navegar).toHaveBeenCalledTimes(5);
+        const [destino, opciones] = navegar.mock.calls[4];
         const parametros = new URL(destino, "https://app.example.test").searchParams;
         expect(Object.fromEntries(parametros)).toMatchObject({
             species_id: "60", producto: "Banana",
@@ -775,7 +1014,7 @@ describe("PreciosHistoricos", () => {
         expect(opciones).toEqual({ scroll: false });
     });
 
-    it("reutiliza los datos cargados al confirmar filtros locales sin cambiar especie ni período", () => {
+    it("consulta el backend si un filtro cambió y todavía no recibió la respuesta", () => {
         render(<PreciosHistoricos producto={productoSinFiltros} historico={historicoConFiltros} {...fechas} />);
         abrirFiltrosAdicionales();
         seleccionarFiltro("Calibre", "G");
@@ -783,7 +1022,7 @@ describe("PreciosHistoricos", () => {
 
         expect(firmasFilasVisibles()).toEqual(["Cavendish|BRASIL|G|I", "Orgánica|ECUADOR|G|II"]);
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledTimes(2);
     });
 
     it("permite reintentar el mismo período cuando la carga anterior falló", () => {
@@ -914,11 +1153,26 @@ describe("PreciosHistoricos", () => {
         }
     });
 
-    it("vuelve a habilitar los filtros del histórico cargado al recuperar la especie consultada", () => {
+    it("conserva los filtros aplicados y los datos parciales al elegir otra especie y volver sin consultar", () => {
+        window.history.replaceState(
+            estadoInicial,
+            "",
+            "/precios-historicos?species_id=60&producto=Banana&variedad=Cavendish&pais=ECUADOR&calibre=M&categoria=I&from=2025-11-01&to=2025-11-08",
+        );
+        const registro = historicoConFiltros.series[0];
+        const presentacion = registro.presentations[0];
+        const datosFiltrados: HistoricoProducto = {
+            ...historicoConFiltros,
+            series: [{ ...registro, presentations: [{ ...presentacion, prices: [presentacion.prices[0]] }] }],
+        };
         render(
             <PreciosHistoricos
                 producto={producto}
-                historico={historicoConFiltros}
+                historico={datosFiltrados}
+                opcionesFiltros={{
+                    variedades: ["Cavendish", "Orgánica"], paises: ["ECUADOR", "BRASIL", "URUGUAY"],
+                    calibres: ["M", "G", "P"], categorias: ["I", "II", "III"],
+                }}
                 {...fechas}
                 especies={[
                     { id: "60", especie: "Banana" },
@@ -926,17 +1180,32 @@ describe("PreciosHistoricos", () => {
                 ]}
             />,
         );
+        const urlAplicada = window.location.href;
+        const filasAplicadas = firmasFilasVisibles();
+        const registrosGrafica = propsGrafica().registros;
         seleccionarFiltro("Especie", "Manzana");
+
+        expect(window.location.href).toBe(urlAplicada);
+        expect(firmasFilasVisibles()).toEqual(filasAplicadas);
+        expect(propsGrafica().registros).toEqual(registrosGrafica);
         seleccionarFiltro("Especie", "Banana");
         abrirFiltrosAdicionales();
 
-        for (const nombre of ["Variedad", "País", "Calibre", "Categoría"]) {
-            expect(screen.getByRole("combobox", { name: nombre })).not.toHaveAttribute("aria-disabled", "true");
+        for (const [nombre, valor] of Object.entries({ Variedad: "Cavendish", País: "ECUADOR", Calibre: "M", Categoría: "I" })) {
+            const filtro = screen.getByRole("combobox", { name: nombre });
+            expect(filtro).not.toHaveAttribute("aria-disabled", "true");
+            expect(filtro).toHaveTextContent(valor);
         }
+        expect(firmasFilasVisibles()).toEqual(["Cavendish|ECUADOR|M|I"]);
+        expect(propsGrafica().registros).toEqual(registrosGrafica);
+        expect(window.location.href).toBe(urlAplicada);
+        expect(navegar).not.toHaveBeenCalled();
         expect(leerOpcionesFiltro("Variedad")).toEqual(["Cavendish", "Orgánica"]);
         seleccionarFiltro("Variedad", "Orgánica");
-        expect(firmasFilasVisibles()).toHaveLength(2);
-        expect(navegar).not.toHaveBeenCalled();
+        expect(navegar).toHaveBeenCalledOnce();
+        expect(Object.fromEntries(new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams)).toMatchObject({
+            variedad: "Orgánica", pais: "ECUADOR", calibre: "M", categoria: "I",
+        });
     });
 
     it("aplica un período dentro del histórico cargado al consultar y sólo navega si se amplía más allá", () => {
@@ -952,13 +1221,19 @@ describe("PreciosHistoricos", () => {
         };
         render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
         const tabla = within(screen.getByRole("table"));
+        expect(propsGrafica().registros).toHaveLength(2);
         fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-05" } });
 
         expect(tabla.getAllByRole("row")).toHaveLength(3);
+        expect(propsGrafica()).toMatchObject(fechas);
+        expect(propsGrafica().registros).toHaveLength(2);
         expect(tabla.getByRole("cell", { name: "02/11/2025" })).toBeInTheDocument();
-        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+        fireEvent.click(screen.getByRole("button", { name: "Consultar" }));
 
         expect(tabla.getAllByRole("row")).toHaveLength(2);
+        expect(propsGrafica()).toMatchObject({ desde: "2025-11-05", hasta: fechas.hasta });
+        expect(propsGrafica().registros).toHaveLength(1);
+        expect(propsGrafica().registros[0].dia.date).toBe("2025-11-07");
         expect(tabla.queryByRole("cell", { name: "02/11/2025" })).not.toBeInTheDocument();
         expect(tabla.getByRole("cell", { name: "07/11/2025" })).toBeInTheDocument();
         expect(navegar).not.toHaveBeenCalled();
@@ -1056,52 +1331,24 @@ describe("PreciosHistoricos", () => {
         expect(screen.queryByText(/No hay registros históricos/)).not.toBeInTheDocument();
     });
 
-    it("permite abrir y cerrar los errores de registros descartados sobre el listado sin ocultar los datos válidos", () => {
+    it("ignora los avisos de calidad guardados por versiones anteriores y muestra los registros", () => {
         const erroresValidacion = [
             '03/11/2025, Banana Cavendish: series[0].presentations[0].prices[1].min_kg tiene el valor "Ñ"; se esperaba un número finito.',
             "03/11/2025, Banana Cavendish: el precio mínimo por kg ($70) es mayor que el máximo ($60).",
         ];
-        render(<PreciosHistoricos producto={producto} historico={{ ...historico, erroresValidacion }} {...fechas} />);
+        const datosGuardados = { ...historico, erroresValidacion };
+        render(<PreciosHistoricos producto={producto} historico={datosGuardados} {...fechas} />);
 
-        const resumen = screen.getByText("Ver errores del histórico (2)");
-        const aviso = resumen.closest("details")!;
-        expect(aviso).not.toHaveAttribute("open");
-        for (const mensaje of erroresValidacion) expect(within(aviso).getByText(mensaje)).not.toBeVisible();
+        expect(document.querySelector("details")).toBeNull();
+        for (const mensaje of erroresValidacion) expect(screen.queryByText(mensaje)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Ver errores del histórico/)).not.toBeInTheDocument();
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         const tabla = screen.getByRole("table");
-        expect(aviso.compareDocumentPosition(tabla) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(within(tabla).getAllByRole("row")).toHaveLength(2);
-        const precioValido = within(tabla).getByRole("cell", { name: "$50 - $60" });
-        expect(precioValido).toBeVisible();
-        const registroMobile = document.querySelector("article")!;
-        expect(registroMobile).toHaveTextContent("$50 - $60 / kg");
-        expect(registroMobile).toBeVisible();
-        expect(aviso.compareDocumentPosition(registroMobile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-
-        fireEvent.click(resumen);
-        expect(aviso).toHaveAttribute("open");
-        for (const mensaje of erroresValidacion) expect(within(aviso).getByText(mensaje)).toBeVisible();
-        expect(precioValido).toBeVisible();
-        expect(registroMobile).toBeVisible();
-
-        fireEvent.click(resumen);
-        expect(aviso).not.toHaveAttribute("open");
-        for (const mensaje of erroresValidacion) expect(within(aviso).getByText(mensaje)).not.toBeVisible();
-        expect(precioValido).toBeVisible();
-        expect(registroMobile).toBeVisible();
+        expect(within(tabla).getByRole("cell", { name: "$50 - $60" })).toBeInTheDocument();
+        expect(document.querySelector("article")).toHaveTextContent("$50 - $60 / kg");
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
-    });
-
-    it.each([
-        { cargando: true },
-        { error: "No pudimos cargar los precios históricos." },
-    ])("oculta los errores de registros descartados durante la carga o un fallo de consulta: %o", (estado) => {
-        const mensaje = 'Registro descartado: min_kg tiene el valor "Ñ".';
-        render(<PreciosHistoricos producto={producto} historico={{ ...historico, erroresValidacion: [mensaje] }} {...fechas} {...estado} />);
-
-        expect(screen.queryByText(mensaje)).not.toBeInTheDocument();
-        expect(screen.queryByText("Ver errores del histórico (1)")).not.toBeInTheDocument();
     });
 
     it.each([
@@ -1134,12 +1381,14 @@ describe("PreciosHistoricos", () => {
         const { rerender } = render(
             <PreciosHistoricos producto={producto} historico={null} {...fechas} error={error} cargando />,
         );
+        expect(propsGrafica()).toMatchObject({ cargando: true, error: true, registros: [] });
         expect(screen.getAllByRole("progressbar", { name: "Cargando precios históricos" })).toHaveLength(2);
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Consultar" })).toBeDisabled();
 
         rerender(<PreciosHistoricos producto={producto} historico={null} {...fechas} error={error} />);
+        expect(propsGrafica()).toMatchObject({ cargando: false, error: true, registros: [] });
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
         expect(screen.getAllByRole("alert")).toHaveLength(2);
         expect(screen.getAllByTestId("WarningAmberIcon")).toHaveLength(2);

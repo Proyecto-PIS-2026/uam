@@ -16,11 +16,12 @@ describe("matriz de autorización BP-04.4", () => {
         expect(autorizado(permiso)).toBe(true);
     });
 
-    it.each(roles)("limita el acceso a mercados y catálogo de Productores para %s", (rol) => {
-        const sesion = sesionDe(rol);
-        expect(autorizado("operador.mercado.acceder", sesion)).toBe(rol === "OPERADOR");
-        expect(autorizado("productor.mercado.acceder", sesion)).toBe(rol === "PRODUCTOR");
-        expect(autorizado("productor.publicacion.consultar", sesion)).toBe(rol === "OPERADOR");
+    it.each(roles)("limita el acceso a mercados y catálogo de Productores para %s",
+        (rol) => {
+            const sesion = sesionDe(rol);
+            expect(autorizado("operador.mercado.acceder", sesion)).toBe(rol === "OPERADOR");
+            expect(autorizado("productor.mercado.acceder", sesion)).toBe(rol === "PRODUCTOR");
+            expect(autorizado("productor.publicacion.consultar", sesion),).toBe(rol === "OPERADOR" || rol === "ADMINISTRADOR");
     });
 
     it.each([
@@ -40,7 +41,6 @@ describe("matriz de autorización BP-04.4", () => {
 
     it.each([
         "productor.publicacion.crear",
-        "productor.publicacion.modificar",
         "productor.publicacion.eliminar",
         "productor.contacto.modificar",
         "productor.departamento.modificar",
@@ -50,6 +50,15 @@ describe("matriz de autorización BP-04.4", () => {
             expect(autorizado(permiso, sesion, { id: 42, usuarioId: 7 })).toBe(rol === "PRODUCTOR");
             expect(autorizado(permiso, sesion, { id: 42, usuarioId: 9 })).toBe(false);
         }
+    });
+
+    it.each(roles)("limita la edición de publicaciones del productor al dueño o un administrador: %s", (rol) => {
+        const sesion = sesionDe(rol);
+        expect(autorizado("productor.publicacion.modificar", sesion, { id: 42, usuarioId: 7 }))
+            .toBe(rol === "PRODUCTOR" || rol === "ADMINISTRADOR");
+        expect(autorizado("productor.publicacion.modificar", sesion, { id: 42, usuarioId: 9 }))
+            .toBe(rol === "ADMINISTRADOR");
+        expect(autorizado("productor.publicacion.modificar", sesion, { id: 0, usuarioId: 7 })).toBe(false);
     });
 
     it.each([

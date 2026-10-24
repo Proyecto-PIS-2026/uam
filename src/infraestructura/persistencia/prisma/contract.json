@@ -28,6 +28,10 @@
       "model": "Especie",
       "namespace": "public"
     },
+    "historicoPrecios": {
+      "model": "HistoricoPrecios",
+      "namespace": "public"
+    },
     "local": {
       "model": "Local",
       "namespace": "public"
@@ -439,6 +443,21 @@
                   "namespace": "public"
                 }
               },
+              "historicoPrecios": {
+                "cardinality": "1:1",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "especieId"
+                  ]
+                },
+                "to": {
+                  "model": "HistoricoPrecios",
+                  "namespace": "public"
+                }
+              },
               "variedades": {
                 "cardinality": "1:N",
                 "on": {
@@ -475,6 +494,83 @@
               },
               "namespaceId": "public",
               "table": "especie"
+            }
+          },
+          "HistoricoPrecios": {
+            "fields": {
+              "especieId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "fechaDesde": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "fechaHasta": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "fechaUltimaActualizacion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "historico": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "especie": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "especieId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Especie",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "especieId": {
+                  "column": "especieId"
+                },
+                "fechaDesde": {
+                  "column": "fechaDesde"
+                },
+                "fechaHasta": {
+                  "column": "fechaHasta"
+                },
+                "fechaUltimaActualizacion": {
+                  "column": "fechaUltimaActualizacion"
+                },
+                "historico": {
+                  "column": "historico"
+                }
+              },
+              "namespaceId": "public",
+              "table": "historicoPrecios"
             }
           },
           "Local": {
@@ -1582,6 +1678,13 @@
                   "plane": "domain"
                 }
               },
+              "solicitoRestablecimiento": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "twoFactorEnabled": {
                 "nullable": false,
                 "type": {
@@ -1631,6 +1734,9 @@
                 },
                 "rol": {
                   "column": "rol"
+                },
+                "solicitoRestablecimiento": {
+                  "column": "solicitoRestablecimiento"
                 },
                 "twoFactorEnabled": {
                   "column": "twoFactorEnabled"
@@ -2025,6 +2131,60 @@
                   ]
                 }
               ]
+            },
+            "historicoPrecios": {
+              "columns": {
+                "especieId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "fechaDesde": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "fechaHasta": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "fechaUltimaActualizacion": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "historico": {
+                  "codecId": "pg/jsonb@1",
+                  "nativeType": "jsonb",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "especieId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "historicoPrecios"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "especie"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "especieId"
+                ]
+              },
+              "uniques": []
             },
             "local": {
               "columns": {
@@ -3004,6 +3164,15 @@
                     "plane": "storage"
                   }
                 },
+                "solicitoRestablecimiento": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "twoFactorEnabled": {
                   "codecId": "pg/bool@1",
                   "default": {
@@ -3139,7 +3308,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "3fe9ff9b77cc22f3603cc103afea9c647926a2583a93c5bdbb13ab08a75f29a2"
+    "storageHash": "7ebfc9a45cd27b34b40279d4b014b448dbfb6c7e0083c7ee6f6e3d19a927de87"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

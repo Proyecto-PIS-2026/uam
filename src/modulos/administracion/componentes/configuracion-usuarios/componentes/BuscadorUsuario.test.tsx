@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ChangeEvent, ReactNode } from "react";
-import BuscadorUsuario from "./BuscadorUsuario";
+import BuscadorUsuario, { type FiltroRestablecimiento} from "./BuscadorUsuario";
 
 interface MockTextFieldProps {
     label?: string;
@@ -120,6 +120,7 @@ describe("BuscadorUsuario", () => {
     it("renderiza el buscador, los selectores y todos los roles disponibles", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -127,6 +128,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="TODOS"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -143,12 +146,13 @@ describe("BuscadorUsuario", () => {
             "aria-hidden",
             "true",
         );
-        expect(screen.getByTestId("icono-filtro")).toHaveAttribute(
-            "aria-hidden",
-            "true",
-        );
+        expect(screen.getAllByTestId("icono-filtro")).toHaveLength(2);
 
-        expect(screen.getAllByRole("option")).toHaveLength(8);
+        screen.getAllByTestId("icono-filtro").forEach((icono) => {
+            expect(icono).toHaveAttribute("aria-hidden", "true");
+        });
+
+        expect(screen.getAllByRole("option")).toHaveLength(12);
 
         for (const rol of [
             "Todos",
@@ -156,21 +160,30 @@ describe("BuscadorUsuario", () => {
             "Operador",
             "Productor",
         ]) {
-            expect(screen.getAllByRole("option", { name: rol })).toHaveLength(2);
+            expect(screen.getAllByRole("option", { name: rol })).toHaveLength(
+                rol === "Todos" ? 4 : 2,
+            );
         }
 
         expect(
             document.querySelector("[data-opcion-mas-larga]"),
         ).toHaveAttribute("data-opcion-mas-larga", "Administrador");
 
-        expect(
-            screen.getByTestId("valor-selector-movil"),
-        ).toContainElement(screen.getByTestId("icono-filtro"));
+        const selectoresMoviles = screen.getAllByTestId("valor-selector-movil");
+        const iconosFiltro = screen.getAllByTestId("icono-filtro");
+
+        expect(selectoresMoviles).toHaveLength(2);
+        expect(iconosFiltro).toHaveLength(2);
+
+        selectoresMoviles.forEach((selector, indice) => {
+        expect(selector).toContainElement(iconosFiltro[indice]);
+});
     });
 
     it("notifica los cambios en el texto de búsqueda", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -178,6 +191,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="TODOS"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -199,6 +214,7 @@ describe("BuscadorUsuario", () => {
     it("notifica los cambios de rol desde el selector de escritorio", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -206,6 +222,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="TODOS"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -236,6 +254,7 @@ describe("BuscadorUsuario", () => {
     it("notifica los cambios de rol desde el selector móvil", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -243,6 +262,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="OPERADOR"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 

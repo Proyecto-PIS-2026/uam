@@ -71,8 +71,7 @@ describe("Página pública del operador", () => {
     it("redirige al operador a su mercado sin consultar un perfil ajeno", async () => {
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorActual.mockResolvedValue({ id: 24, usuarioId: 10, nombreFantasia: "Mi huerta" });
-
-        await expect(Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }) })).rejects.toThrow("NEXT_REDIRECT");
+        await expect(Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }), searchParams: Promise.resolve({})})).rejects.toThrow("NEXT_REDIRECT");
 
         expect(mocks.redirect).toHaveBeenCalledWith("/mi-mercado");
         expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
@@ -85,7 +84,7 @@ describe("Página pública del operador", () => {
         mocks.obtenerOperadorActual.mockResolvedValue({ id: perfil.id, usuarioId: 10, nombreFantasia: perfil.nombreFantasia });
         mocks.obtenerPerfil.mockResolvedValue(perfil);
 
-        render(await Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }) }));
+        render(await Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }), searchParams: Promise.resolve({}) }));
 
         expect(mocks.redirect).not.toHaveBeenCalled();
         expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
@@ -94,22 +93,11 @@ describe("Página pública del operador", () => {
         expect(screen.getByText("Tomate - Perita")).toBeInTheDocument();
     });
 
-    it("redirige al administrador a la gestión del operador", async () => {
-        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 20, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
-        mocks.obtenerPerfil.mockResolvedValue(perfil);
-
-        await expect(Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }) })).rejects.toThrow("NEXT_REDIRECT");
-
-        expect(mocks.redirect).toHaveBeenCalledWith("/gestion-operadores/13");
-        expect(mocks.obtenerPerfil).toHaveBeenCalledWith("Frutas del Norte");
-        expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
-    });
-
-    it.each([null, "PRODUCTOR"] as const)("conserva el perfil público para la sesión %s", async (rol) => {
+    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)("conserva el perfil público para la sesión %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
         mocks.obtenerPerfil.mockResolvedValue(perfil);
 
-        render(await Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }) }));
+        render(await Page({ params: Promise.resolve({ nombre: "Frutas%20del%20Norte" }), searchParams: Promise.resolve({}) }));
 
         expect(mocks.redirect).not.toHaveBeenCalled();
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
@@ -121,7 +109,7 @@ describe("Página pública del operador", () => {
     it("consulta el operador indicado en la URL y muestra su perfil y catálogo", async () => {
         mocks.obtenerPerfil.mockResolvedValue(perfil);
 
-        const contenido = await Page({params: Promise.resolve({nombre: "Frutas%20del%20Norte"})});
+        const contenido = await Page({params: Promise.resolve({nombre: "Frutas%20del%20Norte"}), searchParams: Promise.resolve({})});
         render(contenido);
 
         expect(mocks.obtenerPerfil).toHaveBeenCalledWith("Frutas del Norte");
@@ -135,14 +123,14 @@ describe("Página pública del operador", () => {
     it("llama a notFound cuando el operador no existe", async () => {
         mocks.obtenerPerfil.mockResolvedValue(null);
 
-        await expect(Page({params: Promise.resolve({nombre: "Operador inexistente"})})).rejects.toThrow("PERFIL_NO_ENCONTRADO");
+        await expect(Page({params: Promise.resolve({nombre: "Operador inexistente"}), searchParams: Promise.resolve({})})).rejects.toThrow("PERFIL_NO_ENCONTRADO");
 
         expect(mocks.obtenerPerfil).toHaveBeenCalledWith("Operador inexistente");
         expect(mocks.notFound).toHaveBeenCalledOnce();
     });
 
     it.each(["", "   "])("llama a notFound cuando el nombre está vacío: %s", async (nombre) => {
-        await expect(Page({params: Promise.resolve({nombre})})).rejects.toThrow("PERFIL_NO_ENCONTRADO");
+        await expect(Page({params: Promise.resolve({nombre}), searchParams: Promise.resolve({})})).rejects.toThrow("PERFIL_NO_ENCONTRADO");
 
         expect(mocks.obtenerPerfil).not.toHaveBeenCalled();
         expect(mocks.notFound).toHaveBeenCalledOnce();

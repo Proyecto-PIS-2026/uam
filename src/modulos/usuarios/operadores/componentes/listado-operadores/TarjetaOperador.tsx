@@ -5,18 +5,20 @@ import styles from "./TarjetaOperador.module.css";
 
 type TarjetaOperadorProps = {
     operador: OperadorListado;
+    esAdmin?: boolean;
 };
 
-export default function TarjetaOperador({ operador }: TarjetaOperadorProps) {
+export default function TarjetaOperador({ operador, esAdmin }: TarjetaOperadorProps) {
     const localesTexto = operador.locales.map((local) => {
         const nombreNave = local.nombreNave === "Tinglado" ? local.nombreNave : `Nave ${local.nombreNave}`;
         return `${nombreNave} - ${local.numeroLocal}`;
     }).join(" | ");
     const foto = operador.fotoPerfil?.trim();
     const inicial = operador.nombreFantasia.trim().charAt(0).toLocaleUpperCase("es");
+    const href = esAdmin ? `/gestion-operadores/${operador.id}` : `/operadores/${encodeURIComponent(operador.nombreFantasia)}?origen=operadores`;
 
     const contenido = (
-        <Link href={`/operadores/${encodeURIComponent(operador.nombreFantasia)}`} className={styles.tarjeta}>
+        <Link href={href} className={styles.tarjeta}>
             <div className={styles.imagen}>
                 {foto ? (
                     <Image src={foto} alt={`Foto de ${operador.nombreFantasia}`} fill sizes="(max-width: 767px) 64px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.foto} />

@@ -1,7 +1,20 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
 import TarjetaPublicacionSinOperador from "./TarjetaPublicacionSinOperador";
+
+vi.mock("next/image", async () => {
+    const { createElement } = await import("react");
+    return {
+        default: ({src, alt, onLoad, onError, style}: {
+            src: string;
+            alt: string;
+            onLoad?: React.ReactEventHandler<HTMLImageElement>;
+            onError?: React.ReactEventHandler<HTMLImageElement>;
+            style?: React.CSSProperties;
+        }) => createElement("img", {src, alt, onLoad, onError, style})
+    };
+});
 
 function crearPublicacion(): PublicacionListado {
     return {
@@ -16,6 +29,7 @@ function crearPublicacion(): PublicacionListado {
         calibre: "Mediano",
         codigoCalibre: "M",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 10,
             nombreFantasia: "Huerta Sur",
@@ -45,6 +59,7 @@ describe("TarjetaPublicacionSinOperador", () => {
 
     it("muestra la foto con la especie y variedad como texto alternativo", () => {
         render(<TarjetaPublicacionSinOperador publicacion={{ ...crearPublicacion(), foto: "/tomate.jpg"}} onClick={vi.fn()}/>);
+        fireEvent.load(screen.getByAltText("Foto de Tomate - Perita"));
         expect(screen.getByRole("img", { name: "Foto de Tomate - Perita" })).toBeInTheDocument();
         expect(screen.queryByText("Sin foto disponible")).not.toBeInTheDocument();
     });

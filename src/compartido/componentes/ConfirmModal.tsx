@@ -59,6 +59,8 @@ export function ConfirmModal({
 			aria-labelledby={tituloId}
 			aria-describedby={descripcionId}
 			aria-modal="true"
+			onClose={(evento) => evento.stopPropagation()}
+			onKeyDown={(evento) => { if (evento.key === "Escape") evento.stopPropagation(); }}
 			onCancel={(evento) => { evento.preventDefault(); if (!procesando) alCancelar(); }}
 			onClick={(evento) => { if (evento.target === evento.currentTarget && !procesando) alCancelar(); }}
 		>

@@ -1,0 +1,185 @@
+.encabezado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.titulo {
+    margin: 0;
+    color: var(--color-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 2rem;
+}
+
+.botonAgrupar {
+    display: inline-flex;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    width: 9rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
+    transition: background-color 400ms ease, border-color 400ms ease, color 400ms ease, scale 450ms ease;
+}
+
+.botonAgruparActivo {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: #fff;
+}
+
+.botonAgrupar svg {
+    flex-shrink: 0;
+}
+
+.textoAgrupar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    animation: aparecerTexto 200ms ease 100ms both;
+}
+
+@keyframes aparecerTexto {
+    from {opacity: 0}
+    to {opacity: 1}
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .botonAgrupar {
+        transition: none;
+    }
+
+    .textoAgrupar {
+        animation: none;
+    }
+}
+
+@media (hover: hover) {
+    .botonAgrupar:hover {
+        border-color: var(--color-primary);
+        background-color: var(--color-primary-soft);
+    }
+
+    .botonAgruparActivo:hover {
+        background-color: var(--color-primary-hover);
+    }
+}
+
+.botonAgrupar:active {
+    scale: 0.95;
+}
+
+.grupos {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.encabezadoGrupo {
+    margin-bottom: 1.5rem;
+}
+
+.nombreGrupo {
+    margin: 0;
+    color: var(--color-primary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.75rem;
+}
+
+.resumenGrupo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.cantidadProductos {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.numeroProductos {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.lineaGrupo {
+    height: 1px;
+    flex: 1;
+    background-color: var(--color-border);
+}
+
+.lista {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+}
+
+.sinResultados {
+    color: var(--color-primary);
+}
+
+.botonArriba {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+    cursor: pointer;
+}
+
+.botonArriba:hover {
+    background-color: var(--color-primary-hover);
+}
+
+@media (min-width: 48rem) {
+    .lista {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 64rem) {
+    .lista {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 80rem) {
+    .lista {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}

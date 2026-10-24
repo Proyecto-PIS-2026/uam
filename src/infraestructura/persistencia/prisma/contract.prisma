@@ -22,6 +22,7 @@ model Usuario {
   passwordHash     String
   twoFactorSecret  String?
   twoFactorEnabled Boolean        @default(false)
+  solicitoRestablecimiento Boolean        @default(false)
   rol              RolUsuario
 
   notificaciones   Notificacion[]
@@ -102,6 +103,7 @@ model Especie {
   fotoEspecie   String?
   variedades    Variedad[]
   categorias    Categoria[]
+  historicoPrecios HistoricoPrecios?
 
   @@map("especie")
 }
@@ -169,8 +171,8 @@ model Pais {
 // UBICACIONES
 model Ubicacion {
   id              Int                  @id @default(autoincrement())
-  nombreUbicacion String                 
-  urlMaps         String                 
+  nombreUbicacion String
+  urlMaps         String
   publicacionId   Int
   publicacion     PublicacionProductor @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
 
@@ -253,4 +255,15 @@ model CachePreciosReferencia {
   estadoCache String
 
   @@map("cachePreciosReferencia")
+}
+
+model HistoricoPrecios {
+  especieId                Int     @id
+  especie                  Especie @relation(fields:[especieId], references:[id])
+  historico                Jsonb
+  fechaDesde               Date
+  fechaHasta               Date
+  fechaUltimaActualizacion  Date
+
+  @@map("historicoPrecios")
 }
