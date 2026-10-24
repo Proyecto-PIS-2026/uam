@@ -37,7 +37,7 @@ export default function PerfilProductor({ productor, hrefVolver = "/productores"
                         )}
                     </div>
                     <div className={styles.identidad}>
-                        <p className={styles.tipoPerfil}>Perfil Operador</p>
+                        <p className={styles.tipoPerfil}>Perfil Productor</p>
                         <h1 id="nombre-operador" className={styles.nombre}>{productor.nombreFantasia}</h1>
                     </div>
                 </header>
