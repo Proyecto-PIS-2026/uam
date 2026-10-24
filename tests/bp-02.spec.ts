@@ -25,8 +25,8 @@ type Catalogos = {
 };
 
 async function accederComoAdmin(page: Page) {
-  const usuario = process.env.E2E_BP02_ADMIN_USU;
-  const contrasena = process.env.E2E_BP02_ADMIN_PASS;
+  const usuario = process.env.E2E_BP02_ADMIN_USU || process.env.E2E_ADMINISTRADOR_USU;
+  const contrasena = process.env.E2E_BP02_ADMIN_PASS || process.env.E2E_ADMINISTRADOR_PASS;
   if (!usuario || !contrasena) {
     throw new Error("Configurá E2E_BP02_ADMIN_USU y E2E_BP02_ADMIN_PASS antes de ejecutar BP-02.");
   }
