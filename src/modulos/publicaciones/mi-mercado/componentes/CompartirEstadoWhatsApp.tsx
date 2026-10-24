@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -49,55 +50,13 @@ export default function CompartirEstadoWhatsApp({
         setCompartiendo(true);
 
         try {
-            if (!navigator.share) {
-                setError("Este navegador no permite compartir directamente. Copiá el texto y abrí la foto para publicarlos manualmente en WhatsApp.");
-                return;
-            }
-
-            let archivo: File | undefined;
-
-            if (publicacion.foto) {
-                try {
-                    const respuesta = await fetch(publicacion.foto);
-
-                    if (!respuesta.ok) {
-                        throw new Error("No se pudo obtener la fotografía.");
-                    }
-
-                    const blob = await respuesta.blob();
-
-                    if (!blob.type.startsWith("image/")) {
-                        throw new Error("El archivo no es una imagen.");
-                    }
-
-                    archivo = new File(
-                        [blob],
-                        `producto-${publicacion.id}.png`,
-                        { type: blob.type }
-                    );
-                } catch {
-                    setError("No se pudo adjuntar la fotografía automáticamente. Podés abrirla y guardarla manualmente.");
-                    return;
-                }
-            }
-
-            if (archivo) {
-                if (!navigator.canShare?.({ files: [archivo] })) {
-                    setError("Este dispositivo no admite compartir la fotografía desde el navegador. Podés guardarla manualmente.");
-                    return;
-                }
-
-                await navigator.share({
-                    text: mensaje,
-                    files: [archivo],
-                });
-            } else {
-                await navigator.share({ text: mensaje });
-            }
-        } catch (error) {
-            if (error instanceof Error && error.name !== "AbortError") {
-                setError("No se pudo compartir el producto.");
-            }
+            window.open(
+                `https://wa.me/?text=${encodeURIComponent(mensaje)}`,
+                "_blank",
+                "noopener,noreferrer"
+            );
+        } catch {
+            setError("No se pudo abrir WhatsApp.");
         } finally {
             setCompartiendo(false);
         }
