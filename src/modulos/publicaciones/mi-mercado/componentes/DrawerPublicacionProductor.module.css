@@ -359,6 +359,12 @@
     flex-shrink: 0;
 }
 
+.ayuda {
+    margin: var(--espacio-inline) 0;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+}
+
 @media (width < 768px) {
     .drawer.drawer {
         width: 100%;
@@ -482,6 +488,7 @@
         font-size: clamp(var(--tamano-texto-secundario), 4.3vw, var(--tamano-titulo-seccion));
         white-space: nowrap;
     }
+
 
     .bloqueMedio {
         margin-top: var(--espacio-controles);

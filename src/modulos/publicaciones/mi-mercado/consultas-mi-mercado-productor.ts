@@ -12,10 +12,9 @@ export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperad
     }[];
 };
 
-export async function obtenerPublicacionesMiMercadoProductor() {
-    const productor = await obtenerProductorActual();
-    const relaciones = await db.orm.public.PublicacionProductor
-        .where({ productorId: productor.id })
+async function consultarPublicacionesProductor(productorId: number) {
+    return db.orm.public.PublicacionProductor
+        .where({ productorId })
         .include("pais", (pais) => pais.select("nombrePais"))
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps"))
         .include("publicacion", (publicacion) =>
@@ -27,7 +26,11 @@ export async function obtenerPublicacionesMiMercadoProductor() {
                 .include("calibre"))
         .all();
 
-    const publicaciones: PublicacionMiMercadoProductor[] = relaciones.map((relacion) => {
+}
+
+type RelacionPublicacionProductor = Awaited<ReturnType<typeof consultarPublicacionesProductor>>[number];
+
+export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacionProductor): PublicacionMiMercadoProductor {
         const publicacion = relacion.publicacion;
         return {
             id: publicacion.id,
@@ -64,7 +67,12 @@ export async function obtenerPublicacionesMiMercadoProductor() {
             },
             ubicaciones: relacion.ubicaciones.map(({ id, nombreUbicacion, urlMaps }) => ({ id, nombreUbicacion, urlMaps })),
         };
-    });
+}
+
+export async function obtenerPublicacionesMiMercadoProductor() {
+    const productor = await obtenerProductorActual();
+    const relaciones = await consultarPublicacionesProductor(productor.id);
+    const publicaciones = relaciones.map(mapearPublicacionMiMercadoProductor);
 
     return { productor, publicaciones };
 }

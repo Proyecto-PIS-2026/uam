@@ -10,13 +10,19 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import TextoAjustable from "../../componentes/drawer-publicacion/TextoAjustable";
+import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
+import type { OpcionesEdicionPublicacion } from "../../operadores/tipos";
+import DrawerEditarPublicacionProductor from "./DrawerEditarPublicacionProductor";
 import styles from "./DrawerPublicacionProductor.module.css";
 
 type Props = {
     publicacion: PublicacionMiMercadoProductor | null;
     alCerrar: () => void;
+    alEliminada?: (mensaje: string) => void;
+    alGuardar?: (publicacion: PublicacionMiMercadoProductor) => void;
 };
 
 function enlaceMapa(url: string) {
@@ -28,14 +34,26 @@ function enlaceMapa(url: string) {
     }
 }
 
-export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Props) {
+export default function DrawerPublicacionProductor({ publicacion: recibida, alCerrar, alGuardar, alEliminada }: Props) {
     const esWeb = useMediaQuery("(min-width: 768px)");
+    const [confirmacionPara, setConfirmacionPara] = useState<PublicacionMiMercadoProductor | null>(null);
+    const [eliminando, setEliminando] = useState(false);
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const eliminandoRef = useRef(false);
+    const [guardada, setGuardada] = useState<{ original: PublicacionMiMercadoProductor; nueva: PublicacionMiMercadoProductor } | null>(null);
+    const publicacion = guardada?.original === recibida ? guardada.nueva : recibida;
+    const confirmando = publicacion !== null && confirmacionPara === publicacion;
+    const [formulario, setFormulario] = useState<{ original: PublicacionMiMercadoProductor; opciones: OpcionesEdicionPublicacion } | null>(null);
+    const edicion = formulario?.original === publicacion ? formulario : null;
+    const [cargaPara, setCargaPara] = useState<PublicacionMiMercadoProductor | null>(null);
+    const cargando = publicacion !== null && cargaPara === publicacion;
+    const solicitudRef = useRef(0);
     const [fotoPreparada, setFotoPreparada] = useState<string | null>(null);
     const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
     const contenidoRef = useRef<HTMLDivElement>(null);
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
     const tieneFoto = Boolean(publicacion?.foto?.trim());
-    const abierto = publicacion !== null && (!tieneFoto || fotoPreparada === claveFoto);
+    const abierto = publicacion !== null && !edicion && (!tieneFoto || fotoPreparada === claveFoto);
     const tituloId = publicacion ? `publicacion-productor-${publicacion.id}-titulo` : undefined;
     const especie = publicacion?.presentacion.variedad.especie.nombreEspecie ?? "";
     const variedad = publicacion?.presentacion.variedad.nombreVariedad ?? "";
@@ -55,20 +73,96 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
         contenido.scrollTop = 0;
     }, [abierto, publicacion?.id, esWeb]);
 
+    useEffect(() => () => { solicitudRef.current++; }, [recibida]);
+
     function cerrar() {
+        solicitudRef.current++;
+        setFormulario(null);
+        setCargaPara(null);
+        cerrarNotificacion();
+        setGuardada(null);
         setFotoAmpliada(null);
         setFotoPreparada(null);
+        setConfirmacionPara(null);
         alCerrar();
     }
 
-    return (
-        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={cerrar} onOpen={() => {}} disableSwipeToOpen slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-modal": true, "aria-labelledby": tituloId } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
-            {publicacion && (
+    function solicitarCierre() {
+        if (eliminandoRef.current) return;
+        if (confirmando) {
+            setConfirmacionPara(null);
+            return;
+        }
+        cerrar();
+    }
+
+    async function eliminar() {
+        if (!publicacion || eliminandoRef.current || cargando || edicion) return;
+        const solicitud = ++solicitudRef.current;
+        eliminandoRef.current = true;
+        setEliminando(true);
+        cerrarNotificacion();
+        try {
+            const respuesta = await fetch(`/api/publicaciones/productor/${publicacion.publicacionProductorId}`, { method: "DELETE" });
+            const resultado = await respuesta.json().catch(() => ({}));
+            if (!respuesta.ok && respuesta.status !== 404) {
+                throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
+            }
+            const mensaje = respuesta.ok
+                ? (resultado.mensaje ?? "Publicación eliminada correctamente.")
+                : "La publicación ya había sido eliminada.";
+            if (solicitud === solicitudRef.current) cerrar();
+            alEliminada?.(mensaje);
+        } catch (error) {
+            if (solicitud === solicitudRef.current) {
+                setConfirmacionPara(null);
+                notificar(error instanceof Error ? error.message : "No se pudo conectar con el servidor.", "error");
+            }
+        } finally {
+            eliminandoRef.current = false;
+            setEliminando(false);
+        }
+    }
+
+    async function comenzarEdicion() {
+        if (!publicacion || cargando || eliminandoRef.current || confirmando) return;
+        const solicitud = ++solicitudRef.current;
+        setCargaPara(publicacion);
+        cerrarNotificacion();
+        try {
+            const respuesta = await fetch(`/api/publicaciones/productor/${publicacion.publicacionProductorId}`, { cache: "no-store" });
+            const resultado = await respuesta.json();
+            if (solicitud !== solicitudRef.current) return;
+            if (!respuesta.ok) {
+                notificar(resultado.errores?.join(" ") || "No se pudo cargar la edición.", "error");
+                return;
+            }
+            setFormulario({ original: publicacion, opciones: resultado.opciones });
+        } catch {
+            if (solicitud === solicitudRef.current) notificar("No se pudo cargar la edición. Intentá nuevamente.", "error");
+        } finally {
+            if (solicitud === solicitudRef.current) setCargaPara(null);
+        }
+    }
+
+    function guardar(nueva: PublicacionMiMercadoProductor) {
+        if (!recibida) return;
+        setFotoPreparada(`${nueva.id}-${nueva.foto ?? ""}`);
+        setGuardada({ original: recibida, nueva });
+        setFormulario(null);
+        notificar("Cambios guardados.", "success");
+        alGuardar?.(nueva);
+    }
+
+    return (<>
+        <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
+        <SwipeableDrawer anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={solicitarCierre} onOpen={() => {}} disableSwipeToOpen slotProps={{ paper: { className: styles.drawer, role: "dialog", "aria-modal": true, "aria-labelledby": tituloId } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
+            {publicacion && !edicion && (
                 <>
                     <div className={styles.tarjeta}>
                         <div className={styles.encabezado}>
                             <h2 className={styles.titulo} id={tituloId}>Detalle de publicación</h2>
-                            <button className={styles.cerrar} type="button" onClick={cerrar} aria-label="Cerrar consulta"><CloseIcon fontSize="small" /></button>
+                            <button className={styles.cerrar} type="button" onClick={solicitarCierre} disabled={eliminando} aria-label="Cerrar consulta"><CloseIcon fontSize="small" /></button>
                         </div>
                         <div ref={contenidoRef} className={styles.contenidoScrollable}>
                             <div className={styles.cabecera}>
@@ -91,12 +185,10 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                                 </div>
                             </div>
                             <dl className={styles.bloqueMedio}>
-                                {campos.map(([nombre, valor]) => (
-                                    <div key={nombre} className={styles.informacionDetallada}>
-                                        <dt className={styles.nombreInformacion}>{nombre}</dt>
-                                        <dd className={styles.valorInformacion}>{valor === "" ? "-" : valor}</dd>
-                                    </div>
-                                ))}
+                                {campos.map(([nombre, valor]) => <div key={nombre} className={styles.informacionDetallada}>
+                                    <dt className={styles.nombreInformacion}>{nombre}</dt>
+                                    <dd className={styles.valorInformacion}>{valor === "" ? "-" : valor}</dd>
+                                </div>)}
                                 <div className={styles.informacionDetallada}>
                                     <dt className={styles.nombreInformacion}>Actualización</dt>
                                     <dd className={styles.valorInformacion}><time dateTime={publicacion.fecha}>{fechaFormateada}</time></dd>
@@ -133,12 +225,14 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                                     </ul>
                                 )}
                             </section>
+                            {cargando && <p className={styles.ayuda} role="status">Cargando edición...</p>}
                         </div>
                         <div className={estilosAcciones.pie}>
-                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled title="Próximamente">Eliminar</button>
-                            <button className={estilosAcciones.guardar} type="button" disabled title="Próximamente">Editar</button>
+                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled={eliminando || cargando} onClick={() => { cerrarNotificacion(); setConfirmacionPara(publicacion); }}>Eliminar</button>
+                            <button className={estilosAcciones.guardar} type="button" disabled={cargando || eliminando || confirmando} onClick={comenzarEdicion}>Editar</button>
                         </div>
                     </div>
+                    <ConfirmModal abierto={confirmando} titulo="Eliminar publicación" descripcion={`¿Querés eliminar la publicación de ${especie}? Esta acción no se puede deshacer.`} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminandoRef.current) setConfirmacionPara(null); }} alConfirmar={() => void eliminar()} />
                     <Dialog open={abierto && fotoAmpliada === claveFoto && tieneFoto} onClose={() => setFotoAmpliada(null)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" } } }}>
                         <button type="button" aria-label="Cerrar foto ampliada" onClick={() => setFotoAmpliada(null)} className={`${styles.cerrar} ${styles.cerrarFoto}`}><CloseIcon fontSize="small" /></button>
                         <div className={styles.fotoAmpliada}>
@@ -148,5 +242,6 @@ export default function DrawerPublicacionProductor({ publicacion, alCerrar }: Pr
                 </>
             )}
         </SwipeableDrawer>
-    );
+        {publicacion && edicion && <DrawerEditarPublicacionProductor key={publicacion.id} publicacion={publicacion} opciones={edicion.opciones} alCerrar={() => setFormulario(null)} alGuardar={guardar} />}
+    </>);
 }
