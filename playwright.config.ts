@@ -11,12 +11,20 @@ for (const rol of ['OPERADOR', 'PRODUCTOR', 'INHABILITADO', 'ADMINISTRADOR', 'AD
 
 export default defineConfig({
   testDir: './tests',
-  webServer: {
-    command: 'node tests/bp-17/e2e-server.mjs',
-    url: 'http://127.0.0.1:3100/precios-referencia',
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: 'node tests/bp-17/e2e-server.mjs',
+      url: 'http://127.0.0.1:3100/precios-referencia',
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    {
+      command: 'node tests/bp-25/e2e-server.mjs',
+      url: 'http://127.0.0.1:3200/iniciar-sesion',
+      reuseExistingServer: false,
+      timeout: 180_000,
+    },
+  ],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -42,8 +50,15 @@ export default defineConfig({
     // Chrome de Escritorio como control base del motor Chromium
     {
       name: 'chromium',
-      testIgnore: /bp-(17|18)(?:[\\/]|\.spec\.ts)/,
+      testIgnore: /bp-(17|18|25)(?:[\\/]|\.spec\.ts)/,
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium-bp25',
+      testMatch: /bp-25[\\/]bp-25\.1\.spec\.ts/,
+      fullyParallel: false,
+      workers: 1,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3200' },
     },
     {
       name: 'chromium-bp17',
