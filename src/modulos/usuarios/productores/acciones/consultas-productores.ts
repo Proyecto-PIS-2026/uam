@@ -42,7 +42,8 @@ export async function obtenerProductoresDisponibles(): Promise<ProductorListado[
             cantidadProductos: publicaciones.length,
             ubicaciones: Array.from(new Set(publicaciones.flatMap((relacion) => relacion.ubicaciones.map((ubicacion) => ubicacion.nombreUbicacion)))),
         };
-    }).sort((primero, segundo) => primero.nombreFantasia.localeCompare(segundo.nombreFantasia, "es", { sensitivity: "base" }));
+    }).filter((productor) => productor.cantidadProductos > 0)
+        .sort((primero, segundo) => primero.nombreFantasia.localeCompare(segundo.nombreFantasia, "es", { sensitivity: "base" }));
 }
 
 export async function obtenerPerfilProductor(nombreFantasia: string): Promise<PerfilProductor | null> {

@@ -126,9 +126,26 @@ test.describe("BP-17.1 histórico de precios", () => {
     await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
   });
 
-  for (const id of [undefined, "abc", "0"]) {
-    test(`@new rechaza un producto inválido (${id ?? "sin identificador"})`, async ({ page }) => {
-      await page.goto(`/precios-historicos${id === undefined ? "" : `?species_id=${id}`}`);
+  test("@new permite elegir una especie al entrar sin identificador", async ({ page }) => {
+    await page.goto("/precios-historicos");
+    await expect(page.getByRole("heading", { name: "Histórico de precios", exact: true, level: 1 })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+    await expect(page.getByRole("main").getByRole("status")).toHaveText("Seleccioná una especie para consultar su histórico de precios.");
+    const consultar = page.getByRole("button", { name: "Consultar", exact: true });
+    await expect(consultar).toBeDisabled();
+
+    const especie = page.getByRole("combobox", { name: "Especie", exact: true });
+    await expect(especie).toBeEnabled();
+    await especie.click();
+    await page.getByRole("option", { name: "Acelga", exact: true }).click();
+    await expect(especie).toHaveText("Acelga");
+    await expect(consultar).toBeEnabled();
+    await expect(page).toHaveURL(/\/precios-historicos$/);
+  });
+
+  for (const id of ["abc", "0"]) {
+    test(`@new rechaza un producto inválido (${id})`, async ({ page }) => {
+      await page.goto(`/precios-historicos?species_id=${id}`);
       await expect(page.getByRole("main").getByRole("alert").filter({ visible: true })).toHaveText("Seleccioná un producto válido desde precios de referencia para consultar su histórico.");
     });
   }

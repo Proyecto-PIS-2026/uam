@@ -238,6 +238,25 @@ describe("MiMercado", () => {
     expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
   });
 
+  it("informa el fallo al abrir WhatsApp y mantiene el detalle abierto para reintentar", () => {
+    mocks.abrirWhatsApp.mockImplementationOnce(() => { throw new Error("No se pudo abrir WhatsApp"); });
+    renderMiMercado([crearPublicacion(52, 10, "Manzana")], 5, "Mercado Pérez & Hijos");
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Compartir en WhatsApp" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("No se pudo abrir WhatsApp.");
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toBeInTheDocument();
+    expect(mocks.abrirWhatsApp).toHaveBeenCalledOnce();
+    expect(mocks.solicitud).not.toHaveBeenCalled();
+    expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+    fireEvent.click(screen.getByRole("button", { name: "Compartir en WhatsApp" }));
+    expect(mocks.abrirWhatsApp).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toBeInTheDocument();
+  });
+
   it("actualiza la fecha del detalle abierto con la fecha guardada por el precio rápido", () => {
     renderMiMercado([crearPublicacion(52, 10, "Manzana")]);
     fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));

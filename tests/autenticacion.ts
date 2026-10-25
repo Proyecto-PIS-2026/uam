@@ -21,7 +21,7 @@ export async function iniciarSesionAdministrador(page: Page, credenciales: Crede
 
 export async function iniciarSesionProductor(page: Page, credenciales: Credenciales) {
   await enviarCredenciales(page, credenciales.usuario, credenciales.contrasena);
-  await expect(page).toHaveURL(/\/inicio$/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/mi-mercado\/productor$/, { timeout: 30_000 });
   await expect(page.getByRole("link", { name: "Mi mercado", exact: true }))
     .toHaveAttribute("href", "/mi-mercado/productor");
 }

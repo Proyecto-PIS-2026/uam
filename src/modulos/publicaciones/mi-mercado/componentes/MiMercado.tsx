@@ -307,7 +307,11 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
             <DrawerEditarPublicacion incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }}
             alCompartir={() => {
                 if (publicacionSeleccionada) {
-                    window.open(crearEnlaceWhatsApp(publicacionSeleccionada, nombreOperador, window.location.origin), "_blank", "noopener,noreferrer");
+                    try {
+                        window.open(crearEnlaceWhatsApp(publicacionSeleccionada, nombreOperador, window.location.origin), "_blank", "noopener,noreferrer");
+                    } catch {
+                        notificar("No se pudo abrir WhatsApp.", "error");
+                    }
                 }
             }}
             eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
