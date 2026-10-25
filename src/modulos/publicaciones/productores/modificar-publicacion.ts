@@ -1,3 +1,4 @@
+import { normalizarSeleccionPublicacion, validarCatalogosSeleccion, type SeleccionPublicacion } from "../seleccion-publicacion";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
@@ -11,13 +12,10 @@ type Cliente = Pick<typeof db, "orm">;
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
 
-export type CambiosPublicacionProductor = {
+export type CambiosPublicacionProductor = Omit<SeleccionPublicacion, "paisId"> & {
+    paisId?: number | null;
     precio: string | null;
     foto?: string | null;
-    presentacionId: number;
-    categoriaId: number;
-    calibreId: number;
-    paisId?: number;
     cantidadUnidades?: number | null;
     disponible?: boolean;
     ubicaciones: { nombreUbicacion: string; urlMaps: string }[];
@@ -52,14 +50,8 @@ function esUrlGoogleMaps(valor: string): boolean {
 function validarCambios(entrada: unknown): CambiosPublicacionProductor {
     if (!entrada || typeof entrada !== "object" || Array.isArray(entrada)) datosInvalidos("Los cambios no son válidos.");
     const datos = entrada as Record<string, unknown>;
-    for (const campo of ["presentacionId", "categoriaId", "calibreId"]) {
-        if (typeof datos[campo] !== "number" || !Number.isSafeInteger(datos[campo]) || (datos[campo] as number) <= 0 || (datos[campo] as number) > 2147483647) {
-            datosInvalidos("La presentación, categoría y calibre deben ser válidos.");
-        }
-    }
-    if (datos.paisId !== undefined && (typeof datos.paisId !== "number" || !Number.isSafeInteger(datos.paisId) || datos.paisId <= 0 || datos.paisId > 2147483647)) {
-        datosInvalidos("El país no es válido.");
-    }
+    const seleccion = normalizarSeleccionPublicacion(datos);
+    if (!seleccion.esValido) datosInvalidos(seleccion.errores.join(" "));
     if (datos.cantidadUnidades !== undefined && datos.cantidadUnidades !== null &&
         (typeof datos.cantidadUnidades !== "number" || !Number.isSafeInteger(datos.cantidadUnidades) || datos.cantidadUnidades < 0 || datos.cantidadUnidades > 2147483647)) {
         datosInvalidos("La cantidad de unidades debe ser un número entero entre 0 y 2147483647, o quedar sin informar.");
@@ -67,22 +59,22 @@ function validarCambios(entrada: unknown): CambiosPublicacionProductor {
     if (datos.disponible !== undefined && typeof datos.disponible !== "boolean") {
         datosInvalidos("La disponibilidad no es válida.");
     }
-    if (!precioPublicacionValido(datos.precio)) {
+    if (datos.precio !== undefined && !precioPublicacionValido(datos.precio)) {
         datosInvalidos(PRECIO_PUBLICACION_INVALIDO);
     }
     if (datos.foto !== undefined && datos.foto !== null && typeof datos.foto !== "string") datosInvalidos("La fotografía no es válida.");
-    if (!Array.isArray(datos.ubicaciones)) datosInvalidos("Las ubicaciones no son válidas.");
-    if (datos.ubicaciones.length > 20) datosInvalidos("Se permiten hasta 20 ubicaciones por publicación.");
-    const ubicaciones = datos.ubicaciones.map((ubicacion: unknown) => {
+    const entradaUbicaciones = datos.ubicaciones ?? [];
+    if (!Array.isArray(entradaUbicaciones)) datosInvalidos("Las ubicaciones no son válidas.");
+    if (entradaUbicaciones.length > 20) datosInvalidos("Se permiten hasta 20 ubicaciones por publicación.");
+    const ubicaciones = entradaUbicaciones.map((ubicacion: unknown) => {
         if (!ubicacion || typeof ubicacion !== "object" || Array.isArray(ubicacion)) datosInvalidos("La ubicación no es válida.");
         const { nombreUbicacion, urlMaps } = ubicacion as Record<string, unknown>;
         if (typeof nombreUbicacion !== "string" || !nombreUbicacion.trim() || nombreUbicacion.trim().length > 200) datosInvalidos("Cada ubicación debe tener un nombre de hasta 200 caracteres.");
         if (typeof urlMaps !== "string" || urlMaps.trim().length > 2048 || !esUrlGoogleMaps(urlMaps.trim())) datosInvalidos("Cada ubicación debe incluir un enlace válido de Google Maps de hasta 2048 caracteres.");
         return { nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim() };
     });
-    return { precio: normalizarPrecioPublicacion(datos.precio), foto: datos.foto as string | null | undefined,
-        presentacionId: datos.presentacionId as number, categoriaId: datos.categoriaId as number, calibreId: datos.calibreId as number,
-        paisId: datos.paisId as number | undefined, cantidadUnidades: datos.cantidadUnidades as number | null | undefined,
+    return { ...seleccion.seleccion, paisId: datos.paisId === undefined ? undefined : seleccion.seleccion.paisId, precio: normalizarPrecioPublicacion(datos.precio as string | null | undefined), foto: datos.foto as string | null | undefined,
+        cantidadUnidades: datos.cantidadUnidades as number | null | undefined,
         disponible: datos.disponible as boolean | undefined, ubicaciones };
 }
 
@@ -95,7 +87,7 @@ async function consultarPublicacion(publicacionProductorId: number, cliente: Cli
         .include("publicacion", (publicacion) => publicacion
             .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
             .include("presentacion", (presentacion) => presentacion.include("variedad", (variedad) => variedad.include("especie")))
-            .include("categoria").include("calibre"))
+            .include("especie").include("variedad").include("categoria").include("calibre"))
         .first();
 }
 
@@ -129,27 +121,19 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
                 .returnsRow({ id: "pg/int4@1" }).build());
             const relacion = await obtenerPublicacionProductorEditable(sesion, publicacionProductorId, tx);
             const publicacion = relacion.publicacion;
-            const presentacion = await tx.orm.public.Presentacion.where({ id: cambios.presentacionId })
-                .include("variedad", (variedad) => variedad.include("especie")).first();
-            if (!presentacion || !presentacion.presentacionActiva || !presentacion.variedad.variedadActiva || !presentacion.variedad.especie.especieActiva) {
-                datosInvalidos("La presentación seleccionada no está activa.");
-            }
-            const categoria = await tx.orm.public.Categoria.where({ id: cambios.categoriaId }).first();
-            if (!categoria || (categoria.especieId !== null && categoria.especieId !== presentacion.variedad.especieId)) {
-                datosInvalidos("La categoría no corresponde a la especie de la publicación.");
-            }
-            if (!await tx.orm.public.Calibre.where({ id: cambios.calibreId }).first()) datosInvalidos("El calibre no existe.");
-            if (cambios.paisId !== undefined && !await tx.orm.public.Pais.where({ id: cambios.paisId }).select("id").first()) {
-                datosInvalidos("El país no existe.");
+            const seleccionActual = { ...cambios, paisId: cambios.paisId === undefined ? relacion.paisId : cambios.paisId };
+            if (!await validarCatalogosSeleccion(tx, seleccionActual)) {
+                datosInvalidos("La selección contiene datos que ya no están disponibles o no corresponden a la especie.");
             }
 
             const propias = await tx.orm.public.PublicacionProductor.where({ productorId: relacion.productor.id })
-                .include("publicacion", (publicacion) => publicacion.select("presentacionId", "categoriaId", "calibreId"))
+                .include("publicacion", (publicacion) => publicacion.select("especieId", "variedadId", "presentacionId", "categoriaId", "calibreId"))
                 .all();
-            if (propias.some((otra) => otra.id !== relacion.id &&
+            if (propias.some((otra) => otra.id !== relacion.id && otra.paisId === seleccionActual.paisId &&
+                otra.publicacion.especieId === cambios.especieId && otra.publicacion.variedadId === cambios.variedadId &&
                 otra.publicacion.presentacionId === cambios.presentacionId &&
                 otra.publicacion.categoriaId === cambios.categoriaId && otra.publicacion.calibreId === cambios.calibreId)) {
-                datosInvalidos("Este Productor ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre.");
+                datosInvalidos("Este Productor ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país.");
             }
 
             let foto = cambios.foto === null ? null : publicacion.foto;
@@ -159,7 +143,7 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             }
             // temporal.updatedAt() renueva fecha en este UPDATE, también si sólo cambian ubicaciones.
             await tx.orm.public.Publicacion.where({ id: publicacion.id }).update({
-                precio: cambios.precio as PrecioDb, foto, presentacionId: cambios.presentacionId,
+                precio: cambios.precio as PrecioDb, foto, especieId: cambios.especieId, variedadId: cambios.variedadId, presentacionId: cambios.presentacionId,
                 categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,
                 ...(cambios.cantidadUnidades !== undefined ? { cantidadUnidades: cambios.cantidadUnidades as CantidadUnidadesDb } : {}),
                 ...(cambios.disponible !== undefined ? { publicacionDisponible: cambios.disponible } : {}),

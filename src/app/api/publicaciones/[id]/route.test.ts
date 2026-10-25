@@ -216,6 +216,7 @@ describe("DELETE /api/publicaciones/[id]", () => {
 });
 
 const cambiosEdicion = {
+    especieId: 6, variedadId: 7,
 	precio: "125",
 	foto: null,
 	categoriaId: 4,
@@ -312,7 +313,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 	});
 
 	it("acepta la edición sin campo foto para conservar la imagen actual", async () => {
-		const cambiosSinFoto = { precio: "125", categoriaId: 4, calibreId: 2, presentacionId: 8, paisId: 218, disponible: true };
+		const cambiosSinFoto = { especieId: 6, variedadId: 7, precio: "125", categoriaId: 4, calibreId: 2, presentacionId: 8, paisId: 218, disponible: true };
 		const respuesta = await PATCH(solicitudEdicion(cambiosSinFoto), contextoEdicion);
 		expect(respuesta.status).toBe(200);
 		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosSinFoto, null);
@@ -363,8 +364,8 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		);
 	});
 
-	it.each([undefined, null, "218", 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])(
-		"devuelve 400 para un país ausente o inválido: %s",
+	it.each(["218", -1, 1.5, Number.MAX_SAFE_INTEGER + 1])(
+		"devuelve 400 para un país inválido: %s",
 		async (paisId) => {
 			const respuesta = await PATCH(solicitudEdicion({ ...cambiosEdicion, paisId }), contextoEdicion);
 
@@ -376,6 +377,13 @@ describe("PATCH /api/publicaciones/[id]", () => {
 			expect(revalidatePath).not.toHaveBeenCalled();
 		},
 	);
+
+    it.each([undefined, null, 0, ""])("permite vaciar todos los datos opcionales: %j", async (vacio) => {
+        const cambios = { ...cambiosEdicion, variedadId: vacio, presentacionId: vacio, categoriaId: vacio, calibreId: vacio, paisId: vacio };
+        const respuesta = await PATCH(solicitudEdicion(cambios), contextoEdicion);
+        expect(respuesta.status).toBe(200);
+        expect(modificarPublicacionOperador).toHaveBeenCalledWith(10, 12, expect.objectContaining({ especieId: 6 }), null);
+    });
 
 	it("devuelve 400 cuando el país no existe", async () => {
 		vi.mocked(modificarPublicacionOperador).mockRejectedValue(new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El país no existe."));
@@ -441,7 +449,7 @@ describe("autorización de cambios de publicaciones", () => {
         obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Otro" });
         const formulario = new FormData();
-        formulario.set("cambios", JSON.stringify({ presentacionId: 1, categoriaId: 1, calibreId: 1, paisId: 1 }));
+        formulario.set("cambios", JSON.stringify({ especieId: 1, variedadId: 1, presentacionId: 1, categoriaId: 1, calibreId: 1, paisId: 1 }));
         const handler = metodo === "DELETE" ? DELETE : PATCH;
         const respuesta = await handler(new Request("http://localhost/api/publicaciones/15?operadorId=7", {
             method: metodo, ...(metodo === "PATCH" ? { body: formulario } : {}),

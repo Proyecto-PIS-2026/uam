@@ -69,7 +69,9 @@ export default function TarjetaPublicacionProductorAdmin({ publicacion, alConsul
                         ) : (
                             <span className={styles.consultarPrecio}>Sin precio</span>
                         )}
-                        <span className={styles.presentacionPrecio}>por {publicacion.presentacion}</span>
+                        {publicacion.presentacion?.trim() && publicacion.presentacion.trim() !== "-" && (
+                            <span className={styles.presentacionPrecio}>por {publicacion.presentacion.trim()}</span>
+                        )}
                     </div>
                 </div>
             </div>

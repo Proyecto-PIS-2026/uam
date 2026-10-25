@@ -159,6 +159,9 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                             <span className={styles.username}>
                                 {usuario.username}
                                 {usuario.solicitoRestablecimiento && (
+                                    <WarningAmberIcon fontSize="small" className={styles.iconoRestablecimiento} aria-hidden="true" />
+                                )}
+                                {usuario.solicitoRestablecimiento && (
                                     <span
                                         title="El usuario solicitó restablecer su contraseña"
                                         className={`${styles.indicadorRestablecimiento} ml-2 inline-block rounded bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning`}

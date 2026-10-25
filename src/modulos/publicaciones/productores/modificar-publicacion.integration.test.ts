@@ -18,7 +18,7 @@ let propietario: { id: number; usuarioId: number };
 let otroProductor: { id: number; usuarioId: number };
 let sesionPropietario: DatosSesion;
 let sesionAdministrador: DatosSesion;
-let paisId: number;
+let paisId: number | null;
 let cambiosIniciales: CambiosPublicacionProductor;
 let catalogoAlternativo: { especieId: number; variedadId: number; presentacionId: number; categoriaId: number; paisId: number };
 let elegida: PublicacionCreada;
@@ -32,7 +32,7 @@ async function leer(publicacion: PublicacionCreada) {
     const relacion = await db.orm.public.PublicacionProductor.where({ id: publicacion.publicacionProductorId })
         .include("publicacion", (publicacion) => publicacion.select(
             "id", "fecha", "precio", "foto", "tipoPublicacion", "cantidadUnidades", "publicacionActiva", "publicacionDisponible",
-            "presentacionId", "categoriaId", "calibreId",
+            "especieId", "variedadId", "presentacionId", "categoriaId", "calibreId",
         ))
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "publicacionId", "nombreUbicacion", "urlMaps")).first();
     if (!relacion) throw new Error("No se encontró la publicación creada para la prueba.");
@@ -65,7 +65,7 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         const [productores, relaciones, administrador] = await Promise.all([
             db.orm.public.Productor.select("id", "usuarioId").all(),
             db.orm.public.PublicacionProductor.include("publicacion", (publicacion) => publicacion
-                .select("tipoPublicacion", "presentacionId", "categoriaId", "calibreId")
+                .select("tipoPublicacion", "especieId", "variedadId", "presentacionId", "categoriaId", "calibreId")
                 .include("presentacion", (presentacion) => presentacion.select("presentacionActiva")
                     .include("variedad", (variedad) => variedad.select("variedadActiva", "especieId")
                         .include("especie", (especie) => especie.select("especieActiva"))))
@@ -74,6 +74,7 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         ]);
         const semilla = relaciones.find((relacion) => {
             const publicacion = relacion.publicacion;
+            if (!publicacion.presentacion || !publicacion.categoria) return false;
             const variedad = publicacion.presentacion.variedad;
             return publicacion.tipoPublicacion === "PRODUCTOR" && publicacion.presentacion.presentacionActiva
                 && variedad.variedadActiva && variedad.especie.especieActiva
@@ -94,6 +95,8 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         }
         cambiosIniciales = {
             precio: "100", foto: null,
+            especieId: semilla.publicacion.especieId,
+            variedadId: semilla.publicacion.variedadId,
             presentacionId: semilla.publicacion.presentacionId,
             categoriaId: semilla.publicacion.categoriaId,
             calibreId: calibresCreados[0],
@@ -123,6 +126,8 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
                     cantidadUnidades: 12,
                     publicacionActiva: true,
                     publicacionDisponible: true,
+                    especieId: cambiosIniciales.especieId,
+                    variedadId: cambiosIniciales.variedadId,
                     presentacionId: cambiosIniciales.presentacionId,
                     categoriaId: cambiosIniciales.categoriaId,
                     calibreId: indice === 1 ? calibresCreados[1] : cambiosIniciales.calibreId,
@@ -226,6 +231,8 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         const [otraAntes, ajenaAntes] = await Promise.all([leer(otraPropia), leer(ajena)]);
         const cambios = {
             ...cambiosIniciales,
+            especieId: catalogoAlternativo.especieId,
+            variedadId: catalogoAlternativo.variedadId,
             presentacionId: catalogoAlternativo.presentacionId,
             categoriaId: catalogoAlternativo.categoriaId,
             paisId: catalogoAlternativo.paisId,
@@ -239,16 +246,17 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         expect(despues).toMatchObject({
             paisId: catalogoAlternativo.paisId,
             publicacion: {
+                especieId: catalogoAlternativo.especieId,
+                variedadId: catalogoAlternativo.variedadId,
                 presentacionId: catalogoAlternativo.presentacionId, categoriaId: catalogoAlternativo.categoriaId,
                 cantidadUnidades: 0, publicacionDisponible: false, publicacionActiva: true,
             },
         });
         expect(resultado.publicacion).toMatchObject({
             paisId: catalogoAlternativo.paisId, cantidadUnidades: 0, publicacionDisponible: false,
-            presentacion: {
-                id: catalogoAlternativo.presentacionId,
-                variedad: { id: catalogoAlternativo.variedadId, especie: { id: catalogoAlternativo.especieId } },
-            },
+            especie: { id: catalogoAlternativo.especieId },
+            variedad: { id: catalogoAlternativo.variedadId },
+            presentacion: { id: catalogoAlternativo.presentacionId },
         });
         expect(await leer(otraPropia)).toEqual(otraAntes);
         expect(await leer(ajena)).toEqual(ajenaAntes);
@@ -294,6 +302,8 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
     it("serializa dos ediciones que intentan crear la misma combinación", async () => {
         const cambios = {
             ...cambiosIniciales,
+            especieId: catalogoAlternativo.especieId,
+            variedadId: catalogoAlternativo.variedadId,
             presentacionId: catalogoAlternativo.presentacionId, categoriaId: catalogoAlternativo.categoriaId,
             paisId: catalogoAlternativo.paisId, cantidadUnidades: 0, disponible: false,
             calibreId: calibresCreados[2],

@@ -1,12 +1,10 @@
-export type CambiosPublicacionOperador = {
+import type { SeleccionPublicacion } from "../seleccion-publicacion";
+
+export type CambiosPublicacionOperador = SeleccionPublicacion & {
     version: number;
     precio: string | null;
     cantidadUnidades?: number | null;
     foto?: string | null;
-    categoriaId: number;
-    calibreId: number;
-    presentacionId: number;
-    paisId: number;
     disponible: boolean;
 };
 
@@ -34,7 +32,7 @@ export type PublicacionParaEditar = Omit<CambiosPublicacionOperador, "version"> 
     publicacionOperadorId: number;
     publicacionId: number;
     especieId: number;
-    variedadId: number;
+    variedadId: number | null;
     especie: string;
     variedad: string;
     presentacion?: string;

@@ -105,7 +105,7 @@ describe("altaPublicacionProductor", () => {
         expect(await altaPublicacionProductor(datos)).toEqual({ esValido: true, id: 42, mensaje: "Publicación creada correctamente." });
         expect(mocks.ejecutar).toHaveBeenCalledExactlyOnceWith("bloqueo del productor");
         expect(mocks.ejecutar.mock.invocationCallOrder[0]).toBeLessThan(mocks.relaciones.mock.invocationCallOrder[0]);
-        expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, presentacionId: 4, categoriaId: 5, calibreId: 6 });
+        expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6 });
         expect(mocks.crearRelacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 42, productorId: 1, paisId: 7 });
         expect(mocks.crearUbicacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 74, nombreUbicacion: "Montevideo", urlMaps: "https://www.google.com/maps?q=-34.9%2C-56.2" });
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
@@ -124,15 +124,15 @@ describe("altaPublicacionProductor", () => {
     });
 
     it("avisa sobre un duplicado del mismo Productor antes de guardar", async () => {
-        mocks.relaciones.mockResolvedValue([{ publicacionId: 20 }]);
+        mocks.relaciones.mockResolvedValue([{ publicacionId: 20, paisId: 7 }]);
         mocks.coincidencias.mockResolvedValue([{ id: 20 }]);
-        expect(await altaPublicacionProductor(datos)).toEqual({ esValido: false, errores: ["Este Productor ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre."] });
+        expect(await altaPublicacionProductor(datos)).toEqual({ esValido: false, errores: ["Este Productor ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] });
         expect(mocks.crearPublicacion).not.toHaveBeenCalled();
         expect(mocks.crearUbicacion).not.toHaveBeenCalled();
     });
 
     it("permite una combinación que pertenece a otro Productor", async () => {
-        mocks.relaciones.mockResolvedValue([{ publicacionId: 10 }]);
+        mocks.relaciones.mockResolvedValue([{ publicacionId: 10, paisId: 7 }]);
         mocks.coincidencias.mockResolvedValue([{ id: 20 }]);
         expect(await altaPublicacionProductor(datos)).toMatchObject({ esValido: true });
     });
@@ -179,7 +179,7 @@ describe("altaPublicacionProductor", () => {
     });
 
     it("limpia la foto preparada cuando la combinación ya existe", async () => {
-        mocks.relaciones.mockResolvedValue([{ publicacionId: 20 }]);
+        mocks.relaciones.mockResolvedValue([{ publicacionId: 20, paisId: 7 }]);
         mocks.coincidencias.mockResolvedValue([{ id: 20 }]);
         await expect(altaPublicacionProductor({ ...datos, fotografia })).resolves.toMatchObject({ esValido: false });
         expect(mocks.crearPublicacion).not.toHaveBeenCalled();

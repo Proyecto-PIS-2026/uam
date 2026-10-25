@@ -217,6 +217,21 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.click(screen.getByRole("option", { name: valor }));
     };
 
+    it("incluye publicaciones con solo especie sin agregar opciones vacías a los filtros", () => {
+        const alFiltrar = vi.fn();
+        const minima: PublicacionListado = { ...publicaciones[0], id: 2, variedad: "", presentacion: "", categoria: "", calibre: "", codigoCalibre: "", pais: "", precio: null };
+        const disponibles = [...publicaciones, minima];
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={disponibles} especieFiltro="Manzana" alFiltrar={alFiltrar} />);
+
+        expect(alFiltrar).toHaveBeenLastCalledWith(disponibles);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Gala"]);
+        fireEvent.click(screen.getByRole("option", { name: "Gala" }));
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicaciones);
+        seleccionarFiltro("Variedad", "Todas");
+        expect(alFiltrar).toHaveBeenLastCalledWith(disponibles);
+    });
+
     it("ofrece las naves disponibles y consulta por su nombre exacto", () => {
         const alConsultar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} opcionesRemotas={publicaciones} especieFiltro="" navesDisponibles={["B", "Tinglado", "A", "A"]} alConsultar={alConsultar} />);

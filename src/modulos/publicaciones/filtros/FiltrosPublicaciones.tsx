@@ -149,7 +149,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === especie);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad))].sort(compararOpciones);
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad).filter(Boolean))].sort(compararOpciones);
     }, [opciones, especie]);
 
     // Publicaciones segun Especie, Variedad y Presentacion
@@ -173,7 +173,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.variedad === variedad);
 
-        return [...new Set(publicacionesBase.map((publicacion) =>  publicacion.presentacion))].sort(compararOpciones);
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.presentacion).filter(Boolean))].sort(compararOpciones);
     }, [opciones, especie, variedad]);
 
     // Opciones de Categoria disponibles segun Calibre
@@ -183,7 +183,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (calibre !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.calibre === calibre);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.categoria))].sort(compararOpciones);
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.categoria).filter(Boolean))].sort(compararOpciones);
     }, [publicacionesSegunJerarquia, calibre]);
 
     // Opciones de Calibre disponibles segun Categoria
@@ -192,7 +192,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (categoria !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.categoria === categoria);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.calibre))].sort(compararOpciones);
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.calibre).filter(Boolean))].sort(compararOpciones);
     }, [publicacionesSegunJerarquia, categoria]);
 
     // Obtener Publicaciones segun la jerarquia de filtros

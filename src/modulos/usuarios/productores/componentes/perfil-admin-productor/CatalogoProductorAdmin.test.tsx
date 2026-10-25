@@ -19,7 +19,7 @@ vi.mock("../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProdu
         alEliminada?: (mensaje: string) => void;
     }) => publicacion ? (
         <section role="dialog" aria-label="Detalle de publicación">
-            <h2>{publicacion.presentacion.variedad.especie.nombreEspecie}</h2>
+            <h2>{publicacion.especie.nombreEspecie}</h2>
             <p>{publicacion.pais}</p>
             {publicacion.ubicaciones.map((ubicacion) => <p key={ubicacion.id}>{ubicacion.nombreUbicacion}</p>)}
             <button type="button" onClick={alCerrar}>Cerrar consulta</button>

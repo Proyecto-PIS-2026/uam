@@ -25,7 +25,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 		const [publicaciones, presentaciones, variedades, especies, categorias, calibres, paises] = await Promise.all([
 			db.orm.public.Publicacion
 				.where((publicacion) => publicacion.id.in(ids))
-				.select("id", "fecha", "publicacionDisponible", "precio", "presentacionId", "categoriaId", "calibreId")
+				.select("id", "fecha", "publicacionDisponible", "precio", "especieId", "variedadId", "presentacionId", "categoriaId", "calibreId")
 				.all(),
 			db.orm.public.Presentacion.select("id", "nombrePresentacion", "variedadId").all(),
 			db.orm.public.Variedad.select("id", "nombreVariedad", "especieId").all(),
@@ -44,9 +44,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 		const relacionPorPublicacion = new Map(relaciones.map((item) => [item.publicacionId, item]));
 
 		const resultado = publicaciones.map((publicacion) => {
-			const presentacion = presentacionPorId.get(publicacion.presentacionId);
-			const variedad = presentacion && variedadPorId.get(presentacion.variedadId);
-			const especie = variedad && especiePorId.get(variedad.especieId);
+			const presentacion = publicacion.presentacionId === null ? undefined : presentacionPorId.get(publicacion.presentacionId);
+			const variedad = publicacion.variedadId === null ? undefined : variedadPorId.get(publicacion.variedadId);
+			const especie = especiePorId.get(publicacion.especieId);
 			const relacion = relacionPorPublicacion.get(publicacion.id);
 			return {
 				id: publicacion.id,
@@ -54,9 +54,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 				especie: especie?.nombreEspecie ?? "Sin especie",
 				variedad: variedad?.nombreVariedad ?? "Sin variedad",
 				presentacion: presentacion?.nombrePresentacion ?? "Sin presentación",
-				categoria: categoriaPorId.get(publicacion.categoriaId) ?? "Sin categoría",
-				calibre: calibrePorId.get(publicacion.calibreId) ?? "Sin calibre",
-				pais: relacion ? paisPorId.get(relacion.paisId) ?? "Sin país" : "Sin país",
+				categoria: (publicacion.categoriaId === null ? undefined : categoriaPorId.get(publicacion.categoriaId)) ?? "Sin categoría",
+				calibre: (publicacion.calibreId === null ? undefined : calibrePorId.get(publicacion.calibreId)) ?? "Sin calibre",
+				pais: relacion?.paisId ? paisPorId.get(relacion.paisId) ?? "Sin país" : "Sin país",
 				precio: publicacion.precio === null ? null : String(publicacion.precio),
 				disponible: publicacion.publicacionDisponible,
 			};

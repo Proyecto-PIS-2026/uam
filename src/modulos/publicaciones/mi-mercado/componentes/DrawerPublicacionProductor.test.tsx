@@ -68,15 +68,9 @@ const publicacion: PublicacionMiMercadoProductor = {
     publicacionActiva: true,
     publicacionDisponible: true,
     cantidadUnidades: 12,
-    presentacion: {
-        id: 111,
-        nombrePresentacion: "Cajón",
-        variedad: {
-            id: 11,
-            nombreVariedad: "Williams",
-            especie: { id: 1, nombreEspecie: "Pera", fotoEspecie: null },
-        },
-    },
+    especie: { id: 1, nombreEspecie: "Pera", fotoEspecie: null },
+        variedad: { id: 11, nombreVariedad: "Williams" },
+        presentacion: { id: 111, nombrePresentacion: "Cajón" },
     categoria: { id: 3, nombreCategoria: "Primera" },
     calibre: { id: 4, codigoCalibre: "G", nombreCalibre: "Grande" },
     ubicaciones: [{ id: 21, nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=Salto" }],
@@ -164,7 +158,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         await editar();
         expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Pera");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Especie/ }));
-        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Papa", "Banana", "Manzana", "Tomate", "Ajo", "Pera"]);
+        expect(screen.getAllByRole("option").filter((opcion) => opcion.getAttribute("aria-disabled") !== "true").map((opcion) => opcion.textContent)).toEqual(["Papa", "Banana", "Manzana", "Tomate", "Ajo", "Pera"]);
         expect(especies.map((opcion) => opcion.nombre)).toEqual(["Pera", "Tomate", "Ajo", "Banana", "Manzana", "Papa"]);
         fireEvent.click(screen.getByRole("option", { name: "Pera" }));
         expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Pera");
@@ -233,7 +227,8 @@ describe("DrawerPublicacionProductor: edición", () => {
             precio: "250",
             paisId: 2, pais: "Argentina", cantidadUnidades: 25, publicacionDisponible: false,
             fecha: "2026-10-21T15:00:00.000Z",
-            presentacion: { ...publicacion.presentacion, id: 121, nombrePresentacion: "Saco", variedad: { ...publicacion.presentacion.variedad, id: 12, nombreVariedad: "Packham" } },
+            variedad: { id: 12, nombreVariedad: "Packham" },
+            presentacion: { id: 121, nombrePresentacion: "Saco" },
             categoria: { id: 5, nombreCategoria: "Segunda" },
             calibre: { id: 8, codigoCalibre: "M", nombreCalibre: "Mediano" },
             ubicaciones: [{ id: 30, nombreUbicacion: "Nuevo retiro", urlMaps: "https://maps.app.goo.gl/retiro" }],
@@ -247,7 +242,8 @@ describe("DrawerPublicacionProductor: edición", () => {
         const selectores = screen.getAllByRole("combobox");
         fireEvent.change(await editar(), { target: { value: "250" } });
         await seleccionar("Variedad", "Packham");
-        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Saco");
+        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Sin especificar");
+        await seleccionar("Presentación", "Saco");
         expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent("Primera");
         await seleccionar("Presentación", "Saco");
         await seleccionar("País de origen", "Argentina");
@@ -264,7 +260,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         const { url, datos, cambios } = solicitudGuardado();
         expect(url).toBe("/api/publicaciones/productor/1042");
         expect(cambios).toEqual({
-            precio: "250", foto: "/pera.png", presentacionId: 121, categoriaId: 5, calibreId: 8,
+            especieId: 1, variedadId: 12, precio: "250", foto: "/pera.png", presentacionId: 121, categoriaId: 5, calibreId: 8,
             paisId: 2, cantidadUnidades: 25, disponible: false,
             ubicaciones: [{ nombreUbicacion: "Nuevo retiro", urlMaps: "https://maps.app.goo.gl/retiro" }],
         });
@@ -368,7 +364,9 @@ describe("DrawerPublicacionProductor: edición", () => {
         const inicial = tipoCategoria === "global" ? { ...publicacion, categoria: { id: 6, nombreCategoria: "General" } } : publicacion;
         const actualizada = {
             ...inicial,
-            presentacion: { id: 211, nombrePresentacion: "Bandeja de manzanas", variedad: { id: 21, nombreVariedad: "Red", especie: { id: 2, nombreEspecie: "Manzana", fotoEspecie: null } } },
+            especie: { id: 2, nombreEspecie: "Manzana", fotoEspecie: null },
+        variedad: { id: 21, nombreVariedad: "Red" },
+        presentacion: { id: 211, nombrePresentacion: "Bandeja de manzanas" },
             categoria: { id: 6, nombreCategoria: "General" },
         };
         mocks.fetch.mockResolvedValueOnce(respuesta({ opciones })).mockResolvedValueOnce(respuesta({ publicacion: actualizada }));
@@ -377,9 +375,9 @@ describe("DrawerPublicacionProductor: edición", () => {
 
         await seleccionar("Especie", "Manzana");
 
-        expect(screen.getByRole("combobox", { name: /^Variedad/ })).toHaveTextContent("Red");
-        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Bandeja de manzanas");
-        expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent("General");
+        expect(screen.getByRole("combobox", { name: /^Variedad/ })).toHaveTextContent("Sin especificar");
+        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Sin especificar");
+        expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent(tipoCategoria === "global" ? "General" : "Sin especificar");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Categoría/ }));
         expect(screen.getByRole("option", { name: "General" })).toBeInTheDocument();
         expect(screen.getByRole("option", { name: "Manzanas especiales" })).toBeInTheDocument();
@@ -393,30 +391,53 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.queryByRole("option", { name: "Packham" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "Red" }));
         await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+        await seleccionar("Presentación", "Bandeja de manzanas");
         fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         expect(solicitudGuardado().cambios).toEqual({
-            precio: "100", foto: null, presentacionId: 211, categoriaId: 6, calibreId: 4,
+            especieId: 2, variedadId: 21, precio: "100", foto: null, presentacionId: 211, categoriaId: 6, calibreId: 4,
             paisId: 1, cantidadUnidades: 12, disponible: true,
             ubicaciones: [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=Salto" }],
         });
         expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Manzana");
     });
 
-    it.each(["especie", "variedad"])("impide guardar una %s sin presentaciones y permite completar una selección válida", async (dependencia) => {
+    it.each(["especie", "variedad"])("permite guardar una %s sin presentaciones", async (dependencia) => {
         mocks.fetch.mockResolvedValueOnce(respuesta({ opciones })).mockResolvedValueOnce(respuesta({ publicacion }));
         mostrar();
         const precio = await editar();
         await seleccionar(dependencia === "especie" ? "Especie" : "Variedad", dependencia === "especie" ? "Durazno" : "Sin presentación");
-        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Seleccioná una opción");
+        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Sin especificar");
         fireEvent.submit(precio.closest("form")!);
-        expect(screen.getByRole("alert")).toHaveTextContent("Elegí una especie, variedad, presentación, categoría, calibre y país válidos.");
-        expect(mocks.fetch.mock.calls.some(([, config]) => config?.method === "PATCH")).toBe(false);
-        if (dependencia === "especie") await seleccionar("Especie", "Pera");
-        await seleccionar("Variedad", "Williams");
-        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(publicacion));
+        expect(solicitudGuardado().cambios).toMatchObject({
+            especieId: dependencia === "especie" ? 3 : 1,
+            variedadId: dependencia === "especie" ? null : 13,
+            presentacionId: null,
+        });
+    });
+
+    it("permite vaciar las cinco opciones y consultar una publicación con solo especie", async () => {
+        const actualizada = { ...publicacion, variedad: null, presentacion: null, categoria: null, calibre: null, paisId: null, pais: "", precio: null, cantidadUnidades: null, ubicaciones: [] };
+        mocks.fetch.mockResolvedValueOnce(respuesta({ opciones })).mockResolvedValueOnce(respuesta({ publicacion: actualizada }));
+        mostrar();
+        await editar();
+        for (const campo of ["Variedad", "Categoría", "Calibre", "País de origen"]) await seleccionar(campo, "Sin especificar");
+        fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "" } });
+        fireEvent.change(screen.getByLabelText("Unidades"), { target: { value: "" } });
+        expect(screen.getByRole("button", { name: "Confirmar" }).closest("form")!.checkValidity()).toBe(true);
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
+        expect(solicitudGuardado().cambios).toMatchObject({
+            especieId: 1, variedadId: null, presentacionId: null, categoriaId: null,
+            calibreId: null, paisId: null, precio: null, cantidadUnidades: null,
+        });
+        expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBeInTheDocument();
+        expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Pera");
+        for (const campo of ["Variedad", "Presentación", "Categoría", "Calibre", "País de origen"]) {
+            expect(screen.getByRole("combobox", { name: new RegExp('^' + campo) })).toHaveTextContent("Sin especificar");
+        }
     });
 
     it.each(["0", "2147483647"])("guarda el límite válido de unidades %s como número", async (valor) => {
@@ -484,7 +505,7 @@ describe("DrawerPublicacionProductor: edición", () => {
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         expect(solicitudGuardado().cambios).toEqual({
-            precio: null, foto: null, presentacionId: 111, categoriaId: 3, calibreId: 4,
+            especieId: 1, variedadId: 11, precio: null, foto: null, presentacionId: 111, categoriaId: 3, calibreId: 4,
             paisId: 1, cantidadUnidades: null, disponible: false,
             ubicaciones: [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=Salto" }],
         });

@@ -58,7 +58,7 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
             .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion"))
             .include("publicacion", (publicacion) => publicacion
                 .select("id", "foto", "precio", "fecha", "cantidadUnidades", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
-                .include("presentacion", (presentacion) => presentacion.include("variedad", (variedad) => variedad.include("especie")))
+                .include("especie").include("variedad").include("presentacion")
                 .include("categoria")
                 .include("calibre")))
         .first({ nombreFantasia });
@@ -79,13 +79,13 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
                 foto: publicacion.foto,
                 precio: publicacion.precio,
                 fecha: publicacion.fecha.toString(),
-                especie: publicacion.presentacion.variedad.especie.nombreEspecie,
-                variedad: publicacion.presentacion.variedad.nombreVariedad,
-                presentacion: publicacion.presentacion.nombrePresentacion,
+                especie: publicacion.especie.nombreEspecie,
+                variedad: publicacion.variedad?.nombreVariedad ?? "",
+                presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
                 cantidadUnidades: publicacion.cantidadUnidades,
-                categoria: publicacion.categoria.nombreCategoria,
-                calibre: publicacion.calibre.codigoCalibre,
-                pais: relacion.pais.nombrePais,
+                categoria: publicacion.categoria?.nombreCategoria ?? "",
+                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                pais: relacion.pais?.nombrePais ?? "",
             };
         }),
     };

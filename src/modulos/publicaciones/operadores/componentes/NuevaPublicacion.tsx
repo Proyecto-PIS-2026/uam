@@ -30,7 +30,7 @@ type Catalogos = {
     calibres: Opcion[];
     paises: Opcion[];
 };
-type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia"> & { precio: string; cantidadUnidades: string; fotografia: string };
+type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia" | "variedadId" | "presentacionId" | "categoriaId" | "calibreId" | "paisId"> & { precio: string; cantidadUnidades: string; fotografia: string; variedadId: number; presentacionId: number; categoriaId: number; calibreId: number; paisId: number };
 type NuevaPublicacionProps = {
     operadorId: number;
     incrementoPrecio?: number;
@@ -47,9 +47,9 @@ function CampoSelect({ nombre, valor, opciones, cambiar, deshabilitado = false }
     deshabilitado?: boolean;
 }) {
     return (
-        <TextField select label={nombre} value={valor || ""} onChange={(evento) => cambiar(Number(evento.target.value))} size="small" fullWidth required disabled={deshabilitado} className={drawerStyles.selectMui}
+        <TextField select label={nombre} value={valor || ""} onChange={(evento) => cambiar(Number(evento.target.value))} size="small" fullWidth required={nombre === "Especie"} disabled={deshabilitado} className={drawerStyles.selectMui}
             slotProps={{ select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } }}>
-            <MenuItem value="" disabled className={drawerStyles.opcionSelect}>Seleccioná {nombre.toLowerCase()}</MenuItem>
+            <MenuItem value="" disabled={nombre === "Especie"} className={drawerStyles.opcionSelect}>{nombre === "Especie" ? "Seleccioná especie" : "Sin especificar"}</MenuItem>
             {opciones.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={drawerStyles.opcionSelect}>{opcion.nombre}</MenuItem>)}
         </TextField>
     );
@@ -164,6 +164,11 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
         try {
             const datosProcesados = {
                 ...datos,
+                variedadId: datos.variedadId || null,
+                presentacionId: datos.presentacionId || null,
+                categoriaId: datos.categoriaId || null,
+                calibreId: datos.calibreId || null,
+                paisId: datos.paisId || null,
                 precio: normalizarPrecioPublicacion(datos.precio),
                 cantidadUnidades: datos.cantidadUnidades.trim() !== ""
                     ? parseInt(datos.cantidadUnidades, 10)

@@ -24,10 +24,9 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
                     "publicacionActiva",
                     "publicacionDisponible",
                 )
-                .include("presentacion", (pres) =>
-                    pres.include("variedad", (variedad) =>
-                        variedad.include("especie"))
-                )
+                .include("especie")
+                .include("variedad")
+                .include("presentacion")
                 .include("categoria")
                 .include("calibre")
         );

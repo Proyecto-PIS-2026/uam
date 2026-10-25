@@ -23,7 +23,9 @@ function relacion(publicacionActiva = true, publicacionDisponible = true, tipoPu
         publicacion: {
             id: 10, foto: null, precio: null, fecha: "2026-10-18T12:00:00Z", cantidadUnidades: 20,
             publicacionActiva, publicacionDisponible, tipoPublicacion,
-            presentacion: { nombrePresentacion: "KG", variedad: { nombreVariedad: "Valencia", especie: { nombreEspecie: "Naranja" } } },
+            especie: { nombreEspecie: "Naranja" },
+            variedad: { nombreVariedad: "Valencia" },
+            presentacion: { nombrePresentacion: "KG" },
             categoria: { nombreCategoria: "I" }, calibre: { codigoCalibre: "M" },
         },
     };

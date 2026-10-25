@@ -13,7 +13,7 @@ export default async function Page() {
         <div className="relative isolate flex-1 bg-background text-foreground">
             <main className="contenedor-pagina relative z-10 flex-1">
                 <div className="secciones-pagina relative z-10">
-                    <EncabezadoPagina titulo="Publicaciones" cantidad={publicaciones.length} subtitulo="publicaciones en la plataforma" />
+                    <EncabezadoPagina titulo="Mercado Productores" cantidad={publicaciones.length} subtitulo="publicaciones en la plataforma" />
                     <ContenedorPublicaciones publicaciones={publicaciones} />
                 </div>
             </main>

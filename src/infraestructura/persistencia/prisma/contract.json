@@ -462,6 +462,21 @@
                   "namespace": "public"
                 }
               },
+              "publicaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "especieId"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              },
               "variedades": {
                 "cardinality": "1:N",
                 "on": {
@@ -1234,7 +1249,7 @@
           "Publicacion": {
             "fields": {
               "calibreId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -1248,6 +1263,13 @@
                 }
               },
               "categoriaId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "especieId": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
@@ -1287,7 +1309,7 @@
                 }
               },
               "presentacionId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -1318,6 +1340,13 @@
                   "entityName": "TipoPublicacion",
                   "namespaceId": "public",
                   "plane": "domain"
+                }
+              },
+              "variedadId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
                 }
               },
               "version": {
@@ -1359,6 +1388,21 @@
                   "namespace": "public"
                 }
               },
+              "especie": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "especieId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Especie",
+                  "namespace": "public"
+                }
+              },
               "presentacion": {
                 "cardinality": "N:1",
                 "on": {
@@ -1373,6 +1417,21 @@
                   "model": "Presentacion",
                   "namespace": "public"
                 }
+              },
+              "variedad": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "variedadId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Variedad",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -1385,6 +1444,9 @@
                 },
                 "categoriaId": {
                   "column": "categoriaId"
+                },
+                "especieId": {
+                  "column": "especieId"
                 },
                 "fecha": {
                   "column": "fecha"
@@ -1409,6 +1471,9 @@
                 },
                 "tipoPublicacion": {
                   "column": "tipoPublicacion"
+                },
+                "variedadId": {
+                  "column": "variedadId"
                 },
                 "version": {
                   "column": "version"
@@ -1435,7 +1500,7 @@
                 }
               },
               "paisId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -1525,7 +1590,7 @@
                 }
               },
               "paisId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -1863,6 +1928,21 @@
                 },
                 "to": {
                   "model": "Presentacion",
+                  "namespace": "public"
+                }
+              },
+              "publicaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "variedadId"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
                   "namespace": "public"
                 }
               }
@@ -2758,7 +2838,7 @@
                 "calibreId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
-                  "nullable": false
+                  "nullable": true
                 },
                 "cantidadUnidades": {
                   "codecId": "pg/int4@1",
@@ -2766,6 +2846,11 @@
                   "nullable": true
                 },
                 "categoriaId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "especieId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
                   "nullable": false
@@ -2801,7 +2886,7 @@
                 "presentacionId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
-                  "nullable": false
+                  "nullable": true
                 },
                 "publicacionActiva": {
                   "codecId": "pg/bool@1",
@@ -2832,6 +2917,11 @@
                     "plane": "storage"
                   }
                 },
+                "variedadId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "version": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -2843,6 +2933,38 @@
                 }
               },
               "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "especieId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "especie"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "variedadId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "variedad"
+                  }
+                },
                 {
                   "source": {
                     "columns": [
@@ -2911,10 +3033,26 @@
                 },
                 {
                   "columns": [
+                    "especieId"
+                  ],
+                  "name": "publicacion_especieId_idx_23a2c94e",
+                  "prefix": "publicacion_especieId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "presentacionId"
                   ],
                   "name": "publicacion_presentacionId_idx_2981aeac",
                   "prefix": "publicacion_presentacionId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "variedadId"
+                  ],
+                  "name": "publicacion_variedadId_idx_33d5d76b",
+                  "prefix": "publicacion_variedadId_idx",
                   "unique": false
                 }
               ],
@@ -2944,7 +3082,7 @@
                 "paisId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
-                  "nullable": false
+                  "nullable": true
                 },
                 "publicacionId": {
                   "codecId": "pg/int4@1",
@@ -3048,7 +3186,7 @@
                 "paisId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
-                  "nullable": false
+                  "nullable": true
                 },
                 "productorId": {
                   "codecId": "pg/int4@1",
@@ -3384,7 +3522,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "6b31658ea64079e091b507d9944874ebee46bdc19fa80ccdc2a96259ebb04492"
+    "storageHash": "580baa18385f3be13bd65c632f572151ac3bed83620b4f21eb6d1f5f98c4b59a"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

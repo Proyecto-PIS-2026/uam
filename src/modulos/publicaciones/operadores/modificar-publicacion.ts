@@ -1,3 +1,4 @@
+import { normalizarSeleccionPublicacion, validarCatalogosSeleccion } from "../seleccion-publicacion";
 import { limpiarImagenPublicacionNoReferenciada } from "./limpiar-imagen-publicacion";
 import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
@@ -33,9 +34,11 @@ export async function modificarPublicacionOperador(
         throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La disponibilidad no es válida.");
     }
 
-    if (typeof cambios.paisId !== "number" || !Number.isSafeInteger(cambios.paisId) || cambios.paisId <= 0) {
-        throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El país no es válido.");
+    const seleccion = normalizarSeleccionPublicacion(cambios);
+    if (!seleccion.esValido) {
+        throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", seleccion.errores.join(" "));
     }
+    cambios = { ...cambios, ...seleccion.seleccion };
 
     if (cambios.precio !== null && typeof cambios.precio !== "string") {
         throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El precio no es válido.");
@@ -126,70 +129,25 @@ export async function modificarPublicacionOperador(
                 throw new ErrorEdicionPublicacion("CONFLICTO", "La publicación cambió en otra sesión. Cancelá la edición y revisá los datos actualizados antes de volver a guardar.");
             }
 
-            const presentacion = await tx.orm.public.Presentacion
-                .select("id", "presentacionActiva")
-                .include("variedad", (variedad) =>
-                    variedad
-                        .select("especieId", "variedadActiva")
-                        .include("especie", (especie) =>
-                            especie.select("especieActiva"),
-                        ),
-                )
-                .where({ id: cambios.presentacionId })
-                .first();
-
-            if (!presentacion) {
-                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La presentación no existe.");
-            }
-
-            if (!presentacion.presentacionActiva || !presentacion.variedad.variedadActiva || !presentacion.variedad.especie.especieActiva) {
-                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La presentación seleccionada no está activa.");
-            }
-
-            const categoria = await tx.orm.public.Categoria
-                .select("id", "especieId")
-                .where({ id: cambios.categoriaId })
-                .first();
-
-            if (!categoria) {
-                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La categoría no existe.");
-            }
-
-            if (categoria.especieId !== null && categoria.especieId !== presentacion.variedad.especieId) {
-                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La categoría no corresponde a la especie de la presentación.");
-            }
-
-            const calibre = await tx.orm.public.Calibre
-                .select("id")
-                .where({ id: cambios.calibreId })
-                .first();
-
-            if (!calibre) {
-                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El calibre no existe.");
-            }
-
-            const pais = await tx.orm.public.Pais
-                .select("id")
-                .where({ id: cambios.paisId })
-                .first();
-
-            if (!pais) {
-                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El país no existe.");
+            if (!await validarCatalogosSeleccion(tx, cambios)) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La selección contiene datos que ya no están disponibles o no corresponden a la especie.");
             }
 
             const relaciones = await tx.orm.public.PublicacionOperador.where({ operadorId: operador.id }).all();
             const idsDeOtrasPublicaciones = new Set(
-                relaciones.filter((relacion) => relacion.publicacionId !== vinculo.publicacionId)
+                relaciones.filter((relacion) => relacion.publicacionId !== vinculo.publicacionId && relacion.paisId === cambios.paisId)
                     .map((relacion) => relacion.publicacionId),
             );
             if (idsDeOtrasPublicaciones.size > 0) {
                 const coincidencias = await tx.orm.public.Publicacion.where({
+                    especieId: cambios.especieId,
+                    variedadId: cambios.variedadId,
                     presentacionId: cambios.presentacionId,
                     categoriaId: cambios.categoriaId,
                     calibreId: cambios.calibreId,
                 }).select("id").all();
                 if (coincidencias.some((coincidencia) => idsDeOtrasPublicaciones.has(coincidencia.id))) {
-                    throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre.");
+                    throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país.");
                 }
             }
 
@@ -204,6 +162,8 @@ export async function modificarPublicacionOperador(
                     precio: precioParaGuardar,
                     cantidadUnidades: cantidadUnidadesParaGuardar,
                     foto: fotoActual,
+                    especieId: cambios.especieId,
+                    variedadId: cambios.variedadId,
                     categoriaId: cambios.categoriaId,
                     calibreId: cambios.calibreId,
                     presentacionId: cambios.presentacionId,

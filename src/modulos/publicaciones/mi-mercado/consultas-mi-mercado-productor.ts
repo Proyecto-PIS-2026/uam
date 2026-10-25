@@ -20,8 +20,9 @@ async function consultarPublicacionesProductor(productorId: number) {
         .include("publicacion", (publicacion) =>
             publicacion
                 .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible")
-                .include("presentacion", (presentacion) =>
-                    presentacion.include("variedad", (variedad) => variedad.include("especie")))
+                .include("especie")
+                .include("variedad")
+                .include("presentacion")
                 .include("categoria")
                 .include("calibre"))
         .all();
@@ -36,35 +37,26 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
             id: publicacion.id,
             publicacionProductorId: relacion.id,
             paisId: relacion.paisId,
-            pais: relacion.pais.nombrePais,
+            pais: relacion.pais?.nombrePais ?? "",
             foto: publicacion.foto,
             precio: publicacion.precio === null ? null : String(publicacion.precio),
             fecha: publicacion.fecha.toString(),
             publicacionActiva: publicacion.publicacionActiva,
             publicacionDisponible: publicacion.publicacionDisponible,
             cantidadUnidades: publicacion.cantidadUnidades,
-            presentacion: {
-                id: publicacion.presentacion.id,
-                nombrePresentacion: publicacion.presentacion.nombrePresentacion,
-                variedad: {
-                    id: publicacion.presentacion.variedad.id,
-                    nombreVariedad: publicacion.presentacion.variedad.nombreVariedad,
-                    especie: {
-                        id: publicacion.presentacion.variedad.especie.id,
-                        nombreEspecie: publicacion.presentacion.variedad.especie.nombreEspecie,
-                        fotoEspecie: publicacion.presentacion.variedad.especie.fotoEspecie,
-                    },
-                },
+            especie: {
+                id: publicacion.especie.id,
+                nombreEspecie: publicacion.especie.nombreEspecie,
+                fotoEspecie: publicacion.especie.fotoEspecie,
             },
-            categoria: {
-                id: publicacion.categoria.id,
-                nombreCategoria: publicacion.categoria.nombreCategoria,
-            },
-            calibre: {
+            variedad: publicacion.variedad ? { id: publicacion.variedad.id, nombreVariedad: publicacion.variedad.nombreVariedad } : null,
+            presentacion: publicacion.presentacion ? { id: publicacion.presentacion.id, nombrePresentacion: publicacion.presentacion.nombrePresentacion } : null,
+            categoria: publicacion.categoria ? { id: publicacion.categoria.id, nombreCategoria: publicacion.categoria.nombreCategoria } : null,
+            calibre: publicacion.calibre ? {
                 id: publicacion.calibre.id,
                 codigoCalibre: publicacion.calibre.codigoCalibre,
                 nombreCalibre: publicacion.calibre.nombreCalibre,
-            },
+            } : null,
             ubicaciones: relacion.ubicaciones.map(({ id, nombreUbicacion, urlMaps }) => ({ id, nombreUbicacion, urlMaps })),
         };
 }

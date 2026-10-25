@@ -60,6 +60,22 @@ describe("NuevaPublicacion", () => {
         vi.unstubAllGlobals();
     });
 
+    it("permite publicar solo la especie y envía las opciones vacías como null", async () => {
+        renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Especie/ }));
+        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
+        const formulario = screen.getByRole("button", { name: "Confirmar" }).closest("form")!;
+        expect(formulario.checkValidity()).toBe(true);
+        fireEvent.submit(formulario);
+        await waitFor(() => expect(mocks.alCrear).toHaveBeenCalledOnce());
+        const envio = vi.mocked(fetch).mock.calls.find(([, config]) => config?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({
+            especieId: 2, variedadId: null, presentacionId: null, categoriaId: null,
+            calibreId: null, paisId: null, precio: null, cantidadUnidades: null,
+        });
+    });
+
     it("muestra el formulario del operador actual", async () => {
         renderDrawer();
         expect(screen.getByRole("heading", { name: "Nueva publicación" })).toBeInTheDocument();

@@ -599,6 +599,9 @@ async function main() {
   const { presentacionIds, categoriaIds, cantidadVariedades } =
     await crearCatalogo(consulta, conversiones, archivos);
   const operadorIds = await crearOperadores(fotosOperadores);
+  const clasificaciones = new Map((await prisma.orm.public.Presentacion
+    .include("variedad", (variedad) => variedad.select("id", "especieId"))
+    .all()).map((presentacion) => [presentacion.id, presentacion.variedad]));
 
   let conPrecio = 0;
   let sinPrecio = 0;
@@ -629,6 +632,8 @@ async function main() {
       cantidadUnidades: cantidadUnidadesDemo(indice, oferta.measureUnit),
       foto,
       tipoPublicacion: "OPERADOR",
+      especieId: clasificaciones.get(presentacionId)!.especieId,
+      variedadId: clasificaciones.get(presentacionId)!.id,
       presentacionId,
       categoriaId,
       calibreId,
@@ -703,6 +708,8 @@ async function main() {
       cantidadUnidades: oferta.quantity,
       foto: fotoGenerica(oferta.speciesName, archivos),
       tipoPublicacion: "PRODUCTOR",
+      especieId: clasificaciones.get(presentacionId)!.especieId,
+      variedadId: clasificaciones.get(presentacionId)!.id,
       presentacionId,
       categoriaId,
       calibreId,

@@ -108,7 +108,7 @@ vi.mock("./TarjetaPublicacion", () => ({
       data-operador={operadorId}
       data-incremento={incrementoPrecio}
     >
-      {pub.presentacion.variedad.nombreVariedad}
+      {pub.variedad?.nombreVariedad}
       <button type="button" onClick={() => alConsultar?.(pub)}>Consultar publicación {pub.id}</button>
       <button type="button" onClick={() => alPrecioActualizado?.(pub.id, Number(pub.precio) + incrementoPrecio, "2026-10-10T16:30:00Z")}>Confirmar precio rápido {pub.id}</button>
       <button type="button" onClick={() => alPrecioActualizado?.(pub.id, null, "2026-10-10T16:30:00Z")}>Quitar precio {pub.id}</button>
@@ -131,19 +131,13 @@ function crearPublicacion(
     fecha: "2026-10-03T15:00:00.000Z",
     publicacionActiva: true,
     publicacionDisponible: true,
-    presentacion: {
-      id,
-      nombrePresentacion: "Cajón",
-      variedad: {
-        id,
-        nombreVariedad: `Variedad ${id}`,
-        especie: {
+    especie: {
           id: especieId,
           nombreEspecie,
           fotoEspecie: null,
         },
-      },
-    },
+        variedad: { id, nombreVariedad: `Variedad ${id}` },
+        presentacion: { id, nombrePresentacion: "Cajón" },
     categoria: {
       id: 1,
       nombreCategoria: "Primera",
@@ -354,6 +348,7 @@ describe("MiMercado", () => {
     });
     const cambios: CambiosPublicacionOperador = {
       version: 1,
+      especieId: 20, variedadId: 23,
       precio: "150",
       foto: null,
       presentacionId: 22,
@@ -371,9 +366,8 @@ describe("MiMercado", () => {
     actualizada.foto = "/api/publicaciones/imagenes/52/pera.webp";
     actualizada.paisId = 55;
     actualizada.publicacionDisponible = false;
-    actualizada.presentacion.id = 22;
-    actualizada.presentacion.variedad.id = 23;
-    actualizada.presentacion.variedad.nombreVariedad = "Williams";
+    actualizada.presentacion = { id: 22, nombrePresentacion: "Cajón" };
+    actualizada.variedad = { id: 23, nombreVariedad: "Williams" };
     actualizada.categoria = { id: 2, nombreCategoria: "II" };
     actualizada.calibre = { id: 2, codigoCalibre: "G", nombreCalibre: "Grande" };
     mocks.cargarPublicaciones.mockResolvedValue([actualizada]);
@@ -429,7 +423,7 @@ describe("MiMercado", () => {
     });
     const cambios: CambiosPublicacionOperador = {
       version: 1,
-      precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+      especieId: 10, variedadId: 52, precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
     };
     const propsIniciales = obtenerPropsDrawer();
 
@@ -455,7 +449,7 @@ describe("MiMercado", () => {
 
     await act(async () => {
       await obtenerPropsDrawer().alGuardar(52, { version: 1,
-        precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+        especieId: 10, variedadId: 52, precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 
@@ -473,7 +467,7 @@ describe("MiMercado", () => {
 
     await act(async () => {
       await obtenerPropsDrawer().alGuardar(52, { version: 1,
-        precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+        especieId: 10, variedadId: 52, precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 
@@ -491,7 +485,7 @@ describe("MiMercado", () => {
 
     await act(async () => {
       await obtenerPropsDrawer().alGuardar(52, { version: 1,
-        precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+        especieId: 10, variedadId: 52, precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 

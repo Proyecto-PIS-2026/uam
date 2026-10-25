@@ -47,19 +47,19 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
             WHERE l."finContrato" IS NULL OR (l."finContrato" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date
         ), visibles AS (
             SELECT p.id, p.precio, p.fecha, p."cantidadUnidades",
-                e."nombreEspecie" AS especie, v."nombreVariedad" AS variedad,
-                pr."nombrePresentacion" AS presentacion, c."nombreCategoria" AS categoria,
-                ca."nombreCalibre" AS calibre, ca."codigoCalibre", pa."nombrePais" AS pais,
+                e."nombreEspecie" AS especie, coalesce(v."nombreVariedad", '') AS variedad,
+                coalesce(pr."nombrePresentacion", '') AS presentacion, coalesce(c."nombreCategoria", '') AS categoria,
+                coalesce(ca."nombreCalibre", '') AS calibre, coalesce(ca."codigoCalibre", '') AS "codigoCalibre", coalesce(pa."nombrePais", '') AS pais,
                 o.id AS "operadorId", o."nombreFantasia" AS "operadorNombreFantasia",
                 o."whatsApp" AS "operadorWhatsApp"
             FROM "publicacionOperador" po
             JOIN publicacion p ON p.id = po."publicacionId"
-            JOIN presentacion pr ON pr.id = p."presentacionId"
-            JOIN variedad v ON v.id = pr."variedadId"
-            JOIN especie e ON e.id = v."especieId"
-            JOIN categoria c ON c.id = p."categoriaId"
-            JOIN calibre ca ON ca.id = p."calibreId"
-            JOIN pais pa ON pa.id = po."paisId"
+            LEFT JOIN presentacion pr ON pr.id = p."presentacionId"
+            LEFT JOIN variedad v ON v.id = p."variedadId"
+            JOIN especie e ON e.id = p."especieId"
+            LEFT JOIN categoria c ON c.id = p."categoriaId"
+            LEFT JOIN calibre ca ON ca.id = p."calibreId"
+            LEFT JOIN pais pa ON pa.id = po."paisId"
             JOIN operador o ON o.id = po."operadorId"
             WHERE p."tipoPublicacion" = 'OPERADOR' AND p."publicacionActiva" = true AND p."publicacionDisponible" = true
               AND EXISTS (

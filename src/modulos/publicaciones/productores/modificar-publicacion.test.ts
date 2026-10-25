@@ -4,10 +4,10 @@ import { modificarPublicacionProductor, obtenerPublicacionProductorEditable } fr
 
 const mocks = vi.hoisted(() => {
     const consulta = () => ({ where: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(), include: vi.fn().mockReturnThis(), first: vi.fn(), all: vi.fn(), update: vi.fn(), deleteAll: vi.fn(), create: vi.fn() });
-    return { vinculo: consulta(), publicacion: consulta(), presentacion: consulta(), categoria: consulta(), calibre: consulta(), pais: consulta(), ubicacion: consulta(),
+    return { especie: consulta(), variedad: consulta(), vinculo: consulta(), publicacion: consulta(), presentacion: consulta(), categoria: consulta(), calibre: consulta(), pais: consulta(), ubicacion: consulta(),
         transaction: vi.fn(), execute: vi.fn(), rawSql: vi.fn(), guardarImagen: vi.fn(), eliminarImagen: vi.fn() };
 });
-const orm = { public: { PublicacionProductor: mocks.vinculo, Publicacion: mocks.publicacion, Presentacion: mocks.presentacion,
+const orm = { public: { Especie: mocks.especie, Variedad: mocks.variedad, PublicacionProductor: mocks.vinculo, Publicacion: mocks.publicacion, Presentacion: mocks.presentacion,
     Categoria: mocks.categoria, Calibre: mocks.calibre, Pais: mocks.pais, Ubicacion: mocks.ubicacion } };
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: {
     transaction: mocks.transaction, raw: { sql: mocks.rawSql }, orm: { public: { Publicacion: mocks.publicacion } },
@@ -17,7 +17,7 @@ vi.mock("../operadores/imagenes-publicacion", () => ({
 }));
 
 const sesion: DatosSesion = { usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 };
-const cambios = { precio: "125", foto: "foto-anterior.jpg", presentacionId: 8, categoriaId: 4, calibreId: 2,
+const cambios = { especieId: 6, variedadId: 7, precio: "125", foto: "foto-anterior.jpg", presentacionId: 8, categoriaId: 4, calibreId: 2,
     ubicaciones: [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=-34,-56" }] };
 const fotoNueva = "/api/publicaciones/imagenes/20/12345678-1234-4234-8234-123456789abc.webp";
 
@@ -27,6 +27,8 @@ function relacion() {
         ubicaciones: [{ id: 40, ...cambios.ubicaciones[0] }],
         publicacion: { id: 20, tipoPublicacion: "PRODUCTOR", foto: "foto-anterior.jpg", precio: "125", cantidadUnidades: 10,
             fecha: { toString: () => "2026-10-21T12:00:00Z" }, publicacionActiva: true, publicacionDisponible: true,
+            especie: { id: 6, nombreEspecie: "Manzana", fotoEspecie: null },
+            variedad: { id: 7, nombreVariedad: "Gala" },
             presentacion: { id: 8, variedadId: 7, nombrePresentacion: "Caja", variedad: { id: 7, nombreVariedad: "Gala",
                 especie: { id: 6, nombreEspecie: "Manzana", fotoEspecie: null } } },
             categoria: { id: 4, nombreCategoria: "Primera" }, calibre: { id: 2, codigoCalibre: "M", nombreCalibre: "Mediano" } } };
@@ -36,6 +38,8 @@ beforeEach(() => {
     vi.clearAllMocks();
     mocks.vinculo.first.mockResolvedValue(relacion());
     mocks.vinculo.all.mockResolvedValue([]);
+    mocks.especie.first.mockResolvedValue({ id: 6, especieActiva: true });
+    mocks.variedad.first.mockResolvedValue({ id: 7, especieId: 6, variedadActiva: true });
     mocks.presentacion.first.mockResolvedValue({ id: 8, variedadId: 7, presentacionActiva: true,
         variedad: { especieId: 6, variedadActiva: true, especie: { especieActiva: true } } });
     mocks.categoria.first.mockResolvedValue({ id: 4, especieId: 6 });
@@ -62,11 +66,11 @@ describe("edición de publicaciones de productores", () => {
         const resultado = await modificarPublicacionProductor(sesion, 12, cambios);
         expect(mocks.vinculo.where).toHaveBeenCalledWith({ id: 12 });
         expect(mocks.publicacion.where).toHaveBeenCalledExactlyOnceWith({ id: 20 });
-        expect(mocks.publicacion.update).toHaveBeenCalledExactlyOnceWith({ precio: "125", foto: "foto-anterior.jpg", presentacionId: 8, categoriaId: 4, calibreId: 2 });
+        expect(mocks.publicacion.update).toHaveBeenCalledExactlyOnceWith({ precio: "125", foto: "foto-anterior.jpg", especieId: 6, variedadId: 7, presentacionId: 8, categoriaId: 4, calibreId: 2 });
         expect(mocks.ubicacion.where).toHaveBeenCalledExactlyOnceWith({ publicacionId: 12 });
         expect(mocks.ubicacion.create).toHaveBeenCalledExactlyOnceWith({ ...cambios.ubicaciones[0], publicacionId: 12 });
         expect(resultado.publicacion).toMatchObject({ id: 20, publicacionProductorId: 12, paisId: 1, cantidadUnidades: 10, publicacionDisponible: true, fecha: "2026-10-21T12:00:00Z" });
-        expect(mocks.pais.first).not.toHaveBeenCalled();
+        expect(mocks.pais.where).toHaveBeenCalledWith({ id: 1 });
         expect(mocks.vinculo.update).not.toHaveBeenCalled();
         expect(mocks.transaction).toHaveBeenCalledOnce();
         expect(mocks.rawSql.mock.calls[0][0].join("?")).toContain("pg_advisory_xact_lock(1720, ?)");
@@ -88,7 +92,7 @@ describe("edición de publicaciones de productores", () => {
         expect(mocks.vinculo.update).toHaveBeenCalledExactlyOnceWith({ paisId: 2 });
         expect(mocks.vinculo.where.mock.calls.at(-2)?.[0]).toEqual({ id: 12 });
         expect(mocks.publicacion.update).toHaveBeenCalledExactlyOnceWith({
-            precio: "125", foto: "foto-anterior.jpg", presentacionId: 8, categoriaId: 4, calibreId: 2,
+            precio: "125", foto: "foto-anterior.jpg", especieId: 6, variedadId: 7, presentacionId: 8, categoriaId: 4, calibreId: 2,
             cantidadUnidades: 0, publicacionDisponible: false,
         });
         expect(resultado.publicacion).toMatchObject({ paisId: 2, pais: "Argentina", cantidadUnidades: 0, publicacionDisponible: false });
@@ -113,7 +117,7 @@ describe("edición de publicaciones de productores", () => {
     });
 
     it.each([
-        { paisId: 0 }, { paisId: -1 }, { paisId: 1.5 }, { paisId: 2147483648 }, { paisId: "2" }, { paisId: null },
+        { paisId: -1 }, { paisId: 1.5 }, { paisId: 2147483648 }, { paisId: "2" },
         { cantidadUnidades: -1 }, { cantidadUnidades: 1.5 }, { cantidadUnidades: 2147483648 }, { cantidadUnidades: "10" }, { cantidadUnidades: NaN }, { cantidadUnidades: true },
         { disponible: null }, { disponible: 0 }, { disponible: "false" },
     ])("rechaza los campos nuevos malformados antes de iniciar la transacción: %j", async (dato) => {
@@ -125,7 +129,7 @@ describe("edición de publicaciones de productores", () => {
         mocks.pais.first.mockResolvedValue(null);
 
         await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, paisId: 99 }, new File(["foto"], "foto.png", { type: "image/png" })))
-            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "El país no existe." });
+            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La selección contiene datos que ya no están disponibles o no corresponden a la especie." });
         expect(mocks.pais.where).toHaveBeenCalledWith({ id: 99 });
         expect(mocks.vinculo.update).not.toHaveBeenCalled();
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
@@ -165,7 +169,7 @@ describe("edición de publicaciones de productores", () => {
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
 
-    it.each(["0", "000", "1.5", "-1", "1e3", "10000000000", 125, undefined])("rechaza precio inválido %s antes de escribir", async (precio) => {
+    it.each(["0", "000", "1.5", "-1", "1e3", "10000000000", 125])("rechaza precio inválido %s antes de escribir", async (precio) => {
         await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, precio })).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
@@ -192,7 +196,7 @@ describe("edición de publicaciones de productores", () => {
     });
 
     it.each([
-        { presentacionId: 0 }, { categoriaId: "4" }, { calibreId: 1.1 }, { calibreId: 2147483648 }, { foto: 45 }, { ubicaciones: null },
+        { especieId: 0 }, { categoriaId: "4" }, { calibreId: 1.1 }, { calibreId: 2147483648 }, { foto: 45 }, { ubicaciones: "invalida" },
         { ubicaciones: [{ nombreUbicacion: " ", urlMaps: "https://maps.google.com" }] },
     ])("rechaza datos malformados %j", async (dato) => {
         await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, ...dato })).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
@@ -203,11 +207,13 @@ describe("edición de publicaciones de productores", () => {
         { caso: "otra especie con su categoría", especieId: 9, categoriaEspecieId: 9 },
         { caso: "otra especie con categoría general", especieId: 9, categoriaEspecieId: null },
     ])("permite cambiar a $caso", async ({ especieId, categoriaEspecieId }) => {
+        mocks.especie.first.mockResolvedValue({ id: especieId, especieActiva: true });
+        mocks.variedad.first.mockResolvedValue({ id: 70, especieId, variedadActiva: true });
         mocks.presentacion.first.mockResolvedValue({ id: 80, variedadId: 70, presentacionActiva: true,
             variedad: { especieId, variedadActiva: true, especie: { especieActiva: true } } });
         mocks.categoria.first.mockResolvedValue({ id: 40, especieId: categoriaEspecieId });
 
-        await modificarPublicacionProductor(sesion, 12, { ...cambios, presentacionId: 80, categoriaId: 40 });
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, especieId, variedadId: 70, presentacionId: 80, categoriaId: 40 });
 
         expect(mocks.presentacion.where).toHaveBeenCalledWith({ id: 80 });
         expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ presentacionId: 80, categoriaId: 40 }));
@@ -220,6 +226,10 @@ describe("edición de publicaciones de productores", () => {
         null,
     ])("rechaza una presentación inexistente o un catálogo inactivo", async (presentacion) => {
         mocks.presentacion.first.mockResolvedValue(presentacion);
+        if (presentacion) {
+            mocks.variedad.first.mockResolvedValue({ id: 7, ...presentacion.variedad });
+            mocks.especie.first.mockResolvedValue({ id: 6, ...presentacion.variedad.especie });
+        }
         await expect(modificarPublicacionProductor(sesion, 12, cambios)).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
@@ -229,7 +239,7 @@ describe("edición de publicaciones de productores", () => {
             variedad: { especieId: 9, variedadActiva: true, especie: { especieActiva: true } } });
 
         await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, presentacionId: 80, paisId: 2, cantidadUnidades: 0, disponible: false }))
-            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La categoría no corresponde a la especie de la publicación." });
+            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La selección contiene datos que ya no están disponibles o no corresponden a la especie." });
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
         expect(mocks.vinculo.update).not.toHaveBeenCalled();
         expect(mocks.ubicacion.deleteAll).not.toHaveBeenCalled();
@@ -254,9 +264,11 @@ describe("edición de publicaciones de productores", () => {
         mocks.presentacion.first.mockResolvedValue({ id: 80, variedadId: 70, presentacionActiva: true,
             variedad: { especieId: 9, variedadActiva: true, especie: { especieActiva: true } } });
         mocks.categoria.first.mockResolvedValue({ id: 40, especieId: 9 });
-        mocks.vinculo.all.mockResolvedValue([{ id: 13, publicacion: { presentacionId: 80, categoriaId: 40, calibreId: 2 } }]);
+        mocks.especie.first.mockResolvedValue({ id: 9, especieActiva: true });
+        mocks.variedad.first.mockResolvedValue({ id: 70, especieId: 9, variedadActiva: true });
+        mocks.vinculo.all.mockResolvedValue([{ id: 13, paisId: 2, publicacion: { especieId: 9, variedadId: 70, presentacionId: 80, categoriaId: 40, calibreId: 2 } }]);
 
-        await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, presentacionId: 80, categoriaId: 40, paisId: 2, cantidadUnidades: 0, disponible: false })).rejects.toMatchObject({
+        await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, especieId: 9, variedadId: 70, presentacionId: 80, categoriaId: 40, paisId: 2, cantidadUnidades: 0, disponible: false })).rejects.toMatchObject({
             codigo: "DATOS_INVALIDOS", message: expect.stringContaining("ya tiene una publicación"),
         });
         expect(mocks.vinculo.where).toHaveBeenCalledWith({ productorId: 3 });

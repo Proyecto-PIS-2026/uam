@@ -167,7 +167,7 @@ describe("Listado y navegación de productores", () => {
         await expect(PaginaPerfil({ params: Promise.resolve({ nombre: "Oculto" }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_NOT_FOUND");
     });
 
-    it("ofrece volver a publicaciones cuando el perfil se abre desde una publicación", async () => {
+    it("ofrece volver a Mercado Productores cuando el perfil se abre desde una publicación", async () => {
         render(
             await PaginaPerfil({
                 params: Promise.resolve({
@@ -179,6 +179,6 @@ describe("Listado y navegación de productores", () => {
             })
         );
         expect(mocks.perfil).toHaveBeenCalledWith(perfil.nombreFantasia);
-        expect(screen.getByRole("link", {name: "Volver al listado de publicaciones"})).toHaveAttribute("href", "/publicaciones-productor");
+        expect(screen.getByRole("link", {name: "Volver a Mercado Productores"})).toHaveAttribute("href", "/publicaciones-productor");
     });
 });

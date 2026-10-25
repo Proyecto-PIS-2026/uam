@@ -35,10 +35,10 @@ export default function TarjetaPublicacionSinOperador({publicacion, onClick}: Ta
                 <div className={styles.encabezado}>
                     <h3 className={styles.especie} title={nombreProducto}> {nombreProducto} </h3>
                     <p className={styles.informacionWeb}>
-                        <span className={styles.calibreCompleto}> {publicacion.calibre} </span>
-                        <span className={styles.codigoCalibre}> {publicacion.codigoCalibre} </span>
+                        <span className={styles.calibreCompleto}> {publicacion.calibre?.trim() || "-"} </span>
+                        <span className={styles.codigoCalibre}> {publicacion.codigoCalibre?.trim() || "-"} </span>
                         {" · Categoría "}
-                        {publicacion.categoria}
+                        {publicacion.categoria?.trim() || "-"}
                     </p>
                 </div>
                 <div className={styles.cuerpo}>
@@ -46,13 +46,13 @@ export default function TarjetaPublicacionSinOperador({publicacion, onClick}: Ta
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}> Calibre </span>
                             <span className={styles.chip}>
-                                <span className={styles.calibreCompleto}> {publicacion.calibre} </span>
-                                <span className={styles.codigoCalibre}> {publicacion.codigoCalibre} </span>
+                                <span className={styles.calibreCompleto}> {publicacion.calibre?.trim() || "-"} </span>
+                                <span className={styles.codigoCalibre}> {publicacion.codigoCalibre?.trim() || "-"} </span>
                             </span>
                         </div>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}> Cat. </span>
-                            <span className={styles.chip}> {publicacion.categoria} </span>
+                            <span className={styles.chip}> {publicacion.categoria?.trim() || "-"} </span>
                         </div>
                     </div>
                     <div className={styles.contenedorPrecio}>
@@ -61,7 +61,9 @@ export default function TarjetaPublicacionSinOperador({publicacion, onClick}: Ta
                         ) : (
                             <span className={styles.precio}> {formatoPrecio.format(publicacion.precio)} </span>
                         )}
-                        <span className={styles.presentacionPrecio} title={`por ${publicacion.presentacion}`}> por {publicacion.presentacion} </span>
+                        {publicacion.presentacion?.trim() && publicacion.presentacion.trim() !== "-" && (
+                            <span className={styles.presentacionPrecio} title={`por ${publicacion.presentacion.trim()}`}> por {publicacion.presentacion.trim()} </span>
+                        )}
                     </div>
                 </div>
             </div>

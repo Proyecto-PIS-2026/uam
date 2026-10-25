@@ -13,21 +13,24 @@ function crearPublicacion(): Publicacion {
         fecha: "2026-10-03T15:00:00.000Z",
         publicacionActiva: true,
         publicacionDisponible: true,
-        presentacion: {
-            id: 5,
-            nombrePresentacion: "Docena",
-            variedad: {
-                id: 6,
-                nombreVariedad: "-",
-                especie: { id: 7, nombreEspecie: "Acelga", fotoEspecie: null },
-            },
-        },
+        especie: { id: 7, nombreEspecie: "Acelga", fotoEspecie: null },
+            variedad: { id: 6, nombreVariedad: "-" },
+            presentacion: { id: 5, nombrePresentacion: "Docena" },
         categoria: { id: 1, nombreCategoria: "I" },
         calibre: { id: 2, codigoCalibre: "M", nombreCalibre: "12 PLANTAS" },
     };
 }
 
 describe("crearEnlaceWhatsApp", () => {
+    it("comparte una publicación con solo especie sin inventar atributos", () => {
+        const publicacion: Publicacion = { ...crearPublicacion(), variedad: null, presentacion: null, categoria: null, calibre: null, paisId: null, precio: null };
+        const mensaje = new URL(crearEnlaceWhatsApp(publicacion, "El Mercado", "https://mercado.example")).searchParams.get("text");
+
+        expect(mensaje).toContain("🌿 Acelga\n");
+        expect(mensaje).toContain("💰 Precio: Consultar\n");
+        expect(mensaje).not.toMatch(/Presentación:|Categoría:|Calibre:|undefined|null/);
+    });
+
     it("prepara el mensaje con los datos del producto y el perfil en el origen actual", () => {
         const nombreOperador = "Mercado Pérez & Hijos/Sur";
         const mensaje = [
@@ -50,7 +53,7 @@ describe("crearEnlaceWhatsApp", () => {
     it("incluye la variedad y Consultar cuando la publicación no tiene precio", () => {
         const publicacion = crearPublicacion();
         publicacion.precio = null;
-        publicacion.presentacion.variedad.nombreVariedad = "Verde";
+        publicacion.variedad!.nombreVariedad = "Verde";
 
         const mensaje = new URL(crearEnlaceWhatsApp(publicacion, "El Mercado", "https://otro.example")).searchParams.get("text");
 

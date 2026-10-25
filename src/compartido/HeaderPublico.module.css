@@ -205,6 +205,17 @@
     display: none;
 }
 
+.iconoMenuMobile {
+    flex-shrink: 0;
+    margin-right: var(--espacio-inline);
+}
+
+.etiquetaMenuMobile {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+}
+
 .overlayMenu {
     display: none;
     position: fixed;
@@ -311,11 +322,6 @@
             font-weight: 500;
             text-align: left;
             cursor: pointer;
-        }
-
-        .iconoPerfilMobile {
-            color: var(--color-primary);
-            font-size: 1.5rem !important;
         }
 
         .fotoPerfilMobile {

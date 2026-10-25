@@ -104,6 +104,7 @@ model Especie {
   variedades    Variedad[]
   categorias    Categoria[]
   historicoPrecios HistoricoPrecios?
+  publicaciones Publicacion[]
 
   @@map("especie")
 }
@@ -117,6 +118,7 @@ model Variedad {
   especieId      Int
   especie        Especie        @relation(fields:[especieId], references:[id])
   presentaciones Presentacion[]
+  publicaciones Publicacion[]
 
   @@map("variedad")
 }
@@ -197,12 +199,16 @@ model Publicacion {
   cantidadUnidades      Int?
   foto                  String?
   tipoPublicacion       TipoPublicacion
-  presentacionId        Int
-  presentacion          Presentacion         @relation(fields:[presentacionId], references:[id])
-  categoriaId           Int
-  categoria             Categoria            @relation(fields:[categoriaId], references:[id])
-  calibreId             Int
-  calibre               Calibre              @relation(fields:[calibreId], references:[id])
+  especieId             Int
+  especie               Especie              @relation(fields:[especieId], references:[id])
+  variedadId            Int?
+  variedad              Variedad?            @relation(fields:[variedadId], references:[id])
+  presentacionId        Int?
+  presentacion          Presentacion?        @relation(fields:[presentacionId], references:[id])
+  categoriaId           Int?
+  categoria             Categoria?           @relation(fields:[categoriaId], references:[id])
+  calibreId             Int?
+  calibre               Calibre?             @relation(fields:[calibreId], references:[id])
 
   @@map("publicacion")
 }
@@ -214,8 +220,8 @@ model PublicacionOperador {
   publicacion   Publicacion @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
   operadorId    Int
   operador      Operador    @relation(fields:[operadorId], references:[id])
-  paisId        Int
-  pais          Pais        @relation("PaisOperador", fields:[paisId], references:[id])
+  paisId        Int?
+  pais          Pais?       @relation("PaisOperador", fields:[paisId], references:[id])
 
   @@map("publicacionOperador")
 }
@@ -227,8 +233,8 @@ model PublicacionProductor {
   publicacion    Publicacion @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
   productorId    Int
   productor      Productor   @relation(fields:[productorId], references:[id])
-  paisId         Int
-  pais           Pais        @relation("PaisProductor", fields:[paisId], references:[id])
+  paisId         Int?
+  pais           Pais?       @relation("PaisProductor", fields:[paisId], references:[id])
   ubicaciones    Ubicacion[]
 
   @@map("publicacionProductor")

@@ -25,7 +25,7 @@ export default async function Page({ params, searchParams }: PageProps) {
     const { origen } = await searchParams;
     const desdePublicaciones = origen === "publicaciones";
     const hrefVolver = desdePublicaciones ? "/publicaciones" : "/operadores";
-    const textoVolver = desdePublicaciones ? "Volver al listado de publicaciones" : "Volver al listado de operadores";
+    const textoVolver = desdePublicaciones ? "Volver al Mercado" : "Volver al listado de operadores";
 
     if (sesion?.rol === "OPERADOR") {
         const operador = await obtenerOperadorActual();

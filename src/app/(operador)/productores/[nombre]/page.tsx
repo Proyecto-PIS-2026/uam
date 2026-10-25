@@ -19,7 +19,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     const { origen } = await searchParams;
     const desdePublicaciones = origen === "publicaciones";
     const hrefVolver = desdePublicaciones ? "/publicaciones-productor" : "/productores";
-    const textoVolver = desdePublicaciones ? "Volver al listado de publicaciones" : "Volver al listado de productores";
+    const textoVolver = desdePublicaciones ? "Volver a Mercado Productores" : "Volver al listado de productores";
 
     const contenido = (
         <main className="flex-1 bg-background font-sans text-foreground">

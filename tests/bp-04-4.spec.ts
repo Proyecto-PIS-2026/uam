@@ -101,7 +101,7 @@ test("BP-04.4 CA-1 CP-01: consultas públicas sin iniciar sesión", async ({ pag
   });
 
   await test.step("Consultar las publicaciones y el detalle de un producto", async () => {
-    await consultar("/publicaciones", "Publicaciones");
+    await consultar("/publicaciones", "Mercado");
 
     const publicacion = page.getByRole("button", { name: /^Ver detalles de / }).first();
     await expect(publicacion).toBeVisible();

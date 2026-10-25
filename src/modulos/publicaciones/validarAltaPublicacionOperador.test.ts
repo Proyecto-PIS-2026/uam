@@ -87,7 +87,7 @@ describe("validarAltaPublicacionOperador", () => {
 
 		expect(resultado).toEqual({
 			esValido: false,
-			errores: ["El campo operadorId es obligatorio.", "El campo especieId es obligatorio."],
+			errores: ["La especie es obligatoria y debe ser válida.", "El campo operadorId es obligatorio."],
 		});
 	});
 

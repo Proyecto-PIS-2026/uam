@@ -1,3 +1,4 @@
+import { validarCatalogosSeleccion } from "./seleccion-publicacion";
 import { db } from "../../infraestructura/persistencia/prisma/db";
 import { validarAltaPublicacionOperador } from "./validarAltaPublicacionOperador";
 import { normalizarPrecioPublicacion } from "./precio-publicacion";
@@ -14,25 +15,12 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 	if (!validacion.esValido) return validacion;
 
 	const datos = validacion.datos;
-	const [operador, variedad, presentacion, categoria, calibre, pais] = await Promise.all([
+	const [operador, catalogosValidos] = await Promise.all([
 		db.orm.public.Operador.where({ id: datos.operadorId }).first(),
-		db.orm.public.Variedad.where({ id: datos.variedadId }).first(),
-		db.orm.public.Presentacion.where({ id: datos.presentacionId }).first(),
-		db.orm.public.Categoria.where({ id: datos.categoriaId }).first(),
-		db.orm.public.Calibre.where({ id: datos.calibreId }).first(),
-		db.orm.public.Pais.where({ id: datos.paisId }).first(),
+		validarCatalogosSeleccion(db, datos),
 	]);
-
-	if (!operador || !variedad || !presentacion || !categoria || !calibre || !pais ||
-		variedad.especieId !== datos.especieId || presentacion.variedadId !== variedad.id ||
-		!presentacion.presentacionActiva || !variedad.variedadActiva ||
-		(categoria.especieId !== null && categoria.especieId !== datos.especieId)) {
+	if (!operador || !catalogosValidos) {
 		return { esValido: false, errores: ["La selección contiene datos que ya no están disponibles. Actualizá el formulario."] };
-	}
-
-	const especie = await db.orm.public.Especie.where({ id: datos.especieId }).first();
-	if (!especie?.especieActiva) {
-		return { esValido: false, errores: ["La especie ya no está disponible. Actualizá el formulario."] };
 	}
 
 	type Precio = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
@@ -59,14 +47,16 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 
 			const relaciones = await tx.orm.public.PublicacionOperador.where({ operadorId: operador.id }).all();
 			if (relaciones.length > 0) {
-				const ids = new Set(relaciones.map((relacion) => relacion.publicacionId));
+				const ids = new Set(relaciones.filter((relacion) => relacion.paisId === datos.paisId).map((relacion) => relacion.publicacionId));
 				const coincidencias = await tx.orm.public.Publicacion.where({
-					presentacionId: presentacion.id,
-					categoriaId: categoria.id,
-					calibreId: calibre.id,
+					especieId: datos.especieId,
+					variedadId: datos.variedadId,
+					presentacionId: datos.presentacionId,
+					categoriaId: datos.categoriaId,
+					calibreId: datos.calibreId,
 				}).select("id").all();
 				if (coincidencias.some((publicacion) => ids.has(publicacion.id))) {
-					return { esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre."] };
+					return { esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] };
 				}
 			}
 
@@ -77,14 +67,16 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 				precio,
 				foto: imagenCreada?.url ?? null,
 				cantidadUnidades: datos.cantidadUnidades,
-				presentacionId: presentacion.id,
-				categoriaId: categoria.id,
-				calibreId: calibre.id,
+				especieId: datos.especieId,
+				variedadId: datos.variedadId,
+				presentacionId: datos.presentacionId,
+				categoriaId: datos.categoriaId,
+				calibreId: datos.calibreId,
 			});
 			await tx.orm.public.PublicacionOperador.create({
 				publicacionId: publicacion.id,
 				operadorId: operador.id,
-				paisId: pais.id,
+				paisId: datos.paisId,
 			});
 			await notificarCambioPublicacion(tx, { operadorId: operador.id, publicacionId: publicacion.id });
 			return { esValido: true, id: publicacion.id, mensaje: "Publicación creada correctamente." };

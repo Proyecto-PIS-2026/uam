@@ -45,13 +45,13 @@ export default function TarjetaPublicacionConOperador({publicacion, onClick}: Ta
                     </p>
                     <p className={styles.informacionWeb}>
                         <span className={styles.calibreCompleto}>
-                            {publicacion.calibre}
+                            {publicacion.calibre?.trim() || "-"}
                         </span>
                         <span className={styles.codigoCalibre}>
-                            {publicacion.codigoCalibre}
+                            {publicacion.codigoCalibre?.trim() || "-"}
                         </span>
                         {" · Categoría "}
-                        {publicacion.categoria}
+                        {publicacion.categoria?.trim() || "-"}
                     </p>
                 </div>
                 <div className={styles.cuerpo}>
@@ -62,10 +62,10 @@ export default function TarjetaPublicacionConOperador({publicacion, onClick}: Ta
                             </span>
                             <span className={styles.chip}>
                                 <span className={styles.calibreCompleto}>
-                                    {publicacion.calibre}
+                                    {publicacion.calibre?.trim() || "-"}
                                 </span>
                                 <span className={styles.codigoCalibre}>
-                                    {publicacion.codigoCalibre}
+                                    {publicacion.codigoCalibre?.trim() || "-"}
                                 </span>
                             </span>
                         </div>
@@ -74,7 +74,7 @@ export default function TarjetaPublicacionConOperador({publicacion, onClick}: Ta
                                 Cat.
                             </span>
                             <span className={styles.chip}>
-                                {publicacion.categoria}
+                                {publicacion.categoria?.trim() || "-"}
                             </span>
                         </div>
                     </div>
@@ -93,9 +93,11 @@ export default function TarjetaPublicacionConOperador({publicacion, onClick}: Ta
                                     {formatoPrecio.format(publicacion.precio)}
                                 </span>
                             )}
-                            <span className={styles.presentacionPrecio} title={`por ${publicacion.presentacion}`}>
-                                por {publicacion.presentacion}
-                            </span>
+                            {publicacion.presentacion?.trim() && publicacion.presentacion.trim() !== "-" && (
+                                <span className={styles.presentacionPrecio} title={`por ${publicacion.presentacion.trim()}`}>
+                                    por {publicacion.presentacion.trim()}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

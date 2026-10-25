@@ -47,21 +47,13 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
         ),
     ).where((pp) =>
         pp.productor.some(),
-    ).where((pp) =>
-        pp.pais.some(),
     ).include("publicacion", (p) =>
-        p.select("id", "precio", "fecha", "foto", "cantidadUnidades", "tipoPublicacion").include("presentacion", (pr) =>
-            pr.select("nombrePresentacion").include("variedad", (v) =>
-                v.select("nombreVariedad").include("especie", (e) =>
-                    e.select("nombreEspecie")
-                )
-            )
-        ).include("categoria", (c) =>
-            c.select("nombreCategoria")
-        )
-        .include("calibre", (c) =>
-            c.select("nombreCalibre", "codigoCalibre")
-        )
+        p.select("id", "precio", "fecha", "foto", "cantidadUnidades", "tipoPublicacion")
+            .include("especie", (e) => e.select("nombreEspecie"))
+            .include("variedad", (v) => v.select("nombreVariedad"))
+            .include("presentacion", (pr) => pr.select("nombrePresentacion"))
+            .include("categoria", (c) => c.select("nombreCategoria"))
+            .include("calibre", (c) => c.select("nombreCalibre", "codigoCalibre"))
     ).include("productor", (p) =>
         p.select("id", "nombreFantasia", "fotoPerfil", "whatsApp")
     ).include("pais", (p) =>
@@ -74,25 +66,25 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
         const productor = fila.productor;
         const pais = fila.pais;
         const presentacion = p?.presentacion;
-        const variedad = presentacion?.variedad;
-        const especie = variedad?.especie;
+        const variedad = p?.variedad;
+        const especie = p?.especie;
         const categoria = p?.categoria;
         const calibre = p?.calibre;
         const tipoPublicacion = p?.tipoPublicacion;
-        if (!p || !productor || !pais || !presentacion || !variedad || !especie || !categoria || !calibre || tipoPublicacion !== "PRODUCTOR") return [];
+        if (!p || !productor || !especie || tipoPublicacion !== "PRODUCTOR") return [];
         return [{
             id: Number(p.id),
             precio: p.precio === null ? null : Number(p.precio),
             fecha: p.fecha.toString(),
             foto: p.foto,
             especie: especie.nombreEspecie,
-            variedad: variedad.nombreVariedad,
-            presentacion: presentacion.nombrePresentacion,
+            variedad: variedad?.nombreVariedad ?? "",
+            presentacion: presentacion?.nombrePresentacion ?? "",
             cantidadUnidades: p.cantidadUnidades === null ? null : Number(p.cantidadUnidades),
-            categoria: categoria.nombreCategoria,
-            calibre: calibre.nombreCalibre,
-            codigoCalibre: calibre.codigoCalibre,
-            pais: pais.nombrePais,
+            categoria: categoria?.nombreCategoria ?? "",
+            calibre: calibre?.nombreCalibre ?? "",
+            codigoCalibre: calibre?.codigoCalibre ?? "",
+            pais: pais?.nombrePais ?? "",
             tipoPublicacion,
             productor: {
                 id: Number(productor.id),

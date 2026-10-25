@@ -76,7 +76,7 @@ describe("DrawerPublicacion", () => {
         expect(screen.queryByRole("link", { name: /WhatsApp/i })).not.toBeInTheDocument();
     });
     it("oculta la variedad cuando es un guion", () => {
-        render(<DrawerPublicacionPerfil  publicacion={{ ...crearPublicacion(), variedad: "-" }} open onOpenChange={vi.fn()} />);
+        render(<DrawerPublicacionPerfil  publicacion={{ ...crearPublicacion(), variedad: "-", cantidadUnidades: 10 }} open onOpenChange={vi.fn()} />);
         expect(screen.getByText("Tomate")).toBeInTheDocument();
         expect(screen.queryByText("-")).not.toBeInTheDocument();
     });

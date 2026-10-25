@@ -48,15 +48,9 @@ const publicacionBase = {
     categoriaId: 3,
     calibreId: 4,
     tipoPublicacion: "PRODUCTOR",
-    presentacion: {
-        nombrePresentacion: "Cajón",
-        variedad: {
-            id: 12,
-            especieId: 5,
-            nombreVariedad: "Red Delicious",
-            especie: { nombreEspecie: "Manzana" },
-        },
-    },
+    especie: { id: 5, nombreEspecie: "Manzana" },
+            variedad: { id: 12, especieId: 5, nombreVariedad: "Red Delicious" },
+            presentacion: { nombrePresentacion: "Cajón" },
     categoria: { nombreCategoria: "I" },
     calibre: { codigoCalibre: "G" },
 };

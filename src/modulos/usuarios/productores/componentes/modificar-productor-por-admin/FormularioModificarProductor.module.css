@@ -42,30 +42,6 @@
     color: var(--color-titulo-pagina);
 }
 
-.encabezado::before {
-    content: "";
-    position: absolute;
-    top: -4.5rem;
-    right: 5rem;
-    width: 9rem;
-    height: 9rem;
-    border: 2rem solid rgb(255 255 255 / 6%);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.encabezado::after {
-    content: "";
-    position: absolute;
-    top: -3rem;
-    right: -2rem;
-    width: 14rem;
-    height: 14rem;
-    border: 3rem solid rgb(255 255 255 / 8%);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
 .titulo {
     position: relative;
     z-index: 1;

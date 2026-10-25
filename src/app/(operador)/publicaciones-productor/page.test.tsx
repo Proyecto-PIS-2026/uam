@@ -76,7 +76,7 @@ describe("Page de publicaciones de productores", () => {
         const encabezado = screen.getByTestId("encabezado-pagina");
         const contenedor = screen.getByTestId("contenedor-publicaciones");
 
-        expect(encabezado.getAttribute("data-titulo")).toBe("Publicaciones");
+        expect(encabezado.getAttribute("data-titulo")).toBe("Mercado Productores");
         expect(encabezado.getAttribute("data-cantidad")).toBe("2");
         expect(encabezado.getAttribute("data-subtitulo")).toBe("publicaciones en la plataforma");
         expect(contenedor.getAttribute("data-cantidad")).toBe("2");

@@ -1,6 +1,7 @@
 "use client";
 
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import HojasDecorativas from "@/compartido/HojasDecorativas";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -95,6 +96,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
                 </button>
 
                 <header className={styles.encabezado}>
+                    <HojasDecorativas />
                     <h1 className={styles.titulo}>
                         Modificar productor
                     </h1>

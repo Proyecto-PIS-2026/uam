@@ -1,17 +1,12 @@
+import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublicacion } from "./seleccion-publicacion";
 import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
 
-export type DatosAltaPublicacionProductor = {
+export type DatosAltaPublicacionProductor = SeleccionPublicacion & {
     productorId: number;
-    especieId: number;
-    variedadId: number;
-    presentacionId: number;
-    calibreId: number;
-    categoriaId: number;
-    paisId: number;
-    latitud: number;
-    longitud: number;
-    departamento: string;
-    nombreLugar: string | null;
+    latitud?: number | null;
+    longitud?: number | null;
+    departamento?: string | null;
+    nombreLugar?: string | null;
     disponibilidad: boolean;
     precio?: string | null;
     cantidadUnidades?: number | null;
@@ -43,26 +38,25 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
 
     const datos = valor as Record<string, unknown>;
     const errores: string[] = [];
-    const campos = ["productorId", "especieId", "variedadId", "presentacionId", "calibreId", "categoriaId", "paisId"] as const;
-    for (const campo of campos) {
-        if (typeof datos[campo] !== "number" || !Number.isSafeInteger(datos[campo]) || datos[campo] <= 0) {
-            errores.push(`El campo ${campo} es obligatorio.`);
-        }
-    }
-    if (typeof datos.latitud !== "number" || !Number.isFinite(datos.latitud) || datos.latitud < -90 || datos.latitud > 90) {
+    const seleccion = normalizarSeleccionPublicacion(datos);
+    if (!seleccion.esValido) errores.push(...seleccion.errores);
+    if (!idCatalogoValido(datos.productorId)) errores.push("El campo productorId es obligatorio.");
+    const hayUbicacion = [datos.latitud, datos.longitud, datos.departamento, datos.nombreLugar]
+        .some((valor) => valor !== undefined && valor !== null && valor !== "");
+    if (hayUbicacion && (typeof datos.latitud !== "number" || !Number.isFinite(datos.latitud) || datos.latitud < -90 || datos.latitud > 90)) {
         errores.push("La latitud no es válida.");
     }
-    if (typeof datos.longitud !== "number" || !Number.isFinite(datos.longitud) || datos.longitud < -180 || datos.longitud > 180) {
+    if (hayUbicacion && (typeof datos.longitud !== "number" || !Number.isFinite(datos.longitud) || datos.longitud < -180 || datos.longitud > 180)) {
         errores.push("La longitud no es válida.");
     }
-    if (typeof datos.departamento !== "string" || datos.departamento.trim() === "") {
+    if (hayUbicacion && (typeof datos.departamento !== "string" || datos.departamento.trim() === "")) {
         errores.push("El departamento de la ubicación no es válido.");
     }
-    if (datos.nombreLugar !== null && datos.nombreLugar !== undefined &&
+    if (datos.nombreLugar !== null && datos.nombreLugar !== undefined && datos.nombreLugar !== "" &&
         (typeof datos.nombreLugar !== "string" || datos.nombreLugar.trim() === "" || datos.nombreLugar.length > 300)) {
         errores.push("El nombre de la ubicación no es válido.");
     }
-    if (typeof datos.disponibilidad !== "boolean") errores.push("La disponibilidad no es válida.");
+    if (datos.disponibilidad !== undefined && typeof datos.disponibilidad !== "boolean") errores.push("La disponibilidad no es válida.");
     if (datos.precio !== undefined && !precioPublicacionValido(datos.precio)) {
         errores.push(PRECIO_PUBLICACION_INVALIDO);
     }
@@ -74,5 +68,6 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
         errores.push("La cantidad de unidades debe ser un número entero entre 0 y 2147483647.");
     }
     if (errores.length > 0) return { esValido: false, errores };
-    return { esValido: true, datos: datos as DatosAltaPublicacionProductor };
+    if (!seleccion.esValido) return seleccion;
+    return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true } as DatosAltaPublicacionProductor };
 }

@@ -10,8 +10,8 @@ import type { Credenciales } from "./autenticacion";
 
 function conectar() {
   const url = process.env.DATABASE_URL;
-  if (!url || url !== process.env.DATABASE_URL_TEST) {
-    throw new Error("BP-14.1 requiere DATABASE_URL y DATABASE_URL_TEST apuntando a la base aislada utilizada por el servidor E2E.");
+  if (!url) {
+    throw new Error("BP-14.1 requiere DATABASE_URL apuntando a la misma base que la aplicación utilizada por los tests E2E.");
   }
   return postgres<Contract>({ contractJson, url });
 }

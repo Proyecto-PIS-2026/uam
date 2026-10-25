@@ -163,7 +163,7 @@ describe("GET /api/publicaciones/operador/[id]", () => {
             fecha: new Date("2026-09-20"),
             publicacionDisponible: true,
             precio: 150,
-            presentacionId: 100,
+            especieId: 500, variedadId: 400, presentacionId: 100,
             categoriaId: 200,
             calibreId: 300,
             },

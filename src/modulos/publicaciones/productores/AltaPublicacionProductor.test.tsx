@@ -73,12 +73,42 @@ function comprobarFormularioVacio() {
     const galeria = screen.queryByLabelText("Fotografía desde galería");
     if (galeria) expect(galeria).toHaveValue("");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
 }
 
 describe("AltaPublicacionProductor", () => {
     beforeEach(() => { vi.clearAllMocks(); mocks.esWeb = true; prepararFetch(); });
     afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+    it("permite quitar una ubicación seleccionada antes de crear", async () => {
+        const fetchMock = prepararFetch();
+        await abrirAlta();
+        elegir("Especie", "Manzana");
+        fireEvent.click(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" }));
+        fireEvent.click(screen.getByRole("button", { name: "Usar ubicación" }));
+        fireEvent.click(screen.getByRole("button", { name: "Quitar ubicación" }));
+        expect(screen.queryByText("Ruta 5, Montevideo")).not.toBeInTheDocument();
+        enviarFormulario();
+        expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({ latitud: null, longitud: null, departamento: null, nombreLugar: null });
+    });
+
+    it("permite publicar solo la especie sin ubicación ni otros datos", async () => {
+        const fetchMock = prepararFetch();
+        await abrirAlta();
+        elegir("Especie", "Manzana");
+        const formulario = screen.getByRole("button", { name: "Confirmar" }).closest("form")!;
+        expect(formulario.checkValidity()).toBe(true);
+        enviarFormulario();
+        expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({
+            especieId: 2, variedadId: null, presentacionId: null, categoriaId: null,
+            calibreId: null, paisId: null, precio: null, cantidadUnidades: null,
+            latitud: null, longitud: null, departamento: null,
+        });
+    });
 
     it("indica que está cargando hasta recibir los catálogos", async () => {
         let resolver!: (respuesta: Response) => void;
@@ -150,7 +180,7 @@ describe("AltaPublicacionProductor", () => {
     it("publica para el Productor actual sin precio, cantidad ni fotografía", async () => {
         const fetchMock = prepararFetch();
         await abrirAlta();
-        expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
         completarFormulario(); enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
@@ -238,7 +268,7 @@ describe("AltaPublicacionProductor", () => {
         fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
         fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("");
-        expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
         expect(fetchMock.mock.calls.filter(([, opciones]) => opciones?.method === "POST")).toHaveLength(0);
     });
 

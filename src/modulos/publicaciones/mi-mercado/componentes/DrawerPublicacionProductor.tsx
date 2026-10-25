@@ -75,12 +75,12 @@ function crearBorrador(publicacion: PublicacionMiMercadoProductor): Borrador {
     return {
         precio: publicacion.precio === null ? "" : String(Number(publicacion.precio)),
         cantidadUnidades: publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades),
-        especieId: publicacion.presentacion.variedad.especie.id,
-        variedadId: publicacion.presentacion.variedad.id,
-        presentacionId: publicacion.presentacion.id,
-        categoriaId: publicacion.categoria.id,
-        calibreId: publicacion.calibre.id,
-        paisId: publicacion.paisId,
+        especieId: publicacion.especie.id,
+        variedadId: publicacion.variedad?.id ?? 0,
+        presentacionId: publicacion.presentacion?.id ?? 0,
+        categoriaId: publicacion.categoria?.id ?? 0,
+        calibreId: publicacion.calibre?.id ?? 0,
+        paisId: publicacion.paisId ?? 0,
         disponible: publicacion.publicacionDisponible,
         foto: publicacion.foto, archivo: null, vistaPrevia: null,
         ubicaciones: publicacion.ubicaciones.map(({ id, nombreUbicacion, urlMaps }) => ({ clave: id, nombreUbicacion, urlMaps })),
@@ -103,9 +103,10 @@ function Campo({ nombre, valor, opciones, nombreActual, cambiar, deshabilitado =
             ? [...opciones].sort((a, b) => compararPaisesPorPrioridad(a.nombre, b.nombre))
             : ordenarOpcionesPorNombre(opciones);
     return <TextField select label={nombre} value={valor} onChange={(evento) => cambiar?.(Number(evento.target.value))}
-        size="small" fullWidth required disabled={deshabilitado} className={estilosAcciones.selectMui}
+        size="small" fullWidth required={nombre === "Especie"} disabled={deshabilitado} className={estilosAcciones.selectMui}
         slotProps={{ select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } }}>
-        {!opciones.some((opcion) => opcion.id === valor) && <MenuItem value={valor} disabled className={estilosAcciones.opcionSelect}>{valor === 0 ? "Seleccioná una opción" : nombreActual}</MenuItem>}
+        <MenuItem value={0} disabled={nombre === "Especie"} className={estilosAcciones.opcionSelect}>{nombre === "Especie" ? "Seleccioná especie" : "Sin especificar"}</MenuItem>
+        {valor !== 0 && !opciones.some((opcion) => opcion.id === valor) && <MenuItem value={valor} disabled className={estilosAcciones.opcionSelect}>{nombreActual}</MenuItem>}
         {ordenadas.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={estilosAcciones.opcionSelect}>{opcion.nombre}</MenuItem>)}
     </TextField>;
 }
@@ -180,14 +181,14 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     const tieneFoto = Boolean(fotoVisible?.trim());
     const abierto = recibida !== null && (estado.fotoPreparada || !tieneFoto);
     const tituloId = publicacion ? `publicacion-productor-${publicacion.id}-titulo` : undefined;
-    const variedad = publicacion?.presentacion.variedad;
-    const especie = variedad?.especie;
+    const variedad = publicacion?.variedad;
+    const especie = publicacion?.especie;
     const especieId = borrador?.especieId ?? especie?.id;
     const variedadId = borrador?.variedadId ?? variedad?.id;
     const variedades = edicion?.opciones.variedades.filter((opcion) => opcion.especieId === especieId) ?? [];
     const presentaciones = edicion?.opciones.presentaciones.filter((opcion) => opcion.variedadId === variedadId) ?? [];
     const categorias = edicion?.opciones.categorias.filter((opcion) => opcion.especieId === null || opcion.especieId === especieId) ?? [];
-    const nombrePresentacion = borrador?.presentacionId === 0 ? "sin presentación" : presentaciones.find((opcion) => opcion.id === borrador?.presentacionId)?.nombre ?? publicacion?.presentacion.nombrePresentacion;
+    const nombrePresentacion = borrador?.presentacionId === 0 ? null : presentaciones.find((opcion) => opcion.id === borrador?.presentacionId)?.nombre ?? publicacion?.presentacion?.nombrePresentacion;
     const disponible = borrador?.disponible ?? publicacion?.publicacionDisponible;
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     const reemplazoFoto = <div className={estilosAcciones.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>;
@@ -248,24 +249,19 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     function cambiarEspecie(nuevaEspecieId: number) {
         if (!edicion || !borrador) return;
         const opciones = edicion.opciones;
-        const variedadesDeLaEspecie = opciones.variedades.filter((opcion) => opcion.especieId === nuevaEspecieId);
-        const primeraVariedad = variedadesDeLaEspecie.find((variedad) => opciones.presentaciones.some((presentacion) => presentacion.variedadId === variedad.id)) ?? variedadesDeLaEspecie[0];
-        const primeraPresentacion = opciones.presentaciones.find((opcion) => opcion.variedadId === primeraVariedad?.id);
         const categoriaActual = opciones.categorias.find((opcion) => opcion.id === borrador.categoriaId);
         const categoriaCompatible = categoriaActual?.especieId === null || categoriaActual?.especieId === nuevaEspecieId;
-        const primeraCategoria = opciones.categorias.find((opcion) => opcion.especieId === null || opcion.especieId === nuevaEspecieId);
         cambiar({
             especieId: nuevaEspecieId,
-            variedadId: primeraVariedad?.id ?? 0,
-            presentacionId: primeraPresentacion?.id ?? 0,
-            categoriaId: categoriaCompatible ? borrador.categoriaId : primeraCategoria?.id ?? 0,
+            variedadId: 0,
+            presentacionId: 0,
+            categoriaId: categoriaCompatible ? borrador.categoriaId : 0,
         });
     }
 
     function cambiarVariedad(nuevaVariedadId: number) {
         if (!edicion) return;
-        const primeraPresentacion = edicion.opciones.presentaciones.find((opcion) => opcion.variedadId === nuevaVariedadId);
-        cambiar({ variedadId: nuevaVariedadId, presentacionId: primeraPresentacion?.id ?? 0 });
+        cambiar({ variedadId: nuevaVariedadId, presentacionId: 0 });
     }
 
     function escribirCantidadUnidades(valor: string) {
@@ -326,11 +322,11 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         }
         const opciones = edicion.opciones;
         if (!opciones.especies.some((opcion) => opcion.id === borrador.especieId)
-            || !variedades.some((opcion) => opcion.id === borrador.variedadId)
-            || !presentaciones.some((opcion) => opcion.id === borrador.presentacionId)
-            || !categorias.some((opcion) => opcion.id === borrador.categoriaId)
-            || !opciones.calibres.some((opcion) => opcion.id === borrador.calibreId)
-            || !opciones.paises.some((opcion) => opcion.id === borrador.paisId)) {
+            || (borrador.variedadId !== 0 && !variedades.some((opcion) => opcion.id === borrador.variedadId))
+            || (borrador.presentacionId !== 0 && !presentaciones.some((opcion) => opcion.id === borrador.presentacionId))
+            || (borrador.categoriaId !== 0 && !categorias.some((opcion) => opcion.id === borrador.categoriaId))
+            || (borrador.calibreId !== 0 && !opciones.calibres.some((opcion) => opcion.id === borrador.calibreId))
+            || (borrador.paisId !== 0 && !opciones.paises.some((opcion) => opcion.id === borrador.paisId))) {
             setEstado((actual) => ({ ...actual, errores: ["Elegí una especie, variedad, presentación, categoría, calibre y país válidos."] }));
             return;
         }
@@ -338,8 +334,9 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         const cambios: CambiosPublicacionProductor = {
             precio: normalizarPrecioPublicacion(borrador.precio),
             cantidadUnidades: borrador.cantidadUnidades === "" ? null : Number(borrador.cantidadUnidades),
-            presentacionId: borrador.presentacionId, categoriaId: borrador.categoriaId, calibreId: borrador.calibreId,
-            paisId: borrador.paisId, disponible: borrador.disponible,
+            especieId: borrador.especieId, variedadId: borrador.variedadId || null,
+            presentacionId: borrador.presentacionId || null, categoriaId: borrador.categoriaId || null, calibreId: borrador.calibreId || null,
+            paisId: borrador.paisId || null, disponible: borrador.disponible,
             foto: borrador.foto,
             ubicaciones: borrador.ubicaciones.map(({ nombreUbicacion, urlMaps }) => ({ nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim() })),
         };
@@ -399,7 +396,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={solicitarCierre} arrastreDeshabilitado={ocupado || confirmando}
             slotProps={{ paper: { ref: panelRef, tabIndex: -1, className: estilosAcciones.panel, role: "dialog", "aria-modal": true, "aria-labelledby": tituloId } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
-            {publicacion && especie && variedad && <>
+            {publicacion && especie && <>
                 <header className={`${estilosAcciones.encabezado} ${estilosAcciones.encabezadoConAsa}`}>
                     <div className={estilosAcciones.bloqueSuperior}>
                         <h2 className={estilosAcciones.titulo} id={tituloId}>{editando ? "Editar publicación" : "Consulta de publicación"}</h2>
@@ -420,7 +417,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                             {editando && <small className={estilosAcciones.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
                         </div>
                         <div className={estilosAcciones.campo}>
-                            <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-unidades`}>Unidades ({nombrePresentacion})</label>
+                            <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-unidades`}>Unidades{nombrePresentacion ? ` (${nombrePresentacion})` : ""}</label>
                             <input className={estilosAcciones.entrada} id={`publicacion-productor-${publicacion.id}-unidades`} inputMode="numeric" maxLength={10}
                                 value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "Sin cantidad especificada"} readOnly={!editando} disabled={ocupado}
                                 onChange={(evento) => escribirCantidadUnidades(evento.target.value)} />
@@ -450,11 +447,11 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                         </div>
                         <div className={estilosAcciones.datosProducto} data-editando={editando}>
                             <Campo nombre="Especie" valor={borrador?.especieId ?? especie.id} opciones={edicion?.opciones.especies ?? []} nombreActual={especie.nombreEspecie} cambiar={cambiarEspecie} deshabilitado={!editando || ocupado} priorizarEspecies />
-                            <Campo nombre="Variedad" valor={borrador?.variedadId ?? variedad.id} opciones={variedades} nombreActual={variedad.nombreVariedad} cambiar={cambiarVariedad} deshabilitado={!editando || ocupado} />
-                            <Campo nombre="Presentación" valor={borrador?.presentacionId ?? publicacion.presentacion.id} opciones={presentaciones} nombreActual={publicacion.presentacion.nombrePresentacion} cambiar={(id) => cambiar({ presentacionId: id })} deshabilitado={!editando || ocupado} />
-                            <Campo nombre="País de origen" valor={borrador?.paisId ?? publicacion.paisId} opciones={edicion?.opciones.paises ?? []} nombreActual={publicacion.pais} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={!editando || ocupado} priorizarUruguay />
-                            <Campo nombre="Categoría" valor={borrador?.categoriaId ?? publicacion.categoria.id} opciones={categorias} nombreActual={publicacion.categoria.nombreCategoria} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={!editando || ocupado} />
-                            <Campo nombre="Calibre" valor={borrador?.calibreId ?? publicacion.calibre.id} opciones={edicion?.opciones.calibres ?? []} nombreActual={publicacion.calibre.nombreCalibre} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={!editando || ocupado} />
+                            <Campo nombre="Variedad" valor={borrador?.variedadId ?? variedad?.id ?? 0} opciones={variedades} nombreActual={variedad?.nombreVariedad ?? "Sin especificar"} cambiar={cambiarVariedad} deshabilitado={!editando || ocupado} />
+                            <Campo nombre="Presentación" valor={borrador?.presentacionId ?? publicacion.presentacion?.id ?? 0} opciones={presentaciones} nombreActual={publicacion.presentacion?.nombrePresentacion ?? "Sin especificar"} cambiar={(id) => cambiar({ presentacionId: id })} deshabilitado={!editando || ocupado} />
+                            <Campo nombre="País de origen" valor={borrador?.paisId ?? publicacion.paisId ?? 0} opciones={edicion?.opciones.paises ?? []} nombreActual={publicacion.pais || "Sin especificar"} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={!editando || ocupado} priorizarUruguay />
+                            <Campo nombre="Categoría" valor={borrador?.categoriaId ?? publicacion.categoria?.id ?? 0} opciones={categorias} nombreActual={publicacion.categoria?.nombreCategoria ?? "Sin especificar"} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={!editando || ocupado} />
+                            <Campo nombre="Calibre" valor={borrador?.calibreId ?? publicacion.calibre?.id ?? 0} opciones={edicion?.opciones.calibres ?? []} nombreActual={publicacion.calibre?.nombreCalibre ?? "Sin especificar"} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={!editando || ocupado} />
                         </div>
                         {borrador ? <UbicacionesEdicionProductor ubicaciones={borrador.ubicaciones} deshabilitado={ocupado} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} /> : <UbicacionesConsulta publicacion={publicacion} />}
                         {estado.errores.length > 0 && <div role="alert" className={estilosAcciones.error}>{estado.errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}

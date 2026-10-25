@@ -64,14 +64,7 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
                 "publicacionDisponible",
                 "tipoPublicacion"
             );
-            const conPresentacion = camposPublicacion.include(
-                "presentacion",
-                (consultaPresentacion) =>
-                    consultaPresentacion.include(
-                        "variedad",
-                        (consultaVariedad) => consultaVariedad.include("especie")
-                    )
-            );
+            const conPresentacion = camposPublicacion.include("especie").include("variedad").include("presentacion");
             const conCategoria = conPresentacion.include("categoria");
             const completo = conCategoria.include("calibre");
             return completo;
@@ -89,13 +82,13 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
                 foto: publicacion.foto,
                 precio: publicacion.precio,
                 fecha: publicacion.fecha.toString(),
-                especie: publicacion.presentacion.variedad.especie.nombreEspecie,
-                variedad: publicacion.presentacion.variedad.nombreVariedad,
-                presentacion: publicacion.presentacion.nombrePresentacion,
+                especie: publicacion.especie.nombreEspecie,
+                variedad: publicacion.variedad?.nombreVariedad ?? "",
+                presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
-                categoria: publicacion.categoria.nombreCategoria,
-                calibre: publicacion.calibre.codigoCalibre,
-                pais: completa.pais.nombrePais,
+                categoria: publicacion.categoria?.nombreCategoria ?? "",
+                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                pais: completa.pais?.nombrePais ?? "",
                 ubicaciones: completa.ubicaciones.map((ubicacion) => ({
                     id: ubicacion.id,
                     nombreUbicacion: ubicacion.nombreUbicacion,

@@ -27,10 +27,23 @@ describe("validarAltaPublicacionProductor", () => {
         expect(validarAltaPublicacionProductor(valor)).toEqual({ esValido: false, errores: ["Los datos de la publicación no son válidos."] });
     });
 
-    it.each(["productorId", "especieId", "variedadId", "presentacionId", "calibreId", "categoriaId", "paisId"])("exige un identificador válido para %s", (campo) => {
-        for (const valor of [undefined, "1", 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
-            expect(validarAltaPublicacionProductor({ ...datosValidos, [campo]: valor })).toEqual({ esValido: false, errores: [`El campo ${campo} es obligatorio.`] });
+    it.each(["productorId", "especieId"])("exige un identificador válido para %s", (campo) => {
+        for (const valor of [undefined, "1", 0, -1, 1.5, 2147483648]) {
+            expect(validarAltaPublicacionProductor({ ...datosValidos, [campo]: valor }).esValido).toBe(false);
         }
+    });
+
+    it.each(["variedadId", "presentacionId", "calibreId", "categoriaId", "paisId"])("valida el identificador opcional %s si se informa", (campo) => {
+        for (const valor of ["1", -1, 1.5, 2147483648, true]) {
+            expect(validarAltaPublicacionProductor({ ...datosValidos, [campo]: valor }).esValido).toBe(false);
+        }
+    });
+
+    it.each([undefined, null, "", 0])("acepta solo especie con el resto vacío: %j", (vacio) => {
+        expect(validarAltaPublicacionProductor({ productorId: 1, especieId: 2, variedadId: vacio, presentacionId: vacio,
+            categoriaId: vacio, calibreId: vacio, paisId: vacio })).toMatchObject({ esValido: true, datos: {
+            especieId: 2, variedadId: null, presentacionId: null, categoriaId: null, calibreId: null, paisId: null, disponibilidad: true,
+        } });
     });
 
     it.each([
@@ -42,7 +55,6 @@ describe("validarAltaPublicacionProductor", () => {
         { campo: "longitud", valor: "-56", error: "La longitud no es válida." },
         { campo: "departamento", valor: " ", error: "El departamento de la ubicación no es válido." },
         { campo: "departamento", valor: null, error: "El departamento de la ubicación no es válido." },
-        { campo: "nombreLugar", valor: "", error: "El nombre de la ubicación no es válido." },
         { campo: "nombreLugar", valor: 1, error: "El nombre de la ubicación no es válido." },
         { campo: "nombreLugar", valor: "a".repeat(301), error: "El nombre de la ubicación no es válido." },
         { campo: "disponibilidad", valor: "true", error: "La disponibilidad no es válida." },

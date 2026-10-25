@@ -83,9 +83,9 @@ function Campo({ nombre, valor, opciones: lista, cambiar, deshabilitado = false 
     nombre: string; valor: number; opciones: Opcion[]; cambiar: (id: number) => void; deshabilitado?: boolean;
 }) {
     return <TextField select label={nombre} value={valor || ""} onChange={(evento) => cambiar(Number(evento.target.value))}
-        size="small" fullWidth required disabled={deshabilitado} className={styles.selectMui}
+        size="small" fullWidth required={nombre === "Especie"} disabled={deshabilitado} className={styles.selectMui}
         slotProps={{ select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } }}>
-        <MenuItem value="" disabled>Seleccioná {nombre.toLowerCase()}</MenuItem>
+        <MenuItem value="" disabled={nombre === "Especie"}>{nombre === "Especie" ? "Seleccioná especie" : "Sin especificar"}</MenuItem>
         {lista.map((opcion) => <MenuItem key={opcion.id} value={opcion.id}>{opcion.nombre}</MenuItem>)}
     </TextField>;
 }
@@ -184,6 +184,11 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
             const { cantidad, ...datosSinCantidad } = datos;
             const datosParaGuardar = {
                 ...datosSinCantidad,
+                variedadId: datos.variedadId || null,
+                presentacionId: datos.presentacionId || null,
+                categoriaId: datos.categoriaId || null,
+                calibreId: datos.calibreId || null,
+                paisId: datos.paisId || null,
                 precio: normalizarPrecioPublicacion(datos.precio),
                 cantidadUnidades: cantidad === "" ? null : Number(cantidad),
             };
@@ -215,6 +220,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
                 <button type="button" className={styles.guardar} onClick={() => setMapaAbierto(true)} disabled={guardando}>
                     {datos.latitud === null || datos.longitud === null ? "Seleccionar ubicación de retiro" : "Cambiar ubicación"}
                 </button>
+                {datos.latitud !== null && datos.longitud !== null && <button type="button" className={styles.cancelar} onClick={() => cambiar({ latitud: null, longitud: null, departamento: null, nombreLugar: null })} disabled={guardando}>Quitar ubicación</button>}
                 {datos.departamento && <small className={styles.ayuda}>{datos.nombreLugar ? `${datos.nombreLugar}, ` : ""}{datos.departamento}</small>}
             </div>
             <div className="grid grid-cols-1 gap-[var(--espacio-controles)] sm:grid-cols-2">
@@ -229,7 +235,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
                 {!esWeb && <input ref={galeriaInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFoto} disabled={guardando} aria-label="Fotografía desde galería" />}
             </div></div>
             {errores.length > 0 && <div role="alert" className={styles.error}>{errores.map((error) => <p key={error}>{error}</p>)}</div>}
-        </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={guardando || leyendoFoto || datos.latitud === null || datos.longitud === null}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
+        </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={guardando || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
         <LeafletLocationPicker key={`${datos.latitud ?? "sin"}-${datos.longitud ?? "sin"}`} abierto={mapaAbierto} coordenadas={datos.latitud === null || datos.longitud === null || !datos.departamento ? null : { latitud: datos.latitud, longitud: datos.longitud, departamento: datos.departamento, nombreLugar: datos.nombreLugar }}
             alCerrar={() => setMapaAbierto(false)} alConfirmar={(ubicacion: UbicacionSeleccionada) => { cambiar(ubicacion); setMapaAbierto(false); }} />
     </DrawerDeslizable><NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;

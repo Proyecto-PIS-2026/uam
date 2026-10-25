@@ -64,21 +64,21 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const [fotoNueva, setFotoNueva] = useState<File | null>(null);
     const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
     const [especieIdEditado, setEspecieId] = useState(publicacion.especieId);
-    const [variedadIdEditado, setVariedadId] = useState(publicacion.variedadId);
-    const [categoriaIdEditado, setCategoriaId] = useState(publicacion.categoriaId);
-    const [calibreIdEditado, setCalibreId] = useState(publicacion.calibreId);
-    const [presentacionIdEditado, setPresentacionId] = useState(publicacion.presentacionId);
-    const [paisIdEditado, setPaisId] = useState(publicacion.paisId);
+    const [variedadIdEditado, setVariedadId] = useState(publicacion.variedadId ?? 0);
+    const [categoriaIdEditado, setCategoriaId] = useState(publicacion.categoriaId ?? 0);
+    const [calibreIdEditado, setCalibreId] = useState(publicacion.calibreId ?? 0);
+    const [presentacionIdEditado, setPresentacionId] = useState(publicacion.presentacionId ?? 0);
+    const [paisIdEditado, setPaisId] = useState(publicacion.paisId ?? 0);
     const [disponibleEditado, setDisponible] = useState(publicacion.disponible);
     const precio = editando ? precioEditado : (precioParaEdicion(publicacion.precio));
     const cantidadUnidades = editando ? cantidadUnidadesEditado : (publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
     const foto = editando ? fotoEditado : (publicacion.foto);
     const especieId = editando ? especieIdEditado : (publicacion.especieId);
-    const variedadId = editando ? variedadIdEditado : (publicacion.variedadId);
-    const categoriaId = editando ? categoriaIdEditado : (publicacion.categoriaId);
-    const calibreId = editando ? calibreIdEditado : (publicacion.calibreId);
-    const presentacionId = editando ? presentacionIdEditado : (publicacion.presentacionId);
-    const paisId = editando ? paisIdEditado : (publicacion.paisId);
+    const variedadId = editando ? variedadIdEditado : (publicacion.variedadId ?? 0);
+    const categoriaId = editando ? categoriaIdEditado : (publicacion.categoriaId ?? 0);
+    const calibreId = editando ? calibreIdEditado : (publicacion.calibreId ?? 0);
+    const presentacionId = editando ? presentacionIdEditado : (publicacion.presentacionId ?? 0);
+    const paisId = editando ? paisIdEditado : (publicacion.paisId ?? 0);
     const disponible = editando ? disponibleEditado : (publicacion.disponible);
     const [error, setError] = useState("");
     const inputFotoRef = useRef<HTMLInputElement>(null);
@@ -164,24 +164,18 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
 
     function cambiarEspecie(nuevaEspecieId: number) {
         if (bloqueado) return;
-        const variedadesDeLaEspecie = variedades.filter((opcion) => opcion.especieId === nuevaEspecieId);
-        const primeraVariedad = variedadesDeLaEspecie.find((variedad) => presentaciones.some((presentacion) => presentacion.variedadId === variedad.id)) ?? variedadesDeLaEspecie[0];
-        const primeraPresentacion = presentaciones.find((opcion) => opcion.variedadId === primeraVariedad?.id);
         const categoriaActual = categorias.find((opcion) => opcion.id === categoriaId);
         const categoriaCompatible = categoriaActual?.especieId === null || categoriaActual?.especieId === nuevaEspecieId;
-        const primeraCategoria = categorias.find((opcion) => opcion.especieId === null || opcion.especieId === nuevaEspecieId);
-
         setEspecieId(nuevaEspecieId);
-        setVariedadId(primeraVariedad?.id ?? 0);
-        setPresentacionId(primeraPresentacion?.id ?? 0);
-        if (!categoriaCompatible) setCategoriaId(primeraCategoria?.id ?? 0);
+        setVariedadId(0);
+        setPresentacionId(0);
+        if (!categoriaCompatible) setCategoriaId(0);
     }
 
     function cambiarVariedad(nuevaVariedadId: number) {
         if (bloqueado) return;
-        const primeraPresentacion = presentaciones.find((opcion) => opcion.variedadId === nuevaVariedadId);
         setVariedadId(nuevaVariedadId);
-        setPresentacionId(primeraPresentacion?.id ?? 0);
+        setPresentacionId(0);
     }
 
     function prepararEdicion() {
@@ -196,11 +190,11 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         setPrecio(precioParaEdicion(vigente.precio));
         setCantidadUnidades(vigente.cantidadUnidades == null ? "" : String(vigente.cantidadUnidades));
         setEspecieId(vigente.especieId);
-        setVariedadId(vigente.variedadId);
-        setPresentacionId(vigente.presentacionId);
-        setCategoriaId(vigente.categoriaId);
-        setCalibreId(vigente.calibreId);
-        setPaisId(vigente.paisId);
+        setVariedadId(vigente.variedadId ?? 0);
+        setPresentacionId(vigente.presentacionId ?? 0);
+        setCategoriaId(vigente.categoriaId ?? 0);
+        setCalibreId(vigente.calibreId ?? 0);
+        setPaisId(vigente.paisId ?? 0);
         setDisponible(vigente.disponible);
         setError("");
     }
@@ -226,11 +220,11 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             return;
         }
 
-        const variedadValida = variedadesDisponibles.some((opcion) => opcion.id === variedadId);
-        const presentacionValida = presentacionesDisponibles.some((opcion) => opcion.id === presentacionId);
-        const categoriaValida = categoriasDisponibles.some((opcion) => opcion.id === categoriaId);
-        const calibreValido = calibres.some((opcion) => opcion.id === calibreId);
-        const paisValido = paises.some((opcion) => opcion.id === paisId);
+        const variedadValida = variedadId === 0 || variedadesDisponibles.some((opcion) => opcion.id === variedadId);
+        const presentacionValida = presentacionId === 0 || presentacionesDisponibles.some((opcion) => opcion.id === presentacionId);
+        const categoriaValida = categoriaId === 0 || categoriasDisponibles.some((opcion) => opcion.id === categoriaId);
+        const calibreValido = calibreId === 0 || calibres.some((opcion) => opcion.id === calibreId);
+        const paisValido = paisId === 0 || paises.some((opcion) => opcion.id === paisId);
         if (!especieSeleccionada || !variedadValida || !presentacionValida || !categoriaValida || !calibreValido || !paisValido) {
             setError("Elegí una especie, variedad, presentación, categoría, calibre y país válidos.");
             return;
@@ -252,10 +246,12 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             cantidadFinal === cantidadOriginal &&
             foto === publicacion.foto &&
             fotoNueva === null &&
-            categoriaId === publicacion.categoriaId &&
-            calibreId === publicacion.calibreId &&
-            presentacionId === publicacion.presentacionId &&
-            paisId === publicacion.paisId &&
+            especieId === publicacion.especieId &&
+            variedadId === (publicacion.variedadId ?? 0) &&
+            categoriaId === (publicacion.categoriaId ?? 0) &&
+            calibreId === (publicacion.calibreId ?? 0) &&
+            presentacionId === (publicacion.presentacionId ?? 0) &&
+            paisId === (publicacion.paisId ?? 0) &&
             disponible === publicacion.disponible
 
         if(sinCambios) {
@@ -273,17 +269,26 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             precio: precioNuevo,
             cantidadUnidades: cantidadFinal,
             foto: foto === publicacion.foto ? undefined : foto,
-            categoriaId,
-            calibreId,
-            presentacionId,
-            paisId,
+            especieId,
+            variedadId: variedadId || null,
+            categoriaId: categoriaId || null,
+            calibreId: calibreId || null,
+            presentacionId: presentacionId || null,
+            paisId: paisId || null,
             disponible,
         };
         alIniciarGuardado();
         setGuardando(true);
         try {
             await alGuardar(publicacion.publicacionOperadorId, cambios, fotoNueva);
-            setGuardada({ origen: recibida, datos: { ...publicacion, ...cambios, version: cambios.version + 1, foto } });
+            setGuardada({ origen: recibida, datos: {
+                ...publicacion, ...cambios, version: cambios.version + 1, foto,
+                especie: especieSeleccionada?.nombre ?? publicacion.especie,
+                variedad: variedadSeleccionada?.nombre ?? "",
+                presentacion: presentaciones.find((opcion) => opcion.id === presentacionId)?.nombre ?? "",
+                categoria: categorias.find((opcion) => opcion.id === categoriaId)?.nombre ?? "",
+                calibre: calibres.find((opcion) => opcion.id === calibreId)?.nombre ?? "",
+            } });
             if (modoInicial === "consulta") {
                 setFotoNueva(null);
                 setEditando(false);
@@ -296,7 +301,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             setGuardando(false);
         }
     }
-    const presentacionActual = presentaciones.find(p => p.id === presentacionId)?.nombre || publicacion.presentacion;
+    const presentacionActual = presentacionId ? presentaciones.find(p => p.id === presentacionId)?.nombre || publicacion.presentacion : null;
     const campoPrecio = (
         <div key="precio" className={styles.campo}>
             <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
@@ -352,35 +357,36 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 </TextField>
             </div>
             <div className={styles.campo}>
-                <TextField select label="Variedad" id={`${idBase}-variedad`} value={!editando || variedadesDisponibles.some((opcion) => opcion.id === variedadId) ? variedadId : ""} onChange={(evento) => cambiarVariedad(Number(evento.target.value))} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    {!editando && !variedadesDisponibles.some((opcion) => opcion.id === variedadId) && <MenuItem value={variedadId} className={styles.opcionSelect}>{publicacion.variedad}</MenuItem>}
-                    {variedadesDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin variedades disponibles</MenuItem>}
+                <TextField select label="Variedad" id={`${idBase}-variedad`} value={variedadId} onChange={(evento) => cambiarVariedad(Number(evento.target.value))} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
+                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
+                    {!editando && variedadId !== 0 && !variedadesDisponibles.some((opcion) => opcion.id === variedadId) && <MenuItem value={variedadId} className={styles.opcionSelect}>{publicacion.variedad}</MenuItem>}
                     {variedadesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
             <div className={styles.campo}>
-                <TextField select label="Presentación" id={`${idBase}-presentacion`} value={!editando || presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) ? presentacionId : ""} onChange={(evento) => { if (!bloqueado) setPresentacionId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    {!editando && !presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) && <MenuItem value={presentacionId} className={styles.opcionSelect}>{publicacion.presentacion ?? "Sin presentación"}</MenuItem>}
-                    {presentacionesDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin presentaciones disponibles</MenuItem>}
+                <TextField select label="Presentación" id={`${idBase}-presentacion`} value={presentacionId} onChange={(evento) => { if (!bloqueado) setPresentacionId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
+                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
+                    {!editando && presentacionId !== 0 && !presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) && <MenuItem value={presentacionId} className={styles.opcionSelect}>{publicacion.presentacion ?? "Sin presentación"}</MenuItem>}
                     {presentacionesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
             <div className={styles.campo}>
-                <TextField select label="País" id={`${idBase}-pais`} value={paises.some((opcion) => opcion.id === paisId) ? paisId : ""} onChange={(evento) => { if (!bloqueado) setPaisId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    {paises.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin países disponibles</MenuItem>}
+                <TextField select label="País" id={`${idBase}-pais`} value={paisId} onChange={(evento) => { if (!bloqueado) setPaisId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
+                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
                     {paisesOrdenados.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
             <div className={styles.campo}>
-                <TextField select label="Categoría" id={`${idBase}-categoria`} value={!editando || categoriasDisponibles.some((opcion) => opcion.id === categoriaId) ? categoriaId : ""} onChange={(evento) => { if (!bloqueado) setCategoriaId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    {!editando && !categoriasDisponibles.some((opcion) => opcion.id === categoriaId) && <MenuItem value={categoriaId} className={styles.opcionSelect}>{publicacion.categoria ?? "Sin categoría"}</MenuItem>}
-                    {categoriasDisponibles.length === 0 && <MenuItem value={0} disabled className={styles.opcionSelect}>Sin categorías disponibles</MenuItem>}
+                <TextField select label="Categoría" id={`${idBase}-categoria`} value={categoriaId} onChange={(evento) => { if (!bloqueado) setCategoriaId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
+                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
+                    {!editando && categoriaId !== 0 && !categoriasDisponibles.some((opcion) => opcion.id === categoriaId) && <MenuItem value={categoriaId} className={styles.opcionSelect}>{publicacion.categoria ?? "Sin categoría"}</MenuItem>}
                     {categoriasDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
             <div className={styles.campo}>
-                <TextField select label="Calibre" id={`${idBase}-calibre`} value={!editando || calibres.some((opcion) => opcion.id === calibreId) ? calibreId : ""} onChange={(evento) => { if (!bloqueado) setCalibreId(Number(evento.target.value)); }} size="small" fullWidth required disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    {!editando && !calibres.some((opcion) => opcion.id === calibreId) && <MenuItem value={calibreId} className={styles.opcionSelect}>{publicacion.calibre ?? "Sin calibre"}</MenuItem>}
+                <TextField select label="Calibre" id={`${idBase}-calibre`} value={calibreId} onChange={(evento) => { if (!bloqueado) setCalibreId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
+                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
+                    {!editando && calibreId !== 0 && !calibres.some((opcion) => opcion.id === calibreId) && <MenuItem value={calibreId} className={styles.opcionSelect}>{publicacion.calibre ?? "Sin calibre"}</MenuItem>}
                     {calibres.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
@@ -389,7 +395,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const campoUnidades = (
         <div key="unidades" className={styles.campo}>
             <label className={styles.etiqueta} htmlFor={`${idBase}-cantidadUnidades`}>
-                Unidades ({presentacionActual})
+                Unidades{presentacionActual ? ` (${presentacionActual})` : ""}
             </label>
             <div className={styles.controlesPrecio} data-editando={false}>
                 <input className={`${styles.entrada} w-full grow shrink-0`} id={`${idBase}-cantidadUnidades`} type="text" inputMode="numeric" maxLength={10} placeholder={editando ? "Ingresar cantidad aquí" : "Sin cantidad especificada"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />

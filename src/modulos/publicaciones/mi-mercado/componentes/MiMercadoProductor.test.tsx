@@ -71,15 +71,9 @@ function crearPublicacion(id: number, especie: string, precio: string | null = "
         publicacionActiva: true,
         publicacionDisponible: true,
         cantidadUnidades: 0,
-        presentacion: {
-            id,
-            nombrePresentacion: "Cajón",
-            variedad: {
-                id,
-                nombreVariedad: "-",
-                especie: { id, nombreEspecie: especie, fotoEspecie: null },
-            },
-        },
+        especie: { id, nombreEspecie: especie, fotoEspecie: null },
+        variedad: { id, nombreVariedad: "-" },
+        presentacion: { id, nombrePresentacion: "Cajón" },
         categoria: { id: 1, nombreCategoria: "Primera" },
         calibre: { id: 1, codigoCalibre: "G", nombreCalibre: "Grande" },
         ubicaciones: [{ id: 1, nombreUbicacion: "Quinta del productor", urlMaps: "https://maps.google.com/?q=Montevideo" }],

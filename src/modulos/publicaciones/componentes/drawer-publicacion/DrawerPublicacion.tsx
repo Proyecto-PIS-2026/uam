@@ -109,7 +109,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                                     <div className={styles.bloqueSuperiorDerecho}>
                                         <div className={styles.nombrePublicacion}>
                                             <TextoAjustable className={styles.especie} minimo={esWeb ? 16 : 10} maximo={esWeb ? 34 : 30}>{publicacion.especie}</TextoAjustable>
-                                            {publicacion.variedad !== "-" &&
+                                            {publicacion.variedad?.trim() && publicacion.variedad !== "-" &&
                                                 <TextoAjustable className={styles.variedad} minimo={esWeb ? 14 : 10} maximo={esWeb ? 26 : 23}>{publicacion.variedad}</TextoAjustable>
                                             }
                                         </div>
@@ -122,23 +122,23 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Presentación</span>
-                                    <span className={styles.valorInformacion}>{publicacion.presentacion}</span>
+                                    <span className={styles.valorInformacion}>{publicacion.presentacion?.trim() || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Calibre</span>
-                                    <span className={styles.valorInformacion}>{publicacion.calibre}</span>
+                                    <span className={styles.valorInformacion}>{publicacion.calibre?.trim() || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Categoría</span>
-                                    <span className={styles.valorInformacion}>{publicacion.categoria}</span>
+                                    <span className={styles.valorInformacion}>{publicacion.categoria?.trim() || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Unidades ({publicacion.presentacion})</span>
-                                    <span className={styles.valorInformacion}>{publicacion.cantidadUnidades === null ? "-" : publicacion.cantidadUnidades}</span>
+                                    <span className={styles.nombreInformacion}>Unidades ({publicacion.presentacion?.trim() || "-"})</span>
+                                    <span className={styles.valorInformacion}>{publicacion.cantidadUnidades ?? "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>País</span>
-                                    <span className={styles.valorInformacion}>{publicacion.pais}</span>
+                                    <span className={styles.valorInformacion}>{publicacion.pais?.trim() || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Actualización</span>

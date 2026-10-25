@@ -75,7 +75,7 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
 
             <div className={styles.contenedor}>
                 <nav className={styles.accesos} aria-label="Accesos principales">
-                    {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver publicaciones</span></Link>}
+                    {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver Mercado</span></Link>}
                     {autorizado("operador.catalogo.consultar") && <Link href="/operadores" className={styles.acceso}><StorefrontOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver operadores</span></Link>}
                     {autorizado("listaInteligente.consultar") && (urlListaInteligente ? (
                         <a href={urlListaInteligente} target="_blank" rel="noopener noreferrer" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></a>

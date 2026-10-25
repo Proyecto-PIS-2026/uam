@@ -59,14 +59,16 @@ async function iniciarSesionOperador(page: Page, credenciales: Credenciales) {
 
 async function registrarOperador(page: Page, datos: DatosOperadorPrecarga) {
   await page.goto("/alta-usuario");
-  await page.locator("#rol").selectOption("operador");
+  await page.getByRole("combobox", { name: "Rol del usuario", exact: true }).click();
+  await page.getByRole("option", { name: "Operador", exact: true }).click();
   await page.locator("#nombreUsuario").fill(datos.credenciales.usuario);
   await page.locator("#contraseña").fill(datos.credenciales.contrasena);
   await page.locator("#confirmacionContraseña").fill(datos.credenciales.contrasena);
   await page.locator("#nombre").fill(datos.nombre);
   await page.locator("#numero").fill("99123456");
   await page.getByPlaceholder("Número de local").first().fill(datos.local);
-  await page.locator("select").filter({ hasText: "Seleccionar nave" }).first().selectOption(String(datos.naveId));
+  await page.getByRole("combobox", { name: "Nave", exact: true }).click();
+  await page.getByRole("option").and(page.locator(`[data-value="${datos.naveId}"]`)).click();
   await page.getByRole("button", { name: "Registrar usuario", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Operador creado satisfactoriamente", exact: true })).toBeVisible();
 }
@@ -119,7 +121,7 @@ function tarjetaMercado(page: Page, precio: string) {
 
 async function abrirConsultaMercado(page: Page, precio: string) {
   await tarjetaMercado(page, precio).getByRole("button", { name: /Ver detalle de/ }).click();
-  const consulta = page.getByRole("dialog", { name: "Consultar publicación", exact: true });
+  const consulta = page.getByRole("dialog", { name: "Consulta de publicación", exact: true });
   await expect(consulta).toBeVisible();
   return consulta;
 }
@@ -322,7 +324,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
     await abrirPerfilAdmin(page, operadorA);
     const tarjetaAdmin = page.getByRole("button", { name: /^Ver detalles de/ });
     await tarjetaAdmin.click();
-    const consulta = page.getByRole("dialog", { name: "Consultar publicación", exact: true });
+    const consulta = page.getByRole("dialog", { name: "Consulta de publicación", exact: true });
     await expect(consulta.getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue("1482");
     await consulta.getByRole("button", { name: "Cerrar consulta", exact: true }).click();
     const sesionAdmin = await page.context().storageState();

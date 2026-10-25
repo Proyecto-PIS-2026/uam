@@ -162,11 +162,11 @@ export default function TarjetaPublicacion({
         setEditandoPrecio(false);
     }
 
-    const variedad = pub.presentacion.variedad.nombreVariedad;
-    const especie = pub.presentacion.variedad.especie.nombreEspecie;
-    const presentacion = pub.presentacion.nombrePresentacion;
-    const categoria = pub.categoria.nombreCategoria;
-    const calibre = pub.calibre.nombreCalibre;
+    const variedad = pub.variedad?.nombreVariedad;
+    const especie = pub.especie.nombreEspecie;
+    const presentacion = pub.presentacion?.nombrePresentacion;
+    const categoria = pub.categoria?.nombreCategoria;
+    const calibre = pub.calibre?.nombreCalibre;
     const tieneVariedad = variedad && variedad.trim() !== "" && variedad.trim() !== "-";
     const nombreProducto = tieneVariedad ? `${especie} · ${variedad}` : especie;
 

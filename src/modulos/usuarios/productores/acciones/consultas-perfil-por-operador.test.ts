@@ -75,13 +75,9 @@ function crearFila() {
             publicacionActiva: true,
             publicacionDisponible: true,
             tipoPublicacion: "PRODUCTOR",
-            presentacion: {
-                nombrePresentacion: "Caja",
-                variedad: {
-                    nombreVariedad: "Perita",
-                    especie: { nombreEspecie: "Tomate" },
-                },
-            },
+            especie: { nombreEspecie: "Tomate" },
+            variedad: { nombreVariedad: "Perita" },
+            presentacion: { nombrePresentacion: "Caja" },
             categoria: { nombreCategoria: "Primera" },
             calibre: { codigoCalibre: "M" },
         },

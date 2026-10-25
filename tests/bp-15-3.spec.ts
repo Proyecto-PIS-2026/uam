@@ -5,10 +5,24 @@ import { iniciarSesionProductor } from "./autenticacion";
 // CP-15.3-02 (administrador), 03 (cámara) y 04 (foto web) quedan fuera de esta selección.
 const usuario = "productor_norte_salto";
 const ruta = "/mi-mercado/productor";
-const detalle = (page: Page) => page.getByRole("dialog", { name: "Detalle de publicación", exact: true });
-const edicion = (page: Page) => page.getByRole("dialog", { name: "Editar publicación de Productor", exact: true });
+const detalle = (page: Page) => page.getByRole("dialog", { name: "Consulta de publicación", exact: true });
+const edicion = (page: Page) => page.getByRole("dialog", { name: "Editar publicación", exact: true });
 const tarjetas = (page: Page) => page.getByRole("button", { name: /^Ver detalle de / });
 const tarjeta = (page: Page, producto: string) => page.getByRole("button", { name: `Ver detalle de ${producto}`, exact: true });
+const camposProducto = ["Especie", "Variedad", "Presentación", "País de origen", "Categoría", "Calibre"];
+
+async function datosConsulta(page: Page) {
+  const panel = detalle(page);
+  return {
+    precio: await panel.getByRole("textbox", { name: "Precio en pesos", exact: true }).inputValue(),
+    unidades: await panel.getByRole("textbox", { name: /^Unidades \(/ }).inputValue(),
+    selectores: await Promise.all(camposProducto.map(async (campo) => ({
+      campo, valor: await panel.getByRole("combobox", { name: campo, exact: true }).innerText(),
+    }))),
+    disponibilidad: await panel.getByText(/^(Disponible|No disponible)$/).innerText(),
+    ubicaciones: await panel.getByRole("region", { name: "Puntos de retiro", exact: true }).innerText(),
+  };
+}
 
 async function abrirDetalle(page: Page, producto: string) {
   await tarjeta(page, producto).click();
@@ -59,33 +73,40 @@ test.describe("BP-15.3: modificación de publicaciones del productor", () => {
     await abrirDetalle(page, "Mandarina · Afourer");
     await editar(page);
     const panel = edicion(page);
-    for (const campo of ["Presentación", "Categoría", "Calibre"]) {
+    for (const campo of camposProducto) {
       await expect(panel.getByRole("combobox", { name: campo, exact: true })).toBeEnabled();
     }
     await expect(panel.getByRole("textbox", { name: "Precio en pesos", exact: true })).toBeEditable();
+    await expect(panel.getByRole("textbox", { name: /^Unidades \(/ })).toBeEditable();
+    await expect(panel.getByRole("switch", { name: "Publicación disponible", exact: true })).toBeEnabled();
     await expect(panel.getByRole("button", { name: "Editar foto", exact: true })).toBeEnabled();
     await expect(panel.locator('input[type="file"][aria-label="Fotografía"]')).toHaveAttribute("accept", "image/png,image/jpeg,image/webp");
     await expect(panel.getByRole("button", { name: "Confirmar", exact: true })).toBeEnabled();
     await panel.getByRole("button", { name: "Cancelar", exact: true }).click();
     await expect(detalle(page)).toBeVisible();
+    await expect(detalle(page).getByRole("textbox", { name: "Precio en pesos", exact: true })).not.toBeEditable();
   });
 
   test("CP-15.3-05: salir sin guardar conserva la publicación y su fecha", async ({ page }) => {
     await abrirDetalle(page, "Mandarina · Afourer");
-    const camposDetalle = detalle(page).locator("dl dt, dl dd");
-    const datosIniciales = await camposDetalle.allTextContents();
+    const datosIniciales = await datosConsulta(page);
     const fechaInicial = await detalle(page).locator("time").getAttribute("datetime");
     await editar(page);
     const precio = edicion(page).getByRole("textbox", { name: "Precio en pesos", exact: true });
     const original = await precio.inputValue();
     await precio.fill(String(Number(original) + 17));
     await edicion(page).getByRole("button", { name: "Cerrar edición", exact: true }).click();
-    await expect(detalle(page)).toBeVisible();
-    await expect(detalle(page).getByText(`$${original}`, { exact: true })).toBeVisible();
+    await expect(edicion(page)).not.toBeVisible();
+    await expect(detalle(page)).not.toBeVisible();
+    await abrirDetalle(page, "Mandarina · Afourer");
+    expect(await datosConsulta(page)).toEqual(datosIniciales);
+    await expect(detalle(page).getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(original);
+    await expect(detalle(page).getByRole("textbox", { name: "Precio en pesos", exact: true })).not.toBeEditable();
+    await expect(detalle(page).locator("time")).toHaveAttribute("datetime", fechaInicial!);
     // Recargar comprueba que tampoco hubo cambios persistidos en el servidor.
     await page.reload();
     await abrirDetalle(page, "Mandarina · Afourer");
-    await expect(camposDetalle).toHaveText(datosIniciales);
+    expect(await datosConsulta(page)).toEqual(datosIniciales);
     await expect(detalle(page).locator("time")).toHaveAttribute("datetime", fechaInicial!);
     await editar(page);
     await expect(edicion(page).getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(original);
@@ -107,7 +128,8 @@ test.describe("BP-15.3: modificación de publicaciones del productor", () => {
       guardarIntentado = true;
       await guardar(page);
       const despues = Date.now();
-      await expect(detalle(page).getByText(`$${nuevo}`, { exact: true })).toBeVisible();
+      await expect(detalle(page).getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(nuevo);
+      await expect(detalle(page).getByRole("textbox", { name: "Precio en pesos", exact: true })).not.toBeEditable();
       const fechaGuardada = await detalle(page).locator("time").getAttribute("datetime");
       expect(fechaGuardada).not.toBe(fechaInicial);
       const instante = Date.parse(fechaGuardada!);

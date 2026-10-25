@@ -112,7 +112,7 @@ describe("baja de productor", () => {
 
 		const calibre = (await db.orm.public.Calibre.all())[0];
 		const categoria = (await db.orm.public.Categoria.all())[0];
-		const presentacion = (await db.orm.public.Presentacion.all())[0];
+		const presentacion = (await db.orm.public.Presentacion.include("variedad", (variedad) => variedad.select("id", "especieId")).all())[0];
 		const pais = (await db.orm.public.Pais.all())[0];
 
 		if (!calibre || !categoria || !presentacion || !pais) {
@@ -131,6 +131,8 @@ describe("baja de productor", () => {
             ),
             foto: null,
             precio,
+            especieId: presentacion.variedad.especieId,
+            variedadId: presentacion.variedad.id,
             presentacionId: presentacion.id,
             publicacionActiva: true,
             publicacionDisponible: true,

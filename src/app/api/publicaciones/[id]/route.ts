@@ -1,3 +1,4 @@
+import { normalizarSeleccionPublicacion } from "@/modulos/publicaciones/seleccion-publicacion";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { NextResponse } from "next/server";
@@ -123,8 +124,8 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 		return NextResponse.json({ errores: ["Los cambios no son válidos."] }, { status: 400 });
 	}
 	const datos = cambios as Record<string, unknown>;
-	const identificadores = [datos.presentacionId, datos.categoriaId, datos.calibreId, datos.paisId];
-	if (identificadores.some((id) => typeof id !== "number" || !Number.isSafeInteger(id) || id <= 0) ||
+	const seleccion = normalizarSeleccionPublicacion(datos);
+	if (!seleccion.esValido ||
 		(datos.foto !== undefined && datos.foto !== null && typeof datos.foto !== "string")) {
 		return NextResponse.json({ errores: ["Los cambios no son válidos."] }, { status: 400 });
 	}

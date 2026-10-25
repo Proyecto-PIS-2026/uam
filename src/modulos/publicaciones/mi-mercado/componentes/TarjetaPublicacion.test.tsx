@@ -33,19 +33,13 @@ function crearPublicacion(): Publicacion {
     fecha: "2026-10-03T15:00:00.000Z",
     publicacionActiva: true,
     publicacionDisponible: true,
-    presentacion: {
-      id: 1,
-      nombrePresentacion: "Caja",
-      variedad: {
-        id: 1,
-        nombreVariedad: "Red Delicious",
-        especie: {
+    especie: {
           id: 10,
           nombreEspecie: "Manzana",
           fotoEspecie: null,
         },
-      },
-    },
+            variedad: { id: 1, nombreVariedad: "Red Delicious" },
+            presentacion: { id: 1, nombrePresentacion: "Caja" },
     categoria: {
       id: 1,
       nombreCategoria: "Primera",
@@ -91,6 +85,17 @@ describe("TarjetaPublicacion", () => {
     expect(screen.getByText("$100")).toBeInTheDocument();
   });
 
+  it("muestra una publicación con solo especie y permite consultarla", () => {
+    const consultarPublicacion = vi.fn();
+    const pub: Publicacion = { ...crearPublicacion(), variedad: null, presentacion: null, categoria: null, calibre: null, paisId: null, precio: null };
+    render(<TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} alConsultar={consultarPublicacion} />);
+
+    expect(screen.getByText("Manzana")).toBeInTheDocument();
+    expect(screen.getByText("Sin precio")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "Ver detalle de Manzana" })[0]);
+    expect(consultarPublicacion).toHaveBeenCalledOnce();
+  });
+
   it("muestra no disponible cuando la publicación no está disponible", () => {
     const pub = crearPublicacion();
     pub.publicacionDisponible = false;
@@ -106,7 +111,7 @@ describe("TarjetaPublicacion", () => {
 
   it("no muestra la variedad cuando es guion", () => {
     const pub = crearPublicacion();
-    pub.presentacion.variedad.nombreVariedad = "-";
+    pub.variedad!.nombreVariedad = "-";
 
     render(
       <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
@@ -121,7 +126,7 @@ describe("TarjetaPublicacion", () => {
 
   it("no muestra la variedad cuando está vacía", () => {
     const pub = crearPublicacion();
-    pub.presentacion.variedad.nombreVariedad = "";
+    pub.variedad!.nombreVariedad = "";
 
     render(
       <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
@@ -132,7 +137,7 @@ describe("TarjetaPublicacion", () => {
 
   it("no muestra la variedad cuando contiene solamente espacios", () => {
     const pub = crearPublicacion();
-    pub.presentacion.variedad.nombreVariedad = "   ";
+    pub.variedad!.nombreVariedad = "   ";
 
     render(
       <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
@@ -144,9 +149,9 @@ describe("TarjetaPublicacion", () => {
   it("muestra guion cuando faltan calibre categoría y presentación", () => {
     const pub = crearPublicacion();
 
-    pub.calibre.nombreCalibre = "";
-    pub.categoria.nombreCategoria = "";
-    pub.presentacion.nombrePresentacion = "";
+    pub.calibre!.nombreCalibre = "";
+    pub.categoria!.nombreCategoria = "";
+    pub.presentacion!.nombrePresentacion = "";
 
     render(
       <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
@@ -160,7 +165,7 @@ describe("TarjetaPublicacion", () => {
   it("muestra la fotografía propia de la publicación cuando existe", () => {
     const pub = crearPublicacion();
     pub.foto = "/producto.jpg";
-    pub.presentacion.variedad.especie.fotoEspecie = "/especie.jpg";
+    pub.especie.fotoEspecie = "/especie.jpg";
     render(<TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />);
     fireEvent.load(screen.getByAltText("Manzana · Red Delicious"));
     expect(screen.getByRole("img", { name: "Manzana · Red Delicious" })).toHaveAttribute("src", expect.stringContaining("/producto.jpg"));
@@ -179,7 +184,7 @@ describe("TarjetaPublicacion", () => {
     const pub = crearPublicacion();
 
     pub.foto = null;
-    pub.presentacion.variedad.especie.fotoEspecie =
+    pub.especie.fotoEspecie =
       "/especie.jpg";
 
     render(
@@ -194,7 +199,7 @@ describe("TarjetaPublicacion", () => {
     const pub = crearPublicacion();
 
     pub.foto = null;
-    pub.presentacion.variedad.especie.fotoEspecie = null;
+    pub.especie.fotoEspecie = null;
 
     render(
       <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,

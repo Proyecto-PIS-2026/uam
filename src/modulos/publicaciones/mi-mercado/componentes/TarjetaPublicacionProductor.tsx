@@ -11,8 +11,8 @@ type Props = {
 };
 
 export default function TarjetaPublicacionProductor({ publicacion, alConsultar }: Props) {
-    const variedad = publicacion.presentacion.variedad.nombreVariedad;
-    const especie = publicacion.presentacion.variedad.especie.nombreEspecie;
+    const variedad = publicacion.variedad?.nombreVariedad;
+    const especie = publicacion.especie.nombreEspecie;
     const nombreProducto = variedad && variedad.trim() !== "" && variedad.trim() !== "-" ? `${especie} · ${variedad}` : especie;
 
     return (
@@ -30,7 +30,7 @@ export default function TarjetaPublicacionProductor({ publicacion, alConsultar }
                             </span>
                         </span>
                         <span className={styles.datos}>
-                            {publicacion.calibre.nombreCalibre || "-"} · Cat. {publicacion.categoria.nombreCategoria || "-"} · {publicacion.presentacion.nombrePresentacion || "-"}
+                            {publicacion.calibre?.nombreCalibre || "-"} · Cat. {publicacion.categoria?.nombreCategoria || "-"} · {publicacion.presentacion?.nombrePresentacion || "-"}
                         </span>
                     </span>
                 </span>

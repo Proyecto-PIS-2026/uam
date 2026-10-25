@@ -1,16 +1,28 @@
 import { randomUUID } from "node:crypto";
 import { Client, type Notification } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerDatabaseUrlTest } from "@/infraestructura/persistencia/configuracion-db-test";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
 import { consultarPublicaciones } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
+import { consultarPublicacionesProductores } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
+import { obtenerEspeciesConPublicacionesActivas } from "@/modulos/consulta-mercado/inicio/consultas-inicio";
+import { obtenerPerfilPublicoOperador } from "@/modulos/usuarios/operadores/consultas-perfil-publico";
+import { obtenerPerfilProductor } from "@/modulos/usuarios/productores/acciones/consultas-productores";
+import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
+import { obtenerPublicacionesMiMercadoProductor } from "./mi-mercado/consultas-mi-mercado-productor";
+import { mapearPublicacionesMiMercado } from "./mi-mercado/mapear-publicaciones";
+import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import {
     actualizarPrecioPublicacion,
+    obtenerPublicacionesDeOperador,
     ConflictoPublicacionError,
     incrementarPrecioPublicacion,
 } from "./mi-mercado/consultas-mi-mercado";
+
+const sesionActual = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: sesionActual }));
 
 type Precio = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 
@@ -59,6 +71,8 @@ async function crearFixture() {
             const publicacion = await tx.orm.public.Publicacion.create({
                 tipoPublicacion: esProductor ? "PRODUCTOR" : "OPERADOR",
                 precio: String(esSoloB ? 210 : esOtraEspecie ? 111 : 100 + indice) as Precio,
+                especieId: esOtraEspecie ? otraEspecie.id : especie.id,
+                variedadId: esOtraEspecie ? otraVariedad.id : variedad.id,
                 presentacionId: esOtraEspecie ? otraPresentacion.id : presentacion.id,
                 categoriaId: esOtraEspecie ? otraCategoria.id : categoria.id,
                 calibreId: calibre.id,
@@ -237,6 +251,58 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
         expect(venceHoy.publicaciones.map((publicacion) => publicacion.id)).toEqual([...fixture!.visibles, fixture!.publicacionOtraEspecieId]);
         expect(venceHoy.total).toBe(36);
         expect(venceHoy.naves).toContain(fixture!.naveHoy);
+    });
+
+    it("conserva publicaciones de solo especie en mercados, perfiles, Mi Mercado e inicio", async () => {
+        const especie = await db.orm.public.Especie.create({ nombreEspecie: "Solo especie " + randomUUID() });
+        const creadas: number[] = [];
+        try {
+            const operador = await db.orm.public.Publicacion.create({ especieId: especie.id, tipoPublicacion: "OPERADOR" });
+            creadas.push(operador.id);
+            await db.orm.public.PublicacionOperador.create({ operadorId: fixture!.operadorId, publicacionId: operador.id });
+            const productor = await db.orm.public.Publicacion.create({ especieId: especie.id, tipoPublicacion: "PRODUCTOR" });
+            creadas.push(productor.id);
+            await db.orm.public.PublicacionProductor.create({ productorId: fixture!.productorId, publicacionId: productor.id });
+            const sesionOperador: DatosSesion = { usuarioId: fixture!.usuarioId, rol: "OPERADOR", expiraEn: 2000000000 };
+            sesionActual.mockResolvedValue(sesionOperador);
+
+            const mercado = await consultarPublicaciones({ especie: especie.nombreEspecie });
+            expect(mercado.total).toBe(1);
+            expect(mercado.publicaciones).toEqual([expect.objectContaining({
+                id: operador.id, especie: especie.nombreEspecie, variedad: "", presentacion: "",
+                categoria: "", calibre: "", precio: null,
+            })]);
+            expect(mercado.opciones).toContainEqual({ especie: especie.nombreEspecie, variedad: "", presentacion: "", categoria: "", calibre: "" });
+            expect((await consultarPublicaciones({ especie: especie.nombreEspecie, variedad: "Inexistente" })).publicaciones).toEqual([]);
+            const mercadoProductores = await consultarPublicacionesProductores(sesionOperador);
+            expect(mercadoProductores.publicaciones).toContainEqual(expect.objectContaining({
+                id: productor.id, especie: especie.nombreEspecie, variedad: "", presentacion: "",
+                categoria: "", calibre: "", pais: "", ubicaciones: [],
+            }));
+            const miMercado = mapearPublicacionesMiMercado(await obtenerPublicacionesDeOperador(fixture!.operadorId));
+            expect(miMercado).toContainEqual(expect.objectContaining({
+                id: operador.id, especie: expect.objectContaining({ id: especie.id }), variedad: null,
+                presentacion: null, categoria: null, calibre: null, paisId: null,
+            }));
+            const perfilOperador = await obtenerPerfilPublicoOperador(fixture!.prefijo);
+            expect(perfilOperador?.publicaciones).toContainEqual(expect.objectContaining({ id: operador.id, especie: especie.nombreEspecie, pais: "" }));
+            const perfilProductor = await obtenerPerfilProductor(fixture!.prefijo + "-productor");
+            expect(perfilProductor?.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, pais: "" }));
+            const perfilProductorOperador = await obtenerPerfilProductorPorOperador(fixture!.prefijo + "-productor");
+            expect(perfilProductorOperador?.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, ubicaciones: [] }));
+            expect(await obtenerEspeciesConPublicacionesActivas()).toContainEqual({ nombreEspecie: especie.nombreEspecie, cantidadOperadores: 1 });
+
+            sesionActual.mockResolvedValue({ usuarioId: fixture!.usuarioProductorId, rol: "PRODUCTOR", expiraEn: 2000000000 });
+            const miMercadoProductor = await obtenerPublicacionesMiMercadoProductor();
+            expect(miMercadoProductor.publicaciones).toContainEqual(expect.objectContaining({
+                id: productor.id, especie: expect.objectContaining({ id: especie.id }), variedad: null,
+                presentacion: null, categoria: null, calibre: null, paisId: null, ubicaciones: [],
+            }));
+        } finally {
+            sesionActual.mockReset();
+            for (const id of creadas) await db.orm.public.Publicacion.where({ id }).delete();
+            await db.orm.public.Especie.where({ id: especie.id }).delete();
+        }
     });
 
     it("acumula dos incrementos simultáneos sin perder escrituras y avanza dos versiones", async () => {

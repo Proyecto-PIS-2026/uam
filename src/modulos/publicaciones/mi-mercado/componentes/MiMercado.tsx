@@ -50,13 +50,13 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
         fecha: publicacion.fecha,
         foto: publicacion.foto,
-        especie: publicacion.presentacion.variedad.especie.nombreEspecie,
-        variedad: publicacion.presentacion.variedad.nombreVariedad,
-        presentacion: publicacion.presentacion.nombrePresentacion,
+        especie: publicacion.especie.nombreEspecie,
+        variedad: publicacion.variedad?.nombreVariedad ?? "",
+        presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
         cantidadUnidades: publicacion.cantidadUnidades === null ? null : Number(publicacion.cantidadUnidades),
-        categoria: publicacion.categoria.nombreCategoria,
-        calibre: publicacion.calibre.nombreCalibre,
-        codigoCalibre: publicacion.calibre.codigoCalibre,
+        categoria: publicacion.categoria?.nombreCategoria ?? "",
+        calibre: publicacion.calibre?.nombreCalibre ?? "",
+        codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
         pais: "",
         tipoPublicacion: "OPERADOR",
         operador: { id: operadorId, nombreFantasia: nombreOperador, whatsApp: "" },
@@ -77,21 +77,21 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
     const publicacionParaEditar: PublicacionParaEditar | null = publicacionSeleccionada ? {
         publicacionOperadorId: publicacionSeleccionada.publicacionOperadorId,
         publicacionId: publicacionSeleccionada.id,
-        especieId: publicacionSeleccionada.presentacion.variedad.especie.id,
-        variedadId: publicacionSeleccionada.presentacion.variedad.id,
-        especie: publicacionSeleccionada.presentacion.variedad.especie.nombreEspecie,
-        variedad: publicacionSeleccionada.presentacion.variedad.nombreVariedad,
-        presentacion: publicacionSeleccionada.presentacion.nombrePresentacion,
+        especieId: publicacionSeleccionada.especie.id,
+        variedadId: publicacionSeleccionada.variedad?.id ?? null,
+        especie: publicacionSeleccionada.especie.nombreEspecie,
+        variedad: publicacionSeleccionada.variedad?.nombreVariedad ?? "",
+        presentacion: publicacionSeleccionada.presentacion?.nombrePresentacion ?? "",
         cantidadUnidades: publicacionSeleccionada.cantidadUnidades,
-        categoria: publicacionSeleccionada.categoria.nombreCategoria,
-        calibre: publicacionSeleccionada.calibre.nombreCalibre,
+        categoria: publicacionSeleccionada.categoria?.nombreCategoria ?? "",
+        calibre: publicacionSeleccionada.calibre?.nombreCalibre ?? "",
         precio: publicacionSeleccionada.precio,
         foto: publicacionSeleccionada.foto,
         fecha: publicacionSeleccionada.fecha,
         version: publicacionSeleccionada.version,
-        categoriaId: publicacionSeleccionada.categoria.id,
-        calibreId: publicacionSeleccionada.calibre.id,
-        presentacionId: publicacionSeleccionada.presentacion.id,
+        categoriaId: publicacionSeleccionada.categoria?.id ?? null,
+        calibreId: publicacionSeleccionada.calibre?.id ?? null,
+        presentacionId: publicacionSeleccionada.presentacion?.id ?? null,
         paisId: publicacionSeleccionada.paisId,
         disponible: publicacionSeleccionada.publicacionDisponible,
     } : null;
@@ -316,7 +316,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
             }}
             eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
 
-                <ConfirmModal abierto={publicacionPendiente !== null} titulo="Eliminar publicación" descripcion={publicacionPendiente ? `¿Querés eliminar la publicación de ${publicacionPendiente.presentacion.variedad.especie.nombreEspecie}? Esta acción no se puede deshacer.` : ""} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setPublicacionPendiente(null); }} alConfirmar={() => void eliminarPublicacion()} />
+                <ConfirmModal abierto={publicacionPendiente !== null} titulo="Eliminar publicación" descripcion={publicacionPendiente ? `¿Querés eliminar la publicación de ${publicacionPendiente.especie.nombreEspecie}? Esta acción no se puede deshacer.` : ""} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setPublicacionPendiente(null); }} alConfirmar={() => void eliminarPublicacion()} />
 
             </DrawerEditarPublicacion>
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />

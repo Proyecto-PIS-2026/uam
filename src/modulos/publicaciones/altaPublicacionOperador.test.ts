@@ -137,7 +137,7 @@ describe("altaPublicacionOperador", () => {
     });
 
     it("rechaza duplicados y limpia la imagen preparada sin notificar", async () => {
-        mocks.relaciones.mockResolvedValue([{ publicacionId: 444 }]);
+        mocks.relaciones.mockResolvedValue([{ publicacionId: 444, paisId: 60 }]);
         mocks.coincidencias.mockResolvedValue([{ id: 444 }]);
         expect((await altaPublicacionOperador(DATOS)).esValido).toBe(false);
         expect(mocks.crear).not.toHaveBeenCalled();

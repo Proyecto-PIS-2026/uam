@@ -78,6 +78,12 @@
     overflow-wrap: anywhere;
 }
 
+.iconoRestablecimiento {
+    margin-left: var(--espacio-textos);
+    color: var(--color-warning);
+    vertical-align: middle;
+}
+
 .encabezado span:nth-child(2),
 .informacion {
     min-width: 0;
