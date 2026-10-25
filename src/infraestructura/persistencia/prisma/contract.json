@@ -32,6 +32,10 @@
       "model": "HistoricoPrecios",
       "namespace": "public"
     },
+    "imagen": {
+      "model": "Imagen",
+      "namespace": "public"
+    },
     "local": {
       "model": "Local",
       "namespace": "public"
@@ -571,6 +575,37 @@
               },
               "namespaceId": "public",
               "table": "historicoPrecios"
+            }
+          },
+          "Imagen": {
+            "fields": {
+              "clave": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "contenido": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bytea@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "clave": {
+                  "column": "clave"
+                },
+                "contenido": {
+                  "column": "contenido"
+                }
+              },
+              "namespaceId": "public",
+              "table": "imagen"
             }
           },
           "Local": {
@@ -2196,6 +2231,28 @@
               },
               "uniques": []
             },
+            "imagen": {
+              "columns": {
+                "clave": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "contenido": {
+                  "codecId": "pg/bytea@1",
+                  "nativeType": "bytea",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "clave"
+                ]
+              },
+              "uniques": []
+            },
             "local": {
               "columns": {
                 "finContrato": {
@@ -3327,7 +3384,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "4c1be49ae006f84744eab77f4bcbaf4fc56a44f9a625e65984629e8806b440f8"
+    "storageHash": "6b31658ea64079e091b507d9944874ebee46bdc19fa80ccdc2a96259ebb04492"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

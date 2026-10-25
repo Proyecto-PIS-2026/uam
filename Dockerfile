@@ -27,7 +27,7 @@ COPY --from=builder --chown=node:node /app/.next ./.next
 COPY --from=builder --chown=node:node /app/public ./public
 COPY --from=builder --chown=node:node /app/next.config.ts ./next.config.ts
 
-RUN mkdir -p /app/storage/publicaciones /app/.next/cache && chown -R node:node /app/storage /app/.next/cache
+RUN mkdir -p /app/.next/cache && chown -R node:node /app/.next/cache
 
 USER node
 

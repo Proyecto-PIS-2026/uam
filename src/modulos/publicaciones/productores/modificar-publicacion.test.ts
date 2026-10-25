@@ -282,7 +282,7 @@ describe("edición de publicaciones de productores", () => {
         mocks.ubicacion.create.mockRejectedValueOnce(new Error("Error DB"));
         const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
         await expect(modificarPublicacionProductor(sesion, 12, cambios, archivo)).rejects.toThrow("Error DB");
-        expect(mocks.guardarImagen).toHaveBeenCalledExactlyOnceWith(20, archivo);
+        expect(mocks.guardarImagen).toHaveBeenCalledExactlyOnceWith(20, archivo, { orm, execute: mocks.execute });
         expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(fotoNueva, 20);
     });
 

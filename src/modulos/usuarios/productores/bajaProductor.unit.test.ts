@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 	execute: vi.fn(),
 	revalidatePath: vi.fn(),
 	eliminarImagen: vi.fn(),
+	eliminarPerfil: vi.fn(),
 	productor: {
 		where: vi.fn().mockReturnThis(),
 		first: vi.fn(),
@@ -40,6 +41,12 @@ vi.mock("@/modulos/publicaciones/operadores/imagenes-publicacion", () => ({
 	eliminarImagenPublicacionGestionada: mocks.eliminarImagen,
 }));
 
+vi.mock("@/infraestructura/imagenes/almacenamiento-postgres", () => ({
+	AlmacenamientoImagenesPostgres: class {
+		eliminar = mocks.eliminarPerfil;
+	},
+}));
+
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 	db: {
 		transaction: mocks.transaction,
@@ -60,6 +67,7 @@ describe("baja de productor", () => {
 
 		mocks.exigirAdministrador.mockResolvedValue(undefined);
 		mocks.eliminarImagen.mockResolvedValue(undefined);
+		mocks.eliminarPerfil.mockResolvedValue(undefined);
 
 		relaciones = [
 			{ publicacionId: 20 },
@@ -71,7 +79,7 @@ describe("baja de productor", () => {
 		usuarioExiste = true;
 
 		mocks.productor.first.mockImplementation(async () =>
-			productorExiste ? { id: 14, usuarioId: 90 } : null
+			productorExiste ? { id: 14, usuarioId: 90, fotoPerfil: null } : null
 		);
 
 		mocks.relacion.all.mockImplementation(async () => [...relaciones]);
@@ -211,6 +219,8 @@ describe("baja de productor", () => {
 	});
 
 	it("elimina las fotos de las publicaciones después de confirmar la baja", async () => {
+		const clavePerfil = "productores/14/12345678-1234-4234-8234-123456789abc.webp";
+		mocks.productor.first.mockResolvedValueOnce({ id: 14, usuarioId: 90, fotoPerfil: `/api/imagenes/${clavePerfil}` });
 		const foto20 =
 			"/api/publicaciones/imagenes/20/12345678-1234-4234-8234-123456789abc.png";
 		const foto21 =
@@ -233,6 +243,9 @@ describe("baja de productor", () => {
 		mocks.eliminarImagen.mockImplementation(async () => {
 			expect(transaccionTerminada).toBe(true);
 		});
+		mocks.eliminarPerfil.mockImplementation(async () => {
+			expect(transaccionTerminada).toBe(true);
+		});
 
 		const resultado = await bajaProductor({ productorId: 14 });
 
@@ -242,6 +255,29 @@ describe("baja de productor", () => {
 			[foto20, 20],
 			[foto21, 21],
 		]);
+		expect(mocks.eliminarPerfil).toHaveBeenCalledExactlyOnceWith(clavePerfil);
+	});
+
+	it.each([null, "/productores/perfil-predeterminado.webp", "https://example.com/productor.webp"])("no elimina recursos estáticos o externos del perfil %s", async (fotoPerfil) => {
+		mocks.productor.first.mockResolvedValueOnce({ id: 14, usuarioId: 90, fotoPerfil });
+		const resultado = await bajaProductor({ productorId: 14 });
+		expect(resultado.esValido).toBe(true);
+		expect(mocks.eliminarPerfil).not.toHaveBeenCalled();
+	});
+
+	it("registra un fallo al limpiar el perfil sin revertir la baja confirmada", async () => {
+		mocks.productor.first.mockResolvedValueOnce({ id: 14, usuarioId: 90, fotoPerfil: "/api/imagenes/productores/14/12345678-1234-4234-8234-123456789abc.webp" });
+		const error = new Error("Fallo al eliminar imagen de PostgreSQL");
+		mocks.eliminarPerfil.mockRejectedValueOnce(error);
+		const registrarError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+		const resultado = await bajaProductor({ productorId: 14 });
+
+		expect(resultado.esValido).toBe(true);
+		expect(productorExiste).toBe(false);
+		expect(usuarioExiste).toBe(false);
+		expect(registrarError).toHaveBeenCalledExactlyOnceWith("No se pudo eliminar la foto de perfil del productor dado de baja.", error);
+		expect(mocks.revalidatePath).toHaveBeenCalledWith("/administracion");
 	});
 
 	it("continúa la baja si no se puede eliminar una imagen", async () => {
@@ -272,6 +308,7 @@ describe("baja de productor", () => {
 	});
 
 	it("revierte la transacción si falla la eliminación del usuario", async () => {
+		mocks.productor.first.mockResolvedValueOnce({ id: 14, usuarioId: 90, fotoPerfil: "/api/imagenes/productores/14/12345678-1234-4234-8234-123456789abc.webp" });
 		mocks.usuario.delete.mockRejectedValueOnce(
 			new Error("Fallo de base")
 		);
@@ -290,6 +327,7 @@ describe("baja de productor", () => {
 		expect(usuarioExiste).toBe(true);
 
 		expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+		expect(mocks.eliminarPerfil).not.toHaveBeenCalled();
 		expect(mocks.revalidatePath).not.toHaveBeenCalled();
 	});
 });

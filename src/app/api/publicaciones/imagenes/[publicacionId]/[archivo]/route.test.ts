@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ErrorImagenNoEncontrada } from "@/infraestructura/imagenes/almacenamiento-imagenes";
 
 const mocks = vi.hoisted(() => ({
     puedeLeerImagen: vi.fn(),
@@ -50,7 +51,7 @@ describe("GET /api/publicaciones/imagenes/[publicacionId]/[archivo]", () => {
         expect(mocks.leer).toHaveBeenCalledExactlyOnceWith("publicaciones", 15, nombreArchivo);
     });
 
-    it("devuelve 404 sin leer disco cuando no se autoriza la foto solicitada", async () => {
+    it("devuelve 404 sin consultar los bytes cuando no se autoriza la foto solicitada", async () => {
         mocks.puedeLeerImagen.mockResolvedValue(false);
 
         const respuesta = await solicitarImagen();
@@ -71,7 +72,7 @@ describe("GET /api/publicaciones/imagenes/[publicacionId]/[archivo]", () => {
     });
 
     it.each(["foto.png", "../foto.png", archivo.replace(".png", ".svg")])(
-        "rechaza un archivo inválido antes de consultar permisos o disco, %s", async (nombreArchivo) => {
+        "rechaza un archivo inválido antes de consultar permisos o almacenamiento, %s", async (nombreArchivo) => {
             const respuesta = await solicitarImagen("15", nombreArchivo);
 
             expect(respuesta.status).toBe(404);
@@ -80,8 +81,8 @@ describe("GET /api/publicaciones/imagenes/[publicacionId]/[archivo]", () => {
         },
     );
 
-    it("devuelve 404 cuando no existe el archivo autorizado", async () => {
-        mocks.leer.mockRejectedValue(Object.assign(new Error("No existe"), { code: "ENOENT" }));
+    it("devuelve 404 cuando no existe la imagen autorizada en PostgreSQL", async () => {
+        mocks.leer.mockRejectedValue(new ErrorImagenNoEncontrada());
 
         const respuesta = await solicitarImagen();
 
@@ -89,8 +90,8 @@ describe("GET /api/publicaciones/imagenes/[publicacionId]/[archivo]", () => {
         expect(await respuesta.text()).toBe("Imagen no encontrada");
     });
 
-    it("propaga los errores inesperados de lectura", async () => {
-        const error = new Error("Error de lectura");
+    it("propaga un fallo de PostgreSQL sin convertirlo en imagen no encontrada", async () => {
+        const error = new Error("Error de conexión a PostgreSQL");
         mocks.leer.mockRejectedValue(error);
 
         await expect(solicitarImagen()).rejects.toBe(error);

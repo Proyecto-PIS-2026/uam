@@ -9,6 +9,20 @@ export type CategoriaImagen = typeof CATEGORIAS_IMAGEN[number];
 
 export class ErrorImagen extends Error {}
 
+export class ErrorImagenNoEncontrada extends Error {
+    constructor() {
+        super("Imagen no encontrada.");
+        this.name = "ErrorImagenNoEncontrada";
+    }
+}
+
+export class ErrorImagenYaExiste extends Error {
+    constructor(options?: ErrorOptions) {
+        super("Ya existe una imagen con esa clave.", options);
+        this.name = "ErrorImagenYaExiste";
+    }
+}
+
 const NOMBRE_VALIDO = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$/;
 
 export function validarDestinoImagen(categoria: string, id: number): asserts categoria is CategoriaImagen {

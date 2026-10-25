@@ -1,5 +1,4 @@
 import { File as NodeFile } from "node:buffer";
-import { join } from "node:path";
 import sharp from "sharp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -9,11 +8,16 @@ import {
     leerImagenPublicacion,
     tipoContenidoImagen,
 } from "./imagenes-publicacion";
-import { AlmacenamientoImagenesFilesystem } from "@/infraestructura/imagenes/almacenamiento-filesystem";
+import { AlmacenamientoImagenesPostgres } from "@/infraestructura/imagenes/almacenamiento-postgres";
+import { ErrorImagenNoEncontrada, ErrorImagenYaExiste } from "@/infraestructura/imagenes/almacenamiento-imagenes";
 import { crearServicioImagenes } from "@/infraestructura/imagenes/imagenes";
 
-const archivos = vi.hoisted(() => ({ mkdir: vi.fn(), readFile: vi.fn(), writeFile: vi.fn(), unlink: vi.fn() }));
-vi.mock("node:fs/promises", () => ({ ...archivos, default: archivos }));
+const registros = vi.hoisted(() => ({ crear: vi.fn(), leer: vi.fn(), eliminar: vi.fn() }));
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: { orm: { public: { Imagen: {
+    create: registros.crear,
+    select: () => ({ where: (filtro: unknown) => ({ first: () => registros.leer(filtro) }) }),
+    where: (filtro: unknown) => ({ deleteAll: () => registros.eliminar(filtro) }),
+} } } } }));
 
 const UUID = "12345678-1234-4234-8234-123456789abc";
 const NOMBRE = `${UUID}.png`;
@@ -33,18 +37,17 @@ async function foto(formato: "png" | "jpeg" | "webp" = "png", width = 20, height
 
 beforeEach(() => {
     vi.resetAllMocks();
-    archivos.mkdir.mockResolvedValue(undefined);
-    archivos.writeFile.mockResolvedValue(undefined);
-    archivos.unlink.mockResolvedValue(undefined);
+    registros.crear.mockResolvedValue(undefined);
+    registros.eliminar.mockResolvedValue(undefined);
 });
 
 describe("almacenamiento de imágenes", () => {
-    it.each(["png", "jpeg", "webp"] as const)("guarda %s en filesystem y devuelve una URL sin base64", async (formato) => {
+    it.each(["png", "jpeg", "webp"] as const)("guarda %s como bytes en PostgreSQL y devuelve una URL sin base64", async (formato) => {
         const url = await guardarImagenPublicacion(42, archivo(await foto(formato)));
         expect(url).toMatch(/^\/api\/publicaciones\/imagenes\/42\/[a-f0-9-]+\.webp$/);
-        const [ruta, contenido, opciones] = archivos.writeFile.mock.calls[0];
-        expect(ruta).toBe(join(process.cwd(), "storage", "publicaciones", "42", url.split("/").at(-1)!));
-        expect(opciones).toEqual({ flag: "wx", mode: 0o600 });
+        const [{ clave, contenido }] = registros.crear.mock.calls[0];
+        expect(clave).toBe(`publicaciones/42/${url.split("/").at(-1)!}`);
+        expect(Buffer.isBuffer(contenido)).toBe(true);
         expect((await sharp(contenido).metadata()).format).toBe("webp");
     });
 
@@ -52,13 +55,13 @@ describe("almacenamiento de imágenes", () => {
         const contenido = await foto();
         const url = await guardarImagenPublicacion(42, `data:image/png;base64,${contenido.toString("base64")}`);
         expect(url).toContain("/api/publicaciones/imagenes/42/");
-        expect(archivos.writeFile).toHaveBeenCalledOnce();
+        expect(registros.crear).toHaveBeenCalledOnce();
     });
 
     it("reduce las dimensiones y retira los metadatos", async () => {
         const contenido = await sharp(await foto("jpeg", 2000, 1000)).withExif({ IFD0: { Artist: "Privado" } }).jpeg().toBuffer();
         await guardarImagenPublicacion(42, archivo(contenido));
-        const metadata = await sharp(archivos.writeFile.mock.calls[0][1]).metadata();
+        const metadata = await sharp(registros.crear.mock.calls[0][0].contenido).metadata();
         expect(metadata.width).toBe(1600);
         expect(metadata.height).toBe(800);
         expect(metadata.exif).toBeUndefined();
@@ -70,12 +73,12 @@ describe("almacenamiento de imágenes", () => {
         const url = await servicio.guardar("productores", 9, archivo(await foto()));
         expect(url).toContain("/api/imagenes/productores/9/");
         expect(adaptador.guardar).toHaveBeenCalledOnce();
-        expect(archivos.writeFile).not.toHaveBeenCalled();
+        expect(registros.crear).not.toHaveBeenCalled();
     });
 
     it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])("rechaza el destino %s", async (id) => {
         await expect(guardarImagenPublicacion(id, archivo(await foto()))).rejects.toBeInstanceOf(ErrorImagenPublicacion);
-        expect(archivos.writeFile).not.toHaveBeenCalled();
+        expect(registros.crear).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -85,7 +88,7 @@ describe("almacenamiento de imágenes", () => {
         Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>'),
     ])("rechaza una firma engañosa o un formato no admitido", async (contenido) => {
         await expect(guardarImagenPublicacion(42, archivo(contenido))).rejects.toThrow("JPEG, PNG o WebP");
-        expect(archivos.writeFile).not.toHaveBeenCalled();
+        expect(registros.crear).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -96,53 +99,63 @@ describe("almacenamiento de imágenes", () => {
         archivo(Buffer.alloc(MAXIMO + 1), 1),
     ])("rechaza entradas vacías y tamaños fuera del límite", async (entrada) => {
         await expect(guardarImagenPublicacion(42, entrada as File)).rejects.toThrow("10 MB");
-        expect(archivos.writeFile).not.toHaveBeenCalled();
+        expect(registros.crear).not.toHaveBeenCalled();
     });
 
     it.each(["data:image/png;base64,A", "data:image/png;base64,====", "https://host/foto.png", "data:image/gif;base64,YWJj"])("rechaza codificación %s", async (entrada) => {
         await expect(guardarImagenPublicacion(42, entrada)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
     });
 
-    it("limpia un archivo parcial si falla la escritura y conserva el error", async () => {
-        const error = Object.assign(new Error("Disco lleno"), { code: "ENOSPC" });
-        archivos.writeFile.mockRejectedValueOnce(error);
+    it("propaga el fallo de inserción sin intentar eliminar otra imagen", async () => {
+        const error = new Error("Base de datos no disponible");
+        registros.crear.mockRejectedValueOnce(error);
         await expect(guardarImagenPublicacion(42, archivo(await foto()))).rejects.toBe(error);
-        expect(archivos.unlink).toHaveBeenCalledWith(archivos.writeFile.mock.calls[0][0]);
+        expect(registros.eliminar).not.toHaveBeenCalled();
     });
 
-    it("no sobrescribe ni elimina un archivo existente", async () => {
-        const error = Object.assign(new Error("Existe"), { code: "EEXIST" });
-        archivos.writeFile.mockRejectedValueOnce(error);
-        await expect(new AlmacenamientoImagenesFilesystem().guardar(CLAVE, Buffer.from("foto"))).rejects.toBe(error);
-        expect(archivos.unlink).not.toHaveBeenCalled();
+    it.each([
+        Object.assign(new Error("Existe"), { code: "23505" }),
+        new Error("Inserción rechazada", { cause: Object.assign(new Error("Existe"), { sqlState: "23505" }) }),
+    ])("rechaza una clave duplicada sin sobrescribirla ni eliminarla", async (error) => {
+        registros.crear.mockRejectedValueOnce(error);
+        await expect(new AlmacenamientoImagenesPostgres().guardar(CLAVE, Buffer.from("foto")))
+            .rejects.toBeInstanceOf(ErrorImagenYaExiste);
+        expect(registros.eliminar).not.toHaveBeenCalled();
     });
 
-    it("sigue leyendo imágenes heredadas almacenadas en filesystem", async () => {
+    it("lee los bytes de una imagen PNG conservando su URL existente", async () => {
         const contenido = await foto();
-        archivos.readFile.mockResolvedValue(contenido);
-        await expect(leerImagenPublicacion(42, NOMBRE)).resolves.toBe(contenido);
-        expect(archivos.readFile).toHaveBeenCalledWith(join(process.cwd(), "storage", "publicaciones", "42", NOMBRE));
+        registros.leer.mockResolvedValue({ contenido });
+        await expect(leerImagenPublicacion(42, NOMBRE)).resolves.toEqual(contenido);
+        expect(registros.leer).toHaveBeenCalledExactlyOnceWith({ clave: CLAVE });
+    });
+
+    it("distingue una imagen ausente de un error de lectura de PostgreSQL", async () => {
+        registros.leer.mockResolvedValueOnce(null);
+        await expect(leerImagenPublicacion(42, NOMBRE)).rejects.toBeInstanceOf(ErrorImagenNoEncontrada);
+        const error = new Error("Conexión interrumpida");
+        registros.leer.mockRejectedValueOnce(error);
+        await expect(leerImagenPublicacion(42, NOMBRE)).rejects.toBe(error);
     });
 
     it.each([`../${NOMBRE}`, `${NOMBRE}/otro`, `..%2F${NOMBRE}`, "foto.png", `${UUID}.svg`])("impide nombres o rutas no gestionadas %s", async (nombre) => {
         await expect(leerImagenPublicacion(42, nombre)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
-        expect(archivos.readFile).not.toHaveBeenCalled();
+        expect(registros.leer).not.toHaveBeenCalled();
     });
 
     it.each([`../${CLAVE}`, `publicaciones/42/../${NOMBRE}`, `publicaciones\\42\\${NOMBRE}`, `otro/42/${NOMBRE}`])("el adaptador también valida las claves %s", async (clave) => {
-        await expect(new AlmacenamientoImagenesFilesystem().leer(clave)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
-        expect(archivos.readFile).not.toHaveBeenCalled();
+        await expect(new AlmacenamientoImagenesPostgres().leer(clave)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
+        expect(registros.leer).not.toHaveBeenCalled();
     });
 
-    it("elimina exclusivamente el archivo gestionado propio y tolera su ausencia", async () => {
-        archivos.unlink.mockRejectedValue(Object.assign(new Error("No existe"), { code: "ENOENT" }));
+    it("elimina exclusivamente la clave gestionada propia y tolera su ausencia", async () => {
         await expect(eliminarImagenPublicacionGestionada(URL, 42)).resolves.toBeUndefined();
-        expect(archivos.unlink).toHaveBeenCalledWith(join(process.cwd(), "storage", "publicaciones", "42", NOMBRE));
+        expect(registros.eliminar).toHaveBeenCalledExactlyOnceWith({ clave: CLAVE });
     });
 
     it.each([null, "", "/generico/acelga.jpg", "data:image/png;base64,YWJj", URL.replace("/42/", "/43/"), URL + "?a=1"])("conserva referencias que no pertenecen a la publicación %s", async (url) => {
         await eliminarImagenPublicacionGestionada(url, 42);
-        expect(archivos.unlink).not.toHaveBeenCalled();
+        expect(registros.eliminar).not.toHaveBeenCalled();
     });
 
     it.each([["jpg", "image/jpeg"], ["png", "image/png"], ["webp", "image/webp"]])("identifica el tipo seguro %s", (extension, tipo) => {

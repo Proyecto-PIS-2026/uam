@@ -156,7 +156,7 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
 
             let foto = cambios.foto === null ? null : publicacion.foto;
             if (fotoNueva) {
-                foto = await guardarImagenPublicacion(publicacion.id, fotoNueva);
+                foto = await guardarImagenPublicacion(publicacion.id, fotoNueva, tx);
                 imagenCreada = { url: foto, publicacionId: publicacion.id };
             }
             // temporal.updatedAt() renueva fecha en este UPDATE, también si sólo cambian ubicaciones.

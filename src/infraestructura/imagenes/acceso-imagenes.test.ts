@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/publicaciones/imagenes/[publicacionId]/[archivo]/route";
 import { GET as obtenerOtraImagen } from "@/app/api/imagenes/[categoria]/[id]/[archivo]/route";
+import { ErrorImagenNoEncontrada } from "./almacenamiento-imagenes";
 
 const mocks = vi.hoisted(() => ({
     sesion: vi.fn(), leer: vi.fn(), publicacion: vi.fn(), productor: vi.fn(), relacionProductor: vi.fn(),
@@ -155,13 +156,13 @@ describe("acceso a imágenes", () => {
         expect(mocks.publicacion).not.toHaveBeenCalled();
     });
 
-    it("responde 404 si el archivo referenciado ya no existe", async () => {
-        mocks.leer.mockRejectedValue(Object.assign(new Error("Ausente"), { code: "ENOENT" }));
+    it("responde 404 si la imagen referenciada ya no existe", async () => {
+        mocks.leer.mockRejectedValue(new ErrorImagenNoEncontrada());
         expect((await pedir()).status).toBe(404);
     });
 
     it("propaga fallos de almacenamiento inesperados", async () => {
-        const error = Object.assign(new Error("Permisos"), { code: "EACCES" });
+        const error = new Error("PostgreSQL no disponible");
         mocks.leer.mockRejectedValue(error);
         await expect(pedir()).rejects.toBe(error);
     });
@@ -203,6 +204,16 @@ describe("acceso a imágenes", () => {
         mocks.operador.mockResolvedValue({ fotoPerfil: `/api/imagenes/operadores/9/${ARCHIVO}` });
         expect((await pedirPerfil("especies")).status).toBe(200);
         expect((await pedirPerfil("operadores")).status).toBe(200);
+    });
+
+    it("distingue una foto de perfil inexistente de una caída del almacenamiento", async () => {
+        mocks.especie.mockResolvedValue({ fotoEspecie: `/api/imagenes/especies/9/${ARCHIVO}`, especieActiva: true });
+        mocks.leer.mockRejectedValueOnce(new ErrorImagenNoEncontrada());
+        expect((await pedirPerfil("especies")).status).toBe(404);
+
+        const error = new Error("Conexión a PostgreSQL interrumpida");
+        mocks.leer.mockRejectedValueOnce(error);
+        await expect(pedirPerfil("especies")).rejects.toBe(error);
     });
 
     it.each(["publicaciones", "otro", ".."])("no crea rutas alternativas para %s", async (categoria) => {

@@ -410,6 +410,7 @@ function pesoRepresentable(peso: number): KgPorUnidad {
 }
 
 async function limpiarBase() {
+  await prisma.orm.public.Imagen.where(() => all()).deleteAll();
   await prisma.orm.public.Notificacion.where(() => all()).deleteAll();
   await prisma.orm.public.PublicacionOperador.where(() => all()).deleteAll();
   await prisma.orm.public.PublicacionProductor.where(() => all()).deleteAll();

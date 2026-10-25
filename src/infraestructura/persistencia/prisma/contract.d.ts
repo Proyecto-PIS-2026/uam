@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'4c1be49ae006f84744eab77f4bcbaf4fc56a44f9a625e65984629e8806b440f8'>;
+  StorageHashBase<'6b31658ea64079e091b507d9944874ebee46bdc19fa80ccdc2a96259ebb04492'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -280,6 +280,10 @@ export type FieldOutputTypes = {
       readonly fechaHasta: CodecTypes['pg/date-temporal@1']['output'];
       readonly fechaUltimaActualizacion: CodecTypes['pg/date-temporal@1']['output'];
     };
+    readonly Imagen: {
+      readonly clave: CodecTypes['pg/text@1']['output'];
+      readonly contenido: CodecTypes['pg/bytea@1']['output'];
+    };
     readonly Local: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly numeroLocal: CodecTypes['pg/text@1']['output'];
@@ -418,6 +422,10 @@ export type FieldInputTypes = {
       readonly fechaDesde: CodecTypes['pg/date-temporal@1']['input'];
       readonly fechaHasta: CodecTypes['pg/date-temporal@1']['input'];
       readonly fechaUltimaActualizacion: CodecTypes['pg/date-temporal@1']['input'];
+    };
+    readonly Imagen: {
+      readonly clave: CodecTypes['pg/text@1']['input'];
+      readonly contenido: CodecTypes['pg/bytea@1']['input'];
     };
     readonly Local: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -558,6 +566,10 @@ export type StorageColumnTypes = {
       readonly fechaUltimaActualizacion: CodecTypes['pg/date-temporal@1']['output'];
       readonly historico: CodecTypes['pg/jsonb@1']['output'];
     };
+    readonly imagen: {
+      readonly clave: CodecTypes['pg/text@1']['output'];
+      readonly contenido: CodecTypes['pg/bytea@1']['output'];
+    };
     readonly local: {
       readonly finContrato: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -696,6 +708,10 @@ export type StorageColumnInputTypes = {
       readonly fechaHasta: CodecTypes['pg/date-temporal@1']['input'];
       readonly fechaUltimaActualizacion: CodecTypes['pg/date-temporal@1']['input'];
       readonly historico: CodecTypes['pg/jsonb@1']['input'];
+    };
+    readonly imagen: {
+      readonly clave: CodecTypes['pg/text@1']['input'];
+      readonly contenido: CodecTypes['pg/bytea@1']['input'];
     };
     readonly local: {
       readonly finContrato: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
@@ -1070,6 +1086,24 @@ type ContractBase = Omit<
                   };
                 },
               ];
+            };
+            readonly imagen: {
+              columns: {
+                readonly clave: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly contenido: {
+                  readonly nativeType: 'bytea';
+                  readonly codecId: 'pg/bytea@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['clave'] };
+              uniques: readonly [];
+              indexes: readonly [];
+              foreignKeys: readonly [];
             };
             readonly local: {
               columns: {
@@ -1968,6 +2002,7 @@ type ContractBase = Omit<
     readonly calibre: { readonly namespace: 'public' & NamespaceId; readonly model: 'Calibre' };
     readonly pais: { readonly namespace: 'public' & NamespaceId; readonly model: 'Pais' };
     readonly ubicacion: { readonly namespace: 'public' & NamespaceId; readonly model: 'Ubicacion' };
+    readonly imagen: { readonly namespace: 'public' & NamespaceId; readonly model: 'Imagen' };
     readonly publicacion: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Publicacion';
@@ -2293,6 +2328,27 @@ type ContractBase = Omit<
                 readonly fechaDesde: { readonly column: 'fechaDesde' };
                 readonly fechaHasta: { readonly column: 'fechaHasta' };
                 readonly fechaUltimaActualizacion: { readonly column: 'fechaUltimaActualizacion' };
+              };
+            };
+          };
+          readonly Imagen: {
+            readonly fields: {
+              readonly clave: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly contenido: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bytea@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'imagen';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly clave: { readonly column: 'clave' };
+                readonly contenido: { readonly column: 'contenido' };
               };
             };
           };

@@ -15,7 +15,7 @@ rmSync(app, { recursive: true, force: true });
 mkdirSync(app, { recursive: true });
 
 // Una copia nueva evita modificar la aplicación y conservar archivos de ejecuciones anteriores.
-for (const archivo of ["src", "public", "storage", "postcss.config.mjs", "tsconfig.json", "package.json"]) {
+for (const archivo of ["src", "public", "postcss.config.mjs", "tsconfig.json", "package.json"]) {
     const origen = path.join(raiz, archivo);
     if (existsSync(origen)) cpSync(origen, path.join(app, archivo), { recursive: true });
 }

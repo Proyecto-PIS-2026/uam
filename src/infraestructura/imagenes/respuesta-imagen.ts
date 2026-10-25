@@ -1,5 +1,5 @@
 import { puedeLeerImagen } from "./acceso-imagenes";
-import { type CategoriaImagen, ErrorImagen, tipoContenidoImagen, validarDestinoImagen } from "./almacenamiento-imagenes";
+import { type CategoriaImagen, ErrorImagen, ErrorImagenNoEncontrada, tipoContenidoImagen, validarDestinoImagen } from "./almacenamiento-imagenes";
 import { imagenes } from "./imagenes";
 
 export async function responderImagen(categoria: string, idTexto: string, archivo: string): Promise<Response> {
@@ -17,7 +17,7 @@ export async function responderImagen(categoria: string, idTexto: string, archiv
             headers: { ...headers, "Content-Type": tipo, "Content-Length": String(contenido.length) },
         });
     } catch (error) {
-        if (error instanceof ErrorImagen || (error as NodeJS.ErrnoException).code === "ENOENT") return noEncontrada();
+        if (error instanceof ErrorImagen || error instanceof ErrorImagenNoEncontrada) return noEncontrada();
         throw error;
     }
 }

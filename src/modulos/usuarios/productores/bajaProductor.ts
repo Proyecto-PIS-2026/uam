@@ -5,6 +5,7 @@ import { validarBajaProductor } from "./validarBajaProductor";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { eliminarImagenPublicacionGestionada } from "@/modulos/publicaciones/operadores/imagenes-publicacion";
+import { imagenes } from "@/infraestructura/imagenes/imagenes";
 
 export type ResultadoBajaProductor =
 	| { esValido: false; errores: string[] }
@@ -22,7 +23,7 @@ export async function bajaProductor(valor: unknown): Promise<ResultadoBajaProduc
 		await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1720, ${productorId})`
 			.returnsRow({ locked: "pg/int4@1" }).build());
 		const productor = await tx.orm.public.Productor.where({ id: productorId }).first();
-		if (!productor) return { error: "El productor seleccionado ya no existe.", fotos: [] };
+		if (!productor) return { error: "El productor seleccionado ya no existe.", fotos: [], fotoPerfil: null };
 
 		const relaciones = await tx.orm.public.PublicacionProductor.where({ productorId }).all();
 		const fotos: { publicacionId: number; url: string }[] = [];
@@ -35,7 +36,7 @@ export async function bajaProductor(valor: unknown): Promise<ResultadoBajaProduc
 
 		await tx.orm.public.Productor.where({ id: productorId }).delete();
 		await tx.orm.public.Usuario.where({ id: productor.usuarioId }).delete();
-		return { error: null, fotos };
+		return { error: null, fotos, fotoPerfil: productor.fotoPerfil };
 	});
 
 	if (resultado.error) {
@@ -47,6 +48,13 @@ export async function bajaProductor(valor: unknown): Promise<ResultadoBajaProduc
 			await eliminarImagenPublicacionGestionada(foto.url, foto.publicacionId);
 		} catch (error) {
 			console.error("No se pudo eliminar una imagen del productor dado de baja.", error);
+		}
+	}
+	if (resultado.fotoPerfil) {
+		try {
+			await imagenes.eliminar(resultado.fotoPerfil, "productores", productorId);
+		} catch (error) {
+			console.error("No se pudo eliminar la foto de perfil del productor dado de baja.", error);
 		}
 	}
 

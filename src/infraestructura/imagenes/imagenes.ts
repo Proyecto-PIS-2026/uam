@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
-import { AlmacenamientoImagenesFilesystem } from "./almacenamiento-filesystem";
+import { AlmacenamientoImagenesPostgres } from "./almacenamiento-postgres";
 import {
     type AlmacenamientoImagenes,
     type CategoriaImagen,
@@ -79,4 +79,4 @@ export function crearServicioImagenes(almacenamiento: AlmacenamientoImagenes) {
     };
 }
 
-export const imagenes = crearServicioImagenes(new AlmacenamientoImagenesFilesystem());
+export const imagenes = crearServicioImagenes(new AlmacenamientoImagenesPostgres());
