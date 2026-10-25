@@ -50,7 +50,7 @@ describe("Consultas de productores para operadores", () => {
 
     it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite consultar listado y perfil al rol %s",async (rol) => {
         mocks.obtenerSesion.mockResolvedValue({usuarioId: 5, rol, expiraEn: 2000000000});
-        mocks.all.mockResolvedValue([productor]);
+        mocks.all.mockResolvedValue([{ ...productor, publicacionesProductor: [relacion()] }]);
         mocks.first.mockResolvedValue({
             ...productor,
             publicacionesProductor: [relacion()],
@@ -60,8 +60,8 @@ describe("Consultas de productores para operadores", () => {
                 id: productor.id,
                 nombreFantasia: productor.nombreFantasia,
                 fotoPerfil: null,
-                cantidadProductos: 0,
-                ubicaciones: [],
+                cantidadProductos: 1,
+                ubicaciones: ["Salto"],
             },
         ]);
         await expect(obtenerPerfilProductor(productor.nombreFantasia)).
@@ -77,14 +77,13 @@ describe("Consultas de productores para operadores", () => {
         expect(await obtenerProductoresDisponibles()).toEqual([]);
     });
 
-    it("ordena productores, conserva perfiles sin publicaciones y excluye cuentas con otro rol", async () => {
+    it("ordena productores con publicaciones públicas y excluye los que no tienen publicaciones públicas ni cuentas con otro rol", async () => {
         mocks.all.mockResolvedValue([
             { ...productor, nombreFantasia: "Zeta", publicacionesProductor: [relacion(), relacion(), relacion(false, true, "PRODUCTOR", "Oculta"), relacion(true, false), relacion(true, true, "OPERADOR")] },
             { ...productor, id: 2, nombreFantasia: "Álamo" },
             { ...productor, id: 3, usuario: { rol: "OPERADOR" } },
         ]);
         expect(await obtenerProductoresDisponibles()).toEqual([
-            { id: 2, nombreFantasia: "Álamo", fotoPerfil: null, cantidadProductos: 0, ubicaciones: [] },
             { id: 1, nombreFantasia: "Zeta", fotoPerfil: null, cantidadProductos: 2, ubicaciones: ["Salto"] },
         ]);
     });
@@ -95,6 +94,23 @@ describe("Consultas de productores para operadores", () => {
         expect(mocks.first).toHaveBeenCalledWith({ nombreFantasia: productor.nombreFantasia });
         expect(perfil).toMatchObject({ nombreFantasia: productor.nombreFantasia, ubicaciones: ["Salto"] });
         expect(perfil?.publicaciones.map((publicacion) => publicacion.id)).toEqual([10]);
+    });
+
+    it("conserva la consulta de perfil aunque no haya publicaciones públicas", async () => {
+        mocks.first.mockResolvedValue({
+            ...productor,
+            publicacionesProductor: [
+                relacion(false, true),
+                relacion(true, false),
+                relacion(true, true, "OPERADOR"),
+            ],
+        });
+
+        await expect(obtenerPerfilProductor(productor.nombreFantasia)).resolves.toMatchObject({
+            nombreFantasia: productor.nombreFantasia,
+            publicaciones: [],
+            ubicaciones: [],
+        });
     });
 
     it.each([null, { ...productor, usuario: { rol: "OPERADOR" } }])("oculta perfiles inexistentes o con cuenta no disponible", async (resultado) => {

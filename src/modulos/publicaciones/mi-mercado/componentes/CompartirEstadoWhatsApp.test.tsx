@@ -13,8 +13,6 @@ import CompartirEstadoWhatsApp from "./CompartirEstadoWhatsApp";
 import type { Publicacion } from "./MiMercado";
 
 const mocks = vi.hoisted(() => ({
-  compartir: vi.fn(),
-  puedeCompartir: vi.fn(),
   copiar: vi.fn(),
   obtenerFoto: vi.fn(),
 }));
@@ -101,19 +99,9 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    mocks.compartir.mockResolvedValue(undefined);
     mocks.copiar.mockResolvedValue(undefined);
-    mocks.puedeCompartir.mockReturnValue(true);
 
-    Object.defineProperty(navigator, "share", {
-      configurable: true,
-      value: mocks.compartir,
-    });
-
-    Object.defineProperty(navigator, "canShare", {
-      configurable: true,
-      value: mocks.puedeCompartir,
-    });
+    vi.spyOn(window, "open").mockImplementation(() => null);
 
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -125,10 +113,10 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
 
     Reflect.deleteProperty(navigator, "share");
-    Reflect.deleteProperty(navigator, "canShare");
     Reflect.deleteProperty(navigator, "clipboard");
   });
 
@@ -161,8 +149,10 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
   it("CP-03: permite editar el texto antes de compartir", async () => {
     renderizar();
 
+    const mensaje = "Oferta especial de acelga a $45";
+
     fireEvent.change(obtenerMensaje(), {
-      target: { value: "Oferta especial de acelga a $45" },
+      target: { value: mensaje },
     });
 
     fireEvent.click(
@@ -170,13 +160,15 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
     );
 
     await waitFor(() => {
-      expect(mocks.compartir).toHaveBeenCalledExactlyOnceWith({
-        text: "Oferta especial de acelga a $45",
-      });
+      expect(window.open).toHaveBeenCalledExactlyOnceWith(
+        `https://wa.me/?text=${encodeURIComponent(mensaje)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
     });
   });
 
-  it("CP-04: comparte texto cuando la publicación no tiene foto", async () => {
+  it("CP-04: abre WhatsApp con el texto cuando no hay foto", async () => {
     renderizar(crearPublicacion(null));
 
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
@@ -191,24 +183,18 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
     );
 
     await waitFor(() => {
-      expect(mocks.compartir).toHaveBeenCalledWith({
-        text: mensaje,
-      });
+      expect(window.open).toHaveBeenCalledExactlyOnceWith(
+        `https://wa.me/?text=${encodeURIComponent(mensaje)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
     });
 
     expect(mocks.obtenerFoto).not.toHaveBeenCalled();
   });
 
-  it("CP-05: adjunta la fotografía cuando el dispositivo lo permite", async () => {
+  it("CP-05: permite abrir la fotografía manualmente", async () => {
     const foto = "/imagenes/acelga.png";
-
-    mocks.obtenerFoto.mockResolvedValue({
-      ok: true,
-      blob: async () =>
-        new Blob(["contenido de prueba"], {
-          type: "image/png",
-        }),
-    });
 
     renderizar(crearPublicacion(foto));
 
@@ -227,29 +213,20 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
     );
 
     await waitFor(() => {
-      expect(mocks.compartir).toHaveBeenCalledOnce();
+      expect(window.open).toHaveBeenCalledExactlyOnceWith(
+        `https://wa.me/?text=${encodeURIComponent(mensaje)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
     });
 
-    expect(mocks.obtenerFoto).toHaveBeenCalledWith(foto);
-
-    const datos = mocks.compartir.mock.calls[0][0] as ShareData;
-
-    expect(datos.text).toBe(mensaje);
-    expect(datos.files).toHaveLength(1);
-
-    const archivo = datos.files![0];
-
-    expect(archivo).toBeInstanceOf(File);
-    expect(archivo.name).toBe("producto-52.png");
-    expect(archivo.type).toBe("image/png");
-
-    expect(mocks.puedeCompartir).toHaveBeenCalledOnce();
+    expect(mocks.obtenerFoto).not.toHaveBeenCalled();
   });
 
-  it("CP-06: maneja errores al obtener la fotografía", async () => {
-    mocks.obtenerFoto.mockRejectedValue(
-      new Error("No se pudo descargar la foto"),
-    );
+  it("CP-06: informa cuando falla la apertura de WhatsApp", async () => {
+    vi.mocked(window.open).mockImplementation(() => {
+      throw new Error("No se pudo abrir WhatsApp");
+    });
 
     renderizar(crearPublicacion("/imagenes/acelga.png"));
 
@@ -259,41 +236,41 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent(
-        "No se pudo adjuntar la fotografía",
+        "No se pudo abrir WhatsApp.",
       );
     });
 
-    expect(mocks.compartir).not.toHaveBeenCalled();
     expect(
       screen.getByRole("link", { name: "Abrir foto" }),
     ).toBeInTheDocument();
   });
 
-  it("CP-07: avisa cuando el dispositivo no permite compartir archivos", async () => {
-    mocks.puedeCompartir.mockReturnValue(false);
+  it("CP-07: codifica correctamente el mensaje en la URL de WhatsApp", async () => {
+    renderizar();
 
-    mocks.obtenerFoto.mockResolvedValue({
-      ok: true,
-      blob: async () =>
-        new Blob(["imagen"], { type: "image/png" }),
+    const mensaje = "Acelga 🥬\nPrecio $45 & descuento 10%";
+
+    fireEvent.change(obtenerMensaje(), {
+      target: { value: mensaje },
     });
-
-    renderizar(crearPublicacion("/imagenes/acelga.png"));
 
     fireEvent.click(
       screen.getByRole("button", { name: "Compartir" }),
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveTextContent(
-        "no admite compartir la fotografía",
-      );
+      expect(window.open).toHaveBeenCalledOnce();
     });
 
-    expect(mocks.compartir).not.toHaveBeenCalled();
+    const destino = new URL(
+      vi.mocked(window.open).mock.calls[0][0]!.toString(),
+    );
+
+    expect(destino.hostname).toBe("wa.me");
+    expect(destino.searchParams.get("text")).toBe(mensaje);
   });
 
-  it("CP-08: ofrece una alternativa si navigator.share no existe", async () => {
+  it("CP-08: abre WhatsApp aunque navigator.share no exista", async () => {
     Object.defineProperty(navigator, "share", {
       configurable: true,
       value: undefined,
@@ -301,13 +278,17 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
 
     renderizar();
 
+    const mensaje = obtenerMensaje().value;
+
     fireEvent.click(
       screen.getByRole("button", { name: "Compartir" }),
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveTextContent(
-        "Este navegador no permite compartir directamente",
+      expect(window.open).toHaveBeenCalledExactlyOnceWith(
+        `https://wa.me/?text=${encodeURIComponent(mensaje)}`,
+        "_blank",
+        "noopener,noreferrer",
       );
     });
 
@@ -348,7 +329,7 @@ describe("BP-10.3 - Compartir producto en estado de WhatsApp", () => {
     );
 
     expect(alCerrar).toHaveBeenCalledOnce();
-    expect(mocks.compartir).not.toHaveBeenCalled();
+    expect(window.open).not.toHaveBeenCalled();
   });
 
   it("CP-11: muestra Consultar cuando no hay precio", () => {

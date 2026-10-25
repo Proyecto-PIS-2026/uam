@@ -1,22 +1,31 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { randomUUID } from "node:crypto";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { altaOperador } from "./altaOperador";
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirAdministrador: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
+const identificador = randomUUID().replaceAll("-", "").slice(0, 10);
+const nombreUsuarioPrueba = `operador_${identificador}`;
+const nombrePrueba = `Operador prueba ${identificador}`;
+const nombreAlternativoPrueba = `Otro operador ${identificador}`;
+const usuariosDePrueba = new Set<string>();
+
 function armarDatos(naveId: number, sobrescribir: Record<string, unknown> = {}) {
-	return {
+	const datos = {
 		rol: "operador",
-		nombreUsuario: "probandotest",
+		nombreUsuario: nombreUsuarioPrueba,
 		contraseña: "clave12345",
 		confirmacionContraseña: "clave12345",
-		nombre: "probandotest",
+		nombre: nombrePrueba,
 		codigoPais: "+598",
 		telefono: "099123456",
 		locales: [{ numeroLocal: "999", naveId, contrato: "2029-02-28" }],
 		...sobrescribir,
 	};
+	usuariosDePrueba.add(String(datos.nombreUsuario));
+	return datos;
 }
 
 async function buscarNumeroLocalLibre(naveId: number): Promise<string> {
@@ -42,12 +51,15 @@ async function borrarAlta(operadorId: number) {
 }
 
 describe("alta de operador", () => {
-	beforeEach(async () => {
-		const usuario = await db.orm.public.Usuario.where({ username: "probandotest" }).first();
-		if (!usuario) return;
-		const operador = await db.orm.public.Operador.where({ usuarioId: usuario.id }).first();
-		if (operador) await borrarAlta(operador.id);
-		else await db.orm.public.Usuario.where({ id: usuario.id }).delete();
+	afterEach(async () => {
+		for (const username of usuariosDePrueba) {
+			const usuario = await db.orm.public.Usuario.where({ username }).first();
+			if (!usuario) continue;
+			const operador = await db.orm.public.Operador.where({ usuarioId: usuario.id }).first();
+			if (operador) await borrarAlta(operador.id);
+			else await db.orm.public.Usuario.where({ id: usuario.id }).delete();
+		}
+		usuariosDePrueba.clear();
 	});
 
 	it("devuelve los errores del validador cuando los datos son inválidos", async () => {
@@ -85,7 +97,7 @@ describe("alta de operador", () => {
 
         const usuario = await db.orm.public.Usuario.where({ id: operador.usuarioId }).first();
         expect(usuario).toBeDefined();
-        expect(usuario?.username).toBe("probandotest");
+        expect(usuario?.username).toBe(nombreUsuarioPrueba);
         expect(usuario?.rol).toBe("OPERADOR");
 
         const local = await db.orm.public.Local.where({
@@ -124,7 +136,7 @@ describe("alta de operador", () => {
         expect(primerResultado.esValido).toBe(true); 
         if (!primerResultado.esValido) return; 
 
-        const segundoResultado = await altaOperador( armarDatos(nave.id, { nombre: "otro operador", }), ); 
+        const segundoResultado = await altaOperador(armarDatos(nave.id, { nombre: nombreAlternativoPrueba }));
         expect(segundoResultado).toEqual({ esValido: false, errores: [ "Ya existe un usuario con ese nombre de usuario.", ], }); 
         await borrarAlta(primerResultado.id); 
     })
@@ -147,7 +159,7 @@ describe("alta de operador", () => {
         expect(primerResultado.esValido).toBe(true); 
         if (!primerResultado.esValido) return; 
 
-        const segundoResultado = await altaOperador( armarDatos(nave.id, { nombreUsuario: "otro_usuario_test", }), ); 
+        const segundoResultado = await altaOperador(armarDatos(nave.id, { nombreUsuario: `${nombreUsuarioPrueba}_otro` }));
         expect(segundoResultado).toEqual({ esValido: false, errores: [ "Ya existe un operador con ese nombre.", ], }); 
 
         await borrarAlta(primerResultado.id); 
@@ -175,8 +187,8 @@ describe("alta de operador", () => {
 
         const segundoResultado = await altaOperador(
             armarDatos(nave.id, {
-                nombreUsuario: "otro_usuario_test",
-                nombre: "otro operador",
+                nombreUsuario: `${nombreUsuarioPrueba}_otro`,
+                nombre: nombreAlternativoPrueba,
                 locales: [{
                     numeroLocal,
                     naveId: nave.id,

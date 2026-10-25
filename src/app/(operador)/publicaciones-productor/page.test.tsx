@@ -9,6 +9,7 @@ import { requerirConsultaProductores } from "@/modulos/identidad-acceso/autoriza
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
     requerirOperador: vi.fn(),
+    requerirConsultaProductores: vi.fn(),
 }));
 
 vi.mock("@/modulos/consulta-mercado/acciones/ConsultarPublicacionProductor.action", () => ({
@@ -31,10 +32,6 @@ vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPu
             Publicaciones de productores: {publicaciones.length}
         </div>
     ),
-}));
-
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
-    requerirConsultaProductores: vi.fn(),
 }));
 
 const sesionOperador = {
