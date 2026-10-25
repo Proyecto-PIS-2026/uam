@@ -338,9 +338,10 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
             await tarjeta.click();
             const detalle = pagina.getByRole("dialog", { name: "Detalle de publicación", exact: true });
             const rutaEsperada = conSesion ? `/gestion-operadores/${operadorA.id}` : `/operadores/${encodeURIComponent(operadorA.nombre)}`;
-            await expect.soft(detalle.getByRole("link", { name: "Ver Perfil", exact: true })).toHaveAttribute("href", rutaEsperada);
+            const enlaceEsperado = conSesion ? rutaEsperada : `${rutaEsperada}?origen=publicaciones`;
+            await expect.soft(detalle.getByRole("link", { name: "Ver Perfil", exact: true })).toHaveAttribute("href", enlaceEsperado);
             await detalle.getByRole("link", { name: "Ver Perfil", exact: true }).click();
-            await expect.soft(pagina).toHaveURL((url) => url.pathname === rutaEsperada);
+            await expect.soft(pagina).toHaveURL((url) => `${url.pathname}${url.search}` === enlaceEsperado);
             await informacion.attach(`Perfil ${dispositivo} ${conSesion ? "admin" : "público"}`, { body: await pagina.screenshot({ fullPage: true }), contentType: "image/png" });
           } finally { await contexto.close(); }
         });
