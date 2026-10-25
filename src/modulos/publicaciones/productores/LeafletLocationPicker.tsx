@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import CloseIcon from "@mui/icons-material/Close";
 import type { Map as LeafletMap, CircleMarker } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./LeafletLocationPicker.module.css";
@@ -155,7 +156,7 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
         <section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="titulo-ubicacion-productor">
             <header className={styles.encabezado}>
                 <h2 id="titulo-ubicacion-productor">Seleccionar ubicación</h2>
-                <button type="button" className={styles.cerrar} onClick={alCerrar} aria-label="Cerrar mapa">×</button>
+                <button type="button" className={styles.cerrar} onClick={alCerrar} aria-label="Cerrar mapa"><CloseIcon aria-hidden="true" fontSize="inherit" /></button>
             </header>
             <div className={styles.contenido}>
                 <p className={styles.ayuda}>Haz click para seleccionar una ubicación en el mapa o busca por nombre:</p>

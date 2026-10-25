@@ -43,7 +43,6 @@ async function importar(destino: AlmacenamientoImagenes, clave: string, contenid
         return "importadas";
     } catch (error) {
         if (!(error instanceof ErrorImagenYaExiste)) throw error;
-        // Otra importación pudo crear la misma clave después de nuestra lectura.
         const concurrente = await leerDestino(destino, clave);
         if (!concurrente) throw error;
         return concurrente.equals(contenido) ? "existentes" : "conflictos";
@@ -60,7 +59,6 @@ async function esDirectorio(ruta: string): Promise<boolean | null> {
     }
 }
 
-/** Copia las imágenes sin modificar sus claves, referencias ni archivos originales. */
 export async function migrarImagenesFilesystem({ directorio = join(process.cwd(), "storage"), destino, referencias = [], soloVerificar = false }: {
     directorio?: string;
     destino: AlmacenamientoImagenes;
@@ -112,7 +110,6 @@ export async function migrarImagenesFilesystem({ directorio = join(process.cwd()
         }
     }
 
-    // Las fotos estáticas, externas y base64 siguen siendo referencias válidas fuera del almacén.
     const verificadas = new Map<string, boolean>();
     for (const referencia of referencias) {
         const { categoria, id, url } = referencia;

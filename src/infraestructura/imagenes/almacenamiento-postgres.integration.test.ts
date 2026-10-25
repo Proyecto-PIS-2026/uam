@@ -43,7 +43,6 @@ async function fotografia() {
 
 describe.sequential("almacenamiento compartido de imágenes en PostgreSQL", { timeout: 15_000 }, () => {
     beforeAll(async () => {
-        // El setup de integración valida la separación respecto de DATABASE_URL antes de importar este archivo.
         const url = process.env.DATABASE_URL_TEST;
         if (!url || process.env.DATABASE_URL !== url) {
             throw new Error("La integración de imágenes requiere DATABASE_URL_TEST como base activa.");

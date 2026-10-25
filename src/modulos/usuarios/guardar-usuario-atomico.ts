@@ -28,8 +28,6 @@ export async function guardarUsuarioAtomico(
 ): Promise<number | string> {
     try {
         return await db.transaction(async (tx) => {
-            // Todos los perfiles comparten Usuario.username y reservan sus nombres
-            // antes de comprobarlos, para que altas y ediciones no se adelanten.
             await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1720, 0)`
                 .returnsRow({ locked: "pg/int4@1" }).build());
             return guardar(tx);

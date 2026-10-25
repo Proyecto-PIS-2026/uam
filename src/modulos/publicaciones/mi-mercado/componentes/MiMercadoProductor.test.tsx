@@ -154,7 +154,7 @@ describe("MiMercadoProductor", () => {
         mocks.mediaQuery.mockReturnValue(esWeb);
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
         const tarjeta = screen.getByRole("button", { name: "Ver detalle de Pera" });
-        const zonas = [tarjeta, ...["$100", "Disponible", "Pera", "Sin fotografía", "›"].map((texto) => within(tarjeta).getByText(texto))];
+        const zonas = [tarjeta, ...["$100", "Disponible", "Pera", "Sin fotografía"].map((texto) => within(tarjeta).getByText(texto)), within(tarjeta).getByTestId("ChevronRightIcon")];
 
         for (const zona of zonas) {
             fireEvent.click(zona);

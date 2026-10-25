@@ -78,7 +78,6 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
         } finally {
             cargaEnCurso.current = false;
             if (montado.current && pedido === ultimoPedido.current) setCargando(false);
-            // Una respuesta descartada espera la consulta de los filtros vigentes.
             if (montado.current && pedido !== ultimoPedido.current && (recargaPendiente.current || temporizador.current)) {
                 esperasDeCarga.current.push(...esperas);
             } else {

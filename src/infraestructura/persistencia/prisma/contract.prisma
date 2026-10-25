@@ -179,7 +179,6 @@ model Ubicacion {
   @@map("ubicacion")
 }
 
-// IMAGENES
 model Imagen {
   clave     String @id
   contenido Bytes

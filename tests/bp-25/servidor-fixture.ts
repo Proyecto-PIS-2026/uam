@@ -30,8 +30,6 @@ async function detener(servidor: ChildProcess) {
   await Promise.race([terminado, esperar(5_000)]);
 }
 
-// Importado sólo por BP-25: seleccionar otro proyecto no inicia ni prepara esta base.
-// DATABASE_URL_TEST debe identificar una base desechable, distinta de la principal.
 export const test = testBase.extend<Record<never, never>, { servidorBp25: void }>({
   servidorBp25: [async ({}, usar) => {
     await comprobarPuertoLibre();
@@ -62,7 +60,6 @@ export const test = testBase.extend<Record<never, never>, { servidorBp25: void }
           await respuesta.body?.cancel();
           if (listo) break;
         } catch {
-          // Next puede tardar en compilar la primera página.
         }
         await esperar(250);
       }

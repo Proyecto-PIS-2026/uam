@@ -35,7 +35,9 @@
 }
 
 .alerta :global(.MuiAlert-action) {
-    align-self: flex-start;
+    align-self: center;
+    align-items: center;
+    flex-shrink: 0;
     margin: 0 0 0 auto;
     padding: 0 0 0 var(--espacio-inline);
 }

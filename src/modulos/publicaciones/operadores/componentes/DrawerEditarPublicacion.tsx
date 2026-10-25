@@ -8,6 +8,8 @@ import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
@@ -299,9 +301,9 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         <div key="precio" className={styles.campo}>
             <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
             <div className={styles.controlesPrecio} data-editando={editando}>
-                {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={bloqueado} aria-label={`Disminuir precio en ${incrementoPrecio}`}>−</button>}
+                {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={bloqueado} aria-label={`Disminuir precio en ${incrementoPrecio}`}><RemoveIcon aria-hidden="true" fontSize="inherit" /></button>}
                 <input className={styles.entrada} id={`${idBase}-precio`} type="text" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder={editando ? "Ingresar precio aquí" : "Consultar precio"} value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={ocupado} />
-                {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={bloqueado} aria-label={`Aumentar precio en ${incrementoPrecio}`}>+</button>}
+                {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={bloqueado} aria-label={`Aumentar precio en ${incrementoPrecio}`}><AddIcon aria-hidden="true" fontSize="inherit" /></button>}
             </div>
             {editando && <small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
         </div>

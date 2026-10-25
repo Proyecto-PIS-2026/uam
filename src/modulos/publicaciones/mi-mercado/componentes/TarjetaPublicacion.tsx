@@ -1,6 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "../tipos";
@@ -195,7 +198,7 @@ export default function TarjetaPublicacion({
                 <div className={styles.contenedorPrecio}>
                     <div className={styles.controlesPrecio}>
                         <button type="button" className={styles.botonPrecio} onClick={restar} disabled={guardandoManual || editandoPrecio || !puedeModificar} aria-label="Disminuir precio">
-                            −
+                            <RemoveIcon aria-hidden="true" fontSize="inherit" />
                         </button>
                         {editandoPrecio && puedeModificar ? (
                             <input
@@ -229,11 +232,11 @@ export default function TarjetaPublicacion({
                             </button>
                         )}
                         <button type="button" className={styles.botonPrecio} onClick={sumar} disabled={guardandoManual || editandoPrecio || !puedeModificar} aria-label="Aumentar precio">
-                            +
+                            <AddIcon aria-hidden="true" fontSize="inherit" />
                         </button>
                     </div>
                     <button type="button" onClick={consultarPublicacion} className={styles.botonDetalle} aria-label={`Ver detalle de ${nombreProducto}`}>
-                        ›
+                        <ChevronRightIcon aria-hidden="true" fontSize="inherit" />
                     </button>
                 </div>
                 {errorPrecio && <div role="alert" className={styles.errorPrecio}>{errorPrecio}</div>}

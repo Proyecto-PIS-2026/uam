@@ -139,7 +139,6 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
 
     const naves = useMemo(() => {
         const disponibles = new Set(navesDisponibles ?? []);
-        // Una recarga sin opciones no debe borrar el filtro ni invalidar el selector.
         if (nave !== "Todas") disponibles.add(nave);
         return [...disponibles].sort(compararOpciones);
     }, [navesDisponibles, nave]);

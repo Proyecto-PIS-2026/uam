@@ -21,10 +21,8 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
             enCurso = solicitud;
             try {
                 const resultado = await actualizar();
-                // Una consulta fallida no consume la versión: otra conexión puede reintentarla.
                 if (!cerrado && resultado !== false) versionAplicada = solicitud.version;
             } catch {
-                // El próximo evento vuelve a intentar la versión pendiente de aplicar.
             } finally {
                 enCurso = null;
                 programar();
@@ -53,7 +51,6 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
                 const identificador = (evento as MessageEvent).lastEventId;
                 const version = typeof identificador === "string" && identificador !== "" ? identificador : null;
                 if (version !== null && (version === versionAplicada || version === enCurso?.version)) return;
-                // Las versiones son opacas; importa el último aviso recibido, no un orden numérico.
                 pendiente = { version };
                 programar();
             };

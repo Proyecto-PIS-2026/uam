@@ -77,7 +77,6 @@ export async function GET(solicitud: Request) {
                 const datos = operadorId === undefined || cambio?.publicacionId === undefined ? {} : { publicacionId: cambio.publicacionId };
                 enviar(`${cambio ? "" : "retry: 3000\n"}id: ${version}:${fecha}\nevent: ${cambio ? "cambio" : "conectado"}\ndata: ${JSON.stringify(datos)}\n\n`);
             });
-            // Un callback síncrono puede cerrar por backpressure antes de devolver la desuscripción.
             if (cerrado) desuscribir();
         },
         cancel() { cerrar(true); },

@@ -144,7 +144,7 @@ describe("eventos de publicaciones", () => {
         const lector = respuesta.body!.getReader();
         await lector.read();
         await vi.advanceTimersByTimeAsync(55000);
-        while (!(await lector.read()).done) { /* Consumir los pulsos anteriores al cierre. */ }
+        while (!(await lector.read()).done) { }
         expect(mocks.desuscribir).toHaveBeenCalledOnce();
         expect(vi.getTimerCount()).toBe(0);
     });
@@ -169,7 +169,7 @@ describe("eventos de publicaciones", () => {
         });
         const respuesta = await GET(new Request("http://localhost/api/publicaciones/eventos"));
         const lector = respuesta.body!.getReader();
-        while (!(await lector.read()).done) { /* Vaciar el buffer que provocó backpressure. */ }
+        while (!(await lector.read()).done) { }
         expect(mocks.desuscribir).toHaveBeenCalledOnce();
         expect(vi.getTimerCount()).toBe(0);
     });

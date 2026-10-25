@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import CloseIcon from "@mui/icons-material/Close";
 import Alert from "@mui/material/Alert";
 import Fade from "@mui/material/Fade";
 import Portal from "@mui/material/Portal";
@@ -39,7 +40,6 @@ export default function NotificacionToast({ notificacion, alCerrar }: Props) {
     useEffect(() => {
         if (!notificacion) return;
 
-        // El aviso se cierra antes de que Escape llegue al panel que está debajo.
         const cerrarConEscape = (evento: KeyboardEvent) => {
             if (evento.key !== "Escape" || evento.defaultPrevented) return;
             evento.preventDefault();
@@ -75,6 +75,7 @@ export default function NotificacionToast({ notificacion, alCerrar }: Props) {
                     aria-live={urgente ? "assertive" : "polite"}
                     aria-atomic="true"
                     closeText="Cerrar notificación"
+                    slots={{ closeIcon: CloseIcon }}
                     onClose={alCerrar}
                 >
                     {notificacion.mensaje}

@@ -11,6 +11,8 @@
 
 .volver {
     display: inline-flex;
+    align-items: center;
+    gap: var(--espacio-textos);
     margin-bottom: var(--espacio-secciones);
     padding: 0;
     border: 0;

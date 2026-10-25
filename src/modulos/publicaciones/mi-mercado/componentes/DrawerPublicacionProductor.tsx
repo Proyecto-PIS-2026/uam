@@ -161,7 +161,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     const fotoRef = useRef<HTMLInputElement>(null);
     const galeriaRef = useRef<HTMLInputElement>(null);
 
-    // Una selección nueva reinicia la sesión; actualizar el mismo producto conserva su borrador.
     if (estado.id !== (recibida?.id ?? null)) {
         setEstado(estadoInicial(recibida));
         cerrarNotificacion();
@@ -217,7 +216,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     }, [abierto, estado.id, esWeb]);
 
     useLayoutEffect(() => {
-        // Deshabilitar el botón durante una solicitud puede dejar el foco en body.
         if (abierto && document.activeElement === document.body) {
             panelRef.current?.focus({ preventScroll: true });
         }

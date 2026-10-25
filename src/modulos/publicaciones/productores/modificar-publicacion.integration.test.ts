@@ -88,7 +88,6 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         sesionPropietario = { usuarioId: dueno.usuarioId, rol: "PRODUCTOR", expiraEn: 2000000000 };
         sesionAdministrador = { usuarioId: administrador.id, rol: "ADMINISTRADOR", expiraEn: 2000000000 };
         paisId = semilla.paisId;
-        // Aísla las combinaciones de este archivo del catálogo ya publicado por la semilla.
         for (let indice = 0; indice < 3; indice++) {
             const calibre = await db.orm.public.Calibre.create({ codigoCalibre: `edicion-${randomUUID()}`, nombreCalibre: `Calibre de prueba ${indice}` });
             calibresCreados.push(calibre.id);

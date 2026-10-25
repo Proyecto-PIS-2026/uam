@@ -93,7 +93,6 @@ export default function DrawerDeslizable({
         if (tiempo > 0) arrastre.velocidad = (evento.clientY - arrastre.ultimoY) / tiempo;
         arrastre.ultimoY = evento.clientY;
         arrastre.ultimoTiempo = evento.timeStamp;
-        // Slide reconoce translate(x, y) y continúa la salida desde esta posición.
         arrastre.panel.style.transform = `translate(0px, ${arrastre.distancia}px)`;
         evento.preventDefault();
     }
@@ -112,7 +111,6 @@ export default function DrawerDeslizable({
             return;
         }
         onClose();
-        // Si una confirmación o una operación pendiente veta el cierre, el panel vuelve.
         revisionCierreRef.current = requestAnimationFrame(() => {
             revisionCierreRef.current = null;
             if (estadoRef.current.open && arrastre.panel.isConnected && !arrastreRef.current) restaurarPosicion(arrastre);

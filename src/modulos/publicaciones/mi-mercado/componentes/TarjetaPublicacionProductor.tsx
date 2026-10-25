@@ -1,5 +1,6 @@
 "use client";
 
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import styles from "./TarjetaPublicacion.module.css";
@@ -35,7 +36,7 @@ export default function TarjetaPublicacionProductor({ publicacion, alConsultar }
                 </span>
                 <span className={styles.contenedorPrecio}>
                     <span className={styles.precio}>{publicacion.precio === null ? "Sin precio" : `$${Number(publicacion.precio).toFixed(0)}`}</span>
-                    <span className={styles.botonDetalle} aria-hidden="true">›</span>
+                    <span className={styles.botonDetalle} aria-hidden="true"><ChevronRightIcon aria-hidden="true" fontSize="inherit" /></span>
                 </span>
             </span>
         </button>

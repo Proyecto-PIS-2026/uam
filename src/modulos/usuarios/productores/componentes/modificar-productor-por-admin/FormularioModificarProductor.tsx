@@ -4,6 +4,7 @@ import NotificacionToast, { useNotificacionToast } from "@/compartido/componente
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 import { modificarProductor } from "./modificarProductor";
 import type { ProductorParaModificar } from "./obtenerProductorParaModificar";
@@ -89,7 +90,8 @@ export default function FormularioModificarProductor({ productor }: Props) {
                     onClick={cancelar}
                     disabled={guardando}
                 >
-                    ← Volver al perfil
+                    <ArrowBackIcon aria-hidden="true" fontSize="inherit" />
+                    Volver al perfil
                 </button>
 
                 <header className={styles.encabezado}>

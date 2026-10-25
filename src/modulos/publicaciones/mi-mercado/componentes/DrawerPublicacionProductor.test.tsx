@@ -575,7 +575,6 @@ describe("DrawerPublicacionProductor: edición", () => {
         const editar = screen.getByRole("button", { name: "Editar" });
         editar.focus();
         expect(editar).toHaveFocus();
-        // JSDOM ignora blur() en controles deshabilitados: simulamos antes la pérdida de foco nativa.
         editar.blur();
         fireEvent.click(editar);
         expect(editar).toBeDisabled();

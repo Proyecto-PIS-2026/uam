@@ -123,10 +123,8 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
         resultado = await db.transaction(async (tx) => {
             const objetivo = await tx.orm.public.PublicacionProductor.where({ id: publicacionProductorId }).select("productorId").first();
             if (!objetivo) throw new ErrorEdicionPublicacionProductor("NO_ENCONTRADA", "La publicación no existe.");
-            // Comparte el bloqueo del alta y la baja para preservar la unicidad del catálogo.
             await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1720, ${objetivo.productorId})`
                 .returnsRow({ locked: "pg/int4@1" }).build());
-            // Mantiene el orden relación -> publicación usado por la baja.
             await tx.execute(db.raw.sql`SELECT id FROM "publicacionProductor" WHERE id = ${publicacionProductorId} FOR UPDATE`
                 .returnsRow({ id: "pg/int4@1" }).build());
             const relacion = await obtenerPublicacionProductorEditable(sesion, publicacionProductorId, tx);

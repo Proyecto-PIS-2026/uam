@@ -15,7 +15,6 @@ if (!app.startsWith(temporal + path.sep)) throw new Error("La copia E2E debe est
 dotenv.config({ path: [path.join(raiz, ".env.local"), path.join(raiz, ".env")], quiet: true });
 const databaseUrl = obtenerDatabaseUrlTest();
 
-// La suite usa una base de pruebas desechable. No emite ni modifica el contrato del repositorio.
 for (const [archivo, argumentos] of [
     ["node_modules/prisma/dist/prisma.js", ["db", "migrate", "--yes"]],
     ["node_modules/tsx/dist/cli.mjs", ["src/infraestructura/persistencia/prisma/seed.ts"]],
@@ -66,7 +65,6 @@ function cerrar() {
         process.exit(0);
     }
     if (process.platform === "win32") {
-        // Sólo el árbol del Next creado por este proceso; nunca otro servidor del usuario.
         const resultado = spawnSync("taskkill", ["/PID", String(next.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
         if (resultado.status !== 0) next.kill();
     } else {

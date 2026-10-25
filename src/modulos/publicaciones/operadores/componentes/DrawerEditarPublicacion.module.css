@@ -321,6 +321,9 @@
 }
 
 .ajustarPrecio {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border: 0;
     border-radius: var(--radio-control);
     background: var(--color-primary);

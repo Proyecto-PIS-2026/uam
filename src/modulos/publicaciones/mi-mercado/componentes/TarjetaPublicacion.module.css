@@ -195,6 +195,9 @@
 }
 
 .botonDetalle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--color-secondary);
     font-size: 1.25rem;
     font-weight: 700;

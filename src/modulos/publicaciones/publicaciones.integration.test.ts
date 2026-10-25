@@ -90,7 +90,6 @@ type Fixture = Awaited<ReturnType<typeof crearFixture>>;
 
 async function borrarFixture(fixture: Fixture) {
     await db.transaction(async (tx) => {
-        // Todos los identificadores pertenecen a este fixture. No se vacían tablas compartidas.
         for (const id of fixture.publicacionIds) await tx.orm.public.Publicacion.where({ id }).delete();
         for (const operadorId of [fixture.operadorId, fixture.operadorVencidoId, fixture.operadorSoloBId]) {
             await tx.orm.public.Local.where({ operadorId }).deleteAll();
@@ -125,7 +124,6 @@ function ejecutarYEsperarNotificacion(cliente: Client, payload: string, ejecutar
         const recibir = (notificacion: Notification) => {
             if (notificacion.channel === "uam_publicaciones" && notificacion.payload === payload) finalizar(undefined, notificacion);
         };
-        // Es un límite de fallo, no una espera usada para decidir si llegó un evento.
         const limite = setTimeout(() => finalizar(new Error("No llegó la notificación confirmada de PostgreSQL.")), 5000);
         cliente.on("notification", recibir);
         cliente.on("error", fallar);
@@ -279,8 +277,6 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
             await notificarCambioPublicacion(tx, { operadorId: fixture!.operadorId, publicacionId: fixture!.visibles[0] });
             throw new Error("Revertir fixture");
         })).rejects.toThrow("Revertir fixture");
-        // NOTIFY se entrega en orden de commit. La barrera posterior confirma que el
-        // oyente procesó la cola sin depender de dormir N milisegundos.
         const barrera = JSON.stringify({ barrera: randomUUID() });
         await ejecutarYEsperarNotificacion(oyente, barrera, () => oyente.query("SELECT pg_notify($1, $2)", ["uam_publicaciones", barrera]));
         expect(recibidos).not.toContain(payload);

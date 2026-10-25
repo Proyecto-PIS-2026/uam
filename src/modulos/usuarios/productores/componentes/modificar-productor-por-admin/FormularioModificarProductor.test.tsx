@@ -157,7 +157,7 @@ describe("FormularioModificarProductor", () => {
         });
     });
 
-    it.each(["Cancelar", "← Volver al perfil"])(
+    it.each(["Cancelar", "Volver al perfil"])(
         "vuelve al perfil sin guardar al apretar «%s»",
         (nombreDelBoton) => {
             renderizar();
