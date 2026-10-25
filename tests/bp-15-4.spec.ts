@@ -34,7 +34,7 @@ type Catalogos = Record<"especies" | "variedades" | "presentaciones" | "categori
 // La API prepara una publicación temporal; las acciones de baja se prueban por la interfaz.
 // Se usa otro productor para no alterar los nueve productos requeridos por BP-15.2/15.3.
 const test = base.extend<{ publicacionPrueba: { precio: string; cantidadInicial: number } }>({
-  publicacionPrueba: async ({ page }, use) => {
+  publicacionPrueba: async ({ page }, ejecutarPrueba) => {
     await iniciarSesionProductor(page, { usuario, contrasena: `${usuario}123` });
     await page.goto(ruta);
     await expect(tarjetas(page).first()).toBeVisible();
@@ -64,7 +64,7 @@ const test = base.extend<{ publicacionPrueba: { precio: string; cantidadInicial:
     try {
       await page.reload();
       await expect(tarjetaPrueba(page, precio)).toBeVisible();
-      await use({ precio, cantidadInicial });
+      await ejecutarPrueba({ precio, cantidadInicial });
     } finally {
       // También limpia la publicación si falla un caso de cancelación o confirmación.
       await page.goto(ruta);
