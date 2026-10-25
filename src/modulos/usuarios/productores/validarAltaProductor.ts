@@ -45,6 +45,7 @@ export function validarAltaProductor(valor: unknown): ResultadoValidacionAltaPro
 	if (contraseña.length < 8) errores.push("La contraseña debe tener al menos 8 caracteres.");
 	if (contraseña !== confirmacion) errores.push("Las contraseñas no coinciden.");
 	if (!nombre) errores.push("El nombre es obligatorio.");
+	if (nombre === "." || nombre === "..") errores.push('El nombre no puede ser "." ni "..".');
 	if (!CODIGOS_PAIS.includes(codigoPais)) errores.push("El código de país no es válido.");
 	const reglaTelefono = REGLAS_TELEFONO[codigoPais];
 	if (reglaTelefono && !reglaTelefono.test(numeroSinCodigo)) errores.push("El teléfono no es válido.");

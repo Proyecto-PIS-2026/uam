@@ -103,6 +103,7 @@ export async function modificarOperador(
                 .where({ id: operador.usuarioId })
                 .update({
                     passwordHash,
+                    solicitoRestablecimiento: false,
                 });
         }
         const localesActuales =

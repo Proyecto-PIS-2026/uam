@@ -175,13 +175,18 @@ describe("modificarOperador", () => {
     it("rechaza la modificación si otro operador ya usa ese nombre", async () => {
         prepararBase({ operadorConEseNombre: { id: 99 } });
  
-        const resultado = await modificarOperador(datosValidos);
+        const resultado = await modificarOperador({
+            ...datosValidos,
+            contraseña: "contraseña123",
+            confirmacionContraseña: "contraseña123",
+        });
  
         expect(resultado).toEqual({
             esValido: false,
             errores: ["Ya existe un operador con ese nombre."],
         });
         expect(mockDb.operador.update).not.toHaveBeenCalled();
+        expect(mockDb.usuario.update).not.toHaveBeenCalled();
         expect(mockDb.execute.mock.calls.some(([plan]) => plan.texto.includes("pg_notify"))).toBe(false);
     });
 
@@ -242,14 +247,14 @@ describe("modificarOperador", () => {
         expect(revalidatePath).not.toHaveBeenCalled();
     });
 
-    it("no cambia la contraseña si los campos quedan vacíos", async () => {
+    it("conserva la contraseña y la solicitud de restablecimiento si los campos quedan vacíos", async () => {
         await modificarOperador(datosValidos);
  
         expect(mockArgon2.hash).not.toHaveBeenCalled();
         expect(mockDb.usuario.update).not.toHaveBeenCalled();
     });
 
-    it("guarda el hash de la contraseña nueva en el usuario del operador", async () => {
+    it("guarda la contraseña nueva y resuelve la solicitud de restablecimiento del operador", async () => {
         await modificarOperador({
             ...datosValidos,
             contraseña: "contraseña123",
@@ -258,7 +263,10 @@ describe("modificarOperador", () => {
  
         expect(mockArgon2.hash).toHaveBeenCalledWith("contraseña123", { type: 2 });
         expect(mockDb.usuario.where).toHaveBeenCalledWith({ id: 50 });
-        expect(mockDb.usuario.update).toHaveBeenCalledWith({ passwordHash: "hash-falso" });
+        expect(mockDb.usuario.update).toHaveBeenCalledExactlyOnceWith({
+            passwordHash: "hash-falso",
+            solicitoRestablecimiento: false,
+        });
     });
     
 });

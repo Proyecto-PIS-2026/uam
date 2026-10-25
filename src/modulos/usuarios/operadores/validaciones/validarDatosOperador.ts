@@ -28,6 +28,7 @@ export function validarDatosOperador(
     const reglaTelefono = Object.hasOwn(REGLAS_TELEFONO, codigoPais) ? REGLAS_TELEFONO[codigoPais] : undefined;
 
     if (!nombre) errores.push("El nombre es obligatorio.");
+    if (nombre === "." || nombre === "..") errores.push('El nombre no puede ser "." ni "..".');
     if (nombre.includes("%")) errores.push("El nombre del operador no puede contener %.");
     if (!reglaTelefono) errores.push("El código de país no es válido.");
     if (reglaTelefono && !reglaTelefono.test(numero)) errores.push("El teléfono no es válido.");

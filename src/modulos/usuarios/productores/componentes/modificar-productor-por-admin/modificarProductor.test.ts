@@ -130,13 +130,18 @@ describe("modificarProductor", () => {
     it("rechaza la modificación si otro productor ya usa ese nombre", async () => {
         prepararBase({ productorConEseNombre: { id: 99 } });
  
-        const resultado = await modificarProductor(datosValidos);
+        const resultado = await modificarProductor({
+            ...datosValidos,
+            contraseña: "contraseña123",
+            confirmacionContraseña: "contraseña123",
+        });
  
         expect(resultado).toEqual({
             esValido: false,
             errores: ["Ya existe un productor con ese nombre."],
         });
         expect(mockDb.productor.update).not.toHaveBeenCalled();
+        expect(mockDb.usuario.update).not.toHaveBeenCalled();
     });
 
     // Si el nombre que encuentra es el del mismo productor, no es un nombre repetido
@@ -181,14 +186,14 @@ describe("modificarProductor", () => {
         expect(cache.revalidatePath).not.toHaveBeenCalled();
     });
 
-    it("no cambia la contraseña si los campos quedan vacíos", async () => {
+    it("conserva la contraseña y la solicitud de restablecimiento si los campos quedan vacíos", async () => {
         await modificarProductor(datosValidos);
  
         expect(mockArgon2.hash).not.toHaveBeenCalled();
         expect(mockDb.usuario.update).not.toHaveBeenCalled();
     });
 
-    it("guarda el hash de la contraseña nueva en el usuario del productor", async () => {
+    it("guarda la contraseña nueva y resuelve la solicitud de restablecimiento del productor", async () => {
         await modificarProductor({
             ...datosValidos,
             contraseña: "contraseña123",
@@ -197,7 +202,10 @@ describe("modificarProductor", () => {
  
         expect(mockArgon2.hash).toHaveBeenCalledWith("contraseña123", { type: 2 });
         expect(mockDb.usuario.where).toHaveBeenCalledWith({ id: 60 });
-        expect(mockDb.usuario.update).toHaveBeenCalledWith({ passwordHash: "hash-falso" });
+        expect(mockDb.usuario.update).toHaveBeenCalledExactlyOnceWith({
+            passwordHash: "hash-falso",
+            solicitoRestablecimiento: false,
+        });
     });
     
     // Las páginas que muestran al productor se vuelven a armar con los datos nuevos

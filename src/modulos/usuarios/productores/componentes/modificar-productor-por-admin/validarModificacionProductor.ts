@@ -73,6 +73,9 @@ export function validarModificacionProductor(
     if (!nombre) {
         errores.push("El nombre es obligatorio.");
     }
+    if (nombre === "." || nombre === "..") {
+        errores.push('El nombre no puede ser "." ni "..".');
+    }
 
     if (!CODIGOS_PAIS.includes(codigoPais)) {
         errores.push("El código de país no es válido.");

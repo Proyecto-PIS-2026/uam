@@ -68,6 +68,7 @@ export async function modificarProductor(
                 .where({ id: productor.usuarioId })
                 .update({
                     passwordHash,
+                    solicitoRestablecimiento: false,
                 });
         }
 

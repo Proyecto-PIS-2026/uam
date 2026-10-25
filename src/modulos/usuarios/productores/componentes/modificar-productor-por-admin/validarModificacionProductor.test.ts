@@ -81,6 +81,14 @@ describe("validarModificacionProductor", () => {
     });
 
     describe("nombre", () => {
+        it.each([".", "..", " . ", " .. "])("rechaza el nombre reservado de ruta %j", (nombre) => {
+            expect(erroresDe({ nombre })).toEqual(['El nombre no puede ser "." ni "..".']);
+        });
+
+        it.each(["Frutas S.A.", "..."])("acepta otros nombres con puntos: %s", (nombre) => {
+            expect(datosDe({ nombre }).nombre).toBe(nombre);
+        });
+
         it.each(["", "   ", 123])("rechaza el nombre %j", (nombre) => {
             expect(erroresDe({ nombre })).toEqual(["El nombre es obligatorio."]);
         });
