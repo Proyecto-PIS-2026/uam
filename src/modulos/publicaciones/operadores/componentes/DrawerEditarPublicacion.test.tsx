@@ -669,7 +669,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
             paisId: null, variedad: "", presentacion: "", categoria: "", calibre: "", precio: null,
         }} />);
         for (const campo of ["Variedad", "Presentación", "Categoría", "Calibre", "País"]) {
-            expect(screen.getByRole("combobox", { name: campo })).toHaveTextContent("Sin especificar");
+            expect(screen.getByRole("combobox", { name: campo })).toHaveTextContent("-");
         }
         expect(screen.getByLabelText("Unidades")).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Editar" }));

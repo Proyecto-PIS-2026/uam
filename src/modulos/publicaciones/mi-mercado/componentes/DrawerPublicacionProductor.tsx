@@ -87,13 +87,14 @@ function crearBorrador(publicacion: PublicacionMiMercadoProductor): Borrador {
     };
 }
 
-function Campo({ nombre, valor, opciones, nombreActual, cambiar, deshabilitado = false, priorizarUruguay = false, priorizarEspecies = false }: {
+function Campo({ nombre, valor, opciones, nombreActual, cambiar, deshabilitado = false, enConsulta = false, priorizarUruguay = false, priorizarEspecies = false }: {
     nombre: string;
     valor: number;
     opciones: { id: number; nombre: string }[];
     nombreActual: string;
     cambiar?: (id: number) => void;
     deshabilitado?: boolean;
+    enConsulta?: boolean;
     priorizarUruguay?: boolean;
     priorizarEspecies?: boolean;
 }) {
@@ -105,8 +106,8 @@ function Campo({ nombre, valor, opciones, nombreActual, cambiar, deshabilitado =
     return <TextField select label={nombre} value={valor} onChange={(evento) => cambiar?.(Number(evento.target.value))}
         size="small" fullWidth required={nombre === "Especie"} disabled={deshabilitado} className={estilosAcciones.selectMui}
         slotProps={{ select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } }}>
-        <MenuItem value={0} disabled={nombre === "Especie"} className={estilosAcciones.opcionSelect}>{nombre === "Especie" ? "Seleccioná especie" : "Sin especificar"}</MenuItem>
-        {valor !== 0 && !opciones.some((opcion) => opcion.id === valor) && <MenuItem value={valor} disabled className={estilosAcciones.opcionSelect}>{nombreActual}</MenuItem>}
+        <MenuItem value={0} disabled={nombre === "Especie"} className={estilosAcciones.opcionSelect}>{nombre === "Especie" ? "Seleccioná especie" : enConsulta ? "-" : "Sin especificar"}</MenuItem>
+        {valor !== 0 && !opciones.some((opcion) => opcion.id === valor) && <MenuItem value={valor} disabled className={estilosAcciones.opcionSelect}>{nombreActual?.trim() || "-"}</MenuItem>}
         {ordenadas.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={estilosAcciones.opcionSelect}>{opcion.nombre}</MenuItem>)}
     </TextField>;
 }
@@ -419,7 +420,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-unidades`}>Unidades{nombrePresentacion ? ` (${nombrePresentacion})` : ""}</label>
                             <input className={estilosAcciones.entrada} id={`publicacion-productor-${publicacion.id}-unidades`} inputMode="numeric" maxLength={10}
-                                value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "Sin cantidad especificada"} readOnly={!editando} disabled={ocupado}
+                                value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "-"} readOnly={!editando} disabled={ocupado}
                                 onChange={(evento) => escribirCantidadUnidades(evento.target.value)} />
                             {editando && <small className={estilosAcciones.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small>}
                         </div>
@@ -446,12 +447,12 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                             </label>
                         </div>
                         <div className={estilosAcciones.datosProducto} data-editando={editando}>
-                            <Campo nombre="Especie" valor={borrador?.especieId ?? especie.id} opciones={edicion?.opciones.especies ?? []} nombreActual={especie.nombreEspecie} cambiar={cambiarEspecie} deshabilitado={!editando || ocupado} priorizarEspecies />
-                            <Campo nombre="Variedad" valor={borrador?.variedadId ?? variedad?.id ?? 0} opciones={variedades} nombreActual={variedad?.nombreVariedad ?? "Sin especificar"} cambiar={cambiarVariedad} deshabilitado={!editando || ocupado} />
-                            <Campo nombre="Presentación" valor={borrador?.presentacionId ?? publicacion.presentacion?.id ?? 0} opciones={presentaciones} nombreActual={publicacion.presentacion?.nombrePresentacion ?? "Sin especificar"} cambiar={(id) => cambiar({ presentacionId: id })} deshabilitado={!editando || ocupado} />
-                            <Campo nombre="País de origen" valor={borrador?.paisId ?? publicacion.paisId ?? 0} opciones={edicion?.opciones.paises ?? []} nombreActual={publicacion.pais || "Sin especificar"} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={!editando || ocupado} priorizarUruguay />
-                            <Campo nombre="Categoría" valor={borrador?.categoriaId ?? publicacion.categoria?.id ?? 0} opciones={categorias} nombreActual={publicacion.categoria?.nombreCategoria ?? "Sin especificar"} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={!editando || ocupado} />
-                            <Campo nombre="Calibre" valor={borrador?.calibreId ?? publicacion.calibre?.id ?? 0} opciones={edicion?.opciones.calibres ?? []} nombreActual={publicacion.calibre?.nombreCalibre ?? "Sin especificar"} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={!editando || ocupado} />
+                            <Campo nombre="Especie" valor={borrador?.especieId ?? especie.id} opciones={edicion?.opciones.especies ?? []} nombreActual={especie.nombreEspecie} cambiar={cambiarEspecie} deshabilitado={!editando || ocupado} enConsulta={!editando} priorizarEspecies />
+                            <Campo nombre="Variedad" valor={borrador?.variedadId ?? variedad?.id ?? 0} opciones={variedades} nombreActual={variedad?.nombreVariedad ?? ""} cambiar={cambiarVariedad} deshabilitado={!editando || ocupado} enConsulta={!editando} />
+                            <Campo nombre="Presentación" valor={borrador?.presentacionId ?? publicacion.presentacion?.id ?? 0} opciones={presentaciones} nombreActual={publicacion.presentacion?.nombrePresentacion ?? ""} cambiar={(id) => cambiar({ presentacionId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
+                            <Campo nombre="País de origen" valor={borrador?.paisId ?? publicacion.paisId ?? 0} opciones={edicion?.opciones.paises ?? []} nombreActual={publicacion.pais || ""} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} priorizarUruguay />
+                            <Campo nombre="Categoría" valor={borrador?.categoriaId ?? publicacion.categoria?.id ?? 0} opciones={categorias} nombreActual={publicacion.categoria?.nombreCategoria ?? ""} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
+                            <Campo nombre="Calibre" valor={borrador?.calibreId ?? publicacion.calibre?.id ?? 0} opciones={edicion?.opciones.calibres ?? []} nombreActual={publicacion.calibre?.nombreCalibre ?? ""} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
                         </div>
                         {borrador ? <UbicacionesEdicionProductor ubicaciones={borrador.ubicaciones} deshabilitado={ocupado} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} /> : <UbicacionesConsulta publicacion={publicacion} />}
                         {estado.errores.length > 0 && <div role="alert" className={estilosAcciones.error}>{estado.errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}

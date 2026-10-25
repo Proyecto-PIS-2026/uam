@@ -436,7 +436,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBeInTheDocument();
         expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Pera");
         for (const campo of ["Variedad", "Presentación", "Categoría", "Calibre", "País de origen"]) {
-            expect(screen.getByRole("combobox", { name: new RegExp('^' + campo) })).toHaveTextContent("Sin especificar");
+            expect(screen.getByRole("combobox", { name: new RegExp('^' + campo) })).toHaveTextContent("-");
         }
     });
 

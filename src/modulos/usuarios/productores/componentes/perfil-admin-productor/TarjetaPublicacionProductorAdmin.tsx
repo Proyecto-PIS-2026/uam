@@ -16,7 +16,8 @@ type TarjetaPublicacionProductorAdminProps = {
 };
 
 export default function TarjetaPublicacionProductorAdmin({ publicacion, alConsultar }: TarjetaPublicacionProductorAdminProps) {
-    const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
+    const variedad = publicacion.variedad?.trim();
+    const nombreProducto = variedad && variedad !== "-" ? `${publicacion.especie} - ${variedad}` : publicacion.especie;
     // const ubicacion = publicacion.ubicaciones.map((lugar) => lugar.nombre).join(" · ");
 
     return (
@@ -50,17 +51,17 @@ export default function TarjetaPublicacionProductorAdmin({ publicacion, alConsul
                                 : "No disponible"}
                         </span>
                     </div>
-                    <p className={styles.informacionWeb}>{publicacion.calibre} · Categoría {publicacion.categoria}</p>
+                    <p className={styles.informacionWeb}>{publicacion.calibre?.trim() || "-"} · Categoría {publicacion.categoria?.trim() || "-"}</p>
                 </div>
                 <div className={styles.cuerpo}>
                     <div className={styles.informacionMobile}>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Calibre</span>
-                            <span className={styles.chip}>{publicacion.calibre}</span>
+                            <span className={styles.chip}>{publicacion.calibre?.trim() || "-"}</span>
                         </div>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Cat.</span>
-                            <span className={styles.chip}>{publicacion.categoria}</span>
+                            <span className={styles.chip}>{publicacion.categoria?.trim() || "-"}</span>
                         </div>
                     </div>
                     <div className={styles.contenedorPrecio}>

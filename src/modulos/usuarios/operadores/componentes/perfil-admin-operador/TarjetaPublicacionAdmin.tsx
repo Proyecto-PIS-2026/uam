@@ -17,7 +17,8 @@ type TarjetaPublicacionAdminProps = {
 
 // Copia de TarjetaPublicacion (perfil público) adaptada al administrador
 export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: TarjetaPublicacionAdminProps) {
-    const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
+    const variedad = publicacion.variedad?.trim();
+    const nombreProducto = variedad && variedad !== "-" ? `${publicacion.especie} - ${variedad}` : publicacion.especie;
 
     return (
         <button type="button" className={styles.tarjeta} onClick={() => onSeleccionar?.(publicacion)} aria-label={`Ver detalles de ${nombreProducto}`} aria-haspopup="dialog">
@@ -50,17 +51,17 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
                                 : "No disponible"}
                         </span>
                     </div>
-                    <p className={styles.informacionWeb}>{publicacion.calibre} · Categoría {publicacion.categoria}</p>
+                    <p className={styles.informacionWeb}>{publicacion.calibre?.trim() || "-"} · Categoría {publicacion.categoria?.trim() || "-"}</p>
                 </div>
                 <div className={styles.cuerpo}>
                     <div className={styles.informacionMobile}>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Calibre</span>
-                            <span className={styles.chip}>{publicacion.calibre}</span>
+                            <span className={styles.chip}>{publicacion.calibre?.trim() || "-"}</span>
                         </div>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Cat.</span>
-                            <span className={styles.chip}>{publicacion.categoria}</span>
+                            <span className={styles.chip}>{publicacion.categoria?.trim() || "-"}</span>
                         </div>
                     </div>
                     <div className={styles.contenedorPrecio}>

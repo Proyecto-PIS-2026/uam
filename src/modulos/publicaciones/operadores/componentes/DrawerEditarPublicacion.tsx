@@ -358,35 +358,36 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             </div>
             <div className={styles.campo}>
                 <TextField select label="Variedad" id={`${idBase}-variedad`} value={variedadId} onChange={(evento) => cambiarVariedad(Number(evento.target.value))} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
-                    {!editando && variedadId !== 0 && !variedadesDisponibles.some((opcion) => opcion.id === variedadId) && <MenuItem value={variedadId} className={styles.opcionSelect}>{publicacion.variedad}</MenuItem>}
+                    <MenuItem value={0} className={styles.opcionSelect}>{editando ? "Sin especificar" : "-"}</MenuItem>
+                    {!editando && variedadId !== 0 && !variedadesDisponibles.some((opcion) => opcion.id === variedadId) && <MenuItem value={variedadId} className={styles.opcionSelect}>{publicacion.variedad?.trim() || "-"}</MenuItem>}
                     {variedadesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
             <div className={styles.campo}>
                 <TextField select label="Presentación" id={`${idBase}-presentacion`} value={presentacionId} onChange={(evento) => { if (!bloqueado) setPresentacionId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
-                    {!editando && presentacionId !== 0 && !presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) && <MenuItem value={presentacionId} className={styles.opcionSelect}>{publicacion.presentacion ?? "Sin presentación"}</MenuItem>}
+                    <MenuItem value={0} className={styles.opcionSelect}>{editando ? "Sin especificar" : "-"}</MenuItem>
+                    {!editando && presentacionId !== 0 && !presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) && <MenuItem value={presentacionId} className={styles.opcionSelect}>{publicacion.presentacion?.trim() || "-"}</MenuItem>}
                     {presentacionesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
             <div className={styles.campo}>
                 <TextField select label="País" id={`${idBase}-pais`} value={paisId} onChange={(evento) => { if (!bloqueado) setPaisId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
+                    <MenuItem value={0} className={styles.opcionSelect}>{editando ? "Sin especificar" : "-"}</MenuItem>
+                    {!editando && paisId !== 0 && !paises.some((opcion) => opcion.id === paisId) && <MenuItem value={paisId} className={styles.opcionSelect}>-</MenuItem>}
                     {paisesOrdenados.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
             <div className={styles.campo}>
                 <TextField select label="Categoría" id={`${idBase}-categoria`} value={categoriaId} onChange={(evento) => { if (!bloqueado) setCategoriaId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
-                    {!editando && categoriaId !== 0 && !categoriasDisponibles.some((opcion) => opcion.id === categoriaId) && <MenuItem value={categoriaId} className={styles.opcionSelect}>{publicacion.categoria ?? "Sin categoría"}</MenuItem>}
+                    <MenuItem value={0} className={styles.opcionSelect}>{editando ? "Sin especificar" : "-"}</MenuItem>
+                    {!editando && categoriaId !== 0 && !categoriasDisponibles.some((opcion) => opcion.id === categoriaId) && <MenuItem value={categoriaId} className={styles.opcionSelect}>{publicacion.categoria?.trim() || "-"}</MenuItem>}
                     {categoriasDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
             <div className={styles.campo}>
                 <TextField select label="Calibre" id={`${idBase}-calibre`} value={calibreId} onChange={(evento) => { if (!bloqueado) setCalibreId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
-                    <MenuItem value={0} className={styles.opcionSelect}>Sin especificar</MenuItem>
-                    {!editando && calibreId !== 0 && !calibres.some((opcion) => opcion.id === calibreId) && <MenuItem value={calibreId} className={styles.opcionSelect}>{publicacion.calibre ?? "Sin calibre"}</MenuItem>}
+                    <MenuItem value={0} className={styles.opcionSelect}>{editando ? "Sin especificar" : "-"}</MenuItem>
+                    {!editando && calibreId !== 0 && !calibres.some((opcion) => opcion.id === calibreId) && <MenuItem value={calibreId} className={styles.opcionSelect}>{publicacion.calibre?.trim() || "-"}</MenuItem>}
                     {calibres.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
                 </TextField>
             </div>
@@ -398,7 +399,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 Unidades{presentacionActual ? ` (${presentacionActual})` : ""}
             </label>
             <div className={styles.controlesPrecio} data-editando={false}>
-                <input className={`${styles.entrada} w-full grow shrink-0`} id={`${idBase}-cantidadUnidades`} type="text" inputMode="numeric" maxLength={10} placeholder={editando ? "Ingresar cantidad aquí" : "Sin cantidad especificada"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
+                <input className={`${styles.entrada} w-full grow shrink-0`} id={`${idBase}-cantidadUnidades`} type="text" inputMode="numeric" maxLength={10} placeholder={editando ? "Ingresar cantidad aquí" : "-"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
             </div>
             {editando && <small className={styles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>}
         </div>
