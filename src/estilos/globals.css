@@ -25,7 +25,7 @@
 :root {
   color-scheme: light;
   --ancho-maximo-pagina: 80rem;
-  --ancho-drawer-web: 30rem;
+  --ancho-drawer-web: clamp(24.375rem, calc(50dvh + 0.375rem), 30rem);
   --padding-exterior-pagina: 1rem;
   --padding-titulo-pagina: 1rem;
   --espacio-secciones: 1rem;

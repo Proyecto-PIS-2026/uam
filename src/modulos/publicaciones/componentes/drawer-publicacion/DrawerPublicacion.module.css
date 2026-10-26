@@ -397,7 +397,9 @@
     .marcoImagen {
         display: block;
         width: 100%;
-        height: clamp(11rem, 26dvh, 15rem);
+        height: auto;
+        aspect-ratio: 4 / 3;
+        max-height: 15rem;
         padding: 0;
         flex-shrink: 0;
         border-radius: var(--radio-panel);
