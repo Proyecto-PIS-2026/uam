@@ -46,7 +46,13 @@ function elegir(campo: string, opcion: string) {
 function completarFormulario() {
     elegir("Especie", "Manzana"); elegir("Variedad", "Royal"); elegir("Presentación", "Caja");
     elegir("Categoría", "Primera"); elegir("Calibre", "Grande"); elegir("País de origen", "Uruguay");
+    seleccionarUbicacion();
+}
+
+function seleccionarUbicacion() {
     fireEvent.click(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
     fireEvent.click(screen.getByRole("button", { name: "Usar ubicación" }));
 }
 
@@ -66,7 +72,8 @@ function comprobarFormularioVacio() {
     expect(screen.getByLabelText("Cantidad (kg)")).toHaveValue("");
     expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
     expect(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" })).toBeInTheDocument();
-    expect(screen.queryByText("Ruta 5, Montevideo")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ruta 5")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Nombre del punto de retiro 1")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Seleccionar ubicación" })).not.toBeInTheDocument();
     expect(screen.queryByAltText("Vista previa de la fotografía")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Fotografía")).toHaveValue("");
@@ -84,14 +91,13 @@ describe("AltaPublicacionProductor", () => {
         const fetchMock = prepararFetch();
         await abrirAlta();
         elegir("Especie", "Manzana");
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" }));
-        fireEvent.click(screen.getByRole("button", { name: "Usar ubicación" }));
-        fireEvent.click(screen.getByRole("button", { name: "Quitar ubicación" }));
-        expect(screen.queryByText("Ruta 5, Montevideo")).not.toBeInTheDocument();
+        seleccionarUbicacion();
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar punto de retiro 1" }));
+        expect(screen.queryByText("Ruta 5")).not.toBeInTheDocument();
         enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
-        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({ latitud: null, longitud: null, departamento: null, nombreLugar: null });
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({ ubicaciones: [] });
     });
 
     it("permite publicar solo la especie sin ubicación ni otros datos", async () => {
@@ -106,8 +112,49 @@ describe("AltaPublicacionProductor", () => {
         expect(JSON.parse(envio[1]!.body as string)).toMatchObject({
             especieId: 2, variedadId: null, presentacionId: null, categoriaId: null,
             calibreId: null, paisId: null, precio: null, cantidadUnidades: null,
-            latitud: null, longitud: null, departamento: null,
+            ubicaciones: [],
         });
+    });
+
+    it.each([true, false])("guarda varios puntos de retiro y permite quitar uno sin perder los restantes (escritorio=%s)", async (esWeb) => {
+        mocks.esWeb = esWeb;
+        const fetchMock = prepararFetch();
+        await abrirAlta();
+        elegir("Especie", "Manzana");
+        seleccionarUbicacion();
+        fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 2"), { target: { value: " Depósito " } });
+        fireEvent.change(screen.getByLabelText("Enlace de Google Maps 2"), { target: { value: "https://maps.app.goo.gl/deposito" } });
+        fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 3"), { target: { value: "Punto descartado" } });
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar punto de retiro 3" }));
+
+        expect(screen.getAllByRole("group", { name: /^Punto de retiro/ })).toHaveLength(2);
+        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Ruta 5");
+        expect(screen.getByLabelText("Nombre del punto de retiro 2")).toHaveValue(" Depósito ");
+        enviarFormulario();
+        expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string).ubicaciones).toEqual([
+            { nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2" },
+            { nombreUbicacion: "Depósito", urlMaps: "https://maps.app.goo.gl/deposito" },
+        ]);
+        fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
+        comprobarFormularioVacio();
+    });
+
+    it("no envía un punto incompleto aunque se haya contraído el editor", async () => {
+        const fetchMock = prepararFetch();
+        await abrirAlta();
+        elegir("Especie", "Manzana");
+        fireEvent.click(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" }));
+        fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cambiar ubicación" }));
+        enviarFormulario();
+        expect(screen.getByRole("alert")).toHaveTextContent("Cada ubicación debe tener un nombre de hasta 200 caracteres.");
+        expect(fetchMock.mock.calls.filter(([, opciones]) => opciones?.method === "POST")).toHaveLength(0);
+        fireEvent.click(screen.getByRole("button", { name: "Cambiar ubicación" }));
+        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("");
     });
 
     it("indica que está cargando hasta recibir los catálogos", async () => {
@@ -184,7 +231,7 @@ describe("AltaPublicacionProductor", () => {
         completarFormulario(); enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
-        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6, paisId: 7, latitud: -34.9, longitud: -56.2, departamento: "Montevideo", nombreLugar: "Ruta 5", disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null });
+        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6, paisId: 7, ubicaciones: [{ nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2" }], disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null });
         expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
     });
 
@@ -251,7 +298,7 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("120");
         expect(screen.getByLabelText("Cantidad (kg)")).toHaveValue("35");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
-        expect(screen.getByText("Ruta 5, Montevideo")).toBeInTheDocument();
+        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Ruta 5");
         expect(screen.getByAltText("Vista previa de la fotografía")).toBeInTheDocument();
 
         fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ esValido: true, id: 99, mensaje: "Publicación creada correctamente." }), { status: 201 }));
@@ -280,13 +327,13 @@ describe("AltaPublicacionProductor", () => {
 
     it("permite cambiar la ubicación y cerrar el mapa sin confirmarla", async () => {
         await abrirAlta(); completarFormulario();
-        expect(screen.getByText("Ruta 5, Montevideo")).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Cambiar ubicación" }));
+        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Ruta 5");
+        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
         fireEvent.click(screen.getByRole("button", { name: "Cerrar mapa" }));
-        expect(screen.getByText("Ruta 5, Montevideo")).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Cambiar ubicación" }));
+        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Ruta 5");
+        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
         fireEvent.click(screen.getByRole("button", { name: "Usar departamento" }));
-        expect(screen.getByText("Montevideo", { exact: true })).toBeInTheDocument();
+        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Montevideo");
     });
 
     it.each([{ errores: ["El producto ya existe."] }, {}])("muestra errores del servidor y permite corregir el formulario", async (resultado) => {

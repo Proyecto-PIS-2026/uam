@@ -15,8 +15,8 @@ import Image from "next/image";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { ordenarOpcionesPorNombre } from "../operadores/ordenar-opciones";
 import styles from "../operadores/componentes/DrawerEditarPublicacion.module.css";
-import LeafletLocationPicker from "./LeafletLocationPicker";
-import type { UbicacionSeleccionada } from "./LeafletLocationPicker";
+import UbicacionesEdicionProductor, { type UbicacionEdicionProductor } from "./UbicacionesEdicionProductor";
+import { validarUbicacionesProductor } from "./ubicaciones-productor";
 
 type Opcion = { id: number; nombre: string };
 type Catalogos = {
@@ -29,7 +29,7 @@ type Catalogos = {
 };
 type Formulario = {
     productorId: number; especieId: number; variedadId: number; presentacionId: number; calibreId: number;
-    categoriaId: number; paisId: number; latitud: number | null; longitud: number | null; departamento: string | null; nombreLugar: string | null; disponibilidad: boolean;
+    categoriaId: number; paisId: number; ubicaciones: UbicacionEdicionProductor[]; disponibilidad: boolean;
     precio: string; cantidad: string; fotografia: string;
 };
 
@@ -49,10 +49,7 @@ function formularioInicial(productorId: number): Formulario {
         calibreId: 0,
         categoriaId: 0,
         paisId: 0,
-        latitud: null,
-        longitud: null,
-        departamento: null,
-        nombreLugar: null,
+        ubicaciones: [],
         disponibilidad: true,
         precio: "",
         cantidad: "",
@@ -146,7 +143,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
     const [leyendoFoto, setLeyendoFoto] = useState(false);
     const fotoInput = useRef<HTMLInputElement>(null);
     const galeriaInput = useRef<HTMLInputElement>(null);
-    const [mapaAbierto, setMapaAbierto] = useState(false);
+    const [reinicioUbicaciones, setReinicioUbicaciones] = useState(0);
     const variedades = catalogos.variedades.filter((item) => item.especieId === datos.especieId);
     const presentaciones = catalogos.presentaciones.filter((item) => item.variedadId === datos.variedadId);
     const categorias = catalogos.categorias.filter((item) => item.especieId === null || item.especieId === datos.especieId);
@@ -154,7 +151,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
     function limpiarFormulario() {
         setDatos(formularioInicial(productorId));
         setErrores([]);
-        setMapaAbierto(false);
+        setReinicioUbicaciones((actual) => actual + 1);
         if (fotoInput.current) fotoInput.current.value = "";
         if (galeriaInput.current) galeriaInput.current.value = "";
     }
@@ -179,6 +176,11 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
             setErrores([PRECIO_PUBLICACION_INVALIDO]);
             return;
         }
+        const validacionUbicaciones = validarUbicacionesProductor(datos.ubicaciones);
+        if (!validacionUbicaciones.esValido) {
+            setErrores([validacionUbicaciones.error]);
+            return;
+        }
         setGuardando(true);
         try {
             const { cantidad, ...datosSinCantidad } = datos;
@@ -189,6 +191,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
                 categoriaId: datos.categoriaId || null,
                 calibreId: datos.calibreId || null,
                 paisId: datos.paisId || null,
+                ubicaciones: validacionUbicaciones.ubicaciones,
                 precio: normalizarPrecioPublicacion(datos.precio),
                 cantidadUnidades: cantidad === "" ? null : Number(cantidad),
             };
@@ -216,13 +219,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
                 <Campo nombre="Calibre" valor={datos.calibreId} opciones={catalogos.calibres} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={guardando} />
                 <Campo nombre="País de origen" valor={datos.paisId} opciones={catalogos.paises} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={guardando} />
             </div>
-            <div className={styles.campo}>
-                <button type="button" className={styles.guardar} onClick={() => setMapaAbierto(true)} disabled={guardando}>
-                    {datos.latitud === null || datos.longitud === null ? "Seleccionar ubicación de retiro" : "Cambiar ubicación"}
-                </button>
-                {datos.latitud !== null && datos.longitud !== null && <button type="button" className={styles.cancelar} onClick={() => cambiar({ latitud: null, longitud: null, departamento: null, nombreLugar: null })} disabled={guardando}>Quitar ubicación</button>}
-                {datos.departamento && <small className={styles.ayuda}>{datos.nombreLugar ? `${datos.nombreLugar}, ` : ""}{datos.departamento}</small>}
-            </div>
+            {abierto && <UbicacionesEdicionProductor key={reinicioUbicaciones} ubicaciones={datos.ubicaciones} deshabilitado={guardando} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} />}
             <div className="grid grid-cols-1 gap-[var(--espacio-controles)] sm:grid-cols-2">
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><input className={styles.entrada} id="productor-precio" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder="Ingrese precio aqui" value={datos.precio} onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small></div>
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Cantidad (kg)</label><input className={styles.entrada} id="productor-cantidad" inputMode="numeric" maxLength={10} placeholder="Ingrese cantidad aqui" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small></div>
@@ -236,7 +233,5 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
             </div></div>
             {errores.length > 0 && <div role="alert" className={styles.error}>{errores.map((error) => <p key={error}>{error}</p>)}</div>}
         </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={guardando || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
-        <LeafletLocationPicker key={`${datos.latitud ?? "sin"}-${datos.longitud ?? "sin"}`} abierto={mapaAbierto} coordenadas={datos.latitud === null || datos.longitud === null || !datos.departamento ? null : { latitud: datos.latitud, longitud: datos.longitud, departamento: datos.departamento, nombreLugar: datos.nombreLugar }}
-            alCerrar={() => setMapaAbierto(false)} alConfirmar={(ubicacion: UbicacionSeleccionada) => { cambiar(ubicacion); setMapaAbierto(false); }} />
     </DrawerDeslizable><NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;
 }

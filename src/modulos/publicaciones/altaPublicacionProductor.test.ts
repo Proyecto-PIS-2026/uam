@@ -111,6 +111,59 @@ describe("altaPublicacionProductor", () => {
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
     });
 
+    it("guarda varios puntos en la misma transacción sin duplicar la ubicación anterior", async () => {
+        const ubicaciones = [
+            { nombreUbicacion: " Chacra norte ", urlMaps: " https://www.google.com/maps?q=-34.7,-56.1 " },
+            { nombreUbicacion: " Puesto de retiro ", urlMaps: " https://maps.app.goo.gl/ejemplo " },
+        ];
+        expect(await altaPublicacionProductor({ ...datos, ubicaciones })).toMatchObject({ esValido: true, id: 42 });
+        expect(mocks.transaccion).toHaveBeenCalledOnce();
+        expect(mocks.crearRelacion).toHaveBeenCalledOnce();
+        expect(mocks.crearUbicacion).toHaveBeenCalledTimes(2);
+        expect(mocks.crearUbicacion).toHaveBeenNthCalledWith(1, {
+            publicacionId: 74, nombreUbicacion: "Chacra norte", urlMaps: "https://www.google.com/maps?q=-34.7,-56.1",
+        });
+        expect(mocks.crearUbicacion).toHaveBeenNthCalledWith(2, {
+            publicacionId: 74, nombreUbicacion: "Puesto de retiro", urlMaps: "https://maps.app.goo.gl/ejemplo",
+        });
+    });
+
+    it("permite una lista vacía explícita aunque se envíen las coordenadas anteriores", async () => {
+        expect(await altaPublicacionProductor({ ...datos, ubicaciones: [] })).toMatchObject({ esValido: true, id: 42 });
+        expect(mocks.crearPublicacion).toHaveBeenCalledOnce();
+        expect(mocks.crearRelacion).toHaveBeenCalledOnce();
+        expect(mocks.crearUbicacion).not.toHaveBeenCalled();
+    });
+
+    it("rechaza una ubicación inválida antes de consultar o escribir cualquier dato", async () => {
+        const ubicaciones = [
+            { nombreUbicacion: "Chacra", urlMaps: "https://www.google.com/maps?q=-34.7,-56.1" },
+            { nombreUbicacion: "Retiro", urlMaps: "https://ejemplo.test" },
+        ];
+        expect(await altaPublicacionProductor({ ...datos, ubicaciones, fotografia })).toEqual({
+            esValido: false, errores: ["Cada ubicación debe incluir un enlace válido de Google Maps de hasta 2048 caracteres."],
+        });
+        expect(mocks.productor).not.toHaveBeenCalled();
+        expect(mocks.transaccion).not.toHaveBeenCalled();
+        expect(mocks.crearPublicacion).not.toHaveBeenCalled();
+        expect(mocks.crearRelacion).not.toHaveBeenCalled();
+        expect(mocks.crearUbicacion).not.toHaveBeenCalled();
+        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+    });
+
+    it("propaga el fallo de un segundo punto para abortar la transacción completa y limpiar la foto", async () => {
+        const error = new Error("No se pudo guardar el segundo punto");
+        mocks.crearUbicacion.mockResolvedValueOnce({ id: 1 }).mockRejectedValueOnce(error);
+        const ubicaciones = [
+            { nombreUbicacion: "Chacra", urlMaps: "https://www.google.com/maps?q=-34.7,-56.1" },
+            { nombreUbicacion: "Retiro", urlMaps: "https://maps.app.goo.gl/ejemplo" },
+        ];
+        await expect(altaPublicacionProductor({ ...datos, ubicaciones, fotografia })).rejects.toBe(error);
+        expect(mocks.transaccion).toHaveBeenCalledOnce();
+        expect(mocks.crearUbicacion).toHaveBeenCalledTimes(2);
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(urlFoto, 42);
+    });
+
     it.each([null, "", "   "])("persiste null cuando el precio es %j", async (precio) => {
         expect((await altaPublicacionProductor({ ...datos, precio })).esValido).toBe(true);
         expect(mocks.crearPublicacion).toHaveBeenCalledWith(expect.objectContaining({ precio: null }));

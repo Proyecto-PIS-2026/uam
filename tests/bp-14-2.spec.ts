@@ -130,6 +130,8 @@ async function completarPrecarga(page: Page, calibre: string, precio: string) {
   await alta.getByLabel("Cantidad (kg)").fill("25");
 
   await alta.getByRole("button", { name: "Seleccionar ubicación de retiro" }).click();
+  await alta.getByRole("button", { name: "Agregar punto de retiro" }).click();
+  await alta.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }).click();
   const mapa = page.getByRole("dialog", { name: "Seleccionar ubicación", exact: true });
   await expect(mapa.locator(".leaflet-container")).toBeVisible();
   await mapa.getByRole("searchbox", { name: "Buscar ubicación por nombre" }).fill("Quinta BP-14.2");

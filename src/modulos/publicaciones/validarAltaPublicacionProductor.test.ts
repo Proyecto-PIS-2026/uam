@@ -13,6 +13,55 @@ describe("validarAltaPublicacionProductor", () => {
         expect(validarAltaPublicacionProductor(datosValidos)).toEqual({ esValido: true, datos: datosValidos });
     });
 
+    it("acepta varias ubicaciones y normaliza los nombres y enlaces", () => {
+        const ubicaciones = [
+            { nombreUbicacion: " Chacra norte ", urlMaps: " https://www.google.com/maps?q=-34.7,-56.1 " },
+            { nombreUbicacion: " Puesto de retiro ", urlMaps: " https://maps.app.goo.gl/ejemplo " },
+        ];
+        expect(validarAltaPublicacionProductor({ ...datosValidos, ubicaciones })).toEqual({
+            esValido: true, datos: { ...datosValidos, ubicaciones: [
+                { nombreUbicacion: "Chacra norte", urlMaps: "https://www.google.com/maps?q=-34.7,-56.1" },
+                { nombreUbicacion: "Puesto de retiro", urlMaps: "https://maps.app.goo.gl/ejemplo" },
+            ] },
+        });
+    });
+
+    it.each([[], null, undefined].map((ubicaciones) => ({ ubicaciones })))("una lista explícita vacía prevalece sobre las coordenadas anteriores: $ubicaciones", ({ ubicaciones }) => {
+        expect(validarAltaPublicacionProductor({ ...datosValidos, ubicaciones, latitud: "inválida", nombreLugar: 1 })).toMatchObject({
+            esValido: true, datos: { ubicaciones: [] },
+        });
+    });
+
+    it("acepta hasta 20 ubicaciones con nombres y enlaces en su longitud máxima", () => {
+        const prefijo = "https://www.google.com/maps?q=";
+        const ubicacion = { nombreUbicacion: "a".repeat(200), urlMaps: prefijo + "a".repeat(2048 - prefijo.length) };
+        const ubicaciones = Array.from({ length: 20 }, () => ({ ...ubicacion }));
+        expect(validarAltaPublicacionProductor({ ...datosValidos, ubicaciones })).toEqual({
+            esValido: true, datos: { ...datosValidos, ubicaciones },
+        });
+    });
+
+    it.each([
+        { ubicaciones: "ubicación", error: "Las ubicaciones no son válidas." },
+        { ubicaciones: [null], error: "La ubicación no es válida." },
+        { ubicaciones: ["ubicación"], error: "La ubicación no es válida." },
+        { ubicaciones: [{ nombreUbicacion: " ", urlMaps: "https://maps.google.com" }], error: "Cada ubicación debe tener un nombre de hasta 200 caracteres." },
+        { ubicaciones: [{ nombreUbicacion: "a".repeat(201), urlMaps: "https://maps.google.com" }], error: "Cada ubicación debe tener un nombre de hasta 200 caracteres." },
+        { ubicaciones: Array.from({ length: 21 }, () => ({ nombreUbicacion: "Chacra", urlMaps: "https://maps.google.com" })), error: "Se permiten hasta 20 ubicaciones por publicación." },
+    ])("rechaza ubicaciones inválidas: $error", ({ ubicaciones, error }) => {
+        expect(validarAltaPublicacionProductor({ ...datosValidos, ubicaciones })).toEqual({ esValido: false, errores: [error] });
+    });
+
+    it.each([
+        "https://google.com.ejemplo.test/maps", "https://www.google.com/otro", "javascript:alert(1)",
+        "https://usuario@maps.google.com", "https://maps.google.com:8080", "https://maps.app.goo.gl/",
+        "https://www.google.com/maps?q=" + "a".repeat(2048),
+    ])("rechaza enlaces de ubicación que no cumplen las reglas de edición: %s", (urlMaps) => {
+        expect(validarAltaPublicacionProductor({ ...datosValidos, ubicaciones: [{ nombreUbicacion: "Chacra", urlMaps }] })).toEqual({
+            esValido: false, errores: ["Cada ubicación debe incluir un enlace válido de Google Maps de hasta 2048 caracteres."],
+        });
+    });
+
     it.each(["", null, "001250", "1250", " 1250 ", "9999999999"])("acepta el precio entero o ausente %j", (precio) => {
         expect(validarAltaPublicacionProductor({ ...datosValidos, precio }).esValido).toBe(true);
     });

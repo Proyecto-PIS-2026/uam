@@ -7,6 +7,7 @@ import { mapearPublicacionMiMercadoProductor } from "../mi-mercado/consultas-mi-
 import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarImagenPublicacion } from "../operadores/imagenes-publicacion";
 import { limpiarImagenPublicacionNoReferenciada } from "../operadores/limpiar-imagen-publicacion";
 import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
+import { validarUbicacionesProductor, type UbicacionPublicacionProductor } from "./ubicaciones-productor";
 
 type Cliente = Pick<typeof db, "orm">;
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
@@ -18,7 +19,7 @@ export type CambiosPublicacionProductor = Omit<SeleccionPublicacion, "paisId"> &
     foto?: string | null;
     cantidadUnidades?: number | null;
     disponible?: boolean;
-    ubicaciones: { nombreUbicacion: string; urlMaps: string }[];
+    ubicaciones: UbicacionPublicacionProductor[];
 };
 
 export class ErrorEdicionPublicacionProductor extends Error {
@@ -30,21 +31,6 @@ export class ErrorEdicionPublicacionProductor extends Error {
 
 function datosInvalidos(mensaje: string): never {
     throw new ErrorEdicionPublicacionProductor("DATOS_INVALIDOS", mensaje);
-}
-
-function esUrlGoogleMaps(valor: string): boolean {
-    try {
-        const url = new URL(valor);
-        if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.port) return false;
-        const host = url.hostname.toLowerCase();
-        if (host === "maps.app.goo.gl") return url.pathname.length > 1;
-        if (host === "goo.gl") return /^\/maps\/.+/.test(url.pathname);
-        if (host === "maps.google.com") return true;
-        return ["google.com", "www.google.com", "google.com.uy", "www.google.com.uy", "google.com.ar", "www.google.com.ar"]
-            .includes(host) && /^\/maps(?:\/|$)/.test(url.pathname);
-    } catch {
-        return false;
-    }
 }
 
 function validarCambios(entrada: unknown): CambiosPublicacionProductor {
@@ -63,19 +49,11 @@ function validarCambios(entrada: unknown): CambiosPublicacionProductor {
         datosInvalidos(PRECIO_PUBLICACION_INVALIDO);
     }
     if (datos.foto !== undefined && datos.foto !== null && typeof datos.foto !== "string") datosInvalidos("La fotografía no es válida.");
-    const entradaUbicaciones = datos.ubicaciones ?? [];
-    if (!Array.isArray(entradaUbicaciones)) datosInvalidos("Las ubicaciones no son válidas.");
-    if (entradaUbicaciones.length > 20) datosInvalidos("Se permiten hasta 20 ubicaciones por publicación.");
-    const ubicaciones = entradaUbicaciones.map((ubicacion: unknown) => {
-        if (!ubicacion || typeof ubicacion !== "object" || Array.isArray(ubicacion)) datosInvalidos("La ubicación no es válida.");
-        const { nombreUbicacion, urlMaps } = ubicacion as Record<string, unknown>;
-        if (typeof nombreUbicacion !== "string" || !nombreUbicacion.trim() || nombreUbicacion.trim().length > 200) datosInvalidos("Cada ubicación debe tener un nombre de hasta 200 caracteres.");
-        if (typeof urlMaps !== "string" || urlMaps.trim().length > 2048 || !esUrlGoogleMaps(urlMaps.trim())) datosInvalidos("Cada ubicación debe incluir un enlace válido de Google Maps de hasta 2048 caracteres.");
-        return { nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim() };
-    });
+    const ubicaciones = validarUbicacionesProductor(datos.ubicaciones);
+    if (!ubicaciones.esValido) datosInvalidos(ubicaciones.error);
     return { ...seleccion.seleccion, paisId: datos.paisId === undefined ? undefined : seleccion.seleccion.paisId, precio: normalizarPrecioPublicacion(datos.precio as string | null | undefined), foto: datos.foto as string | null | undefined,
         cantidadUnidades: datos.cantidadUnidades as number | null | undefined,
-        disponible: datos.disponible as boolean | undefined, ubicaciones };
+        disponible: datos.disponible as boolean | undefined, ubicaciones: ubicaciones.ubicaciones };
 }
 
 async function consultarPublicacion(publicacionProductorId: number, cliente: Cliente) {

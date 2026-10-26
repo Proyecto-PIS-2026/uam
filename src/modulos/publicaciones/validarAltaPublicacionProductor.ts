@@ -1,5 +1,6 @@
 import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublicacion } from "./seleccion-publicacion";
 import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
+import { validarUbicacionesProductor, type UbicacionPublicacionProductor } from "./productores/ubicaciones-productor";
 
 export type DatosAltaPublicacionProductor = SeleccionPublicacion & {
     productorId: number;
@@ -7,6 +8,7 @@ export type DatosAltaPublicacionProductor = SeleccionPublicacion & {
     longitud?: number | null;
     departamento?: string | null;
     nombreLugar?: string | null;
+    ubicaciones?: UbicacionPublicacionProductor[];
     disponibilidad: boolean;
     precio?: string | null;
     cantidadUnidades?: number | null;
@@ -41,7 +43,10 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
     const seleccion = normalizarSeleccionPublicacion(datos);
     if (!seleccion.esValido) errores.push(...seleccion.errores);
     if (!idCatalogoValido(datos.productorId)) errores.push("El campo productorId es obligatorio.");
-    const hayUbicacion = [datos.latitud, datos.longitud, datos.departamento, datos.nombreLugar]
+    const tieneUbicaciones = Object.hasOwn(datos, "ubicaciones");
+    const ubicaciones = tieneUbicaciones ? validarUbicacionesProductor(datos.ubicaciones) : undefined;
+    if (ubicaciones && !ubicaciones.esValido) errores.push(ubicaciones.error);
+    const hayUbicacion = !tieneUbicaciones && [datos.latitud, datos.longitud, datos.departamento, datos.nombreLugar]
         .some((valor) => valor !== undefined && valor !== null && valor !== "");
     if (hayUbicacion && (typeof datos.latitud !== "number" || !Number.isFinite(datos.latitud) || datos.latitud < -90 || datos.latitud > 90)) {
         errores.push("La latitud no es válida.");
@@ -52,7 +57,7 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
     if (hayUbicacion && (typeof datos.departamento !== "string" || datos.departamento.trim() === "")) {
         errores.push("El departamento de la ubicación no es válido.");
     }
-    if (datos.nombreLugar !== null && datos.nombreLugar !== undefined && datos.nombreLugar !== "" &&
+    if (!tieneUbicaciones && datos.nombreLugar !== null && datos.nombreLugar !== undefined && datos.nombreLugar !== "" &&
         (typeof datos.nombreLugar !== "string" || datos.nombreLugar.trim() === "" || datos.nombreLugar.length > 300)) {
         errores.push("El nombre de la ubicación no es válido.");
     }
@@ -69,5 +74,6 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
     }
     if (errores.length > 0) return { esValido: false, errores };
     if (!seleccion.esValido) return seleccion;
-    return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true } as DatosAltaPublicacionProductor };
+    return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true,
+        ...(ubicaciones?.esValido ? { ubicaciones: ubicaciones.ubicaciones } : {}) } as DatosAltaPublicacionProductor };
 }

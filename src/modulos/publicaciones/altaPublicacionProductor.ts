@@ -73,7 +73,11 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
                 productorId: productor.id,
                 paisId: datos.paisId,
             });
-            if (datos.latitud !== undefined && datos.latitud !== null && datos.longitud !== undefined && datos.longitud !== null) {
+            if (datos.ubicaciones !== undefined) {
+                for (const ubicacion of datos.ubicaciones) {
+                    await tx.orm.public.Ubicacion.create({ ...ubicacion, publicacionId: publicacionProductor.id });
+                }
+            } else if (datos.latitud !== undefined && datos.latitud !== null && datos.longitud !== undefined && datos.longitud !== null) {
                 await tx.orm.public.Ubicacion.create({
                     publicacionId: publicacionProductor.id,
                     nombreUbicacion: datos.nombreLugar?.trim() || datos.departamento!.trim(),

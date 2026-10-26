@@ -53,7 +53,7 @@
     overflow: hidden;
     padding: var(--padding-control);
     border: 1px solid var(--color-border);
-    border-radius: 9999px;
+    border-radius: var(--radio-control);
     background-color: var(--color-surface);
     color: var(--color-primary);
     font-family: inherit;
