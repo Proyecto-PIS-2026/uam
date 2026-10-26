@@ -319,7 +319,7 @@ describe("MiMercadoProductor", () => {
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("");
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveAttribute("placeholder", "Consultar precio");
         expect(within(detalle).getByLabelText("Unidades (Cajón)")).toHaveValue("");
-        expect(within(detalle).getByLabelText("Unidades (Cajón)")).toHaveAttribute("placeholder", "Sin cantidad especificada");
+        expect(within(detalle).getByLabelText("Unidades (Cajón)")).toHaveAttribute("placeholder", "-");
         expect(within(detalle).getByText("Quinta sin mapa")).toBeInTheDocument();
         expect(within(detalle).queryByRole("link")).not.toBeInTheDocument();
     });

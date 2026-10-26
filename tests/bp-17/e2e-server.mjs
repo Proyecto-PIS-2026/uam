@@ -20,17 +20,17 @@ for (const archivo of ["src", "public", "postcss.config.mjs", "tsconfig.json", "
     if (existsSync(origen)) cpSync(origen, path.join(app, archivo), { recursive: true });
 }
 const cssCopia = path.join(app, "src/estilos/globals.css");
+// Reemplazar el módulo en la copia asegura el mismo proveedor en SSR y RSC,
+// también cuando la consulta cambia mediante navegación del cliente (BP-26).
+const consultasCopia = path.join(app, "src/modulos/informacion-uam/precios-historicos/consultas-precios-historicos.ts");
+const mockConsultas = path.relative(path.dirname(consultasCopia), path.join(carpeta, "consultas-precios-historicos.mock.ts")).replaceAll(path.sep, "/");
+writeFileSync(consultasCopia, `export { obtenerHistoricoPrecios, obtenerHistoricoPreciosConFiltros } from ${JSON.stringify(mockConsultas)};\n`);
 writeFileSync(cssCopia, readFileSync(cssCopia, "utf8").replace(
     '@import "tailwindcss";', '@import "tailwindcss" source("../");',
 ));
 writeFileSync(path.join(app, "next.config.mjs"), `export default {
     agentRules: false,
-    turbopack: {
-        root: ${JSON.stringify(raiz)},
-        resolveAlias: {
-            "@/modulos/informacion-uam/precios-historicos/consultas-precios-historicos": ${JSON.stringify(path.relative(app, path.join(carpeta, "consultas-precios-historicos.mock.ts")).replaceAll(path.sep, "/"))}
-        }
-    }
+    turbopack: { root: ${JSON.stringify(raiz)} }
 };\n`);
 
 writeFileSync(path.join(app, "src/modulos/informacion-uam/precios-referencia/cache-diario.ts"), `
