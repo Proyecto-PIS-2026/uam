@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { useRouter } from "next/navigation";
 import HojasDecorativas from "../../../../compartido/HojasDecorativas";
@@ -274,19 +277,21 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                     {puedeCrear && <button type="button" onClick={abrirAlta} className="boton-primario">Nueva publicación</button>}
                 </div>
 
-                {/* Estado vacío */}
                 {publicacionesVigentes.length === 0 ? (
-                    <div className={styles.estadoVacio}>
-                        <h2 className={styles.tituloVacio}>
-                            No tenés publicaciones
-                        </h2>
-
-                        <p className={styles.descripcionVacio}>
-                            Cuando tengas productos publicados aparecerán acá.
-                        </p>
-                    </div>
+                    <EstadoVacio
+                        titulo="No tenés publicaciones"
+                        descripcion="Cuando tengas productos publicados aparecerán acá."
+                        icono={<Inventory2OutlinedIcon />}
+                        nivelTitulo={2}
+                        anunciar={false}
+                    />
                 ) : publicacionesVisibles.length === 0 ? (
-                    <p className={styles.sinResultados}>No hay publicaciones que coincidan con la búsqueda.</p>
+                    <EstadoVacio
+                        titulo="No hay publicaciones que coincidan con la búsqueda."
+                        descripcion="Probá cambiando o limpiando los filtros para encontrar tus productos."
+                        icono={<SearchOffOutlinedIcon />}
+                        anunciar={false}
+                    />
                 ) : (
                     <div className="grid grid-cols-1 gap-[var(--espacio-controles)] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 tarjetas-compactas-mercado">
                         {publicacionesVisibles.map((pub) => (

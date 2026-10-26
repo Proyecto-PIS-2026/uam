@@ -157,13 +157,6 @@
     gap: var(--espacio-controles);
 }
 
-.sinResultados {
-    margin: var(--espacio-secciones) 0 0;
-    color: var(--color-muted);
-    text-align: center;
-    font-size: var(--tamano-texto-secundario);
-}
-
 @media (min-width: 701px) {
     .lista {
         grid-template-columns: repeat(auto-fill, minmax(14.8rem, 1fr));

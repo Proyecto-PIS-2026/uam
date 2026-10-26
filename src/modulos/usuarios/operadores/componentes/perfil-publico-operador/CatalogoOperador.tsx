@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import { useActualizacionesPublicaciones } from "../../../../publicaciones/tiempo-real/use-actualizaciones-publicaciones";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
@@ -127,7 +130,11 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
                             </div>
                         )
                     ) : (
-                        <p className={styles.sinResultados}>{publicaciones.length === 0 ? "No hay publicaciones disponibles." : "No hay publicaciones que coincidan con la búsqueda."}</p>
+                        <EstadoVacio
+                            titulo={publicaciones.length === 0 ? "Todavía no hay publicaciones" : "Sin resultados para estos filtros"}
+                            descripcion={publicaciones.length === 0 ? "No hay publicaciones disponibles." : "No hay publicaciones que coincidan con la búsqueda."}
+                            icono={publicaciones.length === 0 ? <Inventory2OutlinedIcon /> : <SearchOffOutlinedIcon />}
+                        />
                     )}
                 </div>
             </section>

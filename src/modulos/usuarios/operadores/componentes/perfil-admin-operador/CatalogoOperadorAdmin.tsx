@@ -1,6 +1,8 @@
 "use client";
 
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -112,7 +114,7 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
         <>
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             {publicaciones.length == 0 ? (
-                <p>El operador no tiene publicaciones.</p>
+                <EstadoVacio titulo="Sin publicaciones" descripcion="El operador no tiene publicaciones." icono={<Inventory2OutlinedIcon />} anunciar={false} />
             ) : (
                 <ul className="grid grid-cols-1 gap-[var(--espacio-secciones)] md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas">
                     {publicaciones.map((publicacion) => (

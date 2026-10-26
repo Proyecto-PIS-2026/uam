@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import YardOutlinedIcon from "@mui/icons-material/YardOutlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { useRouter } from "next/navigation";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import HojasDecorativas from "../../../../compartido/HojasDecorativas";
@@ -84,12 +87,20 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                     <button type="button" onClick={() => setAltaAbierta(true)} disabled={!productorId} className="boton-primario">Nueva publicación</button>
                 </div>
                 {publicaciones.length === 0 ? (
-                    <div className={styles.estadoVacio}>
-                        <h2 className={styles.tituloVacio}>No tenés publicaciones</h2>
-                        <p className={styles.descripcionVacio}>Cuando tengas productos publicados aparecerán acá.</p>
-                    </div>
+                    <EstadoVacio
+                        titulo="No tenés publicaciones"
+                        descripcion="Cuando tengas productos publicados aparecerán acá."
+                        icono={<YardOutlinedIcon />}
+                        nivelTitulo={2}
+                        anunciar={false}
+                    />
                 ) : publicacionesVisibles.length === 0 ? (
-                    <p className={styles.sinResultados}>No hay publicaciones que coincidan con la búsqueda.</p>
+                    <EstadoVacio
+                        titulo="No hay publicaciones que coincidan con la búsqueda."
+                        descripcion="Probá cambiando o limpiando los filtros para encontrar tus productos."
+                        icono={<SearchOffOutlinedIcon />}
+                        anunciar={false}
+                    />
                 ) : (
                     <div className="grid grid-cols-1 gap-[var(--espacio-controles)] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                         {publicacionesVisibles.map((publicacion) => (

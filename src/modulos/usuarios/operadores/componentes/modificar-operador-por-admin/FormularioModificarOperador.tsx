@@ -1,6 +1,8 @@
 "use client";
 
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 
 import { useState, type FormEvent } from "react";
@@ -283,6 +285,9 @@ export default function FormularioModificarOperador({
                         <div
                             className={styles.listaLocales}
                         >
+                            {locales.length === 0 && (
+                                <EstadoVacio titulo="Sin locales registrados" descripcion="Agregá un local para completar la información del operador." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
+                            )}
                             {locales.map(
                                 (local, indice) => (
                                     <div

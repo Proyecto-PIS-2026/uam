@@ -1,5 +1,6 @@
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import type { UbicacionPublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
 import styles from "./UbicacionesRetiro.module.css";
 
@@ -12,7 +13,13 @@ export default function UbicacionesRetiro({ ubicaciones}: UbicacionesRetiroProps
         <div className={styles.contenedor}>
             <div className={styles.titulo}>Puntos de retiro</div>
             {ubicaciones.length === 0 ? (
-                <div className={styles.descripcion}>No hay puntos de retiro informados.</div>
+                <EstadoVacio
+                    titulo="No hay puntos de retiro informados."
+                    descripcion="Los puntos de retiro aparecerán aquí cuando se agreguen a la publicación."
+                    icono={<LocationOnOutlinedIcon />}
+                    compacto
+                    anunciar={false}
+                />
             ) : (
                 <div className={styles.lista}>
                     {ubicaciones.map((ubicacion, indice) => (

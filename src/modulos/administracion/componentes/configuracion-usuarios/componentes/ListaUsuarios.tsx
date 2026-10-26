@@ -10,10 +10,13 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 
 import type { UsuarioParaModificar } from "../Tipos";
 import styles from "./ListaUsuarios.module.css";
@@ -21,6 +24,7 @@ import styles from "./ListaUsuarios.module.css";
 interface ListaUsuariosProps {
     usuarios: UsuarioParaModificar[];
     usuarioSeleccionadoId: number | null;
+    hayFiltrosActivos?: boolean;
     onSeleccionar?: (usuario: UsuarioParaModificar) => void;
     onEliminar?: (usuario: UsuarioParaModificar) => void | Promise<void>;
 }
@@ -63,7 +67,7 @@ function obtenerInformacion(usuario: UsuarioParaModificar) {
     return usuario.nombreFantasia;
 }
 
-export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSeleccionar, onEliminar }: ListaUsuariosProps) {
+export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFiltrosActivos = false, onSeleccionar, onEliminar }: ListaUsuariosProps) {
     const router = useRouter();
     const [idsEliminados, setIdsEliminados] = useState<number[]>([]);
     const [pagina, setPagina] = useState(1);
@@ -142,7 +146,14 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, onSelec
                 </p>
             )}
             {usuariosVisibles.length === 0 ? (
-                <p className={styles.sinResultados}>No se encontraron usuarios.</p>
+                <EstadoVacio
+                    titulo="No se encontraron usuarios."
+                    descripcion={hayFiltrosActivos
+                        ? "Probá con otra búsqueda o cambiá los filtros para encontrar usuarios."
+                        : "Los usuarios registrados aparecerán en este listado."}
+                    icono={hayFiltrosActivos ? <SearchOffOutlinedIcon /> : <GroupsOutlinedIcon />}
+                    anunciar={false}
+                />
             ) : (
                 <div className={styles.lista}>
                     <div className={styles.encabezado}>

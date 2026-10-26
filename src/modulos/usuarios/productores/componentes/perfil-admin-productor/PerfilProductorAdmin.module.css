@@ -161,20 +161,6 @@
     outline-offset: 2px;
 }
 
-.estadoVacio {
-    margin: 0;
-    padding: var(--padding-panel);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-panel);
-    background: var(--color-surface);
-    color: var(--color-muted);
-    font-size: var(--tamano-texto-secundario);
-    line-height: var(--interlineado-texto);
-    text-align: center;
-    box-shadow: var(--sombra-panel);
-}
-
-
 .filaPublicaciones {
     display: flex;
     width: 100%;

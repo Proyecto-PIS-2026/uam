@@ -1,6 +1,8 @@
 "use client";
 
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -85,7 +87,7 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
 
                     <h2 className={styles.subtitulo}>Locales</h2>
                     {operador.locales.length === 0 ? (
-                        <p className={styles.vacio}>El operador no tiene locales registrados.</p>
+                        <EstadoVacio titulo="Sin locales registrados" descripcion="El operador no tiene locales registrados." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
                     ) : (
                         <ul className={styles.lista}>
                             {operador.locales.map((local) => (

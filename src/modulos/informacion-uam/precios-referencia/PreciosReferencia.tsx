@@ -2,11 +2,14 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import SearchIcon from "@mui/icons-material/Search";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
@@ -373,12 +376,16 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                 </div>
             </section>
 
-            <section className={styles.tablaPanel} aria-label="Precios relevados">
+            <section className={visibles.length === 0 ? styles.tablaVacia : styles.tablaPanel} aria-label="Precios relevados">
                 <div className={styles.tablaCabecera}>
                     <div><h2>Listado de Precios de referencia</h2></div>
                 </div>
                 {visibles.length === 0 ? (
-                    <p className={styles.vacio}>No hay registros que coincidan con los filtros.</p>
+                    <EstadoVacio
+                        titulo={filas.length === 0 ? "No hay precios de referencia disponibles en este momento." : "No hay registros que coincidan con los filtros."}
+                        descripcion={filas.length === 0 ? "Los valores aparecerán aquí cuando haya un relevamiento disponible." : "Probá cambiando o limpiando los filtros para consultar otros precios."}
+                        icono={filas.length === 0 ? <PriceCheckOutlinedIcon /> : <SearchOffOutlinedIcon />}
+                    />
                 ) : (
                     <>
                         <div className={styles.tablaContenedor}>

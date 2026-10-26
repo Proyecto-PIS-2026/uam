@@ -286,17 +286,6 @@
     gap: var(--espacio-controles);
 }
 
-.sinResultados {
-    padding: var(--padding-panel);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-panel);
-    background: var(--color-surface);
-    color: var(--color-muted);
-    font-size: var(--tamano-texto-secundario);
-    line-height: var(--interlineado-texto);
-    text-align: center;
-}
-
 .paginacion {
     display: flex;
     align-items: center;

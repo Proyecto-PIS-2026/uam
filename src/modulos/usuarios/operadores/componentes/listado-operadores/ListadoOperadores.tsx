@@ -1,6 +1,9 @@
 "use client"; // https://nextjs.org/docs/app/api-reference/directives/use-client
 
 import EncabezadoPagina from "../../../../../compartido/EncabezadoPagina";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import { useState } from "react";
 import type { OperadorListado } from "../../consultas-listado-publico";
 import ControlesListadoOperadores from "./ControlesListadoOperadores";
@@ -77,9 +80,11 @@ export default function ListadoOperadores({ operadores, puedeGestionar = false }
             />
 
             {operadoresFiltrados.length === 0 ? (
-                <p role="status" className="py-[var(--espacio-amplio)] text-center text-muted">
-                    {operadores.length === 0 ? "No hay operadores disponibles." : "No se encontraron operadores que coincidan con la búsqueda y la nave seleccionada."}
-                </p>
+                <EstadoVacio
+                    titulo={operadores.length === 0 ? "Todavía no hay operadores" : "No encontramos operadores"}
+                    descripcion={operadores.length === 0 ? "No hay operadores disponibles." : "No se encontraron operadores que coincidan con la búsqueda y la nave seleccionada."}
+                    icono={operadores.length === 0 ? <StorefrontOutlinedIcon /> : <SearchOffOutlinedIcon />}
+                />
             ) : (
                 <div className={styles.lista}>
                     {operadoresFiltrados.map((operador) => (

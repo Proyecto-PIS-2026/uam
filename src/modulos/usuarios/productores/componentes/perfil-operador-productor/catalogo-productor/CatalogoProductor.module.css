@@ -189,13 +189,6 @@
     gap: var(--espacio-controles);
 }
 
-.sinResultados {
-    margin: var(--espacio-grupos) 0 0;
-    color: var(--color-muted);
-    text-align: center;
-    font-size: var(--tamano-texto-secundario);
-}
-
 @media (min-width: 768px) {
     .lista {
         grid-template-columns: repeat(3, minmax(0, 1fr));

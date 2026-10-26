@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import type { PublicacionPerfilProductor } from "../../../acciones/consultas-perfil-por-operador";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../../../../publicaciones/filtros/FiltrosPublicaciones";
 import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
@@ -117,7 +120,11 @@ export default function CatalogoProductor({publicaciones, whatsAppProductor = ""
                             </div>
                         )
                     ) : (
-                        <p className={styles.sinResultados}>{publicaciones.length === 0 ? "No hay publicaciones disponibles." : "No hay publicaciones que coincidan con la búsqueda."}</p>
+                        <EstadoVacio
+                            titulo={publicaciones.length === 0 ? "Todavía no hay publicaciones" : "Sin resultados para estos filtros"}
+                            descripcion={publicaciones.length === 0 ? "No hay publicaciones disponibles." : "No hay publicaciones que coincidan con la búsqueda."}
+                            icono={publicaciones.length === 0 ? <Inventory2OutlinedIcon /> : <SearchOffOutlinedIcon />}
+                        />
                     )}
                 </div>
             </section>

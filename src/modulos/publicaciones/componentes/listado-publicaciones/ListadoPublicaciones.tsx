@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import ViewModuleIcon from "@mui/icons-material/ViewModule";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
@@ -27,6 +29,7 @@ type Publicacion = TiposPublicacion[keyof TiposPublicacion];
 type Props = {
     publicaciones: Publicacion[];
     esAdmin?: boolean;
+    estadoVacio?: ReactNode;
 };
 
 type GrupoPublicaciones = {
@@ -35,7 +38,7 @@ type GrupoPublicaciones = {
     publicaciones: Publicacion[];
 };
 
-export default function ListadoPublicaciones({ publicaciones, esAdmin = false }: Props) {
+export default function ListadoPublicaciones({ publicaciones, esAdmin = false, estadoVacio }: Props) {
     const [agrupar, setAgrupar] = useState(false);
     const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<Publicacion>();
     const [drawerAbierto, setDrawerAbierto] = useState(false);
@@ -105,10 +108,12 @@ export default function ListadoPublicaciones({ publicaciones, esAdmin = false }:
     }
 
     if (publicaciones.length === 0) {
-        return (
-            <div role="status" className={styles.sinResultados}>
-                No hay publicaciones que coincidan con la búsqueda.
-            </div>
+        return estadoVacio ?? (
+            <EstadoVacio
+                titulo="No hay publicaciones que coincidan con la búsqueda."
+                descripcion="Probá cambiando o limpiando los filtros para ver otros productos."
+                icono={<SearchOffOutlinedIcon />}
+            />
         );
     }
 

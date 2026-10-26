@@ -1,5 +1,7 @@
 "use client";
 
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import Dialog from "@mui/material/Dialog";
@@ -124,7 +126,15 @@ function enlaceMapa(url: string) {
 function UbicacionesConsulta({ publicacion }: { publicacion: PublicacionMiMercadoProductor }) {
     return <section className={styles.ubicaciones} aria-labelledby={`ubicaciones-${publicacion.id}`}>
         <h3 className={styles.tituloUbicaciones} id={`ubicaciones-${publicacion.id}`}>Puntos de retiro</h3>
-        {publicacion.ubicaciones.length === 0 ? <p className={styles.descripcionUbicacion}>No hay puntos de retiro informados.</p> : (
+        {publicacion.ubicaciones.length === 0 ? (
+            <EstadoVacio
+                titulo="No hay puntos de retiro informados."
+                descripcion="Los puntos de retiro aparecerán aquí cuando se agreguen a la publicación."
+                icono={<LocationOnOutlinedIcon />}
+                compacto
+                anunciar={false}
+            />
+        ) : (
             <ul className={styles.listaUbicaciones}>
                 {publicacion.ubicaciones.map((ubicacion, indice) => {
                     const enlace = enlaceMapa(ubicacion.urlMaps);

@@ -84,7 +84,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
             </div>
             <div className={styles.contenido}>
                 <BuscadorUsuarios busqueda={busqueda} tipoUsuario={tipoUsuario} onBusquedaChange={cambiarBusqueda} onTipoUsuarioChange={cambiarTipoUsuario} restablecimiento={restablecimiento} onRestablecimientoChange={cambiarRestablecimiento}/>
-                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario}/>
+                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} hayFiltrosActivos={datos.usuarios.length > 0 && (busqueda.trim().length > 0 || tipoUsuario !== "TODOS" || restablecimiento !== "TODOS")} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario}/>
             </div>
         </section>
     );

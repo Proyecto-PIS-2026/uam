@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import DrawerPublicacionProductor from "../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProductor";
 import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
 import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import TarjetaPublicacionProductorAdmin from "./TarjetaPublicacionProductorAdmin";
-import styles from "./PerfilProductorAdmin.module.css";
 
 type CatalogoProductorAdminProps = {
     publicaciones: PublicacionPerfilAdminProductor[];
@@ -106,7 +107,7 @@ export default function CatalogoProductorAdmin({ publicaciones }: CatalogoProduc
         <>
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             {publicacionesActuales.length === 0 ? (
-                <p className={styles.estadoVacio}>El productor no tiene publicaciones.</p>
+                <EstadoVacio titulo="Sin publicaciones" descripcion="El productor no tiene publicaciones." icono={<Inventory2OutlinedIcon />} anunciar={false} />
             ) : (
                 <ul className="grid grid-cols-1 gap-[var(--espacio-secciones)] md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas">
                     {publicacionesActuales.map((publicacion) => (

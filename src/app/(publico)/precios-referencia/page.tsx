@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import PreciosReferencia from "@/modulos/informacion-uam/precios-referencia/PreciosReferencia";
 import { obtenerPreciosReferencia, type ResultadoPreciosReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 
@@ -26,7 +28,11 @@ export default async function PaginaPreciosReferencia() {
                 ) : (
                     <section className="secciones-pagina">
                         <EncabezadoPagina titulo="Precios de referencia" subtitulo="Consulta los precios relevados de la UAM" />
-                        <p role="status" className="rounded-[var(--radio-panel)] border border-border bg-surface p-[var(--padding-panel)] text-sm text-muted">No hay precios de referencia disponibles en este momento.</p>
+                        <EstadoVacio
+                            titulo="No hay precios de referencia disponibles en este momento."
+                            descripcion="Podés volver a intentarlo más tarde para consultar el último relevamiento."
+                            icono={<PriceCheckOutlinedIcon />}
+                        />
                     </section>
                 )}
             </div>

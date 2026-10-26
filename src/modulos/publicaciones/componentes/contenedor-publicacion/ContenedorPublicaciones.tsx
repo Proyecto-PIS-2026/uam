@@ -1,6 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import YardOutlinedIcon from "@mui/icons-material/YardOutlined";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import type { ResultadoPublicaciones } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import type { FiltrosConsulta } from "../../../consulta-mercado/acciones/filtros-consulta";
 import obtenerPublicaciones from "../../../consulta-mercado/acciones/ConsultarPublicacionOperador.action";
@@ -142,7 +146,17 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
         <div className="secciones-pagina" aria-busy={cargando}>
             <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} navesDisponibles={datos.naves} totalRemoto={datos.total} especieFiltro={especie} ordenInicial="prioridad" alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
             {error && <p role="alert">{error} <button type="button" onClick={() => void cargar()}>Reintentar</button></p>}
-            <ListadoPublicaciones publicaciones={datos.publicaciones} esAdmin={esAdmin} />
+            <ListadoPublicaciones
+                publicaciones={datos.publicaciones}
+                esAdmin={esAdmin}
+                estadoVacio={
+                    <EstadoVacio
+                        titulo={datos.totalCatalogo === 0 ? "Todavía no hay publicaciones disponibles" : "No hay publicaciones que coincidan con la búsqueda."}
+                        descripcion={datos.totalCatalogo === 0 ? "Los productos de los operadores aparecerán aquí cuando estén disponibles." : "Probá cambiando o limpiando los filtros para ver otros productos."}
+                        icono={datos.totalCatalogo === 0 ? <ShoppingBasketOutlinedIcon /> : <SearchOffOutlinedIcon />}
+                    />
+                }
+            />
         </div>
     );
 }
@@ -163,7 +177,17 @@ function ContenidoLocal({publicaciones, especie = "", esAdmin = false}: Propieda
 	return (
 		<div className="secciones-pagina">
 			<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicaciones} especieFiltro={especie} ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")}/>
-			<ListadoPublicaciones esAdmin={esAdmin} publicaciones={publicacionesFiltradas} />
+			<ListadoPublicaciones
+				esAdmin={esAdmin}
+				publicaciones={publicacionesFiltradas}
+				estadoVacio={
+					<EstadoVacio
+						titulo={publicaciones.length === 0 ? "Todavía no hay publicaciones disponibles" : "No hay publicaciones que coincidan con la búsqueda."}
+						descripcion={publicaciones.length === 0 ? "Los productos de los productores aparecerán aquí cuando estén disponibles." : "Probá cambiando o limpiando los filtros para ver otros productos."}
+						icono={publicaciones.length === 0 ? <YardOutlinedIcon /> : <SearchOffOutlinedIcon />}
+					/>
+				}
+			/>
 		</div>
 	);
 }

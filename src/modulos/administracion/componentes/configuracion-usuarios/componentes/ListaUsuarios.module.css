@@ -133,14 +133,6 @@
     color: var(--color-danger) !important;
 }
 
-.sinResultados {
-    margin: 0;
-    padding: var(--espacio-secciones) 0;
-    color: var(--color-muted);
-    font-size: var(--tamano-texto-secundario);
-    text-align: center;
-}
-
 .paginacion {
     display: flex;
     justify-content: center;

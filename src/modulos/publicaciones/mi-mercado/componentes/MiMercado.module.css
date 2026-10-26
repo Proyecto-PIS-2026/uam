@@ -20,36 +20,6 @@
     line-height: var(--interlineado-titulo-pagina);
 }
 
-.sinResultados {
-    margin: 0;
-    color: var(--color-muted);
-    text-align: center;
-    font-size: var(--tamano-texto-secundario);
-}
-
-.estadoVacio {
-    padding: var(--padding-panel);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-panel);
-    background: var(--color-surface);
-    text-align: center;
-    box-shadow: var(--sombra-panel);
-}
-
-.tituloVacio {
-    margin: 0;
-    color: var(--color-foreground);
-    font-size: var(--tamano-titulo-seccion);
-    font-weight: 700;
-}
-
-.descripcionVacio {
-    margin-top: var(--espacio-inline);
-    color: var(--color-muted);
-    font-size: var(--tamano-texto-secundario);
-    line-height: var(--interlineado-texto);
-}
-
 .mensajeError {
     margin: 0;
     padding: var(--padding-panel);

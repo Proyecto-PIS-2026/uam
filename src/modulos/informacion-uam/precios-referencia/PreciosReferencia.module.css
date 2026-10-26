@@ -340,12 +340,14 @@
     color: var(--color-foreground);
     white-space: nowrap;
 }
-.vacio {
-    margin: 0;
-    padding: var(--espacio-amplio) var(--padding-panel);
-    border-top: 1px solid var(--color-border);
-    color: var(--color-muted-foreground);
-    text-align: center;
+.tablaVacia {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--espacio-controles);
+}
+.tablaVacia .tablaCabecera {
+    padding: 0;
 }
 .listaMobile {
     display: none;
