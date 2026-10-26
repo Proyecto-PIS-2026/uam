@@ -218,8 +218,9 @@ describe("DrawerPublicacion con productores", () => {
         );
         const enlace = screen.getByRole("link", {name: "Contactar a Huerta Productora por WhatsApp"});
         const url = new URL(enlace.getAttribute("href")!);
-        expect(url.origin).toBe("https://wa.me");
-        expect(url.pathname).toBe("/59899123456");
+        expect(url.origin).toBe("https://web.whatsapp.com");
+        expect(url.pathname).toBe("/send");
+        expect(url.searchParams.get("phone")).toBe("59899123456");
         expect(url.searchParams.get("text")).toBe("Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.");
         expect(enlace).toHaveAttribute("target", "_blank");
         expect(enlace).toHaveAttribute("rel", "noopener noreferrer");

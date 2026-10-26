@@ -39,8 +39,9 @@ describe("PerfilProductor", () => {
         render(<PerfilProductor productor={productor} />);
         const enlace = screen.getByRole("link", {name: "Contactar a Frutas del Norte por WhatsApp"});
         const destino = new URL(enlace.getAttribute("href")!);
-        expect(destino.hostname).toBe("wa.me");
-        expect(destino.pathname).toBe("/59899100001");
+        expect(destino.hostname).toBe("web.whatsapp.com");
+        expect(destino.pathname).toBe("/send");
+        expect(destino.searchParams.get("phone")).toBe("59899100001");
         expect(destino.searchParams.get("text")).toBe("Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.");
     });
 

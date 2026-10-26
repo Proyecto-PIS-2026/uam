@@ -1,3 +1,4 @@
+import EnlaceWhatsApp from "@/compartido/componentes/EnlaceWhatsApp";
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 
@@ -28,7 +29,6 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
 
     const numeroWhatsApp = operador.whatsApp.replace(/\D/g, "");
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
-    const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
@@ -66,10 +66,10 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
                 </div>
             </div>
 
-            <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${operador.nombreFantasia} por WhatsApp`}>
+            <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} className={styles.botonWhatsApp} aria-label={`Contactar a ${operador.nombreFantasia} por WhatsApp`}>
                 <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                 <span className={styles.textoWhatsApp}>Contactar por WhatsApp</span>
-            </a>
+            </EnlaceWhatsApp>
         </section>
     );
 

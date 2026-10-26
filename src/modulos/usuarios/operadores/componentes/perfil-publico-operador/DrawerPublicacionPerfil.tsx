@@ -1,5 +1,6 @@
 "use client";
 
+import EnlaceWhatsApp from "@/compartido/componentes/EnlaceWhatsApp";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
@@ -28,7 +29,6 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
     const usuario = publicacion ? publicacion.tipoPublicacion === "PRODUCTOR" ? publicacion.productor : publicacion.operador : null;
     const numeroWhatsApp = usuario?.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
-    const enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     
     const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
@@ -145,10 +145,10 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                         </div>
                         <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
                             <div className={styles.bloqueBotones}>
-                                <a href={enlaceWhatsApp} target="_blank" rel="noopener noreferrer" className={styles.botonWhatsApp} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
+                                <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} className={styles.botonWhatsApp} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                                     <span>WhatsApp</span>
-                                </a>
+                                </EnlaceWhatsApp>
                             </div>
                         </div>
                     </div>

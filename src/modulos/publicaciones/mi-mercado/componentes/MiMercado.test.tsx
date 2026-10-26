@@ -17,6 +17,7 @@ type DrawerMockProps = {
   alCerrar: () => void;
   alEliminar?: () => void;
   alCompartir?: () => void;
+  compartiendo?: boolean;
   alGuardar: (publicacionOperadorId: number, cambios: CambiosPublicacionOperador, fotoNueva: File | null) => void | Promise<void>;
   publicacion: PublicacionParaEditar | null;
   modoInicial?: "consulta" | "edicion";
@@ -49,7 +50,7 @@ vi.mock("../../operadores/componentes/DrawerEditarPublicacion", () => ({
         {props.errorConsulta && <p role="alert">{props.errorConsulta}</p>}
         <button type="button" onClick={props.alCerrar}>Cerrar consulta</button>
         {props.alEliminar && <button type="button" onClick={props.alEliminar} disabled={props.eliminando}>Eliminar desde consulta</button>}
-        {props.alCompartir && <button type="button" onClick={props.alCompartir}>Compartir en WhatsApp</button>}
+        {props.alCompartir && <button type="button" onClick={props.alCompartir} disabled={props.compartiendo}>Compartir en WhatsApp</button>}
         {props.children}
       </div>
     );
@@ -221,7 +222,7 @@ describe("MiMercado", () => {
     expect(mocks.abrirWhatsApp).toHaveBeenCalledOnce();
     const [destino, ventana, opciones] = mocks.abrirWhatsApp.mock.calls[0];
     const enlace = new URL(destino);
-    expect(enlace.origin).toBe("https://wa.me");
+    expect(enlace.origin).toBe("https://web.whatsapp.com");
     expect(enlace.searchParams.get("text")).toContain(precioEsperado);
     expect(enlace.searchParams.get("text")).toContain(`${window.location.origin}/operadores/Mercado%20P%C3%A9rez%20%26%20Hijos`);
     expect(ventana).toBe("_blank");

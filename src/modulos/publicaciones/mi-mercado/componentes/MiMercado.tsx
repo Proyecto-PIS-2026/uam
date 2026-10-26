@@ -15,7 +15,7 @@ import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
 import { useActualizacionesPublicaciones } from "../../tiempo-real/use-actualizaciones-publicaciones";
 import styles from "./MiMercado.module.css";
-import { crearEnlaceWhatsApp } from "../enlace-whatsapp";
+import { useCompartirPublicacion } from "../use-compartir-publicacion";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
@@ -73,6 +73,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
     if (seleccion && seleccion.listado !== publicacionesActuales) {
         publicacionSeleccionada = publicacionesActuales.find((publicacion) => publicacion.id === seleccion.publicacion.id) ?? null;
     }
+    const { compartir, preparandoFoto, compartiendo } = useCompartirPublicacion(publicacionSeleccionada, nombreOperador, notificar);
 
     const publicacionParaEditar: PublicacionParaEditar | null = publicacionSeleccionada ? {
         publicacionOperadorId: publicacionSeleccionada.publicacionOperadorId,
@@ -305,15 +306,8 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
             </div>
             {puedeCrear && altaAbierta && <NuevaPublicacion operadorId={operadorId} incrementoPrecio={incrementoPrecio} abierto={altaAbierta} alCerrar={cerrarAlta} alCrear={publicacionCreada} />}
             <DrawerEditarPublicacion incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }}
-            alCompartir={() => {
-                if (publicacionSeleccionada) {
-                    try {
-                        window.open(crearEnlaceWhatsApp(publicacionSeleccionada, nombreOperador, window.location.origin), "_blank", "noopener,noreferrer");
-                    } catch {
-                        notificar("No se pudo abrir WhatsApp.", "error");
-                    }
-                }
-            }}
+            alCompartir={() => { cerrarNotificacion(); void compartir(); }}
+            compartiendo={compartiendo || preparandoFoto}
             eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
 
                 <ConfirmModal abierto={publicacionPendiente !== null} titulo="Eliminar publicación" descripcion={publicacionPendiente ? `¿Querés eliminar la publicación de ${publicacionPendiente.especie.nombreEspecie}? Esta acción no se puede deshacer.` : ""} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setPublicacionPendiente(null); }} alConfirmar={() => void eliminarPublicacion()} />

@@ -153,7 +153,7 @@ describe("Listado y navegación de productores", () => {
         expect(detalle.getByRole("link", { name: /Salto/ })).toHaveAttribute("href", "https://maps.example/salto");
         expect(detalle.getByText("Consultar precio")).toBeInTheDocument();
         expect(detalle.getByText("Uruguay")).toBeInTheDocument();
-        expect(detalle.getByRole("link", { name: /WhatsApp/ })).toHaveAttribute("href", expect.stringContaining("https://wa.me/59899123456"));
+        expect(detalle.getByRole("link", { name: /WhatsApp/ })).toHaveAttribute("href", expect.stringContaining("https://web.whatsapp.com/send?phone=59899123456"));
     });
 
     it("muestra un perfil sin publicaciones ni puntos de retiro", async () => {

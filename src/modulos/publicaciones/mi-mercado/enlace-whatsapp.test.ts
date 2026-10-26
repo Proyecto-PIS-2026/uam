@@ -46,7 +46,7 @@ describe("crearEnlaceWhatsApp", () => {
 
         const enlace = crearEnlaceWhatsApp(crearPublicacion(), nombreOperador, "https://mercado.example");
 
-        expect(enlace).toBe(`https://wa.me/?text=${encodeURIComponent(mensaje)}`);
+        expect(enlace).toBe(`https://web.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`);
         expect(new URL(enlace).searchParams.get("text")).toBe(mensaje);
     });
 

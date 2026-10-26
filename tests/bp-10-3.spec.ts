@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { iniciarSesionOperador } from "./autenticacion";
 
-test("BP-10.3 Compartir producto directamente en WhatsApp con mensaje predeterminado", async ({ page }) => {
+test("BP-10.3 Compartir producto en WhatsApp Web con mensaje predeterminado", async ({ page }) => {
   test.slow();
 
   await page.context().route(/wa\.me|whatsapp\.com/, (route) =>
@@ -27,7 +27,7 @@ test("BP-10.3 Compartir producto directamente en WhatsApp con mensaje predetermi
 
   await popup.waitForURL(/wa\.me|whatsapp\.com/, { waitUntil: "commit" });
   const enlace = new URL(popup.url());
-  expect(enlace.hostname).toMatch(/(^|\.)(wa\.me|whatsapp\.com)$/);
+  expect(enlace.hostname).toBe("web.whatsapp.com");
   const mensaje = enlace.searchParams.get("text");
   expect(mensaje).toContain(nombreProducto);
   expect(mensaje).toContain(`Precio: ${precio ? `$${Number(precio)}` : "Consultar"}`);

@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 import { iniciarSesionOperador } from "./autenticacion";
 
 const WHATSAPP = /wa\.me|whatsapp\.com/;
-const HOST_WHATSAPP = /(^|\.)(wa\.me|whatsapp\.com)$/;
 
 test.describe("BP-10 Contacto por WhatsApp", () => {
   test("CA1: el comprador puede contactar al operador", async ({ page }) => {
@@ -12,7 +11,7 @@ test.describe("BP-10 Contacto por WhatsApp", () => {
 
     const enlace = page.getByRole("link", { name: /^Contactar a .* por WhatsApp$/ });
     await expect(enlace).toBeVisible();
-    await expect(enlace).toHaveAttribute("href", /^https:\/\/wa\.me\//);
+    await expect(enlace).toHaveAttribute("href", /^https:\/\/web\.whatsapp\.com\/send\?phone=/);
   });
 
   test("CA2: el operador puede contactar al productor", async ({ page }) => {
@@ -24,7 +23,7 @@ test.describe("BP-10 Contacto por WhatsApp", () => {
 
     const contactar = page.getByRole("link", { name: /^Contactar a .* por WhatsApp$/ });
     await expect(contactar).toBeVisible();
-    await expect(contactar).toHaveAttribute("href", /^https:\/\/wa\.me\//);
+    await expect(contactar).toHaveAttribute("href", /^https:\/\/web\.whatsapp\.com\/send\?phone=/);
   });
 
   test("CA3: el operador puede compartir sus publicaciones", async ({ page }) => {
@@ -45,7 +44,7 @@ test.describe("BP-10 Contacto por WhatsApp", () => {
     ]);
 
     await popup.waitForURL(WHATSAPP, { waitUntil: "commit" });
-    expect(new URL(popup.url()).hostname).toMatch(HOST_WHATSAPP);
+    expect(new URL(popup.url()).hostname).toBe("web.whatsapp.com");
     expect(new URL(popup.url()).searchParams.get("text")).toBeTruthy();
     await popup.close();
   });
