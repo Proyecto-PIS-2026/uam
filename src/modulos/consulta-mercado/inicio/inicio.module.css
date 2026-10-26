@@ -264,6 +264,10 @@
     border-color: var(--color-primary);
 }
 
+.selectMui :global(.MuiInputLabel-root) {
+    font-size: var(--tamano-texto-secundario);
+}
+
 .selectMui :global(.MuiInputLabel-root.Mui-focused) {
     color: var(--color-primary);
 }

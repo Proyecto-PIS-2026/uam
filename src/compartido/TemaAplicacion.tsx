@@ -34,8 +34,42 @@ const tema = createTheme({
         },
         MuiOutlinedInput: {
             styleOverrides: {
-                root: { backgroundColor: "var(--color-surface)", borderRadius: "var(--radio-control)" },
+                root: {
+                    backgroundColor: "var(--color-surface)",
+                    borderRadius: "var(--radio-control)",
+                    "&:not(.MuiInputBase-multiline)": {
+                        height: "var(--alto-control)",
+                        "& > .MuiOutlinedInput-input": {
+                            boxSizing: "border-box",
+                            height: "100%",
+                            paddingTop: 0,
+                            paddingBottom: 0,
+                        },
+                    },
+                },
                 notchedOutline: { borderColor: "var(--color-border)" },
+            },
+        },
+        MuiSelect: {
+            styleOverrides: {
+                outlined: {
+                    boxSizing: "border-box",
+                    height: "100%",
+                    minHeight: 0,
+                    paddingTop: 0,
+                    paddingBottom: 0,
+                    lineHeight: "var(--alto-control)",
+                },
+            },
+        },
+        MuiFormControl: {
+            styleOverrides: {
+                root: {
+                    "&:has(> .MuiOutlinedInput-root:not(.MuiInputBase-multiline)) > .MuiInputLabel-outlined:not(.MuiInputLabel-shrink)": {
+                        top: 0,
+                        transform: "translate(14px, calc(var(--alto-control) / 2 - 50%)) scale(1)",
+                    },
+                },
             },
         },
         MuiDialog: { styleOverrides: { paper: { borderRadius: "var(--radio-panel)" } } },

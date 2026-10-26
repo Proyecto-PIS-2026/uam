@@ -427,22 +427,8 @@
     border-width: 2px;
 }
 
-.selectMui :global(.MuiSelect-select.MuiSelect-outlined) {
-    box-sizing: border-box;
-    height: 100%;
-    min-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    line-height: var(--alto-control);
-}
-
 .selectMui :global(.MuiInputLabel-root) {
     font-family: var(--font-geist-sans), sans-serif;
-}
-
-.selectMui :global(.MuiInputLabel-root:not(.MuiInputLabel-shrink)) {
-    top: 50%;
-    transform: translate(14px, -50%) scale(1);
 }
 
 .selectMui :global(.MuiInputLabel-root.Mui-focused) {
