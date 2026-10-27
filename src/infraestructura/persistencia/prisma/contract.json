@@ -1694,6 +1694,13 @@
           },
           "Ubicacion": {
             "fields": {
+              "departamento": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1742,6 +1749,9 @@
             },
             "storage": {
               "fields": {
+                "departamento": {
+                  "column": "departamento"
+                },
                 "id": {
                   "column": "id"
                 },
@@ -3283,6 +3293,11 @@
             },
             "ubicacion": {
               "columns": {
+                "departamento": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -3522,7 +3537,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "580baa18385f3be13bd65c632f572151ac3bed83620b4f21eb6d1f5f98c4b59a"
+    "storageHash": "00a5c4d0c5097c79610099c4b873c840008171e7667a703de42c1134851046e6"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

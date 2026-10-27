@@ -21,7 +21,7 @@ vi.mock("../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProdu
         <section role="dialog" aria-label="Detalle de publicación">
             <h2>{publicacion.especie.nombreEspecie}</h2>
             <p>{publicacion.pais}</p>
-            {publicacion.ubicaciones.map((ubicacion) => <p key={ubicacion.id}>{ubicacion.nombreUbicacion}</p>)}
+            {publicacion.ubicaciones.map((ubicacion) => <div key={ubicacion.id}><p>{ubicacion.nombreUbicacion}</p><p>{ubicacion.departamento ?? "-"}</p></div>)}
             <button type="button" onClick={alCerrar}>Cerrar consulta</button>
             <button type="button" onClick={() => {
                 alCerrar();
@@ -33,7 +33,7 @@ vi.mock("../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProdu
                 precio: "125.50",
                 publicacionDisponible: false,
                 categoria: { id: 8, nombreCategoria: "Extra" },
-                ubicaciones: [{ id: 91, nombreUbicacion: "Nuevo punto de retiro", urlMaps: "https://maps.google.com/" }],
+                ubicaciones: [{ id: 91, nombreUbicacion: "Nuevo punto de retiro", urlMaps: "https://maps.google.com/", departamento: "Canelones" }],
             })}>Guardar cambios</button>
         </section>
     ) : null,
@@ -61,8 +61,8 @@ const publicacionBase: PublicacionPerfilAdminProductor = {
     codigoCalibre: "G",
     pais: "Uruguay",
     ubicaciones: [
-        { nombre: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1" },
-        { nombre: "Ruta 5 km 200, Maldonado", urlMaps: "https://goo.gl/maps/maldonado1" },
+        { nombre: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1", departamento: "Salto" },
+        { nombre: "Ruta 5 km 200, Maldonado", urlMaps: "https://goo.gl/maps/maldonado1", departamento: "Maldonado" },
     ],
 };
 
@@ -112,6 +112,21 @@ describe("CatalogoProductorAdmin", () => {
 
         fireEvent.click(within(consulta).getByRole("button", { name: "Cerrar consulta" }));
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("comunica los departamentos al guardar y eliminar sin perderlos entre conversiones", () => {
+        const alCambiarDepartamentos = vi.fn();
+        render(<CatalogoProductorAdmin publicaciones={[publicacionBase]} alCambiarDepartamentos={alCambiarDepartamentos} />);
+        expect(alCambiarDepartamentos).toHaveBeenLastCalledWith(["Maldonado", "Salto"]);
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Manzana - Red Delicious" }));
+        expect(within(screen.getByRole("dialog")).getByText("Salto")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        expect(alCambiarDepartamentos).toHaveBeenLastCalledWith(["Canelones"]);
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ver detalles de Manzana - Red Delicious" }));
+        expect(within(screen.getByRole("dialog")).getByText("Canelones")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar publicación" }));
+        expect(alCambiarDepartamentos).toHaveBeenLastCalledWith([]);
     });
 
     it("actualiza la tarjeta y conserva el detalle guardado al volver a abrirlo", () => {

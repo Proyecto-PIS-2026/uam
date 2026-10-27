@@ -72,6 +72,21 @@
     display: none;
 }
 
+.departamentos {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--espacio-textos);
+    margin: var(--espacio-textos) 0 0;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+    overflow-wrap: anywhere;
+}
+
+.departamentos svg {
+    flex-shrink: 0;
+}
+
 @media (min-width: 768px) {
     .tarjeta {
         height: 100%;

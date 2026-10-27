@@ -11,6 +11,7 @@ vi.mock("@mui/material/Drawer", () => ({
 vi.mock("./LeafletLocationPicker", () => ({
     default: ({ abierto, alConfirmar, alCerrar }: { abierto: boolean; alConfirmar: (ubicacion: UbicacionSeleccionada) => void; alCerrar: () => void }) => abierto ? <section role="dialog" aria-label="Seleccionar ubicación">
         <button onClick={() => alConfirmar({ latitud: -34.9, longitud: -56.2, departamento: "Montevideo", nombreLugar: "Ruta 5" })}>Usar ubicación</button>
+        <button onClick={() => alConfirmar({ latitud: -34.5, longitud: -56.3, departamento: "Canelones", nombreLugar: "Depósito" })}>Usar otra ubicación</button>
         <button onClick={() => alConfirmar({ latitud: -34.9, longitud: -56.2, departamento: "Montevideo", nombreLugar: null })}>Usar departamento</button>
         <button onClick={alCerrar}>Cerrar mapa</button>
     </section> : null,
@@ -130,8 +131,9 @@ describe("AltaPublicacionProductor", () => {
         elegir("Especie", "Manzana");
         seleccionarUbicacion();
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 2" }));
+        fireEvent.click(screen.getByRole("button", { name: "Usar otra ubicación" }));
         fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 2"), { target: { value: " Depósito " } });
-        fireEvent.change(screen.getByLabelText("Enlace de Google Maps 2"), { target: { value: "https://maps.app.goo.gl/deposito" } });
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
         fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 3"), { target: { value: "Punto descartado" } });
         fireEvent.click(screen.getByRole("button", { name: "Eliminar punto de retiro 3" }));
@@ -143,8 +145,8 @@ describe("AltaPublicacionProductor", () => {
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
         expect(JSON.parse(envio[1]!.body as string).ubicaciones).toEqual([
-            { nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2" },
-            { nombreUbicacion: "Depósito", urlMaps: "https://maps.app.goo.gl/deposito" },
+            { nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2", departamento: "Montevideo" },
+            { nombreUbicacion: "Depósito", urlMaps: "https://www.google.com/maps?q=-34.5,-56.3", departamento: "Canelones" },
         ]);
         fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
         comprobarFormularioVacio();
@@ -224,7 +226,7 @@ describe("AltaPublicacionProductor", () => {
         const confirmar = screen.getByRole("button", { name: "Confirmar" });
         const formulario = confirmar.closest("form")!;
 
-        expect(await screen.findByRole("alert")).toHaveTextContent(respuesta instanceof Error ? "Sin conexión" : "No se pudieron cargar los datos.");
+        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron cargar las opciones de la publicación. Volvé a intentarlo.");
         expect(screen.getByRole("alert").closest('[role="dialog"]')).toBeNull();
         expect(screen.getByRole("button", { name: "Confirmar" }).closest("form")).toBe(formulario);
         expect(formulario).toHaveAttribute("aria-busy", "false");
@@ -233,6 +235,63 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" })).toBeDisabled();
         fireEvent.submit(formulario);
         expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("recupera los catálogos sin recargar la página al reintentar desde el drawer persistente", async () => {
+        let resolver!: (respuesta: Response) => void;
+        const fetchMock = vi.fn()
+            .mockRejectedValueOnce(new Error("Detalle técnico que no debe mostrarse"))
+            .mockImplementationOnce(() => new Promise<Response>((resolve) => { resolver = resolve; }));
+        vi.stubGlobal("fetch", fetchMock);
+        const props = { productorId: 4, alCrear: vi.fn(), alCerrar: vi.fn() };
+        const vista = render(<DrawerAltaPublicacionProductor {...props} abierto />);
+        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron cargar las opciones de la publicación. Volvé a intentarlo.");
+        expect(screen.queryByText("Detalle técnico que no debe mostrarse")).not.toBeInTheDocument();
+        vista.rerender(<DrawerAltaPublicacionProductor {...props} abierto={false} />);
+        vista.rerender(<DrawerAltaPublicacionProductor {...props} abierto />);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        const reintentar = screen.getByRole("button", { name: "Reintentar carga" });
+        const confirmar = screen.getByRole("button", { name: "Confirmar" });
+        const formulario = confirmar.closest("form")!;
+        fireEvent.click(reintentar);
+        fireEvent.click(reintentar);
+        expect(reintentar).toBeDisabled();
+        expect(reintentar).toHaveAttribute("aria-busy", "true");
+        expect(confirmar).toBeDisabled();
+        expect(screen.getByLabelText("Precio en pesos")).toBeDisabled();
+        expect(formulario).toHaveAttribute("aria-busy", "true");
+        fireEvent.submit(formulario);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+
+        await act(async () => resolver(new Response(JSON.stringify(catalogos))));
+        expect(confirmar).toBeEnabled();
+        expect(screen.getByLabelText("Precio en pesos")).toBeEnabled();
+        expect(formulario).toHaveAttribute("aria-busy", "false");
+        expect(screen.queryByRole("button", { name: "Reintentar carga" })).not.toBeInTheDocument();
+        elegir("Especie", "Manzana");
+        expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Manzana");
+    });
+
+    it("permite otro reintento si vuelve a fallar sin repetir solicitudes automáticamente", async () => {
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(new Response("{}", { status: 503 }))
+            .mockResolvedValueOnce(new Response("respuesta inválida", { status: 200 }))
+            .mockResolvedValueOnce(new Response(JSON.stringify(catalogos)));
+        vi.stubGlobal("fetch", fetchMock);
+        render(<AltaPublicacionProductor productorId={4} />);
+        await screen.findByRole("alert");
+        expect(screen.getByRole("button", { name: "Agregar producto" })).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Reintentar carga" }));
+        await waitFor(() => expect(screen.getByRole("button", { name: "Reintentar carga" })).toBeEnabled());
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(screen.getByRole("button", { name: "Agregar producto" })).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Reintentar carga" }));
+        await waitFor(() => expect(screen.getByRole("button", { name: "Agregar producto" })).toBeEnabled());
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(screen.queryByRole("button", { name: "Reintentar carga" })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
+        expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
     });
 
     it("prioriza las especies UAM presentes y ordena el resto sin modificar el catálogo recibido", async () => {
@@ -254,7 +313,7 @@ describe("AltaPublicacionProductor", () => {
     it.each([new Response("{}", { status: 500 }), new Error("Sin conexión")])("informa cuando no puede cargar los datos", async (respuesta) => {
         vi.stubGlobal("fetch", vi.fn(() => respuesta instanceof Error ? Promise.reject(respuesta) : Promise.resolve(respuesta)));
         render(<AltaPublicacionProductor productorId={4} />);
-        expect(await screen.findByRole("alert")).toHaveTextContent(respuesta instanceof Error ? "Sin conexión" : "No se pudieron cargar los datos.");
+        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron cargar las opciones de la publicación. Volvé a intentarlo.");
     });
 
     it.each([true, false])("adapta el panel y la carga de fotografía a escritorio=%s", async (esWeb) => {
@@ -300,7 +359,7 @@ describe("AltaPublicacionProductor", () => {
         completarFormulario(); enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
-        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6, paisId: 7, ubicaciones: [{ nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2" }], disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null });
+        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6, paisId: 7, ubicaciones: [{ nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2", departamento: "Montevideo" }], disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null });
         expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
     });
 

@@ -5,6 +5,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import type { Map as LeafletMap, CircleMarker } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./LeafletLocationPicker.module.css";
+import { normalizarDepartamento } from "@/compartido/departamentos-uruguay";
 
 export type UbicacionSeleccionada = {
     latitud: number;
@@ -85,8 +86,11 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
                     const datos = await respuesta.json() as { display_name?: string; address?: { country_code?: string; state?: string; county?: string; city?: string; town?: string; village?: string; suburb?: string; neighbourhood?: string; road?: string } };
                     if (!activo || solicitud !== solicitudSeleccion) return;
                     if (datos.address?.country_code?.toLowerCase() !== "uy") throw new Error("La ubicación debe estar dentro de Uruguay.");
-                    const departamento = datos.address?.state ?? datos.address?.county;
-                    if (!departamento) throw new Error("No se pudo identificar el departamento.");
+                    const departamento = normalizarDepartamento(datos.address?.state) ?? normalizarDepartamento(datos.address?.county);
+                    if (!departamento) {
+                        setError("No pudimos identificar el departamento. Seleccioná nuevamente el punto en el mapa.");
+                        return;
+                    }
                     const nombreLugar = datos.address?.road ?? datos.address?.neighbourhood ?? datos.address?.suburb ?? datos.address?.town ?? datos.address?.city ?? datos.display_name?.split(",")[0] ?? null;
                     const nueva = { latitud, longitud, departamento, nombreLugar };
                     setSeleccion(nueva);
@@ -95,13 +99,15 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
                 } catch (razon) {
                     if (!activo || solicitud !== solicitudSeleccion) return;
                     setSeleccion(null);
-                    setError(razon instanceof Error ? razon.message : "No se pudo identificar la ubicación.");
+                    setError(razon instanceof Error && razon.message === "La ubicación debe estar dentro de Uruguay."
+                        ? razon.message : "No pudimos identificar la ubicación. Revisá tu conexión e intentá nuevamente.");
                 }
             };
             seleccionarCoordenadasRef.current = marcar;
 
             if (inicial) {
                 marcadorRef.current = leaflet.circleMarker(centro, { radius: 8, color: "#176b58", fillColor: "#176b58", fillOpacity: 0.9 }).addTo(mapa);
+                if (!normalizarDepartamento(inicial.departamento)) void marcar(inicial.latitud, inicial.longitud);
             }
             mapa.on("click", (evento) => { void marcar(evento.latlng.lat, evento.latlng.lng); });
         }).catch(() => { if (activo) setError("No se pudo cargar el mapa."); });
@@ -133,10 +139,10 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
             if (solicitud !== solicitudBusquedaRef.current) return;
             setResultados(datos);
             if (datos.length === 0) setError("No se encontraron lugares para esa búsqueda.");
-        } catch (razon) {
+        } catch {
             if (solicitud !== solicitudBusquedaRef.current) return;
             setResultados([]);
-            setError(razon instanceof Error ? razon.message : "No se pudo buscar el lugar.");
+            setError("No pudimos buscar el lugar. Revisá tu conexión e intentá nuevamente.");
         } finally {
             if (solicitud === solicitudBusquedaRef.current) setBuscando(false);
         }
@@ -177,7 +183,7 @@ export default function LeafletLocationPicker({ abierto, coordenadas, alConfirma
             </div>
             <footer className={styles.pie}>
                 <button type="button" className={styles.cancelar} onClick={alCerrar}>Cancelar</button>
-                <button type="button" className={styles.confirmar} onClick={() => seleccion && alConfirmar(seleccion)} disabled={!seleccion || Boolean(error)}>Usar esta ubicación</button>
+                <button type="button" className={styles.confirmar} onClick={() => seleccion && normalizarDepartamento(seleccion.departamento) && alConfirmar(seleccion)} disabled={!seleccion || !normalizarDepartamento(seleccion.departamento) || Boolean(error)}>Usar esta ubicación</button>
             </footer>
         </section>
     </div>;

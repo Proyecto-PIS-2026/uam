@@ -61,7 +61,7 @@ async function consultarPublicacion(publicacionProductorId: number, cliente: Cli
         .where({ id: publicacionProductorId })
         .include("productor", (productor) => productor.select("id", "usuarioId", "nombreFantasia"))
         .include("pais", (pais) => pais.select("nombrePais"))
-        .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps"))
+        .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) => publicacion
             .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
             .include("presentacion", (presentacion) => presentacion.include("variedad", (variedad) => variedad.include("especie")))
@@ -129,9 +129,16 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             if (cambios.paisId !== undefined) {
                 await tx.orm.public.PublicacionProductor.where({ id: relacion.id }).update({ paisId: cambios.paisId });
             }
+            const departamentosAnteriores = new Map(relacion.ubicaciones.map((ubicacion) => [ubicacion.urlMaps.trim(), ubicacion.departamento]));
             await tx.orm.public.Ubicacion.where({ publicacionId: relacion.id }).deleteAll();
             for (const ubicacion of cambios.ubicaciones) {
-                await tx.orm.public.Ubicacion.create({ ...ubicacion, publicacionId: relacion.id });
+                const departamento = ubicacion.departamento === undefined
+                    ? departamentosAnteriores.get(ubicacion.urlMaps.trim())
+                    : ubicacion.departamento;
+                await tx.orm.public.Ubicacion.create({
+                    ...ubicacion, publicacionId: relacion.id,
+                    ...(departamento !== undefined ? { departamento } : {}),
+                });
             }
             const actualizada = await consultarPublicacion(relacion.id, tx);
             if (!actualizada) throw new Error("No se pudo leer la publicación guardada.");

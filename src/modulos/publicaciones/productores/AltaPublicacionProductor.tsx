@@ -11,6 +11,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import Image from "next/image";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { ordenarOpcionesPorNombre } from "../operadores/ordenar-opciones";
@@ -77,6 +78,44 @@ async function cargarCatalogos() {
     };
 }
 
+function useCatalogosPublicacion() {
+    const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
+    const [error, setError] = useState("");
+    const [cargando, setCargando] = useState(true);
+    const [intento, setIntento] = useState(0);
+    const solicitudPendiente = useRef(true);
+
+    useEffect(() => {
+        let activo = true;
+        cargarCatalogos()
+            .then((resultado) => {
+                if (activo) {
+                    setCatalogos(resultado);
+                    setError("");
+                }
+            })
+            .catch(() => {
+                if (activo) setError("No se pudieron cargar las opciones de la publicación. Volvé a intentarlo.");
+            })
+            .finally(() => {
+                if (activo) {
+                    solicitudPendiente.current = false;
+                    setCargando(false);
+                }
+            });
+        return () => { activo = false; };
+    }, [intento]);
+
+    function reintentar() {
+        if (solicitudPendiente.current) return;
+        solicitudPendiente.current = true;
+        setCargando(true);
+        setIntento((actual) => actual + 1);
+    }
+
+    return { catalogos, error, cargando, reintentar };
+}
+
 function Campo({ nombre, valor, opciones: lista, cambiar, deshabilitado = false }: {
     nombre: string; valor: number; opciones: Opcion[]; cambiar: (id: number) => void; deshabilitado?: boolean;
 }) {
@@ -90,23 +129,18 @@ function Campo({ nombre, valor, opciones: lista, cambiar, deshabilitado = false 
 
 export default function AltaPublicacionProductor({ productorId }: { productorId: number }) {
     const esWeb = useMediaQuery("(min-width: 768px)");
-    const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
+    const { catalogos, error, cargando, reintentar } = useCatalogosPublicacion();
     const [abierto, setAbierto] = useState(false);
-    const [cargando, setCargando] = useState(true);
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
 
     useEffect(() => {
-        let activo = true;
-        cargarCatalogos()
-            .then((resultado) => { if (activo) setCatalogos(resultado); })
-            .catch((error) => { if (activo) notificar(error instanceof Error ? error.message : "No se pudieron cargar los datos.", "error"); })
-            .finally(() => { if (activo) setCargando(false); });
-        return () => { activo = false; };
-    }, [notificar]);
+        if (error && !cargando) notificar(error, "error");
+    }, [error, cargando, notificar]);
 
     return <main className="contenedor-pagina secciones-pagina flex-1">
         <header className="encabezado-pagina"><h1 className="titulo-pagina">Alta de publicación de Productor</h1></header>
         <button type="button" className={styles.guardar} onClick={() => { cerrarNotificacion(); setAbierto(true); }} disabled={cargando || !catalogos || !productorId} aria-busy={cargando}>Agregar producto</button>
+        {error && <button type="button" className={styles.cancelar} style={{ flex: "0 0 auto", gap: "var(--espacio-inline)" }} onClick={() => { cerrarNotificacion(); reintentar(); }} disabled={cargando} aria-busy={cargando}><RefreshIcon fontSize="small" />Reintentar carga</button>}
         {productorId > 0 && <DrawerProductor key={productorId} catalogos={catalogos} cargando={cargando} productorId={productorId} abierto={abierto} esWeb={esWeb}
             alCerrar={() => setAbierto(false)} alCrear={(texto) => { setAbierto(false); notificar(texto, "success"); }} />}
         <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
@@ -115,24 +149,13 @@ export default function AltaPublicacionProductor({ productorId }: { productorId:
 
 export function DrawerAltaPublicacionProductor({ productorId, disponibilidadInicial = true, abierto, alCerrar, alCrear }: PropsDrawer) {
     const esWeb = useMediaQuery("(min-width: 768px)");
-    const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
-    const [error, setError] = useState("");
-    const [cargando, setCargando] = useState(true);
+    const { catalogos, error, cargando, reintentar } = useCatalogosPublicacion();
 
-    useEffect(() => {
-        let activo = true;
-        cargarCatalogos()
-            .then((resultado) => { if (activo) setCatalogos(resultado); })
-            .catch((error) => { if (activo) setError(error instanceof Error ? error.message : "No se pudieron cargar los datos."); })
-            .finally(() => { if (activo) setCargando(false); });
-        return () => { activo = false; };
-    }, []);
-
-    return <DrawerProductor key={productorId} catalogos={catalogos} cargando={cargando} errorCarga={error} productorId={productorId} disponibilidadInicial={disponibilidadInicial} abierto={abierto} esWeb={esWeb} alCerrar={alCerrar} alCrear={alCrear} />;
+    return <DrawerProductor key={productorId} catalogos={catalogos} cargando={cargando} errorCarga={error} alReintentarCarga={reintentar} productorId={productorId} disponibilidadInicial={disponibilidadInicial} abierto={abierto} esWeb={esWeb} alCerrar={alCerrar} alCrear={alCrear} />;
 }
 
-function DrawerProductor({ catalogos, cargando, errorCarga = "", productorId, disponibilidadInicial = true, abierto, esWeb, alCerrar, alCrear }: {
-    catalogos: Catalogos | null; cargando: boolean; errorCarga?: string; productorId: number; disponibilidadInicial?: boolean; abierto: boolean; esWeb: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void;
+function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCarga, productorId, disponibilidadInicial = true, abierto, esWeb, alCerrar, alCrear }: {
+    catalogos: Catalogos | null; cargando: boolean; errorCarga?: string; alReintentarCarga?: () => void; productorId: number; disponibilidadInicial?: boolean; abierto: boolean; esWeb: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void;
 }) {
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [datos, setDatos] = useState<Formulario>(() => formularioInicial(productorId, disponibilidadInicial));
@@ -148,8 +171,8 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", productorId, di
     const deshabilitado = cargando || guardando || !catalogos;
 
     useEffect(() => {
-        if (abierto && errorCarga) notificar(errorCarga, "error");
-    }, [abierto, errorCarga, notificar]);
+        if (abierto && errorCarga && !cargando) notificar(errorCarga, "error");
+    }, [abierto, errorCarga, cargando, notificar]);
     const cambiar = (cambio: Partial<Formulario>) => { setDatos((actual) => ({ ...actual, ...cambio })); setErrores([]); };
     function limpiarFormulario() {
         setDatos(formularioInicial(productorId, disponibilidadInicial));
@@ -214,6 +237,7 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", productorId, di
         slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
         <header className={`${styles.encabezado} ${styles.encabezadoConAsa}`}><h2 className={styles.titulo}>Nueva publicación</h2><button className={styles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button></header>
         <form className={styles.formulario} onSubmit={enviar} aria-busy={cargando}><div className={styles.cuerpo}>
+            {errorCarga && alReintentarCarga && <button type="button" className={styles.cancelar} style={{ flex: "0 0 auto", gap: "var(--espacio-inline)" }} onClick={() => { cerrarNotificacion(); alReintentarCarga(); }} disabled={cargando} aria-busy={cargando}><RefreshIcon fontSize="small" />Reintentar carga</button>}
             <div className={styles.datosProducto}>
                 <Campo nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(id) => cambiar({ especieId: id, variedadId: 0, presentacionId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
                 <Campo nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(id) => cambiar({ variedadId: id, presentacionId: 0 })} deshabilitado={deshabilitado || !datos.especieId} />

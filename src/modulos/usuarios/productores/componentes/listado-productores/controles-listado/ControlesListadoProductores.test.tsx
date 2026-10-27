@@ -10,11 +10,26 @@ describe("ControlesListadoProductores", () => {
         alCambiarBusqueda: vi.fn(),
         orden: "a-z",
         alCambiarOrden: vi.fn(),
+        departamento: "",
+        departamentosDisponibles: ["Canelones", "Salto"],
+        alCambiarDepartamento: vi.fn(),
     };
 
     it("Mostrar buscador operadores", () => {
         render(<ControlesListadoProductores {...propsIniciales} />);
         expect(screen.getByRole("searchbox", { name: "Buscar productores" })).toBeInTheDocument();
+    });
+
+    it("envía el departamento elegido y permite volver a Todos", () => {
+        const alCambiarDepartamento = vi.fn();
+        const vista = render(<ControlesListadoProductores {...propsIniciales} alCambiarDepartamento={alCambiarDepartamento} />);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Departamento" }));
+        fireEvent.click(screen.getByRole("option", { name: "Salto" }));
+        expect(alCambiarDepartamento).toHaveBeenLastCalledWith("Salto");
+        vista.rerender(<ControlesListadoProductores {...propsIniciales} departamento="Salto" alCambiarDepartamento={alCambiarDepartamento} />);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Departamento" }));
+        fireEvent.click(screen.getByRole("option", { name: "Todos" }));
+        expect(alCambiarDepartamento).toHaveBeenLastCalledWith("");
     });
 
     it("Mostrar el selector de orden", () => {

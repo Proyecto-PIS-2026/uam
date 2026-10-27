@@ -34,7 +34,7 @@ async function leer(publicacion: PublicacionCreada) {
             "id", "fecha", "precio", "foto", "tipoPublicacion", "cantidadUnidades", "publicacionActiva", "publicacionDisponible",
             "especieId", "variedadId", "presentacionId", "categoriaId", "calibreId",
         ))
-        .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "publicacionId", "nombreUbicacion", "urlMaps")).first();
+        .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "publicacionId", "nombreUbicacion", "urlMaps", "departamento")).first();
     if (!relacion) throw new Error("No se encontró la publicación creada para la prueba.");
     return {
         ...relacion,
@@ -201,15 +201,59 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         expect(await leer(ajena)).toEqual(ajenaAntes);
     });
 
+    it("conserva ubicaciones anteriores sin departamento y permite guardar, conservar y cambiar los departamentos del mapa", async () => {
+        const antes = await leer(elegida);
+        expect(antes.ubicaciones[0].departamento).toBeNull();
+
+        const anteriorGuardada = await modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
+            ...cambiosIniciales, ubicaciones: antes.ubicaciones,
+        });
+        expect(anteriorGuardada.publicacion.ubicaciones[0].departamento).toBeNull();
+        expect((await leer(elegida)).ubicaciones[0].departamento).toBeNull();
+
+        const ubicaciones = [
+            { nombreUbicacion: "Retiro sur", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2", departamento: "Montevideo" },
+            { nombreUbicacion: "Chacra", urlMaps: "https://www.google.com/maps?q=-34.7,-56.1", departamento: "Canelones" },
+        ];
+        const agregadas = await modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
+            ...cambiosIniciales,
+            ubicaciones: ubicaciones.map((ubicacion) => ({ ...ubicacion, departamento: ` Departamento de ${ubicacion.departamento} ` })),
+        });
+        expect((await leer(elegida)).ubicaciones.map(({ nombreUbicacion, urlMaps, departamento }) => ({ nombreUbicacion, urlMaps, departamento })))
+            .toEqual(ubicaciones);
+        expect(agregadas.publicacion.ubicaciones).toEqual(ubicaciones.map((ubicacion) => ({ ...ubicacion, id: expect.any(Number) })));
+
+        const conservadas = await modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
+            ...cambiosIniciales, precio: "250", ubicaciones: agregadas.publicacion.ubicaciones,
+        });
+        expect(conservadas.publicacion.ubicaciones.map(({ departamento }) => departamento)).toEqual(["Montevideo", "Canelones"]);
+
+        const clienteAnterior = await modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
+            ...cambiosIniciales, precio: "275",
+            ubicaciones: ubicaciones.map(({ nombreUbicacion, urlMaps }) => ({ nombreUbicacion, urlMaps: ` ${urlMaps} ` })),
+        });
+        expect(clienteAnterior.publicacion.ubicaciones.map(({ departamento }) => departamento)).toEqual(["Montevideo", "Canelones"]);
+        expect((await leer(elegida)).ubicaciones.map(({ departamento }) => departamento)).toEqual(["Montevideo", "Canelones"]);
+
+        const cambiada = await modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
+            ...cambiosIniciales, ubicaciones: [{ ...ubicaciones[0], departamento: " SAN JOSE " }],
+        });
+        const final = await leer(elegida);
+        expect(final.ubicaciones).toHaveLength(1);
+        expect(final.ubicaciones[0]).toMatchObject({ ...ubicaciones[0], departamento: "San José" });
+        expect(cambiada.publicacion.ubicaciones).toEqual([{ ...ubicaciones[0], departamento: "San José", id: final.ubicaciones[0].id }]);
+    });
+
     it("un administrador modifica la publicación de otro usuario y conserva el resto", async () => {
         const [antes, otraAntes, ajenaAntes] = await Promise.all([leer(elegida), leer(otraPropia), leer(ajena)]);
         expect(sesionAdministrador.usuarioId).not.toBe(sesionPropietario.usuarioId);
 
-        await modificarPublicacionProductor(sesionAdministrador, elegida.publicacionProductorId, { ...cambiosIniciales, precio: null, ubicaciones: [] });
+        const resultado = await modificarPublicacionProductor(sesionAdministrador, elegida.publicacionProductorId, { ...cambiosIniciales, precio: null, ubicaciones: [] });
 
         const despues = await leer(elegida);
         expect(despues.publicacion.precio).toBeNull();
         expect(despues.ubicaciones).toEqual([]);
+        expect(resultado.publicacion.ubicaciones).toEqual([]);
         expect(Temporal.Instant.compare(despues.publicacion.fecha, antes.publicacion.fecha)).toBe(1);
         expect(await leer(otraPropia)).toEqual(otraAntes);
         expect(await leer(ajena)).toEqual(ajenaAntes);

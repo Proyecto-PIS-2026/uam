@@ -167,6 +167,8 @@ describe("LeafletLocationPicker", () => {
     });
 
     it.each([
+        { address: { country_code: "uy", state: "Departamento de Paysandu", road: "Ruta 3" }, nombre: "Ruta 3", departamento: "Paysandú" },
+        { address: { country_code: "uy", state: "Uruguay", county: "San José Department", road: "Ruta 1" }, nombre: "Ruta 1", departamento: "San José" },
         { address: { country_code: "UY", county: "Canelones", neighbourhood: "Centro" }, nombre: "Centro", departamento: "Canelones" },
         { address: { country_code: "uy", state: "Salto", suburb: "Barrio Sur" }, nombre: "Barrio Sur", departamento: "Salto" },
         { address: { country_code: "uy", state: "Colonia", town: "Carmelo" }, nombre: "Carmelo", departamento: "Colonia" },
@@ -181,9 +183,10 @@ describe("LeafletLocationPicker", () => {
     });
 
     it.each([
+        { datos: { address: { country_code: "uy", state: "Ciudad de la Costa" } }, status: 200, error: "No pudimos identificar el departamento. Seleccioná nuevamente el punto en el mapa." },
         { datos: { address: { country_code: "ar", state: "Buenos Aires" } }, status: 200, error: "La ubicación debe estar dentro de Uruguay." },
-        { datos: { address: { country_code: "uy" } }, status: 200, error: "No se pudo identificar el departamento." },
-        { datos: {}, status: 500, error: "No se pudo identificar la ubicación." },
+        { datos: { address: { country_code: "uy" } }, status: 200, error: "No pudimos identificar el departamento. Seleccioná nuevamente el punto en el mapa." },
+        { datos: {}, status: 500, error: "No pudimos identificar la ubicación. Revisá tu conexión e intentá nuevamente." },
     ])("rechaza la ubicación: $error", async ({ datos, status, error }) => {
         vi.stubGlobal("fetch", vi.fn(() => respuesta(datos, status)));
         await abrirMapa(ubicacion); await marcar();
@@ -193,9 +196,20 @@ describe("LeafletLocationPicker", () => {
     });
 
     it("informa un fallo de red al identificar la ubicación", async () => {
-        vi.stubGlobal("fetch", vi.fn().mockRejectedValue("Sin conexión"));
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch: internal proxy")));
         await abrirMapa(); await marcar();
-        expect(screen.getByRole("alert")).toHaveTextContent("No se pudo identificar la ubicación.");
+        expect(screen.getByRole("alert")).toHaveTextContent("No pudimos identificar la ubicación. Revisá tu conexión e intentá nuevamente.");
+        expect(screen.queryByText(/Failed to fetch|internal proxy/)).not.toBeInTheDocument();
+    });
+
+    it("identifica el departamento de un punto anterior antes de permitir confirmarlo", async () => {
+        const pendiente = respuestaPendiente();
+        vi.mocked(fetch).mockReturnValueOnce(pendiente.promesa);
+        await abrirMapa({ ...ubicacion, departamento: "" });
+        expect(screen.getByRole("button", { name: "Usar esta ubicación" })).toBeDisabled();
+        await act(async () => pendiente.resolver(await respuesta({ address: { country_code: "uy", state: "Montevideo", road: "Ruta 5" } })));
+        fireEvent.click(screen.getByRole("button", { name: "Usar esta ubicación" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
     });
 
     it("busca en Uruguay, centra el resultado y confirma su dirección", async () => {
@@ -255,7 +269,7 @@ describe("LeafletLocationPicker", () => {
 
     it.each([
         { status: 200, error: "No se encontraron lugares para esa búsqueda." },
-        { status: 500, error: "No se pudo buscar el lugar." },
+        { status: 500, error: "No pudimos buscar el lugar. Revisá tu conexión e intentá nuevamente." },
     ])("informa una búsqueda sin resultados o fallida: $error", async ({ status, error }) => {
         vi.stubGlobal("fetch", vi.fn(() => respuesta([], status)));
         await abrirMapa();
@@ -270,7 +284,7 @@ describe("LeafletLocationPicker", () => {
         await abrirMapa();
         fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Mercado" } });
         fireEvent.submit(screen.getByRole("searchbox").closest("form")!);
-        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo buscar el lugar.");
+        expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos buscar el lugar. Revisá tu conexión e intentá nuevamente.");
         expect(screen.queryByRole("list")).not.toBeInTheDocument();
     });
 

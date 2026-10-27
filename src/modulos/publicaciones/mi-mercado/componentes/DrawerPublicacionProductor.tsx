@@ -85,7 +85,7 @@ function crearBorrador(publicacion: PublicacionMiMercadoProductor): Borrador {
         paisId: publicacion.paisId ?? 0,
         disponible: publicacion.publicacionDisponible,
         foto: publicacion.foto, archivo: null, vistaPrevia: null,
-        ubicaciones: publicacion.ubicaciones.map(({ id, nombreUbicacion, urlMaps }) => ({ clave: id, nombreUbicacion, urlMaps })),
+        ubicaciones: publicacion.ubicaciones.map(({ id, nombreUbicacion, urlMaps, departamento }) => ({ clave: id, nombreUbicacion, urlMaps, departamento })),
     };
 }
 
@@ -349,7 +349,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             presentacionId: borrador.presentacionId || null, categoriaId: borrador.categoriaId || null, calibreId: borrador.calibreId || null,
             paisId: borrador.paisId || null, disponible: borrador.disponible,
             foto: borrador.foto,
-            ubicaciones: borrador.ubicaciones.map(({ nombreUbicacion, urlMaps }) => ({ nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim() })),
+            ubicaciones: borrador.ubicaciones.map(({ nombreUbicacion, urlMaps, departamento }) => ({ nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim(), departamento })),
         };
         formulario.set("cambios", JSON.stringify(cambios));
         if (borrador.archivo) formulario.set("foto", borrador.archivo);

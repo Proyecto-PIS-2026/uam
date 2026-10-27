@@ -28,8 +28,8 @@ vi.mock(
 );
 
 const productores: ProductorListado[] = [
-    { id: 1, nombreFantasia: "Zeta", fotoPerfil: "/zeta.webp", cantidadProductos: 2, ubicaciones: ["Salto"] },
-    { id: 2, nombreFantasia: "Álamo & Sur", fotoPerfil: null, cantidadProductos: 0, ubicaciones: [] },
+    { id: 1, nombreFantasia: "Zeta", fotoPerfil: "/zeta.webp", cantidadProductos: 2, ubicaciones: ["Salto"], departamentos: ["Salto"] },
+    { id: 2, nombreFantasia: "Álamo & Sur", fotoPerfil: null, cantidadProductos: 0, ubicaciones: [], departamentos: [] },
 ];
 
 const perfil: PerfilProductorPorOperador = {
@@ -37,6 +37,7 @@ const perfil: PerfilProductorPorOperador = {
     nombreFantasia: "Álamo & Sur",
     fotoPerfil: null,
     whatsApp: "59899123456",
+    departamentos: ["Salto"],
     publicaciones: [
         {
             id: 10,
@@ -132,7 +133,7 @@ describe("Listado y navegación de productores", () => {
         rerender(<ListadoProductores productores={productores} />);
         const buscador = screen.getByRole("searchbox", { name: "Buscar productores" });
         fireEvent.change(buscador, { target: { value: "Inexistente" } });
-        expect(screen.getByRole("status")).toHaveTextContent("No se encontraron productores que coincidan con la búsqueda.");
+        expect(screen.getByRole("status")).toHaveTextContent("No se encontraron productores que coincidan con la búsqueda y el departamento seleccionado.");
         fireEvent.change(buscador, { target: { value: "" } });
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(screen.getAllByRole("link")).toHaveLength(2);

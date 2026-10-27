@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { PerfilProductorPorOperador  } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
 import PerfilProductor from "./PerfilProductor";
@@ -7,8 +7,8 @@ import PerfilProductor from "./PerfilProductor";
 vi.mock("next/image", async () => {
     const { createElement } = await import("react");
     return {
-        default: ({ src, alt }: { src: string; alt: string }) =>
-            createElement("img", { src, alt }),
+        default: ({ src, alt, onError }: { src: string; alt: string; onError?: React.ReactEventHandler<HTMLImageElement> }) =>
+            createElement("img", { src, alt, onError }),
     };
 });
 
@@ -18,6 +18,7 @@ const productor: PerfilProductorPorOperador  = {
     nombreFantasia: "Frutas del Norte",
     fotoPerfil: null,
     whatsApp: "+598 99-100-001",
+    departamentos: ["Canelones", "Salto"],
     publicaciones: [],
 };
 
@@ -33,6 +34,20 @@ describe("PerfilProductor", () => {
         render(<PerfilProductor productor={{ ...productor, fotoPerfil: "/productor.jpg" }} />);
         expect(screen.getByRole("img", { name: "Foto de Frutas del Norte" })).toHaveAttribute("src", "/productor.jpg");
         expect(screen.queryByText("F")).not.toBeInTheDocument();
+    });
+
+    it("muestra los departamentos y guion cuando no hay información", () => {
+        const vista = render(<PerfilProductor productor={productor} />);
+        expect(screen.getByText("Canelones · Salto", { exact: false })).toBeInTheDocument();
+        vista.rerender(<PerfilProductor productor={{ ...productor, departamentos: [] }} />);
+        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Departamentos: -");
+    });
+
+    it("muestra la inicial si falla la foto del perfil", () => {
+        render(<PerfilProductor productor={{ ...productor, fotoPerfil: "/productor.jpg" }} />);
+        fireEvent.error(screen.getByRole("img", { name: "Foto de Frutas del Norte" }));
+        expect(screen.getByText("F")).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Foto de Frutas del Norte" })).not.toBeInTheDocument();
     });
 
     it("prepara el enlace de WhatsApp con el número y el mensaje", () => {

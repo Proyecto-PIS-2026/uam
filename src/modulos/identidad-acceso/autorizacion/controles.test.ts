@@ -62,9 +62,12 @@ describe.each([
         expect(redirect).toHaveBeenCalledWith("/iniciar-sesion");
     });
 
-    it("propaga errores de sesión sin tratarlos como una autorización válida", async () => {
-        sesionMock.mockRejectedValue(new Error("Sesión no disponible"));
-        await expect(requerir()).rejects.toThrow("Sesión no disponible");
+    it("propaga fallas de sesión sin convertirlas en un 401 ni redirigir al inicio de sesión", async () => {
+        const error = new Error("No pudimos verificar tu sesión. Intentá nuevamente.");
+        sesionMock.mockRejectedValue(error);
+
+        await expect(exigir()).rejects.toBe(error);
+        await expect(requerir()).rejects.toBe(error);
         expect(redirect).not.toHaveBeenCalled();
     });
 });

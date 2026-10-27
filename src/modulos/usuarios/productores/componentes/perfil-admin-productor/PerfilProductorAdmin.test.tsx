@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 import PerfilProductorAdmin from "./PerfilProductorAdmin";
 import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
@@ -39,6 +39,7 @@ const productorBase: PerfilAdminProductor = {
     nombreFantasia: "Granja Los Álamos",
     fotoPerfil: null,
     whatsApp: "+59899200002",
+    departamentos: ["Salto"],
     publicaciones: [],
 };
 
@@ -58,6 +59,7 @@ describe("PerfilProductorAdmin", () => {
         expect(screen.getByRole("heading", { level: 1, name: "Granja Los Álamos" })).toBeInTheDocument();
         expect(screen.getByText("G")).toBeInTheDocument();
         expect(screen.getByText("+59899200002")).toBeInTheDocument();
+        expect(screen.getByText("Salto", { exact: false })).toBeInTheDocument();
     });
 
     // Con foto, se muestra la foto en lugar de la inicial
@@ -66,6 +68,25 @@ describe("PerfilProductorAdmin", () => {
 
         expect(screen.getByRole("img", { name: "Foto de Granja Los Álamos" })).toBeInTheDocument();
         expect(screen.queryByText("G")).not.toBeInTheDocument();
+    });
+
+    it("recupera la inicial cuando falla la foto del productor", () => {
+        render(<PerfilProductorAdmin productor={{ ...productorBase, fotoPerfil: "/productores/granja.jpg" }} />);
+        fireEvent.error(screen.getByRole("img", { name: "Foto de Granja Los Álamos" }));
+        expect(screen.getByText("G")).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Foto de Granja Los Álamos" })).not.toBeInTheDocument();
+    });
+
+    it("actualiza los departamentos al cambiar publicaciones y acepta los de una recarga posterior", () => {
+        const vista = render(<PerfilProductorAdmin productor={productorBase} />);
+        const { alCambiarDepartamentos } = mocks.propsCatalogo.mock.lastCall![0] as { alCambiarDepartamentos: (departamentos: string[]) => void };
+        act(() => alCambiarDepartamentos(["Canelones"]));
+        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Canelones");
+        expect(screen.queryByText("Salto", { exact: false })).not.toBeInTheDocument();
+        act(() => alCambiarDepartamentos([]));
+        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Departamentos: -");
+        vista.rerender(<PerfilProductorAdmin productor={{ ...productorBase, departamentos: ["Rocha"], publicaciones: [] }} />);
+        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Rocha");
     });
 
     // El enlace de volver lleva al listado de usuarios del panel de administración
@@ -91,7 +112,7 @@ describe("PerfilProductorAdmin", () => {
 
         expect(screen.getByRole("heading", { name: "Publicaciones (2)" })).toBeInTheDocument();
         expect(screen.getByTestId("catalogo")).toBeInTheDocument();
-        expect(mocks.propsCatalogo).toHaveBeenLastCalledWith({ publicaciones });
+        expect(mocks.propsCatalogo).toHaveBeenLastCalledWith({ publicaciones, alCambiarDepartamentos: expect.any(Function) });
     });
 
     it("ofrece agregar un producto para el productor", () => {

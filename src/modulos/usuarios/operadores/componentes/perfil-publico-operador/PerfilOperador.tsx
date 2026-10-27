@@ -6,7 +6,7 @@ import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import Image from "next/image";
+import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import Link from "next/link";
 
 import styles from "./PerfilOperador.module.css";
@@ -42,11 +42,7 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
-                        {operador.fotoPerfil ? (
-                            <Image src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} unoptimized={operador.fotoPerfil.startsWith("/api/")} width={96} height={96} className={styles.imagenOperador} />
-                        ) : (
-                            <span aria-hidden="true">{inicialOperador}</span>
-                        )}
+                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialOperador}</span>} />
                     </div>
 
                     <div className={styles.identidad}>

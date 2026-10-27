@@ -23,6 +23,8 @@
 
 .controles {
     display: flex;
+    min-width: 0;
+    max-width: 100%;
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
@@ -32,7 +34,27 @@
 
 .controles .selectMui {
     width: max-content;
+    max-width: 100%;
     min-width: 7.5rem;
+}
+
+.controles .selectorDepartamento {
+    width: 14rem;
+    min-width: 0;
+}
+
+@media (max-width: 767px) {
+    .controles {
+        width: 100%;
+    }
+
+    .controles .selectMui {
+        flex: 1 1 7.5rem;
+    }
+
+    .controles .selectorDepartamento {
+        flex-basis: 14rem;
+    }
 }
 
 .selectMui :global(.MuiOutlinedInput-root) {

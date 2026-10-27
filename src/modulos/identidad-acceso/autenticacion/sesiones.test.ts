@@ -165,6 +165,28 @@ describe("obtenerSesion", () => {
         expect(await obtenerSesion()).toBeNull();
     });
 
+    it("distingue una falla de la base de una sesión inválida y permite reintentar con la misma cookie", async () => {
+        const datos = { usuarioId: 4, rol: "OPERADOR", expiraEn: segundosActuales + 60 };
+        configurarCookie(datos);
+        const causa = new Error("ECONNREFUSED 127.0.0.1:5432");
+        buscarUsuario.mockRejectedValueOnce(causa);
+
+        await expect(obtenerSesion()).rejects.toMatchObject({
+            message: "No pudimos verificar tu sesión. Intentá nuevamente.",
+            cause: causa,
+        });
+        expect(cookiesSimuladas.delete).not.toHaveBeenCalled();
+        expect(cookiesSimuladas.set).not.toHaveBeenCalled();
+        await expect(obtenerSesion()).resolves.toEqual(datos);
+    });
+
+    it("sigue rechazando una sesión cuyo rol cambió en la base de datos", async () => {
+        configurarCookie({ usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60 });
+        buscarUsuario.mockResolvedValue({ id: 4, rol: "OPERADOR" });
+
+        await expect(obtenerSesion()).resolves.toBeNull();
+    });
+
     it("devuelve null si no hay cookie", async () => {
         expect(await obtenerSesion()).toBeNull();
     });
@@ -211,12 +233,23 @@ describe("obtenerSesion", () => {
         },
     );
 
-    it.each(["4", null, 1.5, Number.MAX_SAFE_INTEGER + 1])(
+    it.each(["4", null, 0, -1, 1.5, 2147483648, Number.MAX_SAFE_INTEGER + 1])(
         "rechaza un identificador de usuario invalido: %s",
         async (usuarioId) => {
             configurarCookie({ usuarioId, rol: "PRODUCTOR", expiraEn: segundosActuales + 60 });
 
             expect(await obtenerSesion()).toBeNull();
+            expect(buscarUsuario).not.toHaveBeenCalled();
+        },
+    );
+
+    it.each([undefined, null, "2030-01-01", "9999999999", 1.5])(
+        "rechaza una expiración inválida sin consultar la base: %s",
+        async (expiraEn) => {
+            configurarCookie({ usuarioId: 4, rol: "PRODUCTOR", expiraEn });
+
+            await expect(obtenerSesion()).resolves.toBeNull();
+            expect(buscarUsuario).not.toHaveBeenCalled();
         },
     );
 

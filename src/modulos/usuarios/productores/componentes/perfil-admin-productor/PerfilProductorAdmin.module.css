@@ -88,6 +88,20 @@
     font-size: var(--tamano-texto-secundario);
 }
 
+.departamentos {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--espacio-inline);
+    margin-bottom: var(--espacio-controles);
+    line-height: var(--interlineado-texto);
+    overflow-wrap: anywhere;
+}
+
+.departamentos svg {
+    flex-shrink: 0;
+    color: var(--color-primary);
+}
+
 .etiqueta {
     font-weight: 600;
 }

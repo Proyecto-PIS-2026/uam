@@ -1,4 +1,5 @@
-import Image from "next/image";
+import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import Link from "next/link";
 import type { ProductorListado } from "../../../acciones/consultas-listado-por-operador";
 import styles from "./TarjetaProductor.module.css";
@@ -18,16 +19,17 @@ export default function TarjetaProductor({ productor, puedeGestionar = false }: 
     const contenido = (
         <Link href={href} className={styles.tarjeta}>
             <div className={styles.imagen}>
-                {foto ? (
-                    <Image src={foto} alt={`Foto de ${productor.nombreFantasia}`} unoptimized={foto.startsWith("/api/")} fill sizes="(max-width: 767px) 64px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.foto} />
-                ) : (
-                    <span className={styles.inicial}>{inicial}</span>
-                )}
+                <ImagenPerfil src={foto} alt={`Foto de ${productor.nombreFantasia}`} fill sizes="(max-width: 767px) 64px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.foto}
+                    reemplazo={<span className={styles.inicial}>{inicial}</span>} />
             </div>
 
             <div className={styles.contenido}>
                 <div className={styles.encabezado}>
                     <div className={styles.nombre} title={productor.nombreFantasia}>{productor.nombreFantasia}</div>
+                    <p className={styles.departamentos}>
+                        <LocationOnOutlinedIcon fontSize="small" aria-hidden="true" />
+                        <span><span className="sr-only">Departamentos: </span>{productor.departamentos.join(" · ") || "-"}</span>
+                    </p>
                 </div>
                 <div className={styles.pie}>
                     <span className={styles.cantidadProductos}>{productor.cantidadProductos}</span>

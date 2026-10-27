@@ -1,4 +1,6 @@
-export type UbicacionPublicacionProductor = { nombreUbicacion: string; urlMaps: string };
+import { normalizarDepartamento } from "@/compartido/departamentos-uruguay";
+
+export type UbicacionPublicacionProductor = { nombreUbicacion: string; urlMaps: string; departamento?: string | null };
 
 type ResultadoValidacionUbicaciones =
     | { esValido: true; ubicaciones: UbicacionPublicacionProductor[] }
@@ -26,14 +28,19 @@ export function validarUbicacionesProductor(entrada: unknown): ResultadoValidaci
     const ubicaciones: UbicacionPublicacionProductor[] = [];
     for (const ubicacion of datos) {
         if (!ubicacion || typeof ubicacion !== "object" || Array.isArray(ubicacion)) return { esValido: false, error: "La ubicación no es válida." };
-        const { nombreUbicacion, urlMaps } = ubicacion as Record<string, unknown>;
+        const { nombreUbicacion, urlMaps, departamento } = ubicacion as Record<string, unknown>;
         if (typeof nombreUbicacion !== "string" || !nombreUbicacion.trim() || nombreUbicacion.trim().length > 200) {
             return { esValido: false, error: "Cada ubicación debe tener un nombre de hasta 200 caracteres." };
         }
         if (typeof urlMaps !== "string" || urlMaps.trim().length > 2048 || !esUrlGoogleMaps(urlMaps.trim())) {
-            return { esValido: false, error: "Cada ubicación debe incluir un enlace válido de Google Maps de hasta 2048 caracteres." };
+            return { esValido: false, error: "Seleccioná cada punto de retiro en el mapa antes de guardar." };
         }
-        ubicaciones.push({ nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim() });
+        const departamentoNormalizado = normalizarDepartamento(departamento);
+        if (departamento !== undefined && departamento !== null && !departamentoNormalizado) {
+            return { esValido: false, error: "Seleccioná una ubicación en el mapa para identificar su departamento de Uruguay." };
+        }
+        ubicaciones.push({ nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim(),
+            ...(departamento !== undefined ? { departamento: departamentoNormalizado } : {}) });
     }
     return { esValido: true, ubicaciones };
 }

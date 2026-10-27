@@ -64,6 +64,7 @@ function crearFila() {
                 id: 3,
                 nombreUbicacion: "Depósito central",
                 urlMaps: "https://maps.example/central",
+                departamento: "Salto",
             },
         ],
         publicacion: {
@@ -108,6 +109,7 @@ describe("obtenerPerfilProductorPorOperador", () => {
         await expect(obtenerPerfilProductorPorOperador(productor.nombreFantasia)).
             resolves.toEqual({
                 ...productor,
+                departamentos: ["Salto"],
                 publicaciones: [
                     {
                         id: 20,
@@ -148,6 +150,7 @@ describe("obtenerPerfilProductorPorOperador", () => {
             obtenerPerfilProductorPorOperador("Huerta Norte")
         ).resolves.toEqual({
             ...productor,
+            departamentos: [],
             publicaciones: [],
         });
         expect(mocks.where).toHaveBeenCalledWith({productorId: productor.id});
@@ -160,6 +163,7 @@ describe("obtenerPerfilProductorPorOperador", () => {
 
         expect(resultado).toEqual({
             ...productor,
+            departamentos: ["Salto"],
             publicaciones: [
                 {
                     id: 20,
@@ -208,6 +212,20 @@ describe("obtenerPerfilProductorPorOperador", () => {
         const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
         expect(resultado?.publicaciones).toHaveLength(1);
         expect(resultado?.publicaciones[0].id).toBe(valida.publicacion.id);
+    });
+
+    it("deduplica departamentos visibles y conserva el desconocido sin inferirlo del nombre", async () => {
+        const base = crearFila();
+        mocks.all.mockResolvedValue([
+            base,
+            { ...base, ubicaciones: [base.ubicaciones[0], { ...base.ubicaciones[0], departamento: "Canelones" }] },
+            { ...base, ubicaciones: [{ ...base.ubicaciones[0], nombreUbicacion: "Maldonado", departamento: null }] },
+            { ...base, publicacion: { ...base.publicacion, publicacionDisponible: false }, ubicaciones: [{ ...base.ubicaciones[0], departamento: "Montevideo" }] },
+            { ...base, publicacion: { ...base.publicacion, publicacionActiva: false }, ubicaciones: [{ ...base.ubicaciones[0], departamento: "Artigas" }] },
+        ]);
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+        expect(resultado?.departamentos).toEqual(["Canelones", "Salto"]);
+        expect(resultado?.publicaciones[2].ubicaciones[0]).toMatchObject({ nombreUbicacion: "Maldonado", departamento: null });
     });
 
     it("conserva valores nulos y ubicaciones vacías", async () => {

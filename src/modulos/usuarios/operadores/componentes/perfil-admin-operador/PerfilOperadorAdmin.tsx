@@ -16,7 +16,7 @@ import AddIcon from "@mui/icons-material/Add";
 import NuevaPublicacion from "@/modulos/publicaciones/operadores/componentes/NuevaPublicacion";
 import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
-import Image from "next/image";
+import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import Link from "next/link";
 import EditIcon from "@mui/icons-material/Edit";
 
@@ -58,11 +58,7 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
-                        {operador.fotoPerfil ? (
-                            <Image src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} unoptimized={operador.fotoPerfil.startsWith("/api/")} width={96} height={96} className={styles.imagenOperador} />
-                        ) : (
-                            <span aria-hidden="true">{inicialOperador}</span>
-                        )}
+                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialOperador}</span>} />
                     </div>
 
                     <div className={styles.identidad}>

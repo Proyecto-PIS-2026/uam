@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
 import { useRouter } from "next/navigation";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
@@ -12,6 +13,7 @@ import TarjetaPublicacionProductorAdmin from "./TarjetaPublicacionProductorAdmin
 
 type CatalogoProductorAdminProps = {
     publicaciones: PublicacionPerfilAdminProductor[];
+    alCambiarDepartamentos?: (departamentos: string[]) => void;
 };
 
 function paraConsulta(publicacion: PublicacionPerfilAdminProductor): PublicacionMiMercadoProductor {
@@ -35,6 +37,7 @@ function paraConsulta(publicacion: PublicacionPerfilAdminProductor): Publicacion
             id: indice,
             nombreUbicacion: ubicacion.nombre,
             urlMaps: ubicacion.urlMaps,
+            departamento: ubicacion.departamento ?? null,
         })),
     };
 }
@@ -64,11 +67,12 @@ function paraTarjeta(publicacion: PublicacionMiMercadoProductor): PublicacionPer
         ubicaciones: publicacion.ubicaciones.map((ubicacion) => ({
             nombre: ubicacion.nombreUbicacion,
             urlMaps: ubicacion.urlMaps,
+            departamento: ubicacion.departamento ?? null,
         })),
     };
 }
 
-export default function CatalogoProductorAdmin({ publicaciones }: CatalogoProductorAdminProps) {
+export default function CatalogoProductorAdmin({ publicaciones, alCambiarDepartamentos }: CatalogoProductorAdminProps) {
     const router = useRouter();
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const publicacionesConsulta = useMemo(() => publicaciones.map(paraConsulta), [publicaciones]);
@@ -79,6 +83,10 @@ export default function CatalogoProductorAdmin({ publicaciones }: CatalogoProduc
     } | null>(null);
     const publicacionesActuales = actualizadas?.origen === publicaciones ? actualizadas.datos : publicacionesConsulta;
     const seleccionada = publicacionesActuales.find((publicacion) => publicacion.id === seleccionId) ?? null;
+
+    useEffect(() => {
+        alCambiarDepartamentos?.(obtenerDepartamentos(publicacionesActuales.flatMap((publicacion) => publicacion.ubicaciones)));
+    }, [publicacionesActuales, alCambiarDepartamentos]);
 
     function actualizarPublicacion(guardada: PublicacionMiMercadoProductor) {
         setActualizadas((anteriores) => {

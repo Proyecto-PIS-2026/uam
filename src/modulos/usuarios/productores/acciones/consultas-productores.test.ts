@@ -64,6 +64,7 @@ describe("Consultas de productores para operadores", () => {
                 fotoPerfil: null,
                 cantidadProductos: 1,
                 ubicaciones: ["Salto"],
+                departamentos: [],
             },
         ]);
         await expect(obtenerPerfilProductor(productor.nombreFantasia)).
@@ -86,8 +87,25 @@ describe("Consultas de productores para operadores", () => {
             { ...productor, id: 3, usuario: { rol: "OPERADOR" } },
         ]);
         expect(await obtenerProductoresDisponibles()).toEqual([
-            { id: 1, nombreFantasia: "Zeta", fotoPerfil: null, cantidadProductos: 2, ubicaciones: ["Salto"] },
+            { id: 1, nombreFantasia: "Zeta", fotoPerfil: null, cantidadProductos: 2, ubicaciones: ["Salto"], departamentos: [] },
         ]);
+    });
+
+    it("obtiene los departamentos de ubicaciones persistidas y no revela los de publicaciones ocultas", async () => {
+        const publicacionesProductor = [
+            { ...relacion(), ubicaciones: [{ nombreUbicacion: "Depósito", departamento: "Salto" }, { nombreUbicacion: "Chacra", departamento: "Canelones" }] },
+            { ...relacion(), ubicaciones: [{ nombreUbicacion: "Otro depósito", departamento: "Salto" }] },
+            { ...relacion(), ubicaciones: [{ nombreUbicacion: "Maldonado", departamento: null }] },
+            { ...relacion(false), ubicaciones: [{ nombreUbicacion: "Oculta", departamento: "Artigas" }] },
+            { ...relacion(true, false), ubicaciones: [{ nombreUbicacion: "No disponible", departamento: "Montevideo" }] },
+            { ...relacion(true, true, "OPERADOR"), ubicaciones: [{ nombreUbicacion: "Otro tipo", departamento: "Rocha" }] },
+        ];
+        mocks.all.mockResolvedValue([{ ...productor, publicacionesProductor }]);
+        mocks.first.mockResolvedValue({ ...productor, publicacionesProductor });
+        expect(await obtenerProductoresDisponibles()).toEqual([expect.objectContaining({
+            cantidadProductos: 3, departamentos: ["Canelones", "Salto"],
+        })]);
+        expect(await obtenerPerfilProductor(productor.nombreFantasia)).toMatchObject({ departamentos: ["Canelones", "Salto"] });
     });
 
     it("consulta el perfil por nombre y devuelve solo publicaciones y puntos de retiro visibles", async () => {

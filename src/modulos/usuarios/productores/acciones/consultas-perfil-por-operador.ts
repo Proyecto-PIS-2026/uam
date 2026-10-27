@@ -1,6 +1,7 @@
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { normalizarDepartamento, obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
 
 export type PublicacionPerfilProductor = {
     id: number;
@@ -18,6 +19,7 @@ export type PublicacionPerfilProductor = {
         id: number;
         nombreUbicacion: string;
         urlMaps: string;
+        departamento?: string | null;
     }[];
 };
 
@@ -26,6 +28,7 @@ export type PerfilProductorPorOperador = {
     nombreFantasia: string;
     fotoPerfil: string | null;
     whatsApp: string;
+    departamentos: string[];
     publicaciones: PublicacionPerfilProductor[];
 };
 
@@ -52,7 +55,7 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
     const consultaCompleta = db.orm.public.PublicacionProductor // Solo armo la consulta sin ejecutarla
         .where({ productorId: productor.id })
         .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
-        .include("ubicaciones", (ubicaciones) =>ubicaciones.select("id", "nombreUbicacion", "urlMaps"))
+        .include("ubicaciones", (ubicaciones) =>ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (consultaPublicacion) => {
             const camposPublicacion = consultaPublicacion.select(
                 "id",
@@ -93,6 +96,7 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
                     id: ubicacion.id,
                     nombreUbicacion: ubicacion.nombreUbicacion,
                     urlMaps: ubicacion.urlMaps,
+                    departamento: normalizarDepartamento(ubicacion.departamento),
                 })),
             });
         }
@@ -103,6 +107,7 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
         nombreFantasia: productor.nombreFantasia,
         fotoPerfil: productor.fotoPerfil,
         whatsApp: productor.whatsApp,
+        departamentos: obtenerDepartamentos(publicaciones.flatMap((publicacion) => publicacion.ubicaciones)),
         publicaciones,
     };
     return productorResultante;

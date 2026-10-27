@@ -18,6 +18,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@mui/material/useMediaQuery", () => ({ default: mocks.mediaQuery }));
+vi.mock("../../productores/LeafletLocationPicker", () => ({
+    default: ({ alConfirmar }: { alConfirmar: (ubicacion: { latitud: number; longitud: number; departamento: string; nombreLugar: string }) => void }) => (
+        <button type="button" onClick={() => alConfirmar({ latitud: -34.5, longitud: -56.1, departamento: "Canelones", nombreLugar: "Nuevo retiro" })}>Confirmar punto en mapa</button>
+    ),
+}));
 vi.mock("@/compartido/componentes/DrawerDeslizable", () => ({
     default: ({ anchor, open, children, onClose, slotProps, ModalProps, arrastreDeshabilitado }: Omit<DrawerProps, "onClose"> & { onClose: () => void; arrastreDeshabilitado?: boolean }) => {
         if (!open && !ModalProps?.keepMounted) return null;
@@ -212,7 +217,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.queryByLabelText("Nombre del punto de retiro 1")).not.toBeInTheDocument();
         editarUbicaciones();
         expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Quinta");
-        expect(screen.getByLabelText("Enlace de Google Maps 1")).toHaveValue("https://maps.google.com/?q=Salto");
+        expect(screen.queryByLabelText("Enlace de Google Maps 1")).not.toBeInTheDocument();
         fireEvent.change(precio, { target: { value: "250" } });
         expect(mocks.fetch).toHaveBeenCalledTimes(1);
         expect(mocks.fetch.mock.calls[0][0]).toBe("/api/publicaciones/productor/1042");
@@ -252,8 +257,8 @@ describe("DrawerPublicacionProductor: edición", () => {
         fireEvent.change(screen.getByLabelText("Unidades (Saco)"), { target: { value: "25" } });
         fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
         editarUbicaciones();
-        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 1"), { target: { value: "Nuevo retiro" } });
-        fireEvent.change(screen.getByLabelText("Enlace de Google Maps 1"), { target: { value: "https://maps.app.goo.gl/retiro" } });
+        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar punto en mapa" }));
         fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
@@ -262,7 +267,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(cambios).toEqual({
             especieId: 1, variedadId: 12, precio: "250", foto: "/pera.png", presentacionId: 121, categoriaId: 5, calibreId: 8,
             paisId: 2, cantidadUnidades: 25, disponible: false,
-            ubicaciones: [{ nombreUbicacion: "Nuevo retiro", urlMaps: "https://maps.app.goo.gl/retiro" }],
+            ubicaciones: [{ nombreUbicacion: "Nuevo retiro", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" }],
         });
         expect(datos.has("foto")).toBe(false);
         expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBe(papel);
@@ -556,15 +561,16 @@ describe("DrawerPublicacionProductor: edición", () => {
         await editar();
         editarUbicaciones();
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 2" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar punto en mapa" }));
         fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 2"), { target: { value: "Depósito" } });
-        fireEvent.change(screen.getByLabelText("Enlace de Google Maps 2"), { target: { value: "https://maps.google.com/?q=Montevideo" } });
         fireEvent.click(screen.getByRole("button", { name: "Eliminar punto de retiro 1" }));
         expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Depósito");
         expect(screen.queryByLabelText("Nombre del punto de retiro 2")).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalled());
-        expect(solicitudGuardado().cambios.ubicaciones).toEqual([{ nombreUbicacion: "Depósito", urlMaps: "https://maps.google.com/?q=Montevideo" }]);
+        expect(solicitudGuardado().cambios.ubicaciones).toEqual([{ nombreUbicacion: "Depósito", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" }]);
     });
 
     it("muestra el error de carga de opciones y conserva la consulta para reintentar", async () => {

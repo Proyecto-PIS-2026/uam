@@ -36,10 +36,19 @@ function desplegar() {
 beforeEach(() => vi.clearAllMocks());
 
 describe("UbicacionesEdicionProductor", () => {
-    it("muestra un resumen compacto sin modificar los enlaces ni desplegar campos", () => {
-        render(<Controlado />);
-        expect(screen.getByText("Quinta original · Depósito")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Cambiar ubicación" })).toHaveAttribute("aria-expanded", "false");
+    it("muestra cada punto con su nombre y departamento sin modificar los enlaces ni desplegar campos", () => {
+        render(<Controlado ubicaciones={[{ ...iniciales[0], departamento: "Montevideo" }, iniciales[1]]} />);
+        const lista = screen.getByRole("list", { name: "Puntos de retiro seleccionados" });
+        const puntos = within(lista).getAllByRole("listitem");
+        expect(puntos).toHaveLength(2);
+        expect(within(puntos[0]).getByText("Quinta original")).toBeInTheDocument();
+        expect(within(puntos[0]).getByText("Departamento: Montevideo")).toBeInTheDocument();
+        expect(within(puntos[1]).getByText("Depósito")).toBeInTheDocument();
+        expect(within(puntos[1]).getByText("Departamento: -")).toBeInTheDocument();
+        const cambiar = screen.getByRole("button", { name: "Cambiar ubicación" });
+        expect(cambiar).toHaveAttribute("aria-expanded", "false");
+        expect(cambiar).toHaveAttribute("aria-controls", lista.id);
+        expect(screen.getAllByRole("button")).toHaveLength(1);
         expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
         expect(mocks.alCambiar).not.toHaveBeenCalled();
     });
@@ -47,12 +56,15 @@ describe("UbicacionesEdicionProductor", () => {
     it("permite desplegar, editar y volver a compactar sin persistir", () => {
         render(<Controlado />);
         desplegar();
-        expect(screen.getByLabelText("Enlace de Google Maps 1")).toHaveValue(iniciales[0].urlMaps);
+        expect(screen.queryByRole("list", { name: "Puntos de retiro seleccionados" })).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Enlace de Google Maps 1")).not.toBeInTheDocument();
         fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 1"), { target: { value: "Quinta editada" } });
         expect(mocks.alCambiar).toHaveBeenLastCalledWith([{ ...iniciales[0], nombreUbicacion: "Quinta editada" }, iniciales[1]]);
         fireEvent.click(screen.getByRole("button", { name: "Cambiar ubicación" }));
         expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-        expect(screen.getByText("Quinta editada · Depósito")).toBeInTheDocument();
+        const lista = screen.getByRole("list", { name: "Puntos de retiro seleccionados" });
+        expect(within(lista).getByText("Quinta editada")).toBeInTheDocument();
+        expect(within(lista).getByText("Depósito")).toBeInTheDocument();
         expect(mocks.alGuardar).not.toHaveBeenCalled();
     });
 
@@ -92,7 +104,7 @@ describe("UbicacionesEdicionProductor", () => {
         expect(mocks.mapa).toHaveBeenLastCalledWith(expect.objectContaining({ coordenadas: null }));
         fireEvent.click(screen.getByRole("button", { name: "Cancelar mapa" }));
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.getByLabelText("Enlace de Google Maps 1")).toHaveValue(urlMaps);
+        expect(screen.queryByLabelText("Enlace de Google Maps 1")).not.toBeInTheDocument();
         expect(mocks.alCambiar).not.toHaveBeenCalled();
     });
 
@@ -101,7 +113,7 @@ describe("UbicacionesEdicionProductor", () => {
         desplegar();
         fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 2" }));
         fireEvent.click(screen.getByRole("button", { name: "Confirmar punto" }));
-        expect(mocks.alCambiar).toHaveBeenCalledExactlyOnceWith([iniciales[0], { clave: 13, nombreUbicacion: "Quinta nueva", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1" }]);
+        expect(mocks.alCambiar).toHaveBeenCalledExactlyOnceWith([iniciales[0], { clave: 13, nombreUbicacion: "Quinta nueva", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" }]);
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(mocks.alGuardar).not.toHaveBeenCalled();
     });
@@ -151,7 +163,7 @@ describe("UbicacionesEdicionProductor", () => {
         expect(alPresionarFueraDelMapa).not.toHaveBeenCalled();
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Quinta editada sin guardar");
-        expect(screen.getByLabelText("Enlace de Google Maps 1")).toHaveValue(iniciales[0].urlMaps);
+        expect(screen.queryByLabelText("Enlace de Google Maps 1")).not.toBeInTheDocument();
         expect(botonOrigen).toHaveFocus();
         expect(mocks.alCambiar).not.toHaveBeenCalled();
         expect(mocks.alGuardar).not.toHaveBeenCalled();

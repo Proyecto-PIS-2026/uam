@@ -1,9 +1,11 @@
 import { db } from "../../../../infraestructura/persistencia/prisma/db";
+import { normalizarDepartamento, obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
 
 // Una ubicación donde está el producto, con su enlace a Google Maps
 export type UbicacionPublicacionProductor = {
     nombre: string;
     urlMaps: string;
+    departamento?: string | null;
 };
 
 // Datos de una publicación del productor tal como los ve el administrador
@@ -37,6 +39,7 @@ export type PerfilAdminProductor = {
     nombreFantasia: string;
     fotoPerfil: string | null;
     whatsApp: string;
+    departamentos: string[];
     publicaciones: PublicacionPerfilAdminProductor[];
 };
 
@@ -58,7 +61,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
     const consultaCompleta = db.orm.public.PublicacionProductor // Solo armo la consulta sin ejecutarla
         .where({ productorId: productor.id })
         .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
-        .include("ubicaciones", (consultaUbicaciones) => consultaUbicaciones.select("nombreUbicacion", "urlMaps"))
+        .include("ubicaciones", (consultaUbicaciones) => consultaUbicaciones.select("nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (consultaPublicacion) => {
             const camposPublicacion = consultaPublicacion.select(
                 "id",
@@ -111,6 +114,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
                 ubicaciones: completa.ubicaciones.map((ubicacion) => ({
                     nombre: ubicacion.nombreUbicacion,
                     urlMaps: ubicacion.urlMaps,
+                    departamento: normalizarDepartamento(ubicacion.departamento),
                 })),
             });
         }
@@ -121,6 +125,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
         nombreFantasia: productor.nombreFantasia,
         fotoPerfil: productor.fotoPerfil,
         whatsApp: productor.whatsApp,
+        departamentos: obtenerDepartamentos(publicaciones.flatMap((publicacion) => publicacion.ubicaciones)),
         publicaciones,
     };
 

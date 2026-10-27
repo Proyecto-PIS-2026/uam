@@ -107,13 +107,13 @@ describe("altaPublicacionProductor", () => {
         expect(mocks.ejecutar.mock.invocationCallOrder[0]).toBeLessThan(mocks.relaciones.mock.invocationCallOrder[0]);
         expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6 });
         expect(mocks.crearRelacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 42, productorId: 1, paisId: 7 });
-        expect(mocks.crearUbicacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 74, nombreUbicacion: "Montevideo", urlMaps: "https://www.google.com/maps?q=-34.9%2C-56.2" });
+        expect(mocks.crearUbicacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 74, nombreUbicacion: "Montevideo", urlMaps: "https://www.google.com/maps?q=-34.9%2C-56.2", departamento: "Montevideo" });
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
     });
 
-    it("guarda varios puntos en la misma transacción sin duplicar la ubicación anterior", async () => {
+    it("guarda los departamentos normalizados y permite puntos anteriores sin departamento en la misma transacción", async () => {
         const ubicaciones = [
-            { nombreUbicacion: " Chacra norte ", urlMaps: " https://www.google.com/maps?q=-34.7,-56.1 " },
+            { nombreUbicacion: " Chacra norte ", urlMaps: " https://www.google.com/maps?q=-34.7,-56.1 ", departamento: " Departamento de Canelones " },
             { nombreUbicacion: " Puesto de retiro ", urlMaps: " https://maps.app.goo.gl/ejemplo " },
         ];
         expect(await altaPublicacionProductor({ ...datos, ubicaciones })).toMatchObject({ esValido: true, id: 42 });
@@ -121,11 +121,31 @@ describe("altaPublicacionProductor", () => {
         expect(mocks.crearRelacion).toHaveBeenCalledOnce();
         expect(mocks.crearUbicacion).toHaveBeenCalledTimes(2);
         expect(mocks.crearUbicacion).toHaveBeenNthCalledWith(1, {
-            publicacionId: 74, nombreUbicacion: "Chacra norte", urlMaps: "https://www.google.com/maps?q=-34.7,-56.1",
+            publicacionId: 74, nombreUbicacion: "Chacra norte", urlMaps: "https://www.google.com/maps?q=-34.7,-56.1", departamento: "Canelones",
         });
         expect(mocks.crearUbicacion).toHaveBeenNthCalledWith(2, {
             publicacionId: 74, nombreUbicacion: "Puesto de retiro", urlMaps: "https://maps.app.goo.gl/ejemplo",
         });
+    });
+
+    it("normaliza también el departamento de las coordenadas del formulario anterior", async () => {
+        await expect(altaPublicacionProductor({ ...datos, departamento: " SAN JOSE ", nombreLugar: " Quinta " }))
+            .resolves.toMatchObject({ esValido: true });
+
+        expect(mocks.crearUbicacion).toHaveBeenCalledExactlyOnceWith({
+            publicacionId: 74, nombreUbicacion: "Quinta", departamento: "San José",
+            urlMaps: "https://www.google.com/maps?q=-34.9%2C-56.2",
+        });
+    });
+
+    it("rechaza un departamento inválido antes de guardar publicaciones o fotografías", async () => {
+        const ubicaciones = [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=-34,-56", departamento: "Buenos Aires" }];
+
+        await expect(altaPublicacionProductor({ ...datos, ubicaciones, fotografia }))
+            .resolves.toMatchObject({ esValido: false });
+        expect(mocks.productor).not.toHaveBeenCalled();
+        expect(mocks.transaccion).not.toHaveBeenCalled();
+        expect(mocks.guardarImagen).not.toHaveBeenCalled();
     });
 
     it("permite una lista vacía explícita aunque se envíen las coordenadas anteriores", async () => {
@@ -141,7 +161,7 @@ describe("altaPublicacionProductor", () => {
             { nombreUbicacion: "Retiro", urlMaps: "https://ejemplo.test" },
         ];
         expect(await altaPublicacionProductor({ ...datos, ubicaciones, fotografia })).toEqual({
-            esValido: false, errores: ["Cada ubicación debe incluir un enlace válido de Google Maps de hasta 2048 caracteres."],
+            esValido: false, errores: ["Seleccioná cada punto de retiro en el mapa antes de guardar."],
         });
         expect(mocks.productor).not.toHaveBeenCalled();
         expect(mocks.transaccion).not.toHaveBeenCalled();

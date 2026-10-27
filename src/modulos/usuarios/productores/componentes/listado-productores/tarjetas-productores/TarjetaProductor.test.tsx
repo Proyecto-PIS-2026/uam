@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import TarjetaProductor from "./TarjetaProductor";
 
 //productores
@@ -8,6 +8,7 @@ const productor = {
     nombreFantasia: "Nombre 1",
     fotoPerfil: "",
     cantidadProductos: 3,
+    departamentos: ["Canelones", "Salto"],
 };
 
 //cuando solo tiene 1 producto
@@ -29,8 +30,8 @@ vi.mock("next/link", () => ({
 vi.mock("next/image", async () => {
     const { createElement } = await import("react");
     return {
-        default: ({ src, alt }: { src: string; alt: string }) =>
-            createElement("img", { src, alt }),
+        default: ({ src, alt, onError }: { src: string; alt: string; onError?: React.ReactEventHandler<HTMLImageElement> }) =>
+            createElement("img", { src, alt, onError }),
     };
 });
 
@@ -57,6 +58,20 @@ describe("TarjetaOperador", () => {
         expect(imagen).toBeInTheDocument();
         expect(imagen).toHaveAttribute("src","/foto.jpg");
         expect(imagen).toHaveAttribute("alt", "Foto de Nombre 1");
+    });
+
+    it("muestra todos los departamentos y guion cuando ninguno está informado", () => {
+        const vista = render(<TarjetaProductor productor={productor} />);
+        expect(screen.getByText("Canelones · Salto")).toBeInTheDocument();
+        vista.rerender(<TarjetaProductor productor={{ ...productor, departamentos: [] }} />);
+        expect(screen.getByText("-")).toBeInTheDocument();
+    });
+
+    it("recupera la inicial si la fotografía falla", () => {
+        render(<TarjetaProductor productor={productorConFoto} />);
+        fireEvent.error(screen.getByRole("img", { name: "Foto de Nombre 1" }));
+        expect(screen.getByText("N")).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Foto de Nombre 1" })).not.toBeInTheDocument();
     });
 
     //mostrar bien la cantidad de productos cuando son mas de 1 
