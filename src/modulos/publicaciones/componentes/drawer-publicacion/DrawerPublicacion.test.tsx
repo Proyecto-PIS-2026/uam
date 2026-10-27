@@ -55,6 +55,51 @@ function crearPublicacion(): PublicacionListado {
 }
 
 describe("DrawerPublicacion", () => {
+    it.each(["otra publicación", "otra foto", "sin publicación"])("vuelve a esperar la foto al regresar desde %s", (cambio) => {
+        const original = { ...crearPublicacion(), foto: "/tomate.jpg" };
+        const siguiente = cambio === "sin publicación" ? null : {
+            ...original,
+            id: cambio === "otra publicación" ? original.id + 1 : original.id,
+            foto: "/tomate-nuevo.jpg",
+        };
+        const onOpenChange = vi.fn();
+        const { rerender } = render(<DrawerPublicacion publicacion={original} open onOpenChange={onOpenChange} />);
+        fireEvent.load(screen.getByAltText("Foto de Tomate"));
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+
+        rerender(<DrawerPublicacion publicacion={siguiente} open onOpenChange={onOpenChange} />);
+        expect(screen.queryByRole("dialog", { name: "Detalle de publicación" })).not.toBeInTheDocument();
+        rerender(<DrawerPublicacion publicacion={original} open onOpenChange={onOpenChange} />);
+        expect(screen.queryByRole("dialog", { name: "Detalle de publicación" })).not.toBeInTheDocument();
+
+        fireEvent.load(screen.getByAltText("Foto de Tomate"));
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+    });
+
+    it.each(["cerrar", "cambiar"])("descarta la foto ampliada al %s la consulta", async (cambio) => {
+        const original = { ...crearPublicacion(), foto: "/tomate.jpg" };
+        const onOpenChange = vi.fn();
+        const { rerender } = render(<DrawerPublicacion publicacion={original} open onOpenChange={onOpenChange} />);
+        fireEvent.load(screen.getByAltText("Foto de Tomate"));
+        fireEvent.click(screen.getByRole("button", { name: "Ampliar foto de Tomate" }));
+        expect(screen.getByRole("button", { name: "Cerrar foto ampliada" })).toBeInTheDocument();
+
+        const siguiente = cambio === "cambiar" ? { ...original, foto: "/tomate-nuevo.jpg" } : original;
+        rerender(<DrawerPublicacion publicacion={siguiente} open={cambio === "cambiar"} onOpenChange={onOpenChange} />);
+        await vi.waitFor(() => {
+            expect(screen.queryByRole("button", { name: "Cerrar foto ampliada" })).not.toBeInTheDocument();
+        });
+        expect(screen.queryByRole("dialog", { name: "Detalle de publicación" })).not.toBeInTheDocument();
+
+        if (cambio === "cerrar") {
+            rerender(<DrawerPublicacion publicacion={original} open onOpenChange={onOpenChange} />);
+        } else {
+            fireEvent.load(screen.getByAltText("Foto de Tomate"));
+        }
+        expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Cerrar foto ampliada" })).not.toBeInTheDocument();
+    });
+
     it("muestra los datos de la publicación y los botones de contacto", () => {
         render(<DrawerPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} />);
         expect(screen.getByRole("dialog")).toBeInTheDocument();

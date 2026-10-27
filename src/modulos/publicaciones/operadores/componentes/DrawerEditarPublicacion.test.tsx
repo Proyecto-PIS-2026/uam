@@ -338,6 +338,7 @@ describe("DrawerEditarPublicacion", () => {
     it("bloquea las acciones y el cierre mientras se actualizan los datos guardados", () => {
         render(<DrawerEditarPublicacion {...props} modoInicial="consulta" alEliminar={mocks.eliminar} actualizando />);
 
+        expect(screen.getByLabelText("Precio en pesos").closest("form")).toHaveAttribute("aria-busy", "true");
         expect(document.querySelector("[data-drawer-handle]")).toHaveAttribute("data-disabled", "true");
 
         expect(screen.getByRole("button", { name: "Editar" })).toBeDisabled();

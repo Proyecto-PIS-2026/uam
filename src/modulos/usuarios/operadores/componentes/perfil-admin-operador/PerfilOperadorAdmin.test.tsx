@@ -123,7 +123,7 @@ describe("PerfilOperadorAdmin", () => {
 
         expect(screen.getByTestId("nueva-publicacion")).toBeInTheDocument();
         expect(mocks.propsNuevaPublicacion).toHaveBeenLastCalledWith(
-            expect.objectContaining({ operadorId: operadorBase.id, abierto: true }),
+            expect.objectContaining({ operadorId: operadorBase.id, abierto: true, disponibilidadInicial: false }),
         );
     });
 

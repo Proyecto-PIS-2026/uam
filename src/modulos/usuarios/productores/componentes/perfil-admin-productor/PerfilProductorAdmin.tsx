@@ -89,7 +89,7 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
             <CatalogoProductorAdmin publicaciones={productor.publicaciones} />
 
             {altaAbierta && (
-                <DrawerAltaPublicacionProductor productorId={productor.id} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={publicacionCreada} />
+                <DrawerAltaPublicacionProductor productorId={productor.id} disponibilidadInicial={false} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={publicacionCreada} />
             )}
         </section>
     );

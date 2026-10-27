@@ -34,7 +34,9 @@ function prepararFetch(resultado: Record<string, unknown> = { mensaje: "Publicac
 
 async function abrirAlta() {
     render(<AltaPublicacionProductor productorId={4} />);
-    fireEvent.click(await screen.findByRole("button", { name: "Agregar producto" }));
+    const agregar = screen.getByRole("button", { name: "Agregar producto" });
+    await waitFor(() => expect(agregar).toBeEnabled());
+    fireEvent.click(agregar);
     return screen.getByRole("dialog", { name: "Nueva publicación de Productor" });
 }
 
@@ -100,20 +102,25 @@ describe("AltaPublicacionProductor", () => {
         expect(JSON.parse(envio[1]!.body as string)).toMatchObject({ ubicaciones: [] });
     });
 
-    it("permite publicar solo la especie sin ubicación ni otros datos", async () => {
+    it.each([undefined, false])("permite publicar solo la especie y restablece la disponibilidad inicial %s", async (disponibilidadInicial) => {
         const fetchMock = prepararFetch();
-        await abrirAlta();
+        const alCrear = vi.fn();
+        render(<DrawerAltaPublicacionProductor productorId={4} disponibilidadInicial={disponibilidadInicial} abierto alCrear={alCrear} alCerrar={vi.fn()} />);
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).toHaveProperty("checked", disponibilidadInicial ?? true);
         elegir("Especie", "Manzana");
         const formulario = screen.getByRole("button", { name: "Confirmar" }).closest("form")!;
         expect(formulario.checkValidity()).toBe(true);
         enviarFormulario();
-        expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        await waitFor(() => expect(alCrear).toHaveBeenCalledWith("Publicación creada correctamente."));
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
         expect(JSON.parse(envio[1]!.body as string)).toMatchObject({
             especieId: 2, variedadId: null, presentacionId: null, categoriaId: null,
             calibreId: null, paisId: null, precio: null, cantidadUnidades: null,
             ubicaciones: [],
+            disponibilidad: disponibilidadInicial ?? true,
         });
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).toHaveProperty("checked", disponibilidadInicial ?? true);
     });
 
     it.each([true, false])("guarda varios puntos de retiro y permite quitar uno sin perder los restantes (escritorio=%s)", async (esWeb) => {
@@ -157,13 +164,75 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("");
     });
 
-    it("indica que está cargando hasta recibir los catálogos", async () => {
+    it("mantiene el botón visible y deshabilitado hasta recibir los catálogos", async () => {
         let resolver!: (respuesta: Response) => void;
         vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { resolver = resolve; })));
         render(<AltaPublicacionProductor productorId={4} />);
-        expect(screen.getByRole("status")).toHaveTextContent("Cargando datos...");
+        const agregar = screen.getByRole("button", { name: "Agregar producto" });
+        expect(agregar).toBeDisabled();
+        expect(agregar).toHaveAttribute("aria-busy", "true");
+        expect(screen.queryByText(/Cargando/)).not.toBeInTheDocument();
+        fireEvent.click(agregar);
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         await act(async () => resolver(new Response(JSON.stringify(catalogos))));
-        expect(await screen.findByRole("button", { name: "Agregar producto" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Agregar producto" })).toBe(agregar);
+        expect(agregar).toBeEnabled();
+        expect(agregar).toHaveAttribute("aria-busy", "false");
+    });
+
+    it.each([undefined, false])("conserva el mismo formulario durante la carga con disponibilidad inicial %s", async (disponibilidadInicial) => {
+        let resolver!: (respuesta: Response) => void;
+        const fetchMock = vi.fn(() => new Promise<Response>((resolve) => { resolver = resolve; }));
+        vi.stubGlobal("fetch", fetchMock);
+        render(<DrawerAltaPublicacionProductor productorId={4} disponibilidadInicial={disponibilidadInicial} abierto alCrear={vi.fn()} alCerrar={vi.fn()} />);
+        const confirmar = screen.getByRole("button", { name: "Confirmar" });
+        const formulario = confirmar.closest("form")!;
+        const precio = screen.getByLabelText("Precio en pesos");
+        const disponibilidad = screen.getByRole("switch", { name: "Publicación disponible" });
+        const ubicaciones = screen.getByRole("button", { name: "Seleccionar ubicación de retiro" });
+
+        expect(formulario).toHaveAttribute("aria-busy", "true");
+        expect(screen.queryByText(/Cargando/)).not.toBeInTheDocument();
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        for (const selector of screen.getAllByRole("combobox")) expect(selector).toHaveAttribute("aria-disabled", "true");
+        for (const control of [precio, screen.getByLabelText("Cantidad (kg)"), disponibilidad, screen.getByLabelText("Fotografía"), ubicaciones, confirmar]) {
+            expect(control).toBeDisabled();
+        }
+        expect(screen.getByRole("button", { name: "Editar foto" })).toBeDisabled();
+        expect(disponibilidad).toHaveProperty("checked", disponibilidadInicial ?? true);
+        expect(screen.getByRole("button", { name: "Cancelar" })).toBeEnabled();
+        fireEvent.submit(formulario);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        await act(async () => resolver(new Response(JSON.stringify(catalogos))));
+        expect(screen.getByRole("button", { name: "Confirmar" })).toBe(confirmar);
+        expect(confirmar.closest("form")).toBe(formulario);
+        expect(screen.getByLabelText("Precio en pesos")).toBe(precio);
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBe(disponibilidad);
+        expect(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" })).toBe(ubicaciones);
+        expect(formulario).toHaveAttribute("aria-busy", "false");
+        expect(confirmar).toBeEnabled();
+        expect(precio).toBeEnabled();
+        expect(disponibilidad).toBeEnabled();
+        expect(ubicaciones).toBeEnabled();
+        expect(disponibilidad).toHaveProperty("checked", disponibilidadInicial ?? true);
+    });
+
+    it.each([new Response("{}", { status: 500 }), new Error("Sin conexión")])("conserva el formulario bloqueado y avisa con toast si falla la carga del drawer", async (respuesta) => {
+        vi.stubGlobal("fetch", vi.fn(() => respuesta instanceof Error ? Promise.reject(respuesta) : Promise.resolve(respuesta)));
+        render(<DrawerAltaPublicacionProductor productorId={4} abierto alCrear={vi.fn()} alCerrar={vi.fn()} />);
+        const confirmar = screen.getByRole("button", { name: "Confirmar" });
+        const formulario = confirmar.closest("form")!;
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(respuesta instanceof Error ? "Sin conexión" : "No se pudieron cargar los datos.");
+        expect(screen.getByRole("alert").closest('[role="dialog"]')).toBeNull();
+        expect(screen.getByRole("button", { name: "Confirmar" }).closest("form")).toBe(formulario);
+        expect(formulario).toHaveAttribute("aria-busy", "false");
+        expect(confirmar).toBeDisabled();
+        expect(screen.getByLabelText("Precio en pesos")).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" })).toBeDisabled();
+        fireEvent.submit(formulario);
+        expect(fetch).toHaveBeenCalledTimes(1);
     });
 
     it("prioriza las especies UAM presentes y ordena el resto sin modificar el catálogo recibido", async () => {
@@ -280,7 +349,7 @@ describe("AltaPublicacionProductor", () => {
         const alCrear = vi.fn();
         const alCerrar = vi.fn();
         render(<DrawerAltaPublicacionProductor productorId={4} abierto alCrear={alCrear} alCerrar={alCerrar} />);
-        await screen.findByRole("combobox", { name: /^Especie/ });
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         completarFormulario();
         fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "120" } });
         fireEvent.change(screen.getByLabelText("Cantidad (kg)"), { target: { value: "35" } });
@@ -362,7 +431,8 @@ describe("AltaPublicacionProductor", () => {
         const alCerrar = vi.fn();
         render(<DrawerAltaPublicacionProductor productorId={4} abierto alCrear={vi.fn()} alCerrar={alCerrar} />);
 
-        expect(screen.getByRole("status")).toHaveTextContent("Cargando datos...");
+        expect(screen.getByRole("button", { name: "Confirmar" }).closest("form")).toHaveAttribute("aria-busy", "true");
+        expect(screen.queryByText(/Cargando/)).not.toBeInTheDocument();
         expect(document.querySelector("[data-drawer-handle]")).toHaveAttribute("data-disabled", "false");
         fireEvent.click(screen.getByRole("button", { name: "Cerrar panel" }));
         expect(alCerrar).toHaveBeenCalledOnce();
