@@ -22,6 +22,7 @@ model Usuario {
   passwordHash     String
   twoFactorSecret  String?
   twoFactorEnabled Boolean        @default(false)
+  solicitoRestablecimiento Boolean        @default(false)
   rol              RolUsuario
 
   notificaciones   Notificacion[]
@@ -61,6 +62,8 @@ model Productor {
   id                     Int                    @id @default(autoincrement())
   usuarioId              Int                    @unique
   usuario                Usuario                @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
+  nombreFantasia         String                 @unique
+  fotoPerfil             String?
   whatsApp               String
 
   publicacionesProductor PublicacionProductor[]
@@ -100,6 +103,8 @@ model Especie {
   fotoEspecie   String?
   variedades    Variedad[]
   categorias    Categoria[]
+  historicoPrecios HistoricoPrecios?
+  publicaciones Publicacion[]
 
   @@map("especie")
 }
@@ -113,6 +118,7 @@ model Variedad {
   especieId      Int
   especie        Especie        @relation(fields:[especieId], references:[id])
   presentaciones Presentacion[]
+  publicaciones Publicacion[]
 
   @@map("variedad")
 }
@@ -155,40 +161,54 @@ model Calibre {
 
 // PAISES
 model Pais {
-  id                  Int                   @id @default(autoincrement())
-  codigoPais          String                @unique
-  nombrePais          String                @unique
-  publicacionesOrigen PublicacionOperador[]
+  id                     Int                    @id @default(autoincrement())
+  codigoPais             String                 @unique
+  nombrePais             String                 @unique
+  publicacionesOperador  PublicacionOperador[]  @relation("PaisOperador")
+  publicacionesProductor PublicacionProductor[] @relation("PaisProductor")
 
   @@map("pais")
 }
 
-// DEPARTAMENTOS
-model Departamento {
-  id                   Int                    @id @default(autoincrement())
-  codigoDepartamento   String                 @unique
-  nombreDepartamento   String                 @unique
-  publicacionesVendido PublicacionProductor[]
+// UBICACIONES
+model Ubicacion {
+  id              Int                  @id @default(autoincrement())
+  nombreUbicacion String
+  urlMaps         String
+  publicacionId   Int
+  publicacion     PublicacionProductor @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
 
-  @@map("departamento")
+  @@map("ubicacion")
+}
+
+model Imagen {
+  clave     String @id
+  contenido Bytes
+
+  @@map("imagen")
 }
 
 // PUBLICACIONES ABSTRACTAS
 model Publicacion {
-  id                    Int                   @id @default(autoincrement())
+  id                    Int                  @id @default(autoincrement())
+  version               Int                  @default(1)
   fecha                 temporal.updatedAt()
-  publicacionDisponible Boolean               @default(true)
-  publicacionActiva     Boolean               @default(true)
+  publicacionDisponible Boolean              @default(true)
+  publicacionActiva     Boolean              @default(true)
   precio                Numeric(12, 2)?
   cantidadUnidades      Int?
   foto                  String?
   tipoPublicacion       TipoPublicacion
-  presentacionId        Int
-  presentacion          Presentacion          @relation(fields:[presentacionId], references:[id])
-  categoriaId           Int
-  categoria             Categoria             @relation(fields:[categoriaId], references:[id])
-  calibreId             Int
-  calibre               Calibre               @relation(fields:[calibreId], references:[id])
+  especieId             Int
+  especie               Especie              @relation(fields:[especieId], references:[id])
+  variedadId            Int?
+  variedad              Variedad?            @relation(fields:[variedadId], references:[id])
+  presentacionId        Int?
+  presentacion          Presentacion?        @relation(fields:[presentacionId], references:[id])
+  categoriaId           Int?
+  categoria             Categoria?           @relation(fields:[categoriaId], references:[id])
+  calibreId             Int?
+  calibre               Calibre?             @relation(fields:[calibreId], references:[id])
 
   @@map("publicacion")
 }
@@ -200,35 +220,35 @@ model PublicacionOperador {
   publicacion   Publicacion @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
   operadorId    Int
   operador      Operador    @relation(fields:[operadorId], references:[id])
-  paisId        Int
-  pais          Pais        @relation(fields:[paisId], references:[id])
+  paisId        Int?
+  pais          Pais?       @relation("PaisOperador", fields:[paisId], references:[id])
 
   @@map("publicacionOperador")
 }
 
 // PUBLICACIONES DE PRODUCTORES
 model PublicacionProductor {
-  id             Int          @id @default(autoincrement())
-  publicacionId  Int          @unique
-  publicacion    Publicacion  @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
+  id             Int         @id @default(autoincrement())
+  publicacionId  Int         @unique
+  publicacion    Publicacion @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
   productorId    Int
-  productor      Productor    @relation(fields:[productorId], references:[id])
-  departamentoId Int
-  departamento   Departamento @relation(fields:[departamentoId], references:[id])
-  direccion      String
+  productor      Productor   @relation(fields:[productorId], references:[id])
+  paisId         Int?
+  pais           Pais?       @relation("PaisProductor", fields:[paisId], references:[id])
+  ubicaciones    Ubicacion[]
 
   @@map("publicacionProductor")
 }
 
 // NOTIFICACIONES
 model Notificacion {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   titulo      String
   descripcion String
-  vista       Boolean  @default(false)
+  vista       Boolean @default(false)
 
   usuarioId   Int
-  usuario     Usuario  @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
+  usuario     Usuario @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
 
   @@map("notificacion")
 }
@@ -249,4 +269,15 @@ model CachePreciosReferencia {
   estadoCache String
 
   @@map("cachePreciosReferencia")
+}
+
+model HistoricoPrecios {
+  especieId                Int     @id
+  especie                  Especie @relation(fields:[especieId], references:[id])
+  historico                Jsonb
+  fechaDesde               Date
+  fechaHasta               Date
+  fechaUltimaActualizacion  Date
+
+  @@map("historicoPrecios")
 }

@@ -85,13 +85,13 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   await page.getByRole("button", { name: /Volver al perfil/ }).click();
   await expect(page).toHaveURL(rutaPerfil);
   await page.getByRole("link", { name: /Volver al listado de operadores/ }).click();
-  await expect(page).toHaveURL("/administracion");
+  await expect(page).toHaveURL(/\/administracion#usuarios$/);
 
   // Una URL directa también debe respetar los permisos, con sesiones independientes.
   for (const perfil of [
     { nombre: "visitante", iniciarSesion: undefined, destino: /^\/iniciar-sesion$/ },
     { nombre: "operador", iniciarSesion: iniciarSesionOperador, destino: /^\/mi-mercado(?:\/|$)/ },
-    { nombre: "productor", iniciarSesion: (pagina: Page) => iniciarSesionProductor(pagina, usuariosAdministrativos.productor), destino: /^\/inicio$/ },
+    { nombre: "productor", iniciarSesion: (pagina: Page) => iniciarSesionProductor(pagina, usuariosAdministrativos.productor), destino: /^\/mi-mercado\/productor$/ },
   ]) {
     await test.step(`BP-18.9: rechazar el acceso administrativo del ${perfil.nombre}`, async () => {
       const pagina = await browser.newPage();
@@ -119,6 +119,7 @@ test("BP-18.2: el importe guardado se aplica al ajuste rápido del operador", as
   const nuevoImporte = importeOriginal === "25" ? "37" : "25";
   const operador = await browser.newPage();
   let precioOriginal: number | undefined;
+  let indicePrecio = -1;
   let precioModificado = false;
 
   try {
@@ -126,8 +127,11 @@ test("BP-18.2: el importe guardado se aplica al ajuste rápido del operador", as
     const precios = operador.getByTitle("Editar precio", { exact: true });
     await expect(precios.first()).toBeVisible();
     const preciosOriginales = await precios.allTextContents();
-    const controles = precios.first().locator("..");
-    precioOriginal = Number((await precios.first().innerText()).replace("$", ""));
+    indicePrecio = preciosOriginales.findIndex((texto) => /^\$[1-9]\d*$/.test(texto.trim()));
+    expect(indicePrecio).toBeGreaterThanOrEqual(0);
+    const precio = precios.nth(indicePrecio);
+    const controles = precio.locator("..");
+    precioOriginal = Number((await precio.innerText()).replace("$", ""));
     expect(Number.isSafeInteger(precioOriginal)).toBe(true);
     expect(precioOriginal).toBeGreaterThan(0);
     expect(precioOriginal + Number(nuevoImporte)).toBeLessThanOrEqual(9999999999);
@@ -150,7 +154,7 @@ test("BP-18.2: el importe guardado se aplica al ajuste rápido del operador", as
 
     await campoImporte.fill(nuevoImporte);
     await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-    await expect(page.getByRole("alert").filter({ hasText: confirmacionGuardado })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: confirmacionGuardado })).toBeVisible();
     await page.reload();
     await expect(campoImporte).toHaveValue(nuevoImporte);
 
@@ -160,14 +164,16 @@ test("BP-18.2: el importe guardado se aplica al ajuste rápido del operador", as
 
     precioModificado = true;
     await controles.getByRole("button", { name: "Aumentar precio", exact: true }).click();
-    await expect(precios.first()).toHaveText(`$${precioOriginal + Number(nuevoImporte)}`);
+    await expect(precio).toHaveText(`$${precioOriginal + Number(nuevoImporte)}`);
     await expect(controles.getByRole("button", { name: "Disminuir precio", exact: true })).toBeEnabled();
+    await expect(precio).toBeEnabled();
     await operador.reload();
-    await expect(precios.first()).toHaveText(`$${precioOriginal + Number(nuevoImporte)}`);
+    await expect(precio).toHaveText(`$${precioOriginal + Number(nuevoImporte)}`);
 
     await controles.getByRole("button", { name: "Disminuir precio", exact: true }).click();
-    await expect(precios.first()).toHaveText(`$${precioOriginal}`);
+    await expect(precio).toHaveText(`$${precioOriginal}`);
     await expect(controles.getByRole("button", { name: "Aumentar precio", exact: true })).toBeEnabled();
+    await expect(precio).toBeEnabled();
     await operador.reload();
     await expect(precios).toHaveText(preciosOriginales);
   } finally {
@@ -175,7 +181,7 @@ test("BP-18.2: el importe guardado se aplica al ajuste rápido del operador", as
       if (precioModificado && precioOriginal !== undefined) {
         await test.step("Restaurar el precio aunque falle una comprobación", async () => {
           await operador.goto("/mi-mercado");
-          const precio = operador.getByTitle("Editar precio", { exact: true }).first();
+          const precio = operador.getByTitle("Editar precio", { exact: true }).nth(indicePrecio);
           await expect(precio).toBeEnabled();
           if ((await precio.innerText()).trim() !== `$${precioOriginal}`) {
             await precio.click();

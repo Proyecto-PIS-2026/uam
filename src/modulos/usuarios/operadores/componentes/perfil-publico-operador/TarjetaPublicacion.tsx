@@ -16,12 +16,12 @@ type TarjetaPublicacionProps = {
 };
 
 export default function TarjetaPublicacion({publicacion, onSeleccionar}: TarjetaPublicacionProps) {
-    const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
+    const nombreProducto = publicacion.variedad && publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
 
     return (
         <button type="button" className={styles.tarjeta} onClick={() => onSeleccionar?.(publicacion)} aria-label={`Ver detalles de ${nombreProducto}`} aria-haspopup="dialog">
             <div className={styles.contenedorImagen}>
-                <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 767px) 96px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.imagen} reemplazo={
+                <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 419px) 88px, (max-width: 700px) 96px, (max-width: 774.4px) calc(50vw - 24px), (max-width: 1027.2px) calc(33.333vw - 21.333px), (max-width: 1279px) calc(25vw - 20px), 234px" className={styles.imagen} reemplazo={
                     <div className={styles.sinFoto}>
                         <ImageOutlinedIcon className={styles.iconoFoto}/>
                         <span className={styles.textoSinFotoMobile}>Foto</span>
@@ -33,17 +33,17 @@ export default function TarjetaPublicacion({publicacion, onSeleccionar}: Tarjeta
             <div className={styles.contenido}>
                 <div className={styles.encabezado}>
                     <h3 className={styles.especie} title={nombreProducto}>{nombreProducto}</h3>
-                    <p className={styles.informacionWeb}>{publicacion.calibre} · Categoría {publicacion.categoria}</p>
+                    <p className={styles.informacionWeb}>{publicacion.calibre?.trim() || "-"} · Categoría {publicacion.categoria?.trim() || "-"}</p>
                 </div>
                 <div className={styles.cuerpo}>
                     <div className={styles.informacionMobile}>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Calibre</span>
-                            <span className={styles.chip}>{publicacion.calibre}</span>
+                            <span className={styles.chip}>{publicacion.calibre?.trim() || "-"}</span>
                         </div>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Cat.</span>
-                            <span className={styles.chip}>{publicacion.categoria}</span>
+                            <span className={styles.chip}>{publicacion.categoria?.trim() || "-"}</span>
                         </div>
                     </div>
                     <div className={styles.contenedorPrecio}>
@@ -52,7 +52,9 @@ export default function TarjetaPublicacion({publicacion, onSeleccionar}: Tarjeta
                         ) : (
                             <span className={styles.consultarPrecio}>Consultar precio</span>
                         )}
-                        <span className={styles.presentacionPrecio}>por {publicacion.presentacion}</span>
+                        {publicacion.presentacion?.trim() && publicacion.presentacion.trim() !== "-" && (
+                            <span className={styles.presentacionPrecio}>por {publicacion.presentacion.trim()}</span>
+                        )}
                     </div>
                 </div>
             </div>

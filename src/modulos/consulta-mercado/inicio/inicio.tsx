@@ -7,12 +7,13 @@ import Link from "next/link";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import SearchIcon from "@mui/icons-material/Search";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
-import Alert from "@mui/material/Alert";
-import Snackbar from "@mui/material/Snackbar";
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import ProductoCard from "./tarjetaProducto";
@@ -39,7 +40,7 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState<"prioridad" | "a-z" | "z-a">("prioridad");
     const [paginaActual, setPaginaActual] = useState(1);
-    const [mostrarAvisoLista, setMostrarAvisoLista] = useState(false);
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
 
     const textoBuscado = normalizarTexto(busqueda.trim());
     const especiesFiltradas = especies.filter((especie) =>
@@ -76,18 +77,16 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
 
             <div className={styles.contenedor}>
                 <nav className={styles.accesos} aria-label="Accesos principales">
-                    {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver publicaciones</span></Link>}
+                    {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver Mercado</span></Link>}
                     {autorizado("operador.catalogo.consultar") && <Link href="/operadores" className={styles.acceso}><StorefrontOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver operadores</span></Link>}
                     {autorizado("listaInteligente.consultar") && (urlListaInteligente ? (
                         <a href={urlListaInteligente} target="_blank" rel="noopener noreferrer" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></a>
                     ) : (
-                        <button type="button" className={styles.acceso} onClick={() => {setMostrarAvisoLista(true)}}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
+                        <button type="button" className={styles.acceso} onClick={() => notificar("La Lista Inteligente no está disponible", "warning")}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
                     ))}
                     {autorizado("preciosReferencia.consultar") && <Link href="/precios-referencia" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></Link>}
                 </nav>
-                <Snackbar className={styles.avisoSnackbar}open={mostrarAvisoLista} autoHideDuration={700} transitionDuration={{ enter: 250, exit: 900 }} onClose={() => setMostrarAvisoLista(false)}anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-                    <Alert className={styles.avisoAlerta} severity="warning" variant="filled" onClose={() => setMostrarAvisoLista(false)}><span>La Lista Inteligente no está disponible</span></Alert>
-                </Snackbar>
+                <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
                 <section className={styles.especies} aria-labelledby="titulo-especies">
                     <div className={styles.tituloContenedor}>
                         <HojasDecorativas />
@@ -106,7 +105,11 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                     </div>
 
                     {especiesPagina.length === 0 ? (
-                        <p className={styles.sinResultados}>No hay especies que coincidan con la búsqueda.</p>
+                        <EstadoVacio
+                            titulo={especies.length === 0 ? "Todavía no hay especies disponibles" : "No hay especies que coincidan con la búsqueda."}
+                            descripcion={especies.length === 0 ? "Las especies aparecerán aquí cuando los operadores publiquen sus productos." : "Probá con otro nombre para encontrar la especie que buscás."}
+                            icono={especies.length === 0 ? <ShoppingBasketOutlinedIcon /> : <SearchOffOutlinedIcon />}
+                        />
                     ) : (
                         <>
                             <div className={styles.lista}>

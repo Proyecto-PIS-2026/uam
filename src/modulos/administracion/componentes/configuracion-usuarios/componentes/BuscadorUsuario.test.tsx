@@ -22,7 +22,7 @@ interface MockSelectProps {
     onChange?: (evento: ChangeEvent<HTMLSelectElement>) => void;
     children?: ReactNode;
     renderValue?: (valor: unknown) => ReactNode;
-    "aria-label"?: string;
+    inputProps?: { "aria-label"?: string };
 }
 
 vi.mock("@mui/material/TextField", () => ({
@@ -71,14 +71,14 @@ vi.mock("@mui/material/Select", () => ({
         onChange,
         children,
         renderValue,
-        "aria-label": ariaLabel,
+        inputProps,
     }: MockSelectProps) => (
         <>
             <div data-testid="valor-selector-movil">
                 {renderValue?.(value)}
             </div>
             <select
-                aria-label={ariaLabel}
+                aria-label={inputProps?.["aria-label"]}
                 value={value}
                 onChange={onChange}
             >
@@ -116,10 +116,20 @@ vi.mock("@mui/icons-material/FilterList", () => ({
     ),
 }));
 
+vi.mock("@mui/icons-material/LockResetOutlined", () => ({
+    default: (props: { "aria-hidden"?: boolean }) => (
+        <span
+            data-testid="icono-restablecimiento"
+            aria-hidden={props["aria-hidden"]}
+        />
+    ),
+}));
+
 describe("BuscadorUsuario", () => {
     it("renderiza el buscador, los selectores y todos los roles disponibles", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -127,6 +137,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="TODOS"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -143,12 +155,15 @@ describe("BuscadorUsuario", () => {
             "aria-hidden",
             "true",
         );
-        expect(screen.getByTestId("icono-filtro")).toHaveAttribute(
-            "aria-hidden",
-            "true",
-        );
+        const iconosFiltro = [
+            screen.getByTestId("icono-filtro"),
+            screen.getByTestId("icono-restablecimiento"),
+        ];
+        iconosFiltro.forEach((icono) => {
+            expect(icono).toHaveAttribute("aria-hidden", "true");
+        });
 
-        expect(screen.getAllByRole("option")).toHaveLength(8);
+        expect(screen.getAllByRole("option")).toHaveLength(12);
 
         for (const rol of [
             "Todos",
@@ -156,21 +171,28 @@ describe("BuscadorUsuario", () => {
             "Operador",
             "Productor",
         ]) {
-            expect(screen.getAllByRole("option", { name: rol })).toHaveLength(2);
+            expect(screen.getAllByRole("option", { name: rol })).toHaveLength(
+                rol === "Todos" ? 4 : 2,
+            );
         }
 
         expect(
             document.querySelector("[data-opcion-mas-larga]"),
         ).toHaveAttribute("data-opcion-mas-larga", "Administrador");
 
-        expect(
-            screen.getByTestId("valor-selector-movil"),
-        ).toContainElement(screen.getByTestId("icono-filtro"));
+        const selectoresMoviles = screen.getAllByTestId("valor-selector-movil");
+
+        expect(selectoresMoviles).toHaveLength(2);
+
+        selectoresMoviles.forEach((selector, indice) => {
+            expect(selector).toContainElement(iconosFiltro[indice]);
+        });
     });
 
     it("notifica los cambios en el texto de búsqueda", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -178,6 +200,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="TODOS"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -199,6 +223,7 @@ describe("BuscadorUsuario", () => {
     it("notifica los cambios de rol desde el selector de escritorio", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -206,6 +231,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="TODOS"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -236,6 +263,7 @@ describe("BuscadorUsuario", () => {
     it("notifica los cambios de rol desde el selector móvil", () => {
         const onBusquedaChange = vi.fn();
         const onTipoUsuarioChange = vi.fn();
+        const onRestablecimientoChange = vi.fn();
 
         render(
             <BuscadorUsuario
@@ -243,6 +271,8 @@ describe("BuscadorUsuario", () => {
                 onBusquedaChange={onBusquedaChange}
                 tipoUsuario="OPERADOR"
                 onTipoUsuarioChange={onTipoUsuarioChange}
+                restablecimiento="TODOS"
+                onRestablecimientoChange={onRestablecimientoChange}
             />,
         );
 
@@ -256,4 +286,36 @@ describe("BuscadorUsuario", () => {
         expect(onTipoUsuarioChange).toHaveBeenCalledWith("PRODUCTOR");
         expect(onBusquedaChange).not.toHaveBeenCalled();
     });
+
+    it.each(["Restablecimiento", "Filtrar por restablecimiento"])(
+        "conserva los cambios del filtro %s",
+        (nombre) => {
+            const onBusquedaChange = vi.fn();
+            const onTipoUsuarioChange = vi.fn();
+            const onRestablecimientoChange = vi.fn();
+
+            render(
+                <BuscadorUsuario
+                    busqueda=""
+                    onBusquedaChange={onBusquedaChange}
+                    tipoUsuario="TODOS"
+                    onTipoUsuarioChange={onTipoUsuarioChange}
+                    restablecimiento="TODOS"
+                    onRestablecimientoChange={onRestablecimientoChange}
+                />,
+            );
+
+            const selector = screen.getByRole("combobox", { name: nombre });
+            expect(selector).toHaveValue("TODOS");
+
+            fireEvent.change(selector, { target: { value: "SOLICITADO" } });
+            fireEvent.change(selector, { target: { value: "TODOS" } });
+
+            expect(onRestablecimientoChange).toHaveBeenCalledTimes(2);
+            expect(onRestablecimientoChange).toHaveBeenNthCalledWith(1, "SOLICITADO");
+            expect(onRestablecimientoChange).toHaveBeenNthCalledWith(2, "TODOS");
+            expect(onBusquedaChange).not.toHaveBeenCalled();
+            expect(onTipoUsuarioChange).not.toHaveBeenCalled();
+        },
+    );
 });

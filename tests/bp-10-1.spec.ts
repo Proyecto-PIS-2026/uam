@@ -20,8 +20,9 @@ test("BP-10.1 permite contactar al operador por WhatsApp", async ({ page }) => {
   await expect(enlaceWhatsApp).toHaveAttribute("target", "_blank");
 
   const destino = new URL((await enlaceWhatsApp.getAttribute("href"))!);
-  expect(destino.hostname).toBe("wa.me");
-  expect(destino.pathname).toMatch(/^\/\d+$/);
+  expect(destino.hostname).toBe("web.whatsapp.com");
+  expect(destino.pathname).toBe("/send");
+  expect(destino.searchParams.get("phone")).toMatch(/^\d+$/);
   expect(destino.searchParams.get("text")).toBe(
     "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.",
   );

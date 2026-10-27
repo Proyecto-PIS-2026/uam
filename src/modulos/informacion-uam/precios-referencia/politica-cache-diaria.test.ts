@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import consultaLocal from "./consulta-referencia.json";
+import { relevamiento } from "../../../../tests/fixtures/precios-referencia.mjs";
 import type { ConsultaPreciosReferencia } from "./consultas-precios-referencia";
 import { leerEstadoCacheDiaria, resolverCacheDiaria, type EstadoCacheDiaria } from "./politica-cache-diaria";
 
@@ -101,8 +101,8 @@ describe("leerEstadoCacheDiaria", () => {
         expect(leerEstadoCacheDiaria(JSON.stringify(estado))).toEqual(estado);
     });
 
-    it("reconoce el relevamiento local completo guardado como caché", () => {
-        const estado = { version: 1, ultimoIntento: "2026-10-01", ultimoExito: "2026-10-01", consulta: consultaLocal };
+    it("reconoce el relevamiento guardado guardado como caché", () => {
+        const estado = { version: 1, ultimoIntento: "2026-10-01", ultimoExito: "2026-10-01", consulta: relevamiento };
 
         expect(leerEstadoCacheDiaria(JSON.stringify(estado))).toEqual(estado);
     });

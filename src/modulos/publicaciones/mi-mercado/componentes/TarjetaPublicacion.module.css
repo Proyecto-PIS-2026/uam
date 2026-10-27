@@ -3,9 +3,23 @@
     min-height: 7rem;
     overflow: hidden;
     border: 1px solid var(--color-border);
-    border-radius: 1rem;
+    border-radius: var(--radio-panel);
     background: var(--color-surface);
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    box-shadow: var(--sombra-panel);
+}
+
+.tarjetaConsulta {
+    width: 100%;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tarjetaConsulta:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }
 
 .botonFoto {
@@ -29,10 +43,10 @@
     justify-content: center;
     height: 100%;
     min-height: 7rem;
-    padding-inline: 0.5rem;
+    padding-inline: var(--espacio-inline);
     background: var(--color-primary-soft);
     color: var(--color-secondary);
-    font-size: 0.75rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 500;
     text-align: center;
 }
@@ -60,20 +74,20 @@
     min-width: 0;
     flex: 1;
     flex-direction: column;
-    padding: 0.75rem;
+    padding: var(--espacio-controles);
 }
 
 .encabezadoProducto {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
 }
 
 .nombreProducto {
     min-width: 0;
     flex: 1;
     color: var(--color-foreground);
-    font-size: 1rem;
+    font-size: var(--tamano-titulo-panel);
     font-weight: 700;
     line-height: 1.25;
 }
@@ -82,8 +96,8 @@
     width: fit-content;
     flex-shrink: 0;
     border-radius: 9999px;
-    padding: 0.25rem 0.5rem;
-    font-size: 10px;
+    padding: var(--espacio-textos) var(--espacio-inline);
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
 }
 
@@ -93,14 +107,14 @@
 }
 
 .noDisponible {
-    background: #f3f4f6;
+    background: var(--color-surface-muted);
     color: var(--color-muted);
 }
 
 .datos {
-    margin-top: 0.5rem;
+    margin-top: var(--espacio-inline);
     color: var(--color-muted);
-    font-size: 0.75rem;
+    font-size: var(--tamano-texto-auxiliar);
     line-height: 1.25rem;
 }
 
@@ -108,14 +122,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.625rem 0.75rem;
+    padding: var(--espacio-controles) var(--espacio-controles);
     border-top: 1px solid var(--color-border);
 }
 
 .controlesPrecio {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
 }
 
 .botonPrecio {
@@ -124,9 +138,9 @@
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: 0.5rem;
-    background: var(--color-secondary);
-    color: white;
+    border-radius: var(--radio-control);
+    background: var(--color-primary);
+    color: var(--color-surface);
     font-size: 1.25rem;
     font-weight: 700;
     transition: background-color 150ms ease, color 150ms ease;
@@ -140,15 +154,20 @@
     box-sizing: border-box;
     width: 5rem;
     height: 2rem;
-    padding-inline: 0.5rem;
+    padding-inline: var(--espacio-textos);
     border: 1px solid var(--color-primary);
-    border-radius: 0.5rem;
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     color: var(--color-foreground);
-    font-size: 1.125rem;
+    font-size: var(--tamano-texto);
     font-weight: 800;
     text-align: center;
     outline: none;
+}
+
+.inputPrecio::placeholder {
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 500;
 }
 
 .inputPrecio:focus {
@@ -157,14 +176,17 @@
 
 .precio {
     min-width: 4rem;
-    cursor: text;
     color: var(--color-foreground);
-    font-size: 1.25rem;
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 800;
     text-align: center;
 }
 
-.precio:hover {
+.precio:enabled {
+    cursor: text;
+}
+
+.precio:enabled:hover {
     text-decoration: underline;
 }
 
@@ -173,6 +195,9 @@
 }
 
 .botonDetalle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--color-secondary);
     font-size: 1.25rem;
     font-weight: 700;
@@ -183,9 +208,9 @@
 }
 
 .errorPrecio {
-    padding: 0 0.75rem 0.75rem;
-    color: #991b1b;
-    font-size: 0.875rem;
+    padding: 0 var(--espacio-controles) var(--espacio-controles);
+    color: var(--color-danger);
+    font-size: var(--tamano-texto-secundario);
 }
 
 @media (min-width: 640px) {
@@ -194,7 +219,7 @@
     }
 
     .informacion {
-        padding: 1rem;
+        padding: var(--espacio-secciones);
     }
 
     .encabezadoProducto {
@@ -204,7 +229,7 @@
     }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 701px) {
     .tarjeta {
         min-height: 0;
         flex-direction: column;
@@ -223,6 +248,6 @@
     }
 
     .informacion {
-        padding: 0.75rem;
+        padding: var(--espacio-controles);
     }
 }

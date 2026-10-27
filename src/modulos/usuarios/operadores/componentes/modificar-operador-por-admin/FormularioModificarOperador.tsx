@@ -1,11 +1,17 @@
 "use client";
 
+import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import HojasDecorativas from "@/compartido/HojasDecorativas";
+
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import BotonVolver from "@/compartido/BotonVolver";
 
-import { modificarOperador } from "./modificarOperador";
+import { modificarOperador } from "../../acciones/modificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
-import type { OperadorParaModificar } from "./obtenerOperadorParaModificar";
+import type { OperadorParaModificar } from "../../tipos";
 
 import styles from "./FormularioModificarOperador.module.css";
 
@@ -47,6 +53,7 @@ export default function FormularioModificarOperador({
     );
 
     const [errores, setErrores] = useState<string[]>([]);
+    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
 
     function actualizarLocal(
@@ -54,6 +61,7 @@ export default function FormularioModificarOperador({
         campo: keyof LocalFormulario,
         valor: string | number,
     ) {
+        if (campo === "nombre" && (typeof valor !== "string" || !/^[0-9]*$/.test(valor))) return;
         setLocales((actuales) =>
             actuales.map((local, i) =>
                 i === indice
@@ -79,7 +87,7 @@ export default function FormularioModificarOperador({
 
     function eliminarLocal(indice: number) {
         if (locales.length === 1) {
-            setErrores(["Debe haber al menos un local."]);
+            notificar("Debe haber al menos un local.", "warning");
             return;
         }
 
@@ -102,6 +110,7 @@ export default function FormularioModificarOperador({
         if (guardando) return;
 
         setErrores([]);
+        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -127,9 +136,10 @@ export default function FormularioModificarOperador({
                 error,
             );
 
-            setErrores([
+            notificar(
                 "No se pudieron guardar los cambios. Intentá de nuevo.",
-            ]);
+                "error",
+            );
         } finally {
             setGuardando(false);
         }
@@ -137,17 +147,18 @@ export default function FormularioModificarOperador({
 
     return (
         <div className={styles.pagina}>
+            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <div className={styles.contenedor}>
-                <button
-                    type="button"
+                <BotonVolver
                     className={styles.volver}
                     onClick={cancelar}
                     disabled={guardando}
                 >
-                    ← Volver al perfil
-                </button>
+                    Volver al perfil
+                </BotonVolver>
 
                 <header className={styles.encabezado}>
+                    <HojasDecorativas />
                     <h1 className={styles.titulo}>
                         Modificar operador
                     </h1>
@@ -274,6 +285,9 @@ export default function FormularioModificarOperador({
                         <div
                             className={styles.listaLocales}
                         >
+                            {locales.length === 0 && (
+                                <EstadoVacio titulo="Sin locales registrados" descripcion="Agregá un local para completar la información del operador." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
+                            )}
                             {locales.map(
                                 (local, indice) => (
                                     <div
@@ -394,6 +408,10 @@ export default function FormularioModificarOperador({
                                                     value={
                                                         local.nombre
                                                     }
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    pattern="[0-9]*"
+                                                    required
                                                     onChange={(
                                                         evento,
                                                     ) =>

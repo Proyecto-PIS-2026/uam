@@ -75,8 +75,9 @@ for (const pantalla of [
     await expect(enlaceWhatsApp).toHaveAttribute("target", "_blank");
 
     const destino = new URL((await enlaceWhatsApp.getAttribute("href"))!);
-    expect(destino.hostname).toBe("wa.me");
-    expect(destino.pathname).toMatch(/^\/\d+$/);
+    expect(destino.hostname).toBe("web.whatsapp.com");
+    expect(destino.pathname).toBe("/send");
+    expect(destino.searchParams.get("phone")).toMatch(/^\d+$/);
 
     // Cerrar y volver a abrir conserva el listado y la publicación seleccionada.
     await page.keyboard.press("Escape");
@@ -87,7 +88,7 @@ for (const pantalla of [
     await expect(detalle.getByText(nombreOperador, { exact: true })).toBeVisible();
 
     const enlacePerfil = detalle.getByRole("link", { name: "Ver Perfil", exact: true });
-    await expect(enlacePerfil).toHaveAttribute("href", `/operadores/${encodeURIComponent(nombreOperador)}`);
+    await expect(enlacePerfil).toHaveAttribute("href", `/operadores/${encodeURIComponent(nombreOperador)}?origen=publicaciones`);
     await enlacePerfil.click();
 
     await expect(page).toHaveURL((url) =>

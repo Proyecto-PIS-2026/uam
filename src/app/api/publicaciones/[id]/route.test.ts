@@ -1,11 +1,13 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { LIMITE_FORMULARIO_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
 const bajaPublicacionOperadorMock = vi.hoisted(() => vi.fn());
 const obtenerSesionMock = vi.hoisted(() => vi.fn<() => Promise<DatosSesion | null>>(() => Promise.resolve({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 })));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: obtenerSesionMock }));
 const obtenerOperadorAutorizadoMock = vi.hoisted(() => vi.fn());
+const obtenerOperadorPorIdMock = vi.hoisted(() => vi.fn());
 const vinculoPublicacionMock = vi.hoisted(() => ({
 	select: vi.fn(),
 	where: vi.fn(),
@@ -15,6 +17,7 @@ const vinculoPublicacionMock = vi.hoisted(() => ({
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
 	obtenerOperadorAutorizado: obtenerOperadorAutorizadoMock,
+	obtenerOperadorPorId: obtenerOperadorPorIdMock,
 }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 	db: { orm: { public: { PublicacionOperador: vinculoPublicacionMock } } },
@@ -213,6 +216,7 @@ describe("DELETE /api/publicaciones/[id]", () => {
 });
 
 const cambiosEdicion = {
+    especieId: 6, variedadId: 7,
 	precio: "125",
 	foto: null,
 	categoriaId: 4,
@@ -233,6 +237,20 @@ function solicitudEdicion(cambios: unknown = cambiosEdicion, fotografia?: File, 
 const contextoEdicion = { params: Promise.resolve({ id: "20" }) };
 
 describe("PATCH /api/publicaciones/[id]", () => {
+    it("devuelve 413 sin modificar una solicitud demasiado grande", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones/20", {
+            method: "PATCH", body: "cuerpo demasiado grande",
+            headers: {
+                "content-type": "multipart/form-data; boundary=prueba",
+                "content-length": String(LIMITE_FORMULARIO_PUBLICACION + 1),
+            },
+        });
+        const respuesta = await PATCH(solicitud, contextoEdicion);
+        expect(respuesta.status).toBe(413);
+        expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
@@ -295,7 +313,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 	});
 
 	it("acepta la edición sin campo foto para conservar la imagen actual", async () => {
-		const cambiosSinFoto = { precio: "125", categoriaId: 4, calibreId: 2, presentacionId: 8, paisId: 218, disponible: true };
+		const cambiosSinFoto = { especieId: 6, variedadId: 7, precio: "125", categoriaId: 4, calibreId: 2, presentacionId: 8, paisId: 218, disponible: true };
 		const respuesta = await PATCH(solicitudEdicion(cambiosSinFoto), contextoEdicion);
 		expect(respuesta.status).toBe(200);
 		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosSinFoto, null);
@@ -346,8 +364,8 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		);
 	});
 
-	it.each([undefined, null, "218", 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])(
-		"devuelve 400 para un país ausente o inválido: %s",
+	it.each(["218", -1, 1.5, Number.MAX_SAFE_INTEGER + 1])(
+		"devuelve 400 para un país inválido: %s",
 		async (paisId) => {
 			const respuesta = await PATCH(solicitudEdicion({ ...cambiosEdicion, paisId }), contextoEdicion);
 
@@ -359,6 +377,13 @@ describe("PATCH /api/publicaciones/[id]", () => {
 			expect(revalidatePath).not.toHaveBeenCalled();
 		},
 	);
+
+    it.each([undefined, null, 0, ""])("permite vaciar todos los datos opcionales: %j", async (vacio) => {
+        const cambios = { ...cambiosEdicion, variedadId: vacio, presentacionId: vacio, categoriaId: vacio, calibreId: vacio, paisId: vacio };
+        const respuesta = await PATCH(solicitudEdicion(cambios), contextoEdicion);
+        expect(respuesta.status).toBe(200);
+        expect(modificarPublicacionOperador).toHaveBeenCalledWith(10, 12, expect.objectContaining({ especieId: 6 }), null);
+    });
 
 	it("devuelve 400 cuando el país no existe", async () => {
 		vi.mocked(modificarPublicacionOperador).mockRejectedValue(new ErrorEdicionPublicacion("DATOS_INVALIDOS", "El país no existe."));
@@ -408,7 +433,7 @@ describe("autorización de cambios de publicaciones", () => {
         expect(modificarPublicacionOperador).not.toHaveBeenCalled();
     });
 
-    it.each(["PRODUCTOR", "ADMINISTRADOR"] as const)("rechaza ambos cambios para %s", async (rol) => {
+    it.each(["PRODUCTOR"] as const)("rechaza ambos cambios para %s", async (rol) => {
         obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
         for (const handler of [DELETE, PATCH]) {
             const respuesta = await handler(handler === PATCH ? solicitudEdicion() : new Request("http://localhost/api/publicaciones/15"), {
@@ -424,7 +449,7 @@ describe("autorización de cambios de publicaciones", () => {
         obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Otro" });
         const formulario = new FormData();
-        formulario.set("cambios", JSON.stringify({ presentacionId: 1, categoriaId: 1, calibreId: 1, paisId: 1 }));
+        formulario.set("cambios", JSON.stringify({ especieId: 1, variedadId: 1, presentacionId: 1, categoriaId: 1, calibreId: 1, paisId: 1 }));
         const handler = metodo === "DELETE" ? DELETE : PATCH;
         const respuesta = await handler(new Request("http://localhost/api/publicaciones/15?operadorId=7", {
             method: metodo, ...(metodo === "PATCH" ? { body: formulario } : {}),
@@ -434,4 +459,66 @@ describe("autorización de cambios de publicaciones", () => {
         expect(modificarPublicacionOperador).not.toHaveBeenCalled();
         expect(vinculoPublicacionMock.first).not.toHaveBeenCalled();
     });
+});
+
+describe("gestión de publicaciones como administrador", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		obtenerSesionMock.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
+		obtenerOperadorPorIdMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
+		vinculoPublicacionMock.select.mockReturnThis();
+		vinculoPublicacionMock.where.mockReturnThis();
+		vinculoPublicacionMock.first.mockResolvedValue({ id: 12 });
+		vi.mocked(modificarPublicacionOperador).mockResolvedValue({ publicacionOperadorId: 12, publicacionId: 20 });
+		bajaPublicacionOperadorMock.mockResolvedValue(true);
+	});
+
+	it("modifica la publicación del operador indicado usando el usuario de ese operador", async () => {
+		const respuesta = await PATCH(solicitudEdicion(cambiosEdicion, undefined, "7"), contextoEdicion);
+
+		expect(respuesta.status).toBe(200);
+		expect(obtenerOperadorPorIdMock).toHaveBeenCalledExactlyOnceWith(7);
+		expect(obtenerOperadorAutorizado).not.toHaveBeenCalled();
+		expect(vinculoPublicacionMock.where).toHaveBeenCalledWith({ publicacionId: 20, operadorId: 7 });
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(70, 12, cambiosEdicion, null);
+		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
+	});
+
+	it("elimina la publicación del operador indicado", async () => {
+		const respuesta = await DELETE(new Request("http://localhost/api/publicaciones/15?operadorId=7", { method: "DELETE" }), {
+			params: Promise.resolve({ id: "15" }),
+		});
+
+		expect(respuesta.status).toBe(200);
+		expect(await respuesta.json()).toEqual({ mensaje: "Publicación eliminada." });
+		expect(obtenerOperadorPorIdMock).toHaveBeenCalledExactlyOnceWith(7);
+		expect(obtenerOperadorAutorizado).not.toHaveBeenCalled();
+		expect(bajaPublicacionOperadorMock).toHaveBeenCalledExactlyOnceWith(15, 7);
+		expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
+	});
+
+	it.each(["DELETE", "PATCH"] as const)("%s devuelve 400 si el administrador no indica el operador", async (metodo) => {
+		const respuesta = metodo === "PATCH"
+			? await PATCH(solicitudEdicion(), contextoEdicion)
+			: await DELETE(new Request("http://localhost/api/publicaciones/15", { method: "DELETE" }), { params: Promise.resolve({ id: "15" }) });
+
+		expect(respuesta.status).toBe(400);
+		expect(await respuesta.json()).toEqual({ errores: ["Debe seleccionar un operador."] });
+		expect(obtenerOperadorPorIdMock).not.toHaveBeenCalled();
+		expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+		expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+	});
+
+	it.each(["DELETE", "PATCH"] as const)("%s devuelve 404 si el operador indicado no existe", async (metodo) => {
+		obtenerOperadorPorIdMock.mockResolvedValue(null);
+		const respuesta = metodo === "PATCH"
+			? await PATCH(solicitudEdicion(cambiosEdicion, undefined, "99"), contextoEdicion)
+			: await DELETE(new Request("http://localhost/api/publicaciones/15?operadorId=99", { method: "DELETE" }), { params: Promise.resolve({ id: "15" }) });
+
+		expect(respuesta.status).toBe(404);
+		expect(await respuesta.json()).toEqual({ errores: ["El operador no existe."] });
+		expect(bajaPublicacionOperadorMock).not.toHaveBeenCalled();
+		expect(modificarPublicacionOperador).not.toHaveBeenCalled();
+		expect(revalidatePath).not.toHaveBeenCalled();
+	});
 });

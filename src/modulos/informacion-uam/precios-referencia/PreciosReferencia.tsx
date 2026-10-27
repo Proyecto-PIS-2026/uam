@@ -2,12 +2,19 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import SearchIcon from "@mui/icons-material/Search";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
+import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
+import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 import type { PrecioReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
+import FuentePrecios from "../FuentePrecios";
 import styles from "./PreciosReferencia.module.css";
 
 type Props = { fechaRelevamiento: string; filas: PrecioReferencia[] };
@@ -70,7 +77,7 @@ function ajustarSeleccion(filas: PrecioReferencia[], seleccion: SeleccionFiltros
 
 function leerPrecio(valor: string): number | null {
     if (valor === "") return null;
-    const precio = Number(valor.replace(",", "."));
+    const precio = Number(valor);
     return Number.isFinite(precio) ? precio : null;
 }
 
@@ -107,10 +114,10 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     }, []);
 
     const disponibles = useMemo(() => ({
-        especies: opciones(filas.map((fila) => fila.especie)),
+        especies: opciones(filas.map((fila) => fila.especie)).sort(compararEspeciesPorPrioridad),
         variedades: especie ? opciones(filasCompatibles(filas, seleccion, ["variedad", "unidad"]).map((fila) => fila.variedad)) : [],
         unidades: variedad ? opciones(filasCompatibles(filas, seleccion, ["unidad"]).map((fila) => fila.unidad)) : [],
-        paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)),
+        paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)).sort(compararPaisesPorPrioridad),
         categorias: opciones(filasCompatibles(filas, seleccion, ["categoria"]).map((fila) => fila.categoria)),
         calibres: opciones(filasCompatibles(filas, seleccion, ["calibre"]).map((fila) => fila.calibre)),
     }), [filas, seleccion, especie, variedad]);
@@ -185,7 +192,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     }
 
     function cambiarPrecio(valor: string, actualizar: (valor: string) => void) {
-        if (valor === "" || /^\d+(?:[.,]\d*)?$/.test(valor)) cambiar(() => actualizar(valor));
+        if (esEntradaPrecioPublicacion(valor)) cambiar(() => actualizar(valor));
     }
 
     function limpiar() {
@@ -338,9 +345,9 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 type="text"
                                 size="small"
                                 value={precioMinimo}
-                                placeholder="$ 0"
+                                placeholder="Sin mínimo"
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMinimo)}
-                                slotProps={{ htmlInput: { inputMode: "decimal", pattern: "[0-9]+([.,][0-9]*)?" } }}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                             />
                             <TextField
                                 className={`${styles.campo} ${styles.filtroPrecioMaximo}`}
@@ -351,7 +358,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 placeholder="Sin límite"
                                 error={rangoPrecioInvalido}
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMaximo)}
-                                slotProps={{ htmlInput: { inputMode: "decimal", pattern: "[0-9]+([.,][0-9]*)?" } }}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                             />
                             {rangoPrecioInvalido && <p className={styles.errorPrecio} role="alert">El precio máximo no puede ser menor al mínimo.</p>}
                         </div>
@@ -369,12 +376,16 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                 </div>
             </section>
 
-            <section className={styles.tablaPanel} aria-label="Precios relevados">
+            <section className={visibles.length === 0 ? styles.tablaVacia : styles.tablaPanel} aria-label="Precios relevados">
                 <div className={styles.tablaCabecera}>
                     <div><h2>Listado de Precios de referencia</h2></div>
                 </div>
                 {visibles.length === 0 ? (
-                    <p className={styles.vacio}>No hay registros que coincidan con los filtros.</p>
+                    <EstadoVacio
+                        titulo={filas.length === 0 ? "No hay precios de referencia disponibles en este momento." : "No hay registros que coincidan con los filtros."}
+                        descripcion={filas.length === 0 ? "Los valores aparecerán aquí cuando haya un relevamiento disponible." : "Probá cambiando o limpiando los filtros para consultar otros precios."}
+                        icono={filas.length === 0 ? <PriceCheckOutlinedIcon /> : <SearchOffOutlinedIcon />}
+                    />
                 ) : (
                     <>
                         <div className={styles.tablaContenedor}>
@@ -470,6 +481,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                     </nav>
                 )}
             </section>
+            <FuentePrecios />
         </div>
     );
 }

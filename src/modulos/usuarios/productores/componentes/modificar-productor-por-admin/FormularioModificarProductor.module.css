@@ -1,0 +1,297 @@
+.pagina {
+    padding: var(--padding-exterior-pagina);
+    background: var(--color-background);
+    color: var(--color-foreground);
+}
+
+.contenedor {
+    width: min(860px, 100%);
+    margin: 0 auto;
+}
+
+.volver {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espacio-textos);
+    margin-bottom: var(--espacio-secciones);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-secondary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.volver:hover {
+    text-decoration: underline;
+}
+
+.volver:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.encabezado {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: var(--espacio-secciones);
+    padding: var(--padding-titulo-pagina);
+    border-radius: var(--radio-panel);
+    background: var(--color-secondary);
+    color: var(--color-titulo-pagina);
+}
+
+.titulo {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    color: var(--color-titulo-pagina);
+    font-size: var(--tamano-titulo-pagina);
+    font-weight: 700;
+    line-height: var(--interlineado-titulo-pagina);
+}
+
+.descripcion {
+    position: relative;
+    z-index: 1;
+    margin: var(--espacio-textos) 0 0;
+    color: var(--color-subtitulo-pagina);
+    font-size: var(--tamano-subtitulo-pagina);
+    font-weight: 400;
+    line-height: var(--interlineado-subtitulo-pagina);
+}
+
+.descripcion strong {
+    color: inherit;
+}
+
+.formulario {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+}
+
+.seccion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
+}
+
+.subtitulo {
+    margin: 0;
+    font-size: var(--tamano-titulo-seccion);
+    font-weight: 600;
+    color: var(--color-secondary);
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-inline);
+    min-width: 0;
+}
+
+.etiqueta {
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
+}
+
+.entrada {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    font: inherit;
+}
+
+.entrada:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    border-width: 2px;
+}
+
+.entrada:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.filaTelefono {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: var(--espacio-controles);
+}
+
+.encabezadoSeccion {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--espacio-secciones);
+}
+
+.ayuda {
+    margin: var(--espacio-textos) 0 0;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+}
+
+.listaLocales {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+}
+
+.local {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface-muted);
+}
+
+.encabezadoLocal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-secciones);
+}
+
+.grillaLocal {
+    display: grid;
+    grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+    gap: var(--espacio-controles);
+}
+
+.grillaContraseña {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-controles);
+}
+
+.agregarLocal,
+.eliminarLocal,
+.cancelar,
+.guardar {
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
+    border-radius: var(--radio-control);
+    font: inherit;
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.agregarLocal {
+    border: 1px solid var(--color-secondary);
+    background: var(--color-surface);
+    color: var(--color-secondary);
+}
+
+.agregarLocal:hover:not(:disabled) {
+    background: var(--color-primary-soft);
+}
+
+.eliminarLocal {
+    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-surface));
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+}
+
+.eliminarLocal:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+}
+
+.acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--espacio-controles);
+    padding-top: var(--espacio-textos);
+}
+
+.cancelar {
+    min-width: 10rem;
+    border: 1px solid var(--color-secondary);
+    background: var(--color-surface);
+    color: var(--color-secondary);
+}
+
+.cancelar:hover:not(:disabled) {
+    background: var(--color-primary-soft);
+}
+
+.guardar {
+    min-width: 10rem;
+    border: 1px solid var(--color-secondary);
+    background: var(--color-secondary);
+    color: var(--color-surface);
+}
+
+.guardar:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+.agregarLocal:disabled,
+.eliminarLocal:disabled,
+.cancelar:disabled,
+.guardar:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.error {
+    padding: var(--padding-panel);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-surface));
+    border-radius: var(--radio-panel);
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+}
+
+.error p {
+    margin: 0;
+}
+
+.error p + p {
+    margin-top: var(--espacio-textos);
+}
+
+@media (max-width: 700px) {
+    .filaTelefono,
+    .grillaLocal,
+    .grillaContraseña {
+        grid-template-columns: 1fr;
+    }
+
+    .encabezadoSeccion {
+        flex-direction: column;
+    }
+
+    .agregarLocal {
+        width: 100%;
+    }
+
+    .acciones {
+        flex-direction: column-reverse;
+    }
+
+    .cancelar,
+    .guardar {
+        width: 100%;
+        min-width: 0;
+    }
+}

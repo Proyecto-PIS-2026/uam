@@ -42,8 +42,20 @@ export default defineConfig({
     // Chrome de Escritorio como control base del motor Chromium
     {
       name: 'chromium',
-      testIgnore: /bp-(17|18)(?:[\\/]|\.spec\.ts)/,
+      testIgnore: /bp-(17|18|25|26)(?:[\\/]|\.spec\.ts)/,
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium-bp25',
+      testMatch: /bp-25[\\/]bp-25\.1\.spec\.ts/,
+      fullyParallel: false,
+      workers: 1,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3200' },
+    },
+    {
+      name: 'chromium-bp26',
+      testMatch: /bp-26\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3100' },
     },
     {
       name: 'chromium-bp17',

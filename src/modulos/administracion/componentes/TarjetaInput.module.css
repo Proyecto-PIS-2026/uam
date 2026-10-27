@@ -1,38 +1,37 @@
 .tarjeta {
     display: flex;
-    margin-top: 0.45rem;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
     position: relative;
     box-sizing: border-box;
     width: 100%;
-    padding: 1.25rem;
+    padding: var(--padding-panel);
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
-    background-color: #fff;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+    border-radius: var(--radio-panel);
+    background-color: var(--color-surface);
+    box-shadow: var(--sombra-panel);
 }
 
 .titulo {
     margin: 0;
     color: var(--color-secondary);
     font-family: inherit;
-    font-size: 1.5rem;
+    font-size: var(--tamano-titulo-seccion);
     line-height: var(--interlineado-titulo-pagina);
     font-weight: 700;
 }
 
 .descripcion {
     margin: 0;
-    color: #4b5563;
-    font-size: 0.95rem;
-    line-height: 1.5;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
 }
 
 .contenedorEdicion {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     width: 100%;
     min-width: 0;
 }
@@ -62,7 +61,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
     flex-shrink: 0;
 }
 
@@ -85,34 +84,12 @@
     background-color: var(--color-primary-soft) !important;
 }
 
-.avisoSnackbar {
-    width: fit-content;
-    max-width: calc(100vw - 2rem);
-    margin-inline: auto;
-}
-
-.avisoSnackbar :global(.MuiAlert-root) {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.avisoAlerta {
-    box-sizing: border-box;
-}
-
-.avisoSnackbar :global(.MuiAlert-action) {
-    align-items: center;
-    padding-top: 0;
-    padding-bottom: 0.1rem;
-}
-
 @media (min-width: 768px) {
     .tarjeta {
-        padding: var(--padding-titulo-pagina);
+        padding: var(--padding-panel);
         border: none;
         border-radius: 0 0.5rem 0.5rem 0.5rem;
-        background-color: #fff;
+        background-color: var(--color-surface);
         box-shadow: none;
     }
 }

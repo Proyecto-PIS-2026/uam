@@ -1,56 +1,34 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import consultaLocal from "./consulta-referencia.json";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { relevamiento } from "../../../../tests/fixtures/precios-referencia.mjs";
 import { obtenerConsultaPreciosReferencia, obtenerPreciosReferencia } from "./consultas-precios-referencia";
 
 const { obtenerRemoto } = vi.hoisted(() => ({ obtenerRemoto: vi.fn() }));
 
 vi.mock("./cache-diario", () => ({ obtenerConsultaDiariaWebservice: obtenerRemoto }));
 
-beforeEach(() => vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "local"));
-afterEach(() => {
-    vi.unstubAllEnvs();
-    obtenerRemoto.mockReset();
+beforeEach(() => {
+    obtenerRemoto.mockReset().mockResolvedValue(relevamiento);
 });
 
-describe("selección de la fuente de precios de referencia", () => {
-    it("usa el relevamiento local mientras no se active el webservice", async () => {
-        vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "local");
-
-        await expect(obtenerConsultaPreciosReferencia()).resolves.toEqual(consultaLocal);
-        expect(obtenerRemoto).not.toHaveBeenCalled();
-    });
-
-    it("usa la caché del webservice cuando se activa explícitamente", async () => {
-        vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "webservice");
-        obtenerRemoto.mockResolvedValue(consultaLocal);
-
-        await expect(obtenerConsultaPreciosReferencia()).resolves.toEqual(consultaLocal);
+describe("consulta de precios de referencia", () => {
+    it("obtiene los precios exclusivamente del servicio con caché en base de datos", async () => {
+        await expect(obtenerConsultaPreciosReferencia()).resolves.toEqual(relevamiento);
         expect(obtenerRemoto).toHaveBeenCalledOnce();
     });
 
-    it("usa el TXT si la variable del despliegue queda vacia", async () => {
-        vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "");
+    it("propaga la falta de precios disponibles sin generar datos de ejemplo", async () => {
+        obtenerRemoto.mockRejectedValue(new Error("No hay relevamientos disponibles"));
 
-        await expect(obtenerConsultaPreciosReferencia()).resolves.toEqual(consultaLocal);
-        expect(obtenerRemoto).not.toHaveBeenCalled();
+        await expect(obtenerConsultaPreciosReferencia()).rejects.toThrow("No hay relevamientos disponibles");
     });
 
-    it("rechaza un valor de fuente desconocido", async () => {
-        vi.stubEnv("PRECIOS_REFERENCIA_FUENTE", "otra");
-
-        await expect(obtenerConsultaPreciosReferencia()).rejects.toThrow("debe ser local o webservice");
-        expect(obtenerRemoto).not.toHaveBeenCalled();
-    });
-});
-
-describe("precios de referencia desde la consulta local", () => {
     it("incluye todas las bandas y conserva la marca de referencia", async () => {
         const resultado = await obtenerPreciosReferencia();
 
         expect(resultado.fechaRelevamiento).toBe("2026-08-27");
-        expect(resultado.filas).toHaveLength(363);
-        expect(resultado.filas.filter((fila) => fila.esReferencia)).toHaveLength(67);
-        expect(new Set(resultado.filas.map((fila) => fila.id)).size).toBe(363);
+        expect(resultado.filas).toHaveLength(89);
+        expect(resultado.filas.filter((fila) => fila.esReferencia)).toHaveLength(44);
+        expect(new Set(resultado.filas.map((fila) => fila.id)).size).toBe(89);
     });
 
     it("conserva los campos y los valores decimales originales", async () => {

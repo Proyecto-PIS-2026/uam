@@ -2,18 +2,17 @@
     display: flex;
     width: 100%;
     min-width: 0;
-    gap: 0.875rem;
-    padding: 0.75rem;
+    gap: var(--espacio-controles);
+    padding: var(--espacio-controles);
     border: 1px solid var(--color-border);
-    border-radius: 0.875rem;
+    border-radius: var(--radio-panel);
     background-color: var(--color-surface);
     color: var(--color-foreground);
-    box-shadow: 0 2px 5px rgb(0 0 0 / 8%);
+    box-shadow: var(--sombra-panel);
     text-align: left;
     font: inherit;
     cursor: pointer;
-    transition:
-        transform 0.15s ease,
+    transition: transform 0.15s ease,
         box-shadow 0.15s ease,
         border-color 0.15s ease;
 }
@@ -26,7 +25,7 @@
 
 .tarjeta:active {
     transform: translateY(0);
-    box-shadow: 0 2px 5px rgb(0 0 0 / 8%);
+    box-shadow: var(--sombra-panel);
 }
 
 .tarjeta:focus-visible {
@@ -43,7 +42,7 @@
     flex-shrink: 0;
     align-self: center;
     overflow: hidden;
-    border-radius: 0.65rem;
+    border-radius: var(--radio-panel);
     background-color: var(--color-primary-soft);
 }
 
@@ -58,9 +57,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.15rem;
+    gap: var(--espacio-textos);
     color: var(--color-secondary);
-    font-size: 0.75rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 500;
 }
 
@@ -90,7 +89,7 @@
     min-width: 0;
     flex-direction: column;
     justify-content: center;
-    padding-bottom: 0.4rem;
+    padding-bottom: var(--espacio-inline);
     border-bottom: 1px solid var(--color-border);
 }
 
@@ -101,7 +100,7 @@
     color: var(--color-foreground);
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 1rem;
+    font-size: var(--tamano-titulo-panel);
     font-weight: 700;
     line-height: 1.2;
 }
@@ -123,7 +122,7 @@
     display: grid;
     width: 100%;
     min-width: 0;
-    padding-right: 0.25rem;
+    padding-right: var(--espacio-textos);
     align-items: center;
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -134,12 +133,12 @@
     height: fit-content;
     flex-direction: column;
     align-items: center;
-    gap: 0.15rem;
+    gap: var(--espacio-textos);
 }
 
 .etiqueta {
-    color: var(--color-muted-foreground);
-    font-size: 0.7rem;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-auxiliar);
     line-height: 1;
 }
 
@@ -147,13 +146,13 @@
     display: inline-flex;
     min-width: 2.5rem;
     height: 1.45rem;
-    padding: 0 0.6rem;
+    padding: 0 var(--espacio-inline);
     align-items: center;
     justify-content: center;
-    border-radius: 0.45rem;
+    border-radius: var(--radio-control);
     background-color: var(--color-primary-soft);
     color: var(--color-primary);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 600;
     line-height: 1;
 }
@@ -165,7 +164,7 @@
     width: 100%;
     min-width: 0;
     height: 100%;
-    padding: 0 0.5rem;
+    padding: 0 var(--espacio-inline);
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -175,7 +174,7 @@
 
 .precio {
     color: var(--color-primary);
-    font-size: 1.2rem;
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
     line-height: 1.1;
     white-space: nowrap;
@@ -183,7 +182,7 @@
 
 .consultarPrecio {
     color: var(--color-primary);
-    font-size: 0.7rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 500;
     line-height: 1.2;
     text-align: center;
@@ -193,12 +192,12 @@
 .presentacionPrecio {
     width: 100%;
     min-width: 0;
-    margin-top: 0.2rem;
+    margin-top: var(--espacio-textos);
     overflow: hidden;
     color: var(--color-muted);
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 0.7rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 400;
     line-height: 1.2;
     text-align: center;
@@ -216,8 +215,8 @@
 
 @media (max-width: 420px) {
     .tarjeta {
-        gap: 0.5rem;
-        padding: 0.6rem;
+        gap: var(--espacio-inline);
+        padding: var(--espacio-inline);
     }
 
     .contenedorImagen {
@@ -226,11 +225,11 @@
     }
 
     .encabezado {
-        padding-bottom: 0.3rem;
+        padding-bottom: var(--espacio-textos);
     }
 
     .especie {
-        font-size: 0.9rem;
+        font-size: var(--tamano-titulo-panel);
     }
 
     .informacionMobile {
@@ -238,38 +237,38 @@
     }
 
     .etiqueta {
-        font-size: 0.62rem;
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .chip {
         min-width: 2rem;
         height: 1.25rem;
-        padding: 0 0.4rem;
-        font-size: 0.7rem;
+        padding: 0 var(--espacio-inline);
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .contenedorPrecio {
-        padding: 0 0.3rem;
+        padding: 0 var(--espacio-textos);
     }
 
     .precio {
-        font-size: 0.95rem;
+        font-size: var(--tamano-titulo-seccion);
     }
 
     .consultarPrecio {
         color: var(--color-primary);
-        font-size: 1.1rem;
+        font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
     }
 
     .presentacionPrecio {
-        margin-top: 0.15rem;
-        font-size: 0.6rem;
+        margin-top: var(--espacio-textos);
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .sinFoto {
-        font-size: 0.65rem;
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .calibreCompleto {
@@ -285,10 +284,10 @@
 
 /* MOBILE GRANDE */
 
-@media (min-width: 420px) and (max-width: 767px) {
+@media (min-width: 420px) and (max-width: 700px) {
     .tarjeta {
-        gap: 1rem;
-        padding: 0.875rem;
+        gap: var(--espacio-secciones);
+        padding: var(--espacio-controles);
     }
 
     .contenedorImagen {
@@ -297,27 +296,27 @@
     }
 
     .encabezado {
-        padding-bottom: 0.45rem;
+        padding-bottom: var(--espacio-inline);
     }
 
     .especie {
-        font-size: 1.05rem;
+        font-size: var(--tamano-titulo-panel);
     }
 
     .informacionMobile {
-        padding-right: 0.25rem;
+        padding-right: var(--espacio-textos);
     }
 
     .contenedorPrecio {
-        padding: 0 0.75rem;
+        padding: 0 var(--espacio-controles);
     }
 
     .precio {
-        font-size: 1.25rem;
+        font-size: var(--tamano-titulo-seccion);
     }
 
     .presentacionPrecio {
-        font-size: 0.75rem;
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .calibreCompleto {
@@ -332,17 +331,16 @@
 
 /* DESKTOP: TARJETA VERTICAL */
 
-@media (min-width: 768px) {
+@media (min-width: 701px) {
     .tarjeta {
         height: 100%;
         flex-direction: column;
         gap: 0;
         padding: 0;
         overflow: hidden;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgb(26 26 26 / 5%);
-        transition:
-            transform 0.15s ease,
+        border-radius: var(--radio-panel);
+        box-shadow: var(--sombra-panel);
+        transition: transform 0.15s ease,
             box-shadow 0.15s ease,
             border-color 0.15s ease;
     }
@@ -368,9 +366,9 @@
     }
 
     .sinFoto {
-        gap: 6px;
+        gap: var(--espacio-inline);
         color: var(--color-secondary);
-        font-size: 0.75rem;
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .iconoFoto {
@@ -389,12 +387,12 @@
     /* CONTENIDO DESKTOP */
 
     .contenido {
-        padding: 14px 12px 12px;
+        padding: var(--espacio-secciones) var(--espacio-controles) var(--espacio-controles);
     }
 
     .encabezado {
         display: block;
-        padding-bottom: 14px;
+        padding-bottom: var(--espacio-secciones);
         border-bottom: 0;
     }
 
@@ -403,16 +401,16 @@
         text-overflow: initial;
         white-space: normal;
         overflow-wrap: anywhere;
-        font-size: 1.0625rem;
+        font-size: var(--tamano-titulo-panel);
     }
 
     .informacionWeb {
         display: block;
-        margin: 6px 0 0;
+        margin: var(--espacio-inline) 0 0;
         color: var(--color-secondary);
-        font-size: 0.8125rem;
+        font-size: var(--tamano-texto-secundario);
         font-weight: 500;
-        line-height: 1.4;
+        line-height: var(--interlineado-texto);
         overflow-wrap: anywhere;
     }
 
@@ -435,7 +433,7 @@
         width: 100%;
         min-width: 0;
         height: auto;
-        padding: 12px 0 0;
+        padding: var(--espacio-controles) 0 0;
         flex: 0 1 auto;
         align-items: flex-end;
         border-top: 1px solid var(--color-border);
@@ -444,23 +442,23 @@
     }
 
     .precio {
-        font-size: 1.5rem;
+        font-size: var(--tamano-titulo-seccion);
         font-weight: 800;
         font-variant-numeric: tabular-nums;
     }
 
     .consultarPrecio {
         color: var(--color-primary);
-        font-size: 1.3rem;
+        font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
     }
-    
+
 
     .presentacionPrecio {
-        margin-top: 4px;
+        margin-top: var(--espacio-textos);
         color: var(--color-muted);
-        font-size: 0.75rem;
+        font-size: var(--tamano-texto-auxiliar);
         text-align: right;
     }
 
@@ -475,12 +473,12 @@
 
 @media (min-width: 448px) and (max-width: 480px) {
     .cuerpo {
-        margin-top: 5px;
+        margin-top: var(--espacio-textos);
     }
 
     .consultarPrecio {
         color: var(--color-primary);
-        font-size: 1rem;
+        font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
     }
@@ -488,21 +486,21 @@
 
 @media (max-width: 448px) {
     .cuerpo {
-        margin-top: 5px;
+        margin-top: var(--espacio-textos);
     }
 
     .consultarPrecio {
         color: var(--color-primary);
-        font-size: 0.8rem;
+        font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
     }
 }
 
-@media (min-width: 480px) and (max-width: 767px) {
+@media (min-width: 480px) and (max-width: 700px) {
     .consultarPrecio {
         color: var(--color-primary);
-        font-size: 1.1rem;
+        font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
     }
@@ -511,7 +509,7 @@
 @media (min-width: 768px) and (min-width: 1024px) {
     .consultarPrecio {
         color: var(--color-primary);
-        font-size: 1rem;
+        font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
     }
@@ -520,8 +518,14 @@
 @media (min-width: 1024px) {
     .consultarPrecio {
         color: var(--color-primary);
-        font-size: 1rem;
+        font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
+    }
+}
+
+@media (min-width: 701px) and (max-width: 1279px) {
+    .consultarPrecio {
+        font-size: var(--tamano-texto-auxiliar);
     }
 }

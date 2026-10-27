@@ -6,9 +6,9 @@ export const metadata = {
 
 export default function Page() {
     return (
-        <main className="contenedor-pagina flex flex-1 items-start justify-center py-10">
-            <section className="w-full max-w-md">
-                <h1 className="mb-6 text-3xl font-bold">Iniciar sesión</h1>
+        <main className="contenedor-pagina flex flex-1 items-start justify-center">
+            <section className="w-full max-w-md secciones-pagina">
+                <h1 className="titulo-pagina-plano">Iniciar sesión</h1>
                 <FormularioInicioSesion />
             </section>
         </main>

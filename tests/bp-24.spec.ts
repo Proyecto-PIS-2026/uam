@@ -10,7 +10,7 @@ const masVendidas = [
 
 test.describe("BP-24: especies más vendidas primero", () => {
   test.beforeEach(async () => {
-    test.slow();
+    test.slow();   
   });
 
   test("CP-24-01: Inicio muestra primero las 15 especies en el orden de la UAM", async ({ page }) => {
@@ -30,14 +30,13 @@ test.describe("BP-24: especies más vendidas primero", () => {
     await expect(page.getByRole("button", { name: "Desagrupar", exact: true })).toBeVisible();
 
     // Aclaración funcional: se agrupa por operador; la prioridad se valida en sus productos.
-    const grupos = page.getByRole("main").getByRole("heading", { level: 2 });
+    const grupos = page.getByRole("main").locator('[class*="nombreGrupo"]');
     await expect(grupos.first()).toBeVisible();
     let gruposConVariasEspecies = 0;
     for (let indice = 0; indice < await grupos.count(); indice += 1) {
       const encabezado = grupos.nth(indice);
       const nombreOperador = (await encabezado.innerText()).trim();
-      const productos = encabezado.locator("xpath=../following-sibling::ul")
-        .getByRole("heading", { level: 3 });
+      const productos = encabezado.locator("../..").getByRole("heading", { level: 3 });
       const especies = (await productos.allTextContents())
         .map(nombre => nombre.split(" - ")[0].trim());
       expect(especies.length, `Productos de ${nombreOperador}`).toBeGreaterThan(0);

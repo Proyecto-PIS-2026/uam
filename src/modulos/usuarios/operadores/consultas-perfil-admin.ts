@@ -3,13 +3,14 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 // Datos de una publicación tal como los ve el administrador
 export type PublicacionPerfilAdmin = {
     id: number;
+    version: number;
     publicacionOperadorId: number;
     especieId: number;
-    variedadId: number;
-    presentacionId: number;
-    categoriaId: number;
-    calibreId: number;
-    paisId: number;
+    variedadId: number | null;
+    presentacionId: number | null;
+    categoriaId: number | null;
+    calibreId: number | null;
+    paisId: number | null;
     foto: string | null;
     precio: string | null;
     cantidadUnidades?: number | null;
@@ -86,6 +87,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         .include("publicacion", (consultaPublicacion) => {
             const camposPublicacion = consultaPublicacion.select(
                 "id",
+                "version",
                 "foto",
                 "precio",
                 "cantidadUnidades",
@@ -97,14 +99,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 "categoriaId",
                 "calibreId"
             );
-            const conPresentacion = camposPublicacion.include(
-                "presentacion",
-                (consultaPresentacion) =>
-                    consultaPresentacion.include(
-                        "variedad",
-                        (consultaVariedad) => consultaVariedad.include("especie")
-                    )
-            );
+            const conPresentacion = camposPublicacion.include("especie").include("variedad").include("presentacion");
             const conCategoria = conPresentacion.include("categoria");
             const completo = conCategoria.include("calibre");
 
@@ -120,9 +115,10 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,
+                version: publicacion.version,
                 publicacionOperadorId: completa.id,
-                especieId: publicacion.presentacion.variedad.especieId,
-                variedadId: publicacion.presentacion.variedad.id,
+                especieId: publicacion.especie.id,
+                variedadId: publicacion.variedad?.id ?? null,
                 presentacionId: publicacion.presentacionId,
                 categoriaId: publicacion.categoriaId,
                 calibreId: publicacion.calibreId,
@@ -132,13 +128,13 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 cantidadUnidades: publicacion.cantidadUnidades,
                 fecha: publicacion.fecha.toString(),
                 disponible: publicacion.publicacionDisponible,
-                especie: publicacion.presentacion.variedad.especie.nombreEspecie,
-                variedad: publicacion.presentacion.variedad.nombreVariedad,
-                presentacion: publicacion.presentacion.nombrePresentacion,
-                categoria: publicacion.categoria.nombreCategoria,
-                calibre: publicacion.calibre.codigoCalibre,
-                codigoCalibre: publicacion.calibre.codigoCalibre,
-                pais: completa.pais.nombrePais,
+                especie: publicacion.especie.nombreEspecie,
+                variedad: publicacion.variedad?.nombreVariedad ?? "",
+                presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
+                categoria: publicacion.categoria?.nombreCategoria ?? "",
+                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
+                pais: completa.pais?.nombrePais ?? "",
             });
         }
     }

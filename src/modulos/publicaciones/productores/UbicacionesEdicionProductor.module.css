@@ -1,0 +1,31 @@
+.seccion,
+.lista,
+.ubicacion {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--espacio-controles);
+}
+
+.resumen {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+    overflow-wrap: anywhere;
+}
+
+.ubicacion {
+    margin: 0;
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
+    color: var(--color-foreground);
+}
+
+.acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espacio-inline);
+}

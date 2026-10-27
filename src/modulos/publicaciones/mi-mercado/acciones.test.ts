@@ -11,6 +11,7 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSes
 const mocks = vi.hoisted(() => ({
     obtenerOperadorAutorizado: vi.fn(),
     actualizarPrecioPublicacion: vi.fn(),
+    incrementarPrecioPublicacion: vi.fn(),
     obtenerPublicacionesDeOperador: vi.fn(),
     mapearPublicacionesMiMercado: vi.fn(),
     revalidatePath: vi.fn(),
@@ -22,6 +23,8 @@ vi.mock("../../usuarios/operadores/operador-actual", () => ({
 
 vi.mock("./consultas-mi-mercado", () => ({
     actualizarPrecioPublicacion: mocks.actualizarPrecioPublicacion,
+    incrementarPrecioPublicacion: mocks.incrementarPrecioPublicacion,
+    ConflictoPublicacionError: class extends Error {},
     obtenerPublicacionesDeOperador: mocks.obtenerPublicacionesDeOperador,
     PublicacionNoEncontradaError: class extends Error {
         constructor() {
@@ -42,7 +45,7 @@ describe("actualizarPrecio", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         sesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
-        mocks.actualizarPrecioPublicacion.mockResolvedValue("2026-10-10T16:30:00Z");
+        mocks.actualizarPrecioPublicacion.mockResolvedValue({ fecha: "2026-10-10T16:30:00Z", precio: 110, version: 2 });
     });
 
     it.each([401, 403] as const)("impide guardar un precio con autorización %s", async (status) => {
@@ -52,13 +55,20 @@ describe("actualizarPrecio", () => {
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 
+    it("conserva el precio ausente al guardar desde la edición rápida", async () => {
+        mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Frutas & Más" });
+        mocks.actualizarPrecioPublicacion.mockResolvedValue({ fecha: "2026-10-10T16:30:00Z", precio: null, version: 2 });
+        expect(await actualizarPrecio(5, null, 13, 1)).toEqual({ publicacionEliminada: false, fecha: "2026-10-10T16:30:00Z", precio: null, version: 2 });
+        expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(13, 5, null, 1);
+    });
+
     it("usa el operador autenticado cuando no se indica un ID", async () => {
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Frutas & Más" });
 
         await actualizarPrecio(5, 110);
 
         expect(mocks.obtenerOperadorAutorizado).toHaveBeenCalledOnce();
-        expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(13, 5, 110);
+        expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(13, 5, 110, undefined);
         expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/mi-mercado");
         expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/mi-mercado/Frutas%20%26%20M%C3%A1s");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/operadores/Frutas%20%26%20M%C3%A1s");
@@ -70,7 +80,7 @@ describe("actualizarPrecio", () => {
         await actualizarPrecio(5, 110, 37);
 
         expect(mocks.obtenerOperadorAutorizado).toHaveBeenCalledExactlyOnceWith(37);
-        expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110);
+        expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110, undefined);
         expect(mocks.revalidatePath).not.toHaveBeenCalledWith("/mi-mercado/Operador%2037");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/operadores/Operador%2037");
     });
@@ -81,9 +91,9 @@ describe("actualizarPrecio", () => {
         const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
 
         try {
-            await expect(actualizarPrecio(5, 110, 37)).resolves.toEqual({ publicacionEliminada: false, fecha: "2026-10-10T16:30:00Z" });
+            await expect(actualizarPrecio(5, 110, 37)).resolves.toEqual({ publicacionEliminada: false, precio: 110, version: 2, fecha: "2026-10-10T16:30:00Z" });
 
-            expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110);
+            expect(mocks.actualizarPrecioPublicacion).toHaveBeenCalledExactlyOnceWith(37, 5, 110, undefined);
             expect(mocks.revalidatePath).toHaveBeenCalledTimes(4);
             expect(registrarError).toHaveBeenCalledOnce();
         } finally {

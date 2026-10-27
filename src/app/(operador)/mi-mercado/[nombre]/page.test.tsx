@@ -12,14 +12,14 @@ import Page from "./page";
 describe("/mi-mercado/[nombre]", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it("pasa el nombre del operador a Mi Mercado", async () => {
-        const contenido = await Page({ params: Promise.resolve({ nombre: "Frutas%20%26%20M%C3%A1s" }) });
-        expect(contenido.props.operadorNombre).toBe("Frutas & Más");
+    it.each(["Jorge Ferias", "Frutas & Más", "Frutas 100%", "Frutas %20", "%", "%ZZ", "%C3"])("recupera el nombre original del segmento codificado: %s", async (nombre) => {
+        const contenido = await Page({ params: Promise.resolve({ nombre: encodeURIComponent(nombre) }) });
+        expect(contenido.props.operadorNombre).toBe(nombre);
         expect(notFoundMock).not.toHaveBeenCalled();
     });
 
     it.each(["", "   "])("rechaza el nombre vacío %s", async (nombre) => {
-        await expect(Page({ params: Promise.resolve({ nombre }) })).rejects.toThrow("NOT_FOUND");
+        await expect(Page({ params: Promise.resolve({ nombre: encodeURIComponent(nombre) }) })).rejects.toThrow("NOT_FOUND");
         expect(notFoundMock).toHaveBeenCalledOnce();
     });
 });

@@ -1,13 +1,10 @@
-export type DatosAltaPublicacionOperador = {
+import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublicacion } from "./seleccion-publicacion";
+import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
+
+export type DatosAltaPublicacionOperador = SeleccionPublicacion & {
 	operadorId: number;
-	especieId: number;
-	variedadId: number;
-	presentacionId: number;
-	calibreId: number;
-	categoriaId: number;
-	paisId: number;
 	disponibilidad: boolean;
-	precio?: string;
+	precio?: string | null;
 	cantidadUnidades?: number | null;
 	fotografia?: string;
 };
@@ -39,21 +36,16 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 
 	const datos = valor as Record<string, unknown>;
 	const errores: string[] = [];
-	const campos = ["operadorId", "especieId", "variedadId", "presentacionId", "calibreId", "categoriaId", "paisId"] as const;
+	const seleccion = normalizarSeleccionPublicacion(datos);
+	if (!seleccion.esValido) errores.push(...seleccion.errores);
+	if (!idCatalogoValido(datos.operadorId)) errores.push("El campo operadorId es obligatorio.");
 
-	for (const campo of campos) {
-		if (typeof datos[campo] !== "number" || !Number.isSafeInteger(datos[campo]) || datos[campo] <= 0) {
-			errores.push(`El campo ${campo} es obligatorio.`);
-		}
-	}
-
-	if (typeof datos.disponibilidad !== "boolean") {
+	if (datos.disponibilidad !== undefined && typeof datos.disponibilidad !== "boolean") {
 		errores.push("La disponibilidad no es válida.");
 	}
 
-	if (datos.precio !== undefined && (typeof datos.precio !== "string" ||
-		(datos.precio.trim() !== "" && !/^\d{1,10}$/.test(datos.precio.trim())))) {
-		errores.push("El precio debe ser un número entero.");
+	if (datos.precio !== undefined && !precioPublicacionValido(datos.precio)) {
+		errores.push(PRECIO_PUBLICACION_INVALIDO);
 	}
 
 	if (datos.fotografia !== undefined && (typeof datos.fotografia !== "string" || !fotografiaValida(datos.fotografia))) {
@@ -67,5 +59,6 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 	}	
 
 	if (errores.length > 0) return { esValido: false, errores };
-	return { esValido: true, datos: datos as DatosAltaPublicacionOperador };
+	if (!seleccion.esValido) return seleccion;
+	return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true } as DatosAltaPublicacionOperador };
 }

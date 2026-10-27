@@ -179,13 +179,9 @@ describe("obtenerPerfilPublicoOperador", () => {
             publicacionActiva: true,
             publicacionDisponible: true,
             tipoPublicacion: "OPERADOR",
-            presentacion: {
-                nombrePresentacion: "Cajón",
-                variedad: {
-                    nombreVariedad: "Perita",
-                    especie: { nombreEspecie: "Tomate" },
-                },
-            },
+            especie: { nombreEspecie: "Tomate" },
+            variedad: { nombreVariedad: "Perita" },
+            presentacion: { nombrePresentacion: "Cajón" },
             categoria: { nombreCategoria: "Extra" },
             calibre: { codigoCalibre: "A" },
         };
@@ -229,13 +225,9 @@ describe("obtenerPerfilPublicoOperador", () => {
             publicacionActiva: true,
             publicacionDisponible: true,
             tipoPublicacion: "OPERADOR",
-            presentacion: {
-                nombrePresentacion: "Cajón",
-                variedad: {
-                    nombreVariedad: "Perita",
-                    especie: { nombreEspecie: "Tomate" },
-                },
-            },
+            especie: { nombreEspecie: "Tomate" },
+            variedad: { nombreVariedad: "Perita" },
+            presentacion: { nombrePresentacion: "Cajón" },
             categoria: { nombreCategoria: "Extra" },
             calibre: { codigoCalibre: "A" },
         };

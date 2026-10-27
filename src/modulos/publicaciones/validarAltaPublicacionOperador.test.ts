@@ -16,6 +16,8 @@ describe("alta de publicación de operador: precio", () => {
 	it.each([
 		["omitido", {}],
 		["vacío", { precio: "" }],
+		["nulo", { precio: null }],
+		["con ceros iniciales", { precio: "00125" }],
 		["entero", { precio: "1250" }],
 		["de diez dígitos", { precio: "1234567890" }],
 	] as const)("acepta un precio %s", (_caso, precio) => {
@@ -23,6 +25,8 @@ describe("alta de publicación de operador: precio", () => {
 	});
 
 	it.each([
+		["cero", "0"],
+		["solamente ceros", "000"],
 		["decimal con coma", "1250,50"],
 		["decimal con punto", "1250.50"],
 		["letras", "abc"],
@@ -35,7 +39,7 @@ describe("alta de publicación de operador: precio", () => {
 	] as const)("rechaza un precio con %s", (_caso, precio) => {
 		expect(validarAltaPublicacionOperador({ ...datosValidos, precio })).toEqual({
 			esValido: false,
-			errores: ["El precio debe ser un número entero."],
+			errores: ["El precio debe ser un número entero positivo de hasta 10 dígitos, sin decimales."],
 		});
 	});
 });
@@ -83,7 +87,7 @@ describe("validarAltaPublicacionOperador", () => {
 
 		expect(resultado).toEqual({
 			esValido: false,
-			errores: ["El campo operadorId es obligatorio.", "El campo especieId es obligatorio."],
+			errores: ["La especie es obligatoria y debe ser válida.", "El campo operadorId es obligatorio."],
 		});
 	});
 

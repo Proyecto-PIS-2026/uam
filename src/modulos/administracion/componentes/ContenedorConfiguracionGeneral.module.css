@@ -10,10 +10,10 @@
     flex: 1;
     min-width: 0;
     padding: 0.75rem 1rem;
-    border: 1px solid var(--color-border, #ddd);
+    border: 1px solid var(--color-border);
     border-radius: 0;
-    background-color: #fff;
-    color: var(--color-foreground, #222);
+    background-color: var(--color-surface);
+    color: var(--color-foreground);
     font: inherit;
     text-align: center;
     cursor: pointer;
@@ -35,43 +35,43 @@
 .boton:hover {
     position: relative;
     z-index: 2;
-    border-color: var(--color-primary, #00852b);
+    border-color: var(--color-primary);
 }
 
 .boton[aria-pressed="true"] {
     position: relative;
     z-index: 1;
-    border-color: var(--color-primary, #2563eb);
-    background-color: var(--color-secondary, #2563eb);
-    color: #fff;
+    border-color: var(--color-primary);
+    background-color: var(--color-secondary);
+    color: var(--color-surface);
     font-weight: 600;
 }
 
 .boton:focus-visible {
     z-index: 2;
-    outline: 2px solid var(--color-primary, #2563eb);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
 
 .panel {
     width: 100%;
     min-width: 0;
-    padding: 1.25rem 0;
+    padding: var(--espacio-secciones) 0 0;
 }
 
 @media (max-width: 480px) {
     .boton {
         padding: 0.65rem 0.35rem;
-        font-size: 0.875rem;
+        font-size: var(--tamano-texto-secundario);
         overflow-wrap: anywhere;
     }
 
     .boton[aria-pressed="true"] {
         position: relative;
         z-index: 1;
-        border-color: var(--color-primary, #00852b);
-        background-color: var(--color-secondary, #00852b);
-        color: #fff;
+        border-color: var(--color-primary);
+        background-color: var(--color-secondary);
+        color: var(--color-surface);
         font-weight: 600;
     }
 }
@@ -95,10 +95,10 @@
         flex: 0 0 10rem;
         min-width: 0;
         padding: 0.75rem 1rem;
-        border: 1px solid var(--color-border, #ddd);
+        border: 1px solid var(--color-border);
         border-radius: 0;
-        background-color: #fff;
-        color: var(--color-foreground, #222);
+        background-color: var(--color-surface);
+        color: var(--color-foreground);
         text-align: center;
     }
 
@@ -117,9 +117,9 @@
     .boton[aria-pressed="true"] {
         position: relative;
         z-index: 1;
-        border-color: var(--color-primary, #00852b);
-        background-color: var(--color-secondary, #00852b);
-        color: #fff;
+        border-color: var(--color-primary);
+        background-color: var(--color-secondary);
+        color: var(--color-surface);
         font-weight: 600;
     }
 
@@ -130,8 +130,8 @@
         box-sizing: border-box;
         margin-top: -1px;
         padding: 0rem;
-        border: 1px solid var(--color-border, #ddd);
+        border: 1px solid var(--color-border);
         border-radius: 0 0.5rem 0.5rem 0.5rem;
-        background-color: #fff;
+        background-color: var(--color-surface);
     }
 }

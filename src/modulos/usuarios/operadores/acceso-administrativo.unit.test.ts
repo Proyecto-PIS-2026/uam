@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { altaOperador } from "./altaOperador";
 import { bajaOperador } from "./bajaOperador";
-import { modificarOperador } from "./componentes/modificar-operador-por-admin/modificarOperador";
+import { modificarOperador } from "./acciones/modificarOperador";
 
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(),

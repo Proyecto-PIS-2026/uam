@@ -5,10 +5,10 @@
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: 1rem;
+  border-radius: var(--radio-panel);
   background: var(--color-surface);
   color: var(--color-foreground);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 7%);
+  box-shadow: var(--sombra-panel);
   transition: box-shadow 200ms ease, transform 200ms ease;
 }
 
@@ -47,14 +47,14 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.875rem 0.75rem 0.75rem;
+  gap: var(--espacio-controles);
+  padding: var(--padding-panel);
 }
 
 .nombreFila {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--espacio-textos);
   min-width: 0;
 }
 
@@ -65,9 +65,9 @@
   min-height: 1.5rem;
   overflow: hidden;
   color: var(--color-foreground);
-  font-size: 1rem;
+  font-size: var(--tamano-titulo-panel);
   font-weight: 600;
-  line-height: 1.25rem;
+  line-height: var(--interlineado-texto);
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -83,25 +83,25 @@
   display: flex;
   align-items: baseline;
   justify-content: flex-end;
-  gap: 0.25rem;
+  gap: var(--espacio-textos);
   margin-top: auto;
-  padding-top: 0.75rem;
+  padding-top: var(--espacio-controles);
   border-top: 1px solid var(--color-border);
   white-space: nowrap;
 }
 
 .cantidad {
   color: var(--color-primary);
-  font-size: 1.5rem;
+  font-size: var(--tamano-titulo-seccion);
   font-weight: 700;
   line-height: 1;
 }
 
 .etiqueta {
   color: var(--color-muted);
-  font-size: 0.75rem;
+  font-size: var(--tamano-texto-auxiliar);
   font-weight: 600;
-  line-height: 1rem;
+  line-height: var(--interlineado-texto);
   text-transform: uppercase;
 }
 
@@ -110,11 +110,6 @@
     aspect-ratio: 8 / 5;
   }
 
-  .nombre {
-    font-size: 1.125rem;
-    line-height: 1.375rem;
-    min-height: 1.5rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

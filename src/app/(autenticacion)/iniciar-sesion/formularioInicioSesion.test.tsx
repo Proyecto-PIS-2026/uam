@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     iniciarSesion,
@@ -141,5 +141,25 @@ describe("FormularioInicioSesion", () => {
             .toHaveTextContent("La solicitud de recuperación fue realizada correctamente.");
         expect(solicitarRecuperacionSimulada).toHaveBeenCalledWith("mercado_verde");
         expect(screen.getByRole("dialog")).toBeInTheDocument();
+        expect(within(screen.getByRole("dialog")).queryByRole("status")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    it.each(["respuesta", "conexion"])("muestra el fallo operativo como toast y permite reintentar: %s", async (fallo) => {
+        const error = "No se pudo registrar la solicitud. Intentá nuevamente.";
+        if (fallo === "respuesta") {
+            solicitarRecuperacionSimulada.mockResolvedValue({ error, tipoError: "operacion" });
+        } else {
+            solicitarRecuperacionSimulada.mockRejectedValue(new Error("Sin conexión"));
+        }
+        render(<FormularioInicioSesion />);
+        fireEvent.click(screen.getByRole("button", { name: "Solicitar recuperación de contraseña" }));
+        fireEvent.change(screen.getByLabelText("Nombre de usuario"), { target: { value: "mercado_verde" } });
+        fireEvent.click(screen.getByRole("button", { name: "Aceptar" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent(error);
+        expect(within(screen.getByRole("dialog")).queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByLabelText("Nombre de usuario")).toHaveValue("mercado_verde");
+        expect(screen.getByRole("button", { name: "Aceptar" })).toBeEnabled();
     });
 });

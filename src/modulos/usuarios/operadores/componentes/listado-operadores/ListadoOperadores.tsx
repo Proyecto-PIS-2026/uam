@@ -1,6 +1,9 @@
 "use client"; // https://nextjs.org/docs/app/api-reference/directives/use-client
 
-import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
+import EncabezadoPagina from "../../../../../compartido/EncabezadoPagina";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import { useState } from "react";
 import type { OperadorListado } from "../../consultas-listado-publico";
 import ControlesListadoOperadores from "./ControlesListadoOperadores";
@@ -9,13 +12,14 @@ import styles from "./ListadoOperadores.module.css";
 
 type ListadoOperadoresProps = {
     operadores: OperadorListado[];
+    puedeGestionar?: boolean;
 };
 
 function normalizarTexto(texto: string) {
     return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, ""); // Busque en internet como ignorar los tildes
 }
 
-export default function ListadoOperadores({ operadores }: ListadoOperadoresProps) {
+export default function ListadoOperadores({ operadores, puedeGestionar = false }: ListadoOperadoresProps) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState("a-z");
     const [naveSeleccionada, setNaveSeleccionada] = useState("Todas");
@@ -62,22 +66,8 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
     });
 
     const contenido = (
-        <section className="contenedor-pagina flex flex-col gap-6">
-            <header className="encabezado-pagina relative isolate overflow-hidden rounded-2xl bg-secondary">
-                <HojasDecorativas />
-
-                <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <h1 className="titulo-pagina text-white">
-                            Operadores
-                        </h1>
-
-                        <p className="mt-2 text-sm text-white/80 sm:text-base">
-                            Consultá los operadores de la plataforma.
-                        </p>
-                    </div>
-                </div>
-            </header>
+        <section className="contenedor-pagina secciones-pagina">
+            <EncabezadoPagina titulo="Operadores" subtitulo="Consultá los operadores de la plataforma." />
 
             <ControlesListadoOperadores
                 busqueda={busqueda}
@@ -90,13 +80,15 @@ export default function ListadoOperadores({ operadores }: ListadoOperadoresProps
             />
 
             {operadoresFiltrados.length === 0 ? (
-                <p role="status" className="py-8 text-center text-muted">
-                    {operadores.length === 0 ? "No hay operadores disponibles." : "No se encontraron operadores que coincidan con la búsqueda y la nave seleccionada."}
-                </p>
+                <EstadoVacio
+                    titulo={operadores.length === 0 ? "Todavía no hay operadores" : "No encontramos operadores"}
+                    descripcion={operadores.length === 0 ? "No hay operadores disponibles." : "No se encontraron operadores que coincidan con la búsqueda y la nave seleccionada."}
+                    icono={operadores.length === 0 ? <StorefrontOutlinedIcon /> : <SearchOffOutlinedIcon />}
+                />
             ) : (
                 <div className={styles.lista}>
                     {operadoresFiltrados.map((operador) => (
-                        <TarjetaOperador key={operador.id} operador={operador}/>
+                        <TarjetaOperador key={operador.id} operador={operador} puedeGestionar={puedeGestionar}/>
                     ))}
                 </div>
             )}

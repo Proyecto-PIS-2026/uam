@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import type { DatosModificarUsuarios, TipoUsuario, UsuarioParaModificar } from "../Tipos";
-import BuscadorUsuarios from "./BuscadorUsuario";
+import BuscadorUsuarios, { type FiltroRestablecimiento } from "./BuscadorUsuario";
 import ListaUsuarios from "./ListaUsuarios";
 import styles from "./ModificarUsuario.module.css";
 import { bajaOperador } from "@/modulos/usuarios/operadores/bajaOperador";
+import { bajaProductor } from "@/modulos/usuarios/productores/bajaProductor";
 
 interface ModificarUsuarioProps {
     datos: DatosModificarUsuarios;
@@ -20,19 +21,20 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
     const [busqueda, setBusqueda] = useState("");
     const [tipoUsuario, setTipoUsuario] = useState<TipoUsuario | "TODOS">("TODOS");
     const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<UsuarioParaModificar | null>(null);
-
+    const [restablecimiento, setRestablecimiento] = useState<FiltroRestablecimiento>("TODOS");
     const usuariosFiltrados = useMemo(() => {
         const texto = busqueda.trim().toLowerCase();
 
         return datos.usuarios.filter((usuario) => {
             if (tipoUsuario !== "TODOS" && usuario.rol !== tipoUsuario) return false;
+            if (restablecimiento === "SOLICITADO" && !usuario.solicitoRestablecimiento) return false;
             if (!texto) return true;
             if (usuario.username.toLowerCase().includes(texto)) return true;
             if (usuario.rol === "ADMINISTRADOR" && usuario.email.toLowerCase().includes(texto)) return true;
-            if (usuario.rol === "OPERADOR" && usuario.nombreFantasia.toLowerCase().includes(texto)) return true;
+            if (usuario.rol !== "ADMINISTRADOR" && usuario.nombreFantasia.toLowerCase().includes(texto)) return true;
             return false;
         });
-    }, [datos, busqueda, tipoUsuario]);
+    }, [datos, busqueda, tipoUsuario, restablecimiento]);
 
     function cambiarBusqueda(nuevaBusqueda: string) {
         setBusqueda(nuevaBusqueda);
@@ -45,12 +47,21 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         setUsuarioSeleccionado(null);
     }
 
+    function cambiarRestablecimiento(nuevoValor: FiltroRestablecimiento) {
+        setRestablecimiento(nuevoValor);
+        setUsuarioSeleccionado(null);
+    }   
+
     async function eliminarUsuario(usuario: UsuarioParaModificar) {
-        if (usuario.rol !== "OPERADOR") {
+        let resultado;
+        if (usuario.rol === "OPERADOR") {
+            resultado = await bajaOperador({ operadorId: usuario.operadorId });
+        } else if (usuario.rol === "PRODUCTOR") {
+            resultado = await bajaProductor({ productorId: usuario.productorId });
+        } else {
             throw new Error("La baja de este tipo de usuario todavía no está disponible.");
         }
 
-        const resultado = await bajaOperador({ operadorId: usuario.operadorId });
         if (!resultado.esValido) {
             throw new Error(resultado.errores.join(" "));
         }
@@ -59,8 +70,9 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         router.refresh();
     }
 
-    const rolParam = tipoUsuario !== "TODOS" ? tipoUsuario.toLowerCase() : "operador";
-    const linkAlta = `/alta-usuario?rol=${rolParam}`;
+    const linkAlta = tipoUsuario !== "TODOS"
+        ? `/alta-usuario?rol=${tipoUsuario.toLowerCase()}`
+        : "/alta-usuario";
 
     return (
         <section className={styles.tarjeta}>
@@ -71,8 +83,8 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
                 </Button>
             </div>
             <div className={styles.contenido}>
-                <BuscadorUsuarios busqueda={busqueda} tipoUsuario={tipoUsuario} onBusquedaChange={cambiarBusqueda} onTipoUsuarioChange={cambiarTipoUsuario}/>
-                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario}/>
+                <BuscadorUsuarios busqueda={busqueda} tipoUsuario={tipoUsuario} onBusquedaChange={cambiarBusqueda} onTipoUsuarioChange={cambiarTipoUsuario} restablecimiento={restablecimiento} onRestablecimientoChange={cambiarRestablecimiento}/>
+                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} hayFiltrosActivos={datos.usuarios.length > 0 && (busqueda.trim().length > 0 || tipoUsuario !== "TODOS" || restablecimiento !== "TODOS")} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario}/>
             </div>
         </section>
     );

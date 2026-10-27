@@ -44,13 +44,19 @@ describe("ListadoOperadores", () => {
         expect(screen.queryByText("Jose")).not.toBeInTheDocument();
     });
     
-    it("Mostrar todos los operadores con Todas seleccionado por defecto", () => {
-        render(<ListadoOperadores operadores={listaOperadores} />);
+    it.each([false, true])("muestra todos los operadores con sus enlaces según el permiso de gestión %s", (puedeGestionar) => {
+        render(<ListadoOperadores operadores={listaOperadores} puedeGestionar={puedeGestionar} />);
         expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Todas");
         expect(screen.getByText("Juan")).toBeInTheDocument();
         expect(screen.getByText("Jose")).toBeInTheDocument();
         expect(screen.getByText("Alberto")).toBeInTheDocument();
         expect(screen.getByText("Juan Mart")).toBeInTheDocument();
+        for (const operador of listaOperadores) {
+            expect(screen.getByText(operador.nombreFantasia).closest("a")).toHaveAttribute(
+                "href",
+                puedeGestionar ? `/gestion-operadores/${operador.id}` : `/operadores/${encodeURIComponent(operador.nombreFantasia)}?origen=operadores`,
+            );
+        }
     });
 
     //que funcione la busqueda

@@ -52,6 +52,8 @@ jobs:
         run: npm run db:setup
 
       - name: Ejecutar Suite Completa de Tests (Vitest)
+        env:
+          DATABASE_URL: ""
         run: npm run test:vitest
 
       - name: Instalar Navegadores de Playwright
@@ -62,6 +64,7 @@ jobs:
 
       - name: Iniciar servidor y ejecutar Tests E2E (Playwright)
         env:
+          DATABASE_URL_TEST: "postgresql://uam:uam_local@localhost:5432/uam_bp25?schema=public"
           E2E_OPERADOR_USU: ${{ secrets.E2E_OPERADOR_USU }}
           E2E_OPERADOR_PASS: ${{ secrets.E2E_OPERADOR_PASS }}
           E2E_PRODUCTOR_USU: ${{ secrets.E2E_PRODUCTOR_USU }}
@@ -71,6 +74,7 @@ jobs:
           E2E_INHABILITADO_USU: ${{ secrets.E2E_INHABILITADO_USU }}
           E2E_INHABILITADO_PASS: ${{ secrets.E2E_INHABILITADO_PASS }}
         run: |
+          node --input-type=module -e 'import pg from "pg"; const cliente = new pg.Client({ connectionString: process.env.DATABASE_URL }); await cliente.connect(); try { await cliente.query("CREATE DATABASE uam_bp25"); } finally { await cliente.end(); }'
           export SESSION_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
           npm run start &
           npx wait-on http://localhost:3000 --timeout 60000

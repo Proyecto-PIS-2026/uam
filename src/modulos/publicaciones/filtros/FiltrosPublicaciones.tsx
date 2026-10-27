@@ -6,9 +6,35 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
+import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 import styles from "./FiltrosPublicaciones.module.css";
 
-import type { PublicacionListado } from "../../consulta-mercado/acciones/Publicaciones";
+import type { FiltrosConsulta, OpcionProducto } from "../../consulta-mercado/acciones/filtros-consulta";
+
+type PublicacionFiltrable = {
+    especie: string;
+    variedad: string;
+    presentacion: string;
+    categoria: string;
+    calibre: string;
+    codigoCalibre: string;
+    precio: number | null;
+};
+
+type FiltrosPublicacionesProps<T extends PublicacionFiltrable> = {
+    publicaciones: T[];
+    opcionesRemotas?: OpcionProducto[];
+    navesDisponibles?: string[];
+    totalRemoto?: number;
+    alConsultar?: (consulta: FiltrosConsulta) => void;
+    especieFiltro: string;
+    obtenerNombreFantasia: (publicacion: T) => string;
+    alFiltrar?: (publicaciones: T[]) => void;
+    alLimpiar?: () => void;
+    alCambiarEspecie?: (especie: string) => void;
+    ordenInicial?: OrdenPublicaciones;
+    alCambiarOrden?: (orden: OrdenPublicaciones) => void;
+};
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
@@ -18,41 +44,43 @@ function normalizarTexto(texto: string) {
 
 const compararOpciones = (a: string, b: string) => a.localeCompare(b, "es", { sensitivity: "base" })
 
+// Comparacion de Precios
+const compararPrecios = (a: PublicacionFiltrable, b: PublicacionFiltrable, ascendente: boolean) => {
+    if (a.precio == null && b.precio == null) return 0;
+    if (a.precio == null) return 1;
+    if (b.precio == null) return -1;
+
+    return ascendente ? a.precio - b.precio : b.precio - a.precio;
+};
+
 export type OrdenPublicaciones = "ninguno" | "prioridad" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
 
-export function compararPublicacionesAlfabeticamente(a: Pick<PublicacionListado, "especie" | "variedad">, b: Pick<PublicacionListado, "especie" | "variedad">) {
+export function compararPublicacionesAlfabeticamente(a: Pick<PublicacionFiltrable, "especie" | "variedad">, b: Pick<PublicacionFiltrable, "especie" | "variedad">) {
     const especie = compararOpciones(a.especie, b.especie);
     return especie !== 0 ? especie : compararOpciones(a.variedad, b.variedad);
 }
 
-export function compararPublicacionesPorPrioridad(a: Pick<PublicacionListado, "especie" | "variedad">, b: Pick<PublicacionListado, "especie" | "variedad">) {
+export function compararPublicacionesPorPrioridad(a: Pick<PublicacionFiltrable, "especie" | "variedad">, b: Pick<PublicacionFiltrable, "especie" | "variedad">) {
     const especie = compararEspeciesPorPrioridad(a.especie, b.especie);
     return especie !== 0 ? especie : compararOpciones(a.variedad, b.variedad);
 }
 
-type FiltrosPublicacionesProps = {
-    publicaciones: PublicacionListado[];
-    especieFiltro: string;
-    alFiltrar?: (publicaciones: PublicacionListado[]) => void;
-    alLimpiar?: () => void;
-    alCambiarEspecie?: (especie: string) => void;
-    ordenInicial?: OrdenPublicaciones;
-    alCambiarOrden?: (orden: OrdenPublicaciones) => void;
-};
-
-export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden}: FiltrosPublicacionesProps) {
+export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({publicaciones, especieFiltro, obtenerNombreFantasia, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, navesDisponibles, totalRemoto, alConsultar}: FiltrosPublicacionesProps<T>) {
+    const opciones: OpcionProducto[] = opcionesRemotas ?? publicaciones;
+    const mostrarNave = navesDisponibles !== undefined;
     // Hooks useState para los filtros
     const [busqueda, setBusqueda] = useState("");                                           // Barra de busqueda
     const [precioMinimo, setPrecioMinimo] = useState("");                                   // Precio Minimo
     const [precioMaximo, setPrecioMaximo] = useState("");                                   // Precio Maximo
     const [especie, setEspecie] = useState(especieFiltro === "" ? "Todas" : especieFiltro); // Filtro Especie
     const [variedad, setVariedad] = useState(() => {
-        const variedadesIniciales = new Set(publicaciones.filter((publicacion) => publicacion.especie === especieFiltro).map((publicacion) => publicacion.variedad));
+        const variedadesIniciales = new Set(opciones.filter((publicacion) => publicacion.especie === especieFiltro).map((publicacion) => publicacion.variedad));
         return especieFiltro !== "" && variedadesIniciales.size === 1 && variedadesIniciales.has("-") ? "-" : "Todas";
-    });                                                                                  // Filtro Variedad
+    });                                                                                     // Filtro Variedad
     const [presentacion, setPresentacion] = useState("Todas");                              // Filtro Presentacion
     const [categoria, setCategoria] = useState("Todas");                                    // Filtro Categoria
     const [calibre, setCalibre] = useState("Todas");                                        // Filtro Calibre
+    const [nave, setNave] = useState("Todas");
 
     const [ultimaFaceta, setUltimaFaceta] = useState<"categoria" | "calibre" | null>(null);
 
@@ -65,14 +93,14 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
     // Filtros de Ordenamiento
     const [orden, setOrden] = useState<OrdenPublicaciones>(ordenInicial);
 
-    const [publicacionesAnteriores, setPublicacionesAnteriores] = useState(publicaciones);
+    const [publicacionesAnteriores, setPublicacionesAnteriores] = useState(opciones);
     const especieNotificada = useRef(especie);
 
     // Reconciliar antes de filtrar evita publicar resultados con selecciones que ya no existen.
-    if (publicacionesAnteriores !== publicaciones) {
-        setPublicacionesAnteriores(publicaciones);
-        const nuevaEspecie = especie === "Todas" || publicaciones.some((publicacion) => publicacion.especie === especie) ? especie : "Todas";
-        let publicacionesBase = nuevaEspecie === "Todas" ? publicaciones : publicaciones.filter((publicacion) => publicacion.especie === nuevaEspecie);
+    if (publicacionesAnteriores !== opciones) {
+        setPublicacionesAnteriores(opciones);
+        const nuevaEspecie = especie === "Todas" || opciones.some((publicacion) => publicacion.especie === especie) ? especie : "Todas";
+        let publicacionesBase = nuevaEspecie === "Todas" ? opciones : opciones.filter((publicacion) => publicacion.especie === nuevaEspecie);
         const variedadesDisponibles = new Set(publicacionesBase.map((publicacion) => publicacion.variedad));
         let nuevaVariedad = nuevaEspecie !== "Todas" && variedadesDisponibles.has(variedad) ? variedad : "Todas";
         if (nuevaEspecie !== "Todas" && variedadesDisponibles.size === 1 && variedadesDisponibles.has("-")) nuevaVariedad = "-";
@@ -105,80 +133,86 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Opciones de Filtros disponibles
     const especies = useMemo(() => {
-        const nombres = [...new Set(publicaciones.map((publicacion) => publicacion.especie))];
-        return nombres.sort(ordenInicial === "prioridad" ? compararEspeciesPorPrioridad : compararOpciones);
-    }, [publicaciones, ordenInicial]);
+        const nombres = [...new Set(opciones.map((publicacion) => publicacion.especie))];
+        return nombres.sort(compararEspeciesPorPrioridad);
+    }, [opciones]);
+
+    const naves = useMemo(() => {
+        const disponibles = new Set(navesDisponibles ?? []);
+        if (nave !== "Todas") disponibles.add(nave);
+        return [...disponibles].sort(compararOpciones);
+    }, [navesDisponibles, nave]);
 
     // Opciones de Variedad disponibles segun Especie
     const variedades = useMemo(() => {
-        let publicacionesBase = publicaciones;
+        let publicacionesBase = opciones;
         if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === especie);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad))].sort(compararOpciones);
-    }, [publicaciones, especie]);
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad).filter(Boolean))].sort(compararOpciones);
+    }, [opciones, especie]);
 
     // Publicaciones segun Especie, Variedad y Presentacion
     const publicacionesSegunJerarquia = useMemo(() => {
-        let publicacionesBase = publicaciones;
-        if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+        let publicacionesBase = opciones;
+        if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === especie);
-        if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+        if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.variedad === variedad);
-        if (presentacion !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => 
+        if (presentacion !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.presentacion === presentacion);
 
         return publicacionesBase;
-    }, [publicaciones, especie, variedad, presentacion]);
+    }, [opciones, especie, variedad, presentacion]);
 
     // Opciones de Presentacion disponibles segun Especie y Variedad
     const presentaciones = useMemo(() => {
-        let publicacionesBase = publicaciones;
+        let publicacionesBase = opciones;
         if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === especie);
         if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.variedad === variedad);
 
-        return [...new Set(publicacionesBase.map((publicacion) =>  publicacion.presentacion))].sort(compararOpciones);
-    }, [publicaciones, especie, variedad]);
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.presentacion).filter(Boolean))].sort(compararOpciones);
+    }, [opciones, especie, variedad]);
 
     // Opciones de Categoria disponibles segun Calibre
     const categorias = useMemo(() => {
         let publicacionesBase = publicacionesSegunJerarquia;
 
-        if (calibre !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+        if (calibre !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.calibre === calibre);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.categoria))].sort(compararOpciones);
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.categoria).filter(Boolean))].sort(compararOpciones);
     }, [publicacionesSegunJerarquia, calibre]);
 
     // Opciones de Calibre disponibles segun Categoria
     const calibres = useMemo(() => {
         let publicacionesBase = publicacionesSegunJerarquia;
-        if (categoria !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+        if (categoria !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.categoria === categoria);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.calibre))].sort(compararOpciones);
+        return [...new Set(publicacionesBase.map((publicacion) => publicacion.calibre).filter(Boolean))].sort(compararOpciones);
     }, [publicacionesSegunJerarquia, categoria]);
 
     // Obtener Publicaciones segun la jerarquia de filtros
     const obtenerPublicacionesJerarquia = (nuevaEspecie: string, nuevaVariedad: string, nuevaPresentacion: string) => {
-        let publicacionesBase = publicaciones;
-        if (nuevaEspecie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+        let publicacionesBase = opciones;
+        if (nuevaEspecie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === nuevaEspecie);
-        if (nuevaVariedad !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => 
+        if (nuevaVariedad !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.variedad === nuevaVariedad);
-        if (nuevaPresentacion !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => 
+        if (nuevaPresentacion !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.presentacion === nuevaPresentacion);
 
         return publicacionesBase;
     };
 
     // Ajuste de filtros de Categoria y Calibre
-    const ajustarFiltrosCategoriaCalibre = (publicacionesBase: PublicacionListado[]) => {
-        const categoriaValida = categoria === "Todas" || publicacionesBase.some((publicacion) => 
+    const ajustarFiltrosCategoriaCalibre = (publicacionesBase: OpcionProducto[]) => {
+        const categoriaValida = categoria === "Todas" || publicacionesBase.some((publicacion) =>
             publicacion.categoria === categoria);
-        const calibreValido = calibre === "Todas" || publicacionesBase.some((publicacion) => 
+        const calibreValido = calibre === "Todas" || publicacionesBase.some((publicacion) =>
             publicacion.calibre === calibre);
         if (!categoriaValida) setCategoria("Todas");
         if (!calibreValido) setCalibre("Todas");
@@ -193,17 +227,9 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         }
     };
 
-    // Comparacion de Precios
-    const compararPrecios = (a: PublicacionListado, b: PublicacionListado, ascendente: boolean) => {
-        if (a.precio == null && b.precio == null) return 0;
-        if (a.precio == null) return 1;
-        if (b.precio == null) return -1;
-
-        return ascendente ? a.precio - b.precio : b.precio - a.precio;
-    }; 
-
     // Aplicacion de Filtros
     const publicacionesFiltradas = useMemo(() => {
+        if (opcionesRemotas) return [];
         const textoBusqueda = normalizarTexto(busqueda.trim());
         const minimo = precioMinimo.trim() === "" ? null : Number(precioMinimo);
         const maximo = precioMaximo.trim() === "" ? null : Number(precioMaximo);
@@ -215,7 +241,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
             if (presentacion !== "Todas" && publicacion.presentacion !== presentacion) return false;
             if (categoria !== "Todas" && publicacion.categoria !== categoria) return false;
             if (calibre !== "Todas" && publicacion.calibre !== calibre) return false;
-            
+
             // Filtro de busqueda
             if (textoBusqueda !== "") {
                 const palabrasBusqueda = textoBusqueda.split(/\s+/);
@@ -226,7 +252,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                     publicacion.categoria,
                     publicacion.calibre,
                     publicacion.codigoCalibre,
-                    publicacion.operador.nombreFantasia,
+                    obtenerNombreFantasia(publicacion),
                 ].map(normalizarTexto);
                 const coincide = palabrasBusqueda.every((palabra) =>
                     camposBusqueda.some((campo) => campo.includes(palabra))
@@ -247,8 +273,14 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         if (orden === "alfabeticoDesc") return [...filtradas].sort((a, b) => compararPublicacionesAlfabeticamente(b, a));
 
         return filtradas;
-    }, [publicaciones, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden]);
-    
+    }, [publicaciones, opcionesRemotas, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden, obtenerNombreFantasia]);
+
+    useEffect(() => {
+        alConsultar?.({ busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden, ...(mostrarNave ? { nave } : {}) });
+    }, [alConsultar, busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden, mostrarNave, nave]);
+
+    const cantidadResultados = totalRemoto ?? publicacionesFiltradas.length;
+
     // Devolver al Componente Padre
     useEffect(() => { alFiltrar?.(publicacionesFiltradas) }, [publicacionesFiltradas, alFiltrar]);
 
@@ -273,6 +305,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
         setPresentacion("Todas");
         setCategoria("Todas");
         setCalibre("Todas");
+        setNave("Todas");
 
         if (ordenInicial !== "prioridad") {
             setOrden(ordenInicial);
@@ -286,7 +319,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Manejador para el cambio de Especie
     const manejarCambioEspecie = (nuevaEspecie: string) => {
-        let publicacionesBase = publicaciones;
+        let publicacionesBase = opciones;
         if (nuevaEspecie !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.especie === nuevaEspecie);
         const variedadesNuevas = [...new Set(publicacionesBase.map((p) => p.variedad))].sort(compararOpciones);
         const nuevaVariedad =  nuevaEspecie !== "Todas" && variedadesNuevas.length === 1 && variedadesNuevas[0] === "-" ? "-" : "Todas";
@@ -327,7 +360,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     // Manejador para el cambio de Calibre
     const manejarCambioCalibre = (nuevoCalibre: string) => {
-        const categoriaValida = nuevoCalibre === "Todas" || categoria === "Todas" || publicacionesSegunJerarquia.some( (publicacion) => 
+        const categoriaValida = nuevoCalibre === "Todas" || categoria === "Todas" || publicacionesSegunJerarquia.some( (publicacion) =>
             publicacion.calibre === nuevoCalibre && publicacion.categoria === categoria);
         setCalibre(nuevoCalibre);
         setUltimaFaceta("calibre");
@@ -336,7 +369,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
     return (
         <div className={styles.contenedor}>
-            <div className={`${styles.layoutFiltros} ${mostrarFiltros ? styles.filtrosAbiertos : ""} ${rangoPrecioInvalido ? styles.rangoInvalido : ""}`}>
+            <div className={`${styles.layoutFiltros} ${mostrarFiltros ? styles.filtrosAbiertos : ""} ${rangoPrecioInvalido ? styles.rangoInvalido : ""} ${mostrarNave ? styles.conFiltroNave : ""}`}>
                 {/* Barra de busqueda */}
                 <TextField fullWidth size="small" label="Buscar publicaciones" type="search" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} className={`${styles.selectMui} ${styles.filtroBuscador}`}
                     slotProps={{input: {startAdornment: (<SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }}/>)}}}
@@ -352,18 +385,29 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                         </MenuItem>
                     ))}
                 </TextField>
+                {mostrarNave && (
+                    <TextField select fullWidth label="Nave" value={nave} onChange={(evento) => setNave(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroNave}`} slotProps={propiedadesMenuSelect}>
+                        <MenuItem value="Todas" className={styles.opcionSelect}>Todas</MenuItem>
+                        {naves.map((opcion) => (
+                            <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}>
+                                {opcion === "Tinglado" ? opcion : `Nave ${opcion}`}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                )}
                 {/* Precio minimo */}
                 <div className={styles.filtroPrecioMinimo}>
-                    <TextField fullWidth size="small" id="precio-minimo" label="Precio Mínimo" type="text" value={precioMinimo} placeholder="$ 0" className={styles.selectMui}
+                    <TextField fullWidth size="small" id="precio-minimo" label="Precio Mínimo" type="text" value={precioMinimo} placeholder="Sin mínimo" className={styles.selectMui}
                         slotProps={{
                             htmlInput: {
                                 inputMode: "numeric",
-                                pattern: "[0-9]*",
+                                pattern: "0*[1-9][0-9]*",
+                                maxLength: MAXIMO_DIGITOS_PRECIO,
                             },
                         }}
                         onChange={(evento) => {
                             const valor = evento.target.value;
-                            if (/^[0-9]*$/.test(valor)) setPrecioMinimo(valor);
+                            if (esEntradaPrecioPublicacion(valor)) setPrecioMinimo(valor);
                         }}
                     />
                 </div>
@@ -373,12 +417,13 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
                         slotProps={{
                             htmlInput: {
                                 inputMode: "numeric",
-                                pattern: "[0-9]*",
+                                pattern: "0*[1-9][0-9]*",
+                                maxLength: MAXIMO_DIGITOS_PRECIO,
                             },
                         }}
                         onChange={(evento) => {
                             const valor = evento.target.value;
-                            if (/^[0-9]*$/.test(valor)) setPrecioMaximo(valor);
+                            if (esEntradaPrecioPublicacion(valor)) setPrecioMaximo(valor);
                         }}
                     />
                 </div>
@@ -501,7 +546,7 @@ export default function FiltrosPublicaciones({publicaciones, especieFiltro, alFi
 
             {/* Boton para limpiar filtros */}
             <div className={styles.pie}>
-                <span className={styles.resultados}> {publicacionesFiltradas.length}{" "} {publicacionesFiltradas.length === 1 ? "publicación" : "publicaciones"}</span>
+                <span className={styles.resultados}> {cantidadResultados}{" "} {cantidadResultados === 1 ? "publicación" : "publicaciones"}</span>
                 <button type="button" className={styles.limpiar} onClick={limpiarFiltros}> Limpiar filtros </button>
             </div>
         </div>

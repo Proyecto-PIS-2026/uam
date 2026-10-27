@@ -1,0 +1,152 @@
+.ampliarFoto {
+    position: absolute;
+    inset: 0;
+    border: none;
+    border-radius: inherit;
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.ampliarFoto:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: -4px;
+}
+
+.modalFoto.modalFoto {
+    position: relative;
+    width: min(50rem, calc(100vw - 2rem));
+    margin: var(--espacio-secciones);
+    padding: 0;
+    border-radius: var(--radio-panel);
+    overflow: hidden;
+    background-color: var(--color-surface);
+}
+
+.fotoAmpliada {
+    position: relative;
+    width: 100%;
+    height: min(38rem, 80dvh);
+}
+
+.imagenAmpliada {
+    object-fit: cover;
+    object-position: center;
+}
+
+.cerrarFoto {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 1;
+}
+
+.cerrarFoto.cerrarFoto:hover {
+    background-color: var(--color-surface);
+}
+
+.cerrarFoto.cerrarFoto:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: -4px;
+}
+
+.ubicaciones {
+    margin: 0;
+    min-width: 0;
+}
+
+.tituloUbicaciones {
+    margin: 0 0 var(--espacio-inline);
+    color: var(--color-foreground);
+    font-size: var(--tamano-titulo-panel);
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+}
+
+.listaUbicaciones {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-controles);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ubicacion {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-controles);
+    min-height: 5rem;
+    padding: var(--espacio-controles);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background-color: var(--color-surface);
+    color: var(--color-secondary);
+    text-decoration: none;
+    transition: background-color 150ms, border-color 150ms;
+    box-sizing: border-box;
+}
+
+.ubicacion:hover,
+.ubicacion:focus-visible {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+}
+
+.ubicacion:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+}
+
+.iconoUbicacion {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.informacionUbicacion {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--espacio-textos);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.nombreUbicacion {
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
+}
+
+.descripcionUbicacion {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+}
+
+.flechaUbicacion {
+    flex-shrink: 0;
+}
+
+@media (width < 768px) {
+
+    .modalFoto.modalFoto {
+        width: min(32rem, calc(100vw - 1.5rem));
+        margin: var(--espacio-controles);
+    }
+
+    .fotoAmpliada {
+        height: min(30rem, 75dvh);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ubicacion {
+        transition: none;
+    }
+}

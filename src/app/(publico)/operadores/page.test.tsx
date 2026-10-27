@@ -54,16 +54,20 @@ describe("Página de operadores", () => {
         obtenerSesionMock.mockResolvedValue(null);
     });
 
-    it("redirige al operador a Mi Mercado sin consultar el listado público", async () => {
-        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+    it.each([
+        { rol: "OPERADOR", destino: "/mi-mercado" },
+        { rol: "PRODUCTOR", destino: "/mi-mercado/productor" },
+    ] as const)("redirige a $rol a Mi Mercado sin consultar el listado público", async ({ rol, destino }) => {
+        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
 
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
 
-        expect(redirectMock).toHaveBeenCalledWith("/mi-mercado");
+        expect(redirectMock).toHaveBeenCalledExactlyOnceWith(destino);
+        expect(obtenerSesionMock).toHaveBeenCalledOnce();
         expect(obtenerOperadoresMock).not.toHaveBeenCalled();
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("conserva el listado público para la sesión %s", async (rol) => {
+    it.each([null, "ADMINISTRADOR"] as const)("adapta los enlaces del listado a la sesión %s", async (rol) => {
         obtenerSesionMock.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
         obtenerOperadoresMock.mockResolvedValue(operadores);
 
@@ -72,6 +76,8 @@ describe("Página de operadores", () => {
         expect(redirectMock).not.toHaveBeenCalled();
         expect(obtenerOperadoresMock).toHaveBeenCalledOnce();
         expect(contenido.props.children.props.children.props.operadores).toBe(operadores);
+        expect(contenido.props.children.props.children.props.puedeGestionar).toBe(rol === "ADMINISTRADOR");
+        expect(obtenerSesionMock).toHaveBeenCalledOnce();
     });
 
     it("consulta los operadores y los pasa al listado", async () => {

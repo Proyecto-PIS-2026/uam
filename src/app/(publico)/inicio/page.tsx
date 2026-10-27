@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import Inicio from "../../../modulos/consulta-mercado/inicio/inicio";
+import { redirigirProductorAMiMercado } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerEspeciesInicio, obtenerUrlListaInteligente } from "../../../modulos/consulta-mercado/inicio/consultas-inicio";
 
 export const metadata = {
@@ -8,6 +9,7 @@ export const metadata = {
 };
 
 export default async function Page() {
+  await redirigirProductorAMiMercado();
   const [especies, urlListaInteligente] = await Promise.all([
     obtenerEspeciesInicio(),
     obtenerUrlListaInteligente(),

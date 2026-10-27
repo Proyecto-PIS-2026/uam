@@ -1,0 +1,527 @@
+[
+  {
+    "id": "column.public.publicacion.variedadId",
+    "label": "Add column \"variedadId\" to \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "variedadId",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"variedadId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "variedadId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"variedadId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ADD COLUMN \"variedadId\" int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"variedadId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "variedadId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.publicacion.especieId",
+    "label": "Add column \"especieId\" to \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "especieId",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"especieId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "especieId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"especieId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ADD COLUMN \"especieId\" int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"especieId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "especieId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.completar_especie_variedad_publicaciones",
+    "label": "Conservar especie y variedad de las publicaciones existentes",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Copiar la especie y variedad antes de permitir atributos vacíos",
+        "sql": "UPDATE \"public\".\"publicacion\" AS publicacion\nSET \"especieId\" = variedad.\"especieId\", \"variedadId\" = variedad.\"id\"\nFROM \"public\".\"presentacion\" AS presentacion\nJOIN \"public\".\"variedad\" AS variedad ON variedad.\"id\" = presentacion.\"variedadId\"\nWHERE publicacion.\"presentacionId\" = presentacion.\"id\";"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "alterNullability.setNotNull.publicacion.especieId",
+    "label": "Set NOT NULL on \"publicacion\".\"especieId\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "especieId",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"especieId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "especieId"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"especieId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"publicacion\" WHERE \"especieId\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"especieId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ALTER COLUMN \"especieId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"especieId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "especieId",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.publicacion.calibreId",
+    "label": "Drop NOT NULL on \"publicacion\".\"calibreId\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "calibreId",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"calibreId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "calibreId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"calibreId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ALTER COLUMN \"calibreId\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"calibreId\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "calibreId",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.publicacion.categoriaId",
+    "label": "Drop NOT NULL on \"publicacion\".\"categoriaId\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "categoriaId",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"categoriaId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "categoriaId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"categoriaId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ALTER COLUMN \"categoriaId\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"categoriaId\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "categoriaId",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.publicacion.presentacionId",
+    "label": "Drop NOT NULL on \"publicacion\".\"presentacionId\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "presentacionId",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"presentacionId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "presentacionId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"presentacionId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ALTER COLUMN \"presentacionId\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"presentacionId\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "presentacionId",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.publicacionOperador.paisId",
+    "label": "Drop NOT NULL on \"publicacionOperador\".\"paisId\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "paisId",
+        "table": "publicacionOperador"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paisId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionOperador",
+          "paisId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"paisId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionOperador\" ALTER COLUMN \"paisId\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paisId\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionOperador",
+          "paisId",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.publicacionProductor.paisId",
+    "label": "Drop NOT NULL on \"publicacionProductor\".\"paisId\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "paisId",
+        "table": "publicacionProductor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paisId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "paisId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"paisId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacionProductor\" ALTER COLUMN \"paisId\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paisId\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacionProductor",
+          "paisId",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacion.publicacion_especieId_idx_23a2c94e",
+    "label": "Create index \"publicacion_especieId_idx_23a2c94e\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacion_especieId_idx_23a2c94e",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacion_especieId_idx_23a2c94e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_especieId_idx_23a2c94e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacion_especieId_idx_23a2c94e\"",
+        "sql": "CREATE INDEX \"publicacion_especieId_idx_23a2c94e\" ON \"public\".\"publicacion\" (\"especieId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacion_especieId_idx_23a2c94e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_especieId_idx_23a2c94e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacion.publicacion_variedadId_idx_33d5d76b",
+    "label": "Create index \"publicacion_variedadId_idx_33d5d76b\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacion_variedadId_idx_33d5d76b",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacion_variedadId_idx_33d5d76b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_variedadId_idx_33d5d76b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacion_variedadId_idx_33d5d76b\"",
+        "sql": "CREATE INDEX \"publicacion_variedadId_idx_33d5d76b\" ON \"public\".\"publicacion\" (\"variedadId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacion_variedadId_idx_33d5d76b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_variedadId_idx_33d5d76b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacion.publicacion_especieId_fkey",
+    "label": "Add foreign key \"publicacion_especieId_fkey\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacion_especieId_fkey",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacion_especieId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_especieId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacion_especieId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\"\nADD CONSTRAINT \"publicacion_especieId_fkey\"\nFOREIGN KEY (\"especieId\")\nREFERENCES \"public\".\"especie\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacion_especieId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_especieId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacion.publicacion_variedadId_fkey",
+    "label": "Add foreign key \"publicacion_variedadId_fkey\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacion_variedadId_fkey",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacion_variedadId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_variedadId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacion_variedadId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\"\nADD CONSTRAINT \"publicacion_variedadId_fkey\"\nFOREIGN KEY (\"variedadId\")\nREFERENCES \"public\".\"variedad\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacion_variedadId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_variedadId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ]
+  }
+]

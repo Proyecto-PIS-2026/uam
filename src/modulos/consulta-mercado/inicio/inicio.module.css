@@ -1,7 +1,7 @@
 .pagina {
     position: relative;
     isolation: isolate;
-    min-height: 100dvh;
+    flex: 1;
     background: var(--color-background);
     color: var(--color-foreground);
 }
@@ -13,9 +13,9 @@
     width: 100%;
     max-width: var(--ancho-maximo-pagina);
     margin: 0 auto;
-    padding: 1.5rem var(--padding-exterior-pagina) var(--padding-exterior-pagina);
+    padding: var(--padding-exterior-pagina);
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--espacio-secciones);
 }
 
 .hero {
@@ -29,14 +29,14 @@
     border-bottom: 1px solid var(--color-border);
     background: var(--color-primary-soft);
     color: var(--color-foreground);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+    box-shadow: var(--sombra-panel);
 }
 
 .heroTexto {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     grid-row: 2;
     padding: 1.5rem var(--padding-exterior-pagina) 1.75rem;
 }
@@ -53,7 +53,7 @@
     max-width: 34rem;
     color: var(--color-foreground);
     font-size: 0.9375rem;
-    line-height: 1.5;
+    line-height: var(--interlineado-texto);
 }
 
 .heroImagen {
@@ -119,8 +119,8 @@
   .tituloMobile {
     display: block;
     padding: var(--padding-exterior-pagina) var(--padding-exterior-pagina) 0;
-    color: black;
-    font-size: 1.75rem;
+    color: var(--color-foreground);
+    font-size: var(--tamano-titulo-pagina);
     font-weight: 800;
     line-height: 1.1;
   }
@@ -129,14 +129,14 @@
 .accesos {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     margin: 0;
 }
 
 .especies {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--espacio-secciones);
 }
 
 .acceso {
@@ -145,15 +145,15 @@
     min-height: 4.5rem;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
+    gap: var(--espacio-inline);
+    padding: var(--espacio-controles);
     border: 1px solid var(--color-border);
-    border-radius: 1rem;
+    border-radius: var(--radio-panel);
     background: var(--color-surface);
     color: var(--color-foreground);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+    box-shadow: var(--sombra-panel);
     font-family: inherit;
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     text-align: center;
     text-decoration: none;
@@ -190,15 +190,16 @@
     width: 100%;
     padding: var(--padding-titulo-pagina);
     border: 1px solid var(--color-primary-hover);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-panel);
     background: var(--color-secondary);
-    color: white;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+    color: var(--color-titulo-pagina);
+    box-shadow: var(--sombra-panel);
 }
 
 .titulo {
     position: relative;
     z-index: 1;
+    color: var(--color-titulo-pagina);
     font-size: var(--tamano-titulo-pagina);
     font-weight: 700;
     line-height: var(--interlineado-titulo-pagina);
@@ -207,15 +208,18 @@
 .subtitulo {
     position: relative;
     z-index: 1;
-    color: rgb(168, 208, 93);
-    font-size: 0.75rem;
+    margin-top: var(--espacio-textos);
+    color: var(--color-subtitulo-pagina);
+    font-size: var(--tamano-subtitulo-pagina);
+    font-weight: 400;
+    line-height: var(--interlineado-subtitulo-pagina);
 }
 
 .controles {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 9rem;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 
 .filtroBuscador {
@@ -242,7 +246,10 @@
 }
 
 .selectMui :global(.MuiOutlinedInput-root) {
+    min-height: var(--alto-control);
+    border-radius: var(--radio-control);
     background-color: var(--color-surface);
+    font-size: var(--tamano-texto-secundario);
 }
 
 .selectMui :global(.MuiOutlinedInput-notchedOutline) {
@@ -255,6 +262,10 @@
 
 .selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-primary);
+}
+
+.selectMui :global(.MuiInputLabel-root) {
+    font-size: var(--tamano-texto-secundario);
 }
 
 .selectMui :global(.MuiInputLabel-root.Mui-focused) {
@@ -272,33 +283,24 @@
 .lista {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-}
-
-.sinResultados {
-    padding: 2rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
-    background: var(--color-surface);
-    color: var(--color-muted);
-    text-align: center;
+    gap: var(--espacio-controles);
 }
 
 .paginacion {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 
 .botonPagina {
-    min-height: 2.75rem;
-    padding: 0.5rem 0.875rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
     border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     color: var(--color-foreground);
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -316,7 +318,7 @@
 
 .paginaActual {
     color: var(--color-muted);
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     white-space: nowrap;
 }
 
@@ -331,17 +333,17 @@
 
     .accesos {
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 1rem;
+        gap: var(--espacio-secciones);
     }
 
     .acceso {
         min-height: 5rem;
-        font-size: 1rem;
+        font-size: var(--tamano-texto);
     }
 
     .lista {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1rem;
+        gap: var(--espacio-secciones);
     }
 }
 
@@ -406,27 +408,4 @@
     .lista {
         grid-template-columns: repeat(5, minmax(0, 1fr));
     }
-}
-
-.avisoSnackbar {
-    width: fit-content;
-    max-width: calc(100vw - 2rem);
-    margin-inline: auto;
-}
-
-.avisoSnackbar :global(.MuiAlert-root) {
-    width: fit-content;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.avisoAlerta {
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.avisoSnackbar :global(.MuiAlert-action) {
-    align-items: center;
-    padding-top: 0;
-    padding-bottom: 0.1rem;
 }

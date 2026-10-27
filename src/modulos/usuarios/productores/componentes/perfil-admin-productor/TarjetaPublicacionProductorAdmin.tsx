@@ -1,0 +1,88 @@
+import ImagenPublicacion from "../../../../publicaciones/componentes/ImagenPublicacion";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
+import styles from "./TarjetaPublicacionProductorAdmin.module.css";
+
+const formatoPrecio = new Intl.NumberFormat("es-UY", {
+    style: "currency",
+    currency: "UYU",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+});
+
+type TarjetaPublicacionProductorAdminProps = {
+    publicacion: PublicacionPerfilAdminProductor;
+    alConsultar: () => void;
+};
+
+export default function TarjetaPublicacionProductorAdmin({ publicacion, alConsultar }: TarjetaPublicacionProductorAdminProps) {
+    const variedad = publicacion.variedad?.trim();
+    const nombreProducto = variedad && variedad !== "-" ? `${publicacion.especie} - ${variedad}` : publicacion.especie;
+    // const ubicacion = publicacion.ubicaciones.map((lugar) => lugar.nombre).join(" · ");
+
+    return (
+        <article className={styles.tarjeta} aria-label={`Ver detalles de ${nombreProducto}`}>
+            <div className={styles.contenedorImagen}>
+                <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 700px) 96px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.imagen} reemplazo={
+                    <div className={styles.sinFoto}>
+                        <ImageOutlinedIcon className={styles.iconoFoto} />
+                        <span className={styles.textoSinFotoMobile}>Foto</span>
+                        <span className={styles.textoSinFotoWeb}>Sin foto disponible</span>
+                    </div>
+                } />
+            </div>
+
+            <div className={styles.contenido}>
+                <div className={styles.encabezado}>
+                    <div className="flex w-full min-w-0 items-start justify-between gap-[var(--espacio-inline)]">
+                        <h3 className={`${styles.especie} min-w-0 flex-1`} title={nombreProducto}>{nombreProducto}</h3>
+                        <span
+                            className={`
+                                ${styles.estado}
+                                ${
+                                    publicacion.disponible
+                                        ? styles.estadoDisponible
+                                        : styles.estadoOculto
+                                }
+                            `}
+                        >
+                            {publicacion.disponible
+                                ? "Disponible"
+                                : "No disponible"}
+                        </span>
+                    </div>
+                    <p className={styles.informacionWeb}>{publicacion.calibre?.trim() || "-"} · Categoría {publicacion.categoria?.trim() || "-"}</p>
+                </div>
+                <div className={styles.cuerpo}>
+                    <div className={styles.informacionMobile}>
+                        <div className={styles.dato}>
+                            <span className={styles.etiqueta}>Calibre</span>
+                            <span className={styles.chip}>{publicacion.calibre?.trim() || "-"}</span>
+                        </div>
+                        <div className={styles.dato}>
+                            <span className={styles.etiqueta}>Cat.</span>
+                            <span className={styles.chip}>{publicacion.categoria?.trim() || "-"}</span>
+                        </div>
+                    </div>
+                    <div className={styles.contenedorPrecio}>
+                        {publicacion.precio != null ? (
+                            <span className={styles.precio}>{formatoPrecio.format(Number(publicacion.precio))}</span>
+                        ) : (
+                            <span className={styles.consultarPrecio}>Sin precio</span>
+                        )}
+                        {publicacion.presentacion?.trim() && publicacion.presentacion.trim() !== "-" && (
+                            <span className={styles.presentacionPrecio}>por {publicacion.presentacion.trim()}</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+            <button
+                type="button"
+                className={styles.consultar}
+                aria-label={`Ver detalles de ${nombreProducto}`}
+                aria-haspopup="dialog"
+                onClick={alConsultar}
+            />
+        </article>
+    );
+}

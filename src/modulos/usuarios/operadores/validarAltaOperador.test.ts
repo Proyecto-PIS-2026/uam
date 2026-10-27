@@ -16,6 +16,15 @@ function armarDatos(sobrescribir: Record<string, unknown> = {}) {
 }
 
 describe("validar alta de operador", () => {
+	it.each([".", "..", " . ", " .. "])("rechaza el nombre reservado de ruta %j", (nombre) => {
+		const resultado = validarAltaOperador(armarDatos({ nombre }));
+		expect(resultado).toEqual({ esValido: false, errores: ['El nombre no puede ser "." ni "..".'] });
+	});
+
+	it.each(["Frutas S.A.", "..."])("acepta otros nombres con puntos: %s", (nombre) => {
+		expect(validarAltaOperador(armarDatos({ nombre })).esValido).toBe(true);
+	});
+
 	it("acepta datos válidos", () => {
 		const resultado = validarAltaOperador(armarDatos());
 
@@ -54,6 +63,20 @@ describe("validar alta de operador", () => {
 		if (resultado.esValido) return;
 		expect(resultado.errores).toContain("El nombre de usuario debe tener al menos 3 caracteres.");
 	});
+
+    it.each(["operador@mercado", "@operador", "operador@"])("rechaza el usuario %s", (nombreUsuario) => {
+        const resultado = validarAltaOperador(armarDatos({ nombreUsuario }));
+        expect(resultado.esValido).toBe(false);
+        if (resultado.esValido) return;
+        expect(resultado.errores).toContain("El nombre de usuario no puede contener @.");
+    });
+
+    it.each(["Frutas 100%", "Frutas %20"])("rechaza el nombre del operador %s", (nombre) => {
+        const resultado = validarAltaOperador(armarDatos({ nombre }));
+        expect(resultado.esValido).toBe(false);
+        if (resultado.esValido) return;
+        expect(resultado.errores).toContain("El nombre del operador no puede contener %.");
+    });
 
 	it("rechaza el alta cuando falta la contraseña", () => {
 		const resultado = validarAltaOperador(

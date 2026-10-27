@@ -6,6 +6,7 @@ import { altaPublicacionOperador } from "@/modulos/publicaciones/altaPublicacion
 import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { revalidatePath } from "next/cache";
+import { ErrorCuerpoDemasiadoGrande, leerJsonLimitado } from "@/infraestructura/http/cuerpo-limitado";
 
 export async function GET() {
 	if (!autorizado("operador.catalogo.consultar")) {
@@ -13,6 +14,9 @@ export async function GET() {
 	}
 	try {
 		const sesion = await obtenerSesion();
+		if (sesion?.rol === "PRODUCTOR") {
+			return NextResponse.json({ errores: ["No tiene permisos para consultar el catálogo de Operadores."] }, { status: 403 });
+		}
 		const operadoresAutorizados = sesion?.rol === "OPERADOR"
 			? [await obtenerOperadorAutorizado()]
 			: db.orm.public.Operador.all();
@@ -50,8 +54,11 @@ export async function POST(request: Request) {
 
 	let datos: unknown;
 	try {
-		datos = await request.json();
-	} catch {
+		datos = await leerJsonLimitado(request);
+	} catch (error) {
+		if (error instanceof ErrorCuerpoDemasiadoGrande) {
+			return NextResponse.json({ errores: [error.message] }, { status: 413 });
+		}
 		return NextResponse.json({ errores: ["El cuerpo de la solicitud no es un JSON válido."] }, { status: 400 });
 	}
 
@@ -65,10 +72,28 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const operador = await obtenerOperadorAutorizado(operadorId);
-		if (!autorizado("operador.publicacion.crear", sesion, operador)) {
-			return NextResponse.json({ errores: ["No tiene permisos para gestionar publicaciones de este Operador."] }, { status: 403 });
+		const esAdmin = autorizado("administracion.publicacion.crear", sesion);
+
+		let operador;
+
+		if (esAdmin) {
+			if (operadorId === undefined) {
+				return NextResponse.json({ errores: ["Debe seleccionar un operador."] },{ status: 400 });
+			}
+
+			const operadores = await db.orm.public.Operador.all();
+			operador = operadores.find((item) => item.id === operadorId);
+
+			if (!operador) {
+				return NextResponse.json({ errores: ["El operador no existe."] },{ status: 404 });
+			}
+		} else {
+			operador = await obtenerOperadorAutorizado(operadorId);
+			if (!autorizado("operador.publicacion.crear", sesion, operador)) {
+				return NextResponse.json({ errores: ["No tiene permisos para gestionar publicaciones de este Operador."] }, { status: 403 });
+			}
 		}
+		
 		const datosDelOperador = typeof datos === "object" && datos !== null && !Array.isArray(datos)
 			? { ...datos, operadorId: operador.id }
 			: datos;

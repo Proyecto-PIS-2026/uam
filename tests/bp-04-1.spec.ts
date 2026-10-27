@@ -66,7 +66,8 @@ test("BP-04.1: inicio de sesión de Operador y Productor", async ({ page }) => {
       await modal.getByLabel("Nombre de usuario").fill(cuenta.usuario);
       await modal.getByRole("button", { name: "Aceptar" }).click();
 
-      await expect(modal.getByRole("status")).toHaveText("La solicitud de recuperación fue realizada correctamente.");
+      await expect(page.getByRole("status").filter({ hasText: "La solicitud de recuperación fue realizada correctamente." }))
+        .toHaveText("La solicitud de recuperación fue realizada correctamente.");
       await modal.getByRole("button", { name: "Cancelar" }).click();
       await expect(modal).toHaveCount(0);
     }

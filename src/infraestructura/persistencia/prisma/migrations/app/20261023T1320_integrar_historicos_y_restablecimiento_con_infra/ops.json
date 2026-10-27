@@ -1,0 +1,125 @@
+[
+  {
+    "id": "table.historicoPrecios",
+    "label": "Create table \"historicoPrecios\"",
+    "summary": "Creates table \"historicoPrecios\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "historicoPrecios"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"historicoPrecios\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"historicoPrecios\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"historicoPrecios\"",
+        "sql": "CREATE TABLE \"public\".\"historicoPrecios\" (\n  \"especieId\" int4 NOT NULL,\n  \"fechaDesde\" date NOT NULL,\n  \"fechaHasta\" date NOT NULL,\n  \"fechaUltimaActualizacion\" date NOT NULL,\n  \"historico\" jsonb NOT NULL,\n  PRIMARY KEY (\"especieId\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"historicoPrecios\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"historicoPrecios\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.usuario.solicitoRestablecimiento",
+    "label": "Add column \"solicitoRestablecimiento\" to \"usuario\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "solicitoRestablecimiento",
+        "table": "usuario"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"solicitoRestablecimiento\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "usuario",
+          "solicitoRestablecimiento"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"solicitoRestablecimiento\"",
+        "sql": "ALTER TABLE \"public\".\"usuario\" ADD COLUMN \"solicitoRestablecimiento\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"solicitoRestablecimiento\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "usuario",
+          "solicitoRestablecimiento"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.historicoPrecios.historicoPrecios_especieId_fkey",
+    "label": "Add foreign key \"historicoPrecios_especieId_fkey\" on \"historicoPrecios\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "historicoPrecios_especieId_fkey",
+        "table": "historicoPrecios"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"historicoPrecios_especieId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "historicoPrecios_especieId_fkey",
+          "public",
+          "\"public\".\"historicoPrecios\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"historicoPrecios_especieId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"historicoPrecios\"\nADD CONSTRAINT \"historicoPrecios_especieId_fkey\"\nFOREIGN KEY (\"especieId\")\nREFERENCES \"public\".\"especie\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"historicoPrecios_especieId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "historicoPrecios_especieId_fkey",
+          "public",
+          "\"public\".\"historicoPrecios\""
+        ]
+      }
+    ]
+  }
+]

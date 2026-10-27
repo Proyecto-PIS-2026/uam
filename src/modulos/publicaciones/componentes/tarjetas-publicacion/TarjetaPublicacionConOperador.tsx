@@ -1,6 +1,6 @@
 import ImagenPublicacion from "../ImagenPublicacion";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import styles from "./TarjetaPublicacionConOperador.module.css";
 
 const formatoPrecio = new Intl.NumberFormat("es-UY", {
@@ -22,7 +22,7 @@ export default function TarjetaPublicacionConOperador({publicacion, onClick}: Ta
     return (
         <button type="button" className={styles.tarjeta} onClick={onClick} aria-label={`Ver detalles de ${nombreProducto}`}>
             <div className={styles.contenedorImagen}>
-                <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 767px) 96px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.imagen} reemplazo={
+                <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill loading="lazy" sizes="(max-width: 419px) 72px, (max-width: 700px) 96px, (max-width: 774.4px) calc(50vw - 24px), (max-width: 1027.2px) calc(33.333vw - 21.333px), (max-width: 1279px) calc(25vw - 20px), 234px" className={styles.imagen} reemplazo={
                     <div className={styles.sinFoto}>
                         <ImageOutlinedIcon className={styles.iconoFoto} />
                         <span className={styles.textoSinFotoMobile}>
@@ -45,13 +45,13 @@ export default function TarjetaPublicacionConOperador({publicacion, onClick}: Ta
                     </p>
                     <p className={styles.informacionWeb}>
                         <span className={styles.calibreCompleto}>
-                            {publicacion.calibre}
+                            {publicacion.calibre?.trim() || "-"}
                         </span>
                         <span className={styles.codigoCalibre}>
-                            {publicacion.codigoCalibre}
+                            {publicacion.codigoCalibre?.trim() || "-"}
                         </span>
                         {" · Categoría "}
-                        {publicacion.categoria}
+                        {publicacion.categoria?.trim() || "-"}
                     </p>
                 </div>
                 <div className={styles.cuerpo}>
@@ -62,10 +62,10 @@ export default function TarjetaPublicacionConOperador({publicacion, onClick}: Ta
                             </span>
                             <span className={styles.chip}>
                                 <span className={styles.calibreCompleto}>
-                                    {publicacion.calibre}
+                                    {publicacion.calibre?.trim() || "-"}
                                 </span>
                                 <span className={styles.codigoCalibre}>
-                                    {publicacion.codigoCalibre}
+                                    {publicacion.codigoCalibre?.trim() || "-"}
                                 </span>
                             </span>
                         </div>
@@ -74,7 +74,7 @@ export default function TarjetaPublicacionConOperador({publicacion, onClick}: Ta
                                 Cat.
                             </span>
                             <span className={styles.chip}>
-                                {publicacion.categoria}
+                                {publicacion.categoria?.trim() || "-"}
                             </span>
                         </div>
                     </div>
@@ -93,9 +93,11 @@ export default function TarjetaPublicacionConOperador({publicacion, onClick}: Ta
                                     {formatoPrecio.format(publicacion.precio)}
                                 </span>
                             )}
-                            <span className={styles.presentacionPrecio} title={`por ${publicacion.presentacion}`}>
-                                por {publicacion.presentacion}
-                            </span>
+                            {publicacion.presentacion?.trim() && publicacion.presentacion.trim() !== "-" && (
+                                <span className={styles.presentacionPrecio} title={`por ${publicacion.presentacion.trim()}`}>
+                                    por {publicacion.presentacion.trim()}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

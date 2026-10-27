@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { LIMITE_JSON_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
 
 const mocks = vi.hoisted(() => ({
@@ -60,7 +61,7 @@ describe("GET /api/publicaciones", () => {
         mocks.paises.mockResolvedValue([]);
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("devuelve los catálogos de publicaciones para %s", async (rol) => {
+    it.each([null, "ADMINISTRADOR"] as const)("devuelve los catálogos de publicaciones para %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
         mocks.operadores.mockResolvedValue([
         { id: 1, nombreFantasia: "Operador 1" },
@@ -90,6 +91,18 @@ describe("GET /api/publicaciones", () => {
         ]);
         expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
         expect(mocks.operadores).toHaveBeenCalledOnce();
+    });
+
+    it("rechaza al productor antes de consultar los catálogos de operadores", async () => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 });
+
+        const respuesta = await GET();
+
+        expect(respuesta.status).toBe(403);
+        expect(await respuesta.json()).toEqual({ errores: ["No tiene permisos para consultar el catálogo de Operadores."] });
+        for (const consulta of [mocks.operadores, mocks.especies, mocks.variedades, mocks.presentaciones, mocks.categorias, mocks.calibres, mocks.paises, mocks.obtenerOperadorAutorizado]) {
+            expect(consulta).not.toHaveBeenCalled();
+        }
     });
 
     it("mantiene los catálogos del alta y devuelve solamente el operador propio", async () => {
@@ -153,6 +166,16 @@ describe("POST /api/publicaciones", () => {
         vi.clearAllMocks();
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" });
+    });
+
+    it("devuelve 413 sin guardar una solicitud demasiado grande", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST", body: "{}", headers: { "content-length": String(LIMITE_JSON_PUBLICACION + 1) },
+        });
+        const respuesta = await POST(solicitud);
+        expect(respuesta.status).toBe(413);
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
     });
 
     it.each([401, 403] as const)("devuelve %s sin crear publicaciones cuando falla la autorización", async (status) => {
@@ -382,7 +405,7 @@ describe("autorización de alta de publicaciones", () => {
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Propio" });
     });
 
-    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)(
+    it.each([null, "PRODUCTOR"] as const)(
         "rechaza el alta con sesión %s antes de escribir",
         async (rol) => {
             mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
@@ -404,6 +427,64 @@ describe("autorización de alta de publicaciones", () => {
             method: "POST", body: JSON.stringify({ operadorId: 7 }),
         }));
         expect(respuesta.status).toBe(403);
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
+});
+
+describe("alta de publicaciones como administrador", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
+        mocks.operadores.mockResolvedValue([
+            { id: 7, usuarioId: 70, nombreFantasia: "Operador 7" },
+            { id: 8, usuarioId: 80, nombreFantasia: "Operador 8" },
+        ]);
+    });
+
+    it("crea la publicación para el operador indicado sin buscar el operador de la sesión", async () => {
+        mocks.altaPublicacionOperador.mockResolvedValue({ esValido: true, id: 15, mensaje: "Creada" });
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST",
+            body: JSON.stringify({ especieId: 4, operadorId: 7 }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const respuesta = await POST(solicitud);
+
+        expect(respuesta.status).toBe(201);
+        expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
+        expect(mocks.altaPublicacionOperador).toHaveBeenCalledExactlyOnceWith({ especieId: 4, operadorId: 7 });
+        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
+        expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
+    });
+
+    it("devuelve 400 si el administrador no indica el operador", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST",
+            body: JSON.stringify({ especieId: 4 }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const respuesta = await POST(solicitud);
+
+        expect(respuesta.status).toBe(400);
+        expect(await respuesta.json()).toEqual({ errores: ["Debe seleccionar un operador."] });
+        expect(mocks.operadores).not.toHaveBeenCalled();
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+    });
+
+    it("devuelve 404 si el operador indicado no existe", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST",
+            body: JSON.stringify({ especieId: 4, operadorId: 99 }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const respuesta = await POST(solicitud);
+
+        expect(respuesta.status).toBe(404);
+        expect(await respuesta.json()).toEqual({ errores: ["El operador no existe."] });
         expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
         expect(revalidatePath).not.toHaveBeenCalled();
     });

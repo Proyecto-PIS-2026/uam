@@ -1,45 +1,25 @@
 .pagina {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--espacio-secciones);
     min-width: 0;
-}
-
-.volver {
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-start;
-    gap: 0.35rem;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--color-primary);
-    font: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.volver:hover {
-    text-decoration: underline;
+    line-height: var(--interlineado-texto);
 }
 
 .filtrosPanel,
 .tablaPanel {
     min-width: 0;
     border: 1px solid var(--color-border);
-    border-radius: 0.875rem;
+    border-radius: var(--radio-panel);
     background: var(--color-surface);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+    box-shadow: var(--sombra-panel);
 }
 
 .filtrosPanel {
     width: 100%;
-    margin: auto;
-    padding: 0.875rem;
+    margin: 0;
+    padding: var(--padding-panel);
     box-sizing: border-box;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
 }
 
 .tablaCabecera {
@@ -47,21 +27,22 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 
 .tablaCabecera h2 {
     margin: 0;
     color: var(--color-secondary);
-    font-size: 1.05rem;
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
+    line-height: var(--interlineado-texto);
 }
 
 .filtros {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.625rem;
-    margin-top: 0.75rem;
+    gap: var(--espacio-controles);
+    margin-top: 0;
 }
 
 .campo {
@@ -73,7 +54,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-column: 1 / -1;
-    gap: 0.625rem;
+    gap: var(--espacio-controles);
     min-width: 0;
 }
 
@@ -91,13 +72,13 @@
     display: inline-flex;
     align-items: center;
     justify-self: start;
-    gap: 0.2rem;
+    gap: var(--espacio-textos);
     grid-column: 1 / -1;
     padding: 0;
     border: 0;
     background: none;
     color: var(--color-primary);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -115,7 +96,7 @@
     grid-column: 1 / -1;
     min-width: 0;
     height: 0;
-    margin-top: -0.625rem;
+    margin-top: calc(-1 * var(--espacio-controles));
     overflow: hidden;
     visibility: hidden;
     transition:
@@ -134,8 +115,8 @@
 .contenidoAdicional {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.625rem;
-    padding: 0.625rem 0 0.125rem;
+    gap: var(--espacio-controles);
+    padding: var(--espacio-controles) 0 0.125rem;
     opacity: 0;
     transition: opacity 0.08s ease-out;
 }
@@ -146,7 +127,10 @@
 }
 
 .campo :global(.MuiOutlinedInput-root) {
+    min-height: var(--alto-control);
+    border-radius: var(--radio-control);
     background: var(--color-surface);
+    font-size: var(--tamano-texto-secundario);
 }
 
 .campo :global(.MuiOutlinedInput-notchedOutline) {
@@ -159,6 +143,10 @@
 
 .campo :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-primary);
+}
+
+.campo :global(.MuiInputLabel-root) {
+    font-size: var(--tamano-texto-secundario);
 }
 
 .campo :global(.MuiInputLabel-root.Mui-focused) {
@@ -178,18 +166,18 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     width: 100%;
     min-width: 0;
-    margin-top: 0.5rem;
-    padding-top: 0.65rem;
+    margin-top: var(--espacio-controles);
+    padding-top: var(--espacio-controles);
     box-sizing: border-box;
     border-top: 1px solid var(--color-border);
 }
 
 .resultadosFiltros {
     color: var(--color-foreground);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .accionesFiltros {
@@ -197,7 +185,7 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
     min-width: 0;
     margin-left: auto;
 }
@@ -207,7 +195,7 @@
     border: 0;
     background: none;
     color: var(--color-primary);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -217,14 +205,14 @@
 }
 
 .consultar {
-    min-height: 2.5rem;
-    padding: 0.35rem 1rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
     border: 0;
-    border-radius: 0.45rem;
+    border-radius: var(--radio-control);
     background: var(--color-primary);
-    color: white;
+    color: var(--color-titulo-pagina);
     font: inherit;
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -240,17 +228,50 @@
 }
 
 .vacio {
-    margin: 0.875rem 0 0;
+    margin: var(--espacio-controles) 0 0;
     color: var(--color-muted-foreground);
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .tablaPanel {
     overflow: hidden;
+    container-type: inline-size;
+}
+
+.estadoVacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--espacio-controles);
+    min-height: 12rem;
+    padding: var(--padding-panel);
+    box-sizing: border-box;
+    color: var(--color-muted-foreground);
+    font-size: var(--tamano-texto-secundario);
+    text-align: center;
+}
+
+.estadoVacio p {
+    max-width: 34rem;
+    margin: 0;
+}
+
+.estadoVacio .iconoVacio {
+    color: var(--color-primary);
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+@container (min-width: 40rem) {
+    .estadoVacio {
+        flex-direction: row;
+        text-align: left;
+    }
 }
 
 .tablaCabecera {
-    padding: 1rem;
+    padding: var(--padding-panel);
 }
 
 .tablaContenedor {
@@ -268,9 +289,9 @@
 
 .errorCarga {
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 1rem;
-    color: #946200;
+    gap: var(--espacio-controles);
+    padding: var(--padding-panel);
+    color: var(--color-warning);
     text-align: center;
 }
 
@@ -280,64 +301,44 @@
     overflow-wrap: anywhere;
 }
 
-.erroresValidacion {
-    margin: 0 1rem 1rem;
-    color: #b42318;
-    font-size: 0.875rem;
-    overflow-wrap: anywhere;
-}
-
-.erroresValidacion summary {
-    cursor: pointer;
-}
-
-.erroresValidacion ul {
-    margin: 0.5rem 0 0;
-    padding-left: 1.25rem;
-}
-
-.erroresValidacion li+li {
-    margin-top: 0.35rem;
-}
-
 .tabla {
     width: 100%;
     min-width: 58rem;
     border-collapse: collapse;
     text-align: left;
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-variant-numeric: tabular-nums;
 }
 
 .tabla th {
-    padding: 0.75rem;
+    padding: var(--espacio-controles);
     border-top: 1px solid var(--color-border);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-primary-soft);
     color: var(--color-secondary);
-    font-size: 0.75rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
     white-space: nowrap;
 }
 
 .tabla td {
     height: 3rem;
-    padding: 0.75rem;
-    border-bottom: 1px solid #e9e9e9;
+    padding: var(--espacio-controles);
+    border-bottom: 1px solid var(--color-border-soft);
     vertical-align: middle;
 }
 
 .tabla th+th,
 .tabla td+td {
-    border-left: 1px solid #eef0ec;
+    border-left: 1px solid var(--color-border-soft);
 }
 
 .tabla tbody tr:nth-child(even) {
-    background: #fafbf9;
+    background: var(--color-surface-muted);
 }
 
 .tabla tbody tr.filaReferencia {
-    background: #f0f7f0;
+    background: var(--color-primary-soft);
 }
 
 .tabla tbody tr.filaReferencia td:first-child {
@@ -345,7 +346,7 @@
 }
 
 .tabla tbody tr:hover {
-    background: #eaf3e9;
+    background: var(--color-primary-soft);
 }
 
 .precio {
@@ -360,11 +361,12 @@
 
 .insignia {
     display: inline-block;
-    border-radius: 999px;
-    background: #e8f4ea;
-    padding: 0.2rem 0.45rem;
-    color: #28633a;
-    font-size: 0.68rem;
+    border-radius: var(--radio-control);
+    background: var(--color-primary-soft);
+    padding: var(--espacio-textos) var(--espacio-inline);
+    color: var(--color-secondary);
+    font-size: var(--tamano-texto-auxiliar);
+    font-weight: 700;
 }
 
 .listaMobile {
@@ -372,16 +374,16 @@
 }
 
 .filaMobile {
-    padding: 0.625rem 0.875rem;
+    padding: var(--espacio-controles) var(--padding-panel);
     border-bottom: 1px solid var(--color-border);
 }
 
 .filaMobile:nth-child(even) {
-    background: #fafbf9;
+    background: var(--color-surface-muted);
 }
 
 .filaMobile.filaMobileReferencia {
-    background: #f2f8f2;
+    background: var(--color-primary-soft);
     box-shadow: inset 3px 0 var(--color-primary);
 }
 
@@ -389,13 +391,13 @@
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) minmax(0, max-content);
     align-items: center;
-    gap: 0.375rem;
+    gap: var(--espacio-inline);
     color: var(--color-secondary);
-    line-height: 1.25;
+    line-height: var(--interlineado-texto);
 }
 
 .filaMobile header time {
-    font-size: 0.8125rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -413,8 +415,8 @@
 .referenciaMobile .insignia {
     min-width: 0;
     max-width: 100%;
-    padding: 0.15rem 0.35rem;
-    font-size: 0.625rem;
+    padding: var(--espacio-textos);
+    font-size: var(--tamano-texto-auxiliar);
     line-height: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -426,8 +428,8 @@
     min-width: 0;
     color: var(--color-secondary);
     text-align: right;
-    font-size: 0.78rem;
-    line-height: 1.3;
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     overflow: hidden;
@@ -438,16 +440,16 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.2rem;
+    gap: var(--espacio-inline);
+    margin-top: var(--espacio-textos);
 }
 
 .nombreProductoMobile {
     min-width: 0;
-    margin: 0.3rem 0 0;
+    margin: var(--espacio-textos) 0 0;
     color: var(--color-muted-foreground);
-    font-size: 0.72rem;
-    line-height: 1.3;
+    font-size: var(--tamano-texto-auxiliar);
+    line-height: var(--interlineado-texto);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -457,8 +459,8 @@
     min-width: 0;
     margin: 0;
     color: var(--color-muted-foreground);
-    font-size: 0.72rem;
-    line-height: 1.3;
+    font-size: var(--tamano-texto-auxiliar);
+    line-height: var(--interlineado-texto);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -467,8 +469,8 @@
 .filaMobileDetalles .volumen {
     color: var(--color-muted-foreground);
     text-align: right;
-    font-size: 0.7rem;
-    line-height: 1.3;
+    font-size: var(--tamano-texto-auxiliar);
+    line-height: var(--interlineado-texto);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -477,25 +479,26 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
+    gap: var(--espacio-secciones);
+    padding: var(--espacio-controles) var(--padding-panel);
     color: var(--color-muted-foreground);
-    font-size: 0.8125rem;
+    font-size: var(--tamano-texto-secundario);
 }
 
 .paginacion>div {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 
 .paginacion button {
-    padding: 0.45rem 0.75rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
     border: 1px solid var(--color-border);
-    border-radius: 0.45rem;
-    background: white;
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
     color: var(--color-secondary);
-    font-size: 0.8125rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
 }
@@ -506,7 +509,7 @@
 }
 
 .paginacion button:disabled {
-    color: #9a9a9a;
+    color: var(--color-disabled);
     cursor: default;
 }
 
@@ -529,12 +532,6 @@
 
     .paginacion>div {
         justify-content: space-between;
-    }
-}
-
-@media (min-width: 420px) {
-    .filtrosPanel {
-        padding: 1rem;
     }
 }
 
@@ -634,7 +631,7 @@
         grid-template-columns: repeat(5, minmax(0, 1fr));
         grid-column: 1 / -1;
         grid-row: 2;
-        gap: 0.625rem;
+        gap: var(--espacio-controles);
     }
 
     .fechas .campo {

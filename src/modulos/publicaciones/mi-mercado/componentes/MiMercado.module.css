@@ -5,58 +5,30 @@
 .encabezadoCatalogo {
     display: flex;
     width: 100%;
-    padding-bottom: 0.75rem;
+    padding-bottom: var(--espacio-controles);
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--espacio-secciones);
     border-bottom: 1px solid var(--color-border);
 }
 
 .titulo {
     margin: 0;
-    color: var(--color-primary);
-    font-size: 1.35rem;
+    color: var(--color-secondary);
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
+    line-height: var(--interlineado-titulo-pagina);
 }
 
-.botonAgrupar {
-    flex-shrink: 0;
-    padding: 0.55rem 0.85rem;
-    border: 1px solid var(--color-border);
-    border-radius: 2rem;
-    background-color: var(--color-surface);
-    color: var(--color-foreground);
-    font: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: border-color 150ms, background-color 150ms, color 150ms;
-}
-
-.botonAgrupar:hover {
-    border-color: var(--color-primary);
-}
-
-.botonAgruparActivo {
-    border-color: var(--color-primary);
-    background-color: var(--color-primary);
-    color: white;
-}
-
-.botonAgrupar:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-}
-
-.sinResultados {
+.mensajeError {
     margin: 0;
-    color: var(--color-muted);
-    text-align: center;
-    font-size: 0.9rem;
+    padding: var(--padding-panel);
+    border-radius: var(--radio-panel);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
 }
 
-@media (min-width: 768px) {
-    .titulo {
-        font-size: 1.5rem;
-    }
+.mensajeError {
+    color: var(--color-danger);
+    background: var(--color-danger-soft);
 }

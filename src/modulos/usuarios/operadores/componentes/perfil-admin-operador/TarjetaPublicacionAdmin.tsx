@@ -17,12 +17,13 @@ type TarjetaPublicacionAdminProps = {
 
 // Copia de TarjetaPublicacion (perfil público) adaptada al administrador
 export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: TarjetaPublicacionAdminProps) {
-    const nombreProducto = publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
+    const variedad = publicacion.variedad?.trim();
+    const nombreProducto = variedad && variedad !== "-" ? `${publicacion.especie} - ${variedad}` : publicacion.especie;
 
     return (
         <button type="button" className={styles.tarjeta} onClick={() => onSeleccionar?.(publicacion)} aria-label={`Ver detalles de ${nombreProducto}`} aria-haspopup="dialog">
             <div className={styles.contenedorImagen}>
-                <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 767px) 96px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.imagen} reemplazo={
+                <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 419px) 88px, (max-width: 700px) 96px, (max-width: 774.4px) calc(50vw - 24px), (max-width: 1027.2px) calc(33.333vw - 21.333px), (max-width: 1279px) calc(25vw - 20px), 234px" className={styles.imagen} reemplazo={
                     <div className={styles.sinFoto}>
                         <ImageOutlinedIcon className={styles.iconoFoto}/>
                         <span className={styles.textoSinFotoMobile}>Foto</span>
@@ -33,17 +34,15 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
 
             <div className={styles.contenido}>
                 <div className={styles.encabezado}>
-                    <div className="flex w-full min-w-0 items-start justify-between gap-2">
+                    <div className="flex w-full min-w-0 items-start justify-between gap-[var(--espacio-inline)]">
                         <h3 className={`${styles.especie} min-w-0 flex-1`} title={nombreProducto}>{nombreProducto}</h3>
                         <span
                             className={`
-                                shrink-0 rounded-full
-                                px-2 py-0.5
-                                text-[10px] font-bold
+                                ${styles.estado}
                                 ${
                                     publicacion.disponible
-                                        ? "bg-primary-soft text-secondary"
-                                        : "bg-gray-100 text-muted"
+                                        ? styles.estadoDisponible
+                                        : styles.estadoOculto
                                 }
                             `}
                         >
@@ -52,17 +51,17 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
                                 : "No disponible"}
                         </span>
                     </div>
-                    <p className={styles.informacionWeb}>{publicacion.calibre} · Categoría {publicacion.categoria}</p>
+                    <p className={styles.informacionWeb}>{publicacion.calibre?.trim() || "-"} · Categoría {publicacion.categoria?.trim() || "-"}</p>
                 </div>
                 <div className={styles.cuerpo}>
                     <div className={styles.informacionMobile}>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Calibre</span>
-                            <span className={styles.chip}>{publicacion.calibre}</span>
+                            <span className={styles.chip}>{publicacion.calibre?.trim() || "-"}</span>
                         </div>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Cat.</span>
-                            <span className={styles.chip}>{publicacion.categoria}</span>
+                            <span className={styles.chip}>{publicacion.categoria?.trim() || "-"}</span>
                         </div>
                     </div>
                     <div className={styles.contenedorPrecio}>
@@ -71,7 +70,9 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
                         ) : (
                             <span className={styles.consultarPrecio}>Sin precio</span>
                         )}
-                        <span className={styles.presentacionPrecio}>por {publicacion.presentacion}</span>
+                        {publicacion.presentacion?.trim() && publicacion.presentacion.trim() !== "-" && (
+                            <span className={styles.presentacionPrecio}>por {publicacion.presentacion.trim()}</span>
+                        )}
                     </div>
                 </div>
             </div>

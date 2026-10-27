@@ -4,26 +4,14 @@
     max-width: 48rem;
     margin: 0 auto;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--espacio-controles);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 701px) {
     .lista {
         display: grid;
         max-width: none;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1rem;
-    }
-}
-
-@media (min-width: 1024px) {
-    .lista {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 1280px) {
-    .lista {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(14.8rem, 1fr));
+        gap: var(--espacio-secciones);
     }
 }

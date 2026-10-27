@@ -1,15 +1,6 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import type { OpcionCategoria, OpcionEdicion, OpcionPresentacion, OpcionVariedad } from "./componentes/DrawerEditarPublicacion";
+import type { OpcionesEdicionPublicacion } from "./tipos";
 import { ordenarOpcionesPorNombre } from "./ordenar-opciones";
-
-export type OpcionesEdicionPublicacion = {
-    especies: OpcionEdicion[];
-    variedades: OpcionVariedad[];
-    presentaciones: OpcionPresentacion[];
-    categorias: OpcionCategoria[];
-    calibres: OpcionEdicion[];
-    paises: OpcionEdicion[];
-};
 
 export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdicionPublicacion> {
     const [especies, variedades, presentaciones, categorias, calibres, paises] = await Promise.all([

@@ -1,0 +1,224 @@
+.fondo {
+    position: fixed;
+    z-index: 1400;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: var(--espacio-secciones);
+    background: rgb(0 0 0 / 45%);
+}
+
+.modal {
+    display: flex;
+    width: min(46rem, 100%);
+    max-height: min(42rem, 100%);
+    flex-direction: column;
+    gap: var(--espacio-controles);
+    overflow: hidden;
+    padding: var(--padding-panel);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    box-shadow: 0 1rem 3rem rgb(0 0 0 / 25%);
+}
+
+.encabezado,
+.pie {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-secciones);
+}
+
+.contenido {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: var(--espacio-controles);
+    overflow-y: auto;
+}
+
+.ayuda,
+.buscador,
+.coordenadas {
+    flex-shrink: 0;
+}
+
+.encabezado h2 {
+    font-size: var(--tamano-titulo-seccion);
+    font-weight: 700;
+}
+
+.cerrar {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-secondary);
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
+    color: var(--color-secondary);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.ayuda,
+.coordenadas,
+.estado {
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+}
+
+.buscador {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-textos);
+}
+
+.controlesBusqueda {
+    display: flex;
+    gap: var(--espacio-inline);
+}
+
+.controlesBusqueda input {
+    min-width: 0;
+    flex: 1;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    font: inherit;
+}
+
+.controlesBusqueda button {
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
+    border: 0;
+    border-radius: var(--radio-control);
+    background: var(--color-secondary);
+    color: var(--color-surface);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.controlesBusqueda button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.resultados {
+    position: absolute;
+    z-index: 1200;
+    top: 100%;
+    right: 0;
+    left: 0;
+    max-height: 12rem;
+    margin: var(--espacio-textos) 0 0;
+    padding: 0;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 18%);
+    list-style: none;
+}
+
+.resultados button {
+    width: 100%;
+    padding: var(--espacio-controles);
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-foreground);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.resultados li:last-child button {
+    border-bottom: 0;
+}
+
+.resultados button:hover {
+    background: var(--color-primary-soft);
+}
+
+.mapa {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--radio-panel);
+    background: var(--color-primary-soft);
+}
+
+.mapaContenedor {
+    position: relative;
+    min-height: min(12rem, 30dvh);
+    height: min(55dvh, 32rem);
+    flex: 1 1 auto;
+}
+
+.mapa :global(.leaflet-container) {
+    width: 100%;
+    height: 100%;
+    font: inherit;
+}
+
+.mapa :global(.leaflet-control-attribution) {
+    font-size: 0.625rem;
+}
+
+.estado,
+.error {
+    position: absolute;
+    z-index: 1000;
+    inset: 1rem;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    pointer-events: none;
+}
+
+.mapaContenedor .error {
+    pointer-events: none;
+}
+
+.error {
+    color: var(--color-danger);
+}
+
+.cancelar,
+.confirmar {
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
+    border-radius: var(--radio-control);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cancelar {
+    border: 1px solid var(--color-secondary);
+    background: var(--color-surface);
+    color: var(--color-secondary);
+}
+
+.confirmar {
+    border: 0;
+    background: var(--color-secondary);
+    color: var(--color-surface);
+}
+
+.confirmar:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}

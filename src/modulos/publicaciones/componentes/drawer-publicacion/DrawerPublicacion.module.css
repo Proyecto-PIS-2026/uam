@@ -1,0 +1,542 @@
+.drawer.drawer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    max-height: 90dvh;
+    overflow: hidden;
+    border-radius: var(--radio-panel) var(--radio-panel) 0 0;
+    background-color: var(--color-surface);
+    color: var(--color-foreground);
+}
+
+.tarjeta {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.encabezado {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.titulo {
+    margin: 0;
+    font-size: var(--tamano-titulo-seccion);
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.cerrar {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-secondary);
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
+    color: var(--color-secondary);
+    cursor: pointer;
+}
+
+.cerrar:hover {
+    background: var(--color-primary-soft);
+}
+
+.cerrar:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: 2px;
+}
+
+.contenidoScrollable {
+    box-sizing: border-box;
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding: var(--padding-panel);
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+}
+
+.pie {
+    flex-shrink: 0;
+    padding: var(--espacio-inline) var(--espacio-secciones) max(var(--espacio-secciones), env(safe-area-inset-bottom));
+    border-top: 1px solid transparent;
+    background-color: var(--color-surface);
+}
+
+.pieConScroll {
+    border-top-color: var(--color-border);
+}
+
+.cabecera {
+    position: relative;
+    isolation: isolate;
+}
+
+.cabecera::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6rem;
+    border-radius: var(--radio-panel) var(--radio-panel) var(--radio-panel) var(--radio-panel);
+    background: var(--color-primary-soft);
+}
+
+.cabecera::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 7rem;
+    left: 4rem;
+    right: 0;
+    height: 3.5rem;
+    border-radius: var(--radio-panel);
+    background: var(--color-primary-soft);
+}
+
+.bloqueSuperior {
+    display: flex;
+    height: 11rem;
+    gap: var(--espacio-inline);
+}
+
+.marcoImagen {
+    display: contents;
+}
+
+.contenedorImagen {
+    position: relative;
+    width: 10rem;
+    height: 10rem;
+    flex-shrink: 0;
+    align-self: center;
+    overflow: hidden;
+    border-radius: 50%;
+    border: 0.4rem solid var(--color-surface);
+    box-shadow: var(--sombra-panel);
+    background-color: var(--color-primary-soft);
+}
+
+.imagen {
+    object-fit: cover;
+}
+
+.sinFoto {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--espacio-textos);
+    color: var(--color-secondary);
+    font-size: var(--tamano-texto-auxiliar);
+    font-weight: 500;
+}
+
+.iconoFoto {
+    font-size: 1.7rem !important;
+}
+
+.bloqueSuperiorDerecho {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    justify-content: space-between;
+}
+
+.nombrePublicacion {
+    height: 6rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-right: var(--espacio-secciones);
+}
+
+.especie,
+.variedad,
+.precio {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-secondary);
+}
+
+.especie {
+    font-weight: 650;
+}
+
+.variedad {
+    font-weight: 550;
+}
+
+.precio {
+    display: flex;
+    align-self: flex-end;
+    height: 4rem;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: var(--espacio-secciones);
+    padding-bottom: var(--espacio-inline);
+    font-size: calc(var(--tamano-texto) * 2);
+    font-weight: 650;
+}
+
+.consultarPrecio {
+    max-width: 100%;
+    padding-right: var(--espacio-secciones);
+    font-size: clamp(var(--tamano-texto-secundario), 4.3vw, var(--tamano-titulo-seccion));
+}
+
+.bloqueMedio {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: var(--espacio-controles);
+    padding: 0;
+    border: 1px solid var(--color-primary-soft);
+    border-radius: var(--radio-panel);
+    overflow: hidden;
+}
+
+.informacionDetallada {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--espacio-secciones);
+    padding: var(--espacio-controles) var(--espacio-secciones);
+    border: none;
+}
+
+.nombreInformacion,
+.valorInformacion {
+    min-width: 0;
+    font-size: var(--tamano-texto);
+    line-height: var(--interlineado-texto);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.nombreInformacion {
+    flex: 1;
+    color: var(--color-foreground);
+    font-weight: 400;
+}
+
+.valorInformacion {
+    flex: 1;
+    color: var(--color-secondary);
+    font-weight: 600;
+    text-align: right;
+}
+
+.informacionDetallada:nth-child(odd) {
+    background-color: var(--color-primary-soft)
+}
+
+.informacionDetallada:nth-child(even) {
+    background-color: var(--color-surface);
+}
+
+.informacionDetallada {
+    padding: var(--espacio-controles) var(--espacio-secciones);
+}
+
+.operador {
+    padding-top: 0;
+    padding-bottom: var(--espacio-inline);
+    line-height: var(--interlineado-texto);
+}
+
+.publicado {
+    color: var(--color-foreground);
+    font-weight: 400;
+}
+
+.nombreOperador {
+    color: var(--color-secondary);
+    font-weight: 600;
+}
+
+.bloqueBotones {
+    display: flex;
+    width: 100%;
+    gap: var(--espacio-inline);
+}
+
+.botonPerfil,
+.botonWhatsApp {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: var(--padding-control);
+    border-radius: var(--radio-control);
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.botonPerfil {
+    background: var(--color-primary-soft);
+    color: var(--color-secondary);
+}
+
+.botonWhatsApp {
+    gap: var(--espacio-inline);
+    background: var(--color-secondary);
+    color: var(--color-surface);
+}
+
+.iconoWhatsApp {
+    font-size: 1.20rem !important;
+}
+
+.ampliarFoto {
+    position: absolute;
+    inset: 0;
+    border: none;
+    border-radius: inherit;
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.ampliarFoto:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: -4px;
+}
+
+.modalFoto.modalFoto {
+    width: min(32rem, calc(100vw - 1.5rem));
+    margin: var(--espacio-controles);
+    padding: 0;
+    border-radius: var(--radio-panel);
+    overflow: hidden;
+    background-color: var(--color-surface);
+}
+
+.fotoAmpliada {
+    position: relative;
+    width: 100%;
+    height: min(30rem, 75dvh);
+}
+
+.imagenAmpliada {
+    object-fit: cover;
+    object-position: center;
+}
+
+.cerrarFoto {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 1;
+}
+
+.cerrarFoto.cerrarFoto:hover {
+    background-color: var(--color-surface);
+}
+
+.cerrarFoto.cerrarFoto:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: -4px;
+}
+
+@media (max-width: 767px) {
+    .encabezado {
+        padding-top: 0;
+    }
+}
+
+@media (min-width: 768px) {
+    .drawer.drawer {
+        width: min(var(--ancho-drawer-web), 100vw);
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+    }
+
+    .tarjeta {
+        flex: 1;
+    }
+
+    .contenidoScrollable {
+        flex: 1;
+    }
+
+    .cabecera::before,
+    .cabecera::after {
+        content: none;
+    }
+
+    .bloqueSuperior {
+        height: auto;
+        flex-direction: column;
+        gap: var(--espacio-secciones);
+    }
+
+    .marcoImagen {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        max-height: 15rem;
+        padding: 0;
+        flex-shrink: 0;
+        border-radius: var(--radio-panel);
+        overflow: hidden;
+        background: transparent;
+    }
+
+    .contenedorImagen {
+        width: 100%;
+        height: 100%;
+        align-self: auto;
+        border: none;
+        border-radius: inherit;
+        box-shadow: var(--sombra-panel);
+    }
+
+    .imagen {
+        object-position: center;
+    }
+
+    .sinFoto {
+        gap: var(--espacio-textos);
+        font-size: var(--tamano-texto-secundario);
+    }
+
+    .iconoFoto {
+        font-size: 2rem !important;
+    }
+
+    .bloqueSuperiorDerecho {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--espacio-controles);
+        width: 100%;
+    }
+
+    .nombrePublicacion {
+        height: auto;
+        min-width: 0;
+        gap: var(--espacio-textos);
+        padding-right: 0;
+        text-align: left;
+    }
+
+    .especie {
+        font-weight: 700;
+    }
+
+    .variedad {
+        font-weight: 600;
+    }
+
+    .precio {
+        height: auto;
+        align-self: center;
+        padding: 0;
+        font-size: calc(var(--tamano-texto) * 2);
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .consultarPrecio {
+        display: block;
+        justify-self: end;
+        width: 7rem;
+        max-width: 100%;
+        padding: 0;
+        font-size: var(--tamano-texto);
+        font-weight: 500;
+        line-height: 1.25;
+        white-space: normal;
+        text-align: right;
+    }
+
+    .bloqueMedio {
+        min-width: 0;
+        margin-top: var(--espacio-secciones);
+    }
+
+    .informacionDetallada:nth-child(even) {
+        background-color: var(--color-surface);
+    }
+
+    .pie {
+        display: flex;
+        flex-direction: column;
+        gap: var(--espacio-inline);
+        margin: 0;
+        padding: var(--espacio-controles) var(--espacio-secciones);
+        padding-bottom: max(var(--espacio-secciones), env(safe-area-inset-bottom));
+        border-top: 1px solid var(--color-border);
+    }
+
+    .operador {
+        padding: 0;
+    }
+
+    .publicado,
+    .nombreOperador {
+        font-size: var(--tamano-texto);
+    }
+
+    .botonPerfil,
+    .botonWhatsApp {
+        min-height: 3rem;
+        padding: var(--padding-control);
+        border-radius: var(--radio-control);
+        font-size: var(--tamano-texto);
+        text-decoration: none;
+    }
+
+    .botonWhatsApp {
+        color: var(--color-surface);
+    }
+
+    .botonWhatsApp:hover {
+        background-color: var(--color-primary-hover);
+    }
+
+    .botonPerfil:focus-visible,
+    .botonWhatsApp:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    .iconoWhatsApp {
+        font-size: 1.3rem !important;
+    }
+
+    .modalFoto.modalFoto {
+        position: relative;
+        width: min(50rem, calc(100vw - 2rem));
+        margin: var(--espacio-secciones);
+    }
+
+    .fotoAmpliada {
+        height: min(38rem, 80dvh);
+    }
+}

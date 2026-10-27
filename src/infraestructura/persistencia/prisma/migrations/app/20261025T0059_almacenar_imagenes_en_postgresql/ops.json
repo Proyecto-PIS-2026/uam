@@ -1,0 +1,41 @@
+[
+  {
+    "id": "table.imagen",
+    "label": "Create table \"imagen\"",
+    "summary": "Creates table \"imagen\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "imagen"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"imagen\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"imagen\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"imagen\"",
+        "sql": "CREATE TABLE \"public\".\"imagen\" (\n  \"clave\" text NOT NULL,\n  \"contenido\" bytea NOT NULL,\n  PRIMARY KEY (\"clave\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"imagen\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"imagen\""
+        ]
+      }
+    ]
+  }
+]

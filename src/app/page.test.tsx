@@ -13,15 +13,20 @@ vi.mock("next/navigation", () => ({
 describe("entrada principal", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR", "OPERADOR"] as const)(
+    it.each([
+        [null, "/inicio"],
+        ["ADMINISTRADOR", "/inicio"],
+        ["PRODUCTOR", "/mi-mercado/productor"],
+        ["OPERADOR", "/mi-mercado"],
+    ] as const)(
         "envía %s a su página principal",
-        async (rol) => {
+        async (rol, destino) => {
             vi.mocked(obtenerSesion).mockResolvedValue(rol === null ? null : {
                 usuarioId: 10, rol, expiraEn: 2000000000,
             });
 
             await expect(Home()).rejects.toThrow("NEXT_REDIRECT");
-            expect(redirect).toHaveBeenCalledExactlyOnceWith(rol === "OPERADOR" ? "/mi-mercado" : "/inicio");
+            expect(redirect).toHaveBeenCalledExactlyOnceWith(destino);
         },
     );
 

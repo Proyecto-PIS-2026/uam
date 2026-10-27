@@ -1,7 +1,12 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import styles from "./FiltrosPublicaciones.module.css";
 import FiltrosPublicaciones from "./FiltrosPublicaciones";
-import type { PublicacionListado } from "../../consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "../../consulta-mercado/acciones/PublicacionesOperador";
+import type { PublicacionProductorListado } from "../../consulta-mercado/acciones/PublicacionesProductor";
+import { MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
+
+const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
+const obtenerNombreProductor = (publicacion: PublicacionProductorListado) => publicacion.productor.nombreFantasia;
 
 const publicaciones: PublicacionListado[] = [
     {
@@ -16,6 +21,7 @@ const publicaciones: PublicacionListado[] = [
         calibre: "Grande",
         codigoCalibre: "G",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",
@@ -45,6 +51,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         calibre: "Grande",
         codigoCalibre: "G",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",
@@ -63,6 +70,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         calibre: "Mediano",
         codigoCalibre: "M",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 2,
             nombreFantasia: "Mercado Verde",
@@ -81,6 +89,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         calibre: "Grande",
         codigoCalibre: "G",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 3,
             nombreFantasia: "Frutas del Sur",
@@ -99,6 +108,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         calibre: "Pequeño",
         codigoCalibre: "P",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 4,
             nombreFantasia: "Mercado Verde",
@@ -153,6 +163,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
         calibre: "Grande",
         codigoCalibre: "G",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",
@@ -171,6 +182,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
         calibre: "Mediano",
         codigoCalibre: "M",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",
@@ -189,6 +201,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
         calibre: "Grande",
         codigoCalibre: "G",
         pais: "Uruguay",
+        tipoPublicacion: "OPERADOR" as const,
         operador: {
             id: 1,
             nombreFantasia: "Frutas del Sur",
@@ -204,14 +217,124 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.click(screen.getByRole("option", { name: valor }));
     };
 
+    it("incluye publicaciones con solo especie sin agregar opciones vacías a los filtros", () => {
+        const alFiltrar = vi.fn();
+        const minima: PublicacionListado = { ...publicaciones[0], id: 2, variedad: "", presentacion: "", categoria: "", calibre: "", codigoCalibre: "", pais: "", precio: null };
+        const disponibles = [...publicaciones, minima];
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={disponibles} especieFiltro="Manzana" alFiltrar={alFiltrar} />);
+
+        expect(alFiltrar).toHaveBeenLastCalledWith(disponibles);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Gala"]);
+        fireEvent.click(screen.getByRole("option", { name: "Gala" }));
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicaciones);
+        seleccionarFiltro("Variedad", "Todas");
+        expect(alFiltrar).toHaveBeenLastCalledWith(disponibles);
+    });
+
+    it("ofrece las naves disponibles y consulta por su nombre exacto", () => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} opcionesRemotas={publicaciones} especieFiltro="" navesDisponibles={["B", "Tinglado", "A", "A"]} alConsultar={alConsultar} />);
+
+        expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Todas");
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Todas" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Nave A", "Nave B", "Tinglado"]);
+        fireEvent.click(screen.getByRole("option", { name: "Nave B" }));
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "B" }));
+
+        seleccionarFiltro("Nave", "Tinglado");
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Tinglado" }));
+        seleccionarFiltro("Nave", "Todas");
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Todas" }));
+    });
+
+    it("combina nave con los demás filtros y la restablece al limpiar", () => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} opcionesRemotas={publicacionesPrueba} especieFiltro="" navesDisponibles={["A", "B"]} alConsultar={alConsultar} />);
+
+        seleccionarFiltro("Nave", "Nave A");
+        seleccionarFiltro("Especie", "Manzana");
+        seleccionarFiltro("Variedad", "Gala");
+        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Categoría", "I");
+        seleccionarFiltro("Calibre", "Grande");
+        fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Frutas del Sur" } });
+        fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "50" } });
+        fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "200" } });
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
+
+        expect(alConsultar).toHaveBeenLastCalledWith({
+            busqueda: "Frutas del Sur", especie: "Manzana", variedad: "Gala", presentacion: "Caja",
+            categoria: "I", calibre: "Grande", precioMinimo: "50", precioMaximo: "200", orden: "precioDesc", nave: "A",
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Todas");
+        expect(alConsultar).toHaveBeenLastCalledWith({
+            busqueda: "", especie: "Todas", variedad: "Todas", presentacion: "Todas",
+            categoria: "Todas", calibre: "Todas", precioMinimo: "", precioMaximo: "", orden: "ninguno", nave: "Todas",
+        });
+    });
+
+    it.each([false, true])("omite Nave y su parámetro cuando no se habilita el filtro (consulta remota: %s)", (remota) => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} opcionesRemotas={remota ? publicaciones : undefined} especieFiltro="" alConsultar={alConsultar} />);
+
+        expect(screen.queryByRole("combobox", { name: "Nave" })).not.toBeInTheDocument();
+        expect(alConsultar.mock.calls.at(-1)?.[0]).not.toHaveProperty("nave");
+        fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Manzana" } });
+        expect(alConsultar.mock.calls.at(-1)?.[0]).not.toHaveProperty("nave");
+    });
+
+    it("conserva la nave seleccionada durante recargas sin resultados ni la opción original", () => {
+        const alConsultar = vi.fn();
+        const advertencia = vi.spyOn(console, "warn").mockImplementation(() => {});
+        try {
+            const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} opcionesRemotas={publicaciones} especieFiltro="" totalRemoto={1} navesDisponibles={["A", "B"]} alConsultar={alConsultar} />);
+            seleccionarFiltro("Nave", "Nave B");
+            alConsultar.mockClear();
+
+            vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={[]} opcionesRemotas={[]} especieFiltro="" totalRemoto={0} navesDisponibles={["A"]} alConsultar={alConsultar} />);
+
+            expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
+            expect(screen.getByText("0 publicaciones")).toBeInTheDocument();
+            expect(alConsultar).not.toHaveBeenCalled();
+            fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
+            expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Nave A", "Nave B"]);
+            fireEvent.click(screen.getByRole("option", { name: "Nave B" }));
+            fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Sin coincidencias" } });
+            expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ busqueda: "Sin coincidencias", nave: "B" }));
+
+            vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={[]} opcionesRemotas={[]} especieFiltro="" totalRemoto={0} navesDisponibles={[]} alConsultar={alConsultar} />);
+            expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
+            seleccionarFiltro("Nave", "Todas");
+            expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Todas" }));
+            expect(advertencia).not.toHaveBeenCalled();
+        } finally {
+            advertencia.mockRestore();
+        }
+    });
+
+    it("mantiene visible la opción Todas aunque todavía no haya naves disponibles", () => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={[]} opcionesRemotas={[]} especieFiltro="" navesDisponibles={[]} alConsultar={alConsultar} />);
+
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
+        expect(screen.getAllByRole("option")).toHaveLength(1);
+        expect(screen.getByRole("option", { name: "Todas" })).toBeInTheDocument();
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ nave: "Todas" }));
+    });
+
     it("descarta categoría y calibre desaparecidos al editar las publicaciones", () => {
         const alFiltrar = vi.fn();
-        const vista = render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro="" alFiltrar={alFiltrar}/>);
+        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro="" alFiltrar={alFiltrar}/>);
         seleccionarFiltro("Categoría", "I");
         seleccionarFiltro("Calibre", "Grande");
 
         const actualizadas = [{ ...publicaciones[0], categoria: "II", calibre: "Pequeño" }];
-        vista.rerender(<FiltrosPublicaciones publicaciones={actualizadas} especieFiltro="" alFiltrar={alFiltrar}/>);
+        vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={actualizadas} especieFiltro="" alFiltrar={alFiltrar}/>);
 
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Todas");
         expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Todos");
@@ -221,7 +344,7 @@ describe("FiltrosPublicaciones", () => {
     it("descarta una especie eliminada y sus filtros dependientes, y notifica al padre", () => {
         const alFiltrar = vi.fn();
         const alCambiarEspecie = vi.fn();
-        const vista = render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarEspecie={alCambiarEspecie}/>);
+        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarEspecie={alCambiarEspecie}/>);
         seleccionarFiltro("Especie", "Manzana");
         seleccionarFiltro("Variedad", "Gala");
         seleccionarFiltro("Presentación", "Caja");
@@ -230,7 +353,7 @@ describe("FiltrosPublicaciones", () => {
         alCambiarEspecie.mockClear();
 
         const restantes = [publicacionesPrueba[3]];
-        vista.rerender(<FiltrosPublicaciones publicaciones={restantes} especieFiltro="" alFiltrar={alFiltrar} alCambiarEspecie={alCambiarEspecie}/>);
+        vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={restantes} especieFiltro="" alFiltrar={alFiltrar} alCambiarEspecie={alCambiarEspecie}/>);
 
         for (const nombre of ["Especie", "Variedad", "Presentación", "Categoría"]) {
             expect(screen.getByRole("combobox", { name: nombre })).toHaveTextContent("Todas");
@@ -242,14 +365,14 @@ describe("FiltrosPublicaciones", () => {
 
     it("descarta una variedad desaparecida y su presentación, conservando las otras selecciones válidas", () => {
         const alFiltrar = vi.fn();
-        const vista = render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
         seleccionarFiltro("Variedad", "Gala");
         seleccionarFiltro("Presentación", "Caja");
         seleccionarFiltro("Categoría", "I");
         seleccionarFiltro("Calibre", "Grande");
 
         const actualizadas = [{ ...publicaciones[0], variedad: "Red", presentacion: "Bolsa" }];
-        vista.rerender(<FiltrosPublicaciones publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
 
         expect(screen.getByRole("combobox", { name: "Especie" })).toHaveTextContent("Manzana");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Todas");
@@ -261,12 +384,12 @@ describe("FiltrosPublicaciones", () => {
 
     it("descarta una presentación desaparecida y conserva la variedad elegida", () => {
         const alFiltrar = vi.fn();
-        const vista = render(<FiltrosPublicaciones publicaciones={publicacionesPresentacion} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPresentacion} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
         seleccionarFiltro("Variedad", "Gala");
         seleccionarFiltro("Presentación", "Caja");
 
         const restantes = [publicacionesPresentacion[1]];
-        vista.rerender(<FiltrosPublicaciones publicaciones={restantes} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={restantes} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
 
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Gala");
         expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Todas");
@@ -275,12 +398,12 @@ describe("FiltrosPublicaciones", () => {
 
     it.each(["Categoría", "Calibre"])("conserva %s cuando una baja invalida la combinación y esa fue la última faceta elegida", (ultimaFaceta) => {
         const alFiltrar = vi.fn();
-        const vista = render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesCombinacionInvalida} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
         const selecciones = ultimaFaceta === "Categoría" ? [["Calibre", "Grande"], ["Categoría", "I"]] : [["Categoría", "I"], ["Calibre", "Grande"]];
         for (const [nombre, valor] of selecciones) seleccionarFiltro(nombre, valor);
 
         const restantes = publicacionesCombinacionInvalida.slice(1);
-        vista.rerender(<FiltrosPublicaciones publicaciones={restantes} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={restantes} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
 
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent(ultimaFaceta === "Categoría" ? "I" : "Todas");
         expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent(ultimaFaceta === "Calibre" ? "Grande" : "Todos");
@@ -289,7 +412,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("conserva filtros válidos, búsqueda, rango de precio y orden cuando se actualiza el listado", () => {
         const alFiltrar = vi.fn();
-        const vista = render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
         seleccionarFiltro("Variedad", "Gala");
         seleccionarFiltro("Presentación", "Caja");
         seleccionarFiltro("Categoría", "I");
@@ -300,7 +423,7 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.click(screen.getByRole("button", { name: /menor precio/i }));
 
         const actualizadas = [{ ...publicaciones[0], precio: 150 }, { ...publicaciones[0], id: 2, precio: 75 }];
-        vista.rerender(<FiltrosPublicaciones publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
 
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Gala");
         expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Caja");
@@ -313,7 +436,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("renderiza los controles principales", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
 
         // Buscador y filtros principales
         expect(screen.getByLabelText("Buscar publicaciones")).toBeInTheDocument();
@@ -342,7 +465,7 @@ describe("FiltrosPublicaciones", () => {
 
     // Tests de estado inicial
     it("mantiene cerrados inicialmente los filtros adicionales y el ordenamiento", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const filtrosExtendidos = document.querySelector(`.${styles.filtrosExtendidos}`);
         const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
         expect(filtrosExtendidos).toBeInTheDocument();
@@ -352,7 +475,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("abre y cierra los filtros adicionales al hacer click en Más filtros", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const layoutFiltros = document.querySelector(`.${styles.layoutFiltros}`);
         const botonMasFiltros = screen.getByRole("button", { name: /más filtros/i });
         expect(layoutFiltros).not.toHaveClass(styles.filtrosAbiertos);
@@ -363,7 +486,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("abre y cierra las opciones de ordenamiento al hacer click en Ordenar por", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
         const botonOrdenar = screen.getByRole("button", { name: /ordenar por/i });
 
@@ -380,24 +503,24 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("renderiza correctamente los campos de búsqueda y precio", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         expect(buscador).toHaveAttribute("type", "search");
         expect(precioMinimo).toHaveAttribute("type", "text");
         expect(precioMinimo).toHaveAttribute("inputmode", "numeric");
-        expect(precioMinimo).toHaveAttribute("pattern", "[0-9]*");
-        expect(precioMinimo).toHaveAttribute("placeholder", "$ 0");
+        expect(precioMinimo).toHaveAttribute("pattern", "0*[1-9][0-9]*");
+        expect(precioMinimo).toHaveAttribute("placeholder", "Sin mínimo");
         expect(precioMaximo).toHaveAttribute("type", "text");
         expect(precioMaximo).toHaveAttribute("inputmode", "numeric");
-        expect(precioMaximo).toHaveAttribute("pattern", "[0-9]*");
+        expect(precioMaximo).toHaveAttribute("pattern", "0*[1-9][0-9]*");
         expect(precioMaximo).toHaveAttribute("placeholder", "Sin límite");
     });
 
     it("rechaza separadores, signos y letras en ambos precios, incluso al pegar", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
 
@@ -437,7 +560,7 @@ describe("FiltrosPublicaciones", () => {
             categoria: nombre,
             calibre: nombre,
         })));
-        render(<FiltrosPublicaciones publicaciones={publicacionesConOpciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConOpciones} especieFiltro=""/>);
 
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -453,32 +576,32 @@ describe("FiltrosPublicaciones", () => {
         }
     });
 
-    it("ordena también las especies con tildes", () => {
+    it("prioriza las especies UAM y ordena las restantes con tildes según el alfabeto español", () => {
         const publicacionesConEspecies = ["Zanahoria", "Árbol", "Berro"].map((especie, indice) => ({
             ...publicaciones[0],
             id: indice + 1,
             especie,
         }));
-        render(<FiltrosPublicaciones publicaciones={publicacionesConEspecies} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConEspecies} especieFiltro=""/>);
 
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
-        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Árbol", "Berro", "Zanahoria"]);
+        expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Zanahoria", "Árbol", "Berro"]);
     });
 
-    it("muestra las especies prioritarias primero en el selector del listado público", () => {
+    it.each(["ninguno", "prioridad", "alfabeticoAsc", "precioDesc"] as const)("prioriza las especies del selector aunque el listado use el orden %s", (ordenInicial) => {
         const publicacionesConEspecies = ["Pera", "Morrón", "Banana", "Acelga", "Papa"].map((especie, indice) => ({
             ...publicaciones[0],
             id: indice + 1,
             especie,
         }));
-        render(<FiltrosPublicaciones publicaciones={publicacionesConEspecies} especieFiltro="" ordenInicial="prioridad"/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConEspecies} especieFiltro="" ordenInicial={ordenInicial}/>);
 
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
         expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Papa", "Banana", "Morrón", "Acelga", "Pera"]);
     });
 
     it("cierra el menú de ordenamiento al seleccionar una opción", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
         const botonOrdenar = screen.getByRole("button", { name: /ordenar por/i });
         fireEvent.click(botonOrdenar);
@@ -490,7 +613,7 @@ describe("FiltrosPublicaciones", () => {
     it("mantiene Sin ordenar y el orden recibido cuando no se indica orden inicial", () => {
         const alFiltrar = vi.fn();
         const alCambiarOrden = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
         const sinOrdenar = screen.getByRole("button", {  name: /sin ordenar/i });
         expect(sinOrdenar).toHaveClass(styles.opcionOrdenamientoActiva);
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -499,7 +622,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("cambia visualmente la opción activa del ordenamiento", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const botonOrdenar = screen.getByRole("button", {  name: /ordenar por/i });
         fireEvent.click(botonOrdenar);
         const sinOrdenar = screen.getByRole("button", { name: /sin ordenar/i });
@@ -511,7 +634,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("muestra la cantidad de publicaciones inicial", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         expect(screen.getByText("1 publicación")).toBeInTheDocument();
     });
 
@@ -523,12 +646,12 @@ describe("FiltrosPublicaciones", () => {
                 id: 2,
             },
         ];
-        render(<FiltrosPublicaciones publicaciones={variasPublicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={variasPublicaciones} especieFiltro=""/>);
         expect(screen.getByText("2 publicaciones")).toBeInTheDocument();
     });
 
     it("inicia los filtros con sus valores por defecto", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         expect(screen.getByLabelText("Especie")).toHaveTextContent("Todas");
         expect(screen.getByLabelText("Variedad")).toHaveTextContent("Todas");
         expect(screen.getByLabelText("Presentación")).toHaveTextContent("Todas");
@@ -537,7 +660,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("habilita los filtros dependientes de forma secuencial", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
         const presentacion = screen.getByLabelText("Presentación");
@@ -556,7 +679,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it('selecciona automáticamente la variedad "-" y habilita Presentación', () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesVariedadUnica} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesVariedadUnica} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
         const presentacion = screen.getByLabelText("Presentación");
@@ -570,7 +693,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("limpia los filtros al hacer click en Limpiar filtros", () => {
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
@@ -587,7 +710,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("muestra la cantidad de publicaciones al filtrar por especie", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -596,7 +719,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("devuelve las publicaciones filtradas por especie mediante alFiltrar", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -608,7 +731,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por variedad", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -622,7 +745,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por presentación", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPresentacion} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPresentacion} especieFiltro="" alFiltrar={alFiltrar}/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -639,7 +762,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por categoría", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const categoria = screen.getByLabelText("Categoría");
         fireEvent.mouseDown(categoria);
         fireEvent.click(screen.getByRole("option", { name: "E" }));
@@ -650,7 +773,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por calibre", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const calibre = screen.getByLabelText("Calibre");
         fireEvent.mouseDown(calibre);
         fireEvent.click(screen.getByRole("option", { name: "Pequeño" }));
@@ -661,7 +784,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por búsqueda de texto", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "manzana" } });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -675,7 +798,7 @@ describe("FiltrosPublicaciones", () => {
             { ...publicacionesPrueba[0], especie: "Ananá" },
             publicacionesPrueba[1],
         ];
-        render(<FiltrosPublicaciones publicaciones={publicacionesConTildes} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConTildes} especieFiltro="" alFiltrar={alFiltrar}/>);
 
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "anana" } });
 
@@ -686,7 +809,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por nombre de operador", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "Mercado Verde" } });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -696,7 +819,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por precio minimo", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         fireEvent.change(precioMinimo, { target: { value: "250" } });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -710,7 +833,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por precio maximo", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMaximo, { target: { value: "250" } });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -724,7 +847,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra las publicaciones por rango de precio", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMinimo, { target: { value: "150" } });
@@ -734,9 +857,48 @@ describe("FiltrosPublicaciones", () => {
         expect(resultado.every((publicacion) => publicacion.precio !== null && publicacion.precio >= 150 && publicacion.precio <= 350)).toBe(true)
     });
 
+    it.each(["Precio Mínimo", "Precio Máximo"])("acepta sólo un entero positivo o vacío en %s", (campo) => {
+        const alConsultar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} opcionesRemotas={publicacionesPrueba} especieFiltro="" alConsultar={alConsultar}/>);
+        const entrada = screen.getByLabelText(campo);
+        expect(entrada).toHaveAttribute("inputmode", "numeric");
+        expect(entrada).toHaveAttribute("maxlength", String(MAXIMO_DIGITOS_PRECIO));
+        expect(screen.getByLabelText("Precio Mínimo")).toHaveAttribute("placeholder", "Sin mínimo");
+
+        fireEvent.change(entrada, { target: { value: "9".repeat(MAXIMO_DIGITOS_PRECIO) } });
+        expect(entrada).toHaveValue("9".repeat(MAXIMO_DIGITOS_PRECIO));
+        fireEvent.change(entrada, { target: { value: "0250" } });
+        expect(entrada).toHaveValue("0250");
+        alConsultar.mockClear();
+        for (const valor of ["0", "000", "-1", "1.5", "1,5", "1e3", "+1", "texto", " ", "9".repeat(MAXIMO_DIGITOS_PRECIO + 1)]) {
+            fireEvent.change(entrada, { target: { value: valor } });
+            expect(entrada).toHaveValue("0250");
+        }
+        expect(alConsultar).not.toHaveBeenCalled();
+
+        fireEvent.change(entrada, { target: { value: "" } });
+        expect(entrada).toHaveValue("");
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ precioMinimo: "", precioMaximo: "" }));
+    });
+
+    it("quitar ambos límites restaura publicaciones con y sin precio", () => {
+        const alFiltrar = vi.fn();
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo);
+
+        fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "1" } });
+        fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "300" } });
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo.filter((publicacion) => publicacion.precio !== null));
+
+        fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "" } });
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo.filter((publicacion) => publicacion.precio !== null));
+        fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "" } });
+        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo);
+    });
+
     it("no devuelve publicaciones cuando el rango de precio es inválido", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones  publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const precioMinimo = screen.getByLabelText("Precio Mínimo");
         const precioMaximo = screen.getByLabelText("Precio Máximo");
         fireEvent.change(precioMinimo, { target: { value: "350" } });
@@ -747,7 +909,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("ordena las publicaciones por precio ascendente", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
@@ -757,7 +919,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("ordena las publicaciones por precio descendente", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
@@ -767,7 +929,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("ordena las publicaciones alfabéticamente de A a Z", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "A-Z" }));
@@ -778,7 +940,7 @@ describe("FiltrosPublicaciones", () => {
     it("aplica A-Z desde el inicio cuando se indica ordenInicial", () => {
         const alFiltrar = vi.fn();
         const alCambiarOrden = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
 
         expect(screen.getByRole("button", { name: "A-Z" })).toHaveClass(styles.opcionOrdenamientoActiva);
         expect(screen.getByRole("button", { name: "Sin ordenar" })).not.toHaveClass(styles.opcionOrdenamientoActiva);
@@ -790,7 +952,7 @@ describe("FiltrosPublicaciones", () => {
     it("restaura el orden inicial A-Z y avisa al limpiar filtros", () => {
         const alFiltrar = vi.fn();
         const alCambiarOrden = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
 
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
@@ -814,7 +976,7 @@ describe("FiltrosPublicaciones", () => {
             { ...publicaciones[0], id: 5, especie: "Acelga", variedad: "-" },
             { ...publicaciones[0], id: 6, especie: "Banana", variedad: "-" },
         ];
-        render(<FiltrosPublicaciones publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
         const ids = () => (alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id);
 
         expect(ids()).toEqual([3, 6, 4, 2, 5, 1]);
@@ -833,7 +995,7 @@ describe("FiltrosPublicaciones", () => {
             { ...publicaciones[0], id: 2, especie: "Papa" },
             { ...publicaciones[0], id: 3, especie: "Acelga" },
         ];
-        const vista = render(<FiltrosPublicaciones publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
+        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
         const ids = () => (alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id);
 
         expect(ids()).toEqual([2, 3, 1]);
@@ -845,13 +1007,13 @@ describe("FiltrosPublicaciones", () => {
         expect(screen.getByRole("button", { name: "A-Z" })).toHaveClass(styles.opcionOrdenamientoActiva);
 
         vista.unmount();
-        render(<FiltrosPublicaciones publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
         expect(ids()).toEqual([2, 3, 1]);
     });
 
     it("ordena las publicaciones alfabéticamente de Z a A", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} />);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} />);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "Z-A" }));
@@ -862,7 +1024,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("filtra por varias palabras sin distinguir mayúsculas y minúsculas", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
         const buscador = screen.getByLabelText("Buscar publicaciones");
         fireEvent.change(buscador, { target: { value: "MANZANA mercado" } });
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
@@ -873,7 +1035,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("permite volver a seleccionar Sin ordenar", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(botonOrdenar);
         fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
@@ -885,7 +1047,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("coloca las publicaciones sin precio al final al ordenar por precio", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
@@ -897,7 +1059,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("mantiene las publicaciones sin precio al final al ordenar por precio descendente", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
@@ -908,7 +1070,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("restaura todas las variedades al seleccionar Todas", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
         fireEvent.mouseDown(especie);
@@ -923,7 +1085,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("mantiene categoría y calibre válidos al cambiar la variedad", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
         const categoria = screen.getByLabelText("Categoría");
@@ -941,7 +1103,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("restablece categoría y calibre cuando dejan de ser válidos al cambiar la variedad", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
@@ -959,7 +1121,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("permite restablecer el calibre seleccionando Todos", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro=""/>);
         const calibre = screen.getByLabelText("Calibre");
         fireEvent.mouseDown(calibre);
         fireEvent.click(screen.getByRole("option", { name: "Grande" }));
@@ -989,7 +1151,7 @@ describe("FiltrosPublicaciones", () => {
                 },
             ];
 
-            render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCalibre} especieFiltro=""/>);
+            render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPruebaCalibre} especieFiltro=""/>);
             const categoria = screen.getByLabelText("Categoría");
             fireEvent.mouseDown(categoria);
             fireEvent.click(screen.getByRole("option", { name: "I" }));
@@ -1023,7 +1185,7 @@ describe("FiltrosPublicaciones", () => {
                 },
             ];
 
-            render(<FiltrosPublicaciones publicaciones={publicacionesPruebaCategoria} especieFiltro=""/>);
+            render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPruebaCategoria} especieFiltro=""/>);
             const calibre = screen.getByLabelText("Calibre");
             fireEvent.mouseDown(calibre);
             fireEvent.click(screen.getByRole("option", { name: "Grande" }));
@@ -1039,7 +1201,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("mantiene la categoría y restablece el calibre cuando la combinación deja de ser válida", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesCombinacionInvalida} especieFiltro=""/>);
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
@@ -1055,7 +1217,7 @@ describe("FiltrosPublicaciones", () => {
     });
 
     it("mantiene el calibre y restablece la categoría cuando la combinación deja de ser válida", () => {
-        render(<FiltrosPublicaciones publicaciones={publicacionesCombinacionInvalida} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesCombinacionInvalida} especieFiltro=""/>);
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
@@ -1074,7 +1236,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("aplica la especie recibida como filtro inicial", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones publicaciones={publicacionesPrueba} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(2);
         expect(resultado.every((publicacion) => publicacion.especie === "Manzana")).toBe(true);
@@ -1086,7 +1248,7 @@ describe("FiltrosPublicaciones", () => {
             { ...publicacionesVariedadUnica[0], id: 1, presentacion: "Caja" },
             { ...publicacionesVariedadUnica[0], id: 2, presentacion: "Bolsa" },
         ];
-        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro="Pera" alFiltrar={alFiltrar} />);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro="Pera" alFiltrar={alFiltrar} />);
 
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
         const presentacion = screen.getByRole("combobox", { name: "Presentación" });
@@ -1095,5 +1257,51 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.click(screen.getByRole("option", { name: "Bolsa" }));
 
         expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual([publicaciones[1]]);
+    });
+
+    it("filtra publicaciones por nombre de productor", () => {
+        const base: PublicacionProductorListado = {
+            id: 1,
+            precio: 100,
+            fecha: "2026-10-03T15:00:00.000Z",
+            foto: null,
+            especie: "Manzana",
+            variedad: "Gala",
+            presentacion: "Caja",
+            categoria: "I",
+            calibre: "Grande",
+            codigoCalibre: "G",
+            pais: "Uruguay",
+            tipoPublicacion: "PRODUCTOR",
+            productor: {
+                id: 1,
+                nombreFantasia: "Mercado Verde",
+                fotoPerfil: null,
+                whatsApp: "099000001",
+            },
+            ubicaciones: [],
+        };
+
+        const otraPublicacion: PublicacionProductorListado = {
+            ...base,
+            id: 2,
+            productor: {
+                ...base.productor,
+                id: 2,
+                nombreFantasia: "Frutas del Sur",
+            },
+        };
+        const alFiltrar = vi.fn();
+        render(
+            <FiltrosPublicaciones
+                publicaciones={[base, otraPublicacion]}
+                especieFiltro=""
+                obtenerNombreFantasia={obtenerNombreProductor}
+                alFiltrar={alFiltrar}
+            />
+        );
+        expect(screen.queryByRole("combobox", { name: "Nave" })).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("Buscar publicaciones"), {target: { value: "mercado verde" }});
+        expect(alFiltrar).toHaveBeenLastCalledWith([base]);
     });
 });

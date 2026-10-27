@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import FormularioModificarOperador from "./FormularioModificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
-import type { OperadorParaModificar } from "./obtenerOperadorParaModificar";
+import type { OperadorParaModificar } from "../../tipos";
 
 const { push, modificarOperadorMock } = vi.hoisted(() => ({
     push: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 
-vi.mock("./modificarOperador", () => ({
+vi.mock("../../acciones/modificarOperador", () => ({
     modificarOperador: modificarOperadorMock,
 }));
 
@@ -85,6 +85,46 @@ describe("FormularioModificarOperador", () => {
         expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
     });
 
+    it.each(["A22", "22B", "-22", "+22", "2.2", "2,2", "2e2"])(
+        "rechaza el número de local inválido %s sin cambiar lo escrito",
+        (valor) => {
+            renderizar();
+            const campo = screen.getByLabelText("Número de local");
+
+            fireEvent.change(campo, { target: { value: valor } });
+
+            expect(campo).toHaveValue("022");
+            expect(modificarOperadorMock).not.toHaveBeenCalled();
+        },
+    );
+
+    it("rechaza un pegado inválido y permite vaciar y reescribir el local con ceros iniciales", () => {
+        renderizar();
+        const campo = screen.getByLabelText("Número de local") as HTMLInputElement;
+
+        expect(campo).toHaveAttribute("type", "text");
+        expect(campo).toHaveAttribute("inputmode", "numeric");
+        fireEvent.input(campo, {
+            target: { value: "12 A34" },
+            inputType: "insertFromPaste",
+            data: "12 A34",
+        });
+        expect(campo).toHaveValue("022");
+
+        fireEvent.change(campo, { target: { value: "" } });
+        expect(campo).toHaveValue("");
+        expect(campo.validity.valueMissing).toBe(true);
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
+
+        fireEvent.input(campo, {
+            target: { value: "0022" },
+            inputType: "insertFromPaste",
+            data: "0022",
+        });
+        expect(campo).toHaveValue("0022");
+        expect(campo.checkValidity()).toBe(true);
+    });
+
     it("agrega un local vacío con la primera nave seleccionada", () => {
         renderizar();
 
@@ -108,7 +148,7 @@ describe("FormularioModificarOperador", () => {
         expect(valorDe(elementoEn(numeros, 0))).toBe("105");
     });
 
-    it("no permite eliminar el único local y muestra el aviso", () => {
+    it("conserva el último local y avisa fuera de las validaciones del formulario", () => {
         renderizar();
 
         fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
@@ -116,6 +156,25 @@ describe("FormularioModificarOperador", () => {
         const alerta = screen.getByRole("alert");
         expect(alerta.textContent).toContain("Debe haber al menos un local.");
         expect(screen.getAllByLabelText("Número de local")).toHaveLength(1);
+        expect(valorDe(screen.getByLabelText("Número de local"))).toBe("022");
+        const formulario = screen.getByRole("button", { name: "Guardar cambios" }).closest("form")!;
+        expect(within(formulario).queryByRole("alert")).not.toBeInTheDocument();
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
+    });
+
+    it("permite cerrar y volver a mostrar el aviso al reintentar eliminar el último local", async () => {
+        renderizar();
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+        expect(screen.getByRole("alert")).toHaveTextContent("Debe haber al menos un local.");
+
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+        await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Debe haber al menos un local.");
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
+        expect(screen.getAllByLabelText("Número de local")).toHaveLength(1);
+        expect(valorDe(screen.getByLabelText("Número de local"))).toBe("022");
     });
 
     it("envía los datos modificados y vuelve al perfil cuando la modificación es válida", async () => {
@@ -217,7 +276,7 @@ describe("FormularioModificarOperador", () => {
         });
     });
 
-    it.each(["Cancelar", "← Volver al perfil"])(
+    it.each(["Cancelar", "Volver al perfil"])(
         "vuelve al perfil sin guardar al apretar «%s»",
         (nombreDelBoton) => {
             renderizar();

@@ -1,5 +1,6 @@
 import { db } from "../../infraestructura/persistencia/prisma/db";
 import { eliminarImagenPublicacionGestionada } from "./operadores/imagenes-publicacion";
+import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
 
 export async function bajaPublicacionOperador(publicacionId: number, operadorId: number): Promise<boolean> {
 	const resultado = await db.transaction(async (tx) => {
@@ -13,6 +14,7 @@ export async function bajaPublicacionOperador(publicacionId: number, operadorId:
 		}
 		const publicacion = await tx.orm.public.Publicacion.where({ id: publicacionId }).first();
 		await tx.orm.public.Publicacion.where({ id: publicacionId }).delete();
+		await notificarCambioPublicacion(tx, { operadorId, publicacionId });
 		return { eliminada: true, foto: publicacion?.foto ?? null };
 	});
 

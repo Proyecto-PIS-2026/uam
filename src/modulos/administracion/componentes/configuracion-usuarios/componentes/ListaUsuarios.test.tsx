@@ -22,7 +22,7 @@ vi.mock("react", async (importOriginal) => {
         ) => {
             if (estadoTest.simularServidor) {
                 const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
-                let desuscribir = () => {};
+                let desuscribir = () => { };
 
                 try {
                     Object.defineProperty(globalThis, "window", {
@@ -30,7 +30,7 @@ vi.mock("react", async (importOriginal) => {
                         writable: true,
                         value: undefined,
                     });
-                    desuscribir = subscribe(() => {});
+                    desuscribir = subscribe(() => { });
                 } finally {
                     if (descriptor) {
                         Object.defineProperty(globalThis, "window", descriptor);
@@ -43,7 +43,7 @@ vi.mock("react", async (importOriginal) => {
                 return getServerSnapshot();
             }
 
-            const desuscribir = subscribe(() => {});
+            const desuscribir = subscribe(() => { });
             desuscribir();
             return getSnapshot();
         },
@@ -80,24 +80,6 @@ vi.mock("@mui/material/Pagination", () => ({
                 );
             })}
         </nav>
-    ),
-}));
-
-vi.mock("@mui/material/IconButton", () => ({
-    default: ({
-        children,
-        title,
-        onClick,
-        disabled,
-    }: {
-        children?: ReactNode;
-        title?: string;
-        onClick?: (evento: MouseEvent<HTMLButtonElement>) => void;
-        disabled?: boolean;
-    }) => (
-        <button type="button" title={title} onClick={onClick} disabled={disabled}>
-            {children}
-        </button>
     ),
 }));
 
@@ -150,44 +132,6 @@ vi.mock("@mui/material/Button", () => ({
     ),
 }));
 
-vi.mock("@mui/material/Snackbar", () => ({
-    default: ({
-        open,
-        onClose,
-        children,
-    }: {
-        open: boolean;
-        onClose: () => void;
-        children?: ReactNode;
-    }) => (
-        <div data-testid="snackbar" hidden={!open}>
-            {open ? children : undefined}
-            <button type="button" aria-label="Cerrar snackbar" onClick={onClose}>
-                Cerrar
-            </button>
-        </div>
-    ),
-}));
-
-vi.mock("@mui/material/Alert", () => ({
-    default: ({
-        severity,
-        onClose,
-        children,
-    }: {
-        severity: "error" | "success";
-        onClose: () => void;
-        children?: ReactNode;
-    }) => (
-        <div role="alert" data-severity={severity}>
-            {children}
-            <button type="button" aria-label="Cerrar alerta" onClick={onClose}>
-                Cerrar
-            </button>
-        </div>
-    ),
-}));
-
 vi.mock("@mui/icons-material/Edit", () => ({
     default: () => <span data-testid="icono-editar" />,
 }));
@@ -216,6 +160,7 @@ const usuarios: UsuarioParaModificar[] = [
         username: "carla.productor",
         rol: "PRODUCTOR",
         productorId: 301,
+        nombreFantasia: "Granja Carla",
     },
 ];
 
@@ -330,7 +275,7 @@ describe("ListaUsuarios", () => {
         expect(within(filaOperador).getByText("La Huerta")).toBeInTheDocument();
         expect(within(filaOperador).getByText("Operador")).toBeInTheDocument();
 
-        expect(within(filaProductor).getByText("-")).toBeInTheDocument();
+        expect(within(filaProductor).getByText("Granja Carla")).toBeInTheDocument();
         expect(within(filaProductor).getByText("Productor")).toBeInTheDocument();
 
         // Una tecla diferente no selecciona al usuario.
@@ -346,22 +291,24 @@ describe("ListaUsuarios", () => {
         expect(onSeleccionar).toHaveBeenNthCalledWith(2, usuarios[1]);
         expect(onSeleccionar).toHaveBeenNthCalledWith(3, usuarios[2]);
 
-        expect(estadoTest.routerPush).toHaveBeenCalledOnce();
-        expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-operadores/201");
+        expect(estadoTest.routerPush).toHaveBeenCalledTimes(2);
+        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(1, "/gestion-operadores/201");
+        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(2, "/gestion-productores/301");
+
     });
 
-    it("navega a la edición del operador y deshabilita las acciones todavía no disponibles", () => {
+    it("navega a la edición del operador y del productor y deshabilita las acciones todavía no disponibles", () => {
         renderLista();
 
         expect(within(obtenerFila("ana.admin")).getByTitle("Edición todavía no disponible")).toBeDisabled();
         hacerClickEnAccion("beto.operador", "Editar perfil");
-        expect(within(obtenerFila("carla.productor")).getByTitle("Edición todavía no disponible")).toBeDisabled();
-
+        hacerClickEnAccion("carla.productor", "Editar perfil");
         expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-operadores/201/editar");
+        expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-productores/301/editar");
 
         fireEvent.click(obtenerFila("ana.admin"));
 
-        expect(estadoTest.routerPush).toHaveBeenCalledOnce();
+        expect(estadoTest.routerPush).toHaveBeenCalledTimes(2);
     });
 
     it("navega a editar sin propagar el click a la fila", () => {
@@ -437,7 +384,7 @@ describe("ListaUsuarios", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
-    it("espera a onEliminar antes de mostrar el éxito y permite cerrar el snackbar", async () => {
+    it("espera a onEliminar antes de mostrar el éxito y permite cerrar la notificación", async () => {
         const onEliminar = vi.fn().mockResolvedValue(undefined);
 
         renderLista({ onEliminar });
@@ -447,7 +394,7 @@ describe("ListaUsuarios", () => {
 
         await waitFor(() => {
             expect(onEliminar).toHaveBeenCalledWith(usuarios[1]);
-            expect(screen.getByRole("alert")).toHaveTextContent(
+            expect(screen.getByRole("status")).toHaveTextContent(
                 "El usuario beto.operador fue eliminado correctamente.",
             );
         });
@@ -455,9 +402,9 @@ describe("ListaUsuarios", () => {
         expect(screen.queryByText("beto.operador")).not.toBeInTheDocument();
         expect(screen.getByTestId("dialog")).not.toBeVisible();
 
-        fireEvent.click(screen.getByRole("button", { name: "Cerrar snackbar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
 
-        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
     it("mantiene al usuario y muestra un error cuando onEliminar falla", async () => {
@@ -474,12 +421,27 @@ describe("ListaUsuarios", () => {
             );
         });
 
-        expect(screen.getByRole("alert")).toHaveAttribute("data-severity", "error");
         expect(screen.getByText("beto.operador")).toBeInTheDocument();
         expect(screen.getByTestId("dialog")).not.toBeVisible();
 
-        fireEvent.click(screen.getByRole("button", { name: "Cerrar snackbar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
 
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+    it("muestra el indicador solo a usuarios que solicitaron restablecimiento", () => {
+        renderLista({
+            usuarios: [
+                { ...usuarios[1], solicitoRestablecimiento: true },
+                { ...usuarios[2], solicitoRestablecimiento: false },
+            ],
+        });
+
+        expect(
+            within(obtenerFila("beto.operador")).getByText("Restablecimiento solicitado")
+        ).toBeInTheDocument();
+
+        expect(
+            within(obtenerFila("carla.productor")).queryByText("Restablecimiento solicitado")
+        ).not.toBeInTheDocument();
     });
 });

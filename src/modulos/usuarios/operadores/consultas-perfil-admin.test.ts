@@ -47,6 +47,7 @@ const operadorBase = {
 
 const publicacionBase = {
     id: 101,
+    version: 7,
     foto: null,
     precio: "120.00",
     cantidadUnidades: 20,
@@ -54,13 +55,9 @@ const publicacionBase = {
     publicacionActiva: true,
     publicacionDisponible: true,
     tipoPublicacion: "OPERADOR",
-    presentacion: {
-        nombrePresentacion: "Cajón",
-        variedad: {
-            nombreVariedad: "Perita",
-            especie: { nombreEspecie: "Tomate" },
-        },
-    },
+    especie: { nombreEspecie: "Tomate" },
+            variedad: { nombreVariedad: "Perita" },
+            presentacion: { nombrePresentacion: "Cajón" },
     categoria: { nombreCategoria: "Extra" },
     calibre: { codigoCalibre: "A" },
 };
@@ -186,6 +183,8 @@ describe("obtenerPerfilAdminOperador", () => {
             { id: 102, disponible: false },
         ]);
         expect(resultado?.publicaciones.map((p) => p.cantidadUnidades)).toEqual([20, 20]);
+        expect(resultado?.publicaciones.map((p) => p.version)).toEqual([7, 7]);
+        expect(mockDb.publicaciones.select.mock.calls.some((campos) => campos.includes("version"))).toBe(true);
     });
 
     // Los locales se ordenan por nave y, dentro de cada nave, por número de local

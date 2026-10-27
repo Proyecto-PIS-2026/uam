@@ -47,7 +47,7 @@ export default function ListadoConfiguracionesGenerales({ configuracion }: Lista
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="secciones-pagina">
             <TarjetaInput
                 titulo="Lista Inteligente"
                 descripcion="Configurá la URL de acceso a la Lista Inteligente."

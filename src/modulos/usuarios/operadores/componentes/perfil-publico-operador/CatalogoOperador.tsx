@@ -1,13 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import { useActualizacionesPublicaciones } from "../../../../publicaciones/tiempo-real/use-actualizaciones-publicaciones";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, type OrdenPublicaciones } from "../../../../publicaciones/filtros/FiltrosPublicaciones";
-import type { PublicacionListado } from "../../../../consulta-mercado/acciones/Publicaciones";
+import type { PublicacionListado } from "../../../../consulta-mercado/acciones/PublicacionesOperador";
 import { compararEspeciesPorPrioridad } from "../../../../../compartido/prioridad-especies";
-import DrawerPublicacionPerfil from "./DrawerPublicacionPerfil";
+import { DrawerPublicacionPerfil } from "./DrawerPublicacionPerfil";
 import TarjetaPublicacion from "./TarjetaPublicacion";
+
+import ViewListIcon from "@mui/icons-material/ViewList";
+import ViewModuleIcon from "@mui/icons-material/ViewModule";
+
 import styles from "./CatalogoOperador.module.css";
+
+const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
 type CatalogoOperadorProps = {
     publicaciones: PublicacionPerfil[];
@@ -17,7 +28,10 @@ type CatalogoOperadorProps = {
 };
 
 export default function CatalogoOperador({publicaciones, whatsAppOperador = "", idOperador = 0, nombreOperador = ""}: CatalogoOperadorProps) {
-    const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<PublicacionPerfil | null>(null);
+    const router = useRouter();
+    useActualizacionesPublicaciones(() => router.refresh(), { operadorPublicoId: idOperador });
+    const [seleccionId, setSeleccionId] = useState<number | null>(null);
+    const publicacionSeleccionada = publicaciones.find((publicacion) => publicacion.id === seleccionId) ?? null;
     const [drawerAbierto, setDrawerAbierto] = useState(false);
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(false);
     const [ordenActual, setOrdenActual] = useState<OrdenPublicaciones>("prioridad");
@@ -25,6 +39,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
         ...publicacion,
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
         codigoCalibre: publicacion.calibre,
+        tipoPublicacion: "OPERADOR",
         operador: {id: idOperador, nombreFantasia: nombreOperador, whatsApp: whatsAppOperador},
     })), [publicaciones, idOperador, nombreOperador, whatsAppOperador]);
     const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
@@ -37,7 +52,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
     }
 
     function abrirDrawer(publicacion: PublicacionPerfil) {
-        setPublicacionSeleccionada(publicacion);
+        setSeleccionId(publicacion.id);
         setDrawerAbierto(true);
     }
 
@@ -58,20 +73,30 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
         return compararEspeciesPorPrioridad(primera, segunda);
     });
 
+    const publicacionParaDrawer = publicacionSeleccionada ? publicacionesParaFiltros.find((publicacion) => publicacion.id === publicacionSeleccionada.id) ?? null : null;
+
     return (
         <>
             <section className={styles.contenedor}>
                 <div className={styles.catalogo}>
                     <div className={styles.filtros}>
-                        <FiltrosPublicaciones publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual}/>
+                        <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual}/>
                     </div>
 
                     <div className={styles.encabezadoCatalogo}>
                         <h2 className={styles.titulo}>Publicaciones</h2>
-
-                        <button type="button" className={`${styles.botonAgrupar} ${agruparPorEspecie ? styles.botonAgruparActivo : ""}`} aria-pressed={agruparPorEspecie} onClick={() => setAgruparPorEspecie((valorActual) => !valorActual)}>
-                            {agruparPorEspecie ? "Desagrupar" : "Agrupar por especie"}
-                        </button>
+                        <div className={styles.espacioAgrupar}>
+                            <button type="button" className={`${styles.botonAgrupar} ${agruparPorEspecie ? styles.botonAgruparActivo : ""}`} aria-pressed={agruparPorEspecie} onClick={() => setAgruparPorEspecie((valorActual) => !valorActual)}>
+                                <span key={agruparPorEspecie ? "desagrupar" : "agrupar"} className={styles.textoAgrupar}>
+                                    {agruparPorEspecie ? (
+                                        <ViewListIcon fontSize="small" />
+                                    ) : (
+                                        <ViewModuleIcon fontSize="small" />
+                                    )}
+                                        {agruparPorEspecie ? "Desagrupar" : "Agrupar por especie"}
+                                </span>
+                            </button>
+                        </div>
                     </div>
 
                     {publicacionesVisibles.length > 0 ? (
@@ -105,12 +130,16 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
                             </div>
                         )
                     ) : (
-                        <p className={styles.sinResultados}>{publicaciones.length === 0 ? "No hay publicaciones disponibles." : "No hay publicaciones que coincidan con la búsqueda."}</p>
+                        <EstadoVacio
+                            titulo={publicaciones.length === 0 ? "Todavía no hay publicaciones" : "Sin resultados para estos filtros"}
+                            descripcion={publicaciones.length === 0 ? "No hay publicaciones disponibles." : "No hay publicaciones que coincidan con la búsqueda."}
+                            icono={publicaciones.length === 0 ? <Inventory2OutlinedIcon /> : <SearchOffOutlinedIcon />}
+                        />
                     )}
                 </div>
             </section>
 
-            <DrawerPublicacionPerfil publicacion={publicacionSeleccionada} open={drawerAbierto} onOpenChange={setDrawerAbierto} whatsAppOperador={whatsAppOperador}/>
+            <DrawerPublicacionPerfil publicacion={publicacionParaDrawer} open={drawerAbierto} onOpenChange={setDrawerAbierto} />
         </>
     );
 }

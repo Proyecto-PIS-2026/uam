@@ -3,8 +3,8 @@ import { ErrorImagenPublicacion } from "./imagenes-publicacion";
 import {
     ErrorEdicionPublicacion,
     modificarPublicacionOperador,
-    type CambiosPublicacionOperador,
 } from "./modificar-publicacion";
+import type { CambiosPublicacionOperador } from "./tipos";
 
 const mocks = vi.hoisted(() => {
     interface ConsultaMock {
@@ -38,6 +38,8 @@ const mocks = vi.hoisted(() => {
         operador: consulta(),
         vinculo: consulta(),
         publicacion: consulta(),
+        especie: consulta(),
+        variedad: consulta(),
         presentacion: consulta(),
         categoria: consulta(),
         calibre: consulta(),
@@ -58,6 +60,8 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
             Operador: mocks.operador,
             PublicacionOperador: mocks.vinculo,
             Publicacion: mocks.publicacion,
+            Especie: mocks.especie,
+            Variedad: mocks.variedad,
             Presentacion: mocks.presentacion,
             Categoria: mocks.categoria,
             Calibre: mocks.calibre,
@@ -66,6 +70,8 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
     },
 }));
 
+vi.mock("./limpiar-imagen-publicacion", () => ({ limpiarImagenPublicacionNoReferenciada: mocks.eliminarImagen }));
+
 vi.mock("./imagenes-publicacion", () => ({
     ErrorImagenPublicacion: class ErrorImagenPublicacion extends Error {},
     guardarImagenPublicacion: mocks.guardarImagen,
@@ -73,10 +79,13 @@ vi.mock("./imagenes-publicacion", () => ({
 }));
 
 const FOTO_ANTERIOR = "/api/publicaciones/imagenes/20/11111111-1111-4111-8111-111111111111.jpg";
-const FOTO_NUEVA = "data:image/jpeg;base64,/9j/2Q==";
+const FOTO_NUEVA = "/api/publicaciones/imagenes/20/22222222-2222-4222-8222-222222222222.webp";
 const resultadoEsperado = { publicacionOperadorId: 12, publicacionId: 20 };
 
 const cambios: CambiosPublicacionOperador = {
+    version: 1,
+    especieId: 6,
+    variedadId: 7,
     precio: "125",
     foto: FOTO_ANTERIOR,
     categoriaId: 4,
@@ -92,7 +101,9 @@ const transaccion = {
         Operador: mocks.operador,
         PublicacionOperador: mocks.vinculo,
         Publicacion: mocks.publicacion,
-        Presentacion: mocks.presentacion,
+        Especie: mocks.especie,
+            Variedad: mocks.variedad,
+            Presentacion: mocks.presentacion,
         Categoria: mocks.categoria,
         Calibre: mocks.calibre,
         Pais: mocks.pais,
@@ -104,25 +115,27 @@ function archivoNuevo(): File {
 }
 
 function prepararTransaccion() {
-    for (const consulta of [mocks.operador, mocks.vinculo, mocks.publicacion, mocks.presentacion, mocks.categoria, mocks.calibre, mocks.pais]) {
+    for (const consulta of [mocks.operador, mocks.vinculo, mocks.publicacion, mocks.especie, mocks.variedad, mocks.presentacion, mocks.categoria, mocks.calibre, mocks.pais]) {
         consulta.select.mockReturnThis();
         consulta.where.mockReturnThis();
         consulta.include.mockReturnThis();
     }
     mocks.operador.first.mockResolvedValue({ id: 3 });
     mocks.vinculo.first.mockResolvedValue({ id: 12, publicacionId: 20 });
-    mocks.vinculo.all.mockResolvedValue([{ id: 12, publicacionId: 20, operadorId: 3 }]);
-    mocks.publicacion.first.mockResolvedValue({ tipoPublicacion: "OPERADOR", foto: FOTO_ANTERIOR });
+    mocks.vinculo.all.mockResolvedValue([{ id: 12, publicacionId: 20, operadorId: 3, paisId: 5 }]);
+    mocks.publicacion.first.mockResolvedValue({ version: 1, tipoPublicacion: "OPERADOR", foto: FOTO_ANTERIOR });
     mocks.publicacion.all.mockResolvedValue([]);
+    mocks.especie.first.mockResolvedValue({ id: 6, especieActiva: true });
+    mocks.variedad.first.mockResolvedValue({ id: 7, especieId: 6, variedadActiva: true });
     mocks.presentacion.first.mockResolvedValue({
-        id: 8,
+        id: 8, variedadId: 7,
         presentacionActiva: true,
         variedad: { especieId: 6, variedadActiva: true, especie: { especieActiva: true } },
     });
     mocks.categoria.first.mockResolvedValue({ id: 4, especieId: null });
     mocks.calibre.first.mockResolvedValue({ id: 2 });
     mocks.pais.first.mockResolvedValue({ id: 5 });
-    mocks.publicacion.update.mockResolvedValue(undefined);
+    mocks.publicacion.update.mockResolvedValue({ id: 20, version: 2 });
     mocks.vinculo.update.mockResolvedValue(undefined);
     mocks.transaction.mockImplementation((callback: (tx: typeof transaccion) => unknown) => callback(transaccion));
     mocks.rawSql.mockReturnValue({ returnsRow: () => ({ build: () => ({}) }) });
@@ -139,17 +152,60 @@ describe("modificarPublicacionOperador", () => {
 
     afterEach(() => vi.restoreAllMocks());
 
+    it("rechaza un formulario antiguo antes de guardar imágenes o modificar datos", async () => {
+        mocks.publicacion.first.mockResolvedValue({ tipoPublicacion: "OPERADOR", foto: FOTO_ANTERIOR, version: 2 });
+        await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({ codigo: "CONFLICTO" });
+        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+    });
+
+    it("revierte la imagen nueva si el control de versión pierde la actualización", async () => {
+        mocks.publicacion.update.mockResolvedValue(null);
+        await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({ codigo: "CONFLICTO" });
+        expect(mocks.publicacion.where).toHaveBeenCalledWith({ id: 20, version: 1 });
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
+        expect(mocks.vinculo.update).not.toHaveBeenCalled();
+    });
+
+    it("procesa la foto sin abrir una transacción y detecta cambios posteriores", async () => {
+        let terminarImagen!: (url: string) => void;
+        let avisarInicio!: () => void;
+        const iniciada = new Promise<void>((resolve) => { avisarInicio = resolve; });
+        mocks.guardarImagen.mockImplementation(() => {
+            avisarInicio();
+            return new Promise<string>((resolve) => { terminarImagen = resolve; });
+        });
+        const guardado = modificarPublicacionOperador(9, 12, cambios, archivoNuevo());
+        const rechazo = expect(guardado).rejects.toMatchObject({ codigo: "CONFLICTO" });
+        await iniciada;
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+        mocks.publicacion.first.mockResolvedValue({ version: 2, tipoPublicacion: "OPERADOR", foto: FOTO_ANTERIOR });
+        terminarImagen(FOTO_NUEVA);
+        await rechazo;
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
+    });
+
+    it("limpia la foto preparada si se elimina el vínculo antes de guardar", async () => {
+        mocks.vinculo.first.mockResolvedValueOnce({ id: 12, publicacionId: 20 }).mockResolvedValue(null);
+        await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({ codigo: "NO_ENCONTRADA" });
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
+    });
+
     it("guarda los cambios de una publicación del operador", async () => {
         await expect(modificarPublicacionOperador(9, 12, cambios)).resolves.toEqual({
             publicacionOperadorId: 12,
             publicacionId: 20,
         });
         expect(mocks.publicacion.update).toHaveBeenCalledWith({
+            version: 2,
             precio: "125",
             foto: cambios.foto,
             categoriaId: 4,
             calibreId: 2,
-            presentacionId: 8,
+            especieId: 6, variedadId: 7, presentacionId: 8,
             publicacionDisponible: true,
         });
         expect(mocks.operador.where).toHaveBeenCalledWith({ usuarioId: 9 });
@@ -158,21 +214,21 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.vinculo.update).toHaveBeenCalledExactlyOnceWith({ paisId: 5 });
         expect(mocks.pais.where).toHaveBeenCalledWith({ id: 5 });
         expect(mocks.publicacion.where).toHaveBeenCalledWith({ id: 20 });
-        expect(mocks.execute).toHaveBeenCalledOnce();
+        expect(mocks.execute).toHaveBeenCalledTimes(2);
         expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.vinculo.all.mock.invocationCallOrder[0]);
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
     it("conserva la foto actual cuando una edición vieja envía la URL anterior", async () => {
-        mocks.publicacion.first.mockResolvedValue({ tipoPublicacion: "OPERADOR", foto: FOTO_NUEVA });
+        mocks.publicacion.first.mockResolvedValue({ version: 1, tipoPublicacion: "OPERADOR", foto: FOTO_NUEVA });
         await modificarPublicacionOperador(9, 12, cambios);
         expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: FOTO_NUEVA }));
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
     it("conserva la foto actual si la edición no incluye el campo foto", async () => {
-        mocks.publicacion.first.mockResolvedValue({ tipoPublicacion: "OPERADOR", foto: FOTO_NUEVA });
+        mocks.publicacion.first.mockResolvedValue({ version: 1, tipoPublicacion: "OPERADOR", foto: FOTO_NUEVA });
         const cambiosSinFoto = { ...cambios };
         delete cambiosSinFoto.foto;
         await modificarPublicacionOperador(9, 12, cambiosSinFoto);
@@ -180,28 +236,28 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
-    it("rechaza una combinación ya publicada por el mismo operador antes de guardar la foto", async () => {
+    it("rechaza una combinación ya publicada por el mismo operador y limpia la foto nueva", async () => {
         mocks.vinculo.all.mockResolvedValue([
-            { id: 12, publicacionId: 20, operadorId: 3 },
-            { id: 13, publicacionId: 21, operadorId: 3 },
+            { id: 12, publicacionId: 20, operadorId: 3, paisId: 5 },
+            { id: 13, publicacionId: 21, operadorId: 3, paisId: 5 },
         ]);
         mocks.publicacion.all.mockResolvedValue([{ id: 21 }]);
 
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({
             codigo: "DATOS_INVALIDOS",
-            message: "Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría y calibre.",
+            message: "Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país.",
         });
         expect(mocks.vinculo.where).toHaveBeenCalledWith({ operadorId: 3 });
-        expect(mocks.publicacion.where).toHaveBeenCalledWith({ presentacionId: 8, categoriaId: 4, calibreId: 2 });
-        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+        expect(mocks.publicacion.where).toHaveBeenCalledWith({ especieId: 6, variedadId: 7, presentacionId: 8, categoriaId: 4, calibreId: 2 });
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
         expect(mocks.vinculo.update).not.toHaveBeenCalled();
     });
 
     it("no considera duplicado a la propia publicación ni a otra de otro operador", async () => {
         mocks.vinculo.all.mockResolvedValue([
-            { id: 12, publicacionId: 20, operadorId: 3 },
-            { id: 13, publicacionId: 21, operadorId: 3 },
+            { id: 12, publicacionId: 20, operadorId: 3, paisId: 5 },
+            { id: 13, publicacionId: 21, operadorId: 3, paisId: 5 },
         ]);
         mocks.publicacion.all.mockResolvedValue([{ id: 20 }, { id: 90 }]);
 
@@ -209,19 +265,19 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.publicacion.update).toHaveBeenCalledOnce();
     });
 
-    it.each(["12.50", "12,50", "1.00", "0.00", "9999999999.99", "-1", "10000000000", "1.234", "1e2", "+1", "01", ""])(
+    it.each(["0", "000", "12.50", "12,50", "1.00", "0.00", "9999999999.99", "-1", "10000000000", "1.234", "1e2", "+1"])(
         "rechaza el precio inválido %s antes de abrir la transacción",
         async (precio) => {
             await expect(modificarPublicacionOperador(9, 12, { ...cambios, precio })).rejects.toMatchObject({
                 codigo: "DATOS_INVALIDOS",
-                message: "El precio debe ser un número entero de hasta 10 dígitos, sin decimales.",
+                message: "El precio debe ser un número entero positivo de hasta 10 dígitos, sin decimales.",
             });
             expect(mocks.transaction).not.toHaveBeenCalled();
         },
     );
 
-    it("permite guardar sin precio", async () => {
-        await modificarPublicacionOperador(9, 12, { ...cambios, precio: null });
+    it.each([null, "", "   "])("permite guardar sin precio con %j", async (precio) => {
+        await modificarPublicacionOperador(9, 12, { ...cambios, precio });
         expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ precio: null }));
     });
 
@@ -245,7 +301,7 @@ describe("modificarPublicacionOperador", () => {
 
     it.each([
         { entrada: " 125 ", esperado: "125" },
-        { entrada: "0", esperado: "0" },
+        { entrada: "00125", esperado: "125" },
         { entrada: "9999999999", esperado: "9999999999" },
     ])("normaliza y permite el precio $entrada", async ({ entrada, esperado }) => {
         await modificarPublicacionOperador(9, 12, { ...cambios, precio: entrada });
@@ -257,13 +313,13 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ publicacionDisponible: false }));
     });
 
-    it.each([undefined, null, "5", 0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+    it.each(["5", -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
         "rechaza un país inválido antes de abrir la transacción: %s",
         async (paisId) => {
             await expect(modificarPublicacionOperador(9, 12, {
                 ...cambios,
                 paisId: paisId as unknown as number,
-            }, archivoNuevo())).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "El país no es válido." });
+            }, archivoNuevo())).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "El campo paisId no es válido." });
             expect(mocks.transaction).not.toHaveBeenCalled();
             expect(mocks.guardarImagen).not.toHaveBeenCalled();
             expect(mocks.publicacion.update).not.toHaveBeenCalled();
@@ -271,14 +327,13 @@ describe("modificarPublicacionOperador", () => {
         },
     );
 
-    it("rechaza un país inexistente antes de guardar la foto o actualizar datos", async () => {
+    it("rechaza un país inexistente y limpia la foto nueva", async () => {
         mocks.pais.first.mockResolvedValue(null);
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo()))
-            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "El país no existe." });
-        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La selección contiene datos que ya no están disponibles o no corresponden a la especie." });
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
         expect(mocks.vinculo.update).not.toHaveBeenCalled();
-        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
     it("guarda el país seleccionado en el vínculo de la publicación", async () => {
@@ -321,8 +376,8 @@ describe("modificarPublicacionOperador", () => {
     it("rechaza una presentación inexistente", async () => {
         mocks.presentacion.first.mockResolvedValue(null);
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo()))
-            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La presentación no existe." });
-        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La selección contiene datos que ya no están disponibles o no corresponden a la especie." });
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
 
@@ -333,21 +388,21 @@ describe("modificarPublicacionOperador", () => {
     ])("rechaza una presentación, variedad o especie inactiva", async (presentacion) => {
         mocks.presentacion.first.mockResolvedValue({ id: 8, ...presentacion });
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
-        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
 
     it("rechaza una categoría inexistente", async () => {
         mocks.categoria.first.mockResolvedValue(null);
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
-        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
 
     it("rechaza una categoría de otra especie", async () => {
         mocks.categoria.first.mockResolvedValue({ id: 4, especieId: 77 });
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
-        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
 
@@ -360,7 +415,7 @@ describe("modificarPublicacionOperador", () => {
     it("rechaza un calibre inexistente", async () => {
         mocks.calibre.first.mockResolvedValue(null);
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
-        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
 
@@ -374,7 +429,7 @@ describe("modificarPublicacionOperador", () => {
         });
         await expect(modificarPublicacionOperador(9, 12, cambios, fotoNueva)).resolves.toEqual(resultadoEsperado);
         expect(mocks.guardarImagen).toHaveBeenCalledExactlyOnceWith(20, fotoNueva);
-        expect(mocks.pais.first.mock.invocationCallOrder[0]).toBeLessThan(mocks.guardarImagen.mock.invocationCallOrder[0]);
+        expect(mocks.guardarImagen.mock.invocationCallOrder[0]).toBeLessThan(mocks.transaction.mock.invocationCallOrder[0]);
         expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: FOTO_NUEVA }));
         expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_ANTERIOR, 20);
         expect(confirmarTransaccion.mock.invocationCallOrder[0]).toBeLessThan(mocks.eliminarImagen.mock.invocationCallOrder[0]);
@@ -406,22 +461,22 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
-    it("no borra archivos cuando falla la actualización de la foto en base", async () => {
+    it("elimina sólo la imagen nueva cuando falla la actualización de la foto en base", async () => {
         const errorOriginal = new Error("Falló la actualización.");
         mocks.publicacion.update.mockRejectedValue(errorOriginal);
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toBe(errorOriginal);
-        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
     });
 
-    it("no borra archivos cuando falla la actualización del país", async () => {
+    it("elimina sólo la imagen nueva cuando falla la actualización del país", async () => {
         const errorOriginal = new Error("Falló la actualización del país.");
         mocks.vinculo.update.mockRejectedValue(errorOriginal);
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toBe(errorOriginal);
         expect(mocks.publicacion.update).toHaveBeenCalledOnce();
-        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
     });
 
-    it("no borra archivos si falla la confirmación de la transacción", async () => {
+    it("elimina sólo la imagen nueva si falla la confirmación de la transacción", async () => {
         const errorOriginal = new Error("No se pudo confirmar la transacción.");
         mocks.transaction.mockImplementation(async (callback: (tx: typeof transaccion) => Promise<unknown>) => {
             await callback(transaccion);
@@ -429,7 +484,7 @@ describe("modificarPublicacionOperador", () => {
         });
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toBe(errorOriginal);
         expect(mocks.publicacion.update).toHaveBeenCalledOnce();
-        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
     });
 
     it("conserva la foto anterior si falla la actualización sin archivo nuevo", async () => {
@@ -502,11 +557,12 @@ describe("modificarPublicacionOperador", () => {
             publicacionId: 20,
         });
         expect(mocks.publicacion.update).toHaveBeenCalledWith({
+            version: 2,
             precio: "125",
             foto: cambios.foto,
             categoriaId: 4,
             calibreId: 2,
-            presentacionId: 8,
+            especieId: 6, variedadId: 7, presentacionId: 8,
             publicacionDisponible: true,
             cantidadUnidades: 200, 
         });
@@ -516,7 +572,7 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.vinculo.update).toHaveBeenCalledExactlyOnceWith({ paisId: 5 });
         expect(mocks.pais.where).toHaveBeenCalledWith({ id: 5 });
         expect(mocks.publicacion.where).toHaveBeenCalledWith({ id: 20 });
-        expect(mocks.execute).toHaveBeenCalledOnce();
+        expect(mocks.execute).toHaveBeenCalledTimes(2);
         expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.vinculo.all.mock.invocationCallOrder[0]);
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
@@ -524,7 +580,7 @@ describe("modificarPublicacionOperador", () => {
 
     it("ejecuta de forma exitosa la validación profunda de la especie activa al modificar", async () => {
         mocks.presentacion.first.mockResolvedValue({
-            id: 8,
+            id: 8, variedadId: 7,
             presentacionActiva: true,
             variedad: { especieId: 6, variedadActiva: true, especie: { especieActiva: true } },
         });

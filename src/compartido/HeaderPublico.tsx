@@ -7,17 +7,34 @@ import Link from "next/link";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import AgricultureOutlinedIcon from "@mui/icons-material/AgricultureOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import NaturePeopleOutlinedIcon from "@mui/icons-material/NaturePeopleOutlined";
+import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import LoginOutlinedIcon from "@mui/icons-material/LoginOutlined";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
+import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import { usePathname } from "next/navigation";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
 
+import { useId } from "react";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+
 import estilos from "./HeaderPublico.module.css";
 
 type OpcionMenu = {
     nombre: string;
     ruta: string;
+    icono: typeof StorefrontOutlinedIcon;
     permitido?: (sesion: DatosSesion | null) => boolean;
     soloSinSesion?: boolean;
     ocultarParaOperador?: boolean;
@@ -27,45 +44,88 @@ const opcionesMenu: OpcionMenu[] = [
     {
         nombre: "Inicio",
         ruta: "/inicio",
+        icono: HomeOutlinedIcon,
         ocultarParaOperador: true,
     },
+    
     {
-        nombre: "Publicaciones",
+        nombre: "Mercado",
         ruta: "/publicaciones",
+        icono: StorefrontOutlinedIcon,
         permitido: () => autorizado("operador.publicacion.consultar"),
         ocultarParaOperador: true,
     },
+    // Listado de publicaciones de productores
+    {
+        nombre: "Mercado Productores",
+        ruta: "/publicaciones-productor",
+        icono: AgricultureOutlinedIcon,
+        permitido: (sesion) => autorizado("productor.publicacion.consultar", sesion),
+    },
+
     {
         nombre: "Operadores",
         ruta: "/operadores",
+        icono: GroupsOutlinedIcon,
         permitido: () => autorizado("operador.catalogo.consultar"),
         ocultarParaOperador: true,
+    },
+
+    {
+        nombre: "Productores",
+        ruta: "/productores",
+        icono: NaturePeopleOutlinedIcon,
+        permitido: (sesion) => autorizado("productor.publicacion.consultar", sesion),
+    },
+
+    {
+        nombre: "Precios de referencia",
+        ruta: "/precios-referencia",
+        icono: PaymentsOutlinedIcon,
+        permitido: () => autorizado("preciosReferencia.consultar"),
+    },
+
+    {
+        nombre: "Mi mercado",
+        ruta: "/mi-mercado",
+        icono: Inventory2OutlinedIcon,
+        permitido: (sesion) => autorizado("operador.mercado.acceder", sesion),
+    },
+
+    {
+        nombre: "Iniciar sesión",
+        ruta: "/iniciar-sesion",
+        icono: LoginOutlinedIcon,
+        soloSinSesion: true,
+    },
+
+    { 
+        nombre: "Administración", 
+        ruta: "/administracion",
+        icono: AdminPanelSettingsOutlinedIcon,
+        permitido: (sesion) => autorizado("usuarios.cuentas.gestionar", sesion),
+    }
+];
+
+const opcionesMenuProductor: OpcionMenu[] = [
+    {
+        nombre: "Mi mercado",
+        ruta: "/mi-mercado/productor",
+        icono: Inventory2OutlinedIcon,
+        permitido: (sesion) => autorizado("productor.mercado.acceder", sesion),
     },
     {
         nombre: "Precios de referencia",
         ruta: "/precios-referencia",
+        icono: PaymentsOutlinedIcon,
         permitido: () => autorizado("preciosReferencia.consultar"),
     },
     {
-        nombre: "Mi mercado",
-        ruta: "/mi-mercado",
-        permitido: (sesion) => autorizado("operador.mercado.acceder", sesion),
+        nombre: "Histórico de precios",
+        ruta: "/precios-historicos",
+        icono: ShowChartOutlinedIcon,
+        permitido: () => autorizado("preciosReferencia.consultar"),
     },
-    {
-        nombre: "Mi mercado",
-        ruta: "/mi-mercado/productor",
-        permitido: (sesion) => autorizado("productor.mercado.acceder", sesion),
-    },
-    {
-        nombre: "Iniciar sesión",
-        ruta: "/iniciar-sesion",
-        soloSinSesion: true,
-    },
-    { 
-        nombre: "Administración", 
-        ruta: "/administracion",
-        permitido: (sesion) => autorizado("usuarios.cuentas.gestionar", sesion),
-    }
 ];
 
 type PropiedadesEncabezado = {
@@ -73,20 +133,150 @@ type PropiedadesEncabezado = {
     fotoPerfil?: string | null;
 };
 
+function MenuPublicaciones({
+    mobile = false,
+    rutaActual,
+    onNavigate,
+}: {
+    mobile?: boolean;
+    rutaActual: string;
+    onNavigate: () => void;
+}) {
+    const [abierto, setAbierto] = useState(false);
+    const referencia = useRef<HTMLDivElement>(null);
+    const botonRef = useRef<HTMLButtonElement>(null);
+    const id = useId();
+
+    const opciones = [
+        { nombre: "Mercado", ruta: "/publicaciones", icono: StorefrontOutlinedIcon },
+        { nombre: "Mercado Productores", ruta: "/publicaciones-productor", icono: AgricultureOutlinedIcon },
+    ];
+
+    const esActiva = (ruta: string) =>
+        rutaActual === ruta || rutaActual.startsWith(`${ruta}/`);
+
+    const activo = opciones.some((opcion) => esActiva(opcion.ruta));
+
+    useEffect(() => {
+        if (!abierto) return;
+
+        function cerrarAlPulsarFuera(evento: PointerEvent) {
+            if (
+                evento.target instanceof Node &&
+                !referencia.current?.contains(evento.target)
+            ) {
+                setAbierto(false);
+            }
+        }
+
+        document.addEventListener("pointerdown", cerrarAlPulsarFuera);
+
+        return () => {
+            document.removeEventListener("pointerdown", cerrarAlPulsarFuera);
+        };
+    }, [abierto]);
+
+    return (
+        <div
+            ref={referencia}
+            className={estilos.grupoPublicaciones}
+            onBlur={(evento) => {
+                if (!evento.currentTarget.contains(evento.relatedTarget)) {
+                    setAbierto(false);
+                }
+            }}
+            onKeyDown={(evento) => {
+                if (evento.key === "Escape" && abierto) {
+                    evento.preventDefault();
+                    evento.stopPropagation();
+                    setAbierto(false);
+                    botonRef.current?.focus();
+                }
+            }}
+        >
+            <button
+                ref={botonRef}
+                type="button"
+                className={[
+                    mobile ? estilos.enlaceMobile : estilos.enlace,
+                    estilos.botonPublicaciones,
+                    activo ? estilos.enlaceActivo : "",
+                ].join(" ")}
+                aria-expanded={abierto}
+                aria-controls={id}
+                onClick={() => setAbierto((valor) => !valor)}
+            >
+                {mobile ? (
+                    <span className={estilos.etiquetaMenuMobile}>
+                        <StorefrontOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
+                        Mercados
+                    </span>
+                ) : "Mercados"}
+                {abierto ? (
+                    <KeyboardArrowUpIcon
+                        className={estilos.iconoExpandir}
+                        aria-hidden="true"
+                    />
+                ) : (
+                    <KeyboardArrowDownIcon
+                        className={estilos.iconoExpandir}
+                        aria-hidden="true"
+                    />
+                )}
+            </button>
+
+            <div
+                id={id}
+                inert={!abierto}
+                className={[
+                    estilos.listaPublicaciones,
+                    abierto ? estilos.listaPublicacionesAbierta : "",
+                    mobile ? estilos.listaPublicacionesMobile : "",
+                ].join(" ")}
+            >
+                {opciones.map((opcion) => (
+                    <Link
+                        key={opcion.ruta}
+                        href={opcion.ruta}
+                        aria-current={esActiva(opcion.ruta) ? "page" : undefined}
+                        className={[
+                            estilos.opcionPublicaciones,
+                            esActiva(opcion.ruta)
+                                ? estilos.opcionPublicacionesActiva
+                                : "",
+                        ].join(" ")}
+                        onClick={() => {
+                            setAbierto(false);
+                            onNavigate();
+                        }}
+                    >
+                        {mobile && <opcion.icono className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />}
+                        {opcion.nombre}
+                    </Link>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export default function HeaderPublico({ sesion, fotoPerfil = null }: PropiedadesEncabezado) {
     const rolUsuario = sesion?.rol ?? null;
+    const esProductor = rolUsuario === "PRODUCTOR";
     const [menuAbierto, cambiarMenuAbierto] = useState(false);
     const [menuUsuarioAbierto, cambiarMenuUsuarioAbierto] = useState(false);
     const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
     const referenciaMenuUsuario = useRef<HTMLDivElement>(null);
     const rutaActual = usePathname() ?? "";
     const rutaPrincipal = obtenerRutaPrincipal(rolUsuario);
-    const opcionesVisibles = opcionesMenu.filter(
+    const opcionesVisibles = (esProductor ? opcionesMenuProductor : opcionesMenu).filter(
         (opcion) =>
             (!opcion.permitido || opcion.permitido(sesion)) &&
             (!opcion.soloSinSesion || rolUsuario === null) &&
             (!opcion.ocultarParaOperador || rolUsuario !== "OPERADOR"),
     );
+
+    const esAdministrador = rolUsuario === "ADMINISTRADOR";
+    const opcionesNavegacion = opcionesVisibles.filter((opcion) => !esAdministrador || opcion.ruta !== "/publicaciones-productor");
 
     useEffect(() => {
         if (!menuUsuarioAbierto) return;
@@ -121,6 +311,11 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
         return rutaActual === ruta || rutaActual.startsWith(`${ruta}/`);
     }
 
+    function cerrarMenus() {
+        cambiarMenuAbierto(false);
+        cambiarMenuUsuarioAbierto(false);
+    }
+
     const menuUsuario = rolUsuario && (
         <div ref={referenciaMenuUsuario} className={estilos.menuOperador}>
             <button
@@ -134,6 +329,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     <Image
                         src={fotoPerfil}
                         alt="Foto de perfil"
+                        unoptimized={fotoPerfil.startsWith("/api/")}
                         width={40}
                         height={40}
                         className={estilos.fotoPerfil}
@@ -145,10 +341,12 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
             </button>
             {menuUsuarioAbierto && (
                 <div className={estilos.desplegableOperador} role="menu">
-                    <span className={estilos.opcionDesplegable} role="menuitem">
-                        Mi perfil
-                    </span>
-                    <form action={cerrarSesionYVolverAlInicio}>
+                    {!esProductor && (
+                        <span className={estilos.opcionDesplegable} role="menuitem">
+                            Mi perfil
+                        </span>
+                    )}
+                    <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
                         <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
                             Cerrar sesión
                         </button>
@@ -158,27 +356,30 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
         </div>
     );
 
-    const menuPerfilMobile = rolUsuario && (
+    const menuPerfilMobile = rolUsuario && !esProductor && (
         <button type="button" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`}>
-            <span>Mi perfil</span>
-            {fotoPerfil && !fotoPerfilFallida ? (
+            <span className={estilos.etiquetaMenuMobile}>
+                <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
+                Mi perfil
+            </span>
+            {fotoPerfil && !fotoPerfilFallida && (
                 <Image
                     src={fotoPerfil}
                     alt=""
+                    unoptimized={fotoPerfil.startsWith("/api/")}
                     width={32}
                     height={32}
                     className={estilos.fotoPerfilMobile}
                     onError={() => cambiarFotoPerfilFallida(true)}
                 />
-            ) : (
-                <AccountCircleIcon className={estilos.iconoPerfilMobile} />
             )}
         </button>
     );
 
     const menuCerrarSesionMobile = rolUsuario && (
-        <form action={cerrarSesionYVolverAlInicio}>
+        <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
             <button type="submit" className={`${estilos.enlaceMobile} ${estilos.cerrarSesionMobile}`}>
+                <LogoutOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
                 Cerrar sesión
             </button>
         </form>
@@ -191,7 +392,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     <Link
                         href={rutaPrincipal}
                         className={estilos.marca}
-                        aria-label={rolUsuario === "OPERADOR" ? "Ir a Mi mercado" : "Ir al inicio"}
+                        aria-label={rolUsuario === "OPERADOR" || esProductor ? "Ir a Mi mercado" : "Ir al inicio"}
                         onClick={() => cambiarMenuAbierto(false)}
                     >
                         <Image
@@ -204,16 +405,26 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         />
                     </Link>
                     <nav className={estilos.navegacion} aria-label="Navegación principal">
-                        {opcionesVisibles.map((opcion) => (
-                            <Link
-                                key={opcion.ruta}
-                                href={opcion.ruta}
-                                aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined}
-                                className={`${estilos.enlace} ${esRutaActiva(opcion.ruta) ? estilos.enlaceActivo : ""}`}
-                            >
-                                {opcion.nombre}
-                            </Link>
-                        ))}
+                        {opcionesNavegacion.map((opcion) =>
+                            esAdministrador && opcion.ruta === "/publicaciones" ? (
+                                <MenuPublicaciones
+                                    key={opcion.ruta}
+                                    rutaActual={rutaActual}
+                                    onNavigate={() => cambiarMenuAbierto(false)}
+                                />
+                            ) : (
+                                <Link
+                                    key={opcion.ruta}
+                                    href={opcion.ruta}
+                                    aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined}
+                                    className={`${estilos.enlace} ${
+                                        esRutaActiva(opcion.ruta) ? estilos.enlaceActivo : ""
+                                    }`}
+                                >
+                                    {opcion.nombre}
+                                </Link>
+                            ),
+                        )}
                     </nav>
                     {menuUsuario}
                     <button
@@ -238,17 +449,27 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     aria-label="Navegación móvil"
                 >
                     {menuPerfilMobile}
-                    {opcionesVisibles.map((opcion) => (
-                        <Link
-                            key={opcion.ruta}
-                            href={opcion.ruta}
-                            aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined}
-                            className={estilos.enlaceMobile}
-                            onClick={() => cambiarMenuAbierto(false)}
-                        >
-                            {opcion.nombre}
-                        </Link>
-                    ))}
+                    {opcionesNavegacion.map((opcion) =>
+                        esAdministrador && opcion.ruta === "/publicaciones" ? (
+                            <MenuPublicaciones
+                                key={opcion.ruta}
+                                mobile
+                                rutaActual={rutaActual}
+                                onNavigate={() => cambiarMenuAbierto(false)}
+                            />
+                        ) : (
+                            <Link
+                                key={opcion.ruta}
+                                href={opcion.ruta}
+                                aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined}
+                                className={estilos.enlaceMobile}
+                                onClick={() => cambiarMenuAbierto(false)}
+                            >
+                                <opcion.icono className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
+                                {opcion.nombre}
+                            </Link>
+                        ),
+                    )}
                     {menuCerrarSesionMobile}
                 </nav>
             </header>
