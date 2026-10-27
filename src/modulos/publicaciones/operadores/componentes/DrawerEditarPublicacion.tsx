@@ -420,7 +420,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                     <CloseIcon fontSize="small" />
                 </button>
             </div>
-            <form className={styles.formulario} onSubmit={solicitarGuardado}>
+            <form className={styles.formulario} onSubmit={solicitarGuardado} aria-busy={ocupado}>
                 <div className={styles.cuerpo}>
                     {[campoPrecio, campoUnidades, seccionFoto, accionesPublicacion, datosProducto, errorFormulario]}
                 </div>

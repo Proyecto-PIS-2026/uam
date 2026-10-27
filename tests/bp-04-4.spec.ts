@@ -1,5 +1,6 @@
 import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
 import { iniciarSesionOperador } from "./autenticacion";
+import { conPreciosReferenciaDePrueba } from "./precios-referencia-db";
 
 const rutaHistoricos = "/precios-historicos?species_id=1&producto=Acelga&variedad=-&pais=URUGUAY&calibre=C&categoria=I";
 
@@ -49,7 +50,7 @@ async function consultarHistoricos(page: Page) {
   await expect(page.getByRole("heading", { name: "Histórico de Acelga", exact: true })).toBeVisible();
 }
 
-test("BP-04.4 CA-1 CP-01: consultas públicas sin iniciar sesión", async ({ page, context }) => {
+test("BP-04.4 CA-1 CP-01: consultas públicas sin iniciar sesión", async ({ page, context }) => conPreciosReferenciaDePrueba(async () => {
   test.slow();
 
   async function consultar(ruta: string, titulo: string) {
@@ -115,7 +116,7 @@ test("BP-04.4 CA-1 CP-01: consultas públicas sin iniciar sesión", async ({ pag
   });
 
   expect((await context.cookies()).some((cookie) => cookie.name === "uam_sesion")).toBe(false);
-});
+}));
 
 test("BP-04.4 CA-1 CP-02: funcionalidades protegidas sin sesión", async ({ page, request }) => {
   test.slow();
@@ -157,7 +158,7 @@ test("BP-04.4 CA-2 CP-03: funcionalidades permitidas al Operador", async ({ page
   await expect(page.getByTitle("Editar precio").first()).toBeEnabled();
 
   await page.getByRole("button", { name: /^Ver detalle de / }).first().click();
-  const consulta = page.getByRole("dialog", { name: "Consultar publicación" });
+  const consulta = page.getByRole("dialog", { name: "Consulta de publicación" });
   await expect(consulta).toBeVisible();
   await expect(consulta.getByRole("button", { name: "Editar", exact: true })).toBeEnabled();
   await expect(consulta.getByRole("button", { name: "Eliminar", exact: true })).toBeEnabled();
@@ -273,7 +274,7 @@ test("BP-04.4 CA-5 CP-09: mercado de otro Operador", async ({ page, request, bro
     try {
       await page.goto(`/mi-mercado/${encodeURIComponent(ajeno!.nombre)}`);
       await expect(page).toHaveURL((url) => url.pathname === "/inicio");
-      await expect(page.getByRole("dialog", { name: "Consultar publicación" })).toHaveCount(0);
+      await expect(page.getByRole("dialog", { name: "Consulta de publicación" })).toHaveCount(0);
     } finally {
       await visitante.reload();
       await expect(publicacion.getByRole("heading")).toHaveText(nombre);

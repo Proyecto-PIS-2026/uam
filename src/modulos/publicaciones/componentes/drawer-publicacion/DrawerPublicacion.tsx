@@ -34,10 +34,16 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
     const enlacePerfil = publicacion && usuario ? publicacion.tipoPublicacion === "OPERADOR" ? esAdmin ? `/gestion-operadores/${publicacion.operador.id}` : `/operadores/${encodeURIComponent(usuario.nombreFantasia)}?origen=publicaciones` : `/productores/${encodeURIComponent(usuario.nombreFantasia)}?origen=publicaciones` : "";    
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     
-    const claveFoto = publicacion ? `${publicacion.id}-${publicacion.foto ?? ""}` : "";
+    const claveFoto = publicacion ? `${publicacion.tipoPublicacion}-${publicacion.id}-${publicacion.foto ?? ""}` : "";
     const tieneFoto = Boolean(publicacion?.foto?.trim());
     const [fotoAmpliada, setFotoAmpliada] = useState(false);
     const [fotoPreparada, setFotoPreparada] = useState<string | null>(null);
+    const [consultaAnterior, setConsultaAnterior] = useState({ claveFoto, open });
+    if (consultaAnterior.claveFoto !== claveFoto || consultaAnterior.open !== open) {
+        setConsultaAnterior({ claveFoto, open });
+        setFotoAmpliada(false);
+        if (consultaAnterior.claveFoto !== claveFoto) setFotoPreparada(null);
+    }
     const drawerVisible = open && publicacion !== null && (!tieneFoto || fotoPreparada === claveFoto);
 
     const contenidoRef = useRef<HTMLDivElement>(null);
@@ -163,7 +169,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             </div>
                         </div>
                     </div>
-                    <Dialog open={fotoAmpliada && open && Boolean(publicacion?.foto)} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" 
+                    <Dialog open={fotoAmpliada && drawerVisible && tieneFoto} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada del producto"
                         slotProps={{ 
                             paper: { className: styles.modalFoto }, 
                             backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" }  }, 

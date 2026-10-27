@@ -599,11 +599,18 @@ describe("DrawerPublicacionProductor: edición", () => {
         editar.blur();
         fireEvent.click(editar);
         expect(editar).toBeDisabled();
+        const precio = screen.getByLabelText("Precio en pesos");
+        expect(precio).toHaveAttribute("readonly");
+        expect(precio.closest("form")).toHaveAttribute("aria-busy", "true");
+        expect(within(papel).queryByRole("status")).not.toBeInTheDocument();
         expect(document.body).toHaveFocus();
 
         await act(async () => resolver(respuesta({ opciones })));
 
         expect(screen.getByRole("dialog", { name: "Editar publicación" })).toBe(papel);
+        expect(screen.getByLabelText("Precio en pesos")).toBe(precio);
+        expect(precio).not.toHaveAttribute("readonly");
+        expect(precio.closest("form")).toHaveAttribute("aria-busy", "false");
         expect(papel).toHaveFocus();
         expect(enfocarPanel).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
         expect(contenido.scrollTop).toBe(80);

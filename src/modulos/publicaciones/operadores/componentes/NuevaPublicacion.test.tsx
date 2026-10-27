@@ -60,9 +60,10 @@ describe("NuevaPublicacion", () => {
         vi.unstubAllGlobals();
     });
 
-    it("permite publicar solo la especie y envía las opciones vacías como null", async () => {
-        renderDrawer();
+    it.each([undefined, false])("permite publicar solo la especie respetando la disponibilidad inicial %s", async (disponibilidadInicial) => {
+        render(<NuevaPublicacion operadorId={9} disponibilidadInicial={disponibilidadInicial} abierto alCerrar={mocks.alCerrar} alCrear={mocks.alCrear} />);
         await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).toHaveProperty("checked", disponibilidadInicial ?? true);
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Especie/ }));
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
         const formulario = screen.getByRole("button", { name: "Confirmar" }).closest("form")!;
@@ -73,6 +74,7 @@ describe("NuevaPublicacion", () => {
         expect(JSON.parse(envio[1]!.body as string)).toMatchObject({
             especieId: 2, variedadId: null, presentacionId: null, categoriaId: null,
             calibreId: null, paisId: null, precio: null, cantidadUnidades: null,
+            disponibilidad: disponibilidadInicial ?? true,
         });
     });
 
@@ -80,6 +82,59 @@ describe("NuevaPublicacion", () => {
         renderDrawer();
         expect(screen.getByRole("heading", { name: "Nueva publicación" })).toBeInTheDocument();
         await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
+    });
+
+    it.each([undefined, false])("conserva el formulario bloqueado mientras carga con disponibilidad inicial %s", async (disponibilidadInicial) => {
+        let resolver!: (respuesta: Response) => void;
+        const fetchMock = vi.fn(() => new Promise<Response>((resolve) => { resolver = resolve; }));
+        vi.stubGlobal("fetch", fetchMock);
+        render(<NuevaPublicacion operadorId={9} disponibilidadInicial={disponibilidadInicial} abierto alCerrar={mocks.alCerrar} alCrear={mocks.alCrear} />);
+        const confirmar = screen.getByRole("button", { name: "Confirmar" });
+        const formulario = confirmar.closest("form")!;
+        const precio = screen.getByLabelText("Precio en pesos");
+        const disponibilidad = screen.getByRole("switch", { name: "Publicación disponible" });
+
+        expect(formulario).toHaveAttribute("aria-busy", "true");
+        expect(screen.queryByText(/Cargando/)).not.toBeInTheDocument();
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+        for (const selector of screen.getAllByRole("combobox")) expect(selector).toHaveAttribute("aria-disabled", "true");
+        for (const control of [precio, screen.getByLabelText(/^Unidades/), disponibilidad, screen.getByLabelText("Fotografía"), screen.getByLabelText("Fotografía desde galería"), confirmar]) {
+            expect(control).toBeDisabled();
+        }
+        for (const nombre of ["Cámara", "Galería", "Aumentar precio en 10", "Disminuir precio en 10"]) {
+            expect(screen.getByRole("button", { name: nombre })).toBeDisabled();
+        }
+        expect(disponibilidad).toHaveProperty("checked", disponibilidadInicial ?? true);
+        expect(screen.getByRole("button", { name: "Cancelar" })).toBeEnabled();
+        fireEvent.submit(formulario);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        await act(async () => resolver(new Response(JSON.stringify(catalogos))));
+        expect(confirmar.closest("form")).toBe(formulario);
+        expect(screen.getByLabelText("Precio en pesos")).toBe(precio);
+        expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBe(disponibilidad);
+        expect(formulario).toHaveAttribute("aria-busy", "false");
+        expect(confirmar).toBeEnabled();
+        expect(precio).toBeEnabled();
+        expect(disponibilidad).toBeEnabled();
+        expect(disponibilidad).toHaveProperty("checked", disponibilidadInicial ?? true);
+    });
+
+    it.each([new Response("{}", { status: 500 }), new Error("Sin conexión")])("mantiene el formulario bloqueado y avisa con un toast si falla el catálogo", async (respuesta) => {
+        vi.stubGlobal("fetch", vi.fn(() => respuesta instanceof Error ? Promise.reject(respuesta) : Promise.resolve(respuesta)));
+        renderDrawer();
+        const confirmar = screen.getByRole("button", { name: "Confirmar" });
+        const formulario = confirmar.closest("form")!;
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron cargar los datos del formulario.");
+        expect(within(formulario).queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Confirmar" }).closest("form")).toBe(formulario);
+        expect(formulario).toHaveAttribute("aria-busy", "false");
+        expect(confirmar).toBeDisabled();
+        expect(screen.getByLabelText("Precio en pesos")).toBeDisabled();
+        fireEvent.submit(formulario);
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(mocks.alCrear).not.toHaveBeenCalled();
     });
 
     it("prioriza las especies UAM presentes y ordena el resto sin modificar el catálogo recibido", async () => {
@@ -117,8 +172,9 @@ describe("NuevaPublicacion", () => {
         expect(precio).toHaveValue("25");
     });
 
-    it("rechaza cero y entradas inválidas sin transformarlas en otro precio", () => {
+    it("rechaza cero y entradas inválidas sin transformarlas en otro precio", async () => {
         renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         const precio = screen.getByLabelText("Precio en pesos");
         fireEvent.change(precio, { target: { value: "1250" } });
         for (const valor of ["0", "00", "12a.50", "12.5", "12,5", "1e3", "+2", "-2", "10000000000"]) {
@@ -127,8 +183,9 @@ describe("NuevaPublicacion", () => {
         }
     });
 
-    it("ofrece cámara primero y también galería en mobile", () => {
+    it("ofrece cámara primero y también galería en mobile", async () => {
         renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         const camara = screen.getByLabelText("Fotografía");
         const galeria = screen.getByLabelText("Fotografía desde galería");
         const abrirCamara = vi.spyOn(camara, "click").mockImplementation(() => {});
@@ -143,9 +200,10 @@ describe("NuevaPublicacion", () => {
         abrirGaleria.mockRestore();
     });
 
-    it("mantiene el selector de archivos en web", () => {
+    it("mantiene el selector de archivos en web", async () => {
         mocks.esWeb = true;
         renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         const archivo = screen.getByLabelText("Fotografía");
         const abrirSelector = vi.spyOn(archivo, "click").mockImplementation(() => {});
         expect(archivo).not.toHaveAttribute("capture");
@@ -162,6 +220,7 @@ describe("NuevaPublicacion", () => {
             readAsDataURL() { this.onload?.(); }
         });
         renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
         fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
         expect(await screen.findByAltText("Vista previa de la fotografía")).toBeInTheDocument();
@@ -174,6 +233,7 @@ describe("NuevaPublicacion", () => {
             readAsDataURL() { this.onload?.(); }
         });
         renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
         fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
         expect(await screen.findByAltText("Vista previa de la fotografía")).toBeInTheDocument();
@@ -209,6 +269,7 @@ describe("NuevaPublicacion", () => {
             readAsDataURL() { this.onload?.(); }
         });
         renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         const archivo = new File([new Uint8Array(10 * 1024 * 1024)], "foto.png", { type: "image/png" });
         fireEvent.change(screen.getByLabelText("Fotografía desde galería"), { target: { files: [archivo] } });
         expect(await screen.findByAltText("Vista previa de la fotografía")).toBeInTheDocument();
@@ -217,6 +278,7 @@ describe("NuevaPublicacion", () => {
 
     it("rechaza una fotografía inválida", async () => {
         renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         const archivo = new File(["texto"], "archivo.txt", { type: "text/plain" });
         fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
         expect(await screen.findByRole("alert")).toHaveTextContent("La fotografía debe ser PNG, JPEG o WebP");
@@ -224,6 +286,7 @@ describe("NuevaPublicacion", () => {
 
     it("rechaza una fotografía mayor a 10 MB", async () => {
         renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         const archivo = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "foto.png", { type: "image/png" });
         fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [archivo] } });
         expect(await screen.findByRole("alert")).toHaveTextContent("hasta 10 MB");

@@ -110,7 +110,7 @@ describe("PerfilProductorAdmin", () => {
 
         expect(screen.getByTestId("alta-publicacion")).toBeInTheDocument();
         expect(mocks.propsDrawerAlta).toHaveBeenLastCalledWith(
-            expect.objectContaining({ productorId: productorBase.id, abierto: true }),
+            expect.objectContaining({ productorId: productorBase.id, abierto: true, disponibilidadInicial: false }),
         );
     });
 

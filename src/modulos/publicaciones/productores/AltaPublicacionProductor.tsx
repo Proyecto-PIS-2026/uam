@@ -35,12 +35,13 @@ type Formulario = {
 
 type PropsDrawer = {
     productorId: number;
+    disponibilidadInicial?: boolean;
     abierto: boolean;
     alCerrar: () => void;
     alCrear: (mensaje: string) => void;
 };
 
-function formularioInicial(productorId: number): Formulario {
+function formularioInicial(productorId: number, disponibilidadInicial: boolean): Formulario {
     return {
         productorId,
         especieId: 0,
@@ -50,7 +51,7 @@ function formularioInicial(productorId: number): Formulario {
         categoriaId: 0,
         paisId: 0,
         ubicaciones: [],
-        disponibilidad: true,
+        disponibilidad: disponibilidadInicial,
         precio: "",
         cantidad: "",
         fotografia: "",
@@ -91,65 +92,67 @@ export default function AltaPublicacionProductor({ productorId }: { productorId:
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
     const [abierto, setAbierto] = useState(false);
-    const [errores, setErrores] = useState<string[]>([]);
+    const [cargando, setCargando] = useState(true);
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
 
     useEffect(() => {
-        cargarCatalogos().then(setCatalogos).catch((error) => setErrores([error instanceof Error ? error.message : "No se pudieron cargar los datos."]));
-    }, []);
+        let activo = true;
+        cargarCatalogos()
+            .then((resultado) => { if (activo) setCatalogos(resultado); })
+            .catch((error) => { if (activo) notificar(error instanceof Error ? error.message : "No se pudieron cargar los datos.", "error"); })
+            .finally(() => { if (activo) setCargando(false); });
+        return () => { activo = false; };
+    }, [notificar]);
 
     return <main className="contenedor-pagina secciones-pagina flex-1">
         <header className="encabezado-pagina"><h1 className="titulo-pagina">Alta de publicación de Productor</h1></header>
-        {errores.length > 0 && <div role="alert" className={styles.error}>{errores.map((error) => <p key={error}>{error}</p>)}</div>}
-        {!catalogos ? <p role="status">Cargando datos...</p> : <>
-            <button type="button" className={styles.guardar} onClick={() => { setErrores([]); cerrarNotificacion(); setAbierto(true); }} disabled={!productorId}>Agregar producto</button>
-        </>}
-        {catalogos && productorId > 0 && <DrawerProductor key={productorId} catalogos={catalogos} productorId={productorId} abierto={abierto} esWeb={esWeb}
+        <button type="button" className={styles.guardar} onClick={() => { cerrarNotificacion(); setAbierto(true); }} disabled={cargando || !catalogos || !productorId} aria-busy={cargando}>Agregar producto</button>
+        {productorId > 0 && <DrawerProductor key={productorId} catalogos={catalogos} cargando={cargando} productorId={productorId} abierto={abierto} esWeb={esWeb}
             alCerrar={() => setAbierto(false)} alCrear={(texto) => { setAbierto(false); notificar(texto, "success"); }} />}
         <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
     </main>;
 }
 
-export function DrawerAltaPublicacionProductor({ productorId, abierto, alCerrar, alCrear }: PropsDrawer) {
+export function DrawerAltaPublicacionProductor({ productorId, disponibilidadInicial = true, abierto, alCerrar, alCrear }: PropsDrawer) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
     const [error, setError] = useState("");
+    const [cargando, setCargando] = useState(true);
 
     useEffect(() => {
-        cargarCatalogos().then(setCatalogos).catch((error) => setError(error instanceof Error ? error.message : "No se pudieron cargar los datos."));
+        let activo = true;
+        cargarCatalogos()
+            .then((resultado) => { if (activo) setCatalogos(resultado); })
+            .catch((error) => { if (activo) setError(error instanceof Error ? error.message : "No se pudieron cargar los datos."); })
+            .finally(() => { if (activo) setCargando(false); });
+        return () => { activo = false; };
     }, []);
 
-    return catalogos ? <DrawerProductor catalogos={catalogos} productorId={productorId} abierto={abierto} esWeb={esWeb} alCerrar={alCerrar} alCrear={alCrear} /> : (
-        <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={alCerrar}
-            slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
-            <header className={`${styles.encabezado} ${styles.encabezadoConAsa}`}>
-                <h2 className={styles.titulo}>Nueva publicación</h2>
-                <button className={styles.cerrar} type="button" onClick={alCerrar} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button>
-            </header>
-            <div className={styles.cuerpo}>
-                {error ? <div role="alert" className={styles.error}>{error}</div> : <p role="status">Cargando datos...</p>}
-            </div>
-        </DrawerDeslizable>
-    );
+    return <DrawerProductor key={productorId} catalogos={catalogos} cargando={cargando} errorCarga={error} productorId={productorId} disponibilidadInicial={disponibilidadInicial} abierto={abierto} esWeb={esWeb} alCerrar={alCerrar} alCrear={alCrear} />;
 }
 
-function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alCrear }: {
-    catalogos: Catalogos; productorId: number; abierto: boolean; esWeb: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void;
+function DrawerProductor({ catalogos, cargando, errorCarga = "", productorId, disponibilidadInicial = true, abierto, esWeb, alCerrar, alCrear }: {
+    catalogos: Catalogos | null; cargando: boolean; errorCarga?: string; productorId: number; disponibilidadInicial?: boolean; abierto: boolean; esWeb: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void;
 }) {
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
-    const [datos, setDatos] = useState<Formulario>(() => formularioInicial(productorId));
+    const [datos, setDatos] = useState<Formulario>(() => formularioInicial(productorId, disponibilidadInicial));
     const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
     const [leyendoFoto, setLeyendoFoto] = useState(false);
     const fotoInput = useRef<HTMLInputElement>(null);
     const galeriaInput = useRef<HTMLInputElement>(null);
     const [reinicioUbicaciones, setReinicioUbicaciones] = useState(0);
-    const variedades = catalogos.variedades.filter((item) => item.especieId === datos.especieId);
-    const presentaciones = catalogos.presentaciones.filter((item) => item.variedadId === datos.variedadId);
-    const categorias = catalogos.categorias.filter((item) => item.especieId === null || item.especieId === datos.especieId);
+    const variedades = catalogos?.variedades.filter((item) => item.especieId === datos.especieId) ?? [];
+    const presentaciones = catalogos?.presentaciones.filter((item) => item.variedadId === datos.variedadId) ?? [];
+    const categorias = catalogos?.categorias.filter((item) => item.especieId === null || item.especieId === datos.especieId) ?? [];
+    const deshabilitado = cargando || guardando || !catalogos;
+
+    useEffect(() => {
+        if (abierto && errorCarga) notificar(errorCarga, "error");
+    }, [abierto, errorCarga, notificar]);
     const cambiar = (cambio: Partial<Formulario>) => { setDatos((actual) => ({ ...actual, ...cambio })); setErrores([]); };
     function limpiarFormulario() {
-        setDatos(formularioInicial(productorId));
+        setDatos(formularioInicial(productorId, disponibilidadInicial));
         setErrores([]);
         setReinicioUbicaciones((actual) => actual + 1);
         if (fotoInput.current) fotoInput.current.value = "";
@@ -171,7 +174,7 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
         } catch { setErrores(["No se pudo leer la fotografía."]); } finally { setLeyendoFoto(false); }
     }
     async function enviar(evento: FormEvent) {
-        evento.preventDefault(); if (guardando || leyendoFoto) return; cerrarNotificacion(); setErrores([]);
+        evento.preventDefault(); if (deshabilitado || leyendoFoto) return; cerrarNotificacion(); setErrores([]);
         if (!precioPublicacionValido(datos.precio)) {
             setErrores([PRECIO_PUBLICACION_INVALIDO]);
             return;
@@ -210,28 +213,28 @@ function DrawerProductor({ catalogos, productorId, abierto, esWeb, alCerrar, alC
     return <><DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} arrastreDeshabilitado={guardando}
         slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
         <header className={`${styles.encabezado} ${styles.encabezadoConAsa}`}><h2 className={styles.titulo}>Nueva publicación</h2><button className={styles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button></header>
-        <form className={styles.formulario} onSubmit={enviar}><div className={styles.cuerpo}>
+        <form className={styles.formulario} onSubmit={enviar} aria-busy={cargando}><div className={styles.cuerpo}>
             <div className={styles.datosProducto}>
-                <Campo nombre="Especie" valor={datos.especieId} opciones={catalogos.especies} cambiar={(id) => cambiar({ especieId: id, variedadId: 0, presentacionId: 0, categoriaId: 0 })} deshabilitado={guardando} />
-                <Campo nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(id) => cambiar({ variedadId: id, presentacionId: 0 })} deshabilitado={guardando || !datos.especieId} />
-                <Campo nombre="Presentación" valor={datos.presentacionId} opciones={presentaciones} cambiar={(id) => cambiar({ presentacionId: id })} deshabilitado={guardando || !datos.variedadId} />
-                <Campo nombre="Categoría" valor={datos.categoriaId} opciones={categorias} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={guardando || !datos.especieId} />
-                <Campo nombre="Calibre" valor={datos.calibreId} opciones={catalogos.calibres} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={guardando} />
-                <Campo nombre="País de origen" valor={datos.paisId} opciones={catalogos.paises} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={guardando} />
+                <Campo nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(id) => cambiar({ especieId: id, variedadId: 0, presentacionId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
+                <Campo nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(id) => cambiar({ variedadId: id, presentacionId: 0 })} deshabilitado={deshabilitado || !datos.especieId} />
+                <Campo nombre="Presentación" valor={datos.presentacionId} opciones={presentaciones} cambiar={(id) => cambiar({ presentacionId: id })} deshabilitado={deshabilitado || !datos.variedadId} />
+                <Campo nombre="Categoría" valor={datos.categoriaId} opciones={categorias} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={deshabilitado || !datos.especieId} />
+                <Campo nombre="Calibre" valor={datos.calibreId} opciones={catalogos?.calibres ?? []} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={deshabilitado} />
+                <Campo nombre="País de origen" valor={datos.paisId} opciones={catalogos?.paises ?? []} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={deshabilitado} />
             </div>
-            {abierto && <UbicacionesEdicionProductor key={reinicioUbicaciones} ubicaciones={datos.ubicaciones} deshabilitado={guardando} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} />}
+            {abierto && <UbicacionesEdicionProductor key={reinicioUbicaciones} ubicaciones={datos.ubicaciones} deshabilitado={deshabilitado} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} />}
             <div className="grid grid-cols-1 gap-[var(--espacio-controles)] sm:grid-cols-2">
-                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><input className={styles.entrada} id="productor-precio" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder="Ingrese precio aqui" value={datos.precio} onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small></div>
-                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Cantidad (kg)</label><input className={styles.entrada} id="productor-cantidad" inputMode="numeric" maxLength={10} placeholder="Ingrese cantidad aqui" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={guardando} /><small className={styles.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small></div>
+                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><input className={styles.entrada} id="productor-precio" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder="Ingrese precio aqui" value={datos.precio} onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small></div>
+                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Cantidad (kg)</label><input className={styles.entrada} id="productor-cantidad" inputMode="numeric" maxLength={10} placeholder="Ingrese cantidad aqui" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small></div>
             </div>
-            <label className={styles.disponibilidad} htmlFor="productor-disponibilidad" data-disponible={datos.disponibilidad}><span className={styles.textoDisponibilidad}><span className={styles.etiqueta}>Disponibilidad</span><span className={styles.estadoDisponibilidad}>{datos.disponibilidad ? "Disponible" : "No disponible"}</span></span><Switch checked={datos.disponibilidad} onChange={(_, valor) => cambiar({ disponibilidad: valor })} disabled={guardando} slotProps={{ input: { id: "productor-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} /></label>
-            <div className={styles.seccionFoto}><div className={styles.marcoFoto}>{datos.fotografia ? <Image className={styles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill unoptimized /> : <div className={styles.sinFoto}><PhotoCameraOutlinedIcon /><span>Sin foto</span></div>}{datos.fotografia && <button type="button" className={`${styles.botonFoto} ${styles.borrarFoto}`} onClick={() => cambiar({ fotografia: "" })} disabled={guardando}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
-                <button type="button" className={styles.botonFoto} onClick={() => fotoInput.current?.click()} disabled={guardando}>{esWeb ? "Editar foto" : "Cámara"}</button>
-                {!esWeb && <button type="button" className={`${styles.botonFoto} ${styles.botonGaleria}`} onClick={() => galeriaInput.current?.click()} disabled={guardando}>Galería</button>}
-                <input ref={fotoInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={guardando} aria-label="Fotografía" />
-                {!esWeb && <input ref={galeriaInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFoto} disabled={guardando} aria-label="Fotografía desde galería" />}
+            <label className={styles.disponibilidad} htmlFor="productor-disponibilidad" data-disponible={datos.disponibilidad}><span className={styles.textoDisponibilidad}><span className={styles.etiqueta}>Disponibilidad</span><span className={styles.estadoDisponibilidad}>{datos.disponibilidad ? "Disponible" : "No disponible"}</span></span><Switch checked={datos.disponibilidad} onChange={(_, valor) => cambiar({ disponibilidad: valor })} disabled={deshabilitado} slotProps={{ input: { id: "productor-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} /></label>
+            <div className={styles.seccionFoto}><div className={styles.marcoFoto}>{datos.fotografia ? <Image className={styles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill unoptimized /> : <div className={styles.sinFoto}><PhotoCameraOutlinedIcon /><span>Sin foto</span></div>}{datos.fotografia && <button type="button" className={`${styles.botonFoto} ${styles.borrarFoto}`} onClick={() => cambiar({ fotografia: "" })} disabled={deshabilitado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
+                <button type="button" className={styles.botonFoto} onClick={() => fotoInput.current?.click()} disabled={deshabilitado}>{esWeb ? "Editar foto" : "Cámara"}</button>
+                {!esWeb && <button type="button" className={`${styles.botonFoto} ${styles.botonGaleria}`} onClick={() => galeriaInput.current?.click()} disabled={deshabilitado}>Galería</button>}
+                <input ref={fotoInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={deshabilitado} aria-label="Fotografía" />
+                {!esWeb && <input ref={galeriaInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFoto} disabled={deshabilitado} aria-label="Fotografía desde galería" />}
             </div></div>
             {errores.length > 0 && <div role="alert" className={styles.error}>{errores.map((error) => <p key={error}>{error}</p>)}</div>}
-        </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={guardando || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
+        </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={deshabilitado || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
     </DrawerDeslizable><NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;
 }

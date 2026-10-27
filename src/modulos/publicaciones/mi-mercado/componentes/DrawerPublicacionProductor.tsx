@@ -418,7 +418,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                     </div>
                     <button className={estilosAcciones.cerrar} type="button" onClick={solicitarCierre} disabled={ocupado} aria-label={editando ? "Cerrar edición" : "Cerrar consulta"}><CloseIcon fontSize="small" /></button>
                 </header>
-                <form className={estilosAcciones.formulario} onSubmit={guardar} aria-busy={ocupado}>
+                <form className={estilosAcciones.formulario} onSubmit={guardar} aria-busy={ocupado || cargando}>
                     <div ref={contenidoRef} className={estilosAcciones.cuerpo}>
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-precio`}>Precio en pesos</label>
@@ -466,7 +466,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                         </div>
                         {borrador ? <UbicacionesEdicionProductor ubicaciones={borrador.ubicaciones} deshabilitado={ocupado} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} /> : <UbicacionesConsulta publicacion={publicacion} />}
                         {estado.errores.length > 0 && <div role="alert" className={estilosAcciones.error}>{estado.errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}
-                        {cargando && <p className={estilosAcciones.ayuda} role="status">Cargando edición...</p>}
                     </div>
                     <div className={estilosAcciones.pie}>
                         {editando ? <>

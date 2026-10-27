@@ -34,6 +34,7 @@ type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidade
 type NuevaPublicacionProps = {
     operadorId: number;
     incrementoPrecio?: number;
+    disponibilidadInicial?: boolean;
     abierto: boolean;
     alCerrar: () => void;
     alCrear: (mensaje: string) => void;
@@ -55,7 +56,7 @@ function CampoSelect({ nombre, valor, opciones, cambiar, deshabilitado = false }
     );
 }
 
-export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, abierto, alCerrar, alCrear }: NuevaPublicacionProps) {
+export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, disponibilidadInicial = true, abierto, alCerrar, alCrear }: NuevaPublicacionProps) {
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
@@ -67,12 +68,13 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
         calibreId: 0,
         categoriaId: 0,
         paisId: 0,
-        disponibilidad: true,
+        disponibilidad: disponibilidadInicial,
         precio: "",
         cantidadUnidades: "",
         fotografia: "",
     });
     const [errores, setErrores] = useState<string[]>([]);
+    const [errorCarga, setErrorCarga] = useState("");
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
     const [leyendoFoto, setLeyendoFoto] = useState(false);
@@ -98,10 +100,14 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                     paises: [...resultado.paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre)),
                 });
             })
-            .catch(() => { if (activo) setErrores(["No se pudieron cargar los datos del formulario."]); })
+            .catch(() => { if (activo) setErrorCarga("No se pudieron cargar los datos del formulario."); })
             .finally(() => { if (activo) setCargando(false); });
         return () => { activo = false; };
     }, []);
+
+    useEffect(() => {
+        if (abierto && errorCarga) notificar(errorCarga, "error");
+    }, [abierto, errorCarga, notificar]);
 
     function actualizar(cambio: Partial<Formulario>) {
         setDatos((actuales) => ({ ...actuales, ...cambio }));
@@ -153,7 +159,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
 
     async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
-        if (guardando || leyendoFoto) return;
+        if (deshabilitado || leyendoFoto) return;
         cerrarNotificacion();
         setErrores([]);
         if (!precioPublicacionValido(datos.precio)) {
@@ -209,10 +215,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                 </button>
             </header>
 
-            <form className={drawerStyles.formulario} onSubmit={enviarFormulario}>
+            <form className={drawerStyles.formulario} onSubmit={enviarFormulario} aria-busy={cargando}>
                 <div className={drawerStyles.cuerpo}>
-                    {cargando && <p className={drawerStyles.ayuda} role="status">Cargando los datos del formulario...</p>}
-
                     <div className={drawerStyles.datosProducto}>
                         <div className={drawerStyles.campo}>
                             <CampoSelect nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(especieId) => actualizar({ especieId, variedadId: 0, presentacionId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
@@ -237,9 +241,9 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                     <div className={drawerStyles.campo}>
                         <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-precio">Precio en pesos</label>
                         <div className={drawerStyles.controlesPrecio}>
-                            <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={guardando} aria-label={`Disminuir precio en ${incrementoPrecio}`}><RemoveIcon aria-hidden="true" fontSize="inherit" /></button>
-                            <input className={drawerStyles.entrada} id="nueva-publicacion-precio" type="text" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder="Ingresar precio aquí" value={datos.precio} onChange={(evento) => { if (esEntradaPrecioPublicacion(evento.target.value)) actualizar({ precio: evento.target.value }); }} disabled={guardando} />
-                            <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={guardando} aria-label={`Aumentar precio en ${incrementoPrecio}`}><AddIcon aria-hidden="true" fontSize="inherit" /></button>
+                            <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={deshabilitado} aria-label={`Disminuir precio en ${incrementoPrecio}`}><RemoveIcon aria-hidden="true" fontSize="inherit" /></button>
+                            <input className={drawerStyles.entrada} id="nueva-publicacion-precio" type="text" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder="Ingresar precio aquí" value={datos.precio} onChange={(evento) => { if (esEntradaPrecioPublicacion(evento.target.value)) actualizar({ precio: evento.target.value }); }} disabled={deshabilitado} />
+                            <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={deshabilitado} aria-label={`Aumentar precio en ${incrementoPrecio}`}><AddIcon aria-hidden="true" fontSize="inherit" /></button>
                         </div>
                         <small className={drawerStyles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>
                     </div>
@@ -265,7 +269,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                                             const valorLimpio = String(Number(valorOriginal));
                                             if (Number(valorLimpio) > 2147483647) return;
                                             actualizar({ cantidadUnidades: valorLimpio });
-                                        }} disabled={guardando}
+                                        }} disabled={deshabilitado}
                                     />
                                 </div>
                                 <small className={drawerStyles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>
@@ -280,17 +284,17 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, ab
                             <span className={drawerStyles.etiqueta}>Disponibilidad</span>
                             <span className={drawerStyles.estadoDisponibilidad}>{datos.disponibilidad ? "Disponible" : "No disponible"}</span>
                         </span>
-                        <Switch className={drawerStyles.interruptorDisponibilidad} checked={datos.disponibilidad} onChange={(_, seleccionado) => actualizar({ disponibilidad: seleccionado })} disabled={guardando} slotProps={{ input: { id: "nueva-publicacion-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} />
+                        <Switch className={drawerStyles.interruptorDisponibilidad} checked={datos.disponibilidad} onChange={(_, seleccionado) => actualizar({ disponibilidad: seleccionado })} disabled={deshabilitado} slotProps={{ input: { id: "nueva-publicacion-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} />
                     </label>
 
                     <div className={drawerStyles.seccionFoto}>
                         <div className={drawerStyles.marcoFoto}>
                             {datos.fotografia ? <Image className={drawerStyles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill sizes="(min-width: 768px) 480px, 100vw" unoptimized /> : <div className={drawerStyles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>}
-                            {datos.fotografia && <button className={`${drawerStyles.botonFoto} ${drawerStyles.borrarFoto}`} type="button" onClick={borrarFotografia} disabled={guardando}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
-                            <button className={drawerStyles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={guardando}><PhotoCameraOutlinedIcon fontSize="small" /> {esWeb ? "Editar foto" : "Cámara"}</button>
-                            {!esWeb && <button className={`${drawerStyles.botonFoto} ${drawerStyles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={guardando}>Galería</button>}
-                            <input ref={inputFotoRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFotografia} disabled={guardando} aria-label="Fotografía" />
-                            {!esWeb && <input ref={inputGaleriaRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFotografia} disabled={guardando} aria-label="Fotografía desde galería" />}
+                            {datos.fotografia && <button className={`${drawerStyles.botonFoto} ${drawerStyles.borrarFoto}`} type="button" onClick={borrarFotografia} disabled={deshabilitado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
+                            <button className={drawerStyles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={deshabilitado}><PhotoCameraOutlinedIcon fontSize="small" /> {esWeb ? "Editar foto" : "Cámara"}</button>
+                            {!esWeb && <button className={`${drawerStyles.botonFoto} ${drawerStyles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={deshabilitado}>Galería</button>}
+                            <input ref={inputFotoRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFotografia} disabled={deshabilitado} aria-label="Fotografía" />
+                            {!esWeb && <input ref={inputGaleriaRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFotografia} disabled={deshabilitado} aria-label="Fotografía desde galería" />}
                         </div>
                     </div>
                 </div>
