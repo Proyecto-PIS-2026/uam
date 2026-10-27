@@ -136,7 +136,10 @@ test.describe("BP-25.1: listado de Productores para Operadores", () => {
       await iniciarSesion(page, "OPERADOR");
       await abrirListadoProductores(page);
 
-      await expect(page.getByRole("status")).toHaveText("No hay productores disponibles.");
+      const estadoVacio = page.getByRole("status");
+      await expect(estadoVacio).toBeVisible();
+      await expect(estadoVacio.getByText("Todavía no hay productores", { exact: true })).toBeVisible();
+      await expect(estadoVacio.getByText("No hay productores disponibles.", { exact: true })).toBeVisible();
       await expect(tarjetasProductores(page)).toHaveCount(0);
     });
   });

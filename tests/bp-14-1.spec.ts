@@ -381,10 +381,19 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
     const datos: Partial<ReturnType<typeof datosValidos>> = datosValidos(operadorA.id, seleccion);
     delete datos.operadorId;
     const inexistente = Math.max(...(await db.orm.public.Operador.select("id").all()).map((operador) => operador.id)) + 1000;
+    const otraVariedad = seleccion.catalogos.variedades.find((variedad) => variedad.especieId !== seleccion.especie.id);
+    const otraPresentacion = seleccion.catalogos.presentaciones.find((presentacion) => presentacion.variedadId !== seleccion.variedad.id);
+    expect(otraVariedad).toBeDefined();
+    expect(otraPresentacion).toBeDefined();
     const invalidos = [
       { datos, estado: 400 },
       { datos: { ...datosValidos(inexistente, seleccion) }, estado: 404 },
-      ...["especieId", "variedadId", "presentacionId", "categoriaId", "calibreId", "paisId"].map((campo) => ({ datos: { ...datosValidos(operadorA.id, seleccion), [campo]: 0 }, estado: 400 })),
+      { datos: { operadorId: operadorA.id }, estado: 400 },
+      { datos: { ...datosValidos(operadorA.id, seleccion), especieId: 0 }, estado: 400 },
+      ...["variedadId", "presentacionId", "categoriaId", "calibreId", "paisId"].map((campo) => ({ datos: { ...datosValidos(operadorA.id, seleccion), [campo]: -1 }, estado: 400 })),
+      { datos: { ...datosValidos(operadorA.id, seleccion), variedadId: 0 }, estado: 400 },
+      { datos: { ...datosValidos(operadorA.id, seleccion), variedadId: otraVariedad!.id }, estado: 400 },
+      { datos: { ...datosValidos(operadorA.id, seleccion), presentacionId: otraPresentacion!.id }, estado: 400 },
       { datos: { ...datosValidos(operadorA.id, seleccion), precio: "texto" }, estado: 400 },
     ];
     const cantidadPublicaciones = await db.orm.public.Publicacion.select("id").all();
@@ -399,6 +408,48 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
     const id = await crearPrecarga(page.request, operadorA.id, seleccion);
     expect(await db.orm.public.PublicacionOperador.where({ operadorId: operadorA.id }).all()).toHaveLength(1);
     expect(await db.orm.public.Publicacion.where({ id }).first()).not.toBeNull();
+    const duplicada = await page.request.post(rutaApi, { data: datosValidos(operadorA.id, seleccion) });
+    expect(duplicada.status()).toBe(400);
+    expect(await duplicada.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] });
+    expect(await db.orm.public.Publicacion.select("id").all()).toHaveLength(cantidadPublicaciones.length + 1);
+    expect(await db.orm.public.PublicacionOperador.select("id").all()).toHaveLength(cantidadRelaciones.length + 1);
+  });
+
+  test("CP-08: permite atributos opcionales y distingue combinaciones con campos vacíos", async ({ page, precargaOperadores }) => {
+    const { db, operadorA } = precargaOperadores;
+    await iniciarSesionAdministrador(page, precargaOperadores.administrador);
+    const seleccion = await obtenerSeleccion(page.request);
+    const minimos = { operadorId: operadorA.id, especieId: seleccion.especie.id };
+    const cantidadPublicaciones = (await db.orm.public.Publicacion.select("id").all()).length;
+    const cantidadRelaciones = (await db.orm.public.PublicacionOperador.select("id").all()).length;
+    for (const variedadId of [undefined, seleccion.variedad.id]) {
+      const respuesta = await page.request.post(rutaApi, { data: { ...minimos, variedadId } });
+      expect(respuesta.status()).toBe(201);
+      const resultado = await respuesta.json();
+      expect(resultado.esValido).toBe(true);
+      expect(await db.orm.public.Publicacion.where({ id: resultado.id }).first()).toMatchObject({
+        especieId: seleccion.especie.id, variedadId: variedadId ?? null,
+        presentacionId: null, categoriaId: null, calibreId: null,
+        precio: null, foto: null, cantidadUnidades: null,
+      });
+      expect(await db.orm.public.PublicacionOperador.where({ publicacionId: resultado.id }).first()).toMatchObject({
+        operadorId: operadorA.id, paisId: null,
+      });
+    }
+    for (const vacio of [undefined, null, 0, ""]) {
+      const datosDuplicados = {
+        ...minimos, variedadId: vacio, presentacionId: vacio, categoriaId: vacio,
+        calibreId: vacio, paisId: vacio, precio: "200", disponibilidad: false,
+      };
+      const respuesta = await page.request.post(rutaApi, { data: datosDuplicados });
+      expect(respuesta.status()).toBe(400);
+      expect(await respuesta.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] });
+    }
+    const repetidaConVariedad = await page.request.post(rutaApi, { data: { ...minimos, variedadId: seleccion.variedad.id } });
+    expect(repetidaConVariedad.status()).toBe(400);
+    expect(await repetidaConVariedad.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] });
+    expect(await db.orm.public.Publicacion.select("id").all()).toHaveLength(cantidadPublicaciones + 2);
+    expect(await db.orm.public.PublicacionOperador.select("id").all()).toHaveLength(cantidadRelaciones + 2);
   });
 
   test("CP-09: verificar roles y propiedad al crear publicaciones", async ({ page, precargaOperadores }) => {

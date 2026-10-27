@@ -140,11 +140,28 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
   test("filtra rangos por unidad y kg, valida límites y permite limpiarlos", async ({ page }) => {
     const minimo = filtros(page).getByRole("textbox", { name: "Precio mínimo", exact: true });
     const maximo = filtros(page).getByRole("textbox", { name: "Precio máximo", exact: true });
-    await minimo.fill("20,5");
+    for (const campo of [minimo, maximo]) {
+      for (const invalido of ["20,5", "20.5", "0", "-1", "texto"]) {
+        await campo.fill(invalido);
+        await expect(campo).toHaveValue("");
+        await resultados(page, registros.length);
+      }
+    }
+    await minimo.fill("20");
     await maximo.fill("100");
-    await resultados(page, registros.filter((fila) => fila.min_un >= 20.5 && fila.max_un <= 100).length);
+    await expect(minimo).toHaveValue("20");
+    await expect(maximo).toHaveValue("100");
+    const porUnidad = registros.filter((fila) => fila.min_un >= 20 && fila.max_un <= 100);
+    expect(porUnidad.length).toBeGreaterThan(0);
+    expect(porUnidad.length).toBeLessThan(registros.length);
+    await resultados(page, porUnidad.length);
+    await expect(filas(page)).toHaveCount(Math.min(40, porUnidad.length));
     await seleccionar(page, "Precio por", "Kg");
-    await resultados(page, registros.filter((fila) => fila.min_kg >= 20.5 && fila.max_kg <= 100).length);
+    const porKg = registros.filter((fila) => fila.min_kg >= 20 && fila.max_kg <= 100);
+    expect(porKg.length).toBeGreaterThan(0);
+    expect(porKg.length).toBeLessThan(registros.length);
+    await resultados(page, porKg.length);
+    await expect(filas(page)).toHaveCount(Math.min(40, porKg.length));
     await maximo.fill("10");
     await expect(filtros(page).getByRole("alert")).toHaveText("El precio máximo no puede ser menor al mínimo.");
     await resultados(page, 0);

@@ -267,7 +267,12 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
         await expect(consulta).toBeVisible();
         await expect(consulta.getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(producto.precio);
         await expect(consulta.getByRole("combobox", { name: "País de origen", exact: true })).toHaveText("URUGUAY");
-        await expect(consulta.getByRole("link", { name: "Quinta BP-14.2", exact: true })).toHaveAttribute("href", /google\.com\/maps\?q=-34\.56%2C-56\.28/);
+        const enlaceMapa = consulta.getByRole("link", { name: "Quinta BP-14.2", exact: true });
+        await expect(enlaceMapa).toBeVisible();
+        const destinoMapa = new URL((await enlaceMapa.getAttribute("href"))!);
+        expect(destinoMapa.origin).toBe("https://www.google.com");
+        expect(destinoMapa.pathname).toBe("/maps");
+        expect(destinoMapa.searchParams.get("q")).toBe("-34.56,-56.28");
         await consulta.getByRole("button", { name: "Cerrar consulta", exact: true }).click();
         await expect(consulta).not.toBeVisible();
       }

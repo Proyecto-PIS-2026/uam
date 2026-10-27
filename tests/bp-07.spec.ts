@@ -54,7 +54,7 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
       .click();
 
     const consulta = page.getByRole("dialog", {
-      name: "Consultar publicación",
+      name: "Consulta de publicación",
     });
 
     await expect(consulta).toBeVisible();
@@ -125,7 +125,7 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     await edicion.getByRole("button", { name: "Guardar" }).click();
 
     consulta = page.getByRole("dialog", {
-      name: "Consultar publicación",
+      name: "Consulta de publicación",
     });
     await expect(consulta).toBeVisible();
 
