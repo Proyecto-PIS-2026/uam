@@ -121,7 +121,7 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
             <CatalogoOperadorAdmin operadorId={operador.id} publicaciones={operador.publicaciones} opciones={opciones} incrementoPrecio={incrementoPrecio} />
 
             {altaAbierta && (
-                <NuevaPublicacion operadorId={operador.id} incrementoPrecio={incrementoPrecio} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={publicacionCreada} />
+                <NuevaPublicacion operadorId={operador.id} incrementoPrecio={incrementoPrecio} disponibilidadInicial={false} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={publicacionCreada} />
             )}
         </section>
     );
