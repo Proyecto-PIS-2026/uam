@@ -6,16 +6,19 @@ import { validarAltaOperador } from "./validarAltaOperador";
 import argon2 from "argon2";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "../fotos-perfil";
 
 export type ResultadoAltaOperador =
 	| { esValido: false; errores: string[] }
 	| { esValido: true; id: number; mensaje: string };
 
-export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperador> {
+export async function altaOperador(valor: unknown, foto?: FormData): Promise<ResultadoAltaOperador> {
 	await exigirAdministrador();
 
 	const validacion = validarAltaOperador(valor);
 	if (!validacion.esValido) return validacion;
+	const validacionFoto = validarCambioFotoPerfil(foto, false);
+	if (!validacionFoto.esValido) return validacionFoto;
 
 	const datos = validacion.datos;
 
@@ -26,7 +29,7 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
 	}
 
 	const passwordHash = await argon2.hash(datos.contraseña, { type: argon2.argon2id });
-	const resultadoTx = await guardarOperadorAtomico(async (tx) => {
+	const resultadoTx = await controlarErrorFotoPerfil(() => guardarOperadorAtomico(async (tx) => {
 
 		const existente = await tx.orm.public.Usuario.where({ username: datos.nombreUsuario }).first();
         if (existente) return "Ya existe un usuario con ese nombre de usuario.";
@@ -67,8 +70,10 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
                 : null,
 	    });
 		}
+		const fotoPerfil = await guardarCambioFotoPerfil(tx, "operadores", operador.id, null, validacionFoto.cambio);
+		if (fotoPerfil !== undefined) await tx.orm.public.Operador.where({ id: operador.id }).update({ fotoPerfil });
 		return operador.id;
-	});
+	}));
 
 	if (typeof resultadoTx === "string") {
 	    return { esValido: false, errores: [resultadoTx] };

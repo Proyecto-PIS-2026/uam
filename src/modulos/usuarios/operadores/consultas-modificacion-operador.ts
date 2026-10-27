@@ -25,7 +25,7 @@ export async function obtenerOperadorParaModificar(
     }
 
     const operador = await db.orm.public.Operador
-        .select("id", "nombreFantasia", "whatsApp")
+        .select("id", "nombreFantasia", "whatsApp", "fotoPerfil")
         .include("locales", (locales) =>
             locales.select(
                 "numeroLocal",
@@ -45,6 +45,7 @@ export async function obtenerOperadorParaModificar(
     return {
         id: operador.id,
         nombre: operador.nombreFantasia,
+        fotoPerfil: operador.fotoPerfil,
         codigoPais,
         telefono,
         locales: operador.locales.map((local) => ({

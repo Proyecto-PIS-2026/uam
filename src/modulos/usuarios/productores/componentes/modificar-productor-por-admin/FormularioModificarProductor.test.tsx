@@ -30,7 +30,7 @@ function renderizar(productor: ProductorParaModificar = productorBase) {
 }
 
 function valorDe(elemento: HTMLElement): string {
-    return (elemento as HTMLInputElement | HTMLSelectElement).value;
+    return (elemento as HTMLInputElement).value;
 }
 
 function estaDeshabilitado(elemento: HTMLElement): boolean {
@@ -53,7 +53,7 @@ describe("FormularioModificarProductor", () => {
         renderizar();
 
         expect(valorDe(screen.getByLabelText("Nombre"))).toBe("Granja Los Álamos");
-        expect(valorDe(screen.getByLabelText("Código"))).toBe("+598");
+        expect(screen.getByRole("combobox", { name: "Código" })).toHaveTextContent("+598");
         expect(valorDe(screen.getByLabelText("WhatsApp"))).toBe("99200002");
         expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
         expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
@@ -67,8 +67,11 @@ describe("FormularioModificarProductor", () => {
             target: { value: "Granja Los Álamos Hermanos" },
         });
         fireEvent.change(screen.getByLabelText("WhatsApp"), {
-            target: { value: "98765432" },
+            target: { value: "1123456789" },
         });
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Código" }));
+        fireEvent.click(screen.getByRole("option", { name: "+54" }));
+        expect(screen.getByRole("combobox", { name: "Código" })).toHaveTextContent("+54");
         apretarGuardar();
 
         await waitFor(() => {
@@ -78,8 +81,8 @@ describe("FormularioModificarProductor", () => {
         expect(modificarProductorMock).toHaveBeenCalledWith({
             productorId: 2,
             nombre: "Granja Los Álamos Hermanos",
-            codigoPais: "+598",
-            telefono: "98765432",
+            codigoPais: "+54",
+            telefono: "1123456789",
             contraseña: "",
             confirmacionContraseña: "",
         });
@@ -137,7 +140,7 @@ describe("FormularioModificarProductor", () => {
         expect(push).not.toHaveBeenCalled();
     });
 
-    it("deshabilita el botón de guardar mientras se está guardando", async () => {
+    it("deshabilita el botón de guardar y el select mientras se está guardando", async () => {
         let resolver: (valor: unknown) => void = () => {};
         modificarProductorMock.mockReturnValue(
             new Promise((resolve) => {
@@ -150,6 +153,10 @@ describe("FormularioModificarProductor", () => {
 
         const botonGuardando = await screen.findByRole("button", { name: "Guardando..." });
         expect(estaDeshabilitado(botonGuardando)).toBe(true);
+        const codigoPais = screen.getByRole("combobox", { name: "Código" });
+        expect(codigoPais).toHaveAttribute("aria-disabled", "true");
+        fireEvent.mouseDown(codigoPais);
+        expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 
         resolver({ esValido: true, id: 2 });
         await waitFor(() => {

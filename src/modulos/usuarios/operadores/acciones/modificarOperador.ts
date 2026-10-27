@@ -7,6 +7,7 @@ import { validarModificacionOperador } from "../validaciones/validarModificacion
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { notificarCambioCatalogoOperador } from "@/infraestructura/tiempo-real/publicaciones";
+import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "../../fotos-perfil";
 
 export type ResultadoModificacionOperador =
     | { esValido: false; errores: string[] }
@@ -14,6 +15,7 @@ export type ResultadoModificacionOperador =
 
 export async function modificarOperador(
     valor: unknown,
+    foto?: FormData,
 ): Promise<ResultadoModificacionOperador> {
     await exigirAdministrador();
 
@@ -22,6 +24,8 @@ export async function modificarOperador(
     if (!validacion.esValido) {
         return validacion;
     }
+    const validacionFoto = validarCambioFotoPerfil(foto);
+    if (!validacionFoto.esValido) return validacionFoto;
 
     const datos = validacion.datos;
 
@@ -50,9 +54,9 @@ export async function modificarOperador(
           })
         : null;
 
-    const resultadoTx = await guardarOperadorAtomico(async (tx) => {
+    const resultadoTx = await controlarErrorFotoPerfil(() => guardarOperadorAtomico(async (tx) => {
         const operador = await tx.orm.public.Operador
-            .select("id", "usuarioId")
+            .select("id", "usuarioId", "fotoPerfil")
             .where({ id: datos.operadorId })
             .first();
 
@@ -91,11 +95,14 @@ export async function modificarOperador(
             }
         }
 
+        const fotoPerfil = await guardarCambioFotoPerfil(tx, "operadores", datos.operadorId, operador.fotoPerfil ?? null, validacionFoto.cambio);
+
         await tx.orm.public.Operador
             .where({ id: datos.operadorId })
             .update({
                 nombreFantasia: datos.nombre,
                 whatsApp: datos.telefono,
+                ...(fotoPerfil !== undefined ? { fotoPerfil } : {}),
             });
 
         if (passwordHash) {
@@ -143,7 +150,7 @@ export async function modificarOperador(
 
         await notificarCambioCatalogoOperador(tx, datos.operadorId);
         return datos.operadorId;
-    }, datos.operadorId);
+    }, datos.operadorId));
 
     if (typeof resultadoTx === "string") {
         return {
@@ -158,6 +165,7 @@ export async function modificarOperador(
     revalidatePath("/operadores");
     revalidatePath("/operadores/[nombre]", "page");
     revalidatePath("/gestion-operadores/[id]", "page");
+    revalidatePath("/gestion-operadores/[id]/editar", "page");
     revalidatePath("/mi-mercado");
     revalidatePath("/mi-mercado/[nombre]", "page");
 

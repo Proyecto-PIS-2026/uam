@@ -5,6 +5,7 @@ const CODIGOS_PAIS = ["+598", "+595", "+56", "+55", "+54"];
 export type ProductorParaModificar = {
     id: number;
     nombre: string;
+    fotoPerfil?: string | null;
     codigoPais: string;
     telefono: string;
 };
@@ -31,7 +32,7 @@ export async function obtenerProductorParaModificar(
     }
 
     const productor = await db.orm.public.Productor
-        .select("id", "nombreFantasia", "whatsApp")
+        .select("id", "nombreFantasia", "whatsApp", "fotoPerfil")
         .where({ id: productorId })
         .first();
 
@@ -44,6 +45,7 @@ export async function obtenerProductorParaModificar(
     return {
         id: productor.id,
         nombre: productor.nombreFantasia,
+        fotoPerfil: productor.fotoPerfil,
         codigoPais,
         telefono,
     };

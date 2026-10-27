@@ -29,7 +29,7 @@ export default function PerfilProductor({ productor, hrefVolver = "/productores"
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
                         {productor.fotoPerfil ? (
-                            <Image src={productor.fotoPerfil} alt={`Foto de ${productor.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} />
+                            <Image src={productor.fotoPerfil} alt={`Foto de ${productor.nombreFantasia}`} unoptimized={productor.fotoPerfil.startsWith("/api/")} width={96} height={96} className={styles.imagenOperador} />
                         ) : (
                             <span aria-hidden="true">{inicialOperador}</span>
                         )}

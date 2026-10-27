@@ -19,7 +19,7 @@ export default function TarjetaProductor({ productor, puedeGestionar = false }: 
         <Link href={href} className={styles.tarjeta}>
             <div className={styles.imagen}>
                 {foto ? (
-                    <Image src={foto} alt={`Foto de ${productor.nombreFantasia}`} fill sizes="(max-width: 767px) 64px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.foto} />
+                    <Image src={foto} alt={`Foto de ${productor.nombreFantasia}`} unoptimized={foto.startsWith("/api/")} fill sizes="(max-width: 767px) 64px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.foto} />
                 ) : (
                     <span className={styles.inicial}>{inicial}</span>
                 )}

@@ -23,7 +23,7 @@ export default function TarjetaOperador({ operador, puedeGestionar = false }: Ta
         <Link href={href} className={styles.tarjeta}>
             <div className={styles.imagen}>
                 {foto ? (
-                    <Image src={foto} alt={`Foto de ${operador.nombreFantasia}`} fill sizes="(max-width: 700px) 64px, (max-width: 774.4px) calc(50vw - 24px), (max-width: 1027.2px) calc(33.333vw - 21.333px), (max-width: 1279px) calc(25vw - 20px), 234px" className={styles.foto} />
+                    <Image src={foto} alt={`Foto de ${operador.nombreFantasia}`} unoptimized={foto.startsWith("/api/")} fill sizes="(max-width: 700px) 64px, (max-width: 774.4px) calc(50vw - 24px), (max-width: 1027.2px) calc(33.333vw - 21.333px), (max-width: 1279px) calc(25vw - 20px), 234px" className={styles.foto} />
                 ) : (
                     <span className={styles.inicial}>{inicial}</span>
                 )}

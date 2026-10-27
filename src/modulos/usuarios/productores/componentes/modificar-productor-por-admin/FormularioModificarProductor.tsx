@@ -3,12 +3,15 @@
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 
-import { useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import { useRouter } from "next/navigation";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 import { modificarProductor } from "./modificarProductor";
 import type { ProductorParaModificar } from "./obtenerProductorParaModificar";
+import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 
 import styles from "./FormularioModificarProductor.module.css";
 
@@ -17,9 +20,11 @@ type Props = {
 };
 
 const CODIGOS_PAIS = ["+598", "+54", "+55", "+56", "+595"];
+const propiedadesMenuSelect = { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } as const;
 
 export default function FormularioModificarProductor({ productor }: Props) {
     const router = useRouter();
+    const idFormulario = useId();
 
     const [nombre, setNombre] = useState(productor.nombre);
     const [codigoPais, setCodigoPais] = useState(
@@ -34,6 +39,8 @@ export default function FormularioModificarProductor({ productor }: Props) {
     const [errores, setErrores] = useState<string[]>([]);
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
+    const guardadoEnCurso = useRef(false);
+    const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
 
     function cancelar() {
         router.push(`/gestion-productores/${productor.id}`);
@@ -44,7 +51,8 @@ export default function FormularioModificarProductor({ productor }: Props) {
     ) {
         evento.preventDefault();
 
-        if (guardando) return;
+        if (guardadoEnCurso.current) return;
+        guardadoEnCurso.current = true;
 
         setErrores([]);
         cerrarNotificacion();
@@ -58,7 +66,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
                 telefono,
                 contraseña,
                 confirmacionContraseña,
-            });
+            }, ...argumentosFotoPerfil(foto));
 
             if (!resultado.esValido) {
                 setErrores(resultado.errores);
@@ -77,6 +85,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
                 "error",
             );
         } finally {
+            guardadoEnCurso.current = false;
             setGuardando(false);
         }
     }
@@ -117,6 +126,8 @@ export default function FormularioModificarProductor({ productor }: Props) {
                             Datos del productor
                         </h2>
 
+                        <SelectorFotoPerfil fotoActual={productor.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
+
                         <label className={styles.campo}>
                             <span className={styles.etiqueta}>
                                 Nombre
@@ -135,15 +146,20 @@ export default function FormularioModificarProductor({ productor }: Props) {
                         </label>
 
                         <div className={styles.filaTelefono}>
-                            <label className={styles.campo}>
+                            <div className={styles.campo}>
                                 <span
+                                    id={`${idFormulario}-codigo-etiqueta`}
                                     className={styles.etiqueta}
                                 >
                                     Código
                                 </span>
 
-                                <select
-                                    className={styles.entrada}
+                                <Select
+                                    id={`${idFormulario}-codigo`}
+                                    labelId={`${idFormulario}-codigo-etiqueta`}
+                                    fullWidth
+                                    size="small"
+                                    MenuProps={propiedadesMenuSelect}
                                     value={codigoPais}
                                     onChange={(evento) =>
                                         setCodigoPais(
@@ -154,16 +170,16 @@ export default function FormularioModificarProductor({ productor }: Props) {
                                 >
                                     {CODIGOS_PAIS.map(
                                         (codigo) => (
-                                            <option
+                                            <MenuItem
                                                 key={codigo}
                                                 value={codigo}
                                             >
                                                 {codigo}
-                                            </option>
+                                            </MenuItem>
                                         ),
                                     )}
-                                </select>
-                            </label>
+                                </Select>
+                            </div>
 
                             <label className={styles.campo}>
                                 <span

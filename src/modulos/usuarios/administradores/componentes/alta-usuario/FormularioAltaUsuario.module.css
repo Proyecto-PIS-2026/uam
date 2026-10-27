@@ -53,10 +53,6 @@
     color: var(--color-primary);
 }
 
-.control :global(.MuiFormLabel-asterisk) {
-    color: var(--color-danger);
-}
-
 .control :global(.MuiSelect-icon) {
     color: var(--color-muted);
 }

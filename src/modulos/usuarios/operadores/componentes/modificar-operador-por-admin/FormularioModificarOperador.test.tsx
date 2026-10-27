@@ -53,7 +53,7 @@ function elementoEn(elementos: HTMLElement[], indice: number): HTMLElement {
 }
 
 function valorDe(elemento: HTMLElement): string {
-    return (elemento as HTMLInputElement | HTMLSelectElement).value;
+    return (elemento as HTMLInputElement).value;
 }
 
 function estaDeshabilitado(elemento: HTMLElement): boolean {
@@ -76,9 +76,9 @@ describe("FormularioModificarOperador", () => {
         renderizar();
 
         expect(valorDe(screen.getByLabelText("Nombre"))).toBe("Caporale");
-        expect(valorDe(screen.getByLabelText("Código"))).toBe("+598");
+        expect(screen.getByRole("combobox", { name: "Código" })).toHaveTextContent("+598");
         expect(valorDe(screen.getByLabelText("WhatsApp"))).toBe("99123456");
-        expect((screen.getByRole("option", { name: "Nave B" }) as HTMLOptionElement).selected).toBe(true);
+        expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
         expect(valorDe(screen.getByLabelText("Número de local"))).toBe("022");
         expect(valorDe(screen.getByLabelText("Fin de contrato"))).toBe("2026-12-31");
         expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
@@ -133,7 +133,7 @@ describe("FormularioModificarOperador", () => {
         const numeros = screen.getAllByLabelText("Número de local");
         expect(numeros).toHaveLength(2);
         expect(valorDe(elementoEn(numeros, 1))).toBe("");
-        expect(valorDe(elementoEn(screen.getAllByLabelText("Nave"), 1))).toBe("1");
+        expect(elementoEn(screen.getAllByRole("combobox", { name: "Nave" }), 1)).toHaveTextContent("Nave A");
         expect(valorDe(elementoEn(screen.getAllByLabelText("Fin de contrato"), 1))).toBe("");
     });
 
@@ -185,8 +185,14 @@ describe("FormularioModificarOperador", () => {
             target: { value: "Caporale Hermanos" },
         });
         fireEvent.change(screen.getByLabelText("WhatsApp"), {
-            target: { value: "98765432" },
+            target: { value: "1123456789" },
         });
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Código" }));
+        fireEvent.click(screen.getByRole("option", { name: "+54" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
+        fireEvent.click(screen.getByRole("option", { name: "Nave A" }));
+        expect(screen.getByRole("combobox", { name: "Código" })).toHaveTextContent("+54");
+        expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave A");
         apretarGuardar();
 
         await waitFor(() => {
@@ -196,11 +202,11 @@ describe("FormularioModificarOperador", () => {
         expect(modificarOperadorMock).toHaveBeenCalledWith({
             operadorId: 7,
             nombre: "Caporale Hermanos",
-            codigoPais: "+598",
-            telefono: "98765432",
+            codigoPais: "+54",
+            telefono: "1123456789",
             contraseña: "",
             confirmacionContraseña: "",
-            locales: [{ nombre: "022", naveId: 2, contrato: "2026-12-31" }],
+            locales: [{ nombre: "022", naveId: 1, contrato: "2026-12-31" }],
         });
     });
 
@@ -256,7 +262,7 @@ describe("FormularioModificarOperador", () => {
         expect(push).not.toHaveBeenCalled();
     });
 
-    it("deshabilita el botón de guardar mientras se está guardando", async () => {
+    it("deshabilita el botón de guardar y los selects mientras se está guardando", async () => {
         let resolver: (valor: unknown) => void = () => {};
         modificarOperadorMock.mockReturnValue(
             new Promise((resolve) => {
@@ -269,6 +275,12 @@ describe("FormularioModificarOperador", () => {
 
         const botonGuardando = await screen.findByRole("button", { name: "Guardando..." });
         expect(estaDeshabilitado(botonGuardando)).toBe(true);
+        for (const campo of ["Código", "Nave"]) {
+            const selector = screen.getByRole("combobox", { name: campo });
+            expect(selector).toHaveAttribute("aria-disabled", "true");
+            fireEvent.mouseDown(selector);
+        }
+        expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 
         resolver({ esValido: true, id: 7 });
         await waitFor(() => {

@@ -59,7 +59,7 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
                         {operador.fotoPerfil ? (
-                            <Image src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} />
+                            <Image src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} unoptimized={operador.fotoPerfil.startsWith("/api/")} width={96} height={96} className={styles.imagenOperador} />
                         ) : (
                             <span aria-hidden="true">{inicialOperador}</span>
                         )}

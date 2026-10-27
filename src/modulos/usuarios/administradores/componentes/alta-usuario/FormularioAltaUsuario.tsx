@@ -5,12 +5,13 @@ import Link from "next/link";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import styles from "./FormularioAltaUsuario.module.css";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import BotonVolver from "@/compartido/BotonVolver";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 import { altaProductor } from "@/modulos/usuarios/productores/altaProductor";
+import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 const ROLES_VALIDOS = ["operador", "productor", "administrador"];
@@ -32,11 +33,14 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [errores, setErrores] = useState<string[]>([]);
     const [enviando, setEnviando] = useState(false);
+    const envioEnCurso = useRef(false);
+    const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
     const [mostrarPopup, setMostrarPopup] = useState(false);
     const [rolCreado, setRolCreado] = useState("");
     const [idUsuarioCreado, setIdUsuarioCreado] = useState<number | null>(null);
 
     function limpiarFormulario() {
+        setFoto(undefined);
         setNombreUsuario("");
         setContraseña("");
         setConfirmacionContraseña("");
@@ -52,6 +56,8 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        if (envioEnCurso.current) return;
+        envioEnCurso.current = true;
         setErrores([]);
         cerrarNotificacion();
         setEnviando(true);
@@ -71,7 +77,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         naveId: Number(local.nave),
                         contrato: local.contrato,
                     })),
-                });
+                }, ...argumentosFotoPerfil(foto));
 
                 if (!resultado.esValido) {
                     setErrores(resultado.errores);
@@ -95,7 +101,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     nombre,
                     codigoPais,
                     telefono,
-                });
+                }, ...argumentosFotoPerfil(foto));
 
                 if (!resultado.esValido) {
                     setErrores(resultado.errores);
@@ -114,6 +120,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         } catch {
             notificar("No se pudo registrar el usuario. Intentá de nuevo.", "error");
         } finally {
+            envioEnCurso.current = false;
             setEnviando(false);
         }
     }
@@ -150,11 +157,12 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
             <form onSubmit={handleSubmit} className={styles.formulario}>
                 <div className={styles.grilla}>
                     <TextField
+                        disabled={enviando}
                         id="rol"
                         select
                         label="Rol del usuario"
                         value={rol}
-                        onChange={(e) => setRol(e.target.value)}
+                        onChange={(e) => { setRol(e.target.value); setFoto(undefined); }}
                         required
                         fullWidth
                         size="small"
@@ -167,6 +175,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         <MenuItem value="administrador" className={styles.opcionSelect}>Administrador</MenuItem>
                     </TextField>
                     <TextField
+                        disabled={enviando}
                         id="nombreUsuario"
                         label="Nombre de Usuario"
                         value={nombreUsuario}
@@ -179,6 +188,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         className={styles.control}
                     />
                     <TextField
+                        disabled={enviando}
                         id="contraseña"
                         label="Contraseña"
                         type="password"
@@ -193,6 +203,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         className={styles.control}
                     />
                     <TextField
+                        disabled={enviando}
                         id="confirmacionContraseña"
                         label="Confirmación de Contraseña"
                         type="password"
@@ -210,7 +221,9 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
 
                 {(rol === "operador" || rol === "productor") && (
                     <>
+                        <SelectorFotoPerfil key={rol} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={enviando} />
                         <TextField
+                            disabled={enviando}
                             id="nombre"
                             label="Nombre"
                             value={nombre}
@@ -223,6 +236,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         />
                         <div className={styles.filaTelefono}>
                             <TextField
+                                disabled={enviando}
                                 id="codigoPais"
                                 select
                                 label="Código de país"
@@ -240,6 +254,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 <MenuItem value="+595" className={styles.opcionSelect}>+595 (Paraguay)</MenuItem>
                             </TextField>
                             <TextField
+                                disabled={enviando}
                                 id="numero"
                                 label="Número de teléfono (WhatsApp)"
                                 type="tel"
@@ -260,7 +275,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                     <h2 id="titulo-locales" className={styles.subtitulo}>Locales</h2>
                                     <p className={styles.ayuda}>Agregá al menos un local para el operador.</p>
                                 </div>
-                                <button type="button" onClick={agregarLocal} className={styles.botonSecundario}>
+                                <button type="button" onClick={agregarLocal} className={styles.botonSecundario} disabled={enviando}>
                                     + Agregar local
                                 </button>
                             </div>
@@ -271,7 +286,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                         <button
                                             type="button"
                                             onClick={() => eliminarLocal(index)}
-                                            disabled={index === 0}
+                                            disabled={enviando || index === 0}
                                             className={styles.botonEliminar}
                                         >
                                             Eliminar local
@@ -279,6 +294,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                     </div>
                                     <div className={styles.grillaLocal}>
                                         <TextField
+                                            disabled={enviando}
                                             id={`numero-local-${index}`}
                                             label="Número de local"
                                             placeholder="Número de local"
@@ -292,6 +308,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                             className={styles.control}
                                         />
                                         <TextField
+                                            disabled={enviando}
                                             id={`nave-${index}`}
                                             select
                                             label="Nave"
@@ -313,6 +330,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                         {local.mostrarContrato ? (
                                             <div className={styles.contrato}>
                                                 <TextField
+                                                    disabled={enviando}
                                                     id={`contrato-${index}`}
                                                     label="Fin de contrato"
                                                     type="date"
@@ -325,6 +343,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                                 />
                                                 <button
                                                     type="button"
+                                                    disabled={enviando}
                                                     onClick={() => setLocales(locales.map((l, i) =>
                                                         i === index ? { ...l, contrato: "", mostrarContrato: false } : l
                                                     ))}
@@ -336,6 +355,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                         ) : (
                                             <button
                                                 type="button"
+                                                disabled={enviando}
                                                 onClick={() => setLocales(locales.map((l, i) =>
                                                     i === index ? { ...l, mostrarContrato: true } : l
                                                 ))}
@@ -360,6 +380,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     <button
                         type="button"
                         onClick={limpiarFormulario}
+                        disabled={enviando}
                         className={styles.botonSecundario}
                     >
                         Limpiar

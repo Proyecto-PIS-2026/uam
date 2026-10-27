@@ -50,7 +50,7 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                     <HojasDecorativas />
                     <div className={styles.avatar}>
                         {productor.fotoPerfil ? (
-                            <Image src={productor.fotoPerfil} alt={`Foto de ${productor.nombreFantasia}`} width={96} height={96} className={styles.imagenAvatar} />
+                            <Image src={productor.fotoPerfil} alt={`Foto de ${productor.nombreFantasia}`} unoptimized={productor.fotoPerfil.startsWith("/api/")} width={96} height={96} className={styles.imagenAvatar} />
                         ) : (
                             <span aria-hidden="true">{inicialProductor}</span>
                         )}

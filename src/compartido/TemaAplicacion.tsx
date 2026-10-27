@@ -22,6 +22,14 @@ const tema = createTheme({
     },
     shape: { borderRadius: 8 },
     components: {
+        MuiFormLabel: {
+            styleOverrides: {
+                asterisk: {
+                    color: "var(--color-foreground)",
+                    "&.Mui-error": { color: "var(--color-foreground)" },
+                },
+            },
+        },
         MuiButton: {
             styleOverrides: {
                 root: {
