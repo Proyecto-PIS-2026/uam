@@ -3,7 +3,7 @@
 import { useId, useMemo } from "react";
 import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlined";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, type LabelProps, type TooltipContentProps, type TooltipValueType } from "recharts";
-import { agruparPreciosPorFecha, obtenerExtremos, obtenerFechasAnteriores, type PuntoGraficaHistorica, type RegistroGrafica } from "./datos-grafica";
+import { agruparPreciosPorFecha, obtenerExtremos, obtenerFechasAnteriores, separarPuntosDistantes, type PuntoGraficaHistorica, type RegistroGrafica } from "./datos-grafica";
 import { esFechaISO, fechaActualMontevideo } from "./parametros-consulta";
 import styles from "./GraficaPreciosHistoricos.module.css";
 
@@ -56,7 +56,7 @@ function EtiquetaExtremo({ viewBox, titulo, valor, dia, color, separar = false }
 
 function DetalleDia({ active, payload }: TooltipContentProps<TooltipValueType, string | number>) {
     const punto = payload?.[0]?.payload as PuntoGraficaHistorica | undefined;
-    if (!active || !punto) return null;
+    if (!active || !punto || (punto.minimo === null && punto.maximo === null)) return null;
     return (
         <div className={styles.tooltip}>
             <strong>{fecha(punto.fecha)}</strong>
@@ -89,6 +89,7 @@ export default function GraficaPreciosHistoricos({ registros, desde, hasta, prod
     const hoy = fechaActualMontevideo();
     const fechasAnteriores = useMemo(() => obtenerFechasAnteriores(desde, hasta, hoy), [desde, hasta, hoy]);
     const puntos = useMemo(() => agruparPreciosPorFecha(registros).filter((punto) => punto.fecha >= desde && punto.fecha <= hasta), [registros, desde, hasta]);
+    const puntosGrafica = useMemo(() => separarPuntosDistantes(puntos), [puntos]);
     const extremos = useMemo(() => obtenerExtremos(puntos), [puntos]);
     const inicio = Date.parse(`${desde}T00:00:00.000Z`);
     const fin = Date.parse(`${hasta}T23:59:59.999Z`);
@@ -122,8 +123,8 @@ export default function GraficaPreciosHistoricos({ registros, desde, hasta, prod
     // Sin una línea vecina, el punto sigue siendo visible aunque la otra serie no tenga dato.
     function puntoAislado(campo: "minimo" | "maximo", color: string) {
         return function PuntoAislado({ cx, cy, index }: { cx?: number; cy?: number; index?: number }) {
-            if (index === undefined || cx === undefined || cy === undefined || puntos[index]?.[campo] == null
-                || puntos[index - 1]?.[campo] != null || puntos[index + 1]?.[campo] != null) return <g key={index} />;
+            if (index === undefined || cx === undefined || cy === undefined || puntosGrafica[index]?.[campo] == null
+                || puntosGrafica[index - 1]?.[campo] != null || puntosGrafica[index + 1]?.[campo] != null) return <g key={index} />;
             return <circle key={index} className="recharts-line-dot" cx={cx} cy={cy} r={4} fill={color} />;
         };
     }
@@ -156,7 +157,7 @@ export default function GraficaPreciosHistoricos({ registros, desde, hasta, prod
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={{ width: 600, height: 350 }}>
-                        <LineChart data={puntos} margin={{ top: fechasAnteriores.length ? 32 : 20, right: 16, left: 0, bottom: 8 }} accessibilityLayer aria-label={`Precios diarios de ${producto}. Mínimo y máximo en pesos por kilogramo.`}>
+                        <LineChart data={puntosGrafica} margin={{ top: fechasAnteriores.length ? 32 : 20, right: 16, left: 0, bottom: 8 }} accessibilityLayer aria-label={`Precios diarios de ${producto}. Mínimo y máximo en pesos por kilogramo.`}>
                             <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="marcaDeTiempo" type="number" scale="time" domain={dominioX} ticks={ticks} allowDataOverflow tickFormatter={(valor: number) => fechaEje.format(new Date(valor))} interval="preserveStartEnd" minTickGap={22} tick={{ fontSize: "var(--tamano-texto-auxiliar)", fill: "var(--color-muted-foreground)" }} tickLine={false} axisLine={{ stroke: "var(--color-border)" }} height={30} />
                             <YAxis type="number" domain={dominioY} width="auto" tickCount={5} allowDecimals={false} allowDataOverflow tickFormatter={(valor: number) => precio(valor)} tick={{ fontSize: "var(--tamano-texto-auxiliar)", fill: "var(--color-muted-foreground)" }} tickLine={false} axisLine={false} />
