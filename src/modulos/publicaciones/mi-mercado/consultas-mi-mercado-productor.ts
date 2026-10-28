@@ -1,6 +1,7 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { obtenerProductorActual } from "../../usuarios/productores/acciones/productor-actual";
 import type { Publicacion } from "./tipos";
+import { ocultarFotosVencidas } from "../fotos-vigentes";
 
 export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperadorId" | "version"> & {
     publicacionProductorId: number;
@@ -65,7 +66,7 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
 export async function obtenerPublicacionesMiMercadoProductor() {
     const productor = await obtenerProductorActual();
     const relaciones = await consultarPublicacionesProductor(productor.id);
-    const publicaciones = relaciones.map(mapearPublicacionMiMercadoProductor);
+    const publicaciones = await ocultarFotosVencidas(relaciones.map(mapearPublicacionMiMercadoProductor));
 
     return { productor, publicaciones };
 }

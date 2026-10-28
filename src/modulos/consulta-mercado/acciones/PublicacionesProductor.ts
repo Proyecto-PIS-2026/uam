@@ -1,6 +1,7 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import type { DatosSesion } from "../../identidad-acceso/autenticacion/sesiones";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { ocultarFotosVencidas } from "../../publicaciones/fotos-vigentes";
 
 export type UbicacionPublicacionProductorListado = {
     id: number;
@@ -99,5 +100,5 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
             }))
         }];
     });
-    return { publicaciones };
+    return { publicaciones: await ocultarFotosVencidas(publicaciones) };
 }

@@ -25,7 +25,7 @@ export class AlmacenamientoImagenesPostgres implements AlmacenamientoImagenes {
     async guardar(clave: string, contenido: Buffer): Promise<void> {
         validarClaveImagen(clave);
         try {
-            await this.cliente.orm.public.Imagen.create({ clave, contenido });
+            await this.cliente.orm.public.Imagen.create({ clave, contenido, cargadaEn: Temporal.Now.instant() });
         } catch (error) {
             if (esClaveDuplicada(error)) throw new ErrorImagenYaExiste({ cause: error });
             throw error;

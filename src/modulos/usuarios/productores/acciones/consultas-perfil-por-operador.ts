@@ -2,6 +2,7 @@ import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { normalizarDepartamento, obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
+import { ocultarFotosVencidas } from "../../../publicaciones/fotos-vigentes";
 
 export type PublicacionPerfilProductor = {
     id: number;
@@ -108,7 +109,7 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
         fotoPerfil: productor.fotoPerfil,
         whatsApp: productor.whatsApp,
         departamentos: obtenerDepartamentos(publicaciones.flatMap((publicacion) => publicacion.ubicaciones)),
-        publicaciones,
+        publicaciones: await ocultarFotosVencidas(publicaciones),
     };
     return productorResultante;
 }

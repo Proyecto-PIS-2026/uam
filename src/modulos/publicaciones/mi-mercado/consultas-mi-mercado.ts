@@ -2,6 +2,7 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
 import type { Numeric } from "@prisma/orm-postgres/target/codec-types";
 import { MAXIMO_PRECIO_PUBLICACION } from "../precio-publicacion";
+import { ocultarFotosVencidas } from "../fotos-vigentes";
 
 export class PublicacionNoEncontradaError extends Error {
     constructor() {
@@ -32,7 +33,8 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
         );
     
     const resultado = await publicaciones.all();
-    return resultado;
+    const vigentes = await ocultarFotosVencidas(resultado.map((relacion) => relacion.publicacion));
+    return resultado.map((relacion, indice) => ({ ...relacion, publicacion: vigentes[indice] }));
 }
 
 export type PrecioActualizado = { precio: number | null; fecha: string; version: number };

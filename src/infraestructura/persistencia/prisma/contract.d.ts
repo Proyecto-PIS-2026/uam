@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'00a5c4d0c5097c79610099c4b873c840008171e7667a703de42c1134851046e6'>;
+  StorageHashBase<'8fc7916e893841c1d0470df21c9c9a7377e0648953c7b5a206ed77045a43a480'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -266,6 +266,12 @@ export type FieldOutputTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['output'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['output'];
     };
+    readonly EjecucionTareaProgramada: {
+      readonly nombre: CodecTypes['pg/text@1']['output'];
+      readonly fecha: CodecTypes['pg/date-temporal@1']['output'];
+      readonly completadaEn: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly elementosProcesados: CodecTypes['pg/int4@1']['output'];
+    };
     readonly Especie: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly uamId: CodecTypes['pg/int4@1']['output'] | null;
@@ -283,6 +289,7 @@ export type FieldOutputTypes = {
     readonly Imagen: {
       readonly clave: CodecTypes['pg/text@1']['output'];
       readonly contenido: CodecTypes['pg/bytea@1']['output'];
+      readonly cargadaEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
     };
     readonly Local: {
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -412,6 +419,12 @@ export type FieldInputTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['input'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['input'];
     };
+    readonly EjecucionTareaProgramada: {
+      readonly nombre: CodecTypes['pg/text@1']['input'];
+      readonly fecha: CodecTypes['pg/date-temporal@1']['input'];
+      readonly completadaEn: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly elementosProcesados: CodecTypes['pg/int4@1']['input'];
+    };
     readonly Especie: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly uamId: CodecTypes['pg/int4@1']['input'] | null;
@@ -429,6 +442,7 @@ export type FieldInputTypes = {
     readonly Imagen: {
       readonly clave: CodecTypes['pg/text@1']['input'];
       readonly contenido: CodecTypes['pg/bytea@1']['input'];
+      readonly cargadaEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
     };
     readonly Local: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -558,6 +572,12 @@ export type StorageColumnTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['output'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['output'];
     };
+    readonly ejecucionTareaProgramada: {
+      readonly completadaEn: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly elementosProcesados: CodecTypes['pg/int4@1']['output'];
+      readonly fecha: CodecTypes['pg/date-temporal@1']['output'];
+      readonly nombre: CodecTypes['pg/text@1']['output'];
+    };
     readonly especie: {
       readonly especieActiva: CodecTypes['pg/bool@1']['output'];
       readonly fotoEspecie: CodecTypes['pg/text@1']['output'] | null;
@@ -573,6 +593,7 @@ export type StorageColumnTypes = {
       readonly historico: CodecTypes['pg/jsonb@1']['output'];
     };
     readonly imagen: {
+      readonly cargadaEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly clave: CodecTypes['pg/text@1']['output'];
       readonly contenido: CodecTypes['pg/bytea@1']['output'];
     };
@@ -704,6 +725,12 @@ export type StorageColumnInputTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['input'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['input'];
     };
+    readonly ejecucionTareaProgramada: {
+      readonly completadaEn: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly elementosProcesados: CodecTypes['pg/int4@1']['input'];
+      readonly fecha: CodecTypes['pg/date-temporal@1']['input'];
+      readonly nombre: CodecTypes['pg/text@1']['input'];
+    };
     readonly especie: {
       readonly especieActiva: CodecTypes['pg/bool@1']['input'];
       readonly fotoEspecie: CodecTypes['pg/text@1']['input'] | null;
@@ -719,6 +746,7 @@ export type StorageColumnInputTypes = {
       readonly historico: CodecTypes['pg/jsonb@1']['input'];
     };
     readonly imagen: {
+      readonly cargadaEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly clave: CodecTypes['pg/text@1']['input'];
       readonly contenido: CodecTypes['pg/bytea@1']['input'];
     };
@@ -1012,6 +1040,34 @@ type ContractBase = Omit<
               indexes: readonly [];
               foreignKeys: readonly [];
             };
+            readonly ejecucionTareaProgramada: {
+              columns: {
+                readonly nombre: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly fecha: {
+                  readonly nativeType: 'date';
+                  readonly codecId: 'pg/date-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly completadaEn: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly elementosProcesados: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['nombre'] };
+              uniques: readonly [];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
             readonly especie: {
               columns: {
                 readonly id: {
@@ -1110,6 +1166,11 @@ type ContractBase = Omit<
                   readonly nativeType: 'bytea';
                   readonly codecId: 'pg/bytea@1';
                   readonly nullable: false;
+                };
+                readonly cargadaEn: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
                 };
               };
               primaryKey: { readonly columns: readonly ['clave'] };
@@ -2066,6 +2127,10 @@ type ContractBase = Omit<
     readonly pais: { readonly namespace: 'public' & NamespaceId; readonly model: 'Pais' };
     readonly ubicacion: { readonly namespace: 'public' & NamespaceId; readonly model: 'Ubicacion' };
     readonly imagen: { readonly namespace: 'public' & NamespaceId; readonly model: 'Imagen' };
+    readonly ejecucionTareaProgramada: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'EjecucionTareaProgramada';
+    };
     readonly publicacion: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Publicacion';
@@ -2276,6 +2341,40 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly EjecucionTareaProgramada: {
+            readonly fields: {
+              readonly nombre: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly fecha: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/date-temporal@1' };
+              };
+              readonly completadaEn: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly elementosProcesados: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'ejecucionTareaProgramada';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly nombre: { readonly column: 'nombre' };
+                readonly fecha: { readonly column: 'fecha' };
+                readonly completadaEn: { readonly column: 'completadaEn' };
+                readonly elementosProcesados: { readonly column: 'elementosProcesados' };
+              };
+            };
+          };
           readonly Especie: {
             readonly fields: {
               readonly id: {
@@ -2415,6 +2514,13 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bytea@1' };
               };
+              readonly cargadaEn: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
             };
             readonly relations: Record<string, never>;
             readonly storage: {
@@ -2423,6 +2529,7 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly clave: { readonly column: 'clave' };
                 readonly contenido: { readonly column: 'contenido' };
+                readonly cargadaEn: { readonly column: 'cargadaEn' };
               };
             };
           };

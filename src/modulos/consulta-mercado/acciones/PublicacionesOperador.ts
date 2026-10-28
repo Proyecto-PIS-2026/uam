@@ -3,6 +3,7 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { Temporal } from "temporal-polyfill";
 import { especiesPrioritarias } from "@/compartido/prioridad-especies";
 import { normalizarFiltros, type FiltrosConsulta, type OpcionProducto } from "./filtros-consulta";
+import { ocultarFotosVencidas } from "../../publicaciones/fotos-vigentes";
 
 export type PublicacionListado = {
     id: number;
@@ -115,5 +116,6 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
     `.returnsRow({ resultado: "pg/text@1" }).build();
     const filas = await db.runtime().query(plan);
     if (!filas[0]) throw new Error("No se pudieron consultar las publicaciones.");
-    return JSON.parse(filas[0].resultado) as ResultadoPublicaciones;
+    const resultado = JSON.parse(filas[0].resultado) as ResultadoPublicaciones;
+    return { ...resultado, publicaciones: await ocultarFotosVencidas(resultado.publicaciones) };
 }

@@ -1,5 +1,6 @@
 import { db } from "../../../../infraestructura/persistencia/prisma/db";
 import { normalizarDepartamento, obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
+import { ocultarFotosVencidas } from "../../../publicaciones/fotos-vigentes";
 
 // Una ubicación donde está el producto, con su enlace a Google Maps
 export type UbicacionPublicacionProductor = {
@@ -126,7 +127,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
         fotoPerfil: productor.fotoPerfil,
         whatsApp: productor.whatsApp,
         departamentos: obtenerDepartamentos(publicaciones.flatMap((publicacion) => publicacion.ubicaciones)),
-        publicaciones,
+        publicaciones: await ocultarFotosVencidas(publicaciones),
     };
 
     return productorResultante;

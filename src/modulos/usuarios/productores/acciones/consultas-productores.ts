@@ -2,6 +2,7 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 import type { PublicacionPerfil } from "../../operadores/consultas-perfil-publico";
 import { obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
+import { ocultarFotosVencidas } from "../../../publicaciones/fotos-vigentes";
 
 export type ProductorListado = {
     id: number;
@@ -76,7 +77,7 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
         whatsApp: productor.whatsApp,
         ubicaciones: Array.from(new Set(publicaciones.flatMap((relacion) => relacion.ubicaciones.map((ubicacion) => ubicacion.nombreUbicacion)))),
         departamentos: obtenerDepartamentos(publicaciones.flatMap((relacion) => relacion.ubicaciones)),
-        publicaciones: publicaciones.map((relacion) => {
+        publicaciones: await ocultarFotosVencidas(publicaciones.map((relacion) => {
             const publicacion = relacion.publicacion;
             return {
                 id: publicacion.id,
@@ -91,6 +92,6 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: relacion.pais?.nombrePais ?? "",
             };
-        }),
+        })),
     };
 }

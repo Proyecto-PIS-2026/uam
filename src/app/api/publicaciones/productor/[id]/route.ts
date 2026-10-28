@@ -6,6 +6,7 @@ import { obtenerOpcionesEdicionPublicacion } from "@/modulos/publicaciones/opera
 import { ErrorEdicionPublicacionProductor, modificarPublicacionProductor, obtenerPublicacionProductorEditable } from "@/modulos/publicaciones/productores/modificar-publicacion";
 import { bajaPublicacionProductorAutorizada, ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada";
 import { ErrorCuerpoDemasiadoGrande, leerFormularioLimitado } from "@/infraestructura/http/cuerpo-limitado";
+import { ocultarFotosVencidas } from "@/modulos/publicaciones/fotos-vigentes";
 
 export const runtime = "nodejs";
 type Contexto = { params: Promise<{ id: string }> };
@@ -66,7 +67,8 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
                 console.error(`No se pudo revalidar ${ruta} tras guardar la publicación:`, error);
             }
         }
-        return NextResponse.json({ publicacion: resultado.publicacion });
+        const [publicacion] = await ocultarFotosVencidas([resultado.publicacion]);
+        return NextResponse.json({ publicacion });
     } catch (error) {
         return respuestaError(error);
     }

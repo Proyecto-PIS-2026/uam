@@ -185,8 +185,18 @@ model Ubicacion {
 model Imagen {
   clave     String @id
   contenido Bytes
+  cargadaEn DateTime?
 
   @@map("imagen")
+}
+
+model EjecucionTareaProgramada {
+  nombre              String   @id
+  fecha               Date
+  completadaEn        DateTime
+  elementosProcesados Int
+
+  @@map("ejecucionTareaProgramada")
 }
 
 // PUBLICACIONES ABSTRACTAS
