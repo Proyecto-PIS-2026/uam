@@ -39,7 +39,7 @@ describe ('TarjetaPublicacionAdmin', () => {
         expect(screen.getAllByText(/Grande/).length).toBeGreaterThan(0);
         expect(screen.getAllByText(/Extra/).length).toBeGreaterThan(0);
         expect(screen.getByText("por Cajón")).toBeInTheDocument();
-        expect(screen.getByText(/120/)).toBeInTheDocument();
+        expect(screen.getByText("$ 120")).toBeInTheDocument();
     });
 
 

@@ -48,13 +48,6 @@ const crearPublicacion = (
     ...cambios,
 });
 
-const formatoPrecio = (precio: number) => new Intl.NumberFormat("es-UY", {
-    style: "currency",
-    currency: "UYU",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-}).format(precio);
-
 describe("TarjetaPublicacionSinProductor", () => {
     const onClick = vi.fn();
 
@@ -124,14 +117,14 @@ describe("TarjetaPublicacionSinProductor", () => {
     });
 
     it("formatea un precio normal en pesos uruguayos", () => {
-        const { container } = render(
+        render(
             <TarjetaPublicacionSinProductor
                 publicacion={crearPublicacion({ precio: 1250 })}
                 onClick={onClick}
             />,
         );
 
-        expect(container.textContent).toContain(formatoPrecio(1250));
+        expect(screen.getByText("$ 1.250")).toBeInTheDocument();
         expect(screen.queryByText("Consultar precio")).not.toBeInTheDocument();
     });
 
@@ -147,14 +140,14 @@ describe("TarjetaPublicacionSinProductor", () => {
     });
 
     it("formatea el precio cero en vez de tratarlo como un precio ausente", () => {
-        const { container } = render(
+        render(
             <TarjetaPublicacionSinProductor
                 publicacion={crearPublicacion({ precio: 0 })}
                 onClick={onClick}
             />,
         );
 
-        expect(container.textContent).toContain(formatoPrecio(0));
+        expect(screen.getByText("$ 0")).toBeInTheDocument();
         expect(screen.queryByText("Consultar precio")).not.toBeInTheDocument();
     });
 

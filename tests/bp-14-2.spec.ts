@@ -260,10 +260,10 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       await expect(page.getByRole("heading", { level: 1, name: productorAlta.nombre, exact: true })).toBeVisible();
       const tarjetas = page.getByRole("article", { name: "Ver detalles de Uchuva", exact: true });
       await expect(tarjetas).toHaveCount(2);
-      for (const producto of [{ calibre: "C", precio: "1371" }, { calibre: "G", precio: "2637" }]) {
+      for (const producto of [{ calibre: "C", precio: "1371", precioVisible: "$ 1.371" }, { calibre: "G", precio: "2637", precioVisible: "$ 2.637" }]) {
         const tarjeta = tarjetas.filter({ hasText: `${producto.calibre} · Categoría -` });
         await expect(tarjeta).toHaveCount(1);
-        await expect(tarjeta).toContainText(new Intl.NumberFormat("es-UY", { style: "currency", currency: "UYU", currencyDisplay: "narrowSymbol", maximumFractionDigits: 0 }).format(Number(producto.precio)));
+        await expect(tarjeta).toContainText(producto.precioVisible);
         await tarjeta.getByRole("button", { name: "Ver detalles de Uchuva", exact: true }).click();
         const consulta = page.getByRole("dialog").filter({ has: page.getByRole("button", { name: "Cerrar consulta", exact: true }) });
         await expect(consulta).toBeVisible();

@@ -1,14 +1,8 @@
+import { formatearPrecio } from "@/compartido/formatear-precio";
 import ImagenPublicacion from "../../../../publicaciones/componentes/ImagenPublicacion";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import type { PublicacionPerfilAdmin } from "../../consultas-perfil-admin";
 import styles from "./TarjetaPublicacionAdmin.module.css";
-
-const formatoPrecio = new Intl.NumberFormat("es-UY", {
-    style: "currency",
-    currency: "UYU",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-});
 
 type TarjetaPublicacionAdminProps = {
     publicacion: PublicacionPerfilAdmin;
@@ -66,7 +60,7 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
                     </div>
                     <div className={styles.contenedorPrecio}>
                         {publicacion.precio != null ? (
-                            <span className={styles.precio}>{formatoPrecio.format(Number(publicacion.precio))}</span>
+                            <span className={styles.precio}>{formatearPrecio(Number(publicacion.precio))}</span>
                         ) : (
                             <span className={styles.consultarPrecio}>Sin precio</span>
                         )}
