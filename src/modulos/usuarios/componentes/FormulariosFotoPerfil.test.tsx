@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FormularioAltaUsuario from "../administradores/componentes/alta-usuario/FormularioAltaUsuario";
 import FormularioModificarOperador from "../operadores/componentes/modificar-operador-por-admin/FormularioModificarOperador";
@@ -71,6 +71,9 @@ describe("Fotos en altas y modificaciones administrativas", () => {
         expect(screen.getByRole("button", { name: "Limpiar" })).toBeDisabled();
         expect(screen.getByRole("combobox", { name: /^Rol del usuario/ })).toHaveAttribute("aria-disabled", "true");
         await act(async () => resolver({ esValido: true, id: 7, mensaje: "Usuario registrado." }));
+        const dialogo = await screen.findByRole("dialog", { name: new RegExp(`^${rol} creado satisfactoriamente$`, "i") });
+        fireEvent.click(within(dialogo).getByRole("button", { name: "Ahora no" }));
+        await waitFor(() => expect(dialogo).not.toBeInTheDocument());
         expect(screen.getByRole("button", { name: "Agregar foto" })).toBeEnabled();
         expect(screen.queryByRole("img", { name: "Vista previa de la foto de perfil" })).not.toBeInTheDocument();
         expect(revocarUrl).toHaveBeenCalledWith("blob:perfil.png");

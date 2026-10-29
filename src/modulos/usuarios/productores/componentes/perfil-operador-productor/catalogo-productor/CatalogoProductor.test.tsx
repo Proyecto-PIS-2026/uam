@@ -4,6 +4,8 @@ import type { PublicacionPerfilProductor } from "@/modulos/usuarios/productores/
 import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
 import CatalogoProductor from "./CatalogoProductor";
 
+const nombreBotonAgrupar = /^Agrupar(?:\s*por especie)?$/;
+
 // Reemplaza Image de Next por un img comun
 vi.mock("next/image", async () => {
     const { createElement } = await import("react");
@@ -66,7 +68,7 @@ describe("CatalogoProductor", () => {
         render(<CatalogoProductor publicaciones={[]}/>);
         expect(screen.getByRole("heading", {name: "Publicaciones"})).toBeInTheDocument();
         expect(screen.getByRole("searchbox", {name: "Buscar publicaciones"})).toBeInTheDocument();
-        expect(screen.getByRole("button", {name: "Agrupar por especie"})).toBeInTheDocument();
+        expect(screen.getByRole("button", {name: nombreBotonAgrupar})).toBeInTheDocument();
         expect(screen.getByText("No hay publicaciones disponibles.")).toBeInTheDocument();
         expect(screen.queryAllByRole("button", {name: /Ver detalles de/})).toHaveLength(0);
     });
@@ -98,7 +100,7 @@ describe("CatalogoProductor", () => {
 
     it("respeta la prioridad al agrupar y aplica A-Z cuando se elige explícitamente", () => {
         render(<CatalogoProductor publicaciones={[acelga, tomate, manzana, papa]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         expect(nombresDeGrupos()).toEqual(["Papa", "Manzana", "Tomate", "Acelga"]);
 
         fireEvent.click(screen.getByRole("button", {name: "Ordenar por"}));
@@ -108,7 +110,7 @@ describe("CatalogoProductor", () => {
 
     it("mantiene el orden prioritario de los grupos cuando se ordenan sus publicaciones por precio", () => {
         render(<CatalogoProductor publicaciones={[{...acelga, precio: "10"}, {...papa, precio: "300"}, {...tomate, precio: "200"}, {...tomateCherry, precio: "50"}]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         fireEvent.click(screen.getByRole("button", {name: "Ordenar por"}));
         fireEvent.click(screen.getByRole("menuitemradio", {name: "Menor Precio"}));
 
@@ -123,7 +125,7 @@ describe("CatalogoProductor", () => {
 
     it("agrupa las publicaciones por especie", () => {
         render(<CatalogoProductor publicaciones={[tomate, tomateCherry, manzana]}/>);
-        const botonAgrupar = screen.getByRole("button", {name: "Agrupar por especie"});
+        const botonAgrupar = screen.getByRole("button", {name: nombreBotonAgrupar});
         expect(botonAgrupar).toHaveAttribute("aria-pressed", "false");
         fireEvent.click(botonAgrupar);
         expect(screen.getByRole("button", {name: "Desagrupar"})).toHaveAttribute("aria-pressed", "true");
@@ -134,7 +136,7 @@ describe("CatalogoProductor", () => {
 
     it("muestra la cantidad de publicaciones de cada especie", () => {
         render(<CatalogoProductor publicaciones={[tomate, tomateCherry, manzana]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         expect(screen.getByText("2")).toBeInTheDocument();
         expect(screen.getByText("productos")).toBeInTheDocument();
         expect(screen.getByText("1")).toBeInTheDocument();
@@ -143,11 +145,11 @@ describe("CatalogoProductor", () => {
 
     it("permite desagrupar las publicaciones", () => {
         render(<CatalogoProductor publicaciones={[tomate, manzana]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         expect(screen.getByRole("heading", {name: "Tomate", level: 3})).toBeInTheDocument();
         expect(screen.getAllByRole("heading", {name: "Manzana", level: 3})).toHaveLength(2);
         fireEvent.click(screen.getByRole("button", {name: "Desagrupar"}));
-        expect(screen.getByRole("button", {name: "Agrupar por especie"})).toHaveAttribute("aria-pressed", "false");
+        expect(screen.getByRole("button", {name: nombreBotonAgrupar})).toHaveAttribute("aria-pressed", "false");
         expect(screen.queryByRole("heading", {name: "Tomate", level: 3})).not.toBeInTheDocument();
         expect(screen.getAllByRole("heading", {name: "Manzana", level: 3})).toHaveLength(1);
         expect(screen.getAllByRole("button", {name: /Ver detalles de/})).toHaveLength(2);
@@ -163,7 +165,7 @@ describe("CatalogoProductor", () => {
 
     it("abre el drawer desde una publicación agrupada", () => {
         render(<CatalogoProductor publicaciones={[tomate]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         fireEvent.click(screen.getByRole("button", {name: "Ver detalles de Tomate - Perita"}));
         expect(screen.getByTestId("drawer")).toBeInTheDocument();
         expect(screen.getByTestId("drawer")).toHaveTextContent("Tomate");
@@ -176,7 +178,7 @@ describe("CatalogoProductor", () => {
 
     it("ordena los grupos de Z-A cuando se selecciona ese orden", () => {
         render(<CatalogoProductor publicaciones={[acelga, tomate, manzana, papa]} />);
-        fireEvent.click(screen.getByRole("button", { name: "Agrupar por especie" }));
+        fireEvent.click(screen.getByRole("button", { name: nombreBotonAgrupar }));
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         fireEvent.click(screen.getByRole("menuitemradio", { name: "Z-A" }));
         expect(nombresDeGrupos()).toEqual(["Tomate", "Papa", "Manzana", "Acelga"]);

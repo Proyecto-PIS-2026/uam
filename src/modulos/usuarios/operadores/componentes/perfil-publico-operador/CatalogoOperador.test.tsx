@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
 import CatalogoOperador from "./CatalogoOperador";
 
+const nombreBotonAgrupar = /^Agrupar(?:\s*por especie)?$/;
+
 const tiempoReal = vi.hoisted(() => ({
     refresh: vi.fn(),
     suscribir: vi.fn(),
@@ -77,7 +79,7 @@ describe("CatalogoOperador", () => {
     it("actualiza el detalle abierto y mantiene búsqueda y agrupación al recibir precios nuevos", () => {
         const { rerender } = render(<CatalogoOperador publicaciones={[tomate, manzana]}/>);
         fireEvent.change(screen.getByRole("searchbox", {name: "Buscar publicaciones"}), { target: { value: "tomate" } });
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         fireEvent.click(screen.getByRole("button", {name: "Ver detalles de Tomate - Perita"}));
         expect(screen.getByTestId("drawer")).toHaveTextContent("120");
 
@@ -101,7 +103,7 @@ describe("CatalogoOperador", () => {
         render(<CatalogoOperador publicaciones={[]}/>);
         expect(screen.getByRole("heading", {name: "Publicaciones"})).toBeInTheDocument();
         expect(screen.getByRole("searchbox", {name: "Buscar publicaciones"})).toBeInTheDocument();
-        expect(screen.getByRole("button", {name: "Agrupar por especie"})).toBeInTheDocument();
+        expect(screen.getByRole("button", {name: nombreBotonAgrupar})).toBeInTheDocument();
         expect(screen.getByText("No hay publicaciones disponibles.")).toBeInTheDocument();
         expect(screen.queryAllByRole("button", {name: /Ver detalles de/})).toHaveLength(0);
     });
@@ -133,7 +135,7 @@ describe("CatalogoOperador", () => {
 
     it("respeta la prioridad al agrupar y aplica A-Z cuando se elige explícitamente", () => {
         render(<CatalogoOperador publicaciones={[acelga, tomate, manzana, papa]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         expect(nombresDeGrupos()).toEqual(["Papa", "Manzana", "Tomate", "Acelga"]);
 
         fireEvent.click(screen.getByRole("button", {name: "Ordenar por"}));
@@ -143,7 +145,7 @@ describe("CatalogoOperador", () => {
 
     it("mantiene el orden prioritario de los grupos cuando se ordenan sus publicaciones por precio", () => {
         render(<CatalogoOperador publicaciones={[{...acelga, precio: "10"}, {...papa, precio: "300"}, {...tomate, precio: "200"}, {...tomateCherry, precio: "50"}]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         fireEvent.click(screen.getByRole("button", {name: "Ordenar por"}));
         fireEvent.click(screen.getByRole("menuitemradio", {name: "Menor Precio"}));
 
@@ -158,7 +160,7 @@ describe("CatalogoOperador", () => {
 
     it("agrupa las publicaciones por especie", () => {
         render(<CatalogoOperador publicaciones={[tomate, tomateCherry, manzana]}/>);
-        const botonAgrupar = screen.getByRole("button", {name: "Agrupar por especie"});
+        const botonAgrupar = screen.getByRole("button", {name: nombreBotonAgrupar});
         expect(botonAgrupar).toHaveAttribute("aria-pressed", "false");
         fireEvent.click(botonAgrupar);
         expect(screen.getByRole("button", {name: "Desagrupar"})).toHaveAttribute("aria-pressed", "true");
@@ -169,7 +171,7 @@ describe("CatalogoOperador", () => {
 
     it("muestra la cantidad de publicaciones de cada especie", () => {
         render(<CatalogoOperador publicaciones={[tomate, tomateCherry, manzana]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         expect(screen.getByText("2")).toBeInTheDocument();
         expect(screen.getByText("productos")).toBeInTheDocument();
         expect(screen.getByText("1")).toBeInTheDocument();
@@ -178,11 +180,11 @@ describe("CatalogoOperador", () => {
 
     it("permite desagrupar las publicaciones", () => {
         render(<CatalogoOperador publicaciones={[tomate, manzana]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         expect(screen.getByRole("heading", {name: "Tomate", level: 3})).toBeInTheDocument();
         expect(screen.getAllByRole("heading", {name: "Manzana", level: 3})).toHaveLength(2);
         fireEvent.click(screen.getByRole("button", {name: "Desagrupar"}));
-        expect(screen.getByRole("button", {name: "Agrupar por especie"})).toHaveAttribute("aria-pressed", "false");
+        expect(screen.getByRole("button", {name: nombreBotonAgrupar})).toHaveAttribute("aria-pressed", "false");
         expect(screen.queryByRole("heading", {name: "Tomate", level: 3})).not.toBeInTheDocument();
         expect(screen.getAllByRole("heading", {name: "Manzana", level: 3})).toHaveLength(1);
         expect(screen.getAllByRole("button", {name: /Ver detalles de/})).toHaveLength(2);
@@ -198,7 +200,7 @@ describe("CatalogoOperador", () => {
 
     it("abre el drawer desde una publicación agrupada", () => {
         render(<CatalogoOperador publicaciones={[tomate]}/>);
-        fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
+        fireEvent.click(screen.getByRole("button", {name: nombreBotonAgrupar}));
         fireEvent.click(screen.getByRole("button", {name: "Ver detalles de Tomate - Perita"}));
         expect(screen.getByTestId("drawer")).toBeInTheDocument();
         expect(screen.getByTestId("drawer")).toHaveTextContent("Tomate");
