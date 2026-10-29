@@ -5,12 +5,11 @@
     gap: var(--espacio-inline);
     width: fit-content;
     max-width: 100%;
-    min-height: 2.75rem;
-    padding: 0.5rem 0;
+    padding: 0;
     border: 0;
     border-radius: 0.25rem;
     background: transparent;
-    color: var(--color-primary);
+    color: var(--color-secondary);
     font: inherit;
     font-size: var(--tamano-texto-secundario);
     font-weight: 600;
@@ -21,13 +20,13 @@
 }
 
 .volver:hover:not(:disabled) {
-    color: var(--color-primary-hover);
+    color: var(--color-secondary-hover);
     text-decoration: underline;
     text-underline-offset: 0.2em;
 }
 
 .volver:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-secondary);
     outline-offset: 3px;
 }
 
@@ -41,4 +40,5 @@
     height: 1.25rem;
     flex-shrink: 0;
     color: inherit;
+    font-size: 1.25rem;
 }

@@ -5,9 +5,9 @@ import HojasDecorativas from "@/compartido/HojasDecorativas";
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
 import { useRouter } from "next/navigation";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import BotonVolver from "@/compartido/BotonVolver";
 
 import { modificarProductor } from "./modificarProductor";
 import type { ProductorParaModificar } from "./obtenerProductorParaModificar";
@@ -19,8 +19,13 @@ type Props = {
     productor: ProductorParaModificar;
 };
 
-const CODIGOS_PAIS = ["+598", "+54", "+55", "+56", "+595"];
-const propiedadesMenuSelect = { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } as const;
+const CODIGOS_PAIS = [
+    { codigo: "+598", pais: "Uruguay" },
+    { codigo: "+54", pais: "Argentina" },
+    { codigo: "+55", pais: "Brasil" },
+    { codigo: "+56", pais: "Chile" },
+    { codigo: "+595", pais: "Paraguay" },
+];
 
 export default function FormularioModificarProductor({ productor }: Props) {
     const router = useRouter();
@@ -94,15 +99,13 @@ export default function FormularioModificarProductor({ productor }: Props) {
         <div className={styles.pagina}>
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <div className={styles.contenedor}>
-                <button
-                    type="button"
+                <BotonVolver
                     className={styles.volver}
                     onClick={cancelar}
                     disabled={guardando}
                 >
-                    <ArrowBackIcon aria-hidden="true" fontSize="inherit" />
                     Volver al perfil
-                </button>
+                </BotonVolver>
 
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
@@ -128,77 +131,47 @@ export default function FormularioModificarProductor({ productor }: Props) {
 
                         <SelectorFotoPerfil fotoActual={productor.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
 
-                        <label className={styles.campo}>
-                            <span className={styles.etiqueta}>
-                                Nombre
-                            </span>
-
-                            <input
-                                className={styles.entrada}
-                                value={nombre}
-                                onChange={(evento) =>
-                                    setNombre(
-                                        evento.target.value,
-                                    )
-                                }
-                                disabled={guardando}
-                            />
-                        </label>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            className={styles.control}
+                            label="Nombre"
+                            value={nombre}
+                            onChange={(evento) => setNombre(evento.target.value)}
+                            disabled={guardando}
+                        />
 
                         <div className={styles.filaTelefono}>
-                            <div className={styles.campo}>
-                                <span
-                                    id={`${idFormulario}-codigo-etiqueta`}
-                                    className={styles.etiqueta}
-                                >
-                                    Código
-                                </span>
+                            <TextField
+                                select
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                id={`${idFormulario}-codigo`}
+                                label="Código de país"
+                                value={codigoPais}
+                                onChange={(evento) => setCodigoPais(evento.target.value)}
+                                disabled={guardando}
+                            >
+                                {CODIGOS_PAIS.map(({ codigo, pais }) => (
+                                    <MenuItem key={codigo} value={codigo}>{codigo} ({pais})</MenuItem>
+                                ))}
+                            </TextField>
 
-                                <Select
-                                    id={`${idFormulario}-codigo`}
-                                    labelId={`${idFormulario}-codigo-etiqueta`}
-                                    fullWidth
-                                    size="small"
-                                    MenuProps={propiedadesMenuSelect}
-                                    value={codigoPais}
-                                    onChange={(evento) =>
-                                        setCodigoPais(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    disabled={guardando}
-                                >
-                                    {CODIGOS_PAIS.map(
-                                        (codigo) => (
-                                            <MenuItem
-                                                key={codigo}
-                                                value={codigo}
-                                            >
-                                                {codigo}
-                                            </MenuItem>
-                                        ),
-                                    )}
-                                </Select>
-                            </div>
-
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    WhatsApp
-                                </span>
-
-                                <input
-                                    className={styles.entrada}
-                                    value={telefono}
-                                    onChange={(evento) =>
-                                        setTelefono(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    disabled={guardando}
-                                />
-                            </label>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="WhatsApp"
+                                type="tel"
+                                value={telefono}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
+                                onChange={(evento) => {
+                                    const nuevoTelefono = evento.target.value;
+                                    if (/^[0-9]*$/.test(nuevoTelefono)) setTelefono(nuevoTelefono);
+                                }}
+                                disabled={guardando}
+                            />
                         </div>
                     </section>
 
@@ -217,49 +190,29 @@ export default function FormularioModificarProductor({ productor }: Props) {
                                 styles.grillaContraseña
                             }
                         >
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Nueva contraseña
-                                </span>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Nueva contraseña"
+                                type="password"
+                                value={contraseña}
+                                onChange={(evento) => setContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
 
-                                <input
-                                    className={styles.entrada}
-                                    type="password"
-                                    value={contraseña}
-                                    onChange={(evento) =>
-                                        setContraseña(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    autoComplete="new-password"
-                                    disabled={guardando}
-                                />
-                            </label>
-
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Confirmar contraseña
-                                </span>
-
-                                <input
-                                    className={styles.entrada}
-                                    type="password"
-                                    value={
-                                        confirmacionContraseña
-                                    }
-                                    onChange={(evento) =>
-                                        setConfirmacionContraseña(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    autoComplete="new-password"
-                                    disabled={guardando}
-                                />
-                            </label>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Confirmar contraseña"
+                                type="password"
+                                value={confirmacionContraseña}
+                                onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
                         </div>
                     </section>
 

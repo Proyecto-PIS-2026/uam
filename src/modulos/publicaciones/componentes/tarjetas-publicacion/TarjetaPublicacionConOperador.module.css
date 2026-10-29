@@ -18,7 +18,7 @@
 }
 
 .tarjeta:hover {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
     box-shadow: 0 4px 10px rgb(0 0 0 / 12%);
     transform: translateY(-1px);
 }
@@ -29,7 +29,7 @@
 }
 
 .tarjeta:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
 }
 
@@ -43,7 +43,7 @@
     align-self: center;
     overflow: hidden;
     border-radius: var(--radio-panel);
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
 }
 
 .imagen {
@@ -168,8 +168,8 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radio-control);
-    background-color: var(--color-primary-soft);
-    color: var(--color-primary);
+    background-color: var(--color-secondary-soft);
+    color: var(--color-secondary);
     font-size: var(--tamano-texto-auxiliar);
     font-weight: 600;
     line-height: 1;
@@ -195,7 +195,7 @@
 }
 
 .precio {
-    color: var(--color-primary);
+    color: var(--color-secondary);
     font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
     line-height: 1.1;
@@ -203,7 +203,7 @@
 }
 
 .consultarPrecio {
-    color: var(--color-primary);
+    color: var(--color-secondary);
     font-size: var(--tamano-texto-auxiliar);
     font-weight: 500;
     line-height: 1.2;
@@ -364,7 +364,7 @@
     }
 
     .tarjeta:hover {
-        border-color: var(--color-primary);
+        border-color: var(--color-secondary);
         box-shadow: 0 10px 28px rgb(26 26 26 / 10%);
         transform: translateY(-2px);
     }
@@ -465,7 +465,7 @@
         min-width: 0;
         flex: 1;
         margin: 0;
-        color: var(--color-primary);
+        color: var(--color-secondary);
         white-space: nowrap;
         font-size: var(--tamano-texto-auxiliar);
         font-weight: 800;
@@ -498,7 +498,7 @@
     }
 
     .consultarPrecio {
-        color: var(--color-primary);
+        color: var(--color-secondary);
         font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
@@ -519,7 +519,7 @@
     }
 
     .consultarPrecio {
-        color: var(--color-primary);
+        color: var(--color-secondary);
         font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
@@ -532,7 +532,7 @@
     }
 
     .consultarPrecio {
-        color: var(--color-primary);
+        color: var(--color-secondary);
         font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
@@ -541,7 +541,7 @@
 
 @media (min-width: 480px) and (max-width: 700px) {
     .consultarPrecio {
-        color: var(--color-primary);
+        color: var(--color-secondary);
         font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
@@ -550,7 +550,7 @@
 
 @media (min-width: 768px) and (min-width: 1024px) {
     .consultarPrecio {
-        color: var(--color-primary);
+        color: var(--color-secondary);
         font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;
@@ -559,7 +559,7 @@
 
 @media (min-width: 1024px) {
     .consultarPrecio {
-        color: var(--color-primary);
+        color: var(--color-secondary);
         font-size: var(--tamano-texto-auxiliar);
         font-weight: 700;
         white-space: nowrap;

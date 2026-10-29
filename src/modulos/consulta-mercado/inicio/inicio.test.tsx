@@ -61,15 +61,17 @@ describe("inicio", () => {
         render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
 
         expect(nombresEnPantalla()).toEqual(["Papa", "Banana", "Manzana", "Acelga", "Berro"]);
-        expect(screen.getByRole("combobox", { name: "Ordenar por" })).not.toHaveTextContent("A-Z");
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        expect(screen.getAllByRole("menuitemradio").every((opcion) => opcion.getAttribute("aria-checked") === "false")).toBe(true);
+        fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
     });
 
     it("ordena todas las especies de forma ascendente al elegir A-Z", () => {
         render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
 
-        const select = screen.getByRole("combobox");
-        fireEvent.mouseDown(select);
-        const opcion = screen.getByRole("option", { name: "A-Z" });
+        const botonOrden = screen.getByRole("button", { name: "Ordenar por" });
+        fireEvent.click(botonOrden);
+        const opcion = screen.getByRole("menuitemradio", { name: "A-Z" });
         fireEvent.click(opcion);
 
         expect(nombresEnPantalla()).toEqual(["Acelga", "Banana", "Berro", "Manzana", "Papa"]);
@@ -77,8 +79,8 @@ describe("inicio", () => {
 
     it("recupera el orden prioritario al volver a entrar a la página", () => {
         const vista = render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
-        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("option", { name: "A-Z" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "A-Z" }));
         expect(nombresEnPantalla()).toEqual(["Acelga", "Banana", "Berro", "Manzana", "Papa"]);
 
         vista.unmount();
@@ -90,9 +92,9 @@ describe("inicio", () => {
     it("ordena las especies de forma descendente (Z-A)", () => {
         render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
 
-        const select = screen.getByRole("combobox");
-        fireEvent.mouseDown(select);
-        const opcion = screen.getByRole("option", { name: "Z-A" });
+        const botonOrden = screen.getByRole("button", { name: "Ordenar por" });
+        fireEvent.click(botonOrden);
+        const opcion = screen.getByRole("menuitemradio", { name: "Z-A" });
         fireEvent.click(opcion);
         const especies = screen.getAllByText(/Banana|Manzana|Sandía/);
 

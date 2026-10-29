@@ -66,7 +66,7 @@ describe("PerfilProductor", () => {
     });
 
     it("permite volver a publicaciones cuando se indica ese origen", () => {
-        render(<PerfilProductor productor={productor} hrefVolver="/publicaciones-productor" textoVolver="Volver a Mercado Productores"/>);
-        expect(screen.getByRole("link", {name: "Volver a Mercado Productores"})).toHaveAttribute("href", "/publicaciones-productor");
+        render(<PerfilProductor productor={productor} hrefVolver="/publicaciones-productor" textoVolver="Volver a Mercado Producción"/>);
+        expect(screen.getByRole("link", {name: "Volver a Mercado Producción"})).toHaveAttribute("href", "/publicaciones-productor");
     });
 });

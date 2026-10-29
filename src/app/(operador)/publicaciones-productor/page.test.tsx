@@ -27,8 +27,8 @@ vi.mock("@/compartido/EncabezadoPagina", () => ({
     ),
 }));
 
-vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones", () => ({    default: ({ publicaciones }: { publicaciones: unknown[] }) => (
-        <div data-testid="contenedor-publicaciones" data-cantidad={publicaciones.length}>
+vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones", () => ({    default: ({ publicaciones, esAdmin }: { publicaciones: unknown[]; esAdmin?: boolean }) => (
+        <div data-testid="contenedor-publicaciones" data-cantidad={publicaciones.length} data-es-admin={esAdmin}>
             Publicaciones de productores: {publicaciones.length}
         </div>
     ),
@@ -68,6 +68,7 @@ describe("Page de publicaciones de productores", () => {
         expect(requerirConsultaProductores).toHaveBeenCalledTimes(1);
         expect(obtenerPublicaciones).toHaveBeenCalledExactlyOnceWith(sesion);
         expect(screen.getByTestId("contenedor-publicaciones")).toHaveAttribute("data-cantidad", "2");
+        expect(screen.getByTestId("contenedor-publicaciones")).toHaveAttribute("data-es-admin", String(rol === "ADMINISTRADOR"));
     });
 
     it("muestra encabezado, cantidad y publicaciones cuando la consulta devuelve resultados", async () => {
@@ -76,7 +77,7 @@ describe("Page de publicaciones de productores", () => {
         const encabezado = screen.getByTestId("encabezado-pagina");
         const contenedor = screen.getByTestId("contenedor-publicaciones");
 
-        expect(encabezado.getAttribute("data-titulo")).toBe("Mercado Productores");
+        expect(encabezado.getAttribute("data-titulo")).toBe("Mercado Producción");
         expect(encabezado.getAttribute("data-cantidad")).toBe("2");
         expect(encabezado.getAttribute("data-subtitulo")).toBe("publicaciones en la plataforma");
         expect(contenedor.getAttribute("data-cantidad")).toBe("2");

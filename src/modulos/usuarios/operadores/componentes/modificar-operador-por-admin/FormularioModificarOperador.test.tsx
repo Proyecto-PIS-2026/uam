@@ -76,10 +76,10 @@ describe("FormularioModificarOperador", () => {
         renderizar();
 
         expect(valorDe(screen.getByLabelText("Nombre"))).toBe("Caporale");
-        expect(screen.getByRole("combobox", { name: "Código" })).toHaveTextContent("+598");
+        expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598");
         expect(valorDe(screen.getByLabelText("WhatsApp"))).toBe("99123456");
         expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
-        expect(valorDe(screen.getByLabelText("Número de local"))).toBe("022");
+        expect(valorDe(screen.getByLabelText(/^Número de local/))).toBe("022");
         expect(valorDe(screen.getByLabelText("Fin de contrato"))).toBe("2026-12-31");
         expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
         expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
@@ -89,7 +89,7 @@ describe("FormularioModificarOperador", () => {
         "rechaza el número de local inválido %s sin cambiar lo escrito",
         (valor) => {
             renderizar();
-            const campo = screen.getByLabelText("Número de local");
+            const campo = screen.getByLabelText(/^Número de local/);
 
             fireEvent.change(campo, { target: { value: valor } });
 
@@ -100,7 +100,7 @@ describe("FormularioModificarOperador", () => {
 
     it("rechaza un pegado inválido y permite vaciar y reescribir el local con ceros iniciales", () => {
         renderizar();
-        const campo = screen.getByLabelText("Número de local") as HTMLInputElement;
+        const campo = screen.getByLabelText(/^Número de local/) as HTMLInputElement;
 
         expect(campo).toHaveAttribute("type", "text");
         expect(campo).toHaveAttribute("inputmode", "numeric");
@@ -130,7 +130,7 @@ describe("FormularioModificarOperador", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "+ Agregar local" }));
 
-        const numeros = screen.getAllByLabelText("Número de local");
+        const numeros = screen.getAllByLabelText(/^Número de local/);
         expect(numeros).toHaveLength(2);
         expect(valorDe(elementoEn(numeros, 1))).toBe("");
         expect(elementoEn(screen.getAllByRole("combobox", { name: "Nave" }), 1)).toHaveTextContent("Nave A");
@@ -143,7 +143,7 @@ describe("FormularioModificarOperador", () => {
         const botonesEliminar = screen.getAllByRole("button", { name: "Eliminar" });
         fireEvent.click(elementoEn(botonesEliminar, 0));
 
-        const numeros = screen.getAllByLabelText("Número de local");
+        const numeros = screen.getAllByLabelText(/^Número de local/);
         expect(numeros).toHaveLength(1);
         expect(valorDe(elementoEn(numeros, 0))).toBe("105");
     });
@@ -155,8 +155,8 @@ describe("FormularioModificarOperador", () => {
 
         const alerta = screen.getByRole("alert");
         expect(alerta.textContent).toContain("Debe haber al menos un local.");
-        expect(screen.getAllByLabelText("Número de local")).toHaveLength(1);
-        expect(valorDe(screen.getByLabelText("Número de local"))).toBe("022");
+        expect(screen.getAllByLabelText(/^Número de local/)).toHaveLength(1);
+        expect(valorDe(screen.getByLabelText(/^Número de local/))).toBe("022");
         const formulario = screen.getByRole("button", { name: "Guardar cambios" }).closest("form")!;
         expect(within(formulario).queryByRole("alert")).not.toBeInTheDocument();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
@@ -173,8 +173,8 @@ describe("FormularioModificarOperador", () => {
         fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
         expect(await screen.findByRole("alert")).toHaveTextContent("Debe haber al menos un local.");
         expect(screen.getAllByRole("alert")).toHaveLength(1);
-        expect(screen.getAllByLabelText("Número de local")).toHaveLength(1);
-        expect(valorDe(screen.getByLabelText("Número de local"))).toBe("022");
+        expect(screen.getAllByLabelText(/^Número de local/)).toHaveLength(1);
+        expect(valorDe(screen.getByLabelText(/^Número de local/))).toBe("022");
     });
 
     it("envía los datos modificados y vuelve al perfil cuando la modificación es válida", async () => {
@@ -187,11 +187,11 @@ describe("FormularioModificarOperador", () => {
         fireEvent.change(screen.getByLabelText("WhatsApp"), {
             target: { value: "1123456789" },
         });
-        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Código" }));
-        fireEvent.click(screen.getByRole("option", { name: "+54" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Código de país" }));
+        fireEvent.click(screen.getByRole("option", { name: "+54 (Argentina)" }));
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
         fireEvent.click(screen.getByRole("option", { name: "Nave A" }));
-        expect(screen.getByRole("combobox", { name: "Código" })).toHaveTextContent("+54");
+        expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+54");
         expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave A");
         apretarGuardar();
 
@@ -275,7 +275,7 @@ describe("FormularioModificarOperador", () => {
 
         const botonGuardando = await screen.findByRole("button", { name: "Guardando..." });
         expect(estaDeshabilitado(botonGuardando)).toBe(true);
-        for (const campo of ["Código", "Nave"]) {
+        for (const campo of ["Código de país", "Nave"]) {
             const selector = screen.getByRole("combobox", { name: campo });
             expect(selector).toHaveAttribute("aria-disabled", "true");
             fireEvent.mouseDown(selector);

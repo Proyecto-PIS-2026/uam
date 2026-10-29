@@ -91,8 +91,29 @@ describe("precios de Mi Mercado", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
-    it("valida el resultado del incremento sobre la base actual", async () => {
-        await expect(incrementarPrecioPublicacion(10, 20, -100)).rejects.toThrow("mayor a cero");
+    it.each([-100, -110])("quita el precio cuando el decremento %s llega a cero o lo supera", async (incremento) => {
+        expect(await incrementarPrecioPublicacion(10, 20, incremento)).toEqual({ precio: null, version: 2, fecha: fila.fecha });
+        expect(fila).toMatchObject({ precio: null, version: 2 });
+        expect(mocks.notificar).toHaveBeenCalledWith(expect.anything(), { operadorId: 10, publicacionId: 20 });
+    });
+
+    it("mantiene sin precio al decrementar una publicación que ya no tiene precio", async () => {
+        fila.precio = null;
+        expect(await incrementarPrecioPublicacion(10, 20, -10)).toMatchObject({ precio: null, version: 2 });
+        expect(fila.precio).toBeNull();
+    });
+
+    it("suma desde sin precio después de un decremento que supera el precio anterior", async () => {
+        fila.precio = "5.00";
+        const resultados = await Promise.all([incrementarPrecioPublicacion(10, 20, -10), incrementarPrecioPublicacion(10, 20, 10)]);
+        expect(resultados.map(({ precio }) => precio)).toEqual([null, 10]);
+        expect(fila).toMatchObject({ precio: "10.00", version: 3 });
+    });
+
+    it("rechaza incrementos cuyo resultado excede el precio máximo", async () => {
+        fila.precio = "9999999999.00";
+        await expect(incrementarPrecioPublicacion(10, 20, 1)).rejects.toThrow("máximo");
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
         expect(mocks.notificar).not.toHaveBeenCalled();
     });
 });

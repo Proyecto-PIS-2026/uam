@@ -169,7 +169,10 @@ describe("NuevaPublicacion", () => {
         fireEvent.click(screen.getByRole("button", { name: "Aumentar precio en 25" }));
         expect(precio).toHaveValue("25");
         fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 25" }));
-        expect(precio).toHaveValue("25");
+        expect(precio).toHaveValue("");
+        fireEvent.change(precio, { target: { value: "5" } });
+        fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 25" }));
+        expect(precio).toHaveValue("");
     });
 
     it("rechaza cero y entradas inválidas sin transformarlas en otro precio", async () => {

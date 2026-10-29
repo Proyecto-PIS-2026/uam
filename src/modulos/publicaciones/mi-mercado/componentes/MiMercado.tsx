@@ -6,7 +6,7 @@ import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { useRouter } from "next/navigation";
-import HojasDecorativas from "../../../../compartido/HojasDecorativas";
+import EncabezadoPagina from "../../../../compartido/EncabezadoPagina";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
 import DrawerEditarPublicacion from "../../operadores/componentes/DrawerEditarPublicacion";
 import type { Publicacion } from "../tipos";
@@ -242,28 +242,10 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
             <div className="contenedor-pagina secciones-pagina relative z-10">
 
                 {/* Encabezado */}
-                <header className="encabezado-pagina relative isolate overflow-hidden">
-                    <HojasDecorativas />
-                    <div className="relative z-10 flex flex-col gap-[var(--espacio-controles)] sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                            <p className="mb-[var(--espacio-textos)] text-[length:var(--tamano-texto-auxiliar)] font-bold uppercase tracking-widest text-[var(--color-subtitulo-pagina)]">
-                                Mis publicaciones
-                            </p>
-
-                            <h1 className="titulo-pagina">
-                                Mi Mercado
-                            </h1>
-
-                            <p className="subtitulo-pagina mt-[var(--espacio-textos)]">
-                                Consultá los productos que tenés publicados.
-                            </p>
-                        </div>
-
-                        <p className="subtitulo-pagina">
-                            {publicacionesVigentes.length}{" "}{publicacionesVigentes.length === 1 ? "publicación" : "publicaciones"}
-                        </p>
-                    </div>
-                </header>
+                <EncabezadoPagina
+                    titulo="Mi Mercado"
+                    subtitulo={`${publicacionesVigentes.length} ${publicacionesVigentes.length === 1 ? "publicación" : "publicaciones"}`}
+                />
 
                 {error && <p className={styles.mensajeError} role="alert">{error}</p>}
 

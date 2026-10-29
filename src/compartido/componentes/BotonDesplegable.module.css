@@ -1,0 +1,49 @@
+.boton.boton {
+    flex-shrink: 0;
+    min-width: 0;
+    min-height: var(--alto-control);
+    padding: var(--espacio-inline);
+    color: var(--color-secondary);
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+    text-transform: none;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.boton.boton:hover,
+.boton.boton:active,
+.boton.boton:focus-visible {
+    text-decoration: none;
+}
+
+.boton:global(.Mui-focusVisible) {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 2px;
+}
+
+.boton :global(.MuiButton-endIcon) {
+    margin-right: 0;
+    margin-left: var(--espacio-textos);
+}
+
+.boton :global(.MuiButton-endIcon) .flecha {
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+}
+
+.flecha {
+    transition: transform var(--duracion-despliegue-filtros) var(--curva-despliegue-filtros);
+}
+
+.flechaAbierta {
+    transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .flecha {
+        transition: none;
+    }
+}

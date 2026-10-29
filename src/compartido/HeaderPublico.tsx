@@ -49,7 +49,7 @@ const opcionesMenu: OpcionMenu[] = [
     },
     
     {
-        nombre: "Mercado",
+        nombre: "Mercado Virtual",
         ruta: "/publicaciones",
         icono: StorefrontOutlinedIcon,
         permitido: () => autorizado("operador.publicacion.consultar"),
@@ -57,7 +57,7 @@ const opcionesMenu: OpcionMenu[] = [
     },
     // Listado de publicaciones de productores
     {
-        nombre: "Mercado Productores",
+        nombre: "Mercado Producción",
         ruta: "/publicaciones-productor",
         icono: AgricultureOutlinedIcon,
         permitido: (sesion) => autorizado("productor.publicacion.consultar", sesion),
@@ -148,8 +148,8 @@ function MenuPublicaciones({
     const id = useId();
 
     const opciones = [
-        { nombre: "Mercado", ruta: "/publicaciones", icono: StorefrontOutlinedIcon },
-        { nombre: "Mercado Productores", ruta: "/publicaciones-productor", icono: AgricultureOutlinedIcon },
+        { nombre: "Mercado Virtual", ruta: "/publicaciones", icono: StorefrontOutlinedIcon },
+        { nombre: "Mercado Producción", ruta: "/publicaciones-productor", icono: AgricultureOutlinedIcon },
     ];
 
     const esActiva = (ruta: string) =>

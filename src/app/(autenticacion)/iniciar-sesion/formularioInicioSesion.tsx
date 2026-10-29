@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
+import Dialog from "@mui/material/Dialog";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
@@ -18,6 +19,7 @@ export default function FormularioInicioSesion() {
     const [mostrarContrasena, cambiarMostrarContrasena] = useState(false);
     const [modalRecuperacionAbierto, cambiarModalRecuperacionAbierto] = useState(false);
     const [usuarioRecuperacion, cambiarUsuarioRecuperacion] = useState("");
+    const usuarioRecuperacionRef = useRef<HTMLInputElement>(null);
     const [errorRecuperacion, cambiarErrorRecuperacion] = useState("");
     const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
     const [solicitudPendiente, cambiarSolicitudPendiente] = useState(false);
@@ -29,6 +31,7 @@ export default function FormularioInicioSesion() {
     }
 
     function cerrarModalRecuperacion() {
+        if (solicitudPendiente) return;
         cambiarErrorRecuperacion("");
         cambiarModalRecuperacionAbierto(false);
     }
@@ -117,70 +120,69 @@ export default function FormularioInicioSesion() {
                 <button
                     type="button"
                     onClick={abrirModalRecuperacion}
-                    className="w-full text-center text-sm text-[var(--color-primary)] underline underline-offset-2 hover:opacity-80"
+                    className="w-full text-center text-sm text-[var(--color-secondary)] underline underline-offset-2 hover:opacity-80"
                 >
                     Solicitar recuperación de contraseña
                 </button>
             </form>
-            {modalRecuperacionAbierto && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm"
-                    role="presentation"
-                    onMouseDown={(evento) => {
-                        if (evento.target === evento.currentTarget) cerrarModalRecuperacion();
+            <Dialog
+                open={modalRecuperacionAbierto}
+                onClose={cerrarModalRecuperacion}
+                maxWidth={false}
+                aria-labelledby="titulo-recuperacion-contrasena"
+                aria-describedby="descripcion-recuperacion-contrasena"
+                slotProps={{
+                    paper: { sx: { m: 2, width: "calc(100% - 32px)", maxWidth: "28rem", p: "var(--padding-panel)" } },
+                    transition: { onEntered: () => usuarioRecuperacionRef.current?.focus() },
+                }}
+            >
+                <h2 id="titulo-recuperacion-contrasena" className="titulo-seccion mb-[var(--espacio-controles)]">
+                    Solicitar recuperación de contraseña
+                </h2>
+                <p id="descripcion-recuperacion-contrasena" className="mb-4 text-sm text-[var(--color-foreground)]">
+                    Ingresá tu nombre de usuario y confirmá si estás seguro de solicitar la recuperación.
+                </p>
+                <label htmlFor="usuarioRecuperacion" className="mb-2 block text-sm font-medium">
+                    Nombre de usuario
+                </label>
+                <input
+                    ref={usuarioRecuperacionRef}
+                    id="usuarioRecuperacion"
+                    type="text"
+                    autoFocus
+                    autoComplete="username"
+                    disabled={solicitudPendiente}
+                    value={usuarioRecuperacion}
+                    onChange={(evento) => {
+                        cambiarUsuarioRecuperacion(evento.target.value);
+                        if (errorRecuperacion) cambiarErrorRecuperacion("");
                     }}
-                >
-                    <div
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="titulo-recuperacion-contrasena"
-                        className="w-full max-w-md rounded-[var(--radio-panel)] bg-surface p-[var(--padding-panel)] shadow-xl"
+                    className="mb-2 campo-formulario"
+                />
+                {errorRecuperacion && (
+                    <p role="alert" className="mb-4 text-sm text-danger">
+                        {errorRecuperacion}
+                    </p>
+                )}
+                <div className="flex w-full items-center justify-end gap-[var(--espacio-controles)]">
+                    <button
+                        type="button"
+                        onClick={cerrarModalRecuperacion}
+                        disabled={solicitudPendiente}
+                        className="boton-secundario"
                     >
-                        <h2 id="titulo-recuperacion-contrasena" className="titulo-seccion mb-[var(--espacio-controles)]">
-                            Solicitar recuperación de contraseña
-                        </h2>
-                        <p className="mb-4 text-sm text-[var(--color-foreground)]">
-                            Ingresá tu nombre de usuario y confirmá si estás seguro de solicitar la recuperación.
-                        </p>
-                        <label htmlFor="usuarioRecuperacion" className="mb-2 block text-sm font-medium">
-                            Nombre de usuario
-                        </label>
-                        <input
-                            id="usuarioRecuperacion"
-                            type="text"
-                            autoComplete="username"
-                            value={usuarioRecuperacion}
-                            onChange={(evento) => {
-                                cambiarUsuarioRecuperacion(evento.target.value);
-                                if (errorRecuperacion) cambiarErrorRecuperacion("");
-                            }}
-                            className="mb-2 campo-formulario"
-                        />
-                        {errorRecuperacion && (
-                            <p role="alert" className="mb-4 text-sm text-danger">
-                                {errorRecuperacion}
-                            </p>
-                        )}
-                        <div className="flex w-full items-center justify-end gap-[var(--espacio-controles)]">
-                            <button
-                                type="button"
-                                onClick={cerrarModalRecuperacion}
-                                className="boton-secundario"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="button"
-                                onClick={aceptarSolicitudRecuperacion}
-                                disabled={solicitudPendiente}
-                                className="boton-primario"
-                            >
-                                {solicitudPendiente ? "Enviando..." : "Aceptar"}
-                            </button>
-                        </div>
-                    </div>
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        onClick={aceptarSolicitudRecuperacion}
+                        disabled={solicitudPendiente}
+                        className="boton-primario"
+                    >
+                        {solicitudPendiente ? "Enviando..." : "Aceptar"}
+                    </button>
                 </div>
-            )}
+            </Dialog>
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </>
     );

@@ -14,12 +14,12 @@
 
 .tarjeta:hover {
     transform: translateY(-2px);
-    border-color: color-mix(in srgb, var(--color-primary) 50%, transparent);
+    border-color: color-mix(in srgb, var(--color-secondary) 50%, transparent);
     box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
 }
 
 .tarjeta:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);
     outline-offset: 2px;
 }
 
@@ -33,8 +33,8 @@
     justify-content: center;
     overflow: hidden;
     border-radius: var(--radio-control);
-    background-color: var(--color-primary-soft);
-    color: var(--color-primary);
+    background-color: var(--color-secondary-soft);
+    color: var(--color-secondary);
 }
 
 .foto {
@@ -80,7 +80,7 @@
     white-space: nowrap;
     font-size: var(--tamano-texto-secundario);
     font-weight: 600;
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .pie {
@@ -101,7 +101,7 @@
     }
 
     .tarjeta:hover {
-        border-color: var(--color-primary);
+        border-color: var(--color-secondary);
         box-shadow: 0 10px 28px rgb(26 26 26 / 10%);
     }
 
@@ -110,7 +110,7 @@
     }
 
     .tarjeta:focus-visible {
-        outline-color: var(--color-primary);
+        outline-color: var(--color-secondary);
     }
 
     .imagen {
@@ -176,7 +176,7 @@
     }
 
     .cantidadProductos {
-        color: var(--color-primary);
+        color: var(--color-secondary);
         font-size: 1.5rem;
         font-weight: 800;
         line-height: 1.1;

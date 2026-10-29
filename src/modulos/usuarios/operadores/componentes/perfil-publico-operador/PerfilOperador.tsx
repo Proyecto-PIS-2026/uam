@@ -5,9 +5,8 @@ import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import BotonVolver from "@/compartido/BotonVolver";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
-import Link from "next/link";
 
 import styles from "./PerfilOperador.module.css";
 
@@ -34,10 +33,9 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <Link href={hrefVolver} className={styles.volver}>
-                <ArrowBackIcon fontSize="small" aria-hidden="true" />
+            <BotonVolver href={hrefVolver} className={styles.volver}>
                 {textoVolver}
-            </Link>
+            </BotonVolver>
             <div className={styles.tarjetaPerfil}>
                 <header className={styles.encabezado}>
                     <HojasDecorativas />

@@ -44,7 +44,7 @@ test("BP-08.1: listado público de productos agrupado por especie", async ({ pag
 
   // CA-5: existe acceso al listado general sin seleccionar especie.
   const verPublicaciones = page.getByRole("link", {
-    name: "Ver Mercado",
+    name: "Ver Mercado Virtual",
   });
 
   await expect(verPublicaciones).toBeVisible();

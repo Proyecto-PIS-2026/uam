@@ -129,15 +129,13 @@ async function completarPrecarga(page: Page, calibre: string, precio: string) {
   await alta.getByLabel("Precio en pesos").fill(precio);
   await alta.getByLabel("Cantidad (kg)").fill("25");
 
-  await alta.getByRole("button", { name: "Seleccionar ubicación de retiro" }).click();
   await alta.getByRole("button", { name: "Agregar punto de retiro" }).click();
-  await alta.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }).click();
-  const mapa = page.getByRole("dialog", { name: "Seleccionar ubicación", exact: true });
+  const mapa = page.getByRole("dialog", { name: "Agregar punto de retiro", exact: true });
   await expect(mapa.locator(".leaflet-container")).toBeVisible();
-  await mapa.getByRole("searchbox", { name: "Buscar ubicación por nombre" }).fill("Quinta BP-14.2");
+  await mapa.getByRole("searchbox", { name: "Buscar dirección o lugar" }).fill("Quinta BP-14.2");
   await mapa.getByRole("button", { name: "Buscar", exact: true }).click();
   await mapa.getByRole("button", { name: "Quinta BP-14.2, Canelones, Uruguay", exact: true }).click();
-  await mapa.getByRole("button", { name: "Usar esta ubicación" }).click();
+  await mapa.getByRole("button", { name: "Agregar punto", exact: true }).click();
   await expect(mapa).not.toBeVisible();
   return alta;
 }
@@ -158,6 +156,7 @@ async function precargarProducto(page: Page, productorId: number, calibre: strin
 }
 
 async function entrarAlMercado(page: Page, productor: Credenciales) {
+  await prepararMapa(page);
   await iniciarSesionProductor(page, productor);
   await page.getByRole("link", { name: "Mi mercado", exact: true }).click();
   await expect(page).toHaveURL(/\/mi-mercado\/productor$/);
@@ -188,8 +187,11 @@ async function editarPrecarga(page: Page, precarga: Precarga) {
   const edicion = await abrirEdicion(page, "1371");
   await expect(edicion.getByLabel("Precio en pesos")).toHaveValue("1371");
   await edicion.getByLabel("Precio en pesos").fill("1482");
-  await edicion.getByRole("button", { name: "Cambiar ubicación", exact: true }).click();
-  await edicion.getByLabel("Nombre del punto de retiro 1", { exact: true }).fill("Quinta actualizada BP-14.2");
+  await edicion.getByRole("button", { name: "Editar punto de retiro 1", exact: true }).click();
+  const mapa = page.getByRole("dialog", { name: "Editar punto de retiro", exact: true });
+  await mapa.getByLabel(/^Nombre del punto de retiro(?:\s*\*)?$/).fill("Quinta actualizada BP-14.2");
+  await mapa.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+  await expect(mapa).not.toBeVisible();
   const [respuesta] = await Promise.all([
     page.waitForResponse((response) => new URL(response.url()).pathname === `/api/publicaciones/productor/${precarga.publicacionProductorId}` && response.request().method() === "PATCH"),
     edicion.getByRole("button", { name: "Confirmar", exact: true }).click(),
@@ -261,7 +263,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       for (const producto of [{ calibre: "C", precio: "1371" }, { calibre: "G", precio: "2637" }]) {
         const tarjeta = tarjetas.filter({ hasText: `${producto.calibre} · Categoría -` });
         await expect(tarjeta).toHaveCount(1);
-        await expect(tarjeta).toContainText(new Intl.NumberFormat("es-UY", { style: "currency", currency: "UYU", maximumFractionDigits: 0 }).format(Number(producto.precio)));
+        await expect(tarjeta).toContainText(new Intl.NumberFormat("es-UY", { style: "currency", currency: "UYU", currencyDisplay: "narrowSymbol", maximumFractionDigits: 0 }).format(Number(producto.precio)));
         await tarjeta.getByRole("button", { name: "Ver detalles de Uchuva", exact: true }).click();
         const consulta = page.getByRole("dialog").filter({ has: page.getByRole("button", { name: "Cerrar consulta", exact: true }) });
         await expect(consulta).toBeVisible();
@@ -394,8 +396,11 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       await entrarAlMercado(paginaProductor, productorAlta);
       const edicion = await abrirEdicion(paginaProductor, "1371");
       await edicion.getByLabel("Precio en pesos").fill("9999");
-      await edicion.getByRole("button", { name: "Cambiar ubicación", exact: true }).click();
-      await edicion.getByLabel("Nombre del punto de retiro 1", { exact: true }).fill("No debe guardarse");
+      await edicion.getByRole("button", { name: "Editar punto de retiro 1", exact: true }).click();
+      const mapa = paginaProductor.getByRole("dialog", { name: "Editar punto de retiro", exact: true });
+      await mapa.getByLabel(/^Nombre del punto de retiro(?:\s*\*)?$/).fill("No debe guardarse");
+      await mapa.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+      await expect(mapa).not.toBeVisible();
       let escrituras = 0;
       paginaProductor.on("request", (request) => {
         if (request.method() === "PATCH") escrituras++;
@@ -406,8 +411,10 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       await expect(tarjetaProductor(paginaProductor, "9999")).toHaveCount(0);
       const reabierta = await abrirEdicion(paginaProductor, "1371");
       await expect(reabierta.getByLabel("Precio en pesos")).toHaveValue("1371");
-      await reabierta.getByRole("button", { name: "Cambiar ubicación", exact: true }).click();
-      await expect(reabierta.getByLabel("Nombre del punto de retiro 1", { exact: true })).toHaveValue("Quinta BP-14.2");
+      await reabierta.getByRole("button", { name: "Editar punto de retiro 1", exact: true }).click();
+      const mapaReabierto = paginaProductor.getByRole("dialog", { name: "Editar punto de retiro", exact: true });
+      await expect(mapaReabierto.getByLabel(/^Nombre del punto de retiro(?:\s*\*)?$/)).toHaveValue("Quinta BP-14.2");
+      await mapaReabierto.getByRole("button", { name: "Cancelar", exact: true }).click();
       expect(escrituras).toBe(0);
       const relaciones = await leerPrecargas(precarga.productorId);
       expect(relaciones).toHaveLength(1);

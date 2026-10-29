@@ -70,44 +70,14 @@
     color: var(--color-secondary);
 }
 
-.campo {
-    display: flex;
-    flex-direction: column;
-    gap: var(--espacio-inline);
-    min-width: 0;
-}
-
-.etiqueta {
-    font-size: var(--tamano-texto-secundario);
-    font-weight: 600;
-}
-
-.entrada {
-    box-sizing: border-box;
+.control {
     width: 100%;
-    min-height: var(--alto-control);
-    padding: var(--padding-control);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-control);
-    background: var(--color-surface);
-    color: var(--color-foreground);
-    font: inherit;
-}
-
-.entrada:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    border-width: 2px;
-}
-
-.entrada:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    min-width: 0;
 }
 
 .filaTelefono {
     display: grid;
-    grid-template-columns: 8rem minmax(0, 1fr);
+    grid-template-columns: 13rem minmax(0, 1fr);
     gap: var(--espacio-controles);
 }
 
@@ -183,7 +153,7 @@
 }
 
 .agregarLocal:hover:not(:disabled) {
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
 }
 
 .eliminarLocal {
@@ -210,7 +180,7 @@
 }
 
 .cancelar:hover:not(:disabled) {
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
 }
 
 .guardar {

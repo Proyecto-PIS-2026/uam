@@ -88,12 +88,12 @@
 
 .ubicacion:hover,
 .ubicacion:focus-visible {
-    border-color: var(--color-primary);
-    background-color: var(--color-primary-soft);
+    border-color: var(--color-secondary);
+    background-color: var(--color-secondary-soft);
 }
 
 .ubicacion:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-secondary);
     outline-offset: 3px;
 }
 
@@ -105,8 +105,8 @@
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
-    background-color: var(--color-primary-soft);
-    color: var(--color-primary);
+    background-color: var(--color-secondary-soft);
+    color: var(--color-secondary);
 }
 
 .informacionUbicacion {

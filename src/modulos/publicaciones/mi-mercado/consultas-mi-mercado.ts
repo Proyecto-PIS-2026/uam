@@ -73,7 +73,8 @@ async function guardarPrecio(operadorId: number, publicacionId: number, valor: n
         if (!incrementar && (!Number.isSafeInteger(versionEsperada) || versionEsperada !== actual.version)) {
             throw new ConflictoPublicacionError({ precio: actual.precio === null ? null : Number(actual.precio), fecha: actual.fecha.toString(), version: actual.version });
         }
-        const precio = incrementar ? Number(actual.precio ?? 0) + (valor as number) : valor;
+        const resultado = incrementar ? Number(actual.precio ?? 0) + (valor as number) : valor;
+        const precio = incrementar && resultado !== null && resultado <= 0 ? null : resultado;
         validarPrecio(precio);
         const actualizada = await tx.orm.public.Publicacion.where({ id: publicacionId, version: actual.version })
             .update({ precio: precio === null ? null : precio.toFixed(2) as Numeric<12, 2>, version: actual.version + 1 });

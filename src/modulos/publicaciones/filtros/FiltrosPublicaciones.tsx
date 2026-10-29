@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import SearchIcon from "@mui/icons-material/Search";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { MenuItem, TextField } from "@mui/material";
+import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
+import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 import styles from "./FiltrosPublicaciones.module.css";
@@ -86,9 +86,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
 
     // Mostrar Filtros extendidos
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
-
-    // Mostrar Filtros de Ordenamiento
-    const [mostrarOrdenamiento, setMostrarOrdenamiento] = useState(false);
+    const idFiltrosExtendidos = useId();
 
     // Filtros de Ordenamiento
     const [orden, setOrden] = useState<OrdenPublicaciones>(ordenInicial);
@@ -287,7 +285,6 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     const cambiarOrden = (nuevoOrden: OrdenPublicaciones) => {
         setOrden(nuevoOrden);
         alCambiarOrden?.(nuevoOrden);
-        setMostrarOrdenamiento(false);
     };
 
     // Variedad Unica
@@ -432,7 +429,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                         El precio máximo no puede ser menor al mínimo.
                     </span>
                 )}
-                <div className={styles.filtrosExtendidos}>
+                <div id={idFiltrosExtendidos} className={styles.filtrosExtendidos}>
                     <div className={styles.filtrosVariedadPresentacion}>
                         {/* Variedad */}
                         <TextField select fullWidth label="Variedad" value={variedadUnica ? "-" : variedad} onChange={(e) => manejarCambioVariedad(e.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroVariedad}`} disabled={especie === "Todas" || variedadUnica} slotProps={propiedadesMenuSelect}>
@@ -491,56 +488,21 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                 {/* Botones */}
                 <div className={styles.barraOpciones}>
                     {/* Mas filtros */}
-                    <button className={styles.botonExtendidos} type="button" onClick={() => setMostrarFiltros((valorActual) => !valorActual)}>
-                        <span>Más filtros</span>
-                        {mostrarFiltros ? (
-                            <KeyboardArrowUpIcon
-                                className={styles.iconoExpandir}
-                            />
-                        ) : (
-                            <KeyboardArrowDownIcon
-                                className={styles.iconoExpandir}
-                            />
-                        )}
-                    </button>
-                    {/* Ordenar por */}
-                    <button className={styles.botonExtendidos} type="button" onClick={() => setMostrarOrdenamiento((valorActual) => !valorActual)}>
-                        <span>Ordenar por</span>
-                        {mostrarOrdenamiento ? (
-                            <KeyboardArrowUpIcon
-                                className={styles.iconoExpandir}
-                            />
-                        ) : (
-                            <KeyboardArrowDownIcon
-                                className={styles.iconoExpandir}
-                            />
-                        )}
-                    </button>
-                    {/* Opciones de ordenamiento */}
-                    <div className={`${styles.listaOrdenamiento} ${mostrarOrdenamiento ? styles.listaOrdenamientoAbierta : ""}`}>
-                        {ordenInicial !== "prioridad" && (
-                            <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "ninguno" ? styles.opcionOrdenamientoActiva : ""}`}
-                                onClick={() => cambiarOrden("ninguno")}>
-                                Sin ordenar
-                            </button>
-                        )}
-                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "precioAsc" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => cambiarOrden("precioAsc")}>
-                            Menor Precio
-                        </button>
-                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "precioDesc" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => cambiarOrden("precioDesc")}>
-                            Mayor Precio
-                        </button>
-                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "alfabeticoAsc" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => cambiarOrden("alfabeticoAsc")}>
-                            A-Z
-                        </button>
-                        <button type="button" className={`${styles.opcionOrdenamiento} ${orden === "alfabeticoDesc" ? styles.opcionOrdenamientoActiva : ""}`}
-                            onClick={() => cambiarOrden("alfabeticoDesc")}>
-                            Z-A
-                        </button>
-                    </div>
+                    <BotonDesplegable className={styles.botonExtendidos} abierto={mostrarFiltros} aria-controls={idFiltrosExtendidos} onClick={() => setMostrarFiltros((valorActual) => !valorActual)}>
+                        Más filtros
+                    </BotonDesplegable>
+                    <BotonOrdenar<OrdenPublicaciones>
+                        valor={orden}
+                        alCambiar={cambiarOrden}
+                        className={styles.botonOrdenar}
+                        opciones={[
+                            ...(ordenInicial !== "prioridad" ? [{ valor: "ninguno" as const, etiqueta: "Sin ordenar" }] : []),
+                            { valor: "precioAsc", etiqueta: "Menor Precio" },
+                            { valor: "precioDesc", etiqueta: "Mayor Precio" },
+                            { valor: "alfabeticoAsc", etiqueta: "A-Z" },
+                            { valor: "alfabeticoDesc", etiqueta: "Z-A" },
+                        ]}
+                    />
                 </div>
             </div>
 

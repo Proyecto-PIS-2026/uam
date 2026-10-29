@@ -41,7 +41,7 @@
 
 .control :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline),
 .control :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
 }
 
 .control :global(.MuiInputLabel-root) {
@@ -50,7 +50,7 @@
 }
 
 .control :global(.MuiInputLabel-root.Mui-focused) {
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .control :global(.MuiSelect-icon) {
@@ -65,7 +65,7 @@
 .opcionSelect:global(.Mui-selected),
 .opcionSelect:global(.Mui-selected:hover),
 .opcionSelect:global(.Mui-focusVisible) {
-    background: var(--color-primary-soft) !important;
+    background: var(--color-secondary-soft) !important;
     color: var(--color-secondary);
 }
 
@@ -158,7 +158,7 @@
 }
 
 .botonSecundario:hover:not(:disabled) {
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
 }
 
 .botonConfirmar {
@@ -167,8 +167,8 @@
 }
 
 .botonConfirmar:hover:not(:disabled) {
-    background: var(--color-primary-hover);
-    border-color: var(--color-primary-hover);
+    background: var(--color-secondary-hover);
+    border-color: var(--color-secondary-hover);
 }
 
 .botonEliminar {
@@ -185,7 +185,7 @@
 .botonSecundario:focus-visible,
 .botonConfirmar:focus-visible,
 .botonEliminar:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
 }
 

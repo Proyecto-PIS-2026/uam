@@ -242,6 +242,18 @@ function crearPublicacionProductor(): PublicacionProductorListado {
 }
 
 describe("DrawerPublicacion con productores", () => {
+    it.each([
+        { esAdmin: false, ruta: "/productores/Huerta%20Productora?origen=publicaciones" },
+        { esAdmin: true, ruta: "/gestion-productores/30" },
+    ])("dirige ambos enlaces al perfil correspondiente con esAdmin=$esAdmin", ({ esAdmin, ruta }) => {
+        render(<DrawerPublicacion publicacion={crearPublicacionProductor()} open esAdmin={esAdmin} onOpenChange={vi.fn()} />);
+
+        for (const nombre of ["Ver Perfil", "Huerta Productora"]) {
+            const enlace = screen.getByRole("link", { name: nombre });
+            expect(enlace).toHaveAttribute("href", ruta);
+        }
+    });
+
     it("muestra los datos de la publicación y el perfil del productor", () => {
         render(
             <DrawerPublicacion

@@ -10,10 +10,10 @@ vi.mock("@mui/material/Drawer", () => ({
 }));
 vi.mock("./LeafletLocationPicker", () => ({
     default: ({ abierto, alConfirmar, alCerrar }: { abierto: boolean; alConfirmar: (ubicacion: UbicacionSeleccionada) => void; alCerrar: () => void }) => abierto ? <section role="dialog" aria-label="Seleccionar ubicación">
-        <button onClick={() => alConfirmar({ latitud: -34.9, longitud: -56.2, departamento: "Montevideo", nombreLugar: "Ruta 5" })}>Usar ubicación</button>
-        <button onClick={() => alConfirmar({ latitud: -34.5, longitud: -56.3, departamento: "Canelones", nombreLugar: "Depósito" })}>Usar otra ubicación</button>
-        <button onClick={() => alConfirmar({ latitud: -34.9, longitud: -56.2, departamento: "Montevideo", nombreLugar: null })}>Usar departamento</button>
-        <button onClick={alCerrar}>Cerrar mapa</button>
+        <button type="button" onClick={() => alConfirmar({ latitud: -34.9, longitud: -56.2, departamento: "Montevideo", nombreLugar: "Ruta 5" })}>Usar ubicación</button>
+        <button type="button" onClick={() => alConfirmar({ latitud: -34.5, longitud: -56.3, departamento: "Canelones", nombreLugar: "Depósito" })}>Usar otra ubicación</button>
+        <button type="button" onClick={() => alConfirmar({ latitud: -34.9, longitud: -56.2, departamento: "Montevideo", nombreLugar: "Montevideo" })}>Usar departamento</button>
+        <button type="button" onClick={alCerrar}>Cerrar mapa</button>
     </section> : null,
 }));
 
@@ -53,9 +53,7 @@ function completarFormulario() {
 }
 
 function seleccionarUbicacion() {
-    fireEvent.click(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" }));
     fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
-    fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
     fireEvent.click(screen.getByRole("button", { name: "Usar ubicación" }));
 }
 
@@ -74,9 +72,9 @@ function comprobarFormularioVacio() {
     expect(screen.getByLabelText("Precio en pesos")).toHaveValue("");
     expect(screen.getByLabelText("Cantidad (kg)")).toHaveValue("");
     expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
-    expect(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Agregar punto de retiro" })).toBeInTheDocument();
     expect(screen.queryByText("Ruta 5")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Nombre del punto de retiro 1")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Nombre del punto de retiro/)).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Seleccionar ubicación" })).not.toBeInTheDocument();
     expect(screen.queryByAltText("Vista previa de la fotografía")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Fotografía")).toHaveValue("");
@@ -95,7 +93,7 @@ describe("AltaPublicacionProductor", () => {
         await abrirAlta();
         elegir("Especie", "Manzana");
         seleccionarUbicacion();
-        fireEvent.click(screen.getByRole("button", { name: "Eliminar punto de retiro 1" }));
+        fireEvent.click(screen.getByRole("button", { name: "Quitar punto de retiro 1" }));
         expect(screen.queryByText("Ruta 5")).not.toBeInTheDocument();
         enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
@@ -131,16 +129,14 @@ describe("AltaPublicacionProductor", () => {
         elegir("Especie", "Manzana");
         seleccionarUbicacion();
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 2" }));
         fireEvent.click(screen.getByRole("button", { name: "Usar otra ubicación" }));
-        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 2"), { target: { value: " Depósito " } });
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
-        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 3"), { target: { value: "Punto descartado" } });
-        fireEvent.click(screen.getByRole("button", { name: "Eliminar punto de retiro 3" }));
+        fireEvent.click(screen.getByRole("button", { name: "Usar departamento" }));
+        fireEvent.click(screen.getByRole("button", { name: "Quitar punto de retiro 3" }));
 
-        expect(screen.getAllByRole("group", { name: /^Punto de retiro/ })).toHaveLength(2);
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Ruta 5");
-        expect(screen.getByLabelText("Nombre del punto de retiro 2")).toHaveValue(" Depósito ");
+        expect(screen.getAllByRole("button", { name: /^Editar punto de retiro/ })).toHaveLength(2);
+        expect(screen.getByText("Ruta 5")).toBeInTheDocument();
+        expect(screen.getByText("Depósito")).toBeInTheDocument();
         enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
@@ -152,18 +148,17 @@ describe("AltaPublicacionProductor", () => {
         comprobarFormularioVacio();
     });
 
-    it("no envía un punto incompleto aunque se haya contraído el editor", async () => {
+    it("cancelar la selección no agrega puntos incompletos ni impide publicar sin ubicaciones", async () => {
         const fetchMock = prepararFetch();
         await abrirAlta();
         elegir("Especie", "Manzana");
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" }));
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
-        fireEvent.click(screen.getByRole("button", { name: "Cambiar ubicación" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar mapa" }));
+        expect(screen.queryByRole("button", { name: /^Editar punto de retiro/ })).not.toBeInTheDocument();
         enviarFormulario();
-        expect(screen.getByRole("alert")).toHaveTextContent("Cada ubicación debe tener un nombre de hasta 200 caracteres.");
-        expect(fetchMock.mock.calls.filter(([, opciones]) => opciones?.method === "POST")).toHaveLength(0);
-        fireEvent.click(screen.getByRole("button", { name: "Cambiar ubicación" }));
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("");
+        expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string).ubicaciones).toEqual([]);
     });
 
     it("mantiene el botón visible y deshabilitado hasta recibir los catálogos", async () => {
@@ -191,7 +186,7 @@ describe("AltaPublicacionProductor", () => {
         const formulario = confirmar.closest("form")!;
         const precio = screen.getByLabelText("Precio en pesos");
         const disponibilidad = screen.getByRole("switch", { name: "Publicación disponible" });
-        const ubicaciones = screen.getByRole("button", { name: "Seleccionar ubicación de retiro" });
+        const ubicaciones = screen.getByRole("button", { name: "Agregar punto de retiro" });
 
         expect(formulario).toHaveAttribute("aria-busy", "true");
         expect(screen.queryByText(/Cargando/)).not.toBeInTheDocument();
@@ -211,7 +206,7 @@ describe("AltaPublicacionProductor", () => {
         expect(confirmar.closest("form")).toBe(formulario);
         expect(screen.getByLabelText("Precio en pesos")).toBe(precio);
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBe(disponibilidad);
-        expect(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" })).toBe(ubicaciones);
+        expect(screen.getByRole("button", { name: "Agregar punto de retiro" })).toBe(ubicaciones);
         expect(formulario).toHaveAttribute("aria-busy", "false");
         expect(confirmar).toBeEnabled();
         expect(precio).toBeEnabled();
@@ -232,7 +227,7 @@ describe("AltaPublicacionProductor", () => {
         expect(formulario).toHaveAttribute("aria-busy", "false");
         expect(confirmar).toBeDisabled();
         expect(screen.getByLabelText("Precio en pesos")).toBeDisabled();
-        expect(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Agregar punto de retiro" })).toBeDisabled();
         fireEvent.submit(formulario);
         expect(fetch).toHaveBeenCalledTimes(1);
     });
@@ -426,7 +421,7 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("120");
         expect(screen.getByLabelText("Cantidad (kg)")).toHaveValue("35");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Ruta 5");
+        expect(screen.getByText("Ruta 5")).toBeInTheDocument();
         expect(screen.getByAltText("Vista previa de la fotografía")).toBeInTheDocument();
 
         fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ esValido: true, id: 99, mensaje: "Publicación creada correctamente." }), { status: 201 }));
@@ -455,13 +450,13 @@ describe("AltaPublicacionProductor", () => {
 
     it("permite cambiar la ubicación y cerrar el mapa sin confirmarla", async () => {
         await abrirAlta(); completarFormulario();
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Ruta 5");
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
+        expect(screen.getByText("Ruta 5")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Editar punto de retiro 1" }));
         fireEvent.click(screen.getByRole("button", { name: "Cerrar mapa" }));
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Ruta 5");
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
+        expect(screen.getByText("Ruta 5")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Editar punto de retiro 1" }));
         fireEvent.click(screen.getByRole("button", { name: "Usar departamento" }));
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Montevideo");
+        expect(screen.getByText("Montevideo", { exact: true })).toBeInTheDocument();
     });
 
     it.each([{ errores: ["El producto ya existe."] }, {}])("muestra errores del servidor y permite corregir el formulario", async (resultado) => {

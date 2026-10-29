@@ -80,6 +80,7 @@ export default function BuscadorUsuario({
                 </div>
 
                 <Select
+                    color="secondary"
                     value={tipoUsuario}
                     onChange={(evento) => onTipoUsuarioChange(evento.target.value as TipoUsuario | "TODOS")}
                     className={`${styles.selectorRolMovil} ${tipoUsuario !== "TODOS" ? styles.selectorActivo : ""}`}
@@ -94,6 +95,7 @@ export default function BuscadorUsuario({
                 </Select>
 
                 <Select
+                    color="secondary"
                     value={restablecimiento}
                     onChange={(evento) => onRestablecimientoChange(evento.target.value as FiltroRestablecimiento)}
                     className={`${styles.selectorRolMovil} ${restablecimiento !== "TODOS" ? styles.selectorActivo : ""}`}

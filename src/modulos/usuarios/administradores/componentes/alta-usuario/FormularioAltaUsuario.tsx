@@ -4,6 +4,7 @@ import NotificacionToast, { useNotificacionToast } from "@/compartido/componente
 import Link from "next/link";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import Dialog from "@mui/material/Dialog";
 import styles from "./FormularioAltaUsuario.module.css";
 import { useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
@@ -36,6 +37,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const envioEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
     const [mostrarPopup, setMostrarPopup] = useState(false);
+    const ahoraNoRef = useRef<HTMLButtonElement>(null);
     const [rolCreado, setRolCreado] = useState("");
     const [idUsuarioCreado, setIdUsuarioCreado] = useState<number | null>(null);
 
@@ -391,43 +393,51 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 </div>
             </form>
 
-            {mostrarPopup && (rolCreado === "operador" || rolCreado === "productor") && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-[var(--padding-exterior-pagina)]">
-                    <div className="w-full max-w-md rounded-[var(--radio-panel)] bg-surface p-[var(--padding-panel)] shadow-xl">
-                        <h2 className={styles.subtitulo}>
-                            {rolCreado === "operador"
-                                ? "Operador creado satisfactoriamente"
-                                : "Productor creado satisfactoriamente"}
-                        </h2>
+            <Dialog
+                open={mostrarPopup && (rolCreado === "operador" || rolCreado === "productor")}
+                onClose={() => setMostrarPopup(false)}
+                maxWidth={false}
+                aria-labelledby="titulo-usuario-creado"
+                aria-describedby="descripcion-usuario-creado"
+                slotProps={{
+                    paper: { sx: { m: 2, width: "calc(100% - 32px)", maxWidth: "28rem", p: "var(--padding-panel)" } },
+                    transition: { onEntered: () => ahoraNoRef.current?.focus() },
+                }}
+            >
+                <h2 id="titulo-usuario-creado" className={styles.subtitulo}>
+                    {rolCreado === "operador"
+                        ? "Operador creado satisfactoriamente"
+                        : "Productor creado satisfactoriamente"}
+                </h2>
 
-                        <p className={styles.descripcionPopup}>
-                            ¿Desea precargar productos para este usuario?
-                        </p>
+                <p id="descripcion-usuario-creado" className={styles.descripcionPopup}>
+                    ¿Desea precargar productos para este usuario?
+                </p>
 
-                        <div className={`${styles.acciones} mt-[var(--espacio-secciones)]`}>
-                            <button
-                                type="button"
-                                onClick={() => setMostrarPopup(false)}
-                                className={styles.botonSecundario}
-                            >
-                                Ahora no
-                            </button>
-                            {idUsuarioCreado !== null && (
-                                <Link
-                                    href={
-                                        rolCreado === "operador"
-                                            ? `/gestion-operadores/${idUsuarioCreado}`
-                                            : `/gestion-productores/${idUsuarioCreado}`
-                                    }
-                                    className={styles.botonConfirmar}
-                                >
-                                    Precargar productos
-                                </Link>
-                            )}
-                        </div>
-                    </div>
+                <div className={`${styles.acciones} mt-[var(--espacio-secciones)]`}>
+                    <button
+                        ref={ahoraNoRef}
+                        type="button"
+                        autoFocus
+                        onClick={() => setMostrarPopup(false)}
+                        className={styles.botonSecundario}
+                    >
+                        Ahora no
+                    </button>
+                    {idUsuarioCreado !== null && (
+                        <Link
+                            href={
+                                rolCreado === "operador"
+                                    ? `/gestion-operadores/${idUsuarioCreado}`
+                                    : `/gestion-productores/${idUsuarioCreado}`
+                            }
+                            className={styles.botonConfirmar}
+                        >
+                            Precargar productos
+                        </Link>
+                    )}
                 </div>
-            )}
+            </Dialog>
         </section>
     );
 }

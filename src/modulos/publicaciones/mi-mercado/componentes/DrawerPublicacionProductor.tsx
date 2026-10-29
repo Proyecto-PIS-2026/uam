@@ -8,6 +8,7 @@ import Dialog from "@mui/material/Dialog";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -24,6 +25,7 @@ import type { OpcionesEdicionPublicacion } from "../../operadores/tipos";
 import { ordenarOpcionesPorNombre } from "../../operadores/ordenar-opciones";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import UbicacionesEdicionProductor, { type UbicacionEdicionProductor } from "../../productores/UbicacionesEdicionProductor";
+import { validarUbicacionesProductor } from "../../productores/ubicaciones-productor";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import styles from "./DrawerPublicacionProductor.module.css";
@@ -341,6 +343,11 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             setEstado((actual) => ({ ...actual, errores: ["Elegí una especie, variedad, presentación, categoría, calibre y país válidos."] }));
             return;
         }
+        const validacionUbicaciones = validarUbicacionesProductor(borrador.ubicaciones);
+        if (!validacionUbicaciones.esValido) {
+            setEstado((actual) => ({ ...actual, errores: [validacionUbicaciones.error] }));
+            return;
+        }
         const formulario = new FormData();
         const cambios: CambiosPublicacionProductor = {
             precio: normalizarPrecioPublicacion(borrador.precio),
@@ -349,7 +356,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             presentacionId: borrador.presentacionId || null, categoriaId: borrador.categoriaId || null, calibreId: borrador.calibreId || null,
             paisId: borrador.paisId || null, disponible: borrador.disponible,
             foto: borrador.foto,
-            ubicaciones: borrador.ubicaciones.map(({ nombreUbicacion, urlMaps, departamento }) => ({ nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim(), departamento })),
+            ubicaciones: validacionUbicaciones.ubicaciones,
         };
         formulario.set("cambios", JSON.stringify(cambios));
         if (borrador.archivo) formulario.set("foto", borrador.archivo);
@@ -408,7 +415,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={solicitarCierre} arrastreDeshabilitado={ocupado || confirmando}
             slotProps={{ paper: { ref: panelRef, tabIndex: -1, className: estilosAcciones.panel, role: "dialog", "aria-modal": true, "aria-labelledby": tituloId } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
             {publicacion && especie && <>
-                <header className={`${estilosAcciones.encabezado} ${estilosAcciones.encabezadoConAsa}`}>
+                <header className={estilosAcciones.encabezado}>
                     <div className={estilosAcciones.bloqueSuperior}>
                         <h2 className={estilosAcciones.titulo} id={tituloId}>{editando ? "Editar publicación" : "Consulta de publicación"}</h2>
                         <div className={estilosAcciones.informacionDetallada}>
@@ -422,14 +429,14 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                     <div ref={contenidoRef} className={estilosAcciones.cuerpo}>
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-precio`}>Precio en pesos</label>
-                            <input className={estilosAcciones.entrada} id={`publicacion-productor-${publicacion.id}-precio`} inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO}
+                            <OutlinedInput color="secondary" className={estilosAcciones.entrada} size="small" id={`publicacion-productor-${publicacion.id}-precio`} slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                                 value={borrador?.precio ?? (publicacion.precio === null ? "" : String(Number(publicacion.precio)))} placeholder={editando ? "Ingresar precio aquí" : "Consultar precio"} readOnly={!editando} disabled={ocupado}
                                 onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} />
                             {editando && <small className={estilosAcciones.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
                         </div>
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-unidades`}>Unidades{nombrePresentacion ? ` (${nombrePresentacion})` : ""}</label>
-                            <input className={estilosAcciones.entrada} id={`publicacion-productor-${publicacion.id}-unidades`} inputMode="numeric" maxLength={10}
+                            <OutlinedInput color="secondary" className={estilosAcciones.entrada} size="small" id={`publicacion-productor-${publicacion.id}-unidades`} slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }}
                                 value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "-"} readOnly={!editando} disabled={ocupado}
                                 onChange={(evento) => escribirCantidadUnidades(evento.target.value)} />
                             {editando && <small className={estilosAcciones.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small>}

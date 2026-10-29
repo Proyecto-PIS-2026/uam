@@ -6,7 +6,7 @@ import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { useRouter } from "next/navigation";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import HojasDecorativas from "../../../../compartido/HojasDecorativas";
+import EncabezadoPagina from "../../../../compartido/EncabezadoPagina";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
@@ -66,17 +66,10 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
     return (
         <main className="relative isolate flex-1 bg-background">
             <div className="contenedor-pagina secciones-pagina relative z-10">
-                <header className="encabezado-pagina relative isolate overflow-hidden">
-                    <HojasDecorativas />
-                    <div className="relative z-10 flex flex-col gap-[var(--espacio-controles)] sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                            <p className="mb-[var(--espacio-textos)] text-[length:var(--tamano-texto-auxiliar)] font-bold uppercase tracking-widest text-[var(--color-subtitulo-pagina)]">Mis publicaciones</p>
-                            <h1 className="titulo-pagina">Mi Mercado</h1>
-                            <p className="subtitulo-pagina mt-[var(--espacio-textos)]">Consultá los productos que tenés publicados.</p>
-                        </div>
-                        <p className="subtitulo-pagina">{publicaciones.length} {publicaciones.length === 1 ? "publicación" : "publicaciones"}</p>
-                    </div>
-                </header>
+                <EncabezadoPagina
+                    titulo="Mi Mercado"
+                    subtitulo={`${publicaciones.length} ${publicaciones.length === 1 ? "publicación" : "publicaciones"}`}
+                />
                 {publicaciones.length > 0 && (
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />

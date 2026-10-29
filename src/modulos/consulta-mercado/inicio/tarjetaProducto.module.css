@@ -18,7 +18,7 @@
 }
 
 .tarjeta:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-secondary);
   outline-offset: 2px;
 }
 
@@ -29,7 +29,7 @@
   aspect-ratio: 4 / 3;
   place-items: center;
   overflow: hidden;
-  background: var(--color-primary-soft);
+  background: var(--color-secondary-soft);
 }
 
 .foto {
@@ -75,7 +75,7 @@
 
 .nombreFila .flecha {
   flex-shrink: 0;
-  color: var(--color-primary);
+  color: var(--color-secondary);
   font-size: 1.5rem;
 }
 
@@ -91,7 +91,7 @@
 }
 
 .cantidad {
-  color: var(--color-primary);
+  color: var(--color-secondary);
   font-size: var(--tamano-titulo-seccion);
   font-weight: 700;
   line-height: 1;

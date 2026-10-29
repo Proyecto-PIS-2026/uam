@@ -121,8 +121,8 @@ describe("Listado y navegación de productores", () => {
     it("ordena A-Z y Z-A sin modificar la lista recibida", () => {
         render(<ListadoProductores productores={productores} />);
         expect(screen.getAllByRole("link")[0]).toHaveTextContent("Álamo & Sur");
-        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("option", { name: "Z-A" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Z-A" }));
         expect(screen.getAllByRole("link")[0]).toHaveTextContent("Zeta");
         expect(productores[0].nombreFantasia).toBe("Zeta");
     });
@@ -168,7 +168,7 @@ describe("Listado y navegación de productores", () => {
         await expect(PaginaPerfil({ params: Promise.resolve({ nombre: "Oculto" }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_NOT_FOUND");
     });
 
-    it("ofrece volver a Mercado Productores cuando el perfil se abre desde una publicación", async () => {
+    it("ofrece volver a Mercado Producción cuando el perfil se abre desde una publicación", async () => {
         render(
             await PaginaPerfil({
                 params: Promise.resolve({
@@ -180,6 +180,6 @@ describe("Listado y navegación de productores", () => {
             })
         );
         expect(mocks.perfil).toHaveBeenCalledWith(perfil.nombreFantasia);
-        expect(screen.getByRole("link", {name: "Volver a Mercado Productores"})).toHaveAttribute("href", "/publicaciones-productor");
+        expect(screen.getByRole("link", {name: "Volver a Mercado Producción"})).toHaveAttribute("href", "/publicaciones-productor");
     });
 });

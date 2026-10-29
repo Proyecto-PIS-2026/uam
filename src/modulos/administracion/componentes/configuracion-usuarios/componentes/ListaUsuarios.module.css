@@ -34,8 +34,8 @@
 .encabezado {
     align-items: center;
     padding: var(--espacio-controles) var(--padding-lista-usuarios);
-    border-bottom: 2px solid var(--color-primary);
-    background-color: var(--color-primary-soft);
+    border-bottom: 2px solid var(--color-secondary);
+    background-color: var(--color-secondary-soft);
     color: var(--color-secondary);
     font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
@@ -66,12 +66,12 @@
 }
 
 .fila:hover {
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
 }
 
 .fila.seleccionada {
-    background-color: var(--color-primary-soft);
-    box-shadow: inset 3px 0 0 var(--color-primary);
+    background-color: var(--color-secondary-soft);
+    box-shadow: inset 3px 0 0 var(--color-secondary);
 }
 
 .username {
@@ -135,7 +135,7 @@
 }
 
 .botonEditar {
-    color: var(--color-primary) !important;
+    color: var(--color-secondary) !important;
 }
 
 .botonEliminar {
@@ -153,16 +153,16 @@
 }
 
 .paginacion :global(.MuiPaginationItem-root.Mui-selected) {
-    background-color: var(--color-primary);
+    background-color: var(--color-secondary);
     color: var(--color-surface);
 }
 
 .paginacion :global(.MuiPaginationItem-root.Mui-selected:hover) {
-    background-color: var(--color-primary-hover);
+    background-color: var(--color-secondary-hover);
 }
 
 .paginacion :global(.MuiPaginationItem-root:hover) {
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
 }
 
 .modal:global(.MuiDialog-paper) {
@@ -184,8 +184,8 @@
 }
 
 .botonCancelarModal {
-    border-color: var(--color-primary) !important;
-    color: var(--color-primary) !important;
+    border-color: var(--color-secondary) !important;
+    color: var(--color-secondary) !important;
     text-transform: none !important;
     font-weight: 600 !important;
 }

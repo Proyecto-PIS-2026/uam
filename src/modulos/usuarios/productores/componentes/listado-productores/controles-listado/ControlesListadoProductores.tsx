@@ -2,6 +2,7 @@ import styles from "./ControlesListadoProductores.module.css";
 import SearchIcon from "@mui/icons-material/Search";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
+import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
 
 type ControlesListadoProductoresProps  = {
     busqueda: string;
@@ -25,10 +26,11 @@ export default function ControlesListadoProductores({ busqueda, alCambiarBusqued
                     <MenuItem value="" className={styles.opcionSelect}>Todos</MenuItem>
                     {departamentosDisponibles.map((nombre) => <MenuItem key={nombre} value={nombre} className={styles.opcionSelect}>{nombre}</MenuItem>)}
                 </TextField>
-                <TextField select label="Ordenar por" value={orden} onChange={(evento) => alCambiarOrden(evento.target.value)} size="small" className={styles.selectMui}>
-                    <MenuItem value="a-z" className={styles.opcionSelect}>A-Z</MenuItem>
-                    <MenuItem value="z-a" className={styles.opcionSelect}>Z-A</MenuItem>
-                </TextField>
+                <BotonOrdenar
+                    valor={orden}
+                    opciones={[{ valor: "a-z", etiqueta: "A-Z" }, { valor: "z-a", etiqueta: "Z-A" }]}
+                    alCambiar={alCambiarOrden}
+                />
             </div>
         </div>
     );

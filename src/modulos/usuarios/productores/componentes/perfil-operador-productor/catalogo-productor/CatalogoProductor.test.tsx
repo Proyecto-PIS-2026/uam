@@ -102,7 +102,7 @@ describe("CatalogoProductor", () => {
         expect(nombresDeGrupos()).toEqual(["Papa", "Manzana", "Tomate", "Acelga"]);
 
         fireEvent.click(screen.getByRole("button", {name: "Ordenar por"}));
-        fireEvent.click(screen.getByRole("button", {name: "A-Z"}));
+        fireEvent.click(screen.getByRole("menuitemradio", {name: "A-Z"}));
         expect(nombresDeGrupos()).toEqual(["Acelga", "Manzana", "Papa", "Tomate"]);
     });
 
@@ -110,7 +110,7 @@ describe("CatalogoProductor", () => {
         render(<CatalogoProductor publicaciones={[{...acelga, precio: "10"}, {...papa, precio: "300"}, {...tomate, precio: "200"}, {...tomateCherry, precio: "50"}]}/>);
         fireEvent.click(screen.getByRole("button", {name: "Agrupar por especie"}));
         fireEvent.click(screen.getByRole("button", {name: "Ordenar por"}));
-        fireEvent.click(screen.getByRole("button", {name: "Menor Precio"}));
+        fireEvent.click(screen.getByRole("menuitemradio", {name: "Menor Precio"}));
 
         expect(nombresDeGrupos()).toEqual(["Papa", "Tomate", "Acelga"]);
         expect(screen.getAllByRole("button", {name: /Ver detalles de/}).map((boton) => boton.getAttribute("aria-label"))).toEqual([
@@ -178,7 +178,7 @@ describe("CatalogoProductor", () => {
         render(<CatalogoProductor publicaciones={[acelga, tomate, manzana, papa]} />);
         fireEvent.click(screen.getByRole("button", { name: "Agrupar por especie" }));
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("button", { name: "Z-A" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Z-A" }));
         expect(nombresDeGrupos()).toEqual(["Tomate", "Papa", "Manzana", "Acelga"]);
     });
 

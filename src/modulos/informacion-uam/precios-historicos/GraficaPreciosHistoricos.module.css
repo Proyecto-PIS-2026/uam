@@ -1,5 +1,5 @@
 .panel {
-    --precio-minimo: var(--color-primary);
+    --precio-minimo: var(--color-secondary);
     --precio-maximo: #a64a12;
     box-sizing: border-box;
     width: 100%;
@@ -70,7 +70,7 @@
 }
 
 .grafica :global(.recharts-wrapper:focus-visible) {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
 }
 
@@ -112,12 +112,9 @@
     font-size: var(--tamano-texto-auxiliar);
 }
 
-.valorMinimo {
-    color: var(--precio-minimo);
-}
-
-.valorMaximo {
-    color: var(--precio-maximo);
+.valorPrecio {
+    color: var(--color-secondary);
+    fill: var(--color-secondary);
 }
 
 .estado {
@@ -141,14 +138,14 @@
 .estadoVacio .iconoVacio {
     flex-shrink: 0;
     font-size: 24px;
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .cargando {
     width: 1.75rem;
     height: 1.75rem;
-    border: 3px solid var(--color-primary-soft);
-    border-top-color: var(--color-primary);
+    border: 3px solid var(--color-secondary-soft);
+    border-top-color: var(--color-secondary);
     border-radius: 50%;
     animation: girar .8s linear infinite;
 }

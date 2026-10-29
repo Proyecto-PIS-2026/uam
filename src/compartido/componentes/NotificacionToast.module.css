@@ -52,7 +52,7 @@
 }
 
 .success:global(.MuiAlert-root) {
-    background-color: var(--color-primary);
+    background-color: var(--color-secondary);
 }
 
 .error:global(.MuiAlert-root) {

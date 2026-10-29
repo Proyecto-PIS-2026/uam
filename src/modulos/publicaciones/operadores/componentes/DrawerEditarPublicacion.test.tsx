@@ -547,7 +547,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ precio: null }), null));
     });
 
-    it("aumenta desde precio nulo y no produce cero al disminuir", () => {
+    it("aumenta desde precio nulo y vuelve a sin precio al disminuir hasta cero", () => {
         render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, precio: null }} />);
         const precio = screen.getByLabelText("Precio en pesos");
         expect(precio).toHaveValue("");
@@ -556,7 +556,16 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         fireEvent.click(screen.getByRole("button", { name: "Aumentar precio en 10" }));
         expect(precio).toHaveValue("10");
         fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 10" }));
-        expect(precio).toHaveValue("10");
+        expect(precio).toHaveValue("");
+    });
+
+    it.each(["10", "5"])("guarda sin precio cuando la resta desde %s llega a cero o menos", async (precio) => {
+        render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, precio }} />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Disminuir precio en 10" }));
+        guardarDesdeBoton();
+
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ precio: null }), null));
     });
 
     it("filtra las variedades por especie y limpia la presentación al cambiar variedad", async () => {
@@ -649,7 +658,8 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
     it.each([
         { inicial: "100", boton: "Aumentar precio en 10", esperado: "110" },
         { inicial: "100", boton: "Disminuir precio en 10", esperado: "90" },
-        { inicial: "5", boton: "Disminuir precio en 10", esperado: "5" },
+        { inicial: "5", boton: "Disminuir precio en 10", esperado: "" },
+        { inicial: "10", boton: "Disminuir precio en 10", esperado: "" },
         { inicial: "9999999999", boton: "Aumentar precio en 10", esperado: "9999999999" },
         { inicial: "9999999995", boton: "Aumentar precio en 10", esperado: "9999999999" },
         { inicial: "0.29", boton: "Aumentar precio en 10", esperado: "0.29" },

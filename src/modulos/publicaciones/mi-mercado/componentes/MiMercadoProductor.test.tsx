@@ -113,7 +113,7 @@ describe("MiMercadoProductor", () => {
         expect(screen.queryByTitle("Manzana")).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
         expect(screen.getAllByTitle(/Pera|Manzana/).map((titulo) => titulo.textContent)).toEqual(["Pera", "Manzana"]);
     });
 

@@ -135,8 +135,8 @@ describe("ListadoOperadores", () => {
     it("Ordenar a los operadores de Z-A", () => {
         render(<ListadoOperadores operadores={listaOperadores} />);
 
-        const selectorOrden = screen.getByRole("combobox", {name: "Ordenar por",});
-        fireEvent.mouseDown(selectorOrden);
+        const selectorOrden = screen.getByRole("button", {name: "Ordenar por",});
+        fireEvent.click(selectorOrden);
         fireEvent.click(screen.getByText("Z-A"));
 
         const tarjetas = screen.getAllByText(/^(Alberto|Jose|Juan|Juan Mart)$/);

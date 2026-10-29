@@ -6,6 +6,7 @@ import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
@@ -159,8 +160,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         const precioActual = Number(precio || "0");
         if (!Number.isInteger(precioActual)) return;
         const nuevoPrecio = Math.min(MAXIMO_PRECIO_PUBLICACION, precioActual + cantidad);
-        if (nuevoPrecio <= 0) return;
-        setPrecio(String(nuevoPrecio));
+        setPrecio(nuevoPrecio <= 0 ? "" : String(nuevoPrecio));
     }
 
     function cambiarEspecie(nuevaEspecieId: number) {
@@ -308,7 +308,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
             <div className={styles.controlesPrecio} data-editando={editando}>
                 {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={bloqueado} aria-label={`Disminuir precio en ${incrementoPrecio}`}><RemoveIcon aria-hidden="true" fontSize="inherit" /></button>}
-                <input className={styles.entrada} id={`${idBase}-precio`} type="text" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder={editando ? "Ingresar precio aquí" : "Consultar precio"} value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={ocupado} />
+                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-precio`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder={editando ? "Ingresar precio aquí" : "Consultar precio"} value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={ocupado} />
                 {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={bloqueado} aria-label={`Aumentar precio en ${incrementoPrecio}`}><AddIcon aria-hidden="true" fontSize="inherit" /></button>}
             </div>
             {editando && <small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
@@ -400,7 +400,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 Unidades{presentacionActual ? ` (${presentacionActual})` : ""}
             </label>
             <div className={styles.controlesPrecio} data-editando={false}>
-                <input className={`${styles.entrada} w-full grow shrink-0`} id={`${idBase}-cantidadUnidades`} type="text" inputMode="numeric" maxLength={10} placeholder={editando ? "Ingresar cantidad aquí" : "-"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
+                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-cantidadUnidades`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder={editando ? "Ingresar cantidad aquí" : "-"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
             </div>
             {editando && <small className={styles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>}
         </div>
@@ -408,7 +408,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const errorFormulario = (error || errorConsulta) ? <p key="error" className={styles.error} role="alert">{error || errorConsulta}</p> : null;
     return (
         <>
-            <div className={`${styles.encabezado} ${styles.encabezadoConAsa}`}>
+            <div className={styles.encabezado}>
                 <div className={styles.bloqueSuperior}>
                     <div className={styles.titulo} id={`${idBase}-titulo`}>{editando ? "Editar publicación" : "Consulta de publicación"}</div>
                     <div className={styles.informacionDetallada}>

@@ -4,7 +4,6 @@ import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import SearchIcon from "@mui/icons-material/Search";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
@@ -14,6 +13,7 @@ import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import ProductoCard from "./tarjetaProducto";
@@ -77,7 +77,7 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
 
             <div className={styles.contenedor}>
                 <nav className={styles.accesos} aria-label="Accesos principales">
-                    {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver Mercado</span></Link>}
+                    {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver Mercado Virtual</span></Link>}
                     {autorizado("operador.catalogo.consultar") && <Link href="/operadores" className={styles.acceso}><StorefrontOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver operadores</span></Link>}
                     {autorizado("listaInteligente.consultar") && (urlListaInteligente ? (
                         <a href={urlListaInteligente} target="_blank" rel="noopener noreferrer" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></a>
@@ -98,10 +98,12 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                         <TextField fullWidth size="small" label="Buscar especies" type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }} className={`${styles.selectMui} ${styles.filtroBuscador}`}
                             slotProps={{input: {startAdornment: <SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }} />}}}
                         />
-                        <TextField select label="Ordenar por" value={orden === "prioridad" ? "" : orden} onChange={(evento) => { setOrden(evento.target.value as "a-z" | "z-a"); setPaginaActual(1); }} size="small" className={`${styles.selectMui} ${styles.filtroOrden}`}>
-                            <MenuItem value="a-z" className={styles.opcionSelect}>A-Z</MenuItem>
-                            <MenuItem value="z-a" className={styles.opcionSelect}>Z-A</MenuItem>
-                        </TextField>
+                        <BotonOrdenar<"prioridad" | "a-z" | "z-a">
+                            valor={orden}
+                            opciones={[{ valor: "a-z", etiqueta: "A-Z" }, { valor: "z-a", etiqueta: "Z-A" }]}
+                            alCambiar={(nuevoOrden) => { setOrden(nuevoOrden); setPaginaActual(1); }}
+                            className={styles.filtroOrden}
+                        />
                     </div>
 
                     {especiesPagina.length === 0 ? (

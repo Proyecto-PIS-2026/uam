@@ -29,7 +29,7 @@
     border-radius: var(--radio-control);
     min-height: var(--alto-control);
     background-color: var(--color-surface);
-    color: var(--color-primary);
+    color: var(--color-secondary);
     font-family: inherit;
     font-size: var(--tamano-texto-secundario);
     font-weight: 600;
@@ -41,8 +41,8 @@
 }
 
 .botonAgruparActivo {
-    border-color: var(--color-primary);
-    background-color: var(--color-primary);
+    border-color: var(--color-secondary);
+    background-color: var(--color-secondary);
     color: var(--color-surface);
 }
 
@@ -83,12 +83,12 @@
 
 @media (hover: hover) {
     .botonAgrupar:hover {
-        border-color: var(--color-primary);
-        background-color: var(--color-primary-soft);
+        border-color: var(--color-secondary);
+        background-color: var(--color-secondary-soft);
     }
 
     .botonAgruparActivo:hover {
-        background-color: var(--color-primary-hover);
+        background-color: var(--color-secondary-hover);
     }
 }
 
@@ -108,7 +108,7 @@
 
 .nombreGrupo {
     margin: 0;
-    color: var(--color-primary);
+    color: var(--color-secondary);
     font-size: var(--tamano-titulo-panel);
     font-weight: 600;
     line-height: 1.75rem;
@@ -128,7 +128,7 @@
 }
 
 .numeroProductos {
-    color: var(--color-primary);
+    color: var(--color-secondary);
     font-weight: 600;
 }
 
@@ -158,14 +158,14 @@
     height: 48px;
     border: none;
     border-radius: 50%;
-    background-color: var(--color-primary);
+    background-color: var(--color-secondary);
     color: var(--color-surface);
     box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
     cursor: pointer;
 }
 
 .botonArriba:hover {
-    background-color: var(--color-primary-hover);
+    background-color: var(--color-secondary-hover);
 }
 
 @media (min-width: 48rem) {

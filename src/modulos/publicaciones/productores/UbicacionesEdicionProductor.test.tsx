@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UbicacionSeleccionada } from "./LeafletLocationPicker";
@@ -6,14 +7,21 @@ import UbicacionesEdicionProductor, { type UbicacionEdicionProductor } from "./U
 
 const mocks = vi.hoisted(() => ({ alCambiar: vi.fn(), alGuardar: vi.fn(), mapa: vi.fn() }));
 vi.mock("./LeafletLocationPicker", () => ({
-    default: (props: { abierto: boolean; coordenadas: UbicacionSeleccionada | null; alCerrar: () => void; alConfirmar: (ubicacion: UbicacionSeleccionada) => void }) => {
+    default: function Mapa(props: {
+        abierto: boolean; modo?: "agregar" | "editar"; nombreInicial?: string;
+        coordenadas: UbicacionSeleccionada | null; alCerrar: () => void;
+        alConfirmar: (ubicacion: UbicacionSeleccionada) => void;
+    }) {
         mocks.mapa(props);
-        return props.abierto ? <div role="dialog" aria-label="Seleccionar ubicación">
-            <form onSubmit={(evento) => evento.preventDefault()}><button type="submit">Buscar en mapa</button></form>
+        const [nombre, setNombre] = useState(props.nombreInicial || "Quinta nueva");
+        const punto = { latitud: -34.5, longitud: -56.1, departamento: "Canelones", nombreLugar: nombre };
+        return props.abierto ? createPortal(<div role="dialog" aria-label="Punto de retiro">
+            <label>Nombre del punto de retiro<input value={nombre} onChange={(evento) => setNombre(evento.target.value)} /></label>
             <button type="button" onClick={props.alCerrar}>Cancelar mapa</button>
-            <button type="button" onClick={() => props.alConfirmar({ latitud: -34.5, longitud: -56.1, departamento: "Canelones", nombreLugar: "Quinta nueva" })}>Confirmar punto</button>
-            <button type="button" onClick={() => props.alConfirmar({ latitud: -34.5, longitud: -56.1, departamento: "Canelones", nombreLugar: null })}>Confirmar departamento</button>
-        </div> : null;
+            <button type="button" onClick={() => props.alConfirmar(punto)}>Confirmar punto</button>
+            <button type="button" onClick={() => props.alConfirmar({ ...punto, departamento: "Desconocido" })}>Confirmar departamento inválido</button>
+            <button type="button" onClick={() => props.alConfirmar({ ...punto, latitud: Number.NaN })}>Confirmar coordenadas inválidas</button>
+        </div>, document.body) : null;
     },
 }));
 
@@ -24,148 +32,133 @@ const iniciales: UbicacionEdicionProductor[] = [
 
 function Controlado({ ubicaciones = iniciales, deshabilitado = false }: { ubicaciones?: UbicacionEdicionProductor[]; deshabilitado?: boolean }) {
     const [lista, setLista] = useState(ubicaciones);
-    return <div data-testid="contenedor-drawer"><form aria-label="Editar publicación" onSubmit={(evento) => { evento.preventDefault(); mocks.alGuardar(); }}>
+    return <form aria-label="Editar publicación" onSubmit={(evento) => { evento.preventDefault(); mocks.alGuardar(); }}>
         <UbicacionesEdicionProductor ubicaciones={lista} deshabilitado={deshabilitado} alCambiar={(nueva) => { mocks.alCambiar(nueva); setLista(nueva); }} />
-    </form></div>;
+    </form>;
 }
 
-function desplegar() {
-    fireEvent.click(screen.getByRole("button", { name: "Cambiar ubicación" }));
+function confirmar(nombre = "Quinta nueva") {
+    fireEvent.change(screen.getByLabelText("Nombre del punto de retiro"), { target: { value: nombre } });
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar punto", exact: true }));
 }
 
 beforeEach(() => vi.clearAllMocks());
 
 describe("UbicacionesEdicionProductor", () => {
-    it("muestra cada punto con su nombre y departamento sin modificar los enlaces ni desplegar campos", () => {
+    it("muestra los puntos y sus acciones directamente sin cambiar los datos guardados", () => {
         render(<Controlado ubicaciones={[{ ...iniciales[0], departamento: "Montevideo" }, iniciales[1]]} />);
-        const lista = screen.getByRole("list", { name: "Puntos de retiro seleccionados" });
-        const puntos = within(lista).getAllByRole("listitem");
+        const puntos = within(screen.getByRole("list")).getAllByRole("listitem");
         expect(puntos).toHaveLength(2);
         expect(within(puntos[0]).getByText("Quinta original")).toBeInTheDocument();
-        expect(within(puntos[0]).getByText("Departamento: Montevideo")).toBeInTheDocument();
+        expect(within(puntos[0]).getByText(/Departamento:.*Montevideo/)).toBeInTheDocument();
         expect(within(puntos[1]).getByText("Depósito")).toBeInTheDocument();
-        expect(within(puntos[1]).getByText("Departamento: -")).toBeInTheDocument();
-        const cambiar = screen.getByRole("button", { name: "Cambiar ubicación" });
-        expect(cambiar).toHaveAttribute("aria-expanded", "false");
-        expect(cambiar).toHaveAttribute("aria-controls", lista.id);
-        expect(screen.getAllByRole("button")).toHaveLength(1);
+        expect(screen.getByRole("button", { name: "Editar punto de retiro 1" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Quitar punto de retiro 2" })).toBeEnabled();
         expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
         expect(mocks.alCambiar).not.toHaveBeenCalled();
     });
 
-    it("permite desplegar, editar y volver a compactar sin persistir", () => {
-        render(<Controlado />);
-        desplegar();
-        expect(screen.queryByRole("list", { name: "Puntos de retiro seleccionados" })).not.toBeInTheDocument();
-        expect(screen.queryByLabelText("Enlace de Google Maps 1")).not.toBeInTheDocument();
-        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 1"), { target: { value: "Quinta editada" } });
-        expect(mocks.alCambiar).toHaveBeenLastCalledWith([{ ...iniciales[0], nombreUbicacion: "Quinta editada" }, iniciales[1]]);
-        fireEvent.click(screen.getByRole("button", { name: "Cambiar ubicación" }));
-        expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-        const lista = screen.getByRole("list", { name: "Puntos de retiro seleccionados" });
-        expect(within(lista).getByText("Quinta editada")).toBeInTheDocument();
-        expect(within(lista).getByText("Depósito")).toBeInTheDocument();
+    it("agregar abre directamente el mapa y cancelar no crea una fila vacía", () => {
+        render(<Controlado ubicaciones={[]} />);
+        fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+        expect(mocks.mapa).toHaveBeenLastCalledWith(expect.objectContaining({ modo: "agregar", coordenadas: null }));
+        expect(screen.getByRole("dialog", { name: "Punto de retiro" })).toBeInTheDocument();
+        expect(mocks.alCambiar).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar mapa" }));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /^Editar punto de retiro/ })).not.toBeInTheDocument();
+        expect(mocks.alCambiar).not.toHaveBeenCalled();
         expect(mocks.alGuardar).not.toHaveBeenCalled();
     });
 
-    it("agrega y elimina puntos con claves estables y conserva las ubicaciones restantes", () => {
+    it("agrega solo al confirmar, normaliza el nombre y conserva claves estables al quitar y agregar", () => {
         render(<Controlado />);
-        desplegar();
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
-        expect(mocks.alCambiar).toHaveBeenLastCalledWith([...iniciales, { clave: 14, nombreUbicacion: "", urlMaps: "" }]);
-        fireEvent.click(screen.getByRole("button", { name: "Eliminar punto de retiro 2" }));
-        expect(mocks.alCambiar).toHaveBeenLastCalledWith([iniciales[0], { clave: 14, nombreUbicacion: "", urlMaps: "" }]);
+        confirmar(" Quinta nueva ");
+        const nueva = { clave: 14, nombreUbicacion: "Quinta nueva", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" };
+        expect(mocks.alCambiar).toHaveBeenLastCalledWith([...iniciales, nueva]);
+        fireEvent.click(screen.getByRole("button", { name: "Quitar punto de retiro 2" }));
+        expect(mocks.alCambiar).toHaveBeenLastCalledWith([iniciales[0], nueva]);
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
-        expect(mocks.alCambiar).toHaveBeenLastCalledWith([iniciales[0], { clave: 14, nombreUbicacion: "", urlMaps: "" }, { clave: 15, nombreUbicacion: "", urlMaps: "" }]);
+        confirmar("Segundo retiro");
+        expect(mocks.alCambiar).toHaveBeenLastCalledWith([iniciales[0], nueva, { ...nueva, clave: 15, nombreUbicacion: "Segundo retiro" }]);
+        expect(mocks.alGuardar).not.toHaveBeenCalled();
     });
 
-    it("ofrece seleccionar ubicación cuando no hay puntos y limita el alta a veinte", () => {
-        const vista = render(<Controlado ubicaciones={[]} />);
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar ubicación de retiro" }));
-        fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("");
-        vista.unmount();
+    it("limita el alta a veinte y la habilita nuevamente al quitar un punto", () => {
         render(<Controlado ubicaciones={Array.from({ length: 20 }, (_, indice) => ({ ...iniciales[0], clave: indice + 1 }))} />);
-        desplegar();
         expect(screen.getByRole("button", { name: "Agregar punto de retiro" })).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Quitar punto de retiro 20" }));
+        expect(screen.getByRole("button", { name: "Agregar punto de retiro" })).toBeEnabled();
     });
 
-    it("precarga las coordenadas q=lat,lon y conserva el nombre del punto", () => {
+    it("precarga coordenadas, nombre y modo de edición sin modificar el punto al abrirlo", () => {
         render(<Controlado />);
-        desplegar();
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 2" }));
-        expect(mocks.mapa).toHaveBeenLastCalledWith(expect.objectContaining({ coordenadas: { latitud: -34.8, longitud: -56.2, departamento: "", nombreLugar: "Depósito" } }));
-    });
-
-    it.each(["https://maps.app.goo.gl/corto", "https://goo.gl/maps/legado", "https://www.google.com/maps?q=Montevideo", "https://www.google.com/maps?q=999,-56", "enlace legado"])("conserva un enlace no convertible al cancelar el mapa: %s", (urlMaps) => {
-        render(<Controlado ubicaciones={[{ ...iniciales[0], urlMaps }]} />);
-        desplegar();
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
-        expect(mocks.mapa).toHaveBeenLastCalledWith(expect.objectContaining({ coordenadas: null }));
-        fireEvent.click(screen.getByRole("button", { name: "Cancelar mapa" }));
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.queryByLabelText("Enlace de Google Maps 1")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Editar punto de retiro 2" }));
+        expect(mocks.mapa).toHaveBeenLastCalledWith(expect.objectContaining({ modo: "editar", nombreInicial: "Depósito", coordenadas: { latitud: -34.8, longitud: -56.2, departamento: "", nombreLugar: "Depósito" } }));
+        expect(screen.getByLabelText("Nombre del punto de retiro")).toHaveValue("Depósito");
         expect(mocks.alCambiar).not.toHaveBeenCalled();
     });
 
-    it("confirmar el mapa modifica solamente el punto seleccionado", () => {
+    it.each(["https://maps.app.goo.gl/corto", "https://goo.gl/maps/legado", "https://www.google.com/maps?q=Montevideo", "https://www.google.com/maps?q=999,-56", "enlace legado"])("conserva el nombre y el enlace legado al cancelar: %s", (urlMaps) => {
+        render(<Controlado ubicaciones={[{ ...iniciales[0], urlMaps }]} />);
+        fireEvent.click(screen.getByRole("button", { name: "Editar punto de retiro 1" }));
+        expect(mocks.mapa).toHaveBeenLastCalledWith(expect.objectContaining({ coordenadas: null, nombreInicial: "Quinta original" }));
+        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro"), { target: { value: "No guardar" } });
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar mapa" }));
+        expect(screen.getByText("Quinta original")).toBeInTheDocument();
+        expect(screen.queryByText("No guardar")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/Enlace de Google Maps/)).not.toBeInTheDocument();
+        expect(mocks.alCambiar).not.toHaveBeenCalled();
+    });
+
+    it("confirmar la edición modifica solamente el punto seleccionado", () => {
         render(<Controlado />);
-        desplegar();
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 2" }));
-        fireEvent.click(screen.getByRole("button", { name: "Confirmar punto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Editar punto de retiro 2" }));
+        confirmar();
         expect(mocks.alCambiar).toHaveBeenCalledExactlyOnceWith([iniciales[0], { clave: 13, nombreUbicacion: "Quinta nueva", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" }]);
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(mocks.alGuardar).not.toHaveBeenCalled();
     });
 
-    it("usa el departamento cuando el mapa no devuelve nombre del lugar", () => {
-        render(<Controlado />);
-        desplegar();
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
-        fireEvent.click(screen.getByRole("button", { name: "Confirmar departamento" }));
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Canelones");
-    });
-
-    it("mantiene el buscador fuera del formulario de edición e impide guardar al buscar", () => {
-        render(<Controlado />);
-        desplegar();
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
-        const dialogo = screen.getByRole("dialog");
-        expect(screen.getByTestId("contenedor-drawer")).toContainElement(dialogo);
-        expect(screen.getByRole("form", { name: "Editar publicación" })).not.toContainElement(dialogo);
-        fireEvent.submit(within(dialogo).getByRole("button", { name: "Buscar en mapa" }).closest("form")!);
-        expect(mocks.alGuardar).not.toHaveBeenCalled();
+    it.each(["", "   ", "x".repeat(201)])("no incorpora un punto con nombre inválido", (nombre) => {
+        render(<Controlado ubicaciones={[]} />);
+        fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+        confirmar(nombre);
         expect(mocks.alCambiar).not.toHaveBeenCalled();
     });
 
-    it("impide abrir o editar mientras se guardan los cambios", () => {
+    it.each(["Confirmar departamento inválido", "Confirmar coordenadas inválidas"])("no incorpora datos incompletos: %s", (accion) => {
+        render(<Controlado ubicaciones={[]} />);
+        fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+        fireEvent.click(screen.getByRole("button", { name: accion }));
+        expect(mocks.alCambiar).not.toHaveBeenCalled();
+    });
+
+    it("permite quitar todos los puntos sin agregar otros implícitamente", () => {
+        render(<Controlado ubicaciones={[iniciales[0]]} />);
+        fireEvent.click(screen.getByRole("button", { name: "Quitar punto de retiro 1" }));
+        expect(mocks.alCambiar).toHaveBeenCalledExactlyOnceWith([]);
+        expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Agregar punto de retiro" })).toBeEnabled();
+        expect(mocks.alGuardar).not.toHaveBeenCalled();
+    });
+
+    it("impide agregar, editar o quitar mientras se guarda la publicación", () => {
+        render(<Controlado deshabilitado />);
+        for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Editar punto de retiro 1" }));
+        fireEvent.click(screen.getByRole("button", { name: "Quitar punto de retiro 1" }));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(mocks.alCambiar).not.toHaveBeenCalled();
+    });
+
+    it("no recrea un punto eliminado mientras se estaba editando", () => {
         const vista = render(<UbicacionesEdicionProductor ubicaciones={iniciales} deshabilitado={false} alCambiar={mocks.alCambiar} />);
-        desplegar();
-        vista.rerender(<UbicacionesEdicionProductor ubicaciones={iniciales} deshabilitado alCambiar={mocks.alCambiar} />);
-        expect(screen.getByRole("button", { name: "Cambiar ubicación" })).toBeDisabled();
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toBeDisabled();
-        fireEvent.click(screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" }));
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Editar punto de retiro 1" }));
+        vista.rerender(<UbicacionesEdicionProductor ubicaciones={[iniciales[1]]} deshabilitado={false} alCambiar={mocks.alCambiar} />);
+        const confirmarPunto = screen.queryByRole("button", { name: "Confirmar punto", exact: true });
+        if (confirmarPunto) fireEvent.click(confirmarPunto);
         expect(mocks.alCambiar).not.toHaveBeenCalled();
-    });
-
-    it("Escape cierra sólo el mapa, conserva el borrador y devuelve el foco al botón de origen", () => {
-        const alPresionarFueraDelMapa = vi.fn();
-        render(<div onKeyDown={alPresionarFueraDelMapa}><Controlado /></div>);
-        desplegar();
-        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 1"), { target: { value: "Quinta editada sin guardar" } });
-        mocks.alCambiar.mockClear();
-        const botonOrigen = screen.getByRole("button", { name: "Seleccionar en mapa punto de retiro 1" });
-        fireEvent.click(botonOrigen);
-        const buscador = screen.getByRole("button", { name: "Buscar en mapa" });
-        buscador.focus();
-        fireEvent.keyDown(buscador, { key: "Escape" });
-        expect(alPresionarFueraDelMapa).not.toHaveBeenCalled();
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Quinta editada sin guardar");
-        expect(screen.queryByLabelText("Enlace de Google Maps 1")).not.toBeInTheDocument();
-        expect(botonOrigen).toHaveFocus();
-        expect(mocks.alCambiar).not.toHaveBeenCalled();
-        expect(mocks.alGuardar).not.toHaveBeenCalled();
     });
 });

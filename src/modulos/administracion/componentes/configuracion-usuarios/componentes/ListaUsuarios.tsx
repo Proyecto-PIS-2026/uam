@@ -198,7 +198,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
 
             {cantidadPaginas > 1 && (
                 <div className={styles.paginacion}>
-                    <Pagination count={cantidadPaginas} page={paginaActual} onChange={cambiarPagina} color="primary" shape="rounded" size={esMobile ? "small" : "medium"} />
+                    <Pagination count={cantidadPaginas} page={paginaActual} onChange={cambiarPagina} color="secondary" shape="rounded" size={esMobile ? "small" : "medium"} />
                 </div>
             )}
 

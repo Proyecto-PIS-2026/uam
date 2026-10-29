@@ -2,6 +2,7 @@ import styles from "./ControlesListadoOperadores.module.css";
 import SearchIcon from "@mui/icons-material/Search";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
+import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
@@ -40,10 +41,11 @@ export default function ControlesListadoOperadores({busqueda, alCambiarBusqueda,
                     </TextField>
                 </div>
 
-                <TextField select label="Ordenar por" value={orden} onChange={(evento) => alCambiarOrden(evento.target.value)} size="small" className={styles.selectMui}>
-                    <MenuItem value="a-z" className={styles.opcionSelect}>A-Z</MenuItem>
-                    <MenuItem value="z-a" className={styles.opcionSelect}>Z-A</MenuItem>
-                </TextField>
+                <BotonOrdenar
+                    valor={orden}
+                    opciones={[{ valor: "a-z", etiqueta: "A-Z" }, { valor: "z-a", etiqueta: "Z-A" }]}
+                    alCambiar={alCambiarOrden}
+                />
             </div>
         </div>
     );

@@ -3,15 +3,17 @@
 import type { ReactNode } from "react";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
+const paletaSecundaria = { main: "#005d29", dark: "#004a21", light: "#e6efea", contrastText: "#ffffff" };
+
 const tema = createTheme({
     cssVariables: true,
     palette: {
         mode: "light",
-        primary: { main: "#008332", dark: "#006826", light: "#e5f0e6", contrastText: "#ffffff" },
-        secondary: { main: "#005d29", contrastText: "#ffffff" },
+        primary: paletaSecundaria,
+        secondary: paletaSecundaria,
         error: { main: "#b42318", dark: "#912018", light: "#fef3f2" },
         warning: { main: "#946200", light: "#fff8e6" },
-        success: { main: "#008332", light: "#e5f0e6" },
+        success: paletaSecundaria,
         background: { default: "#f6f5f0", paper: "#ffffff" },
         text: { primary: "#1a1a1a", secondary: "#5f5f5f", disabled: "#767676" },
         divider: "#dedede",
@@ -31,6 +33,7 @@ const tema = createTheme({
             },
         },
         MuiButton: {
+            defaultProps: { color: "secondary" },
             styleOverrides: {
                 root: {
                     minHeight: "var(--alto-control)",
@@ -40,11 +43,18 @@ const tema = createTheme({
                 },
             },
         },
+        MuiTextField: { defaultProps: { color: "secondary" } },
+        MuiCheckbox: { defaultProps: { color: "secondary" } },
+        MuiSwitch: { defaultProps: { color: "secondary" } },
+        MuiCircularProgress: { defaultProps: { color: "secondary" } },
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
                     backgroundColor: "var(--color-surface)",
                     borderRadius: "var(--radio-control)",
+                    "&:hover:not(.Mui-disabled):not(.Mui-error) .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "var(--color-secondary)",
+                    },
                     "&:not(.MuiInputBase-multiline)": {
                         height: "var(--alto-control)",
                         "& > .MuiOutlinedInput-input": {
@@ -59,6 +69,13 @@ const tema = createTheme({
             },
         },
         MuiSelect: {
+            defaultProps: {
+                MenuProps: {
+                    slotProps: {
+                        paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } },
+                    },
+                },
+            },
             styleOverrides: {
                 outlined: {
                     boxSizing: "border-box",
@@ -70,7 +87,20 @@ const tema = createTheme({
                 },
             },
         },
+        MuiMenuItem: {
+            styleOverrides: {
+                root: {
+                    fontSize: "var(--tamano-texto)",
+                    lineHeight: "var(--interlineado-texto)",
+                    "&.Mui-selected, &.Mui-selected:hover, &.Mui-selected.Mui-focusVisible, &.Mui-focusVisible": {
+                        backgroundColor: "var(--color-secondary-soft)",
+                        color: "var(--color-secondary)",
+                    },
+                },
+            },
+        },
         MuiFormControl: {
+            defaultProps: { color: "secondary" },
             styleOverrides: {
                 root: {
                     "&:has(> .MuiOutlinedInput-root:not(.MuiInputBase-multiline)) > .MuiInputLabel-outlined:not(.MuiInputLabel-shrink)": {

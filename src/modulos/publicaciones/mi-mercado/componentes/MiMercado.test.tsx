@@ -191,7 +191,7 @@ function idsTarjetas() {
 
 function elegirOrden(nombre: "A-Z" | "Z-A" | "Menor Precio" | "Mayor Precio") {
   fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-  fireEvent.click(screen.getByRole("button", { name: nombre }));
+  fireEvent.click(screen.getByRole("menuitemradio", { name: nombre }));
 }
 
 describe("MiMercado", () => {

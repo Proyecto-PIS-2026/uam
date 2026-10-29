@@ -53,7 +53,7 @@ describe("FormularioModificarProductor", () => {
         renderizar();
 
         expect(valorDe(screen.getByLabelText("Nombre"))).toBe("Granja Los Álamos");
-        expect(screen.getByRole("combobox", { name: "Código" })).toHaveTextContent("+598");
+        expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598");
         expect(valorDe(screen.getByLabelText("WhatsApp"))).toBe("99200002");
         expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
         expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
@@ -69,9 +69,9 @@ describe("FormularioModificarProductor", () => {
         fireEvent.change(screen.getByLabelText("WhatsApp"), {
             target: { value: "1123456789" },
         });
-        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Código" }));
-        fireEvent.click(screen.getByRole("option", { name: "+54" }));
-        expect(screen.getByRole("combobox", { name: "Código" })).toHaveTextContent("+54");
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Código de país" }));
+        fireEvent.click(screen.getByRole("option", { name: "+54 (Argentina)" }));
+        expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+54");
         apretarGuardar();
 
         await waitFor(() => {
@@ -153,7 +153,7 @@ describe("FormularioModificarProductor", () => {
 
         const botonGuardando = await screen.findByRole("button", { name: "Guardando..." });
         expect(estaDeshabilitado(botonGuardando)).toBe(true);
-        const codigoPais = screen.getByRole("combobox", { name: "Código" });
+        const codigoPais = screen.getByRole("combobox", { name: "Código de país" });
         expect(codigoPais).toHaveAttribute("aria-disabled", "true");
         fireEvent.mouseDown(codigoPais);
         expect(screen.queryByRole("listbox")).not.toBeInTheDocument();

@@ -21,6 +21,7 @@
 }
 
 .encabezado {
+    composes: encabezado from "../../../../../compartido/componentes/DrawerDeslizable.module.css";
     display: flex;
     flex-shrink: 0;
     align-items: center;
@@ -31,6 +32,7 @@
 }
 
 .titulo {
+    composes: titulo from "../../../../../compartido/componentes/DrawerDeslizable.module.css";
     margin: 0;
     font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
@@ -38,6 +40,7 @@
 }
 
 .cerrar {
+    composes: cerrar from "../../../../../compartido/componentes/DrawerDeslizable.module.css";
     display: inline-flex;
     width: var(--alto-control);
     height: var(--alto-control);
@@ -52,7 +55,26 @@
 }
 
 .cerrar:hover {
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
+}
+
+.encabezado .cerrar {
+    position: relative;
+    width: 1.75em;
+    height: auto;
+    padding: 0;
+    border: 0;
+    line-height: 1;
+}
+
+.encabezado .cerrar::before {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+}
+
+.encabezado .cerrar :global(.MuiSvgIcon-root) {
+    font-size: 1.75em;
 }
 
 .cerrar:focus-visible {
@@ -96,7 +118,7 @@
     right: 0;
     height: 6rem;
     border-radius: 1.5rem 1.5rem 0.75rem 0.75rem;
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
 }
 
 .cabecera::after {
@@ -108,7 +130,7 @@
     right: 0;
     height: 3.5rem;
     border-radius: var(--radio-panel);
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
 }
 
 .bloqueSuperior {
@@ -131,7 +153,7 @@
     border-radius: 50%;
     border: 0.4rem solid var(--color-surface);
     box-shadow: 0 0.5rem 1rem #0002;
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
 }
 
 .imagen {
@@ -213,7 +235,7 @@
     gap: 0;
     margin-top: var(--espacio-controles);
     padding: 0;
-    border: 1px solid var(--color-primary-soft);
+    border: 1px solid var(--color-secondary-soft);
     border-radius: var(--radio-panel);
     overflow: hidden;
 }
@@ -250,7 +272,7 @@
 }
 
 .informacionDetallada:nth-child(odd) {
-    background-color: var(--color-primary-soft)
+    background-color: var(--color-secondary-soft)
 }
 
 .informacionDetallada:nth-child(even) {
@@ -264,35 +286,17 @@
 .bloqueBotones {
     display: flex;
     width: 100%;
-    gap: var(--espacio-inline);
-}
-
-.botonPerfil,
-.botonWhatsApp {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    padding: var(--espacio-controles) var(--espacio-inline);
-    border-radius: var(--radio-control);
-    font-size: var(--tamano-texto-secundario);
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.botonPerfil {
-    background: var(--color-primary-soft);
-    color: var(--color-secondary);
+    gap: var(--espacio-controles);
 }
 
 .botonWhatsApp {
-    gap: var(--espacio-inline);
-    background: var(--color-secondary);
-    color: var(--color-surface);
+    min-width: 0;
+    flex: 1 1 0;
+    text-decoration: none;
 }
 
 .iconoWhatsApp {
-    font-size: 1.20rem !important;
+    font-size: 1.25rem !important;
 }
 
 .ampliarFoto {
@@ -343,12 +347,6 @@
 .cerrarFoto.cerrarFoto:focus-visible {
     outline: 3px solid var(--color-secondary);
     outline-offset: -4px;
-}
-
-@media (max-width: 767px) {
-    .encabezado {
-        padding-top: 0;
-    }
 }
 
 @media (min-width: 768px) {
@@ -476,33 +474,6 @@
         padding: var(--espacio-controles) var(--padding-panel);
         padding-bottom: max(var(--padding-panel), env(safe-area-inset-bottom));
         border-top: 1px solid var(--color-border);
-    }
-
-    .botonPerfil,
-    .botonWhatsApp {
-        min-height: var(--alto-control);
-        padding: var(--padding-control);
-        border-radius: var(--radio-control);
-        font-size: var(--tamano-texto);
-        text-decoration: none;
-    }
-
-    .botonWhatsApp {
-        color: var(--color-surface);
-    }
-
-    .botonWhatsApp:hover {
-        background-color: var(--color-primary-hover);
-    }
-
-    .botonPerfil:focus-visible,
-    .botonWhatsApp:focus-visible {
-        outline: 2px solid var(--color-primary);
-        outline-offset: 2px;
-    }
-
-    .iconoWhatsApp {
-        font-size: 1.3rem !important;
     }
 
     .modalFoto.modalFoto {

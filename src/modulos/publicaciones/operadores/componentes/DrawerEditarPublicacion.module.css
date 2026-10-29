@@ -13,6 +13,7 @@
 }
 
 .encabezado {
+    composes: encabezado from "../../../../compartido/componentes/DrawerDeslizable.module.css";
     position: relative;
     z-index: 1;
     display: flex;
@@ -30,6 +31,7 @@
 }
 
 .titulo {
+    composes: titulo from "../../../../compartido/componentes/DrawerDeslizable.module.css";
     font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
     line-height: 1.3;
@@ -52,6 +54,7 @@
 
 
 .cerrar {
+    composes: cerrar from "../../../../compartido/componentes/DrawerDeslizable.module.css";
     display: inline-flex;
     width: 2.5rem;
     height: 2.5rem;
@@ -67,7 +70,7 @@
 
 .cerrar:hover,
 .cancelar:hover {
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
 }
 
 .cerrar:focus-visible,
@@ -88,6 +91,8 @@
 }
 
 .cuerpo {
+    position: relative;
+    z-index: 0;
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
@@ -118,7 +123,7 @@
     place-items: center;
     overflow: hidden;
     border-radius: var(--radio-panel);
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
     color: var(--color-secondary);
 }
 
@@ -166,7 +171,7 @@
 }
 
 .botonFoto:hover {
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
 }
 
 .botonGaleria {
@@ -174,10 +179,6 @@
 }
 
 @media (max-width: 767px) {
-    .encabezadoConAsa {
-        padding-top: 0;
-    }
-
     .botonFoto:not(.botonGaleria):not(.borrarFoto) {
         right: auto;
         left: 0.75rem;
@@ -212,8 +213,15 @@
     grid-column: 1 / -1;
 }
 
-.accionesPublicacion > .disponibilidad {
+.accionesPublicacion > .disponibilidad,
+.accionesPublicacion > .compartirConsulta {
+    box-sizing: border-box;
+    height: var(--alto-control);
     min-height: var(--alto-control);
+}
+
+.accionesPublicacion > .disponibilidad {
+    padding-block: 0;
 }
 
 .compartirConsulta {
@@ -240,7 +248,7 @@
 
 .disponibilidad[data-disponible="true"] {
     border-color: var(--color-secondary);
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
 }
 
 .textoDisponibilidad {
@@ -278,7 +286,6 @@
 @media (max-width: 767px) {
     .accionesPublicacion[data-editando="true"] > .disponibilidad {
         gap: var(--espacio-inline);
-        padding-block: 0;
     }
 
     .accionesPublicacion[data-editando="true"] .textoDisponibilidad {
@@ -302,7 +309,7 @@
 }
 
 .interruptorDisponibilidad :global(.MuiSwitch-switchBase:hover) {
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
 }
 
 .interruptorDisponibilidad :global(.Mui-focusVisible) {
@@ -326,7 +333,7 @@
     justify-content: center;
     border: 0;
     border-radius: var(--radio-control);
-    background: var(--color-primary);
+    background: var(--color-secondary);
     color: var(--color-surface);
     font: inherit;
     font-size: 1.5rem;
@@ -334,7 +341,7 @@
 }
 
 .ajustarPrecio:hover {
-    background: var(--color-primary-hover);
+    background: var(--color-secondary-hover);
 }
 
 .cerrar:disabled,
@@ -379,27 +386,7 @@
 
 .entrada {
     min-width: 0;
-    box-sizing: border-box;
     width: 100%;
-    min-height: var(--alto-control);
-    padding: var(--padding-control);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-control);
-    background: var(--color-surface);
-    color: var(--color-foreground);
-    font: inherit;
-    font-size: var(--tamano-texto);
-}
-
-.entrada:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    border-width: 2px;
-}
-
-.entrada:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 .selectMui {
@@ -423,7 +410,7 @@
 }
 
 .selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
     border-width: 2px;
 }
 
@@ -432,7 +419,7 @@
 }
 
 .selectMui :global(.MuiInputLabel-root.Mui-focused) {
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .selectMui :global(.MuiSelect-icon) {
@@ -462,7 +449,7 @@
 .opcionSelect:global(.Mui-selected),
 .opcionSelect:global(.Mui-selected:hover),
 .opcionSelect:global(.Mui-focusVisible) {
-    background: var(--color-primary-soft) !important;
+    background: var(--color-secondary-soft) !important;
     color: var(--color-secondary);
 }
 
@@ -481,14 +468,14 @@
 }
 
 .pie {
-    position: sticky;
-    bottom: 0;
+    position: relative;
+    z-index: 1;
     display: flex;
     flex: 0 0 auto;
     gap: var(--espacio-controles);
     padding: var(--padding-panel) var(--padding-panel) calc(var(--padding-panel) + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--color-border);
     background: var(--color-surface);
+    box-shadow: inset 0 1px 0 var(--color-border);
 }
 
 .cancelar,
@@ -527,13 +514,13 @@
 }
 
 .guardar {
-    border: 1px solid var(--color-primary);
-    background: var(--color-primary);
+    border: 1px solid var(--color-secondary);
+    background: var(--color-secondary);
     color: var(--color-surface);
 }
 
 .guardar:hover {
-    background: var(--color-primary-hover);
+    background: var(--color-secondary-hover);
 }
 
 .guardar:disabled {

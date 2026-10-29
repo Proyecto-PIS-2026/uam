@@ -6,6 +6,7 @@ import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
@@ -118,8 +119,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
         const precioActual = Number(datos.precio || "0");
         if (!Number.isInteger(precioActual)) return;
         const nuevoPrecio = Math.min(MAXIMO_PRECIO_PUBLICACION, precioActual + cantidad);
-        if (nuevoPrecio <= 0) return;
-        actualizar({ precio: String(nuevoPrecio) });
+        actualizar({ precio: nuevoPrecio <= 0 ? "" : String(nuevoPrecio) });
     }
 
     async function seleccionarFotografia(evento: ChangeEvent<HTMLInputElement>) {
@@ -208,7 +208,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
     return (
         <>
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} arrastreDeshabilitado={guardando} slotProps={{ paper: { className: drawerStyles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": "titulo-nueva-publicacion" } }}>
-            <header className={`${drawerStyles.encabezado} ${drawerStyles.encabezadoConAsa}`}>
+            <header className={drawerStyles.encabezado}>
                 <h1 id="titulo-nueva-publicacion" className={drawerStyles.titulo}>Nueva publicación</h1>
                 <button className={drawerStyles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta">
                     <CloseIcon fontSize="small" />
@@ -242,7 +242,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                         <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-precio">Precio en pesos</label>
                         <div className={drawerStyles.controlesPrecio}>
                             <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={deshabilitado} aria-label={`Disminuir precio en ${incrementoPrecio}`}><RemoveIcon aria-hidden="true" fontSize="inherit" /></button>
-                            <input className={drawerStyles.entrada} id="nueva-publicacion-precio" type="text" inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO} placeholder="Ingresar precio aquí" value={datos.precio} onChange={(evento) => { if (esEntradaPrecioPublicacion(evento.target.value)) actualizar({ precio: evento.target.value }); }} disabled={deshabilitado} />
+                            <OutlinedInput color="secondary" className={drawerStyles.entrada} size="small" id="nueva-publicacion-precio" type="text" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder="Ingresar precio aquí" value={datos.precio} onChange={(evento) => { if (esEntradaPrecioPublicacion(evento.target.value)) actualizar({ precio: evento.target.value }); }} disabled={deshabilitado} />
                             <button className={drawerStyles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={deshabilitado} aria-label={`Aumentar precio en ${incrementoPrecio}`}><AddIcon aria-hidden="true" fontSize="inherit" /></button>
                         </div>
                         <small className={drawerStyles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>
@@ -258,7 +258,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                                     Unidades {textoPresentacion}
                                 </label>
                                 <div className={drawerStyles.controlesPrecio} data-editando={false}>
-                                    <input className={`${drawerStyles.entrada} w-full`} id="nueva-publicacion-cantidadUnidades" type="text" inputMode="numeric" maxLength={10} placeholder="Ingresar cantidad aquí" value={datos.cantidadUnidades}
+                                    <OutlinedInput color="secondary" className={drawerStyles.entrada} size="small" id="nueva-publicacion-cantidadUnidades" type="text" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder="Ingresar cantidad aquí" value={datos.cantidadUnidades}
                                         onChange={(evento) => {
                                             const valorOriginal = evento.target.value;
                                             if (valorOriginal === "") {

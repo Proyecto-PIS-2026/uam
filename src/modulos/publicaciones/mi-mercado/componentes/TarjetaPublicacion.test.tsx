@@ -335,9 +335,11 @@ describe("TarjetaPublicacion", () => {
     );
   });
 
-  it("no permite disminuir el precio hasta cero", () => {
+  it.each(["10", "5"])("deja sin precio al disminuir desde %s hasta cero o negativo", async (precioInicial) => {
     const pub = crearPublicacion();
-    pub.precio = "5";
+    pub.precio = precioInicial;
+    const alPrecioActualizado = vi.fn();
+    vi.mocked(incrementarPrecio).mockResolvedValueOnce({ publicacionEliminada: false, precio: null, version: 2, fecha: pub.fecha });
 
     render(
       <TarjetaPublicacion
@@ -345,14 +347,17 @@ describe("TarjetaPublicacion", () => {
         pub={pub}
         incrementoPrecio={10}
         operadorId={37}
+        alPrecioActualizado={alPrecioActualizado}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Disminuir precio" }));
 
-    expect(screen.getByText("$5")).toBeInTheDocument();
+    expect(screen.getByText("Sin precio")).toBeInTheDocument();
+    await waitFor(() => expect(alPrecioActualizado).toHaveBeenCalledExactlyOnceWith(1, null, pub.fecha, 2));
+    expect(screen.getByText("Sin precio")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(incrementarPrecio).not.toHaveBeenCalled();
+    expect(incrementarPrecio).toHaveBeenCalledExactlyOnceWith(1, -10, 37);
   });
 
   it("permite editar manualmente el precio", async () => {
@@ -779,6 +784,41 @@ describe("TarjetaPublicacion", () => {
     expect(incrementarPrecio).toHaveBeenNthCalledWith(1, 1, 10, 37);
     expect(incrementarPrecio).toHaveBeenNthCalledWith(2, 1, 20, 37);
     expect(screen.getByText("$130")).toBeInTheDocument();
+  });
+
+  it("conserva el orden de clics rápidos al pasar por sin precio", async () => {
+    let confirmarPrimero!: () => void;
+    let confirmarDescuento!: () => void;
+    const fecha = "2026-10-16T12:00:00Z";
+    vi.mocked(incrementarPrecio)
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        confirmarPrimero = () => resolve({ publicacionEliminada: false, precio: 15, version: 2, fecha });
+      }))
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        confirmarDescuento = () => resolve({ publicacionEliminada: false, precio: null, version: 3, fecha });
+      }))
+      .mockResolvedValueOnce({ publicacionEliminada: false, precio: 10, version: 4, fecha });
+    const alPrecioActualizado = vi.fn();
+    render(<TarjetaPublicacion pub={{ ...crearPublicacion(), precio: "5" }} puedeModificar incrementoPrecio={10} operadorId={37} alPrecioActualizado={alPrecioActualizado} />);
+    const aumentar = screen.getByRole("button", { name: "Aumentar precio" });
+    const disminuir = screen.getByRole("button", { name: "Disminuir precio" });
+
+    fireEvent.click(aumentar);
+    fireEvent.click(disminuir);
+    fireEvent.click(disminuir);
+    expect(screen.getByText("Sin precio")).toBeInTheDocument();
+    fireEvent.click(aumentar);
+    expect(screen.getByText("$10")).toBeInTheDocument();
+
+    await act(async () => confirmarPrimero());
+    expect(incrementarPrecio).toHaveBeenNthCalledWith(2, 1, -20, 37);
+    expect(screen.getByText("$10")).toBeInTheDocument();
+    await act(async () => confirmarDescuento());
+    expect(incrementarPrecio).toHaveBeenCalledTimes(3);
+    expect(incrementarPrecio).toHaveBeenNthCalledWith(1, 1, 10, 37);
+    expect(incrementarPrecio).toHaveBeenNthCalledWith(3, 1, 10, 37);
+    expect(alPrecioActualizado).toHaveBeenLastCalledWith(1, 10, fecha, 4);
+    expect(screen.getByText("$10")).toBeInTheDocument();
   });
 
 });
