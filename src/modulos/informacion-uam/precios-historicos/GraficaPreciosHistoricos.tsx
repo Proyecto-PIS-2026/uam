@@ -29,10 +29,11 @@ function fecha(valor: string) {
     return fechaCompleta.format(new Date(`${valor}T12:00:00.000Z`));
 }
 
-function EtiquetaExtremo({ viewBox, titulo, valor, dia, separar = false }: LabelProps & {
+function EtiquetaExtremo({ viewBox, titulo, valor, dia, color, separar = false }: LabelProps & {
     titulo: string;
     valor: number;
     dia: string;
+    color: string;
     separar?: boolean;
 }) {
     if (!viewBox || !("x" in viewBox) || !("y" in viewBox) || !("width" in viewBox)
@@ -42,13 +43,13 @@ function EtiquetaExtremo({ viewBox, titulo, valor, dia, separar = false }: Label
     const compacto = viewBox.width < 420;
     const y = viewBox.y - (separar ? compacto ? 52 : 30 : compacto ? 22 : 9);
     return (
-        <text x={x} y={y} fill="var(--color-muted-foreground)" className={styles.etiquetaExtremo} textAnchor="start">
+        <text x={x} y={y} fill={color} className={styles.etiquetaExtremo} textAnchor="start">
             {compacto ? (
                 <>
-                    <tspan x={x}>{titulo} <tspan className={styles.valorPrecio}>{precio(valor)}</tspan></tspan>
+                    <tspan x={x}>{titulo} {precio(valor)}</tspan>
                     <tspan x={x} dy={14}>{fecha(dia)}</tspan>
                 </>
-            ) : <>{titulo} <tspan className={styles.valorPrecio}>{precio(valor)}</tspan>{` · ${fecha(dia)}`}</>}
+            ) : `${titulo} ${precio(valor)} · ${fecha(dia)}`}
         </text>
     );
 }
@@ -59,8 +60,8 @@ function DetalleDia({ active, payload }: TooltipContentProps<TooltipValueType, s
     return (
         <div className={styles.tooltip}>
             <strong>{fecha(punto.fecha)}</strong>
-            <p>Mínimo: <span className={styles.valorPrecio}>{punto.minimo === null ? "—" : precio(punto.minimo)}</span>{punto.minimo !== null && "/kg"}</p>
-            <p>Máximo: <span className={styles.valorPrecio}>{punto.maximo === null ? "—" : precio(punto.maximo)}</span>{punto.maximo !== null && "/kg"}</p>
+            <p className={styles.valorMinimo}>Mínimo: {punto.minimo === null ? "—" : `${precio(punto.minimo)}/kg`}</p>
+            <p className={styles.valorMaximo}>Máximo: {punto.maximo === null ? "—" : `${precio(punto.maximo)}/kg`}</p>
             <small>{punto.cantidad} {punto.cantidad === 1 ? "registro" : "registros"}</small>
         </div>
     );
@@ -159,7 +160,7 @@ export default function GraficaPreciosHistoricos({ registros, desde, hasta, prod
                         <LineChart data={puntosGrafica} margin={{ top: fechasAnteriores.length ? 32 : 20, right: 16, left: 0, bottom: 8 }} accessibilityLayer aria-label={`Precios diarios de ${producto}. Mínimo y máximo en pesos por kilogramo.`}>
                             <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="marcaDeTiempo" type="number" scale="time" domain={dominioX} ticks={ticks} allowDataOverflow tickFormatter={(valor: number) => fechaEje.format(new Date(valor))} interval="preserveStartEnd" minTickGap={22} tick={{ fontSize: "var(--tamano-texto-auxiliar)", fill: "var(--color-muted-foreground)" }} tickLine={false} axisLine={{ stroke: "var(--color-border)" }} height={30} />
-                            <YAxis type="number" domain={dominioY} width="auto" tickCount={5} allowDecimals={false} allowDataOverflow tickFormatter={(valor: number) => precio(valor)} tick={{ fontSize: "var(--tamano-texto-auxiliar)", fill: "var(--color-secondary)" }} tickLine={false} axisLine={false} />
+                            <YAxis type="number" domain={dominioY} width="auto" tickCount={5} allowDecimals={false} allowDataOverflow tickFormatter={(valor: number) => precio(valor)} tick={{ fontSize: "var(--tamano-texto-auxiliar)", fill: "var(--color-muted-foreground)" }} tickLine={false} axisLine={false} />
                             <Tooltip content={DetalleDia} isAnimationActive={false} cursor={{ stroke: "var(--color-muted)", strokeDasharray: "3 3" }} />
                             {fechasAnteriores.map((dia) => {
                                 const instante = Date.parse(`${dia}T12:00:00.000Z`);
@@ -168,11 +169,11 @@ export default function GraficaPreciosHistoricos({ registros, desde, hasta, prod
                             <Line type="linear" dataKey="minimo" name="Mínimo diario" stroke="var(--precio-minimo)" strokeWidth={2} dot={puntoAislado("minimo", "var(--precio-minimo)")} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
                             <Line type="linear" dataKey="maximo" name="Máximo diario" stroke="var(--precio-maximo)" strokeWidth={2} strokeDasharray="6 3" dot={puntoAislado("maximo", "var(--precio-maximo)")} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
                             {extremosIguales ? (
-                                <ReferenceLine y={minimo.valor} stroke="var(--color-muted)" strokeDasharray="3 4" label={<EtiquetaExtremo titulo="Mínimo y máximo" valor={minimo.valor} dia={minimo.fecha} />} />
+                                <ReferenceLine y={minimo.valor} stroke="var(--color-muted)" strokeDasharray="3 4" label={<EtiquetaExtremo titulo="Mínimo y máximo" valor={minimo.valor} dia={minimo.fecha} color="var(--color-secondary)" />} />
                             ) : (
                                 <>
-                                    {maximo && <ReferenceLine y={maximo.valor} stroke="var(--precio-maximo)" strokeDasharray="3 4" label={<EtiquetaExtremo titulo="Máximo" valor={maximo.valor} dia={maximo.fecha} separar={Boolean(extremosCercanos && minimo && maximo.valor >= minimo.valor)} />} />}
-                                    {minimo && <ReferenceLine y={minimo.valor} stroke="var(--precio-minimo)" strokeDasharray="3 4" label={<EtiquetaExtremo titulo="Mínimo" valor={minimo.valor} dia={minimo.fecha} separar={Boolean(extremosCercanos && maximo && minimo.valor > maximo.valor)} />} />}
+                                    {maximo && <ReferenceLine y={maximo.valor} stroke="var(--precio-maximo)" strokeDasharray="3 4" label={<EtiquetaExtremo titulo="Máximo" valor={maximo.valor} dia={maximo.fecha} color="var(--precio-maximo)" separar={Boolean(extremosCercanos && minimo && maximo.valor >= minimo.valor)} />} />}
+                                    {minimo && <ReferenceLine y={minimo.valor} stroke="var(--precio-minimo)" strokeDasharray="3 4" label={<EtiquetaExtremo titulo="Mínimo" valor={minimo.valor} dia={minimo.fecha} color="var(--precio-minimo)" separar={Boolean(extremosCercanos && maximo && minimo.valor > maximo.valor)} />} />}
                                 </>
                             )}
                         </LineChart>

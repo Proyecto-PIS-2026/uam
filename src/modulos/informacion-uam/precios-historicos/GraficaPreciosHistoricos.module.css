@@ -112,9 +112,12 @@
     font-size: var(--tamano-texto-auxiliar);
 }
 
-.valorPrecio {
-    color: var(--color-secondary);
-    fill: var(--color-secondary);
+.valorMinimo {
+    color: var(--precio-minimo);
+}
+
+.valorMaximo {
+    color: var(--precio-maximo);
 }
 
 .estado {
