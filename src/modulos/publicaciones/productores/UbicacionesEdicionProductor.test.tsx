@@ -39,7 +39,7 @@ function Controlado({ ubicaciones = iniciales, deshabilitado = false }: { ubicac
 
 function confirmar(nombre = "Quinta nueva") {
     fireEvent.change(screen.getByLabelText("Nombre del punto de retiro"), { target: { value: nombre } });
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar punto", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar punto" }));
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -157,7 +157,7 @@ describe("UbicacionesEdicionProductor", () => {
         const vista = render(<UbicacionesEdicionProductor ubicaciones={iniciales} deshabilitado={false} alCambiar={mocks.alCambiar} />);
         fireEvent.click(screen.getByRole("button", { name: "Editar punto de retiro 1" }));
         vista.rerender(<UbicacionesEdicionProductor ubicaciones={[iniciales[1]]} deshabilitado={false} alCambiar={mocks.alCambiar} />);
-        const confirmarPunto = screen.queryByRole("button", { name: "Confirmar punto", exact: true });
+        const confirmarPunto = screen.queryByRole("button", { name: "Confirmar punto" });
         if (confirmarPunto) fireEvent.click(confirmarPunto);
         expect(mocks.alCambiar).not.toHaveBeenCalled();
     });
