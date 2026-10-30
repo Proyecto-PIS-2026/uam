@@ -5,6 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 import MenuIcon from "@mui/icons-material/Menu";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import Badge from "@mui/material/Badge";
+import { useDemoNotificaciones } from "@/modulos/notificaciones/ContextoDemo";
 import CloseIcon from "@mui/icons-material/Close";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
@@ -131,6 +134,7 @@ const opcionesMenuProductor: OpcionMenu[] = [
 type PropiedadesEncabezado = {
     sesion: DatosSesion | null;
     fotoPerfil?: string | null;
+    sinLeer?: number;
 };
 
 function MenuPublicaciones({
@@ -259,7 +263,10 @@ function MenuPublicaciones({
     );
 }
 
-export default function HeaderPublico({ sesion, fotoPerfil = null }: PropiedadesEncabezado) {
+export default function HeaderPublico({ sesion, fotoPerfil = null, sinLeer = 0 }: PropiedadesEncabezado) {
+    const demo = useDemoNotificaciones();
+    if (demo?.activa) sinLeer = demo.notificaciones.filter((n) => !n.vista).length;
+    const rutaNotificaciones = "/notificaciones";
     const rolUsuario = sesion?.rol ?? null;
     const esProductor = rolUsuario === "PRODUCTOR";
     const [menuAbierto, cambiarMenuAbierto] = useState(false);
@@ -338,9 +345,13 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 ) : (
                     <AccountCircleIcon className={estilos.iconoOperador} />
                 )}
+                {sinLeer > 0 && <span className={estilos.contadorNotificaciones}>{sinLeer}</span>}
             </button>
             {menuUsuarioAbierto && (
                 <div className={estilos.desplegableOperador} role="menu">
+                    <Link href={rutaNotificaciones} role="menuitem" className={estilos.opcionDesplegable} onClick={cerrarMenus}>
+                        <NotificationsNoneIcon fontSize="small" /> Notificaciones {sinLeer > 0 && <span>({sinLeer})</span>}
+                    </Link>
                     {!esProductor && (
                         <span className={estilos.opcionDesplegable} role="menuitem">
                             Mi perfil
@@ -435,6 +446,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         aria-expanded={menuAbierto}
                         aria-controls="menu-mobile"
                     >
+                        {sesion && sinLeer > 0 && <span className={estilos.contadorNotificaciones}>{sinLeer}</span>}
                         <MenuIcon
                             className={`${estilos.iconoMenu} ${menuAbierto ? estilos.iconoMenuOculto : estilos.iconoMenuVisible}`}
                         />
@@ -448,6 +460,10 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     className={`${estilos.navegacionMobile} ${menuAbierto ? estilos.navegacionMobileAbierta : ""}`}
                     aria-label="Navegación móvil"
                 >
+                    {sesion && <Link href={rutaNotificaciones} className={estilos.enlaceMobile} onClick={cerrarMenus}>
+                        <Badge badgeContent={sinLeer} color="error" max={999999}><NotificationsNoneIcon className={estilos.iconoMenuMobile} fontSize="small" /></Badge>
+                        Notificaciones
+                    </Link>}
                     {menuPerfilMobile}
                     {opcionesNavegacion.map((opcion) =>
                         esAdministrador && opcion.ruta === "/publicaciones" ? (
