@@ -12,6 +12,7 @@ import BotonVolver from "@/compartido/BotonVolver";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 import { altaProductor } from "@/modulos/usuarios/productores/altaProductor";
+import { altaAdministrador } from "@/modulos/usuarios/administradores/altaAdministrador";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
@@ -36,6 +37,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
     const [enviando, setEnviando] = useState(false);
     const envioEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
+    const [email, setEmail] = useState("");
     const [mostrarPopup, setMostrarPopup] = useState(false);
     const ahoraNoRef = useRef<HTMLButtonElement>(null);
     const [rolCreado, setRolCreado] = useState("");
@@ -52,6 +54,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         setLocales([
             { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
         ]);
+        setEmail("");
         setErrores([]);
         cerrarNotificacion();
     }
@@ -117,8 +120,26 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 setMostrarPopup(true);
                 return;
             }
-            // Pendiente: administrador
-            setErrores(["Esta alta todavía no está disponible para el rol seleccionado."]);
+
+            if (rol === "administrador") {
+                const resultado = await altaAdministrador({
+                    rol,
+                    nombreUsuario,
+                    contraseña,
+                    confirmacionContraseña: confirmacioncontraseña,
+                    email,
+                });
+
+                if (!resultado.esValido) {
+                    setErrores(resultado.errores);
+                    return;
+                }
+
+                limpiarFormulario();
+                notificar(resultado.mensaje, "success");
+                return;
+            }
+
         } catch {
             notificar("No se pudo registrar el usuario. Intentá de nuevo.", "error");
         } finally {
@@ -220,6 +241,23 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         className={styles.control}
                     />
                 </div>
+
+                {rol === "administrador" && (
+                    <TextField
+                        disabled={enviando}
+                        id="email"
+                        label="Email"
+                        type="email"
+                        value={email}
+                        required
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Ingresar correo electrónico"
+                        autoComplete="email"
+                        fullWidth
+                        size="small"
+                        className={styles.control}
+                    />
+                )}
 
                 {(rol === "operador" || rol === "productor") && (
                     <>
