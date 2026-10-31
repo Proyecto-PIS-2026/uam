@@ -10,7 +10,10 @@ import { modificarOperador } from "./operadores/acciones/modificarOperador";
 import { modificarProductor } from "./productores/componentes/modificar-productor-por-admin/modificarProductor";
 
 const autorizacion = vi.hoisted(() => ({ exigirAdministrador: vi.fn() }));
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => autorizacion);
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/modulos/identidad-acceso/autorizacion/controles")>()),
+    ...autorizacion,
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 type Perfil = "operador" | "productor";
