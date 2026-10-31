@@ -33,6 +33,15 @@ it("consulta todas las publicaciones coincidentes sin limitar ni desplazar resul
     expect(plan.texto).not.toContain('FROM "publicacionProductor"');
 });
 
+it("excluye publicaciones de usuarios deshabilitados de los resultados y sus filtros", async () => {
+    await consultarPublicaciones();
+    const plan = query.mock.calls[0][0];
+
+    expect(plan.texto).toContain('JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true');
+    expect(plan.texto).toContain('JOIN operador o ON o.id = po."operadorId"');
+    expect(plan.texto).toContain("FROM visibles");
+});
+
 it("parametriza filtros y orden sin interpolar SQL recibido del cliente", async () => {
     const busqueda = "tomate '; drop table publicacion; --";
     const nave = "A' OR 1=1 --";

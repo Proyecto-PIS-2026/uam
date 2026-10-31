@@ -84,7 +84,7 @@ vi.mock("@/modulos/administracion/componentes/configuracion-general/ContenedorCo
 describe("PaginaAdministracion", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        requerirAdministradorMock.mockResolvedValue(undefined);
+        requerirAdministradorMock.mockResolvedValue({ usuarioId: 7, rol: "ADMINISTRADOR" });
         obtenerConfiguracionesMock.mockResolvedValue([]);
         consultarDatosModificarUsuariosMock.mockResolvedValue([]);
     });
@@ -95,6 +95,12 @@ describe("PaginaAdministracion", () => {
         await expect(PaginaAdministracion()).rejects.toThrow("NEXT_REDIRECT");
         expect(obtenerConfiguracionesMock).not.toHaveBeenCalled();
         expect(consultarDatosModificarUsuariosMock).not.toHaveBeenCalled();
+    });
+
+    it("identifica al administrador actual en el listado para impedir su propia deshabilitación", async () => {
+        render(await PaginaAdministracion());
+
+        expect(consultarDatosModificarUsuariosMock).toHaveBeenCalledExactlyOnceWith(7);
     });
 
     it("renderiza el encabezado y la estructura general de administración", async () => {

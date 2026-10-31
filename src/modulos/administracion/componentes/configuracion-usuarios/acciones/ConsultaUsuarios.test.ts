@@ -87,7 +87,7 @@ describe("consultarDatosModificarUsuarios", () => {
         );
     });
 
-    it("consulta las tres entidades y transforma los resultados correctamente", async () => {
+    it("incluye usuarios habilitados y deshabilitados de los tres roles y el administrador actual", async () => {
         mocks.administradorAll.mockResolvedValue([
             {
                 id: 101,
@@ -97,6 +97,7 @@ describe("consultarDatosModificarUsuarios", () => {
                     username: "ana.admin",
                     rol: "ADMINISTRADOR",
                     solicitoRestablecimiento: false,
+                    habilitado: false,
                 },
             },
         ]);
@@ -110,6 +111,7 @@ describe("consultarDatosModificarUsuarios", () => {
                     username: "beto.operador",
                     rol: "OPERADOR",
                     solicitoRestablecimiento: true,
+                    habilitado: true,
                 },
             },
         ]);
@@ -123,11 +125,12 @@ describe("consultarDatosModificarUsuarios", () => {
                     username: "carla.productor",
                     rol: "PRODUCTOR",
                     solicitoRestablecimiento: false,
+                    habilitado: false,
                 },
             },
         ]);
 
-        const resultado = await consultarDatosModificarUsuarios();
+        const resultado = await consultarDatosModificarUsuarios(1);
 
         expect(mocks.administradorSelect).toHaveBeenCalledTimes(1);
         expect(mocks.administradorSelect).toHaveBeenCalledWith("id", "email");
@@ -164,6 +167,7 @@ describe("consultarDatosModificarUsuarios", () => {
             "username",
             "rol",
             "solicitoRestablecimiento",
+            "habilitado",
         );
 
         expect(mocks.usuarioSelect).toHaveBeenNthCalledWith(
@@ -172,6 +176,7 @@ describe("consultarDatosModificarUsuarios", () => {
             "username",
             "rol",
             "solicitoRestablecimiento",
+            "habilitado",
         );
 
         expect(mocks.usuarioSelect).toHaveBeenNthCalledWith(
@@ -180,6 +185,7 @@ describe("consultarDatosModificarUsuarios", () => {
             "username",
             "rol",
             "solicitoRestablecimiento",
+            "habilitado",
         );
 
         expect(mocks.administradorAll).toHaveBeenCalledTimes(1);
@@ -187,6 +193,7 @@ describe("consultarDatosModificarUsuarios", () => {
         expect(mocks.productorAll).toHaveBeenCalledTimes(1);
 
         expect(resultado).toEqual({
+            usuarioActualId: 1,
             usuarios: [
                 {
                     id: 1,
@@ -195,6 +202,7 @@ describe("consultarDatosModificarUsuarios", () => {
                     administradorId: 101,
                     email: "ana@example.com",
                     solicitoRestablecimiento: false,
+                    habilitado: false,
                 },
                 {
                     id: 2,
@@ -203,6 +211,7 @@ describe("consultarDatosModificarUsuarios", () => {
                     operadorId: 201,
                     nombreFantasia: "La Huerta",
                     solicitoRestablecimiento: true,
+                    habilitado: true,
                 },
                 {
                     id: 3,
@@ -211,6 +220,7 @@ describe("consultarDatosModificarUsuarios", () => {
                     productorId: 301,
                     nombreFantasia: "Granja Carla",
                     solicitoRestablecimiento: false,
+                    habilitado: false,
                 },
             ],
         });

@@ -1771,6 +1771,13 @@
           },
           "Usuario": {
             "fields": {
+              "habilitado": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1846,6 +1853,9 @@
             },
             "storage": {
               "fields": {
+                "habilitado": {
+                  "column": "habilitado"
+                },
                 "id": {
                   "column": "id"
                 },
@@ -3368,6 +3378,15 @@
                 }
               ],
               "columns": {
+                "habilitado": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -3537,7 +3556,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "00a5c4d0c5097c79610099c4b873c840008171e7667a703de42c1134851046e6"
+    "storageHash": "f91697ce0934a9b5ebbfe875154982a1719b5ebf1812116844194dd39fc43687"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

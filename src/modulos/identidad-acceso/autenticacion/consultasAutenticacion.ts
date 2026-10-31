@@ -3,14 +3,14 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 export async function obtenerUsuarioOperadorPorNombre(nombreUsuario: string) {
     return db.orm.public.Usuario
         .select("id", "passwordHash", "rol")
-        .where({ username: nombreUsuario, rol: "OPERADOR" })
+        .where({ username: nombreUsuario, rol: "OPERADOR", habilitado: true })
         .first();
 }
 
 export async function obtenerUsuarioProductorPorNombre(nombreUsuario: string) {
     return db.orm.public.Usuario
         .select("id", "passwordHash", "rol")
-        .where({ username: nombreUsuario, rol: "PRODUCTOR" })
+        .where({ username: nombreUsuario, rol: "PRODUCTOR", habilitado: true })
         .first();
 }
 
@@ -33,7 +33,7 @@ export async function obtenerUsuarioAdministradorPorCorreo(correo: string) {
 
     return db.orm.public.Usuario
         .select("id", "passwordHash", "rol")
-        .where({ id: administrador.usuarioId, rol: "ADMINISTRADOR" })
+        .where({ id: administrador.usuarioId, rol: "ADMINISTRADOR", habilitado: true })
         .first();
 }
 

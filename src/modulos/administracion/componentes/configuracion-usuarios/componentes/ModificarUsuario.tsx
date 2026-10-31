@@ -11,6 +11,7 @@ import ListaUsuarios from "./ListaUsuarios";
 import styles from "./ModificarUsuario.module.css";
 import { bajaOperador } from "@/modulos/usuarios/operadores/bajaOperador";
 import { bajaProductor } from "@/modulos/usuarios/productores/bajaProductor";
+import { cambiarHabilitacionUsuario } from "../acciones/cambiarHabilitacionUsuario";
 
 interface ModificarUsuarioProps {
     datos: DatosModificarUsuarios;
@@ -70,6 +71,17 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         router.refresh();
     }
 
+    async function cambiarHabilitacion(usuario: UsuarioParaModificar) {
+        const resultado = await cambiarHabilitacionUsuario({
+            usuarioId: usuario.id,
+            habilitado: usuario.habilitado === false,
+        });
+        if (!resultado.esValido) {
+            throw new Error(resultado.errores.join(" "));
+        }
+        router.refresh();
+    }
+
     const linkAlta = tipoUsuario !== "TODOS"
         ? `/alta-usuario?rol=${tipoUsuario.toLowerCase()}`
         : "/alta-usuario";
@@ -84,7 +96,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
             </div>
             <div className={styles.contenido}>
                 <BuscadorUsuarios busqueda={busqueda} tipoUsuario={tipoUsuario} onBusquedaChange={cambiarBusqueda} onTipoUsuarioChange={cambiarTipoUsuario} restablecimiento={restablecimiento} onRestablecimientoChange={cambiarRestablecimiento}/>
-                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} hayFiltrosActivos={datos.usuarios.length > 0 && (busqueda.trim().length > 0 || tipoUsuario !== "TODOS" || restablecimiento !== "TODOS")} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario}/>
+                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} usuarioActualId={datos.usuarioActualId} hayFiltrosActivos={datos.usuarios.length > 0 && (busqueda.trim().length > 0 || tipoUsuario !== "TODOS" || restablecimiento !== "TODOS")} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario} onCambiarHabilitacion={cambiarHabilitacion}/>
             </div>
         </section>
     );
