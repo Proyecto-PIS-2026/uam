@@ -5,6 +5,7 @@ import { validarAltaProductor } from "./validarAltaProductor";
 import argon2 from "argon2";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "../fotos-perfil";
 
 export type ResultadoAltaProductor =
@@ -12,7 +13,7 @@ export type ResultadoAltaProductor =
 	| { esValido: true; id: number; mensaje: string };
 
 export async function altaProductor(valor: unknown, foto?: FormData): Promise<ResultadoAltaProductor> {
-	await exigirAdministrador();
+	await controlarSesionEnAccion(exigirAdministrador);
 
 	const validacion = validarAltaProductor(valor);
 	if (!validacion.esValido) return validacion;

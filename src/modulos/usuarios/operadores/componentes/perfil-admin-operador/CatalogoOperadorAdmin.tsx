@@ -1,6 +1,8 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
+
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 
@@ -56,13 +58,12 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
     const [drawerAbierto, setDrawerAbierto] = useState(false);
     const [bajaPendiente, setBajaPendiente] = useState(false);
     const [eliminando, setEliminando] = useState(false);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     // Se busca en las props para que, después de router.refresh(), el drawer muestre los datos guardados
     const publicacionSeleccionada = publicaciones.find((publicacion) => publicacion.id === seleccionadaId) ?? null;
 
     function abrirDrawer(publicacion: PublicacionPerfilAdmin) {
-        cerrarNotificacion();
         setSeleccionadaId(publicacion.id);
         setDrawerAbierto(true);
     }
@@ -81,7 +82,7 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
         formulario.set("cambios", JSON.stringify(cambios));
         if (fotoNueva) formulario.set("fotografia", fotoNueva);
 
-        const respuesta = await fetch(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "PATCH", body: formulario });
+        const respuesta = await fetchConSesion(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "PATCH", body: formulario });
         const resultado = await respuesta.json();
         if (!respuesta.ok) {
             if (respuesta.status === 409) router.refresh();
@@ -93,9 +94,8 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
     async function eliminarPublicacion() {
         if (!publicacionSeleccionada || eliminando) return;
         setEliminando(true);
-        cerrarNotificacion();
         try {
-            const respuesta = await fetch(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "DELETE" });
+            const respuesta = await fetchConSesion(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "DELETE" });
             const resultado = await respuesta.json();
             if (!respuesta.ok) {
                 throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
@@ -112,7 +112,6 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
 
     return (
         <>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             {publicaciones.length == 0 ? (
                 <EstadoVacio titulo="Sin publicaciones" descripcion="El operador no tiene publicaciones." icono={<Inventory2OutlinedIcon />} anunciar={false} />
             ) : (
@@ -132,7 +131,7 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
                 publicacion={publicacionSeleccionada ? paraDrawer (publicacionSeleccionada) : null}
                 incrementoPrecio={incrementoPrecio}
                 alGuardar={guardarCambios}
-                alEliminar={() => { cerrarNotificacion(); setBajaPendiente(true); }}
+                alEliminar={() => { setBajaPendiente(true); }}
                 eliminando={eliminando}
                 {...opciones}
             >

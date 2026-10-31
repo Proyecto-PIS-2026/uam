@@ -1,6 +1,6 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import Link from "next/link";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
@@ -31,7 +31,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
     ]);
     const [codigoPais, setCodigoPais] = useState("+598");
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [errores, setErrores] = useState<string[]>([]);
     const [enviando, setEnviando] = useState(false);
     const envioEnCurso = useRef(false);
@@ -53,7 +53,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
             { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
         ]);
         setErrores([]);
-        cerrarNotificacion();
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -61,7 +60,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         if (envioEnCurso.current) return;
         envioEnCurso.current = true;
         setErrores([]);
-        cerrarNotificacion();
         setEnviando(true);
 
         try {
@@ -149,7 +147,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
 
     return (
         <section className="contenedor-pagina secciones-pagina">
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <BotonVolver href="/administracion#usuarios">Volver al panel administrativo</BotonVolver>
             <EncabezadoPagina
                 titulo="Alta de usuario"

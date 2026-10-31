@@ -29,7 +29,8 @@ const mocks = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/modulos/identidad-acceso/autorizacion/controles")>()),
 	exigirAdministrador: mocks.exigirAdministrador,
 }));
 

@@ -1,7 +1,9 @@
 "use client";
 
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
+
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
@@ -58,7 +60,7 @@ function CampoSelect({ nombre, valor, opciones, cambiar, deshabilitado = false }
 }
 
 export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, disponibilidadInicial = true, abierto, alCerrar, alCrear }: NuevaPublicacionProps) {
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
     const [datos, setDatos] = useState<Formulario>({
@@ -85,7 +87,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
 
     useEffect(() => {
         let activo = true;
-        fetch("/api/publicaciones")
+        fetchConSesion("/api/publicaciones")
             .then(async (respuesta) => {
                 if (!respuesta.ok) throw new Error("No se pudieron cargar los datos del formulario.");
                 return respuesta.json() as Promise<Catalogos>;
@@ -160,7 +162,6 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
     async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (deshabilitado || leyendoFoto) return;
-        cerrarNotificacion();
         setErrores([]);
         if (!precioPublicacionValido(datos.precio)) {
             setErrores([PRECIO_PUBLICACION_INVALIDO]);
@@ -180,7 +181,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                     ? parseInt(datos.cantidadUnidades, 10)
                     : null
             };
-            const respuesta = await fetch("/api/publicaciones", {
+            const respuesta = await fetchConSesion("/api/publicaciones", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datosProcesados),
@@ -304,7 +305,6 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                 </div>
             </form>
         </DrawerDeslizable>
-        <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </>
     );
 }

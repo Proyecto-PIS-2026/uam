@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@/test-utils";
 
 import PerfilProductorAdmin from "./PerfilProductorAdmin";
 import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
@@ -159,8 +159,7 @@ describe("PerfilProductorAdmin", () => {
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
-    // Al volver a abrir el alta se borra el aviso anterior
-    it("borra el aviso anterior al volver a abrir el alta", () => {
+    it("conserva y apila los avisos al abrir otra alta y permite cerrarlos por separado", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
         fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
@@ -169,7 +168,12 @@ describe("PerfilProductorAdmin", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
 
-        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         expect(screen.getByTestId("alta-publicacion")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
+        const avisos = screen.getAllByRole("status");
+        expect(avisos).toHaveLength(2);
+        fireEvent.click(within(avisos[0]).getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.getAllByRole("status")).toEqual([avisos[1]]);
     });
 });

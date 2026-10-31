@@ -37,7 +37,7 @@ describe("/mi-mercado", () => {
     it("redirige al login antes de consultar operadores si no hay sesión", async () => {
         mocks.obtenerSesion.mockResolvedValue(null);
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/iniciar-sesion");
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/sesion-finalizada");
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
     });
 
@@ -76,7 +76,7 @@ describe("acceso no autorizado a Mi Mercado", () => {
     it("mantiene el inicio de sesión para visitantes", async () => {
         mocks.obtenerSesion.mockResolvedValue(null);
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/iniciar-sesion");
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/sesion-finalizada");
     });
 
     it("comprueba el permiso antes de consultar el operador", async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 
@@ -35,10 +35,9 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(false);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     function abrirAlta() {
-        cerrarNotificacion();
         setAltaAbierta(true);
     }
 
@@ -50,7 +49,6 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <BotonVolver href="/administracion#usuarios" className={styles.volver}>
                 Volver al listado de operadores
             </BotonVolver>

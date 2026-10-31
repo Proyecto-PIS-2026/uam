@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { modificarProductor } from "./modificarProductor";
 
 const autorizacion = vi.hoisted(() => ({ exigirAdministrador: vi.fn() }));
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => autorizacion);
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/modulos/identidad-acceso/autorizacion/controles")>()),
+    ...autorizacion,
+}));
 const cache = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
 vi.mock("next/cache", () => cache);
 

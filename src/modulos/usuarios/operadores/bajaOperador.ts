@@ -4,6 +4,7 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import { validarBajaOperador } from "./validarBajaOperador";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { eliminarImagenPublicacionGestionada } from "@/modulos/publicaciones/operadores/imagenes-publicacion";
 import { imagenes } from "@/infraestructura/imagenes/imagenes";
 import { notificarCambioCatalogoOperador } from "@/infraestructura/tiempo-real/publicaciones";
@@ -13,7 +14,7 @@ export type ResultadoBajaOperador =
 	| { esValido: true; mensaje: string };
 
 export async function bajaOperador(valor: unknown): Promise<ResultadoBajaOperador> {
-    await exigirAdministrador();
+    await controlarSesionEnAccion(exigirAdministrador);
 
     const validacion = validarBajaOperador(valor);
 	if (!validacion.esValido) return validacion;

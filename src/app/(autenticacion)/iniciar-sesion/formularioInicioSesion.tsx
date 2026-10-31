@@ -2,7 +2,7 @@
 
 import { useActionState, useRef, useState } from "react";
 import Dialog from "@mui/material/Dialog";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
@@ -21,12 +21,11 @@ export default function FormularioInicioSesion() {
     const [usuarioRecuperacion, cambiarUsuarioRecuperacion] = useState("");
     const usuarioRecuperacionRef = useRef<HTMLInputElement>(null);
     const [errorRecuperacion, cambiarErrorRecuperacion] = useState("");
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [solicitudPendiente, cambiarSolicitudPendiente] = useState(false);
 
     function abrirModalRecuperacion() {
         cambiarErrorRecuperacion("");
-        cerrarNotificacion();
         cambiarModalRecuperacionAbierto(true);
     }
 
@@ -45,7 +44,6 @@ export default function FormularioInicioSesion() {
 
         cambiarSolicitudPendiente(true);
         cambiarErrorRecuperacion("");
-        cerrarNotificacion();
         try {
             const resultado = await solicitarRecuperacion(usuarioRecuperacion);
             if (resultado.tipoError === "operacion" && resultado.error) {
@@ -183,7 +181,6 @@ export default function FormularioInicioSesion() {
                     </button>
                 </div>
             </Dialog>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </>
     );
 }

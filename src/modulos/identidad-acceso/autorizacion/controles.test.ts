@@ -59,7 +59,7 @@ describe.each([
 
     it("envía las páginas a iniciar sesión cuando no hay sesión", async () => {
         await expect(requerir()).rejects.toThrow("NEXT_REDIRECT");
-        expect(redirect).toHaveBeenCalledWith("/iniciar-sesion");
+        expect(redirect).toHaveBeenCalledWith("/sesion-finalizada");
     });
 
     it("propaga fallas de sesión sin convertirlas en un 401 ni redirigir al inicio de sesión", async () => {
@@ -183,7 +183,7 @@ describe("consulta de productores y sus publicaciones", () => {
 
     it("redirige a iniciar sesión al acceder a una página sin sesión", async () => {
         await expect(requerirConsultaProductores()).rejects.toThrow("NEXT_REDIRECT");
-        expect(redirect).toHaveBeenCalledExactlyOnceWith("/iniciar-sesion");
+        expect(redirect).toHaveBeenCalledExactlyOnceWith("/sesion-finalizada");
     });
 
     it.each([ "No tenés permiso para consultar productores.", "No tenés permiso para consultar el perfil del productor."])("rechaza al Productor con el mensaje: %s", async (mensaje) => {

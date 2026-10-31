@@ -1,47 +1,95 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useState } from "react";
+import Dialog from "@mui/material/Dialog";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfirmModal } from "./ConfirmModal";
 
-const showModalOriginal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "showModal");
+afterEach(cleanup);
 
-describe("ConfirmModal dentro de otro diálogo", () => {
-    beforeEach(() => {
-        Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
-            configurable: true,
-            value: function (this: HTMLDialogElement) { this.open = true; },
-        });
-    });
-
-    afterEach(() => {
-        cleanup();
-        vi.restoreAllMocks();
-        if (showModalOriginal) Object.defineProperty(HTMLDialogElement.prototype, "showModal", showModalOriginal);
-        else Reflect.deleteProperty(HTMLDialogElement.prototype, "showModal");
-    });
-
-    it.each([false, true])("aísla Escape y respeta la cancelación con procesando=%s", (procesando) => {
+describe("ConfirmModal", () => {
+    it.each([false, true])("aísla Escape del diálogo padre y respeta procesando=%s", (procesando) => {
         const teclaPadre = vi.fn();
+        const cerrarPadre = vi.fn();
         const cancelar = vi.fn();
-        render(<dialog open onKeyDown={teclaPadre}>
+        render(<Dialog open onKeyDown={teclaPadre} onClose={cerrarPadre} aria-label="Publicación">
             <ConfirmModal abierto titulo="Eliminar publicación" descripcion="Confirmar baja" procesando={procesando} alConfirmar={vi.fn()} alCancelar={cancelar} />
-        </dialog>);
+        </Dialog>);
 
-        const confirmacion = screen.getByRole("alertdialog");
-        fireEvent.keyDown(confirmacion, { key: "Escape" });
-        fireEvent(confirmacion, new Event("cancel", { cancelable: true }));
+        fireEvent.keyDown(screen.getByRole("alertdialog"), { key: "Escape" });
 
         expect(teclaPadre).not.toHaveBeenCalled();
+        expect(cerrarPadre).not.toHaveBeenCalled();
         expect(cancelar).toHaveBeenCalledTimes(procesando ? 0 : 1);
     });
 
-    it("el cierre nativo de la confirmación no cierra el diálogo padre", () => {
-        const cerrarPadre = vi.fn();
-        render(<dialog open onClose={cerrarPadre}>
-            <ConfirmModal abierto titulo="Eliminar publicación" descripcion="Confirmar baja" alConfirmar={vi.fn()} alCancelar={vi.fn()} />
-        </dialog>);
+    it.each([false, true])("el clic fuera solo cancela la confirmación si procesando=%s lo permite", (procesando) => {
+        const clicPadre = vi.fn();
+        const cancelar = vi.fn();
+        render(<div onClick={clicPadre}>
+            <ConfirmModal abierto titulo="Eliminar publicación" descripcion="Confirmar baja" procesando={procesando} alConfirmar={vi.fn()} alCancelar={cancelar} />
+        </div>);
 
-        fireEvent(screen.getByRole("alertdialog"), new Event("close"));
+        const fondo = screen.getByRole("alertdialog").parentElement!;
+        fireEvent.mouseDown(fondo);
+        fireEvent.click(fondo);
 
-        expect(cerrarPadre).not.toHaveBeenCalled();
+        expect(clicPadre).not.toHaveBeenCalled();
+        expect(cancelar).toHaveBeenCalledTimes(procesando ? 0 : 1);
+    });
+
+    it("describe la acción y permite confirmar sin activar la cancelación ni el padre", () => {
+        const confirmar = vi.fn();
+        const cancelar = vi.fn();
+        const clicPadre = vi.fn();
+        render(<div onClick={clicPadre}>
+            <ConfirmModal abierto titulo="Eliminar publicación" descripcion="Se eliminará esta publicación" textoConfirmar="Eliminar" alConfirmar={confirmar} alCancelar={cancelar} />
+        </div>);
+
+        const confirmacion = screen.getByRole("alertdialog", { name: "Eliminar publicación" });
+        expect(confirmacion).toHaveAccessibleDescription("Se eliminará esta publicación");
+        expect(confirmacion).toHaveAttribute("aria-modal", "true");
+        fireEvent.mouseDown(confirmacion);
+        fireEvent.click(confirmacion);
+        expect(cancelar).not.toHaveBeenCalled();
+        fireEvent.click(within(confirmacion).getByRole("button", { name: "Eliminar" }));
+
+        expect(confirmar).toHaveBeenCalledOnce();
+        expect(cancelar).not.toHaveBeenCalled();
+        expect(clicPadre).not.toHaveBeenCalled();
+    });
+
+    it("deshabilita ambas acciones mientras procesa", () => {
+        const confirmar = vi.fn();
+        const cancelar = vi.fn();
+        render(<ConfirmModal abierto procesando titulo="Eliminar publicación" descripcion="Confirmar baja" alConfirmar={confirmar} alCancelar={cancelar} />);
+
+        const botonCancelar = screen.getByRole("button", { name: "Cancelar" });
+        const botonConfirmar = screen.getByRole("button", { name: "Eliminando..." });
+        expect(botonCancelar).toBeDisabled();
+        expect(botonConfirmar).toBeDisabled();
+        fireEvent.click(botonCancelar);
+        fireEvent.click(botonConfirmar);
+        expect(confirmar).not.toHaveBeenCalled();
+        expect(cancelar).not.toHaveBeenCalled();
+    });
+
+    it("enfoca Cancelar al abrir y devuelve el foco al disparador cuando se cierra", async () => {
+        function Ejemplo() {
+            const [abierto, setAbierto] = useState(false);
+            return <>
+                <button onClick={() => setAbierto(true)}>Solicitar eliminación</button>
+                <ConfirmModal abierto={abierto} titulo="Eliminar publicación" descripcion="Confirmar baja" alConfirmar={vi.fn()} alCancelar={() => setAbierto(false)} />
+            </>;
+        }
+        render(<Ejemplo />);
+        const disparador = screen.getByRole("button", { name: "Solicitar eliminación" });
+        disparador.focus();
+        fireEvent.click(disparador);
+
+        await waitFor(() => expect(screen.getByRole("button", { name: "Cancelar" })).toHaveFocus());
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+        await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+        expect(disparador).toHaveFocus();
     });
 });

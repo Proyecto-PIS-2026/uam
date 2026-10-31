@@ -4,7 +4,10 @@ import { modificarOperador } from "./modificarOperador";
 import { revalidatePath } from "next/cache";
 
 const autorizacion = vi.hoisted(() => ({ exigirAdministrador: vi.fn() }));
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => autorizacion);
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/modulos/identidad-acceso/autorizacion/controles")>()),
+    ...autorizacion,
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
  
 const mockDb = vi.hoisted(() => ({

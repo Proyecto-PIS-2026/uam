@@ -74,7 +74,7 @@ describe("Listado y navegación de productores", () => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
         await expect(PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(perfil.nombreFantasia) }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/mi-mercado/productor" : "/iniciar-sesion");
+        expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/mi-mercado/productor" : "/sesion-finalizada");
         expect(mocks.listado).not.toHaveBeenCalled();
         expect(mocks.perfil).not.toHaveBeenCalled();
     });

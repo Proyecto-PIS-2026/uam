@@ -42,7 +42,7 @@ describe("/mi-mercado/productor", () => {
         vi.mocked(obtenerSesion).mockResolvedValue(null);
 
         await expect(PaginaMiMercadoProductor()).rejects.toThrow("REDIRECCION");
-        expect(redireccionSimulada).toHaveBeenCalledExactlyOnceWith("/iniciar-sesion");
+        expect(redireccionSimulada).toHaveBeenCalledExactlyOnceWith("/sesion-finalizada");
         expect(obtenerPublicacionesMiMercadoProductor).not.toHaveBeenCalled();
         expect(MiMercadoProductor).not.toHaveBeenCalled();
     });

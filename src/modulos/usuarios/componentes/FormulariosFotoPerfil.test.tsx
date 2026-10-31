@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FormularioAltaUsuario from "../administradores/componentes/alta-usuario/FormularioAltaUsuario";
 import FormularioModificarOperador from "../operadores/componentes/modificar-operador-por-admin/FormularioModificarOperador";

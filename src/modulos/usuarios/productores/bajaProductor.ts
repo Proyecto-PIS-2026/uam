@@ -4,6 +4,7 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import { validarBajaProductor } from "./validarBajaProductor";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { eliminarImagenPublicacionGestionada } from "@/modulos/publicaciones/operadores/imagenes-publicacion";
 import { imagenes } from "@/infraestructura/imagenes/imagenes";
 
@@ -12,7 +13,7 @@ export type ResultadoBajaProductor =
 	| { esValido: true; mensaje: string };
 
 export async function bajaProductor(valor: unknown): Promise<ResultadoBajaProductor> {
-	await exigirAdministrador();
+	await controlarSesionEnAccion(exigirAdministrador);
 
 	const validacion = validarBajaProductor(valor);
 	if (!validacion.esValido) return validacion;

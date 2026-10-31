@@ -1,6 +1,6 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 
 import { useId, useRef, useState, type FormEvent } from "react";
@@ -42,7 +42,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
         useState("");
 
     const [errores, setErrores] = useState<string[]>([]);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
@@ -60,7 +60,6 @@ export default function FormularioModificarProductor({ productor }: Props) {
         guardadoEnCurso.current = true;
 
         setErrores([]);
-        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -97,7 +96,6 @@ export default function FormularioModificarProductor({ productor }: Props) {
 
     return (
         <div className={styles.pagina}>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <div className={styles.contenedor}>
                 <BotonVolver
                     className={styles.volver}

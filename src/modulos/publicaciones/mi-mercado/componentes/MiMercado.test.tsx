@@ -5,7 +5,7 @@ import {
   fireEvent,
   waitFor,
   within,
-} from "@testing-library/react";
+} from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../../operadores/tipos";
@@ -34,10 +34,12 @@ const mocks = vi.hoisted(() => ({
   abrirWhatsApp: vi.fn(),
   drawer: vi.fn<(props: DrawerMockProps) => void>(),
   cargarPublicaciones: vi.fn(),
+  suscribirActualizaciones: vi.fn<(actualizar: () => Promise<unknown>, operadorId: number) => void>(),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refrescar, replace: mocks.reemplazar }) }));
 vi.mock("../acciones", () => ({ cargarPublicacionesMiMercado: mocks.cargarPublicaciones }));
+vi.mock("../../tiempo-real/use-actualizaciones-publicaciones", () => ({ useActualizacionesPublicaciones: mocks.suscribirActualizaciones }));
 
 vi.mock("../../operadores/componentes/DrawerEditarPublicacion", () => ({
   default: (props: DrawerMockProps) => {
@@ -491,7 +493,7 @@ describe("MiMercado", () => {
     });
 
     expect(screen.getAllByText("No se pudo actualizar el listado. Recargá la página.").length).toBeGreaterThan(0);
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Publicación actualizada.");
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-actualizando", "false");
     expect(mocks.refrescar).not.toHaveBeenCalled();
@@ -554,7 +556,7 @@ describe("MiMercado", () => {
 
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo actualizar el listado."));
     expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent("Publicación eliminada.");
     expect(mocks.cargarPublicaciones).toHaveBeenCalledExactlyOnceWith(9);
   });
 
@@ -611,6 +613,103 @@ describe("MiMercado", () => {
     expect(screen.queryByRole("dialog", { name: "Nueva publicación" })).not.toBeInTheDocument();
     expect(mocks.cargarPublicaciones).toHaveBeenCalledExactlyOnceWith(9);
     expect(mocks.refrescar).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["alta", "Publicación creada correctamente."],
+    ["edición", "Publicación actualizada."],
+    ["baja", "Publicación eliminada."],
+  ])("conserva el aviso de %s y los datos más nuevos si se adelanta una recarga en tiempo real", async (operacion, mensaje) => {
+    const inicial = crearPublicacion(52, 10, "Manzana");
+    const nueva = crearPublicacion(53, 20, "Pera");
+    const actualizada = { ...inicial, precio: "150", version: 2 };
+    const datosNuevos = operacion === "baja" ? [nueva] : [actualizada, nueva];
+    let completarRecarga!: (datos: Publicacion[]) => void;
+    let completarTiempoReal!: (datos: Publicacion[]) => void;
+    mocks.cargarPublicaciones
+      .mockReturnValueOnce(new Promise<Publicacion[]>((resolve) => { completarRecarga = resolve; }))
+      .mockReturnValueOnce(new Promise<Publicacion[]>((resolve) => { completarTiempoReal = resolve; }));
+    mocks.solicitud.mockResolvedValue({ ok: true, json: async () => ({ mensaje }) });
+    renderMiMercado([inicial]);
+
+    let guardado: void | Promise<void> = undefined;
+    if (operacion === "alta") {
+      fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+      fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+    } else {
+      fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+      if (operacion === "edición") {
+        act(() => {
+          guardado = obtenerPropsDrawer().alGuardar(52, {
+            version: 1, especieId: 10, variedadId: 52, precio: "150", foto: null,
+            presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+          }, null);
+        });
+      } else {
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar desde consulta" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
+      }
+    }
+    await waitFor(() => expect(mocks.cargarPublicaciones).toHaveBeenCalledTimes(1));
+
+    let recargaTiempoReal!: Promise<unknown>;
+    act(() => {
+      recargaTiempoReal = mocks.suscribirActualizaciones.mock.lastCall![0]();
+    });
+    expect(mocks.cargarPublicaciones).toHaveBeenCalledTimes(2);
+    await act(async () => { completarTiempoReal(datosNuevos); await recargaTiempoReal; });
+    await act(async () => { completarRecarga([inicial]); await guardado; });
+
+    expect(screen.getByRole("status")).toHaveTextContent(mensaje);
+    expect(screen.getByTestId("publicacion-53")).toBeInTheDocument();
+    if (operacion === "baja") {
+      expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
+    } else {
+      if (operacion === "alta") fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+      expect(obtenerPropsDrawer().publicacion?.precio).toBe("150");
+    }
+  });
+
+  it("conserva el aviso del alta al navegar desde la página de nueva publicación", async () => {
+    let completarRecarga!: (datos: Publicacion[]) => void;
+    mocks.cargarPublicaciones.mockReturnValue(new Promise<Publicacion[]>((resolve) => { completarRecarga = resolve; }));
+    const { rerender } = render(
+      <MiMercado puedeCrear={true} puedeModificar={true} puedeEliminar={true} operadorId={9}
+        abrirAltaInicial publicaciones={[]} incrementoPrecio={5}
+        opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }} />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+    expect(mocks.reemplazar).toHaveBeenCalledWith("/mi-mercado", { scroll: false });
+    rerender(<main>Destino de la navegación</main>);
+    await act(async () => { completarRecarga([crearPublicacion(52, 10, "Manzana")]); });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+  });
+
+  it("conserva la confirmación del alta aunque falle la recarga posterior", async () => {
+    mocks.cargarPublicaciones.mockRejectedValue(new Error("No se pudo consultar la base de datos"));
+    renderMiMercado([]);
+    fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo actualizar el listado.");
+    expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+  });
+
+  it("acumula los avisos de dos altas consecutivas sin borrar el primero al abrir otra acción", async () => {
+    mocks.cargarPublicaciones.mockResolvedValue([]);
+    renderMiMercado([]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+    await waitFor(() => expect(screen.getAllByRole("status")).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+    fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+    await waitFor(() => expect(screen.getAllByRole("status")).toHaveLength(2));
+    expect(screen.getAllByRole("status").every((aviso) => aviso.textContent?.includes("Publicación creada correctamente."))).toBe(true);
   });
 
   it("muestra el listado de publicaciones del operador", () => {

@@ -11,7 +11,7 @@
     .lista {
         display: grid;
         max-width: none;
-        grid-template-columns: repeat(auto-fit, minmax(14.8rem, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(14.8rem, 1fr));
         gap: var(--espacio-secciones);
     }
 }

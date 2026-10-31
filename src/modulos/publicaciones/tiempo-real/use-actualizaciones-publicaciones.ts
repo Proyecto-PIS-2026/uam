@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent } from "react";
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
 
 export function useActualizacionesPublicaciones(alActualizar: () => void | Promise<unknown>, filtro?: number | { operadorPublicoId: number }) {
     const operadorId = typeof filtro === "number" ? filtro : undefined;
@@ -13,7 +14,12 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
         let versionAplicada: string | null = null;
         let enCurso: { version: string | null } | null = null;
         let pendiente: { version: string | null } | null = null;
+        let verificacionSesion: AbortController | null = null;
         let cerrado = false;
+        const cancelarVerificacion = () => {
+            verificacionSesion?.abort();
+            verificacionSesion = null;
+        };
         const recargar = async () => {
             if (cerrado || enCurso || !pendiente || document.visibilityState === "hidden") return;
             const solicitud = pendiente;
@@ -36,6 +42,7 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
             }, 200);
         };
         const conectar = () => {
+            cancelarVerificacion();
             fuente?.close();
             fuente = null;
             clearTimeout(temporizador);
@@ -56,11 +63,26 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
             };
             nuevaFuente.addEventListener("cambio", recibir);
             nuevaFuente.addEventListener("conectado", recibir);
+            if (operadorId !== undefined) {
+                const verificarSesion = async () => {
+                    if (cerrado || fuente !== nuevaFuente || verificacionSesion || document.visibilityState === "hidden") return;
+                    const controlador = new AbortController();
+                    verificacionSesion = controlador;
+                    try {
+                        await fetchConSesion("/api/sesion", { cache: "no-store", signal: controlador.signal });
+                    } catch {
+                    } finally {
+                        if (verificacionSesion === controlador) verificacionSesion = null;
+                    }
+                };
+                nuevaFuente.addEventListener("error", () => { void verificarSesion(); });
+            }
         };
         conectar();
         document.addEventListener("visibilitychange", conectar);
         return () => {
             cerrado = true;
+            cancelarVerificacion();
             fuente?.close();
             clearTimeout(temporizador);
             document.removeEventListener("visibilitychange", conectar);

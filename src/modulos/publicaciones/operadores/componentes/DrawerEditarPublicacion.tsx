@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
@@ -54,7 +54,7 @@ function precioParaEdicion(precio: string | null) {
     return Number.isInteger(valor) ? String(valor) : precio;
 }
 
-function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando, alErrorGuardar, alIniciarGuardado }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void; alErrorGuardar: (mensaje: string) => void; alIniciarGuardado: () => void }) {
+function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando, alErrorGuardar }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void; alErrorGuardar: (mensaje: string) => void }) {
     const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
     const [baseEdicion, setBaseEdicion] = useState(recibida);
     const [guardada, setGuardada] = useState<{ origen: PublicacionParaEditar; datos: PublicacionParaEditar } | null>(null);
@@ -278,7 +278,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             paisId: paisId || null,
             disponible,
         };
-        alIniciarGuardado();
         setGuardando(true);
         try {
             await alGuardar(publicacion.publicacionOperadorId, cambios, fotoNueva);
@@ -443,7 +442,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
 }
 
 export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
     function cerrar() {
@@ -453,11 +452,10 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
         <>
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} arrastreDeshabilitado={guardando || eliminando || actualizando} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} alErrorGuardar={(mensaje) => notificar(mensaje, "error")} alIniciarGuardado={cerrarNotificacion} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} alErrorGuardar={(mensaje) => notificar(mensaje, "error")} />
             )}
             {publicacion && children}
         </DrawerDeslizable>
-        <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </>
     );
 }

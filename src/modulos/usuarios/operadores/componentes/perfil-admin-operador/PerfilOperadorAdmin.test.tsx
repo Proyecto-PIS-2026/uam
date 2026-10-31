@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@/test-utils";
 
 import PerfilOperadorAdmin from "./PerfilOperadorAdmin";
 import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
@@ -151,8 +151,7 @@ describe("PerfilOperadorAdmin", () => {
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
-    // Al volver a abrir el alta se borra el aviso anterior
-    it("borra el aviso anterior al volver a abrir el alta", () => {
+    it("conserva y apila los avisos al abrir otra alta y permite cerrarlos por separado", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
         fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
@@ -161,8 +160,13 @@ describe("PerfilOperadorAdmin", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
 
-        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         expect(screen.getByTestId("nueva-publicacion")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
+        const avisos = screen.getAllByRole("status");
+        expect(avisos).toHaveLength(2);
+        fireEvent.click(within(avisos[0]).getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.getAllByRole("status")).toEqual([avisos[1]]);
     });
 
     // Muestra la cantidad de publicaciones y le pasa los datos al catálogo

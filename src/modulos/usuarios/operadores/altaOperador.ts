@@ -6,6 +6,7 @@ import { validarAltaOperador } from "./validarAltaOperador";
 import argon2 from "argon2";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "../fotos-perfil";
 
 export type ResultadoAltaOperador =
@@ -13,7 +14,7 @@ export type ResultadoAltaOperador =
 	| { esValido: true; id: number; mensaje: string };
 
 export async function altaOperador(valor: unknown, foto?: FormData): Promise<ResultadoAltaOperador> {
-	await exigirAdministrador();
+	await controlarSesionEnAccion(exigirAdministrador);
 
 	const validacion = validarAltaOperador(valor);
 	if (!validacion.esValido) return validacion;
