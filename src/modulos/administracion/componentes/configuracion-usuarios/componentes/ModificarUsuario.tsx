@@ -11,6 +11,7 @@ import ListaUsuarios from "./ListaUsuarios";
 import styles from "./ModificarUsuario.module.css";
 import { bajaOperador } from "@/modulos/usuarios/operadores/bajaOperador";
 import { bajaProductor } from "@/modulos/usuarios/productores/bajaProductor";
+import { bajaAdministrador } from "@/modulos/usuarios/administradores/bajaAdministrador";
 
 interface ModificarUsuarioProps {
     datos: DatosModificarUsuarios;
@@ -59,7 +60,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         } else if (usuario.rol === "PRODUCTOR") {
             resultado = await bajaProductor({ productorId: usuario.productorId });
         } else {
-            throw new Error("La baja de este tipo de usuario todavía no está disponible.");
+            resultado = await bajaAdministrador({ administradorId: usuario.administradorId });
         }
 
         if (!resultado.esValido) {
