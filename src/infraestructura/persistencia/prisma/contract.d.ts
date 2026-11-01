@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'00a5c4d0c5097c79610099c4b873c840008171e7667a703de42c1134851046e6'>;
+  StorageHashBase<'0591994aee22c0e71080a12c7604f8a45b6d8ebb5d833da9b8d8c192d8a44f18'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -339,6 +339,7 @@ export type FieldOutputTypes = {
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['output'];
       readonly publicacionActiva: CodecTypes['pg/bool@1']['output'];
       readonly precio: Numeric<12, 2> | null;
+      readonly comentario: CodecTypes['pg/text@1']['output'] | null;
       readonly cantidadUnidades: CodecTypes['pg/int4@1']['output'] | null;
       readonly foto: CodecTypes['pg/text@1']['output'] | null;
       readonly tipoPublicacion: 'OPERADOR' | 'PRODUCTOR';
@@ -485,6 +486,7 @@ export type FieldInputTypes = {
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['input'];
       readonly publicacionActiva: CodecTypes['pg/bool@1']['input'];
       readonly precio: CodecTypes['pg/numeric@1']['input'] | null;
+      readonly comentario: CodecTypes['pg/text@1']['input'] | null;
       readonly cantidadUnidades: CodecTypes['pg/int4@1']['input'] | null;
       readonly foto: CodecTypes['pg/text@1']['input'] | null;
       readonly tipoPublicacion: 'OPERADOR' | 'PRODUCTOR';
@@ -628,6 +630,7 @@ export type StorageColumnTypes = {
       readonly calibreId: CodecTypes['pg/int4@1']['output'] | null;
       readonly cantidadUnidades: CodecTypes['pg/int4@1']['output'] | null;
       readonly categoriaId: CodecTypes['pg/int4@1']['output'] | null;
+      readonly comentario: CodecTypes['pg/text@1']['output'] | null;
       readonly especieId: CodecTypes['pg/int4@1']['output'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly foto: CodecTypes['pg/text@1']['output'] | null;
@@ -774,6 +777,7 @@ export type StorageColumnInputTypes = {
       readonly calibreId: CodecTypes['pg/int4@1']['input'] | null;
       readonly cantidadUnidades: CodecTypes['pg/int4@1']['input'] | null;
       readonly categoriaId: CodecTypes['pg/int4@1']['input'] | null;
+      readonly comentario: CodecTypes['pg/text@1']['input'] | null;
       readonly especieId: CodecTypes['pg/int4@1']['input'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly foto: CodecTypes['pg/text@1']['input'] | null;
@@ -1549,6 +1553,11 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/numeric@1';
                   readonly nullable: true;
                   readonly typeParams: { readonly precision: 12; readonly scale: 2 };
+                };
+                readonly comentario: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
                 readonly cantidadUnidades: {
                   readonly nativeType: 'int4';
@@ -2860,6 +2869,10 @@ type ContractBase = Omit<
                   readonly typeParams: { readonly precision: 12; readonly scale: 2 };
                 };
               };
+              readonly comentario: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly cantidadUnidades: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
@@ -2960,6 +2973,7 @@ type ContractBase = Omit<
                 readonly publicacionDisponible: { readonly column: 'publicacionDisponible' };
                 readonly publicacionActiva: { readonly column: 'publicacionActiva' };
                 readonly precio: { readonly column: 'precio' };
+                readonly comentario: { readonly column: 'comentario' };
                 readonly cantidadUnidades: { readonly column: 'cantidadUnidades' };
                 readonly foto: { readonly column: 'foto' };
                 readonly tipoPublicacion: { readonly column: 'tipoPublicacion' };

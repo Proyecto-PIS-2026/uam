@@ -1269,6 +1269,13 @@
                   "kind": "scalar"
                 }
               },
+              "comentario": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "especieId": {
                 "nullable": false,
                 "type": {
@@ -1444,6 +1451,9 @@
                 },
                 "categoriaId": {
                   "column": "categoriaId"
+                },
+                "comentario": {
+                  "column": "comentario"
                 },
                 "especieId": {
                   "column": "especieId"
@@ -2860,6 +2870,11 @@
                   "nativeType": "int4",
                   "nullable": true
                 },
+                "comentario": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "especieId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -3537,7 +3552,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "00a5c4d0c5097c79610099c4b873c840008171e7667a703de42c1134851046e6"
+    "storageHash": "0591994aee22c0e71080a12c7604f8a45b6d8ebb5d833da9b8d8c192d8a44f18"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",
