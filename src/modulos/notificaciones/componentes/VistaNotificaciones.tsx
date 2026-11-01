@@ -157,12 +157,13 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
 
     return (
         <main className="contenedor-pagina secciones-pagina flex-1">
-            <EncabezadoPagina titulo="Notificaciones" subtitulo="Consultá tus avisos y novedades." />
+            <EncabezadoPagina titulo="Notificaciones" subtitulo={listado
+                ? `${listado.noLeidas} ${listado.noLeidas === 1 ? "notificación sin leer" : "notificaciones sin leer"}`
+                : "Consultá tus avisos y novedades."} />
             <section className={styles.contenido} aria-label="Tus notificaciones" aria-busy={cargando || ocupado}>
                 <div className={styles.barraAcciones}>
-                    <p className={styles.resumen}>{listado ? `${listado.noLeidas} ${listado.noLeidas === 1 ? "notificación sin leer" : "notificaciones sin leer"}` : "Tus avisos"}</p>
                     <div className={styles.accionesGenerales}>
-                        <button type="button" className="boton-secundario" onClick={() => void modificar("leer")} disabled={!listado || listado.noLeidas === 0 || ocupado} aria-busy={guardando === "leer:todas"}>
+                        <button type="button" className={`boton-secundario ${styles.leer}`} onClick={() => void modificar("leer")} disabled={!listado || listado.noLeidas === 0 || ocupado} aria-busy={guardando === "leer:todas"}>
                             <DoneAllIcon fontSize="small" aria-hidden="true" />Leer todo
                         </button>
                         <button type="button" className={`boton-secundario ${styles.borrarTodo}`} onClick={() => { cerrarNotificacion(); setConfirmarBorrado(true); }} disabled={!listado?.notificaciones.length || ocupado}>

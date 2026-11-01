@@ -9,14 +9,8 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: var(--espacio-controles);
-}
-
-.resumen {
-    margin: 0;
-    color: var(--color-muted);
-    font-size: var(--tamano-texto-secundario);
 }
 
 .accionesGenerales {
@@ -59,7 +53,7 @@
 }
 
 .fila[data-leida="false"] {
-    border-left-color: var(--color-primary);
+    border-left-color: var(--color-secondary);
     background: var(--color-primary-soft);
 }
 
@@ -145,12 +139,12 @@ a.texto:focus-visible,
 }
 
 .leer {
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .leer:hover:not(:disabled) {
-    border-color: var(--color-primary);
-    background: var(--color-primary-soft);
+    border-color: var(--color-secondary);
+    background: var(--color-secondary-soft);
 }
 
 .borrar {
@@ -222,8 +216,27 @@ a.texto:focus-visible,
         flex: 1 1 0;
     }
 
-    .fila {
-        grid-template-columns: minmax(0, 1fr);
+    .aviso {
+        display: contents;
+    }
+
+    .texto {
+        grid-column: 1 / -1;
+    }
+
+    .detalle {
+        min-width: 0;
+        flex-wrap: nowrap;
+    }
+
+    .estado {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .detalle time {
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
 
     .error > button {

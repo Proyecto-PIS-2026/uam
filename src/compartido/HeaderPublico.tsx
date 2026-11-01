@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import Badge from "@mui/material/Badge";
 
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
@@ -32,6 +33,37 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 
 import estilos from "./HeaderPublico.module.css";
+
+function ContadorNotificaciones({ cantidad, enEsquina = false }: { cantidad: number; enEsquina?: boolean }) {
+    if (cantidad <= 0) return null;
+
+    return (
+        <Badge
+            badgeContent={cantidad}
+            max={99}
+            color="error"
+            sx={enEsquina ? {
+                position: "absolute",
+                right: "-0.15rem",
+                bottom: "-0.15rem",
+                zIndex: 1,
+                pointerEvents: "none",
+            } : undefined}
+            slotProps={{
+                badge: {
+                    "aria-hidden": true,
+                    sx: {
+                        position: "static",
+                        transform: "none",
+                        backgroundColor: "var(--color-danger)",
+                        color: "var(--color-surface)",
+                        ...(enEsquina && { outline: "2px solid var(--color-surface)" }),
+                    },
+                },
+            }}
+        />
+    );
+}
 
 type OpcionMenu = {
     nombre: string;
@@ -343,13 +375,13 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 ) : (
                     <AccountCircleIcon className={estilos.iconoOperador} />
                 )}
-                {noLeidas > 0 && <span className={`${estilos.contadorNotificaciones} ${estilos.contadorEsquina}`} aria-hidden="true">{noLeidas > 99 ? "99+" : noLeidas}</span>}
+                <ContadorNotificaciones cantidad={noLeidas} enEsquina />
             </button>
             {menuUsuarioAbierto && (
                 <div className={estilos.desplegableOperador} role="menu">
                     <Link href="/notificaciones" role="menuitem" className={estilos.enlaceNotificaciones} onClick={cerrarMenus} aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined}>
                         <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
-                        {noLeidas > 0 && <span className={estilos.contadorNotificaciones} aria-hidden="true">{noLeidas > 99 ? "99+" : noLeidas}</span>}
+                        <ContadorNotificaciones cantidad={noLeidas} />
                     </Link>
                     {!esProductor && (
                         <span className={estilos.opcionDesplegable} role="menuitem">
@@ -452,7 +484,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         <CloseIcon
                             className={`${estilos.iconoMenu} ${menuAbierto ? estilos.iconoCerrarVisible : estilos.iconoCerrarOculto}`}
                         />
-                        {noLeidas > 0 && <span className={`${estilos.contadorNotificaciones} ${estilos.contadorEsquina}`} aria-hidden="true">{noLeidas > 99 ? "99+" : noLeidas}</span>}
+                        <ContadorNotificaciones cantidad={noLeidas} enEsquina />
                     </button>
                     {rolUsuario && <span id={descripcionNotificacionesId} className={estilos.descripcionNotificaciones}>{noLeidas} {noLeidas === 1 ? "notificación sin leer" : "notificaciones sin leer"}</span>}
                 </div>
@@ -464,7 +496,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     {menuPerfilMobile}
                     {rolUsuario && <Link href="/notificaciones" className={`${estilos.enlaceMobile} ${estilos.enlaceNotificaciones}`} aria-current={esRutaActiva("/notificaciones") ? "page" : undefined} aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined} onClick={cerrarMenus}>
                         <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
-                        {noLeidas > 0 && <span className={estilos.contadorNotificaciones} aria-hidden="true">{noLeidas > 99 ? "99+" : noLeidas}</span>}
+                        <ContadorNotificaciones cantidad={noLeidas} />
                     </Link>}
                     {opcionesNavegacion.map((opcion) =>
                         esAdministrador && opcion.ruta === "/publicaciones" ? (
