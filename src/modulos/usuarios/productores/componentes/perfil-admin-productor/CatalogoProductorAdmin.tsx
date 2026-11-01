@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
 import { useRouter } from "next/navigation";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import DrawerPublicacionProductor from "../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProductor";
@@ -74,7 +74,7 @@ function paraTarjeta(publicacion: PublicacionMiMercadoProductor): PublicacionPer
 
 export default function CatalogoProductorAdmin({ publicaciones, alCambiarDepartamentos }: CatalogoProductorAdminProps) {
     const router = useRouter();
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const publicacionesConsulta = useMemo(() => publicaciones.map(paraConsulta), [publicaciones]);
     const [seleccionId, setSeleccionId] = useState<number | null>(null);
     const [actualizadas, setActualizadas] = useState<{
@@ -113,7 +113,6 @@ export default function CatalogoProductorAdmin({ publicaciones, alCambiarDeparta
 
     return (
         <>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             {publicacionesActuales.length === 0 ? (
                 <EstadoVacio titulo="Sin publicaciones" descripcion="El productor no tiene publicaciones." icono={<Inventory2OutlinedIcon />} anunciar={false} />
             ) : (

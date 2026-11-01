@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@/test-utils";
 import type { ReactNode } from "react";
 
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";

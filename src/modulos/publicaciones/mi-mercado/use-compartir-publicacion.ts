@@ -71,10 +71,11 @@ export function useCompartirPublicacion(
             const datos: ShareData = { text: crearMensajeWhatsApp(publicacion, nombreOperador, window.location.origin) };
             if (vigente?.archivo && navigator.canShare({ files: [vigente.archivo] })) {
                 datos.files = [vigente.archivo];
-            } else if (foto) {
-                notificar("Este navegador no permite adjuntar la foto. Se compartirá el texto.", "warning");
             }
             await navigator.share(datos);
+            if (foto && !datos.files?.length) {
+                notificar("Se compartió solo el texto porque este navegador no permite adjuntar la foto.", "warning");
+            }
         } catch (error) {
             const cancelado = typeof error === "object" && error !== null && "name" in error && error.name === "AbortError";
             if (!cancelado) {
