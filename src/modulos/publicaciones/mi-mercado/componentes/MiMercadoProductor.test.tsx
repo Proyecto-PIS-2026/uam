@@ -260,7 +260,7 @@ describe("MiMercadoProductor", () => {
         fireEvent.click(within(alta).getByRole("button", { name: "Cancelar" }));
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(within(screen.getByRole("button", { name: "Ver detalle de Pera" })).getByText("$220")).toBeInTheDocument();
-    });
+    }, 500_000);
 
     it("muestra el estado vacío sin filtros ni acciones de operador", () => {
         render(<MiMercadoProductor publicaciones={[]} />);

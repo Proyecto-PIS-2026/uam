@@ -1,3 +1,5 @@
+"use client";
+
 import EnlaceWhatsApp from "@/compartido/componentes/EnlaceWhatsApp";
 import HojasDecorativas from "../../../../../../compartido/HojasDecorativas";
 import type { PerfilProductorPorOperador } from "../../../acciones/consultas-perfil-por-operador";
@@ -14,8 +16,19 @@ type PerfilProductorProps  = {
     textoVolver?: string;
 };
 
+const registrarContactoWhatsApp = (tipo: "OPERADOR" | "PRODUCTOR", entidadId: number) => {
+    fetch("/api/estadisticas/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo, entidadId }),
+        keepalive: true, // Esto evita que el navegador cancele la petición al abrir WhatsApp o cerrar la ventana
+    }).catch((err) => {
+        console.error("Error al registrar contacto:", err);
+    });
+};
+
 export default function PerfilProductor({ productor, hrefVolver = "/productores", textoVolver = "Volver al listado de productores" }: PerfilProductorProps) {
-    const inicialOperador = productor.nombreFantasia.trim()[0]?.toUpperCase();;
+    const inicialOperador = productor.nombreFantasia.trim()[0]?.toUpperCase();
 
     const numeroWhatsApp = productor.whatsApp.replace(/\D/g, "");
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
@@ -44,7 +57,7 @@ export default function PerfilProductor({ productor, hrefVolver = "/productores"
                     </p>
                 </div>
             </div>
-            <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} className={styles.botonWhatsApp} aria-label={`Contactar a ${productor.nombreFantasia} por WhatsApp`}>
+            <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} onClick={() => registrarContactoWhatsApp("PRODUCTOR", productor.id)} className={styles.botonWhatsApp} aria-label={`Contactar a ${productor.nombreFantasia} por WhatsApp`}>
                 <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                 <span className={styles.textoWhatsApp}>Contactar por WhatsApp</span>
             </EnlaceWhatsApp>

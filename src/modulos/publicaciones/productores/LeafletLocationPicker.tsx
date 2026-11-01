@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
@@ -54,9 +55,22 @@ function resultadoValido(valor: unknown): valor is ResultadoBusqueda {
         && coordenadasValidas(Number(resultado.lat), Number(resultado.lon));
 }
 
-export default function LeafletLocationPicker({ abierto, coordenadas, nombreInicial, modo = "agregar", alConfirmar, alCerrar }: Props) {
+function obtenerSeleccionInicial(latitud: number | null, longitud: number | null, departamentoValor: string, nombreLugar: string) {
+    const departamento = normalizarDepartamento(departamentoValor);
+
+    return latitud !== null && longitud !== null && coordenadasValidas(latitud, longitud)
+        ? { latitud, longitud, departamento: departamento ?? "", nombreLugar }
+        : null;
+}
+
+function LeafletLocationPickerInterno({ abierto, coordenadas, nombreInicial, modo = "agregar", alConfirmar, alCerrar }: Props) {
     const id = useId();
     const esMobile = useMediaQuery("(max-width: 767px)");
+    const latitudInicial = coordenadas?.latitud ?? null;
+    const longitudInicial = coordenadas?.longitud ?? null;
+    const departamentoInicial = coordenadas?.departamento ?? "";
+    const nombreLugarInicial = nombreInicial ?? coordenadas?.nombreLugar ?? "";
+    const seleccionInicial = obtenerSeleccionInicial(latitudInicial, longitudInicial, departamentoInicial, nombreLugarInicial);
     const [elementoMapa, setElementoMapa] = useState<HTMLDivElement | null>(null);
     const mapaInstanciaRef = useRef<LeafletMap | null>(null);
     const marcadorRef = useRef<CircleMarker | null>(null);
@@ -65,9 +79,9 @@ export default function LeafletLocationPicker({ abierto, coordenadas, nombreInic
     const solicitudSeleccionRef = useRef(0);
     const busquedaAbortRef = useRef<AbortController | null>(null);
     const seleccionAbortRef = useRef<AbortController | null>(null);
-    const nombreEditadoRef = useRef(false);
-    const [seleccion, setSeleccion] = useState<UbicacionSeleccionada | null>(null);
-    const [nombre, setNombre] = useState("");
+    const nombreEditadoRef = useRef(Boolean(nombreLugarInicial.trim()));
+    const [seleccion, setSeleccion] = useState<UbicacionSeleccionada | null>(() => seleccionInicial?.departamento ? seleccionInicial : null);
+    const [nombre, setNombre] = useState(nombreLugarInicial);
     const [nombreRevisado, setNombreRevisado] = useState(false);
     const [errorSeleccion, setErrorSeleccion] = useState("");
     const [errorBusqueda, setErrorBusqueda] = useState("");
@@ -77,33 +91,14 @@ export default function LeafletLocationPicker({ abierto, coordenadas, nombreInic
     const [buscando, setBuscando] = useState(false);
     const [identificando, setIdentificando] = useState(false);
     const [mapaListo, setMapaListo] = useState(false);
-    const latitudInicial = coordenadas?.latitud ?? null;
-    const longitudInicial = coordenadas?.longitud ?? null;
-    const departamentoInicial = coordenadas?.departamento ?? "";
-    const nombreLugarInicial = nombreInicial ?? coordenadas?.nombreLugar ?? "";
 
     useEffect(() => {
         if (!abierto || !elementoMapa) return;
-        const departamento = normalizarDepartamento(departamentoInicial);
-        const inicial = latitudInicial !== null && longitudInicial !== null && coordenadasValidas(latitudInicial, longitudInicial)
-            ? { latitud: latitudInicial, longitud: longitudInicial, departamento: departamento ?? "", nombreLugar: nombreLugarInicial }
-            : null;
+        const inicial = obtenerSeleccionInicial(latitudInicial, longitudInicial, departamentoInicial, nombreLugarInicial);
         let activo = true;
         let observador: ResizeObserver | undefined;
         let temporizadorTamano: ReturnType<typeof setTimeout> | undefined;
-        nombreEditadoRef.current = Boolean(nombreLugarInicial.trim());
-        setNombre(nombreLugarInicial);
-        setNombreRevisado(false);
-        setSeleccion(inicial?.departamento ? inicial : null);
-        setErrorSeleccion("");
-        setErrorBusqueda("");
-        setErrorMapa("");
-        setBusqueda("");
-        setResultados([]);
-        setBuscando(false);
-        setIdentificando(false);
-        setMapaListo(false);
-
+        
         void import("leaflet").then((leaflet) => {
             if (!activo || !elementoMapa.isConnected) return;
             const centro: [number, number] = inicial ? [inicial.latitud, inicial.longitud] : CENTRO_URUGUAY;
@@ -266,12 +261,12 @@ export default function LeafletLocationPicker({ abierto, coordenadas, nombreInic
 
     const nombreValido = nombre.trim().length > 0 && nombre.trim().length <= 200;
     const puedeConfirmar = mapaListo && !identificando && !errorSeleccion && !errorMapa && Boolean(seleccion?.departamento) && nombreValido;
+
     function confirmar() {
         if (!puedeConfirmar || !seleccion) return;
         alConfirmar({ ...seleccion, nombreLugar: nombre.trim() });
     }
 
-    if (!abierto) return null;
     return <Dialog open onClose={cerrar} fullScreen={esMobile} fullWidth maxWidth="md" aria-labelledby={`${id}-titulo`} aria-describedby={`${id}-ayuda`}
         slotProps={{ paper: { className: styles.modal }, transition: { onEntered: () => mapaInstanciaRef.current?.invalidateSize() } }}>
         <header className={styles.encabezado}>
@@ -316,4 +311,19 @@ export default function LeafletLocationPicker({ abierto, coordenadas, nombreInic
             <Button type="button" variant="contained" color="secondary" onClick={confirmar} disabled={!puedeConfirmar}>{modo === "editar" ? "Guardar cambios" : "Agregar punto"}</Button>
         </footer>
     </Dialog>;
+}
+
+export default function LeafletLocationPicker(props: Props) {
+    if (!props.abierto) return null;
+
+    const claveInicial = JSON.stringify([
+        props.coordenadas?.latitud ?? null,
+        props.coordenadas?.longitud ?? null,
+        props.coordenadas?.departamento ?? null,
+        props.coordenadas?.nombreLugar ?? null,
+        props.nombreInicial ?? null,
+        props.modo ?? "agregar",
+    ]);
+
+    return <LeafletLocationPickerInterno key={claveInicial} {...props} />;
 }

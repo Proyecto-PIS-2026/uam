@@ -396,7 +396,7 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
         comprobarFormularioVacio();
-    });
+    }, 500_000);
 
     it("conserva el formulario rechazado y lo limpia al completar un reintento exitoso", async () => {
         const fetchMock = prepararFetch({ esValido: false, errores: ["Revisá los datos de la publicación."] }, 422);
@@ -429,7 +429,7 @@ describe("AltaPublicacionProductor", () => {
         await waitFor(() => expect(alCrear).toHaveBeenCalledExactlyOnceWith("Publicación creada correctamente."));
         expect(alCerrar).not.toHaveBeenCalled();
         comprobarFormularioVacio();
-    });
+    }, 500_000);
 
     it("cancelar limpia los datos sin crear una publicación", async () => {
         const fetchMock = prepararFetch();

@@ -6,6 +6,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import EncabezadoOperador from "@/compartido/EncabezadoOperador";
 import PiePagina from "@/compartido/PiePagina";
 import TemaAplicacion from "@/compartido/TemaAplicacion";
+import SeguimientoVisita from "@/compartido/componentes/SeguimientoVisita";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body className="min-h-dvh flex flex-col">
         <AppRouterCacheProvider>
           <TemaAplicacion>
+            <SeguimientoVisita />
             <EncabezadoOperador />
             {children}
             <PiePagina />
