@@ -297,18 +297,19 @@ describe("ListaUsuarios", () => {
 
     });
 
-    it("navega a la edición del operador y del productor y deshabilita las acciones todavía no disponibles", () => {
+    it("navega a la edición de cada rol", () => {
         renderLista();
 
-        expect(within(obtenerFila("ana.admin")).getByTitle("Edición todavía no disponible")).toBeDisabled();
+        hacerClickEnAccion("ana.admin", "Editar perfil");
         hacerClickEnAccion("beto.operador", "Editar perfil");
         hacerClickEnAccion("carla.productor", "Editar perfil");
         expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-operadores/201/editar");
         expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-productores/301/editar");
+        expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-administradores/101/editar");
 
         fireEvent.click(obtenerFila("ana.admin"));
 
-        expect(estadoTest.routerPush).toHaveBeenCalledTimes(2);
+        expect(estadoTest.routerPush).toHaveBeenCalledTimes(3);
     });
 
     it("navega a editar sin propagar el click a la fila", () => {
