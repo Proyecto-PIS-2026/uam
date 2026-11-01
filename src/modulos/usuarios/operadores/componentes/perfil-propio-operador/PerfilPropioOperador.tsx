@@ -14,6 +14,11 @@ import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
 import FormularioPerfilPropio from "./FormularioPerfilPropio";
 import styles from "./PerfilPropioOperador.module.css";
 
+function formatearFecha(fecha: string): string {
+    const [anio, mes, dia] = fecha.split("-");
+    return `${dia}/${mes}/${anio}`;
+}
+
 export default function PerfilPropioOperador({ perfil }: { perfil: PerfilPropioOperador }) {
     const [editando, setEditando] = useState(false);
     const [fotoPerfilFallida, setFotoPerfilFallida] = useState(false);
