@@ -50,18 +50,28 @@ afterEach(() => {
 });
 
 describe("FormularioModificarAdministrador", () => {
-    // Criterio 2: se muestran los valores actuales
     it("muestra los datos actuales del administrador", () => {
         renderizar();
 
         expect(valorDe(screen.getByLabelText("Nombre de usuario"))).toBe("beto.admin");
         expect(valorDe(screen.getByLabelText("Correo electrónico"))).toBe("beto@ejemplo.com");
+        expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
+        expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
     });
 
-    it("no ofrece modificar la contraseña", () => {
+    it("envía la nueva contraseña y su confirmación", async () => {
+        modificarMock.mockResolvedValue({ esValido: true, id: 102 });
         renderizar();
 
-        expect(screen.queryByLabelText(/contraseña/i)).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("Nueva contraseña"), { target: { value: "contraseña123" } });
+        fireEvent.change(screen.getByLabelText("Confirmar contraseña"), { target: { value: "contraseña123" } });
+        apretarGuardar();
+
+        await waitFor(() =>
+            expect(modificarMock).toHaveBeenCalledWith(
+                expect.objectContaining({ contraseña: "contraseña123", confirmacionContraseña: "contraseña123" }),
+            ),
+        );
     });
 
     it("envía los datos modificados y vuelve al perfil cuando la modificación es válida", async () => {
@@ -77,6 +87,8 @@ describe("FormularioModificarAdministrador", () => {
             administradorId: 102,
             nombreUsuario: "beto.nuevo",
             email: "nuevo@ejemplo.com",
+            contraseña: "",
+            confirmacionContraseña: "",
         });
     });
 

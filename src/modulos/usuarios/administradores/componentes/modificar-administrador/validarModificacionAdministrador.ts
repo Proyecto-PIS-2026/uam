@@ -2,6 +2,7 @@ export type DatosModificacionAdministrador = {
     administradorId: number;
     nombreUsuario: string;
     email: string;
+    contraseña: string | null;
 };
 
 export type ResultadoValidacionModificacionAdministrador =
@@ -23,12 +24,13 @@ export function validarModificacionAdministrador(valor: unknown): ResultadoValid
     const administradorId = datos.administradorId;
     const nombreUsuario = texto(datos.nombreUsuario);
     const email = texto(datos.email);
+    const contraseña = typeof datos.contraseña === "string" ? datos.contraseña : "";
+    const confirmacion = typeof datos.confirmacionContraseña === "string" ? datos.confirmacionContraseña : "";
 
     if (typeof administradorId !== "number" || !Number.isSafeInteger(administradorId) || administradorId <= 0) {
         errores.push("El administrador no es válido.");
     }
 
-    // Misma regla que el alta de usuarios
     if (!nombreUsuario) {
         errores.push("El nombre es obligatorio.");
     } else if (nombreUsuario.length < 3) {
@@ -41,6 +43,11 @@ export function validarModificacionAdministrador(valor: unknown): ResultadoValid
         errores.push("El correo electrónico no es válido.");
     }
 
+    if (contraseña || confirmacion) {
+        if (contraseña.length < 8) errores.push("La contraseña debe tener al menos 8 caracteres.");
+        if (contraseña !== confirmacion) errores.push("Las contraseñas no coinciden.");
+    }
+
     if (errores.length > 0) {
         return { esValido: false, errores };
     }
@@ -51,6 +58,7 @@ export function validarModificacionAdministrador(valor: unknown): ResultadoValid
             administradorId: administradorId as number,
             nombreUsuario,
             email,
+            contraseña: contraseña || null,
         },
     };
 }

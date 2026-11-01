@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import argon2 from "argon2";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { validarModificacionAdministrador } from "./validarModificacionAdministrador";
@@ -20,6 +21,10 @@ export async function modificarAdministrador(valor: unknown): Promise<ResultadoM
 
     const datos = validacion.datos;
 
+    const passwordHash = datos.contraseña
+        ? await argon2.hash(datos.contraseña, { type: argon2.argon2id })
+        : null;
+
     const resultadoTx = await db.transaction(async (tx) => {
         const administrador = await tx.orm.public.Administrador
             .select("id", "usuarioId")
@@ -31,7 +36,7 @@ export async function modificarAdministrador(valor: unknown): Promise<ResultadoM
         }
 
         if (administrador.usuarioId === sesion.usuarioId) {
-            return "Tus propios datos se modifican desde Mi Perfil.";
+            return "Tus propios datos se modifican desde Mi perfil.";
         }
 
         const correoRepetido = await tx.orm.public.Administrador
@@ -56,7 +61,7 @@ export async function modificarAdministrador(valor: unknown): Promise<ResultadoM
 
         await tx.orm.public.Usuario
             .where({ id: administrador.usuarioId })
-            .update({ username: datos.nombreUsuario });
+            .update(passwordHash ? { username: datos.nombreUsuario, passwordHash } : { username: datos.nombreUsuario });
 
         return datos.administradorId;
     });

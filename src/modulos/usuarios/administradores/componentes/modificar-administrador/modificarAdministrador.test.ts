@@ -7,6 +7,12 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => autorizacion)
 const cache = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
 vi.mock("next/cache", () => cache);
 
+const mockArgon2 = vi.hoisted(() => ({
+    hash: vi.fn(),
+    argon2id: 2,
+}));
+vi.mock("argon2", () => ({ default: mockArgon2 }));
+
 const mockDb = vi.hoisted(() => ({
     administrador: {
         select: vi.fn().mockReturnThis(),
@@ -30,9 +36,9 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 }));
 
 type EstadoBase = {
-    administrador: { id: number; usuarioId: number } | null; // El administrador a modificar
-    administradorConEseCorreo: { id: number } | null; // Un administrador que ya usa el correo nuevo
-    usuarioConEseNombre: { id: number } | null; // Un usuario que ya usa el nombre nuevo
+    administrador: { id: number; usuarioId: number } | null;
+    administradorConEseCorreo: { id: number } | null;
+    usuarioConEseNombre: { id: number } | null;
 };
 
 const estadoPorDefecto: EstadoBase = {
@@ -54,7 +60,9 @@ function prepararBase(cambios: Partial<EstadoBase> = {}) {
 const datosValidos = {
     administradorId: 102,
     nombreUsuario: "beto.admin",
-    email: "beto@example.com",
+    email: "beto@ejemplo.com",
+    contraseña: "",
+    confirmacionContraseña: "",
 };
 
 describe("modificarAdministrador", () => {
@@ -62,6 +70,7 @@ describe("modificarAdministrador", () => {
         vi.clearAllMocks();
         autorizacion.exigirAdministrador.mockResolvedValue({ usuarioId: 7, rol: "ADMINISTRADOR" });
         prepararBase();
+        mockArgon2.hash.mockResolvedValue("hash-falso");
         mockDb.transaction.mockImplementation(async (operaciones: (tx: unknown) => unknown) =>
             operaciones({ orm: { public: { Administrador: mockDb.administrador, Usuario: mockDb.usuario } } }),
         );
@@ -72,6 +81,7 @@ describe("modificarAdministrador", () => {
 
         await expect(modificarAdministrador(datosValidos)).rejects.toThrow("No autorizado");
         expect(mockDb.transaction).not.toHaveBeenCalled();
+        expect(mockArgon2.hash).not.toHaveBeenCalled();
     });
 
     it("devuelve los errores de validación sin tocar la base", async () => {
@@ -94,7 +104,7 @@ describe("modificarAdministrador", () => {
 
         expect(await modificarAdministrador(datosValidos)).toEqual({
             esValido: false,
-            errores: ["Tus propios datos se modifican desde Mi Perfil."],
+            errores: ["Tus propios datos se modifican desde Mi perfil."],
         });
         expect(mockDb.administrador.update).not.toHaveBeenCalled();
     });
@@ -129,16 +139,28 @@ describe("modificarAdministrador", () => {
         });
     });
 
-    it("guarda el correo y el nombre sin tocar el segundo factor", async () => {
+    it("guarda el correo y el nombre sin tocar la contraseña ni el segundo factor", async () => {
         expect(await modificarAdministrador(datosValidos)).toEqual({
             esValido: true,
             id: 102,
             mensaje: "Administrador modificado correctamente.",
         });
 
-        expect(mockDb.administrador.update).toHaveBeenCalledWith({ email: "beto@example.com" });
+        expect(mockDb.administrador.update).toHaveBeenCalledWith({ email: "beto@ejemplo.com" });
         expect(mockDb.usuario.where).toHaveBeenLastCalledWith({ id: 2 });
         expect(mockDb.usuario.update).toHaveBeenCalledWith({ username: "beto.admin" });
+        expect(mockArgon2.hash).not.toHaveBeenCalled();
+    });
+
+    it("guarda el hash de la contraseña nueva sin tocar el segundo factor", async () => {
+        await modificarAdministrador({
+            ...datosValidos,
+            contraseña: "contraseña123",
+            confirmacionContraseña: "contraseña123",
+        });
+
+        expect(mockArgon2.hash).toHaveBeenCalledWith("contraseña123", { type: 2 });
+        expect(mockDb.usuario.update).toHaveBeenCalledWith({ username: "beto.admin", passwordHash: "hash-falso" });
     });
 
     it("refresca el panel y el perfil después de guardar", async () => {
@@ -146,5 +168,13 @@ describe("modificarAdministrador", () => {
 
         expect(cache.revalidatePath).toHaveBeenCalledWith("/administracion");
         expect(cache.revalidatePath).toHaveBeenCalledWith("/gestion-administradores/[id]", "page");
+    });
+
+    it("no refresca ninguna página si no se guardó nada", async () => {
+        prepararBase({ administradorConEseCorreo: { id: 103 } });
+
+        await modificarAdministrador(datosValidos);
+
+        expect(cache.revalidatePath).not.toHaveBeenCalled();
     });
 });

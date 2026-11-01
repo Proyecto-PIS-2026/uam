@@ -5,7 +5,9 @@ import { validarModificacionAdministrador } from "./validarModificacionAdministr
 const datosValidos = {
     administradorId: 102,
     nombreUsuario: "beto.admin",
-    email: "beto@example.com",
+    email: "beto@ejemplo.com",
+    contraseña: "",
+    confirmacionContraseña: "",
 };
 
 function validar(cambios: Record<string, unknown> = {}) {
@@ -18,10 +20,10 @@ function erroresDe(cambios: Record<string, unknown> = {}): string[] {
 }
 
 describe("validarModificacionAdministrador", () => {
-    it("acepta datos correctos y quita los espacios sobrantes", () => {
-        expect(validar({ nombreUsuario: "  beto.admin  ", email: "  beto@example.com " })).toEqual({
+    it("acepta datos correctos, quita los espacios sobrantes y no cambia la contraseña", () => {
+        expect(validar({ nombreUsuario: "  beto.admin  ", email: "  beto@ejemplo.com " })).toEqual({
             esValido: true,
-            datos: { administradorId: 102, nombreUsuario: "beto.admin", email: "beto@example.com" },
+            datos: { administradorId: 102, nombreUsuario: "beto.admin", email: "beto@ejemplo.com", contraseña: null },
         });
     });
 
@@ -48,14 +50,43 @@ describe("validarModificacionAdministrador", () => {
         expect(erroresDe({ email })).toEqual(["El correo electrónico es obligatorio."]);
     });
 
-    it.each(["beto", "beto@", "@example.com", "beto@example", "beto @example.com"])("rechaza el correo inválido %j", (email) => {
+    it.each(["beto", "beto@", "@ejemplo.com", "beto@ejemplo", "beto @ejemplo.com"])("rechaza el correo inválido %j", (email) => {
         expect(erroresDe({ email })).toEqual(["El correo electrónico no es válido."]);
     });
 
+    describe("contraseña", () => {
+        it("acepta una contraseña de 8 caracteres que coincide con su confirmación", () => {
+            const resultado = validar({ contraseña: "12345678", confirmacionContraseña: "12345678" });
+
+            expect(resultado.esValido && resultado.datos.contraseña).toBe("12345678");
+        });
+
+        it("rechaza una contraseña de menos de 8 caracteres", () => {
+            expect(erroresDe({ contraseña: "corta1", confirmacionContraseña: "corta1" })).toEqual([
+                "La contraseña debe tener al menos 8 caracteres.",
+            ]);
+        });
+
+        it("rechaza una contraseña que no coincide con su confirmación", () => {
+            expect(erroresDe({ contraseña: "contraseña123", confirmacionContraseña: "contraseñaDistinta123" })).toEqual([
+                "Las contraseñas no coinciden.",
+            ]);
+        });
+
+        it("rechaza completar solo la confirmación", () => {
+            expect(erroresDe({ contraseña: "", confirmacionContraseña: "contraseña123" })).toEqual([
+                "La contraseña debe tener al menos 8 caracteres.",
+                "Las contraseñas no coinciden.",
+            ]);
+        });
+    });
+
     it("devuelve todos los errores encontrados, en orden", () => {
-        expect(erroresDe({ nombreUsuario: "", email: "beto" })).toEqual([
+        expect(erroresDe({ nombreUsuario: "", email: "beto", contraseña: "corta" })).toEqual([
             "El nombre es obligatorio.",
             "El correo electrónico no es válido.",
+            "La contraseña debe tener al menos 8 caracteres.",
+            "Las contraseñas no coinciden.",
         ]);
     });
 });

@@ -23,6 +23,9 @@ export default function FormularioModificarAdministrador({ administrador }: Prop
     const [nombreUsuario, setNombreUsuario] = useState(administrador.nombreUsuario);
     const [email, setEmail] = useState(administrador.email);
 
+    const [contraseña, setContraseña] = useState("");
+    const [confirmacionContraseña, setConfirmacionContraseña] = useState("");
+
     const [errores, setErrores] = useState<string[]>([]);
     const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
@@ -46,6 +49,8 @@ export default function FormularioModificarAdministrador({ administrador }: Prop
                 administradorId: administrador.id,
                 nombreUsuario,
                 email,
+                contraseña,
+                confirmacionContraseña,
             });
 
             if (!resultado.esValido) {
@@ -109,6 +114,40 @@ export default function FormularioModificarAdministrador({ administrador }: Prop
                         <p className={styles.ayuda}>
                             El correo electrónico se usa para iniciar sesión: si lo cambiás, el administrador va a tener que ingresar con el nuevo.
                         </p>
+                    </section>
+
+                    <section className={styles.seccion}>
+                        <h2 className={styles.subtitulo}>Cambiar contraseña</h2>
+
+                        <p className={styles.ayuda}>
+                            Dejá los campos vacíos si no querés modificar la contraseña actual.
+                        </p>
+
+                        <div className={styles.grillaContraseña}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Nueva contraseña"
+                                type="password"
+                                value={contraseña}
+                                onChange={(evento) => setContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
+
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Confirmar contraseña"
+                                type="password"
+                                value={confirmacionContraseña}
+                                onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
+                        </div>
                     </section>
 
                     {errores.length > 0 && (
