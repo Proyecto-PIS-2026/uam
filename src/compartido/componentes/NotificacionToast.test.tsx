@@ -2,6 +2,7 @@ import { act, fireEvent, render as renderOriginal, screen, waitFor, within } fro
 import { useState } from "react";
 import type { ReactElement } from "react";
 import Drawer from "@mui/material/Drawer";
+import Dialog from "@mui/material/Dialog";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ProveedorNotificacionesToast, useNotificacionToast } from "./NotificacionToast";
 
@@ -233,6 +234,43 @@ describe("NotificacionToast", () => {
         expect(screen.getByRole("alert")).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it.each(["drawer", "dialog"] as const)("muestra un nuevo aviso cuando el anterior venció dentro de un %s que ya se desmontó", async (tipoPanel) => {
+        vi.useFakeTimers();
+        const descriptorPopover = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "showPopover");
+        const mostrarPopover = vi.fn(function (this: HTMLElement) {
+            if (!this.isConnected) throw new DOMException("Invalid on disconnected popover elements.", "InvalidStateError");
+            this.style.display = "block";
+        });
+        Object.defineProperty(HTMLElement.prototype, "showPopover", { configurable: true, value: mostrarPopover });
+        function Pantalla() {
+            const [abierto, setAbierto] = useState(true);
+            const { notificar } = useNotificacionToast();
+            const Panel = tipoPanel === "drawer" ? Drawer : Dialog;
+            return <><Ejemplo />{abierto && <Panel open transitionDuration={0} slotProps={{ paper: { role: "dialog", "aria-label": "Panel" } }}>
+                <button onClick={() => notificar("Aviso anterior", "success")}>Avisar dentro</button>
+                <button onClick={() => setAbierto(false)}>Cerrar panel</button>
+            </Panel>}</>;
+        }
+        try {
+            render(<Pantalla />);
+            fireEvent.click(screen.getByRole("button", { name: "Avisar dentro" }));
+            expect(within(screen.getByRole("dialog", { name: "Panel" })).getByRole("status")).toHaveTextContent("Aviso anterior");
+            await act(async () => vi.advanceTimersByTime(5000));
+            await act(async () => vi.advanceTimersByTime(160));
+            expect(screen.queryByRole("region", { name: "Notificaciones", hidden: true })).not.toBeInTheDocument();
+            fireEvent.click(screen.getByRole("button", { name: "Cerrar panel" }));
+            expect(screen.queryByRole("dialog", { name: "Panel", hidden: true })).not.toBeInTheDocument();
+            fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+            await act(async () => {});
+            expect(screen.getByRole("status")).toHaveTextContent("Cambios guardados.");
+            expect(screen.getByRole("region", { name: "Notificaciones" })).toHaveAttribute("popover", "manual");
+            expect(mostrarPopover).toHaveBeenCalledTimes(2);
+        } finally {
+            if (descriptorPopover) Object.defineProperty(HTMLElement.prototype, "showPopover", descriptorPopover);
+            else Reflect.deleteProperty(HTMLElement.prototype, "showPopover");
+        }
     });
 
     it("adapta el espacio del aviso al viewport visible y sus desplazamientos", () => {
