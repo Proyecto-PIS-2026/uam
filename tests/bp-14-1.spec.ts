@@ -102,6 +102,11 @@ async function completarProducto(page: Page, formulario: Locator, seleccion: Sel
 }
 
 async function confirmarAlta(page: Page, formulario: Locator) {
+  const notificacion = page.getByRole("status").filter({ hasText: /^Publicación creada correctamente\.$/ });
+  while (await notificacion.count() > 0) {
+    await notificacion.first().getByRole("button", { name: "Cerrar notificación", exact: true }).click();
+  }
+  await expect(notificacion).toHaveCount(0);
   const guardado = page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === rutaApi && respuesta.request().method() === "POST");
   await formulario.getByRole("button", { name: "Confirmar", exact: true }).click();
   const respuesta = await guardado;
@@ -109,7 +114,7 @@ async function confirmarAlta(page: Page, formulario: Locator) {
   const resultado = await respuesta.json();
   expect(resultado.esValido).toBe(true);
   await expect(formulario).not.toBeVisible();
-  await expect(page.getByRole("status")).toHaveText("Publicación creada correctamente.");
+  await expect(notificacion).toHaveText("Publicación creada correctamente.");
   return resultado.id as number;
 }
 

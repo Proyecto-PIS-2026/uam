@@ -1,5 +1,7 @@
 "use client";
 
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -21,7 +23,7 @@ export default function ListadoConfiguraciones({ configuracion }: ListadoConfigu
     }
 
     async function guardarConfiguracion(nombre: string, valor: string): Promise<string> {
-        const respuesta = await fetch(
+        const respuesta = await fetchConSesion(
             `/api/configuracion/${encodeURIComponent(nombre)}`,
             {
                 method: "PATCH",

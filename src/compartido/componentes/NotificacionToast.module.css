@@ -1,11 +1,41 @@
-.contenedor:global(.MuiSnackbar-root) {
-    right: var(--espacio-secciones);
-    bottom: calc(var(--espacio-secciones) + env(safe-area-inset-bottom, 0px));
-    left: auto;
-    width: calc(100% - 2 * var(--espacio-secciones));
+.contenedor {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    right: calc(var(--toast-derecha, 0px) + var(--espacio-secciones) + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--toast-inferior, 0px) + var(--espacio-secciones) + env(safe-area-inset-bottom, 0px));
+    width: calc(var(--toast-ancho-visible, 100vw) - 2 * var(--espacio-secciones) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     max-width: 28rem;
-    transform: none;
+    max-height: calc(var(--toast-alto-visible, 100dvh) - 2 * var(--espacio-secciones) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    pointer-events: none;
     z-index: 1400;
+}
+
+.pila {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-inline);
+    padding: 4px;
+}
+
+.elemento {
+    flex-shrink: 0;
+    pointer-events: auto;
+}
+
+.antigua {
+    opacity: 0.5;
+}
+
+.antigua:focus-within,
+.antigua:hover {
+    opacity: 1;
 }
 
 .alerta:global(.MuiAlert-root) {

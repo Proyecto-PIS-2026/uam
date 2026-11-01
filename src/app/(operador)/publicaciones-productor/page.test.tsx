@@ -1,19 +1,17 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
-import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacionProductor.action";
+import { consultarPublicacionesProductores } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
 import Page, { dynamic } from "./page";
 import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
 import { requerirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
-    requerirOperador: vi.fn(),
     requerirConsultaProductores: vi.fn(),
 }));
 
-vi.mock("@/modulos/consulta-mercado/acciones/ConsultarPublicacionProductor.action", () => ({
-    default: vi.fn(),
+vi.mock("@/modulos/consulta-mercado/acciones/PublicacionesProductor", () => ({
+    consultarPublicacionesProductores: vi.fn(),
 }));
 
 vi.mock("@/compartido/EncabezadoPagina", () => ({
@@ -37,20 +35,20 @@ vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPu
 const sesionOperador = {
     usuarioId: 23,
     rol: "OPERADOR",
-} as unknown as Awaited<ReturnType<typeof requerirOperador>>;
+} as unknown as Awaited<ReturnType<typeof requerirConsultaProductores>>;
 
 const publicacionesEjemplo = [
     { id: 101, especie: "Tomate" },
     { id: 102, especie: "Manzana" },
 ] as unknown as PublicacionProductorListado[];
 
-type ResultadoMock = Awaited<ReturnType<typeof obtenerPublicaciones>>;
+type ResultadoMock = Awaited<ReturnType<typeof consultarPublicacionesProductores>>;
 
 describe("Page de publicaciones de productores", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         vi.mocked(requerirConsultaProductores).mockResolvedValue(sesionOperador);
-        vi.mocked(obtenerPublicaciones).mockResolvedValue({ publicaciones: publicacionesEjemplo } as ResultadoMock);
+        vi.mocked(consultarPublicacionesProductores).mockResolvedValue({ publicaciones: publicacionesEjemplo } as ResultadoMock);
     });
 
     afterEach(() => {
@@ -66,7 +64,7 @@ describe("Page de publicaciones de productores", () => {
         vi.mocked(requerirConsultaProductores).mockResolvedValue(sesion);
         render(await Page());
         expect(requerirConsultaProductores).toHaveBeenCalledTimes(1);
-        expect(obtenerPublicaciones).toHaveBeenCalledExactlyOnceWith(sesion);
+        expect(consultarPublicacionesProductores).toHaveBeenCalledExactlyOnceWith(sesion);
         expect(screen.getByTestId("contenedor-publicaciones")).toHaveAttribute("data-cantidad", "2");
         expect(screen.getByTestId("contenedor-publicaciones")).toHaveAttribute("data-es-admin", String(rol === "ADMINISTRADOR"));
     });
@@ -85,7 +83,7 @@ describe("Page de publicaciones de productores", () => {
     });
 
     it("muestra cantidad cero cuando la consulta devuelve una lista vacía", async () => {
-        vi.mocked(obtenerPublicaciones).mockResolvedValue({ publicaciones: [] } as ResultadoMock);
+        vi.mocked(consultarPublicacionesProductores).mockResolvedValue({ publicaciones: [] } as ResultadoMock);
 
         render(await Page());
 
@@ -100,7 +98,7 @@ describe("Page de publicaciones de productores", () => {
         { descripcion: "publicaciones null", resultado: { publicaciones: null } },
         { descripcion: "publicaciones undefined", resultado: { publicaciones: undefined } },
     ])("usa una lista vacía cuando el resultado es $descripcion", async ({ resultado }) => {
-        vi.mocked(obtenerPublicaciones).mockResolvedValue(resultado as unknown as ResultadoMock);
+        vi.mocked(consultarPublicacionesProductores).mockResolvedValue(resultado as unknown as ResultadoMock);
 
         render(await Page());
 
@@ -108,22 +106,22 @@ describe("Page de publicaciones de productores", () => {
         expect(screen.getByTestId("contenedor-publicaciones").getAttribute("data-cantidad")).toBe("0");
     });
 
-    it.each(["/inicio", "/iniciar-sesion"])("no consulta publicaciones cuando el control redirige a %s", async (ruta) => {
+    it.each(["/inicio", "/sesion-finalizada"])("no consulta publicaciones cuando el control redirige a %s", async (ruta) => {
         vi.mocked(requerirConsultaProductores).mockRejectedValue(new Error(`NEXT_REDIRECT:${ruta}`));
         await expect(Page()).rejects.toThrow(`NEXT_REDIRECT:${ruta}`);
-        expect(obtenerPublicaciones).not.toHaveBeenCalled();
+        expect(consultarPublicacionesProductores).not.toHaveBeenCalled();
     });
 
     it("propaga el error al obtener la sesión sin consultar publicaciones", async () => {
         vi.mocked(requerirConsultaProductores).mockRejectedValue(new Error("No se pudo validar la sesión"));
         await expect(Page()).rejects.toThrow("No se pudo validar la sesión");
-        expect(obtenerPublicaciones).not.toHaveBeenCalled();
+        expect(consultarPublicacionesProductores).not.toHaveBeenCalled();
     });
 
     it("propaga los errores de la consulta de publicaciones", async () => {
-        vi.mocked(obtenerPublicaciones).mockRejectedValue(new Error("Error consultando publicaciones"));
+        vi.mocked(consultarPublicacionesProductores).mockRejectedValue(new Error("Error consultando publicaciones"));
 
         await expect(Page()).rejects.toThrow("Error consultando publicaciones");
-        expect(obtenerPublicaciones).toHaveBeenCalledWith(sesionOperador);
+        expect(consultarPublicacionesProductores).toHaveBeenCalledWith(sesionOperador);
     });
 });

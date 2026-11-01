@@ -9,7 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 
 import EditIcon from "@mui/icons-material/Edit";
@@ -72,7 +72,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
     const [idsEliminados, setIdsEliminados] = useState<number[]>([]);
     const [pagina, setPagina] = useState(1);
     const [usuarioAEliminar, setUsuarioAEliminar] = useState<UsuarioParaModificar | null>(null);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [eliminando, setEliminando] = useState(false);
 
     const esMobile = useEsMobileSSR();
@@ -219,7 +219,6 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
                 </DialogActions>
             </Dialog>
 
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </div>
     );
 }

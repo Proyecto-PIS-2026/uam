@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 
 import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
 import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";

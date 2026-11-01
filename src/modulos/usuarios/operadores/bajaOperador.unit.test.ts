@@ -15,7 +15,8 @@ const mocks = vi.hoisted(() => ({
     publicacion: { where: vi.fn().mockReturnThis(), first: vi.fn(), delete: vi.fn() },
 }));
 
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/modulos/identidad-acceso/autorizacion/controles")>()),
     exigirAdministrador: mocks.exigirAdministrador,
 }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
