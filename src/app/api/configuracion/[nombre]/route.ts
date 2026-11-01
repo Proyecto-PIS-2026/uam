@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { actualizarConfiguracion, obtenerConfiguracion } from "@/modulos/administracion/ConsultaConfiguracion";
+import { actualizarConfiguracion, obtenerConfiguracion } from "@/modulos/administracion/acciones/consultas-configuracion";
 import { ErrorAutorizacion, exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export const runtime = "nodejs";

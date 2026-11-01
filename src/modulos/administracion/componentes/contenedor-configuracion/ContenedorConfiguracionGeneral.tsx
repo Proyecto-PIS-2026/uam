@@ -6,17 +6,15 @@ import type { ReactNode } from "react";
 import styles from "./ContenedorConfiguracionGeneral.module.css";
 
 const pestañas = [
-    { id: "publicaciones", etiqueta: "Publicaciones" },
+    { id: "general", etiqueta: "General" },
     { id: "usuarios", etiqueta: "Usuarios" },
-    { id: "publico", etiqueta: "Público" },
 ] as const;
 
 type IdPestaña = typeof pestañas[number]["id"];
 
 interface ContenedorConfiguracionGeneralProps {
-    publicaciones: ReactNode;
+    general: ReactNode;
     usuarios: ReactNode;
-    publica: ReactNode;
 }
 
 function suscribirCambiosHash(callback: () => void) {
@@ -40,7 +38,7 @@ function obtenerPestañaServidor(): IdPestaña {
     return pestañas[0].id;
 }
 
-export default function ContenedorConfiguracionGeneral({ publicaciones, usuarios, publica }: ContenedorConfiguracionGeneralProps) {
+export default function ContenedorConfiguracionGeneral({ general, usuarios }: ContenedorConfiguracionGeneralProps) {
     const router = useRouter();
     const [pestañaLocal, setPestañaLocal] = useState<IdPestaña | null>(null);
 
@@ -63,9 +61,8 @@ export default function ContenedorConfiguracionGeneral({ publicaciones, usuarios
     }, []);
 
     const contenidos: Record<IdPestaña, ReactNode> = {
-        "publicaciones": publicaciones,
+        "general": general,
         "usuarios": usuarios,
-        "publico": publica,
     };
 
     function seleccionarPestaña(id: IdPestaña) {

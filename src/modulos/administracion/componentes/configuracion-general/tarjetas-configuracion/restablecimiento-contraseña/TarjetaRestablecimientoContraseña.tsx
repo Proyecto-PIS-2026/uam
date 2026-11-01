@@ -1,0 +1,111 @@
+"use client";
+
+import { useState } from "react";
+import { IconButton, Switch } from "@mui/material";
+import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
+import NotificacionToast, {
+    useNotificacionToast,
+} from "@/compartido/componentes/NotificacionToast";
+import styles from "./TarjetaConfiguracionSwitch.module.css";
+
+interface Props {
+    titulo: string;
+    descripcion: string;
+    etiqueta: string;
+    habilitado: boolean;
+    onGuardar: (habilitado: boolean) => Promise<void>;
+}
+
+export default function TarjetaConfiguracionSwitch({
+    titulo,
+    descripcion,
+    etiqueta,
+    habilitado,
+    onGuardar,
+}: Props) {
+    const [valor, setValor] = useState(habilitado);
+    const [valorGuardado, setValorGuardado] = useState(habilitado);
+    const [valorAnterior, setValorAnterior] = useState(habilitado);
+    const [guardando, setGuardando] = useState(false);
+
+    const { notificacion, notificar, cerrarNotificacion } =
+        useNotificacionToast();
+
+    if (valorAnterior !== habilitado) {
+        setValorAnterior(habilitado);
+        setValor(habilitado);
+        setValorGuardado(habilitado);
+    }
+
+    const huboCambios = valor !== valorGuardado;
+
+    async function guardar() {
+        if (guardando || !huboCambios) return;
+
+        setGuardando(true);
+
+        try {
+            await onGuardar(valor);
+            setValorGuardado(valor);
+
+            notificar(
+                "La configuración se guardó correctamente.",
+                "success",
+            );
+        } catch (error) {
+            notificar(
+                error instanceof Error
+                    ? error.message
+                    : "No se pudo guardar la configuración.",
+                "error",
+            );
+        } finally {
+            setGuardando(false);
+        }
+    }
+
+    return (
+        <div className={styles.tarjeta}>
+            <h2 className={styles.titulo}>{titulo}</h2>
+
+            <p className={styles.descripcion}>{descripcion}</p>
+
+            <div className={styles.filaEdicion}>
+                <label
+                    className={styles.filaSwitch}
+                    data-habilitado={valor}
+                    data-guardando={guardando}
+                >
+                    <span className={styles.etiqueta}>{etiqueta}</span>
+
+                    <Switch
+                        checked={valor}
+                        disabled={guardando}
+                        onChange={(_, checked) => setValor(checked)}
+                        className={styles.switch}
+                        slotProps={{
+                            input: {
+                                role: "switch",
+                                "aria-label": etiqueta,
+                            },
+                        }}
+                    />
+                </label>
+
+                <IconButton
+                    aria-label={`Guardar configuración: ${titulo}`}
+                    disabled={guardando || !huboCambios}
+                    onClick={guardar}
+                    className={styles.botonGuardar}
+                >
+                    <CheckOutlinedIcon />
+                </IconButton>
+            </div>
+
+            <NotificacionToast
+                notificacion={notificacion}
+                alCerrar={cerrarNotificacion}
+            />
+        </div>
+    );
+}

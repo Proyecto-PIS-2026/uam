@@ -11,6 +11,8 @@ import obtenerPublicaciones from "../../../consulta-mercado/acciones/ConsultarPu
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
 import ListadoPublicaciones from "../listado-publicaciones/ListadoPublicaciones";
 import { useActualizacionesPublicaciones } from "../../tiempo-real/use-actualizaciones-publicaciones";
+import type { OrdenConsulta } from "@/modulos/consulta-mercado/acciones/filtros-consulta";
+import { compararPublicacionesAlfabeticamente } from "../../filtros/FiltrosPublicaciones";
 
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
@@ -18,10 +20,47 @@ import type { PublicacionProductorListado } from "../../../consulta-mercado/acci
 type Publicacion = PublicacionListado | PublicacionProductorListado;
 const obtenerNombreFantasia = (publicacion: Publicacion) => publicacion.tipoPublicacion === "OPERADOR" ? publicacion.operador.nombreFantasia : publicacion.productor.nombreFantasia;
 
+function ordenarPublicaciones(
+    publicaciones: Publicacion[],
+    orden: OrdenConsulta,
+): Publicacion[] {
+    const resultado = [...publicaciones];
+
+    switch (orden) {
+        case "prioridad":
+            return resultado.sort(compararPublicacionesPorPrioridad);
+
+        case "alfabeticoAsc":
+            return resultado.sort(compararPublicacionesAlfabeticamente);
+
+        case "alfabeticoDesc":
+            return resultado.sort((a, b) =>
+                compararPublicacionesAlfabeticamente(b, a),
+            );
+
+        case "precioAsc":
+        case "precioDesc":
+            return resultado.sort((a, b) => {
+                if (a.precio == null && b.precio == null) return 0;
+                if (a.precio == null) return 1;
+                if (b.precio == null) return -1;
+
+                return orden === "precioAsc"
+                    ? a.precio - b.precio
+                    : b.precio - a.precio;
+            });
+
+        default:
+            return resultado;
+    }
+}
+
 type PropiedadesLocales = {
     publicaciones: Publicacion[];
     especie?: string;
     esAdmin?: boolean;
+    ordenInicial?: OrdenConsulta;
+    ordenamientoHabilitado?: boolean;
 };
 
 export default function ContenedorPublicaciones(props: PropiedadesRemotas | PropiedadesLocales) {
@@ -34,15 +73,17 @@ type PropiedadesRemotas = {
     resultado: ResultadoPublicaciones;
     especie?: string;
     esAdmin?: boolean;
+    ordenInicial?: OrdenConsulta;
+    ordenamientoHabilitado?: boolean;
 };
 
 const publicacionesParaFiltros: [] = [];
 
-function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: PropiedadesRemotas) {
+function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicial = "prioridad", ordenamientoHabilitado = true }: PropiedadesRemotas) {
     const [datos, setDatos] = useState(resultado);
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState("");
-    const consulta = useRef<FiltrosConsulta>({ especie, orden: "prioridad" });
+    const consulta = useRef<FiltrosConsulta>({especie, orden: ordenInicial});
     const ultimoPedido = useRef(0);
     const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
     const montado = useRef(true);
@@ -144,7 +185,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
 
     return (
         <div className="secciones-pagina" aria-busy={cargando}>
-            <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} navesDisponibles={datos.naves} totalRemoto={datos.total} especieFiltro={especie} ordenInicial="prioridad" alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
+            <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} navesDisponibles={datos.naves} totalRemoto={datos.total} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
             {error && <p role="alert">{error} <button type="button" onClick={() => void cargar()}>Reintentar</button></p>}
             <ListadoPublicaciones
                 publicaciones={datos.publicaciones}
@@ -161,11 +202,16 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false }: Propiedad
     );
 }
 
-function ContenidoLocal({publicaciones, especie = "", esAdmin = false}: PropiedadesLocales) {
+function ContenidoLocal({publicaciones, especie = "", esAdmin = false, ordenInicial = "prioridad", ordenamientoHabilitado = true }: PropiedadesLocales) {
 	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => {
-		const iniciales = especie ? publicaciones.filter((publicacion) => publicacion.especie === especie) : [...publicaciones];
-		return iniciales.sort(compararPublicacionesPorPrioridad);
-	});
+        const iniciales = especie
+            ? publicaciones.filter(
+                  (publicacion) => publicacion.especie === especie,
+              )
+            : publicaciones;
+
+        return ordenarPublicaciones(iniciales, ordenInicial);
+    });
 
 	function actualizarEspecieEnUrl(nuevaEspecie: string) {
 		const url = new URL(window.location.href);
@@ -176,7 +222,7 @@ function ContenidoLocal({publicaciones, especie = "", esAdmin = false}: Propieda
 
 	return (
 		<div className="secciones-pagina">
-			<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicaciones} especieFiltro={especie} ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")}/>
+			<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicaciones} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} alFiltrar={setPublicacionesFiltradas} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")}/>
 			<ListadoPublicaciones
 				esAdmin={esAdmin}
 				publicaciones={publicacionesFiltradas}

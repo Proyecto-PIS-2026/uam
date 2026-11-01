@@ -34,6 +34,7 @@ type FiltrosPublicacionesProps<T extends PublicacionFiltrable> = {
     alCambiarEspecie?: (especie: string) => void;
     ordenInicial?: OrdenPublicaciones;
     alCambiarOrden?: (orden: OrdenPublicaciones) => void;
+    ordenamientoHabilitado?: boolean;
 };
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
@@ -65,7 +66,7 @@ export function compararPublicacionesPorPrioridad(a: Pick<PublicacionFiltrable, 
     return especie !== 0 ? especie : compararOpciones(a.variedad, b.variedad);
 }
 
-export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({publicaciones, especieFiltro, obtenerNombreFantasia, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, navesDisponibles, totalRemoto, alConsultar}: FiltrosPublicacionesProps<T>) {
+export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({publicaciones, especieFiltro, obtenerNombreFantasia, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, navesDisponibles, totalRemoto, alConsultar, ordenamientoHabilitado = true}: FiltrosPublicacionesProps<T>) {
     const opciones: OpcionProducto[] = opcionesRemotas ?? publicaciones;
     const mostrarNave = navesDisponibles !== undefined;
     // Hooks useState para los filtros
@@ -89,7 +90,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     const idFiltrosExtendidos = useId();
 
     // Filtros de Ordenamiento
-    const [orden, setOrden] = useState<OrdenPublicaciones>(ordenInicial);
+    const [ordenElegido, setOrden] = useState<OrdenPublicaciones>(ordenInicial);
+    const orden = ordenamientoHabilitado ? ordenElegido : ordenInicial;
 
     const [publicacionesAnteriores, setPublicacionesAnteriores] = useState(opciones);
     const especieNotificada = useRef(especie);
@@ -491,18 +493,19 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                     <BotonDesplegable className={styles.botonExtendidos} abierto={mostrarFiltros} aria-controls={idFiltrosExtendidos} onClick={() => setMostrarFiltros((valorActual) => !valorActual)}>
                         Más filtros
                     </BotonDesplegable>
-                    <BotonOrdenar<OrdenPublicaciones>
-                        valor={orden}
-                        alCambiar={cambiarOrden}
-                        className={styles.botonOrdenar}
-                        opciones={[
-                            ...(ordenInicial !== "prioridad" ? [{ valor: "ninguno" as const, etiqueta: "Sin ordenar" }] : []),
-                            { valor: "precioAsc", etiqueta: "Menor Precio" },
-                            { valor: "precioDesc", etiqueta: "Mayor Precio" },
-                            { valor: "alfabeticoAsc", etiqueta: "A-Z" },
-                            { valor: "alfabeticoDesc", etiqueta: "Z-A" },
-                        ]}
-                    />
+                    {ordenamientoHabilitado && (
+                        <BotonOrdenar<OrdenPublicaciones>
+                            valor={orden}
+                            alCambiar={cambiarOrden}
+                            className={styles.botonOrdenar}
+                            opciones={[
+                                { valor: "precioAsc", etiqueta: "Menor precio" },
+                                { valor: "precioDesc", etiqueta: "Mayor precio" },
+                                { valor: "alfabeticoAsc", etiqueta: "A-Z" },
+                                { valor: "alfabeticoDesc", etiqueta: "Z-A" },
+                            ]}
+                        />
+                    )}
                 </div>
             </div>
 

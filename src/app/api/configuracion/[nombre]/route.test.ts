@@ -1,5 +1,5 @@
 import { obtenerSesion, type RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
-import { actualizarConfiguracion, obtenerConfiguracion } from "@/modulos/administracion/ConsultaConfiguracion";
+import { actualizarConfiguracion, obtenerConfiguracion } from "@/modulos/administracion/acciones/consultas-configuracion";
 import { GET, PATCH } from "./route";
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: vi.fn() }));
