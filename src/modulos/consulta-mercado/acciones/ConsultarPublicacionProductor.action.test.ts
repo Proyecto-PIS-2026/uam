@@ -1,18 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DatosSesion } from "../../identidad-acceso/autenticacion/sesiones";
 import type { ResultadoPublicacionesProductores } from "./PublicacionesProductor";
+import { redirect } from "next/navigation";
+import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { RUTA_INICIO_SESION } from "@/modulos/identidad-acceso/autenticacion/rutas-sesion";
 
 const mocks = vi.hoisted(() => ({
     consultarPublicacionesProductores: vi.fn(),
     exigirConsultaMercadoOperador: vi.fn(),
+    cerrarSesion: vi.fn(),
+}));
+
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
+    obtenerSesion: vi.fn(),
+    cerrarSesion: mocks.cerrarSesion,
 }));
 
 vi.mock("./PublicacionesProductor", () => ({
     consultarPublicacionesProductores: mocks.consultarPublicacionesProductores,
 }));
 
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/modulos/identidad-acceso/autorizacion/controles")>()),
     exigirConsultaMercadoOperador: mocks.exigirConsultaMercadoOperador,
+}));
+
+vi.mock("next/navigation", () => ({
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
 }));
 
 import obtenerPublicaciones from "./ConsultarPublicacionProductor.action";
@@ -117,5 +131,23 @@ describe("obtenerPublicaciones", () => {
 
         expect(mocks.exigirConsultaMercadoOperador).toHaveBeenCalledTimes(1);
         expect(mocks.consultarPublicacionesProductores).toHaveBeenCalledWith(sesion);
+    });
+
+    it("redirige si la sesión dejó de ser válida sin consultar publicaciones", async () => {
+        mocks.exigirConsultaMercadoOperador.mockRejectedValue(new ErrorAutorizacion(401, "Iniciá sesión."));
+
+        await expect(obtenerPublicaciones(sesion)).rejects.toThrow("NEXT_REDIRECT");
+        expect(redirect).toHaveBeenCalledExactlyOnceWith(RUTA_INICIO_SESION);
+        expect(mocks.cerrarSesion).toHaveBeenCalledExactlyOnceWith();
+        expect(mocks.consultarPublicacionesProductores).not.toHaveBeenCalled();
+    });
+
+    it("conserva el rechazo por permisos sin cerrar una sesión válida", async () => {
+        const error = new ErrorAutorizacion(403, "Acceso al mercado denegado");
+        mocks.exigirConsultaMercadoOperador.mockRejectedValue(error);
+
+        await expect(obtenerPublicaciones(sesion)).rejects.toBe(error);
+        expect(redirect).not.toHaveBeenCalled();
+        expect(mocks.consultarPublicacionesProductores).not.toHaveBeenCalled();
     });
 });

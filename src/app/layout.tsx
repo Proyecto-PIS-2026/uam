@@ -7,6 +7,7 @@ import EncabezadoOperador from "@/compartido/EncabezadoOperador";
 import PiePagina from "@/compartido/PiePagina";
 import TemaAplicacion from "@/compartido/TemaAplicacion";
 import SeguimientoVisita from "@/compartido/componentes/SeguimientoVisita";
+import { ProveedorNotificacionesToast } from "@/compartido/componentes/NotificacionToast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,10 +37,12 @@ export default function RootLayout({
       <body className="min-h-dvh flex flex-col">
         <AppRouterCacheProvider>
           <TemaAplicacion>
-            <SeguimientoVisita />
-            <EncabezadoOperador />
-            {children}
-            <PiePagina />
+            <ProveedorNotificacionesToast>
+              <EncabezadoOperador />
+              <SeguimientoVisita />
+              {children}
+              <PiePagina />
+            </ProveedorNotificacionesToast>
           </TemaAplicacion>
         </AppRouterCacheProvider>
       </body>

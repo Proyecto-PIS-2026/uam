@@ -1,6 +1,6 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
@@ -63,7 +63,7 @@ export default function FormularioModificarOperador({
     );
 
     const [errores, setErrores] = useState<string[]>([]);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
@@ -123,7 +123,6 @@ export default function FormularioModificarOperador({
         guardadoEnCurso.current = true;
 
         setErrores([]);
-        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -161,7 +160,6 @@ export default function FormularioModificarOperador({
 
     return (
         <div className={styles.pagina}>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <div className={styles.contenedor}>
                 <BotonVolver
                     className={styles.volver}

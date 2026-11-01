@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import SearchIcon from "@mui/icons-material/Search";
@@ -55,22 +54,32 @@ function resultadoValido(valor: unknown): valor is ResultadoBusqueda {
         && coordenadasValidas(Number(resultado.lat), Number(resultado.lon));
 }
 
-function obtenerSeleccionInicial(latitud: number | null, longitud: number | null, departamentoValor: string, nombreLugar: string) {
-    const departamento = normalizarDepartamento(departamentoValor);
-
-    return latitud !== null && longitud !== null && coordenadasValidas(latitud, longitud)
-        ? { latitud, longitud, departamento: departamento ?? "", nombreLugar }
-        : null;
+export default function LeafletLocationPicker({ abierto, ...props }: Props) {
+    if (!abierto) return null;
+    const claveInicial = JSON.stringify([
+        props.coordenadas?.latitud ?? null,
+        props.coordenadas?.longitud ?? null,
+        props.coordenadas?.departamento ?? null,
+        props.coordenadas?.nombreLugar ?? null,
+        props.nombreInicial ?? null,
+        props.modo ?? "agregar",
+    ]);
+    return <SelectorPuntoRetiro key={claveInicial} {...props} />;
 }
 
-function LeafletLocationPickerInterno({ abierto, coordenadas, nombreInicial, modo = "agregar", alConfirmar, alCerrar }: Props) {
-    const id = useId();
-    const esMobile = useMediaQuery("(max-width: 767px)");
+function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alConfirmar, alCerrar }: Omit<Props, "abierto">) {
     const latitudInicial = coordenadas?.latitud ?? null;
     const longitudInicial = coordenadas?.longitud ?? null;
     const departamentoInicial = coordenadas?.departamento ?? "";
     const nombreLugarInicial = nombreInicial ?? coordenadas?.nombreLugar ?? "";
-    const seleccionInicial = obtenerSeleccionInicial(latitudInicial, longitudInicial, departamentoInicial, nombreLugarInicial);
+    const inicial = useMemo(() => {
+        const departamento = normalizarDepartamento(departamentoInicial);
+        return latitudInicial !== null && longitudInicial !== null && coordenadasValidas(latitudInicial, longitudInicial)
+            ? { latitud: latitudInicial, longitud: longitudInicial, departamento: departamento ?? "", nombreLugar: nombreLugarInicial }
+            : null;
+    }, [latitudInicial, longitudInicial, departamentoInicial, nombreLugarInicial]);
+    const id = useId();
+    const esMobile = useMediaQuery("(max-width: 767px)");
     const [elementoMapa, setElementoMapa] = useState<HTMLDivElement | null>(null);
     const mapaInstanciaRef = useRef<LeafletMap | null>(null);
     const marcadorRef = useRef<CircleMarker | null>(null);
@@ -80,7 +89,7 @@ function LeafletLocationPickerInterno({ abierto, coordenadas, nombreInicial, mod
     const busquedaAbortRef = useRef<AbortController | null>(null);
     const seleccionAbortRef = useRef<AbortController | null>(null);
     const nombreEditadoRef = useRef(Boolean(nombreLugarInicial.trim()));
-    const [seleccion, setSeleccion] = useState<UbicacionSeleccionada | null>(() => seleccionInicial?.departamento ? seleccionInicial : null);
+    const [seleccion, setSeleccion] = useState<UbicacionSeleccionada | null>(inicial?.departamento ? inicial : null);
     const [nombre, setNombre] = useState(nombreLugarInicial);
     const [nombreRevisado, setNombreRevisado] = useState(false);
     const [errorSeleccion, setErrorSeleccion] = useState("");
@@ -93,12 +102,11 @@ function LeafletLocationPickerInterno({ abierto, coordenadas, nombreInicial, mod
     const [mapaListo, setMapaListo] = useState(false);
 
     useEffect(() => {
-        if (!abierto || !elementoMapa) return;
-        const inicial = obtenerSeleccionInicial(latitudInicial, longitudInicial, departamentoInicial, nombreLugarInicial);
+        if (!elementoMapa) return;
         let activo = true;
         let observador: ResizeObserver | undefined;
         let temporizadorTamano: ReturnType<typeof setTimeout> | undefined;
-        
+
         void import("leaflet").then((leaflet) => {
             if (!activo || !elementoMapa.isConnected) return;
             const centro: [number, number] = inicial ? [inicial.latitud, inicial.longitud] : CENTRO_URUGUAY;
@@ -198,7 +206,7 @@ function LeafletLocationPickerInterno({ abierto, coordenadas, nombreInicial, mod
             mapaInstanciaRef.current?.remove();
             mapaInstanciaRef.current = null;
         };
-    }, [abierto, elementoMapa, latitudInicial, longitudInicial, departamentoInicial, nombreLugarInicial]);
+    }, [elementoMapa, inicial]);
 
     function cerrar() {
         solicitudBusquedaRef.current += 1;
@@ -311,19 +319,4 @@ function LeafletLocationPickerInterno({ abierto, coordenadas, nombreInicial, mod
             <Button type="button" variant="contained" color="secondary" onClick={confirmar} disabled={!puedeConfirmar}>{modo === "editar" ? "Guardar cambios" : "Agregar punto"}</Button>
         </footer>
     </Dialog>;
-}
-
-export default function LeafletLocationPicker(props: Props) {
-    if (!props.abierto) return null;
-
-    const claveInicial = JSON.stringify([
-        props.coordenadas?.latitud ?? null,
-        props.coordenadas?.longitud ?? null,
-        props.coordenadas?.departamento ?? null,
-        props.coordenadas?.nombreLugar ?? null,
-        props.nombreInicial ?? null,
-        props.modo ?? "agregar",
-    ]);
-
-    return <LeafletLocationPickerInterno key={claveInicial} {...props} />;
 }

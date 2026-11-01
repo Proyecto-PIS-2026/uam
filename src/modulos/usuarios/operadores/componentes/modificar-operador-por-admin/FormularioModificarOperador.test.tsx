@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 
 import FormularioModificarOperador from "./FormularioModificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
