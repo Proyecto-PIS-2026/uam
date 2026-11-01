@@ -12,7 +12,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { ConfirmModal } from "@/compartido/componentes/ConfirmModal";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { notificarCambioNotificaciones } from "../cliente";
 import { urlInternaNotificacion } from "../validacion-url";
 import type { NotificacionesUsuario } from "../tipos";
@@ -45,7 +45,7 @@ function leerContador(datos: unknown): number {
 }
 
 export default function VistaNotificaciones({ usuarioId }: Props) {
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [datos, setDatos] = useState<{ usuarioId: number; listado: NotificacionesUsuario } | null>(null);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState("");
@@ -217,7 +217,6 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
             </section>
             <ConfirmModal abierto={confirmarBorrado} titulo="Borrar todas las notificaciones" descripcion="Se borrarán todas tus notificaciones. Esta acción no se puede deshacer." textoConfirmar="Sí, borrar todas"
                 procesando={guardando === "borrar:todas"} alCancelar={() => { if (!mutacion.current) setConfirmarBorrado(false); }} alConfirmar={() => void modificar("borrar")} />
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </main>
     );
 }

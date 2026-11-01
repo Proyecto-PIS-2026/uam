@@ -4,12 +4,11 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import SearchIcon from "@mui/icons-material/Search";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { MenuItem, TextField } from "@mui/material";
+import { Checkbox, MenuItem, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
@@ -255,16 +254,14 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                             <MenuItem key={v} value={v} className={styles.opcionSelect}>{v}</MenuItem>
                         ))}
                     </TextField>
-                    <button
-                        type="button"
+                    <BotonDesplegable
                         className={styles.botonMasFiltros}
-                        aria-expanded={mostrarFiltros}
+                        abierto={mostrarFiltros}
                         aria-controls="filtros-adicionales-precios"
                         onClick={() => setMostrarFiltros((abiertos) => !abiertos)}
                     >
                         Más filtros
-                        {mostrarFiltros ? <KeyboardArrowUpIcon className={styles.iconoExpandir} /> : <KeyboardArrowDownIcon className={styles.iconoExpandir} />}
-                    </button>
+                    </BotonDesplegable>
                     <div ref={panelFiltrosRef} id="filtros-adicionales-precios" className={`${styles.filtrosAdicionales} ${mostrarFiltros ? styles.filtrosAbiertos : ""}`}>
                         <div ref={contenidoFiltrosRef} className={styles.contenidoAdicional}>
                             <TextField
@@ -366,7 +363,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                 </div>
                 <div className={styles.barraOpciones}>
                     <label className={styles.soloReferencias}>
-                        <input type="checkbox" checked={soloReferencias} onChange={(e) => cambiar(() => setSoloReferencias(e.target.checked))} />
+                        <Checkbox size="small" checked={soloReferencias} onChange={(e) => cambiar(() => setSoloReferencias(e.target.checked))} sx={{ padding: 0 }} />
                         Solo registros de referencia
                     </label>
                 </div>

@@ -57,8 +57,8 @@ async function ContenidoPreciosHistoricos({ producto, consulta }: {
         historico = respuesta.historico;
         opcionesFiltros = respuesta.opcionesFiltros;
     } catch (causa) {
-        const detalle = causa instanceof Error ? `${causa.name}: ${causa.message}` : String(causa);
-        error = detalle.trim() || "Error de carga sin detalle.";
+        console.error("No se pudieron cargar los precios históricos.", causa);
+        error = "No pudimos cargar los precios históricos. Intentá nuevamente en unos minutos.";
     }
     return (
         <PreciosHistoricos

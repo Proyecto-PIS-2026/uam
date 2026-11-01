@@ -1,14 +1,8 @@
+import { formatearPrecio } from "@/compartido/formatear-precio";
 import ImagenPublicacion from "../../../../../publicaciones/componentes/ImagenPublicacion";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import type { PublicacionPerfilProductor } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
 import styles from "./TarjetaPublicacion.module.css";
-
-const formatoPrecio = new Intl.NumberFormat("es-UY", {
-    style: "currency",
-    currency: "UYU",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-});
 
 type TarjetaPublicacionProps = {
     publicacion: PublicacionPerfilProductor;
@@ -47,7 +41,7 @@ export default function TarjetaPublicacion({publicacion, onSeleccionar}: Tarjeta
                     </div>
                     <div className={styles.contenedorPrecio}>
                         {publicacion.precio != null ? (
-                            <span className={styles.precio}>{formatoPrecio.format(Number(publicacion.precio))}</span>
+                            <span className={styles.precio}>{formatearPrecio(Number(publicacion.precio))}</span>
                         ) : (
                             <span className={styles.consultarPrecio}>Consultar precio</span>
                         )}

@@ -44,7 +44,7 @@
 }
 
 .botonAlta:hover {
-    background-color: var(--color-primary-hover) !important;
+    background-color: var(--color-secondary-hover) !important;
 }
 
 .contenido {

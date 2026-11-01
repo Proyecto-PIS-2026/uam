@@ -10,6 +10,9 @@ describe("ControlesListadoProductores", () => {
         alCambiarBusqueda: vi.fn(),
         orden: "a-z",
         alCambiarOrden: vi.fn(),
+        departamento: "",
+        departamentosDisponibles: ["Canelones", "Salto"],
+        alCambiarDepartamento: vi.fn(),
     };
 
     it("Mostrar buscador operadores", () => {
@@ -17,20 +20,32 @@ describe("ControlesListadoProductores", () => {
         expect(screen.getByRole("searchbox", { name: "Buscar productores" })).toBeInTheDocument();
     });
 
+    it("envía el departamento elegido y permite volver a Todos", () => {
+        const alCambiarDepartamento = vi.fn();
+        const vista = render(<ControlesListadoProductores {...propsIniciales} alCambiarDepartamento={alCambiarDepartamento} />);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Departamento" }));
+        fireEvent.click(screen.getByRole("option", { name: "Salto" }));
+        expect(alCambiarDepartamento).toHaveBeenLastCalledWith("Salto");
+        vista.rerender(<ControlesListadoProductores {...propsIniciales} departamento="Salto" alCambiarDepartamento={alCambiarDepartamento} />);
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Departamento" }));
+        fireEvent.click(screen.getByRole("option", { name: "Todos" }));
+        expect(alCambiarDepartamento).toHaveBeenLastCalledWith("");
+    });
+
     it("Mostrar el selector de orden", () => {
         render(<ControlesListadoProductores {...propsIniciales} />);
-        expect(screen.getByRole("combobox", {name: "Ordenar por",})).toBeInTheDocument();
+        expect(screen.getByRole("button", {name: "Ordenar por",})).toBeInTheDocument();
     });
 
     it("Mostrar opciones de orden", () => {
         render(<ControlesListadoProductores {...propsIniciales} />);
 
-        const selectorOrden = screen.getByRole("combobox", {name: "Ordenar por",});
+        const selectorOrden = screen.getByRole("button", {name: "Ordenar por",});
 
-        fireEvent.mouseDown(selectorOrden);
+        fireEvent.click(selectorOrden);
 
-        expect(screen.getByRole("option", { name: "A-Z" })).toBeInTheDocument();
-        expect(screen.getByRole("option", { name: "Z-A" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Z-A" })).toBeInTheDocument();
     });
 
     it("Llama al callback cuando se escribe una búsqueda", () => {
@@ -49,8 +64,8 @@ describe("ControlesListadoProductores", () => {
         render(
             <ControlesListadoProductores {...propsIniciales} alCambiarOrden={alCambiarOrden} />
         );
-        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("option", { name: "Z-A" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Z-A" }));
         expect(alCambiarOrden).toHaveBeenCalledExactlyOnceWith("z-a");
     });
 });

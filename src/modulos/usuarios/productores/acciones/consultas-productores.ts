@@ -1,6 +1,7 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 import type { PublicacionPerfil } from "../../operadores/consultas-perfil-publico";
+import { obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
 
 export type ProductorListado = {
     id: number;
@@ -8,6 +9,7 @@ export type ProductorListado = {
     fotoPerfil: string | null;
     cantidadProductos: number;
     ubicaciones: string[];
+    departamentos: string[];
 };
 
 export type PerfilProductor = Omit<ProductorListado, "cantidadProductos"> & {
@@ -30,7 +32,7 @@ export async function obtenerProductoresDisponibles(): Promise<ProductorListado[
         .include("usuario", (usuario) => usuario.select("rol"))
         .include("publicacionesProductor", (publicaciones) => publicaciones
             .include("publicacion", (publicacion) => publicacion.select("publicacionActiva", "publicacionDisponible", "tipoPublicacion"))
-            .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion")))
+            .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion", "departamento")))
         .all();
 
     return productores.filter((productor) => productor.usuario.rol === "PRODUCTOR").map((productor) => {
@@ -41,6 +43,7 @@ export async function obtenerProductoresDisponibles(): Promise<ProductorListado[
             fotoPerfil: productor.fotoPerfil,
             cantidadProductos: publicaciones.length,
             ubicaciones: Array.from(new Set(publicaciones.flatMap((relacion) => relacion.ubicaciones.map((ubicacion) => ubicacion.nombreUbicacion)))),
+            departamentos: obtenerDepartamentos(publicaciones.flatMap((relacion) => relacion.ubicaciones)),
         };
     }).filter((productor) => productor.cantidadProductos > 0)
         .sort((primero, segundo) => primero.nombreFantasia.localeCompare(segundo.nombreFantasia, "es", { sensitivity: "base" }));
@@ -55,7 +58,7 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
         .include("usuario", (usuario) => usuario.select("rol"))
         .include("publicacionesProductor", (publicaciones) => publicaciones
             .include("pais", (pais) => pais.select("nombrePais"))
-            .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion"))
+            .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion", "departamento"))
             .include("publicacion", (publicacion) => publicacion
                 .select("id", "foto", "precio", "fecha", "cantidadUnidades", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
                 .include("especie").include("variedad").include("presentacion")
@@ -72,6 +75,7 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
         fotoPerfil: productor.fotoPerfil,
         whatsApp: productor.whatsApp,
         ubicaciones: Array.from(new Set(publicaciones.flatMap((relacion) => relacion.ubicaciones.map((ubicacion) => ubicacion.nombreUbicacion)))),
+        departamentos: obtenerDepartamentos(publicaciones.flatMap((relacion) => relacion.ubicaciones)),
         publicaciones: publicaciones.map((relacion) => {
             const publicacion = relacion.publicacion;
             return {

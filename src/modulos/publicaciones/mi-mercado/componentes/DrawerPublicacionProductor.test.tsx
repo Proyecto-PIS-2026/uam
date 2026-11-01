@@ -1,7 +1,9 @@
 import type { DrawerProps } from "@mui/material/Drawer";
 import type { DialogProps } from "@mui/material/Dialog";
 import type { ReactNode, Ref } from "react";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OpcionesEdicionPublicacion } from "../../operadores/tipos";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
@@ -18,6 +20,16 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@mui/material/useMediaQuery", () => ({ default: mocks.mediaQuery }));
+vi.mock("../../productores/LeafletLocationPicker", () => ({
+    default: function Mapa({ abierto, nombreInicial, alConfirmar, alCerrar }: { abierto: boolean; nombreInicial?: string; alConfirmar: (ubicacion: { latitud: number; longitud: number; departamento: string; nombreLugar: string }) => void; alCerrar: () => void }) {
+        const [nombre, setNombre] = useState(nombreInicial || "Nuevo retiro");
+        return abierto ? createPortal(<section role="dialog" aria-label="Punto de retiro">
+            <label>Nombre del punto de retiro<input value={nombre} onChange={(evento) => setNombre(evento.target.value)} /></label>
+            <button type="button" onClick={() => alConfirmar({ latitud: -34.5, longitud: -56.1, departamento: "Canelones", nombreLugar: nombre })}>Confirmar punto en mapa</button>
+            <button type="button" onClick={alCerrar}>Cancelar mapa</button>
+        </section>, document.body) : null;
+    },
+}));
 vi.mock("@/compartido/componentes/DrawerDeslizable", () => ({
     default: ({ anchor, open, children, onClose, slotProps, ModalProps, arrastreDeshabilitado }: Omit<DrawerProps, "onClose"> & { onClose: () => void; arrastreDeshabilitado?: boolean }) => {
         if (!open && !ModalProps?.keepMounted) return null;
@@ -116,7 +128,7 @@ async function seleccionar(campo: string, opcion: string) {
 }
 
 function editarUbicaciones() {
-    fireEvent.click(screen.getByRole("button", { name: /^(Cambiar ubicación|Seleccionar ubicación de retiro)$/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Editar punto de retiro 1" }));
 }
 
 function solicitudGuardado() {
@@ -209,10 +221,11 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByLabelText("Unidades (Cajón)")).toHaveValue("12");
         expect(screen.getByLabelText("Unidades (Cajón)")).toBeEnabled();
         expect(screen.getByLabelText("Unidades (Cajón)")).not.toHaveAttribute("readonly");
-        expect(screen.queryByLabelText("Nombre del punto de retiro 1")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Nombre del punto de retiro")).not.toBeInTheDocument();
         editarUbicaciones();
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Quinta");
-        expect(screen.getByLabelText("Enlace de Google Maps 1")).toHaveValue("https://maps.google.com/?q=Salto");
+        expect(screen.getByLabelText("Nombre del punto de retiro")).toHaveValue("Quinta");
+        expect(screen.queryByLabelText("Enlace de Google Maps 1")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar mapa" }));
         fireEvent.change(precio, { target: { value: "250" } });
         expect(mocks.fetch).toHaveBeenCalledTimes(1);
         expect(mocks.fetch.mock.calls[0][0]).toBe("/api/publicaciones/productor/1042");
@@ -252,8 +265,8 @@ describe("DrawerPublicacionProductor: edición", () => {
         fireEvent.change(screen.getByLabelText("Unidades (Saco)"), { target: { value: "25" } });
         fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
         editarUbicaciones();
-        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 1"), { target: { value: "Nuevo retiro" } });
-        fireEvent.change(screen.getByLabelText("Enlace de Google Maps 1"), { target: { value: "https://maps.app.goo.gl/retiro" } });
+        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro"), { target: { value: "Nuevo retiro" } });
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar punto en mapa" }));
         fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
@@ -262,7 +275,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(cambios).toEqual({
             especieId: 1, variedadId: 12, precio: "250", foto: "/pera.png", presentacionId: 121, categoriaId: 5, calibreId: 8,
             paisId: 2, cantidadUnidades: 25, disponible: false,
-            ubicaciones: [{ nombreUbicacion: "Nuevo retiro", urlMaps: "https://maps.app.goo.gl/retiro" }],
+            ubicaciones: [{ nombreUbicacion: "Nuevo retiro", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" }],
         });
         expect(datos.has("foto")).toBe(false);
         expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBe(papel);
@@ -278,9 +291,9 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByRole("combobox", { name: /^País de origen/ })).toHaveTextContent("Argentina");
         expect(screen.getByText("No disponible", { exact: true })).toBeInTheDocument();
         expect(screen.getByText("21/10/2026")).toHaveAttribute("dateTime", actualizada.fecha);
-        const aviso = screen.getByRole("status");
+        const aviso = await screen.findByRole("status");
         expect(aviso).toHaveTextContent("Cambios guardados.");
-        expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).not.toContainElement(aviso);
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
         fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(mocks.cerrar).not.toHaveBeenCalled();
@@ -306,8 +319,10 @@ describe("DrawerPublicacionProductor: edición", () => {
         fireEvent.change(screen.getByLabelText("Unidades (Bandeja de manzanas)"), { target: { value: "35" } });
         fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
         editarUbicaciones();
-        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 1"), { target: { value: "No guardar" } });
+        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro"), { target: { value: "No guardar" } });
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar punto en mapa" }));
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar punto en mapa" }));
         fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
 
         expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBe(papel);
@@ -328,9 +343,8 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByRole("combobox", { name: /^Calibre/ })).toHaveTextContent("G - Grande");
         expect(screen.getByLabelText("Unidades (Cajón)")).toHaveValue("12");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
-        editarUbicaciones();
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Quinta");
-        expect(screen.queryByLabelText("Nombre del punto de retiro 2")).not.toBeInTheDocument();
+        expect(screen.getByText("Quinta", { exact: true })).toBeInTheDocument();
+        expect(screen.getAllByRole("button", { name: /^Editar punto de retiro/ })).toHaveLength(1);
     });
 
     it.each(["Cerrar edición", "Cerrar desde fondo", "Escape", "arrastre"])("cierra todo el drawer desde edición con %s sin guardar", async (accion) => {
@@ -554,17 +568,16 @@ describe("DrawerPublicacionProductor: edición", () => {
         mocks.fetch.mockResolvedValueOnce(respuesta({ opciones })).mockResolvedValueOnce(respuesta({ publicacion }));
         mostrar();
         await editar();
-        editarUbicaciones();
         fireEvent.click(screen.getByRole("button", { name: "Agregar punto de retiro" }));
-        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 2"), { target: { value: "Depósito" } });
-        fireEvent.change(screen.getByLabelText("Enlace de Google Maps 2"), { target: { value: "https://maps.google.com/?q=Montevideo" } });
-        fireEvent.click(screen.getByRole("button", { name: "Eliminar punto de retiro 1" }));
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Depósito");
-        expect(screen.queryByLabelText("Nombre del punto de retiro 2")).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro"), { target: { value: "Depósito" } });
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar punto en mapa" }));
+        fireEvent.click(screen.getByRole("button", { name: "Quitar punto de retiro 1" }));
+        expect(screen.getByText("Depósito")).toBeInTheDocument();
+        expect(screen.getAllByRole("button", { name: /^Editar punto de retiro/ })).toHaveLength(1);
         fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalled());
-        expect(solicitudGuardado().cambios.ubicaciones).toEqual([{ nombreUbicacion: "Depósito", urlMaps: "https://maps.google.com/?q=Montevideo" }]);
+        expect(solicitudGuardado().cambios.ubicaciones).toEqual([{ nombreUbicacion: "Depósito", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" }]);
     });
 
     it("muestra el error de carga de opciones y conserva la consulta para reintentar", async () => {
@@ -591,7 +604,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         mostrar();
         const papel = screen.getByRole("dialog", { name: "Consulta de publicación" });
         const enfocarPanel = vi.spyOn(papel, "focus");
-        const contenido = screen.getByLabelText("Precio en pesos").parentElement!.parentElement!;
+        const contenido = screen.getByLabelText("Precio en pesos").closest("form")!.firstElementChild as HTMLElement;
         contenido.scrollTop = 80;
         const editar = screen.getByRole("button", { name: "Editar" });
         editar.focus();
@@ -709,7 +722,8 @@ describe("DrawerPublicacionProductor: edición", () => {
         fireEvent.change(screen.getByLabelText("Unidades (Cajón)"), { target: { value: "23" } });
         fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
         editarUbicaciones();
-        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro 1"), { target: { value: "Mi borrador" } });
+        fireEvent.change(screen.getByLabelText("Nombre del punto de retiro"), { target: { value: "Mi borrador" } });
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar punto en mapa" }));
         const actualizada = {
             ...publicacion, precio: "175", cantidadUnidades: 40, fecha: "2026-10-24T12:00:00.000Z",
             presentacion: { ...publicacion.presentacion, id: 112, nombrePresentacion: "Bolsa" },
@@ -724,7 +738,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByRole("combobox", { name: /^País de origen/ })).toHaveTextContent("Argentina");
         expect(screen.getByLabelText("Unidades (Cajón)")).toHaveValue("23");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
-        expect(screen.getByLabelText("Nombre del punto de retiro 1")).toHaveValue("Mi borrador");
+        expect(screen.getByText("Mi borrador")).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
 
         expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBe(papel);

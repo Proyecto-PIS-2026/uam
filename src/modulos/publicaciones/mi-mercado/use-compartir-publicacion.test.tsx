@@ -99,6 +99,32 @@ describe("useCompartirPublicacion", () => {
         expect(notificar).toHaveBeenCalledWith(expect.stringContaining("no permite adjuntar la foto"), "warning");
     });
 
+    it("espera a que termine el menú nativo antes de avisar que no se adjuntó la foto", async () => {
+        let terminar!: () => void;
+        compartirNativo.mockReturnValueOnce(new Promise<void>((resolve) => { terminar = resolve; }));
+        admiteArchivo.mockReturnValue(false);
+        const { result } = preparar();
+        await waitFor(() => expect(result.current.preparandoFoto).toBe(false));
+        let tarea!: Promise<void>;
+        act(() => { tarea = result.current.compartir(); });
+
+        expect(compartirNativo).toHaveBeenCalledWith({ text: expect.any(String) });
+        expect(notificar).not.toHaveBeenCalled();
+        await act(async () => { terminar(); await tarea; });
+        expect(notificar).toHaveBeenCalledExactlyOnceWith("Se compartió solo el texto porque este navegador no permite adjuntar la foto.", "warning");
+    });
+
+    it("no avisa de una foto omitida si se cancela el menú sin compartir", async () => {
+        admiteArchivo.mockReturnValue(false);
+        compartirNativo.mockRejectedValueOnce(new DOMException("Cancelado", "AbortError"));
+        const { result } = preparar();
+        await waitFor(() => expect(result.current.preparandoFoto).toBe(false));
+        await act(() => result.current.compartir());
+
+        expect(notificar).not.toHaveBeenCalled();
+        expect(result.current.compartiendo).toBe(false);
+    });
+
     it("cancelar el menú no muestra un error ni abre WhatsApp por otra vía", async () => {
         compartirNativo.mockRejectedValue(new DOMException("Cancelado", "AbortError"));
         const { result } = preparar({ ...publicacion, foto: null });

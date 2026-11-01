@@ -59,12 +59,15 @@ describe.each([
 
     it("envía las páginas a iniciar sesión cuando no hay sesión", async () => {
         await expect(requerir()).rejects.toThrow("NEXT_REDIRECT");
-        expect(redirect).toHaveBeenCalledWith("/iniciar-sesion");
+        expect(redirect).toHaveBeenCalledWith("/sesion-finalizada");
     });
 
-    it("propaga errores de sesión sin tratarlos como una autorización válida", async () => {
-        sesionMock.mockRejectedValue(new Error("Sesión no disponible"));
-        await expect(requerir()).rejects.toThrow("Sesión no disponible");
+    it("propaga fallas de sesión sin convertirlas en un 401 ni redirigir al inicio de sesión", async () => {
+        const error = new Error("No pudimos verificar tu sesión. Intentá nuevamente.");
+        sesionMock.mockRejectedValue(error);
+
+        await expect(exigir()).rejects.toBe(error);
+        await expect(requerir()).rejects.toBe(error);
         expect(redirect).not.toHaveBeenCalled();
     });
 });
@@ -180,7 +183,7 @@ describe("consulta de productores y sus publicaciones", () => {
 
     it("redirige a iniciar sesión al acceder a una página sin sesión", async () => {
         await expect(requerirConsultaProductores()).rejects.toThrow("NEXT_REDIRECT");
-        expect(redirect).toHaveBeenCalledExactlyOnceWith("/iniciar-sesion");
+        expect(redirect).toHaveBeenCalledExactlyOnceWith("/sesion-finalizada");
     });
 
     it.each([ "No tenés permiso para consultar productores.", "No tenés permiso para consultar el perfil del productor."])("rechaza al Productor con el mensaje: %s", async (mensaje) => {

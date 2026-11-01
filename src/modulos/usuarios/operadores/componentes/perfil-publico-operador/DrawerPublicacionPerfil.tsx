@@ -151,7 +151,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                         </div>
                         <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
                             <div className={styles.bloqueBotones}>
-                                <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} className={styles.botonWhatsApp} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
+                                <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} className={`boton-primario ${styles.botonWhatsApp}`} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                                     <span>WhatsApp</span>
                                 </EnlaceWhatsApp>

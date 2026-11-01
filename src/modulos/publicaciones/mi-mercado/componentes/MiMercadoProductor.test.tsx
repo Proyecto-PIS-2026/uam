@@ -1,7 +1,7 @@
 import type { DrawerProps } from "@mui/material/Drawer";
 import type { DialogProps } from "@mui/material/Dialog";
 import type { ReactNode } from "react";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import MiMercadoProductor from "./MiMercadoProductor";
@@ -113,7 +113,7 @@ describe("MiMercadoProductor", () => {
         expect(screen.queryByTitle("Manzana")).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
         expect(screen.getAllByTitle(/Pera|Manzana/).map((titulo) => titulo.textContent)).toEqual(["Pera", "Manzana"]);
     });
 

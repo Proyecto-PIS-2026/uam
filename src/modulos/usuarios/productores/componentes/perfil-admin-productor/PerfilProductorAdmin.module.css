@@ -46,7 +46,7 @@
     overflow: hidden;
     border: 2px solid rgb(255 255 255 / 65%);
     border-radius: var(--radio-panel);
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
     color: var(--color-secondary);
     font-size: 2rem;
     font-weight: 700;
@@ -86,6 +86,20 @@
 .dato {
     margin: 0;
     font-size: var(--tamano-texto-secundario);
+}
+
+.departamentos {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--espacio-inline);
+    margin-bottom: var(--espacio-controles);
+    line-height: var(--interlineado-texto);
+    overflow-wrap: anywhere;
+}
+
+.departamentos svg {
+    flex-shrink: 0;
+    color: var(--color-secondary);
 }
 
 .etiqueta {
@@ -153,7 +167,7 @@
 }
 
 .botonEditar:hover {
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
 }
 
 .botonEditar:focus-visible {
@@ -186,7 +200,7 @@
 }
 
 .botonAlta:hover {
-    background-color: var(--color-primary-hover) !important;
+    background-color: var(--color-secondary-hover) !important;
 }
 
 @media (min-width: 701px) {

@@ -217,6 +217,17 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.click(screen.getByRole("option", { name: valor }));
     };
 
+    const seleccionarOrden = (valor: string) => {
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: valor }));
+    };
+
+    const comprobarOrdenActivo = (valor: string) => {
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        expect(screen.getByRole("menuitemradio", { name: valor })).toHaveAttribute("aria-checked", "true");
+        fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+    };
+
     it("incluye publicaciones con solo especie sin agregar opciones vacías a los filtros", () => {
         const alFiltrar = vi.fn();
         const minima: PublicacionListado = { ...publicaciones[0], id: 2, variedad: "", presentacion: "", categoria: "", calibre: "", codigoCalibre: "", pais: "", precio: null };
@@ -262,8 +273,7 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Frutas del Sur" } });
         fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "50" } });
         fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "200" } });
-        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
+        seleccionarOrden("Mayor Precio");
 
         expect(alConsultar).toHaveBeenLastCalledWith({
             busqueda: "Frutas del Sur", especie: "Manzana", variedad: "Gala", presentacion: "Caja",
@@ -420,7 +430,7 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Manzana" } });
         fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "50" } });
         fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "200" } });
-        fireEvent.click(screen.getByRole("button", { name: /menor precio/i }));
+        seleccionarOrden("Menor Precio");
 
         const actualizadas = [{ ...publicaciones[0], precio: 150 }, { ...publicaciones[0], id: 2, precio: 75 }];
         vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
@@ -456,22 +466,22 @@ describe("FiltrosPublicaciones", () => {
         expect(screen.getByLabelText("Categoría")).toBeInTheDocument();
 
         // Opciones de ordenamiento
-        expect(screen.getByRole("button", { name: /sin ordenar/i })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /menor precio/i })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /mayor precio/i })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /^a-z$/i })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /^z-a$/i })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        expect(screen.getByRole("menuitemradio", { name: /sin ordenar/i })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: /menor precio/i })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: /mayor precio/i })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: /^a-z$/i })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: /^z-a$/i })).toBeInTheDocument();
     });
 
     // Tests de estado inicial
     it("mantiene cerrados inicialmente los filtros adicionales y el ordenamiento", () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const filtrosExtendidos = document.querySelector(`.${styles.filtrosExtendidos}`);
-        const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
         expect(filtrosExtendidos).toBeInTheDocument();
-        expect(listaOrdenamiento).toBeInTheDocument();
         expect(document.querySelector(`.${styles.filtrosAbiertos}`)).not.toBeInTheDocument();
-        expect(listaOrdenamiento).not.toHaveClass(styles.listaOrdenamientoAbierta);
+        expect(screen.getByRole("button", { name: "Ordenar por" })).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     });
 
     it("abre y cierra los filtros adicionales al hacer click en Más filtros", () => {
@@ -485,21 +495,14 @@ describe("FiltrosPublicaciones", () => {
         expect(layoutFiltros).not.toHaveClass(styles.filtrosAbiertos);
     });
 
-    it("abre y cierra las opciones de ordenamiento al hacer click en Ordenar por", () => {
+    it("abre las opciones de ordenamiento y permite cerrarlas con Escape", () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
-        const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
-        const botonOrdenar = screen.getByRole("button", { name: /ordenar por/i });
-
-        // Filtros ordenamientos antes de abrir
-        expect(listaOrdenamiento).not.toHaveClass(styles.listaOrdenamientoAbierta);
-        fireEvent.click(botonOrdenar);
-
-        // Filtros ordenamientos abiertos
-        expect(listaOrdenamiento).toHaveClass(styles.listaOrdenamientoAbierta);
-
-        // Filtros ordenamientos cerradis
-        fireEvent.click(botonOrdenar);
-        expect(listaOrdenamiento).not.toHaveClass(styles.listaOrdenamientoAbierta);
+        const selectorOrden = screen.getByRole("button", { name: "Ordenar por" });
+        expect(selectorOrden).toHaveAttribute("aria-expanded", "false");
+        fireEvent.click(selectorOrden);
+        expect(selectorOrden).toHaveAttribute("aria-expanded", "true");
+        fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+        expect(selectorOrden).toHaveAttribute("aria-expanded", "false");
     });
 
     it("renderiza correctamente los campos de búsqueda y precio", () => {
@@ -602,20 +605,19 @@ describe("FiltrosPublicaciones", () => {
 
     it("cierra el menú de ordenamiento al seleccionar una opción", () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
-        const listaOrdenamiento = document.querySelector(`.${styles.listaOrdenamiento}`);
-        const botonOrdenar = screen.getByRole("button", { name: /ordenar por/i });
-        fireEvent.click(botonOrdenar);
-        expect(listaOrdenamiento).toHaveClass(styles.listaOrdenamientoAbierta);
-        fireEvent.click(screen.getByRole("button", { name: /menor precio/i }));
-        expect(listaOrdenamiento).not.toHaveClass(styles.listaOrdenamientoAbierta);
+        const selectorOrden = screen.getByRole("button", { name: "Ordenar por" });
+        fireEvent.click(selectorOrden);
+        expect(selectorOrden).toHaveAttribute("aria-expanded", "true");
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
+        expect(selectorOrden).toHaveAttribute("aria-expanded", "false");
+        comprobarOrdenActivo("Menor Precio");
     });
 
     it("mantiene Sin ordenar y el orden recibido cuando no se indica orden inicial", () => {
         const alFiltrar = vi.fn();
         const alCambiarOrden = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
-        const sinOrdenar = screen.getByRole("button", {  name: /sin ordenar/i });
-        expect(sinOrdenar).toHaveClass(styles.opcionOrdenamientoActiva);
+        comprobarOrdenActivo("Sin ordenar");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => publicacion.id)).toEqual([1, 2, 3, 4]);
         expect(alCambiarOrden).not.toHaveBeenCalled();
@@ -623,14 +625,14 @@ describe("FiltrosPublicaciones", () => {
 
     it("cambia visualmente la opción activa del ordenamiento", () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
-        const botonOrdenar = screen.getByRole("button", {  name: /ordenar por/i });
-        fireEvent.click(botonOrdenar);
-        const sinOrdenar = screen.getByRole("button", { name: /sin ordenar/i });
-        const menorPrecio = screen.getByRole("button", { name: /menor precio/i });
-        expect(sinOrdenar).toHaveClass(styles.opcionOrdenamientoActiva);
-        fireEvent.click(menorPrecio);
-        expect(menorPrecio).toHaveClass(styles.opcionOrdenamientoActiva);
-        expect(sinOrdenar).not.toHaveClass(styles.opcionOrdenamientoActiva);
+        const selectorOrden = screen.getByRole("button", { name: "Ordenar por" });
+        fireEvent.click(selectorOrden);
+        expect(screen.getByRole("menuitemradio", { name: "Sin ordenar" })).toHaveAttribute("aria-checked", "true");
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
+        comprobarOrdenActivo("Menor Precio");
+        fireEvent.click(selectorOrden);
+        expect(screen.getByRole("menuitemradio", { name: "Menor Precio" })).toHaveAttribute("aria-checked", "true");
+        expect(screen.getByRole("menuitemradio", { name: "Sin ordenar" })).toHaveAttribute("aria-checked", "false");
     });
 
     it("muestra la cantidad de publicaciones inicial", () => {
@@ -910,9 +912,7 @@ describe("FiltrosPublicaciones", () => {
     it("ordena las publicaciones por precio ascendente", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
-        const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
-        fireEvent.click(botonOrdenar);
-        fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
+        seleccionarOrden("Menor Precio");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => publicacion.precio)).toEqual([100, 200, 300, 400]);
     });
@@ -920,9 +920,7 @@ describe("FiltrosPublicaciones", () => {
     it("ordena las publicaciones por precio descendente", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
-        const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
-        fireEvent.click(botonOrdenar);
-        fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
+        seleccionarOrden("Mayor Precio");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => publicacion.precio)).toEqual([400, 300, 200, 100]);
     });
@@ -930,9 +928,7 @@ describe("FiltrosPublicaciones", () => {
     it("ordena las publicaciones alfabéticamente de A a Z", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
-        const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
-        fireEvent.click(botonOrdenar);
-        fireEvent.click(screen.getByRole("button", { name: "A-Z" }));
+        seleccionarOrden("A-Z");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => [publicacion.especie, publicacion.variedad])).toEqual([["Manzana", "Gala"], ["Manzana", "Red"], ["Pera", "Packham"], ["Pera", "Williams"]]);
     });
@@ -942,8 +938,7 @@ describe("FiltrosPublicaciones", () => {
         const alCambiarOrden = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
 
-        expect(screen.getByRole("button", { name: "A-Z" })).toHaveClass(styles.opcionOrdenamientoActiva);
-        expect(screen.getByRole("button", { name: "Sin ordenar" })).not.toHaveClass(styles.opcionOrdenamientoActiva);
+        comprobarOrdenActivo("A-Z");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => publicacion.id)).toEqual([1, 2, 4, 3]);
         expect(alCambiarOrden).not.toHaveBeenCalled();
@@ -954,19 +949,18 @@ describe("FiltrosPublicaciones", () => {
         const alCambiarOrden = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
 
-        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
+        seleccionarOrden("Mayor Precio");
         expect(alCambiarOrden).toHaveBeenLastCalledWith("precioDesc");
         expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([4, 3, 2, 1]);
 
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-        expect(screen.getByRole("button", { name: "A-Z" })).toHaveClass(styles.opcionOrdenamientoActiva);
+        comprobarOrdenActivo("A-Z");
         expect(alCambiarOrden).toHaveBeenCalledTimes(2);
         expect(alCambiarOrden).toHaveBeenLastCalledWith("alfabeticoAsc");
         expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([1, 2, 4, 3]);
     });
 
-    it("aplica la prioridad solo como orden inicial y no la ofrece en el menú público", () => {
+    it("aplica la prioridad solo como orden inicial y no permite seleccionarla en el menú público", () => {
         const alFiltrar = vi.fn();
         const datos = [
             { ...publicaciones[0], id: 1, especie: "Pera", variedad: "Williams" },
@@ -980,8 +974,10 @@ describe("FiltrosPublicaciones", () => {
         const ids = () => (alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id);
 
         expect(ids()).toEqual([3, 6, 4, 2, 5, 1]);
-        expect(screen.queryByRole("button", { name: "Sin ordenar" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: /prioridad/i })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        expect(screen.queryByRole("menuitemradio", { name: "Sin ordenar" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Orden predeterminado" })).not.toBeInTheDocument();
+        fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "manzana" } });
         expect(ids()).toEqual([4, 2]);
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
@@ -999,12 +995,14 @@ describe("FiltrosPublicaciones", () => {
         const ids = () => (alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id);
 
         expect(ids()).toEqual([2, 3, 1]);
-        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("button", { name: "A-Z" }));
+        seleccionarOrden("A-Z");
         expect(ids()).toEqual([3, 2, 1]);
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
         expect(ids()).toEqual([3, 2, 1]);
-        expect(screen.getByRole("button", { name: "A-Z" })).toHaveClass(styles.opcionOrdenamientoActiva);
+        comprobarOrdenActivo("A-Z");
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        expect(screen.queryByRole("menuitemradio", { name: "Orden predeterminado" })).not.toBeInTheDocument();
+        fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
 
         vista.unmount();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
@@ -1014,9 +1012,7 @@ describe("FiltrosPublicaciones", () => {
     it("ordena las publicaciones alfabéticamente de Z a A", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} />);
-        const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
-        fireEvent.click(botonOrdenar);
-        fireEvent.click(screen.getByRole("button", { name: "Z-A" }));
+        seleccionarOrden("Z-A");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => [ publicacion.especie, publicacion.variedad])).toEqual([["Pera", "Williams"], ["Pera", "Packham"], ["Manzana", "Red"], ["Manzana", "Gala"]]);
     });
@@ -1036,20 +1032,15 @@ describe("FiltrosPublicaciones", () => {
 
     it("permite volver a seleccionar Sin ordenar", () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro=""/>);
-        const botonOrdenar = screen.getByRole("button", { name: "Ordenar por" });
-        fireEvent.click(botonOrdenar);
-        fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
-        fireEvent.click(botonOrdenar);
-        const sinOrdenar = screen.getByRole("button", {name: "Sin ordenar"});
-        fireEvent.click(sinOrdenar);
-        expect(sinOrdenar).toHaveClass(styles.opcionOrdenamientoActiva);
+        seleccionarOrden("Menor Precio");
+        seleccionarOrden("Sin ordenar");
+        comprobarOrdenActivo("Sin ordenar");
     });
 
     it("coloca las publicaciones sin precio al final al ordenar por precio", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
-        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("button", { name: "Menor Precio" }));
+        seleccionarOrden("Menor Precio");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
         expect(resultado).toHaveLength(3);
         expect(resultado[0].precio).toBe(200);
@@ -1060,8 +1051,7 @@ describe("FiltrosPublicaciones", () => {
     it("mantiene las publicaciones sin precio al final al ordenar por precio descendente", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
-        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("button", { name: "Mayor Precio" }));
+        seleccionarOrden("Mayor Precio");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
         expect(resultado).toHaveLength(3);
         expect(resultado[0].precio).toBe(200);

@@ -10,7 +10,7 @@ test("BP-20.1 muestra el listado público de operadores", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Operadores" })).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Buscar operadores" })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Nave" })).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Ordenar por" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ordenar por" })).toBeVisible();
 
   const tarjetasOperador = page.locator('a[href^="/operadores/"]');
   await expect(tarjetasOperador.first()).toBeVisible();

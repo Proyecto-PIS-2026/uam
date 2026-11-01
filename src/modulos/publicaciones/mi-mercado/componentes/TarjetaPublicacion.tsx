@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
@@ -30,7 +31,7 @@ export default function TarjetaPublicacion({
     alPrecioActualizado,
     alPublicacionEliminada,
 }: Props) {
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const recibido = { precio: pub.precio === null ? null : Number(pub.precio), version: pub.version, fecha: pub.fecha };
     const [confirmado, setConfirmado] = useState(recibido);
     const actual = confirmado.version > recibido.version ? confirmado : recibido;
@@ -38,7 +39,7 @@ export default function TarjetaPublicacion({
     const precio = optimista === undefined ? actual.precio : optimista;
     const [errorPrecio, setErrorPrecio] = useState("");
     const guardandoRef = useRef(false);
-    const incrementosPendientesRef = useRef(0);
+    const incrementosPendientesRef = useRef<number[]>([]);
     const precioVisibleRef = useRef(recibido.precio ?? 0);
     const versionEdicionRef = useRef(pub.version);
     const [guardandoPrecio, setGuardandoPrecio] = useState(false);
@@ -53,7 +54,6 @@ export default function TarjetaPublicacion({
             setErrorPrecio(PRECIO_PUBLICACION_INVALIDO);
             return;
         }
-        cerrarNotificacion();
         guardandoRef.current = true;
         setGuardandoPrecio(true);
         setGuardandoManual(true);
@@ -81,17 +81,15 @@ export default function TarjetaPublicacion({
 
     async function guardarIncrementos() {
         if (guardandoRef.current) return;
-        cerrarNotificacion();
         guardandoRef.current = true;
         setGuardandoPrecio(true);
         setErrorPrecio("");
         try {
-            while (incrementosPendientesRef.current !== 0) {
-                const incremento = incrementosPendientesRef.current;
-                incrementosPendientesRef.current = 0;
+            while (incrementosPendientesRef.current.length > 0) {
+                const incremento = incrementosPendientesRef.current.shift()!;
                 const resultado = await incrementarPrecio(pub.id, incremento, operadorId);
                 if (resultado.publicacionEliminada) {
-                    incrementosPendientesRef.current = 0;
+                    incrementosPendientesRef.current = [];
                     alPublicacionEliminada?.();
                     return;
                 }
@@ -99,14 +97,17 @@ export default function TarjetaPublicacion({
                 setConfirmado({ precio: precioActual, version: resultado.version, fecha: resultado.fecha });
                 alPrecioActualizado?.(pub.id, precioActual, resultado.fecha, resultado.version);
                 if (resultado.conflicto) {
-                    incrementosPendientesRef.current = 0;
+                    incrementosPendientesRef.current = [];
                     notificar("La publicación cambió en otra sesión. Revisá el precio actualizado y volvé a intentar.", "warning");
                 }
-                precioVisibleRef.current = (precioActual ?? 0) + incrementosPendientesRef.current;
-                setOptimista(incrementosPendientesRef.current === 0 ? precioActual : precioVisibleRef.current);
+                precioVisibleRef.current = incrementosPendientesRef.current.reduce(
+                    (acumulado, pendiente) => Math.max(0, acumulado + pendiente),
+                    precioActual ?? 0,
+                );
+                setOptimista(precioVisibleRef.current <= 0 ? null : precioVisibleRef.current);
             }
         } catch (error) {
-            incrementosPendientesRef.current = 0;
+            incrementosPendientesRef.current = [];
             notificar(error instanceof Error ? error.message : "No se pudo guardar el precio.", "error");
         } finally {
             guardandoRef.current = false;
@@ -118,11 +119,19 @@ export default function TarjetaPublicacion({
     function cambiarPorIncremento(incremento: number) {
         if (guardandoManual) return;
         const precioActual = guardandoRef.current ? precioVisibleRef.current : actual.precio ?? 0;
+        if (precioActual <= 0 && incremento < 0) return;
         const siguiente = precioActual + incremento;
-        if (!Number.isSafeInteger(siguiente) || siguiente <= 0 || siguiente > MAXIMO_PRECIO_PUBLICACION) return;
-        incrementosPendientesRef.current += incremento;
-        precioVisibleRef.current = siguiente;
-        setOptimista(siguiente);
+        if (!Number.isSafeInteger(siguiente) || siguiente > MAXIMO_PRECIO_PUBLICACION) return;
+        const pendientes = incrementosPendientesRef.current;
+        const ultimoIndice = pendientes.length - 1;
+        if (ultimoIndice >= 0 && Math.sign(pendientes[ultimoIndice]) === Math.sign(incremento)
+            && Math.abs(pendientes[ultimoIndice] + incremento) <= MAXIMO_PRECIO_PUBLICACION) {
+            pendientes[ultimoIndice] += incremento;
+        } else {
+            pendientes.push(incremento);
+        }
+        precioVisibleRef.current = Math.max(0, siguiente);
+        setOptimista(siguiente <= 0 ? null : siguiente);
         void guardarIncrementos();
     }
 
@@ -201,16 +210,15 @@ export default function TarjetaPublicacion({
                             <RemoveIcon aria-hidden="true" fontSize="inherit" />
                         </button>
                         {editandoPrecio && puedeModificar ? (
-                            <input
+                            <OutlinedInput
+                                color="secondary"
                                 autoFocus
+                                size="small"
                                 type="text"
-                                inputMode="numeric"
-                                maxLength={MAXIMO_DIGITOS_PRECIO}
+                                slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO, "aria-label": "Editar precio", title: AYUDA_PRECIO_PUBLICACION } }}
                                 placeholder="Sin precio"
                                 value={precioTemporal}
                                 className={styles.inputPrecio}
-                                aria-label="Editar precio"
-                                title={AYUDA_PRECIO_PUBLICACION}
                                 onChange={(e) => {
                                     if (esEntradaPrecioPublicacion(e.target.value)) setPrecioTemporal(e.target.value);
                                 }}
@@ -243,5 +251,5 @@ export default function TarjetaPublicacion({
             </div>
         </div>
     );
-    return <>{contenido}<NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;
+    return contenido;
 }

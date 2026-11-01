@@ -22,9 +22,14 @@ function normalizarTexto(texto: string) {
 export default function ListadoProductores({ productores, puedeGestionar = false }: ListadoProductoresProps) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState("a-z");
+    const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState("");
+    const departamentosDisponibles = [...new Set(productores.flatMap((productor) => productor.departamentos))]
+        .sort((primero, segundo) => primero.localeCompare(segundo, "es", { sensitivity: "base" }));
+    const departamentoVigente = departamentosDisponibles.includes(departamentoSeleccionado) ? departamentoSeleccionado : "";
     const textoBuscado = normalizarTexto(busqueda.trim());
     const productoresFiltrados = productores.filter((productor) =>
         normalizarTexto(productor.nombreFantasia).includes(textoBuscado)
+        && (!departamentoVigente || productor.departamentos.includes(departamentoVigente))
     );
 
     productoresFiltrados.sort((primerProductor, segundoProductor) => {
@@ -35,11 +40,12 @@ export default function ListadoProductores({ productores, puedeGestionar = false
     const contenido = (
         <div className="contenedor-pagina secciones-pagina">
             <EncabezadoPagina titulo="Productores" subtitulo="Consultá los productores de la plataforma." />
-            <ControlesListadoProductores busqueda={busqueda} alCambiarBusqueda={setBusqueda} orden={orden} alCambiarOrden={setOrden}/>
+            <ControlesListadoProductores busqueda={busqueda} alCambiarBusqueda={setBusqueda} orden={orden} alCambiarOrden={setOrden}
+                departamento={departamentoVigente} departamentosDisponibles={departamentosDisponibles} alCambiarDepartamento={setDepartamentoSeleccionado} />
             {productoresFiltrados.length === 0 ? (
                 <EstadoVacio
                     titulo={productores.length === 0 ? "Todavía no hay productores" : "No encontramos productores"}
-                    descripcion={productores.length === 0 ? "No hay productores disponibles." : "No se encontraron productores que coincidan con la búsqueda."}
+                    descripcion={productores.length === 0 ? "No hay productores disponibles." : "No se encontraron productores que coincidan con la búsqueda y el departamento seleccionado."}
                     icono={productores.length === 0 ? <AgricultureOutlinedIcon /> : <SearchOffOutlinedIcon />}
                 />
             ) : (

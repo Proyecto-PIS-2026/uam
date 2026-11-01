@@ -144,6 +144,67 @@ describe("edición de publicaciones de productores", () => {
         expect(mocks.ubicacion.create).not.toHaveBeenCalled();
     });
 
+    it.each([
+        { caso: "conserva el departamento", departamento: "Montevideo", esperado: "Montevideo" },
+        { caso: "cambia y normaliza el departamento", departamento: " RIO NEGRO ", esperado: "Río Negro" },
+        { caso: "permite una ubicación anterior sin departamento", departamento: undefined, esperado: null },
+        { caso: "conserva un departamento anterior nulo", departamento: null, esperado: null },
+    ])("$caso al guardar y devolver las ubicaciones", async ({ departamento, esperado }) => {
+        const inicial = relacion();
+        const anterior = { ...inicial, ubicaciones: [{ ...inicial.ubicaciones[0], departamento: departamento == null ? null : "Montevideo" }] };
+        const ubicacion = { ...cambios.ubicaciones[0], ...(departamento !== undefined ? { departamento } : {}) };
+        const guardada = { id: 41, ...cambios.ubicaciones[0], departamento: esperado };
+        mocks.vinculo.first.mockResolvedValueOnce(anterior).mockResolvedValueOnce(anterior)
+            .mockResolvedValueOnce({ ...anterior, ubicaciones: [guardada] });
+
+        const resultado = await modificarPublicacionProductor(sesion, 12, { ...cambios, ubicaciones: [ubicacion] });
+
+        expect(mocks.ubicacion.deleteAll).toHaveBeenCalledOnce();
+        expect(mocks.ubicacion.create).toHaveBeenCalledExactlyOnceWith({
+            ...cambios.ubicaciones[0], publicacionId: 12, departamento: esperado,
+        });
+        expect(resultado.publicacion.ubicaciones).toStrictEqual([guardada]);
+    });
+
+    it.each([
+        { caso: "conserva el vigente si el cliente anterior omite el campo", departamento: undefined, esperado: "Canelones" },
+        { caso: "respeta un null explícito", departamento: null, esperado: null },
+        { caso: "respeta el cambio explícito", departamento: "Montevideo", esperado: "Montevideo" },
+    ])("$caso para la misma URL aunque cambie el nombre", async ({ departamento, esperado }) => {
+        const inicial = relacion();
+        const urlMaps = cambios.ubicaciones[0].urlMaps;
+        const anterior = { ...inicial, ubicaciones: [{ ...inicial.ubicaciones[0], urlMaps: ` ${urlMaps} `, departamento: "Canelones" }] };
+        mocks.vinculo.first.mockResolvedValue(anterior);
+
+        await modificarPublicacionProductor(sesion, 12, {
+            ...cambios,
+            ubicaciones: [{ nombreUbicacion: "Nombre actualizado", urlMaps: `  ${urlMaps}  `, ...(departamento !== undefined ? { departamento } : {}) }],
+        });
+
+        expect(mocks.ubicacion.create).toHaveBeenCalledExactlyOnceWith({
+            nombreUbicacion: "Nombre actualizado", urlMaps, publicacionId: 12, departamento: esperado,
+        });
+    });
+
+    it("no hereda el departamento de otro punto cuando el cliente anterior cambia la URL", async () => {
+        const inicial = relacion();
+        mocks.vinculo.first.mockResolvedValue({ ...inicial, ubicaciones: [{ ...inicial.ubicaciones[0], departamento: "Canelones" }] });
+        const ubicacionNueva = { nombreUbicacion: inicial.ubicaciones[0].nombreUbicacion, urlMaps: "https://maps.google.com/?q=-34.9,-56.2" };
+
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, ubicaciones: [ubicacionNueva] });
+
+        expect(mocks.ubicacion.create).toHaveBeenCalledExactlyOnceWith({ ...ubicacionNueva, publicacionId: 12 });
+        expect(mocks.ubicacion.create.mock.calls[0][0]).not.toHaveProperty("departamento");
+    });
+
+    it("rechaza un departamento inválido antes de abrir la transacción", async () => {
+        await expect(modificarPublicacionProductor(sesion, 12, {
+            ...cambios, ubicaciones: [{ ...cambios.ubicaciones[0], departamento: "Buenos Aires" }],
+        })).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.ubicacion.deleteAll).not.toHaveBeenCalled();
+    });
+
     it("permite editar a un administrador con un usuario distinto del dueño", async () => {
         await expect(modificarPublicacionProductor({ ...sesion, usuarioId: 999, rol: "ADMINISTRADOR" }, 12, { ...cambios, paisId: 2, cantidadUnidades: 0, disponible: false })).resolves.toMatchObject({ productorId: 3 });
         expect(mocks.publicacion.update).toHaveBeenCalledOnce();

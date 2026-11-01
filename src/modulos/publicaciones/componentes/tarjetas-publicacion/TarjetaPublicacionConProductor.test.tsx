@@ -120,17 +120,11 @@ describe("TarjetaPublicacionConProductor", () => {
     });
 
     it("muestra el precio formateado en pesos uruguayos", () => {
-        const { container } = render(
+        render(
             <TarjetaPublicacionConProductor publicacion={crearPublicacion({ precio: 1250 })} onClick={onClick} />,
         );
-        const precioEsperado = new Intl.NumberFormat("es-UY", {
-            style: "currency",
-            currency: "UYU",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-        }).format(1250);
 
-        expect(container.textContent).toContain(precioEsperado);
+        expect(screen.getByText("$ 1.250")).toBeInTheDocument();
         expect(screen.queryByText("Consultar precio")).not.toBeInTheDocument();
     });
 
@@ -143,17 +137,11 @@ describe("TarjetaPublicacionConProductor", () => {
     });
 
     it("formatea el precio cero como un precio y no como precio ausente", () => {
-        const { container } = render(
+        render(
             <TarjetaPublicacionConProductor publicacion={crearPublicacion({ precio: 0 })} onClick={onClick} />,
         );
-        const precioEsperado = new Intl.NumberFormat("es-UY", {
-            style: "currency",
-            currency: "UYU",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-        }).format(0);
 
-        expect(container.textContent).toContain(precioEsperado);
+        expect(screen.getByText("$ 0")).toBeInTheDocument();
         expect(screen.queryByText("Consultar precio")).not.toBeInTheDocument();
     });
 

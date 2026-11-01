@@ -1,6 +1,6 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 
@@ -16,7 +16,7 @@ import AddIcon from "@mui/icons-material/Add";
 import NuevaPublicacion from "@/modulos/publicaciones/operadores/componentes/NuevaPublicacion";
 import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
-import Image from "next/image";
+import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import Link from "next/link";
 import EditIcon from "@mui/icons-material/Edit";
 
@@ -35,10 +35,9 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(false);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     function abrirAlta() {
-        cerrarNotificacion();
         setAltaAbierta(true);
     }
 
@@ -50,7 +49,6 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <BotonVolver href="/administracion#usuarios" className={styles.volver}>
                 Volver al listado de operadores
             </BotonVolver>
@@ -58,11 +56,7 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
-                        {operador.fotoPerfil ? (
-                            <Image src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} />
-                        ) : (
-                            <span aria-hidden="true">{inicialOperador}</span>
-                        )}
+                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialOperador}</span>} />
                     </div>
 
                     <div className={styles.identidad}>

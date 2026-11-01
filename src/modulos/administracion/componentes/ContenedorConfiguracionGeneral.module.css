@@ -35,13 +35,13 @@
 .boton:hover {
     position: relative;
     z-index: 2;
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
 }
 
 .boton[aria-pressed="true"] {
     position: relative;
     z-index: 1;
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
     background-color: var(--color-secondary);
     color: var(--color-surface);
     font-weight: 600;
@@ -49,7 +49,7 @@
 
 .boton:focus-visible {
     z-index: 2;
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
 }
 
@@ -69,7 +69,7 @@
     .boton[aria-pressed="true"] {
         position: relative;
         z-index: 1;
-        border-color: var(--color-primary);
+        border-color: var(--color-secondary);
         background-color: var(--color-secondary);
         color: var(--color-surface);
         font-weight: 600;
@@ -117,7 +117,7 @@
     .boton[aria-pressed="true"] {
         position: relative;
         z-index: 1;
-        border-color: var(--color-primary);
+        border-color: var(--color-secondary);
         background-color: var(--color-secondary);
         color: var(--color-surface);
         font-weight: 600;

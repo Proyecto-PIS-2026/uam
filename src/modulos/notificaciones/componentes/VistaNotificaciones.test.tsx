@@ -1,19 +1,10 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import VistaNotificaciones from "./VistaNotificaciones";
 import { notificarCambioNotificaciones } from "../cliente";
 import type { NotificacionesUsuario } from "../tipos";
 
 vi.mock("../cliente", () => ({ notificarCambioNotificaciones: vi.fn() }));
-vi.mock("@/compartido/componentes/NotificacionToast", async (importOriginal) => {
-    const original = await importOriginal<typeof import("@/compartido/componentes/NotificacionToast")>();
-    return {
-        ...original,
-        default: ({ notificacion, alCerrar }: Parameters<typeof original.default>[0]) => notificacion && <div role={notificacion.tipo === "error" ? "alert" : "status"}>
-            {notificacion.mensaje}<button onClick={alCerrar}>Cerrar notificación</button>
-        </div>,
-    };
-});
 
 const modalOriginal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "showModal");
 const cierreOriginal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "close");
@@ -161,13 +152,14 @@ describe("VistaNotificaciones", () => {
     it("Borrar todo requiere confirmación, admite cancelar y bloquea envíos repetidos mientras guarda", async () => {
         await abrir();
         fireEvent.click(screen.getByRole("button", { name: "Borrar todo" }));
-        const dialogo = screen.getByRole("alertdialog", { name: "Borrar todas las notificaciones" });
+        let dialogo = screen.getByRole("alertdialog", { name: "Borrar todas las notificaciones" });
         expect(dialogo).toBeVisible();
         expect(fetch).toHaveBeenCalledTimes(1);
         fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" }));
-        await waitFor(() => expect(dialogo).not.toBeVisible());
+        await waitFor(() => expect(dialogo).not.toBeInTheDocument());
         expect(screen.getAllByRole("listitem")).toHaveLength(2);
         fireEvent.click(screen.getByRole("button", { name: "Borrar todo" }));
+        dialogo = screen.getByRole("alertdialog", { name: "Borrar todas las notificaciones" });
         const borrado = pendiente();
         vi.mocked(fetch).mockReturnValueOnce(borrado.promesa);
         fireEvent.click(within(dialogo).getByRole("button", { name: "Sí, borrar todas" }));
@@ -176,6 +168,7 @@ describe("VistaNotificaciones", () => {
         fireEvent.click(within(dialogo).getByRole("button", { name: "Eliminando..." }));
         expect(fetch).toHaveBeenCalledTimes(2);
         await act(async () => borrado.resolver(respuesta({ noLeidas: 0 })));
+        await waitFor(() => expect(dialogo).not.toBeInTheDocument());
         expect(screen.getByRole("heading", { name: "No tenés notificaciones" })).toBeVisible();
         expect(fetch).toHaveBeenLastCalledWith("/api/notificaciones", expect.objectContaining({ method: "DELETE" }));
         expect(notificarCambioNotificaciones).toHaveBeenLastCalledWith(7, 0);

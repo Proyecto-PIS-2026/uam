@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'ab324b686f298874a9b085ab4fb43de91ec22d019f9fbd7a4d9a0c6219d8b363'>;
+  StorageHashBase<'db0bb2af972b451bef5b50a6367375df63008e0555a34e735f906ed0e83cf268'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -365,6 +365,7 @@ export type FieldOutputTypes = {
     readonly Ubicacion: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly nombreUbicacion: CodecTypes['pg/text@1']['output'];
+      readonly departamento: CodecTypes['pg/text@1']['output'] | null;
       readonly urlMaps: CodecTypes['pg/text@1']['output'];
       readonly publicacionId: CodecTypes['pg/int4@1']['output'];
     };
@@ -512,6 +513,7 @@ export type FieldInputTypes = {
     readonly Ubicacion: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly nombreUbicacion: CodecTypes['pg/text@1']['input'];
+      readonly departamento: CodecTypes['pg/text@1']['input'] | null;
       readonly urlMaps: CodecTypes['pg/text@1']['input'];
       readonly publicacionId: CodecTypes['pg/int4@1']['input'];
     };
@@ -657,6 +659,7 @@ export type StorageColumnTypes = {
       readonly publicacionId: CodecTypes['pg/int4@1']['output'];
     };
     readonly ubicacion: {
+      readonly departamento: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly nombreUbicacion: CodecTypes['pg/text@1']['output'];
       readonly publicacionId: CodecTypes['pg/int4@1']['output'];
@@ -804,6 +807,7 @@ export type StorageColumnInputTypes = {
       readonly publicacionId: CodecTypes['pg/int4@1']['input'];
     };
     readonly ubicacion: {
+      readonly departamento: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly nombreUbicacion: CodecTypes['pg/text@1']['input'];
       readonly publicacionId: CodecTypes['pg/int4@1']['input'];
@@ -1895,6 +1899,11 @@ type ContractBase = Omit<
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                };
+                readonly departamento: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
                 readonly urlMaps: {
                   readonly nativeType: 'text';
@@ -3153,6 +3162,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly departamento: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly urlMaps: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -3181,6 +3194,7 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly id: { readonly column: 'id' };
                 readonly nombreUbicacion: { readonly column: 'nombreUbicacion' };
+                readonly departamento: { readonly column: 'departamento' };
                 readonly urlMaps: { readonly column: 'urlMaps' };
                 readonly publicacionId: { readonly column: 'publicacionId' };
               };

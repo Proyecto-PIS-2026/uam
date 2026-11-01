@@ -60,7 +60,7 @@ const relacionBase = {
     paisId: 1,
     pais: { nombrePais: "Uruguay"},
     ubicaciones: [
-        { nombreUbicacion: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1"}
+        { nombreUbicacion: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1", departamento: "Salto" }
     ],
     publicacion: publicacionBase,
 };
@@ -118,6 +118,7 @@ describe("obtenerPerfilAdminProductor", () => {
             nombreFantasia: "Granja Los Álamos",
             fotoPerfil: null,
             whatsApp: "+59899200002",
+            departamentos: [],
             publicaciones: [],
         });
         expect(mockDb.publicaciones.where).toHaveBeenCalledWith({ productorId: 2 });
@@ -152,7 +153,7 @@ describe("obtenerPerfilAdminProductor", () => {
                 codigoCalibre: "G",
                 pais: "Uruguay",
                 ubicaciones: [
-                    { nombre: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1" },
+                    { nombre: "Ruta 3 km 500, Salto", urlMaps: "https://goo.gl/maps/salto1", departamento: "Salto" },
                 ],
             },
         ]);
@@ -173,6 +174,17 @@ describe("obtenerPerfilAdminProductor", () => {
             { id: 201, disponible: true },
             { id: 202, disponible: false },
         ]);
+        expect(resultado?.departamentos).toEqual(["Salto"]);
+    });
+
+    it("incluye departamentos de publicaciones no disponibles para el admin y excluye bajas", async () => {
+        mockDb.productor.first.mockResolvedValue(productorBase);
+        mockDb.publicaciones.all.mockResolvedValue([
+            relacionBase,
+            { ...relacionBase, publicacion: { ...publicacionBase, publicacionDisponible: false }, ubicaciones: [{ ...relacionBase.ubicaciones[0], departamento: "Canelones" }] },
+            { ...relacionBase, publicacion: { ...publicacionBase, publicacionActiva: false }, ubicaciones: [{ ...relacionBase.ubicaciones[0], departamento: "Montevideo" }] },
+        ]);
+        expect(await obtenerPerfilAdminProductor(2)).toMatchObject({ departamentos: ["Canelones", "Salto"] });
     });
  
 });

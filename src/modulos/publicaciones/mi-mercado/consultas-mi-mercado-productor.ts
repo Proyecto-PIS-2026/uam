@@ -9,6 +9,7 @@ export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperad
         id: number;
         nombreUbicacion: string;
         urlMaps: string;
+        departamento?: string | null;
     }[];
 };
 
@@ -16,7 +17,7 @@ async function consultarPublicacionesProductor(productorId: number) {
     return db.orm.public.PublicacionProductor
         .where({ productorId })
         .include("pais", (pais) => pais.select("nombrePais"))
-        .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps"))
+        .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) =>
             publicacion
                 .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible")
@@ -57,7 +58,7 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
                 codigoCalibre: publicacion.calibre.codigoCalibre,
                 nombreCalibre: publicacion.calibre.nombreCalibre,
             } : null,
-            ubicaciones: relacion.ubicaciones.map(({ id, nombreUbicacion, urlMaps }) => ({ id, nombreUbicacion, urlMaps })),
+            ubicaciones: relacion.ubicaciones.map(({ id, nombreUbicacion, urlMaps, departamento }) => ({ id, nombreUbicacion, urlMaps, departamento })),
         };
 }
 

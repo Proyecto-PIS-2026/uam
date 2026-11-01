@@ -2,6 +2,9 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useActualizacionesPublicaciones } from "./use-actualizaciones-publicaciones";
 
+const verificarSesion = vi.hoisted(() => vi.fn<(entrada: RequestInfo | URL, opciones?: RequestInit) => Promise<Response>>());
+vi.mock("@/modulos/identidad-acceso/autenticacion/cliente-sesion", () => ({ fetchConSesion: verificarSesion }));
+
 class FuenteEventos extends EventTarget {
     static instancias: FuenteEventos[] = [];
     close = vi.fn();
@@ -18,6 +21,7 @@ async function notificar(fuente: FuenteEventos, tipo: "conectado" | "cambio", ve
 describe("actualizaciones de publicaciones", () => {
     beforeEach(() => {
         FuenteEventos.instancias = [];
+        verificarSesion.mockReset().mockResolvedValue(new Response(null, { status: 204 }));
         vi.useFakeTimers();
         vi.stubGlobal("EventSource", FuenteEventos);
     });
@@ -297,5 +301,106 @@ describe("actualizaciones de publicaciones", () => {
         const hook = renderHook(() => useActualizacionesPublicaciones(vi.fn()));
         expect(FuenteEventos.instancias).toHaveLength(0);
         hook.unmount();
+    });
+
+    it("comprueba la sesión privada solamente al fallar SSE, sin sondeos periódicos", async () => {
+        const hook = renderHook(() => useActualizacionesPublicaciones(vi.fn(), 7));
+        const fuente = FuenteEventos.instancias[0];
+        await notificar(fuente, "conectado", "a");
+        expect(verificarSesion).not.toHaveBeenCalled();
+
+        await act(async () => { fuente.dispatchEvent(new Event("error")); });
+
+        expect(verificarSesion).toHaveBeenCalledExactlyOnceWith("/api/sesion", { cache: "no-store", signal: expect.any(AbortSignal) });
+        expect(fuente.close).not.toHaveBeenCalled();
+        await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+        expect(verificarSesion).toHaveBeenCalledOnce();
+        hook.unmount();
+    });
+
+    it.each([undefined, { operadorPublicoId: 7 }])("no comprueba sesiones ante errores del canal público %s", async (filtro) => {
+        const hook = renderHook(() => useActualizacionesPublicaciones(vi.fn(), filtro));
+        const fuente = FuenteEventos.instancias[0];
+
+        await act(async () => {
+            fuente.dispatchEvent(new Event("error"));
+            await vi.advanceTimersByTimeAsync(60_000);
+        });
+
+        expect(verificarSesion).not.toHaveBeenCalled();
+        expect(fuente.close).not.toHaveBeenCalled();
+        hook.unmount();
+    });
+
+    it("delega la sesión inválida al helper que procesa el 401 sin generar rechazos sin manejar", async () => {
+        verificarSesion.mockRejectedValueOnce(new Error("Tu sesión finalizó. Volvé a iniciar sesión."));
+        const hook = renderHook(() => useActualizacionesPublicaciones(vi.fn(), 7));
+
+        await act(async () => { FuenteEventos.instancias[0].dispatchEvent(new Event("error")); });
+
+        expect(verificarSesion).toHaveBeenCalledExactlyOnceWith("/api/sesion", { cache: "no-store", signal: expect.any(AbortSignal) });
+        hook.unmount();
+    });
+
+    it.each(["red", "503"])("mantiene la reconexión SSE ante una falla temporal de %s", async (fallo) => {
+        if (fallo === "red") verificarSesion.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+        else verificarSesion.mockResolvedValueOnce(new Response(null, { status: 503 }));
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar, 7));
+        const fuente = FuenteEventos.instancias[0];
+
+        await act(async () => { fuente.dispatchEvent(new Event("error")); });
+        await notificar(fuente, "conectado", "recuperada");
+
+        expect(verificarSesion).toHaveBeenCalledOnce();
+        expect(FuenteEventos.instancias).toHaveLength(1);
+        expect(fuente.close).not.toHaveBeenCalled();
+        expect(actualizar).toHaveBeenCalledOnce();
+        hook.unmount();
+    });
+
+    it("evita comprobaciones simultáneas y permite comprobar otro error posterior", async () => {
+        let terminar!: (respuesta: Response) => void;
+        verificarSesion.mockImplementationOnce(() => new Promise<Response>((resolve) => { terminar = resolve; }));
+        const hook = renderHook(() => useActualizacionesPublicaciones(vi.fn(), 7));
+        const fuente = FuenteEventos.instancias[0];
+        await act(async () => {
+            fuente.dispatchEvent(new Event("error"));
+            fuente.dispatchEvent(new Event("error"));
+            fuente.dispatchEvent(new Event("error"));
+        });
+        expect(verificarSesion).toHaveBeenCalledOnce();
+
+        await act(async () => { terminar(new Response(null, { status: 204 })); });
+        await act(async () => { fuente.dispatchEvent(new Event("error")); });
+
+        expect(verificarSesion).toHaveBeenCalledTimes(2);
+        hook.unmount();
+    });
+
+    it.each(["desmontar", "cambiar canal", "ocultar"])("cancela la comprobación pendiente al %s e ignora errores de la fuente anterior", async (accion) => {
+        verificarSesion.mockImplementation(() => new Promise<Response>(() => {}));
+        const hook = renderHook(({ operadorId }) => useActualizacionesPublicaciones(vi.fn(), operadorId), { initialProps: { operadorId: 7 } });
+        const anterior = FuenteEventos.instancias[0];
+        await act(async () => { anterior.dispatchEvent(new Event("error")); });
+        const signal = verificarSesion.mock.calls[0][1]?.signal;
+        expect(signal?.aborted).toBe(false);
+
+        if (accion === "desmontar") hook.unmount();
+        else if (accion === "cambiar canal") hook.rerender({ operadorId: 8 });
+        else {
+            vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+            act(() => document.dispatchEvent(new Event("visibilitychange")));
+        }
+
+        expect(signal?.aborted).toBe(true);
+        await act(async () => { anterior.dispatchEvent(new Event("error")); });
+        expect(verificarSesion).toHaveBeenCalledOnce();
+        if (accion === "cambiar canal") {
+            await act(async () => { FuenteEventos.instancias[1].dispatchEvent(new Event("error")); });
+            expect(verificarSesion).toHaveBeenCalledTimes(2);
+            expect(verificarSesion.mock.calls[1][1]?.signal?.aborted).toBe(false);
+        }
+        if (accion !== "desmontar") hook.unmount();
     });
 });

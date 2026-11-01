@@ -666,21 +666,25 @@ async function main() {
   const ubicacionesDemo = [
     {
         nombreUbicacion: "Depósito Central - Salto",
+        departamento: "Salto",
         latitud: -31.388,
         longitud: -57.960,
     },
     {
         nombreUbicacion: "Chacra Los Naranjos - Zona Norte",
+        departamento: "Salto",
         latitud: -31.365,
         longitud: -57.955,
     },
     {
         nombreUbicacion: "Empaque Las Quintas - Zona Este",
+        departamento: "Salto",
         latitud: -31.390,
         longitud: -57.930,
     },
     {
         nombreUbicacion: "Depósito El Ombú - Zona Sur",
+        departamento: "Salto",
         latitud: -31.410,
         longitud: -57.950,
     },
@@ -723,6 +727,7 @@ async function main() {
     for (const punto of ubicacionesDemo.slice(0, oferta.cantidadUbicaciones)) {
       await prisma.orm.public.Ubicacion.create({
           nombreUbicacion: punto.nombreUbicacion,
+          departamento: punto.departamento,
           urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${punto.latitud},${punto.longitud}`)}`,
           publicacionId: publicacionProductor.id,
       });

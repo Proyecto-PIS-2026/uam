@@ -2,8 +2,7 @@
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import BotonVolver from "@/compartido/BotonVolver";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlined";
 import { MenuItem, TextField } from "@mui/material";
@@ -279,14 +278,13 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 <MenuItem key={valor} value={valor} className={styles.opcionSelect}>{valor}</MenuItem>
                             ))}
                         </TextField>
-                        <button
-                            type="button" className={styles.botonMasFiltros}
-                            aria-expanded={mostrarFiltros} aria-controls={idFiltros}
+                        <BotonDesplegable
+                            className={styles.botonMasFiltros}
+                            abierto={mostrarFiltros} aria-controls={idFiltros}
                             onClick={() => setMostrarFiltros((abiertos) => !abiertos)}
                         >
                             Más filtros
-                            {mostrarFiltros ? <KeyboardArrowUpIcon className={styles.iconoExpandir} /> : <KeyboardArrowDownIcon className={styles.iconoExpandir} />}
-                        </button>
+                        </BotonDesplegable>
                         <div ref={panelFiltrosRef} id={idFiltros} className={`${styles.filtrosAdicionales} ${mostrarFiltros ? styles.filtrosAbiertos : ""}`}>
                             <div ref={contenidoFiltrosRef} className={styles.contenidoAdicional}>
                                 <TextField

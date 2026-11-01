@@ -69,7 +69,7 @@ for (const pantalla of [
 
     async function ordenar(opcion: string) {
       await page.getByRole("button", { name: "Ordenar por" }).click();
-      await page.getByRole("button", { name: opcion, exact: true }).click();
+      await page.getByRole("menuitemradio", { name: opcion, exact: true }).click();
     }
 
     await page.setViewportSize(pantalla.viewport);

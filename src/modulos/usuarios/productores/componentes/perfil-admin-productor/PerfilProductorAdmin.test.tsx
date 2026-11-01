@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@/test-utils";
 
 import PerfilProductorAdmin from "./PerfilProductorAdmin";
 import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
@@ -39,6 +39,7 @@ const productorBase: PerfilAdminProductor = {
     nombreFantasia: "Granja Los Álamos",
     fotoPerfil: null,
     whatsApp: "+59899200002",
+    departamentos: ["Salto"],
     publicaciones: [],
 };
 
@@ -58,6 +59,7 @@ describe("PerfilProductorAdmin", () => {
         expect(screen.getByRole("heading", { level: 1, name: "Granja Los Álamos" })).toBeInTheDocument();
         expect(screen.getByText("G")).toBeInTheDocument();
         expect(screen.getByText("+59899200002")).toBeInTheDocument();
+        expect(screen.getByText("Salto", { exact: false })).toBeInTheDocument();
     });
 
     // Con foto, se muestra la foto en lugar de la inicial
@@ -66,6 +68,25 @@ describe("PerfilProductorAdmin", () => {
 
         expect(screen.getByRole("img", { name: "Foto de Granja Los Álamos" })).toBeInTheDocument();
         expect(screen.queryByText("G")).not.toBeInTheDocument();
+    });
+
+    it("recupera la inicial cuando falla la foto del productor", () => {
+        render(<PerfilProductorAdmin productor={{ ...productorBase, fotoPerfil: "/productores/granja.jpg" }} />);
+        fireEvent.error(screen.getByRole("img", { name: "Foto de Granja Los Álamos" }));
+        expect(screen.getByText("G")).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Foto de Granja Los Álamos" })).not.toBeInTheDocument();
+    });
+
+    it("actualiza los departamentos al cambiar publicaciones y acepta los de una recarga posterior", () => {
+        const vista = render(<PerfilProductorAdmin productor={productorBase} />);
+        const { alCambiarDepartamentos } = mocks.propsCatalogo.mock.lastCall![0] as { alCambiarDepartamentos: (departamentos: string[]) => void };
+        act(() => alCambiarDepartamentos(["Canelones"]));
+        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Canelones");
+        expect(screen.queryByText("Salto", { exact: false })).not.toBeInTheDocument();
+        act(() => alCambiarDepartamentos([]));
+        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Departamentos: -");
+        vista.rerender(<PerfilProductorAdmin productor={{ ...productorBase, departamentos: ["Rocha"], publicaciones: [] }} />);
+        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Rocha");
     });
 
     // El enlace de volver lleva al listado de usuarios del panel de administración
@@ -91,7 +112,7 @@ describe("PerfilProductorAdmin", () => {
 
         expect(screen.getByRole("heading", { name: "Publicaciones (2)" })).toBeInTheDocument();
         expect(screen.getByTestId("catalogo")).toBeInTheDocument();
-        expect(mocks.propsCatalogo).toHaveBeenLastCalledWith({ publicaciones });
+        expect(mocks.propsCatalogo).toHaveBeenLastCalledWith({ publicaciones, alCambiarDepartamentos: expect.any(Function) });
     });
 
     it("ofrece agregar un producto para el productor", () => {
@@ -138,8 +159,7 @@ describe("PerfilProductorAdmin", () => {
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
-    // Al volver a abrir el alta se borra el aviso anterior
-    it("borra el aviso anterior al volver a abrir el alta", () => {
+    it("conserva y apila los avisos al abrir otra alta y permite cerrarlos por separado", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
         fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
@@ -148,7 +168,12 @@ describe("PerfilProductorAdmin", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
 
-        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         expect(screen.getByTestId("alta-publicacion")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
+        const avisos = screen.getAllByRole("status");
+        expect(avisos).toHaveLength(2);
+        fireEvent.click(within(avisos[0]).getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.getAllByRole("status")).toEqual([avisos[1]]);
     });
 });

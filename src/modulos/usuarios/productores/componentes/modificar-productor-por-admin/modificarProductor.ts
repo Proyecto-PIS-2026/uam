@@ -5,7 +5,9 @@ import argon2 from "argon2";
 import { validarModificacionProductor } from "./validarModificacionProductor";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { guardarUsuarioAtomico } from "@/modulos/usuarios/guardar-usuario-atomico";
+import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "@/modulos/usuarios/fotos-perfil";
 
 export type ResultadoModificacionProductor =
     | { esValido: false; errores: string[] }
@@ -13,14 +15,17 @@ export type ResultadoModificacionProductor =
 
 export async function modificarProductor(
     valor: unknown,
+    foto?: FormData,
 ): Promise<ResultadoModificacionProductor> {
-    await exigirAdministrador();
+    await controlarSesionEnAccion(exigirAdministrador);
 
     const validacion = validarModificacionProductor(valor);
 
     if (!validacion.esValido) {
         return validacion;
     }
+    const validacionFoto = validarCambioFotoPerfil(foto);
+    if (!validacionFoto.esValido) return validacionFoto;
 
     const datos = validacion.datos;
 
@@ -30,11 +35,11 @@ export async function modificarProductor(
           })
         : null;
 
-    const resultadoTx = await guardarUsuarioAtomico(async (tx) => {
+    const resultadoTx = await controlarErrorFotoPerfil(() => guardarUsuarioAtomico(async (tx) => {
         await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1720, ${datos.productorId})`
             .returnsRow({ locked: "pg/int4@1" }).build());
         const productor = await tx.orm.public.Productor
-            .select("id", "usuarioId")
+            .select("id", "usuarioId", "fotoPerfil")
             .where({ id: datos.productorId })
             .first();
 
@@ -56,11 +61,14 @@ export async function modificarProductor(
             return "Ya existe un productor con ese nombre.";
         }
 
+        const fotoPerfil = await guardarCambioFotoPerfil(tx, "productores", datos.productorId, productor.fotoPerfil ?? null, validacionFoto.cambio);
+
         await tx.orm.public.Productor
             .where({ id: datos.productorId })
             .update({
                 nombreFantasia: datos.nombre,
                 whatsApp: datos.telefono,
+                ...(fotoPerfil !== undefined ? { fotoPerfil } : {}),
             });
 
         if (passwordHash) {
@@ -73,7 +81,7 @@ export async function modificarProductor(
         }
 
         return datos.productorId;
-    }, "productor");
+    }, "productor"));
 
     if (typeof resultadoTx === "string") {
         return {
@@ -84,6 +92,7 @@ export async function modificarProductor(
 
     revalidatePath("/administracion");
     revalidatePath("/gestion-productores/[id]", "page");
+    revalidatePath("/gestion-productores/[id]/editar", "page");
     revalidatePath("/publicaciones-productor");
     revalidatePath("/productores");
     revalidatePath("/productores/[nombre]", "page");

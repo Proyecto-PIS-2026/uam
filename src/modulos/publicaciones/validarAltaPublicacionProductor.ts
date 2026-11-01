@@ -1,6 +1,7 @@
 import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublicacion } from "./seleccion-publicacion";
 import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
 import { validarUbicacionesProductor, type UbicacionPublicacionProductor } from "./productores/ubicaciones-productor";
+import { normalizarDepartamento } from "@/compartido/departamentos-uruguay";
 
 export type DatosAltaPublicacionProductor = SeleccionPublicacion & {
     productorId: number;
@@ -42,7 +43,7 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
     const errores: string[] = [];
     const seleccion = normalizarSeleccionPublicacion(datos);
     if (!seleccion.esValido) errores.push(...seleccion.errores);
-    if (!idCatalogoValido(datos.productorId)) errores.push("El campo productorId es obligatorio.");
+    if (!idCatalogoValido(datos.productorId)) errores.push("Seleccioná un productor válido para la publicación.");
     const tieneUbicaciones = Object.hasOwn(datos, "ubicaciones");
     const ubicaciones = tieneUbicaciones ? validarUbicacionesProductor(datos.ubicaciones) : undefined;
     if (ubicaciones && !ubicaciones.esValido) errores.push(ubicaciones.error);
@@ -54,7 +55,7 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
     if (hayUbicacion && (typeof datos.longitud !== "number" || !Number.isFinite(datos.longitud) || datos.longitud < -180 || datos.longitud > 180)) {
         errores.push("La longitud no es válida.");
     }
-    if (hayUbicacion && (typeof datos.departamento !== "string" || datos.departamento.trim() === "")) {
+    if (hayUbicacion && !normalizarDepartamento(datos.departamento)) {
         errores.push("El departamento de la ubicación no es válido.");
     }
     if (!tieneUbicaciones && datos.nombreLugar !== null && datos.nombreLugar !== undefined && datos.nombreLugar !== "" &&
@@ -75,5 +76,6 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
     if (errores.length > 0) return { esValido: false, errores };
     if (!seleccion.esValido) return seleccion;
     return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true,
+        ...(hayUbicacion ? { departamento: normalizarDepartamento(datos.departamento) } : {}),
         ...(ubicaciones?.esValido ? { ubicaciones: ubicaciones.ubicaciones } : {}) } as DatosAltaPublicacionProductor };
 }

@@ -58,7 +58,7 @@ describe("validarAltaPublicacionProductor", () => {
         "https://www.google.com/maps?q=" + "a".repeat(2048),
     ])("rechaza enlaces de ubicación que no cumplen las reglas de edición: %s", (urlMaps) => {
         expect(validarAltaPublicacionProductor({ ...datosValidos, ubicaciones: [{ nombreUbicacion: "Chacra", urlMaps }] })).toEqual({
-            esValido: false, errores: ["Cada ubicación debe incluir un enlace válido de Google Maps de hasta 2048 caracteres."],
+            esValido: false, errores: ["Seleccioná cada punto de retiro en el mapa antes de guardar."],
         });
     });
 

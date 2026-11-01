@@ -60,7 +60,10 @@ describe("Página de precios históricos", () => {
         obtenerCatalogoMock.mockResolvedValue([{ id: "60", especie: "Banana" }]);
     });
 
-    afterEach(() => vi.useRealTimers());
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
 
     it("consulta por especie sin clasificación con tres años por defecto hasta hoy en Montevideo", async () => {
         const { suspense, componente } = await resolverHistorico({ species_id: "60", producto: "Otra fruta" });
@@ -267,25 +270,21 @@ describe("Página de precios históricos", () => {
         expect(componente.props.cargando).toBeUndefined();
     });
 
-    it("muestra temporalmente el nombre y mensaje reales del fallo de carga", async () => {
-        const error = new Error("El webservice respondió con HTTP 401.");
-        error.name = "ErrorWebservice";
-        obtenerHistoricoPreciosMock.mockRejectedValue(error);
-        const { componente } = await resolverHistorico({ species_id: "60" });
-
-        expect(componente.props.historico).toBeNull();
-        expect(componente.props.error).toContain(error.name);
-        expect(componente.props.error).toContain(error.message);
-    });
-
     it.each([
-        ["HTTP 500: no se pudo obtener el histórico", "HTTP 500: no se pudo obtener el histórico"],
-        ["", "Error de carga sin detalle."],
-    ])("muestra el rechazo de texto y usa un mensaje de respaldo cuando está vacío: %j", async (rechazo, mensaje) => {
+        new Error("El webservice respondió con HTTP 401; token=secreto-interno."),
+        "HTTP 500: ECONNREFUSED servicio-interno:5432",
+        "",
+        null,
+        { codigo: "CONFIGURACION_INVALIDA", detalle: "endpoint-interno" },
+    ])("registra el fallo en el servidor sin exponer detalles al usuario: %j", async (rechazo) => {
+        const registrarError = vi.spyOn(console, "error").mockImplementation(() => undefined);
         obtenerHistoricoPreciosMock.mockRejectedValue(rechazo);
-        const { componente } = await resolverHistorico({ species_id: "60" });
+        const { componente } = await resolverHistorico({ species_id: "60", producto: "Banana", variedad: "Cavendish" });
 
         expect(componente.props.historico).toBeNull();
-        expect(componente.props.error).toContain(mensaje);
+        expect(componente.props.error).toBe("No pudimos cargar los precios históricos. Intentá nuevamente en unos minutos.");
+        expect(componente.props.producto).toMatchObject({ id: "60", especie: "Banana", variedad: "Cavendish" });
+        expect(componente.props.especies).toEqual([{ id: "60", especie: "Banana" }]);
+        expect(registrarError).toHaveBeenCalledExactlyOnceWith("No se pudieron cargar los precios históricos.", rechazo);
     });
 });

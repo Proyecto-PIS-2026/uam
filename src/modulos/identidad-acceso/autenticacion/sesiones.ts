@@ -68,20 +68,27 @@ export async function obtenerSesion(): Promise<DatosSesion | null> {
         return null;
     }
 
+    let datos: DatosSesion;
     try {
-        const datos = JSON.parse(
+        datos = JSON.parse(
             Buffer.from(contenido, "base64url").toString("utf8"),
         ) as DatosSesion;
-        if (datos.expiraEn <= Math.floor(Date.now() / 1000)) return null;
-        if (!Number.isSafeInteger(datos.usuarioId)) return null;
-        if (
-            datos.rol !== "OPERADOR" &&
-            datos.rol !== "ADMINISTRADOR" &&
-            datos.rol !== "PRODUCTOR"
-        ) {
-            return null;
-        }
+    } catch {
+        return null;
+    }
 
+    if (!datos || typeof datos !== "object" || Array.isArray(datos)) return null;
+    if (!Number.isSafeInteger(datos.expiraEn) || datos.expiraEn <= Math.floor(Date.now() / 1000)) return null;
+    if (!Number.isSafeInteger(datos.usuarioId) || datos.usuarioId <= 0 || datos.usuarioId > 2147483647) return null;
+    if (
+        datos.rol !== "OPERADOR" &&
+        datos.rol !== "ADMINISTRADOR" &&
+        datos.rol !== "PRODUCTOR"
+    ) {
+        return null;
+    }
+
+    try {
         const usuario = await db.orm.public.Usuario
             .where({ id: datos.usuarioId })
             .first();
@@ -91,7 +98,7 @@ export async function obtenerSesion(): Promise<DatosSesion | null> {
         }
 
         return datos;
-    } catch {
-        return null;
+    } catch (cause) {
+        throw new Error("No pudimos verificar tu sesión. Intentá nuevamente.", { cause });
     }
 }

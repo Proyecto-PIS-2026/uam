@@ -28,8 +28,8 @@ vi.mock(
 );
 
 const productores: ProductorListado[] = [
-    { id: 1, nombreFantasia: "Zeta", fotoPerfil: "/zeta.webp", cantidadProductos: 2, ubicaciones: ["Salto"] },
-    { id: 2, nombreFantasia: "Álamo & Sur", fotoPerfil: null, cantidadProductos: 0, ubicaciones: [] },
+    { id: 1, nombreFantasia: "Zeta", fotoPerfil: "/zeta.webp", cantidadProductos: 2, ubicaciones: ["Salto"], departamentos: ["Salto"] },
+    { id: 2, nombreFantasia: "Álamo & Sur", fotoPerfil: null, cantidadProductos: 0, ubicaciones: [], departamentos: [] },
 ];
 
 const perfil: PerfilProductorPorOperador = {
@@ -37,6 +37,7 @@ const perfil: PerfilProductorPorOperador = {
     nombreFantasia: "Álamo & Sur",
     fotoPerfil: null,
     whatsApp: "59899123456",
+    departamentos: ["Salto"],
     publicaciones: [
         {
             id: 10,
@@ -73,7 +74,7 @@ describe("Listado y navegación de productores", () => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
         await expect(PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(perfil.nombreFantasia) }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/mi-mercado/productor" : "/iniciar-sesion");
+        expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/mi-mercado/productor" : "/sesion-finalizada");
         expect(mocks.listado).not.toHaveBeenCalled();
         expect(mocks.perfil).not.toHaveBeenCalled();
     });
@@ -120,8 +121,8 @@ describe("Listado y navegación de productores", () => {
     it("ordena A-Z y Z-A sin modificar la lista recibida", () => {
         render(<ListadoProductores productores={productores} />);
         expect(screen.getAllByRole("link")[0]).toHaveTextContent("Álamo & Sur");
-        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("option", { name: "Z-A" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Z-A" }));
         expect(screen.getAllByRole("link")[0]).toHaveTextContent("Zeta");
         expect(productores[0].nombreFantasia).toBe("Zeta");
     });
@@ -132,7 +133,7 @@ describe("Listado y navegación de productores", () => {
         rerender(<ListadoProductores productores={productores} />);
         const buscador = screen.getByRole("searchbox", { name: "Buscar productores" });
         fireEvent.change(buscador, { target: { value: "Inexistente" } });
-        expect(screen.getByRole("status")).toHaveTextContent("No se encontraron productores que coincidan con la búsqueda.");
+        expect(screen.getByRole("status")).toHaveTextContent("No se encontraron productores que coincidan con la búsqueda y el departamento seleccionado.");
         fireEvent.change(buscador, { target: { value: "" } });
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(screen.getAllByRole("link")).toHaveLength(2);
@@ -167,7 +168,7 @@ describe("Listado y navegación de productores", () => {
         await expect(PaginaPerfil({ params: Promise.resolve({ nombre: "Oculto" }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_NOT_FOUND");
     });
 
-    it("ofrece volver a Mercado Productores cuando el perfil se abre desde una publicación", async () => {
+    it("ofrece volver a Mercado Producción cuando el perfil se abre desde una publicación", async () => {
         render(
             await PaginaPerfil({
                 params: Promise.resolve({
@@ -179,6 +180,6 @@ describe("Listado y navegación de productores", () => {
             })
         );
         expect(mocks.perfil).toHaveBeenCalledWith(perfil.nombreFantasia);
-        expect(screen.getByRole("link", {name: "Volver a Mercado Productores"})).toHaveAttribute("href", "/publicaciones-productor");
+        expect(screen.getByRole("link", {name: "Volver a Mercado Producción"})).toHaveAttribute("href", "/publicaciones-productor");
     });
 });

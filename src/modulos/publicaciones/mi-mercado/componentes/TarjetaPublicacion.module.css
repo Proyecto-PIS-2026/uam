@@ -18,7 +18,7 @@
 }
 
 .tarjetaConsulta:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
 }
 
@@ -27,7 +27,7 @@
     width: 7rem;
     flex-shrink: 0;
     overflow: hidden;
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
     text-align: left;
 }
 
@@ -44,7 +44,7 @@
     height: 100%;
     min-height: 7rem;
     padding-inline: var(--espacio-inline);
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
     color: var(--color-secondary);
     font-size: var(--tamano-texto-auxiliar);
     font-weight: 500;
@@ -66,7 +66,7 @@
 }
 
 .botonInformacion:hover {
-    background: color-mix(in srgb, var(--color-primary-soft) 30%, transparent);
+    background: color-mix(in srgb, var(--color-secondary-soft) 30%, transparent);
 }
 
 .informacion {
@@ -102,7 +102,7 @@
 }
 
 .disponible {
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
     color: var(--color-secondary);
 }
 
@@ -139,7 +139,7 @@
     width: 2rem;
     height: 2rem;
     border-radius: var(--radio-control);
-    background: var(--color-primary);
+    background: var(--color-secondary);
     color: var(--color-surface);
     font-size: 1.25rem;
     font-weight: 700;
@@ -147,36 +147,33 @@
 }
 
 .botonPrecio:hover {
-    background: var(--color-primary-hover);
+    background: var(--color-secondary-hover);
 }
 
-.inputPrecio {
-    box-sizing: border-box;
+.inputPrecio:global(.MuiOutlinedInput-root) {
+    --alto-control: 2rem;
     width: 5rem;
-    height: 2rem;
-    padding-inline: var(--espacio-textos);
-    border: 1px solid var(--color-primary);
-    border-radius: var(--radio-control);
-    background: var(--color-surface);
-    color: var(--color-foreground);
     font-size: var(--tamano-texto);
     font-weight: 800;
-    text-align: center;
-    outline: none;
 }
 
-.inputPrecio::placeholder {
+.inputPrecio :global(.MuiOutlinedInput-input) {
+    padding-inline: var(--espacio-textos);
+    text-align: center;
+}
+
+.inputPrecio :global(.MuiOutlinedInput-input)::placeholder {
     font-size: var(--tamano-texto-secundario);
     font-weight: 500;
 }
 
-.inputPrecio:focus {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+.inputPrecio:global(.Mui-focused) {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-secondary) 20%, transparent);
 }
 
 .precio {
     min-width: 4rem;
-    color: var(--color-foreground);
+    color: var(--color-secondary);
     font-size: var(--tamano-titulo-seccion);
     font-weight: 800;
     text-align: center;
@@ -204,7 +201,7 @@
 }
 
 .botonDetalle:hover {
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .errorPrecio {
@@ -238,7 +235,7 @@
 
     .tarjeta:hover {
         transform: translateY(-0.125rem);
-        border-color: var(--color-primary);
+        border-color: var(--color-secondary);
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     }
 

@@ -5,9 +5,8 @@ import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import Image from "next/image";
-import Link from "next/link";
+import BotonVolver from "@/compartido/BotonVolver";
+import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 
 import styles from "./PerfilOperador.module.css";
 
@@ -34,19 +33,14 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-operador">
-            <Link href={hrefVolver} className={styles.volver}>
-                <ArrowBackIcon fontSize="small" aria-hidden="true" />
+            <BotonVolver href={hrefVolver} className={styles.volver}>
                 {textoVolver}
-            </Link>
+            </BotonVolver>
             <div className={styles.tarjetaPerfil}>
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
-                        {operador.fotoPerfil ? (
-                            <Image src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} />
-                        ) : (
-                            <span aria-hidden="true">{inicialOperador}</span>
-                        )}
+                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialOperador}</span>} />
                     </div>
 
                     <div className={styles.identidad}>

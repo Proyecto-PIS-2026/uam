@@ -1,16 +1,18 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import Link from "next/link";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import Dialog from "@mui/material/Dialog";
 import styles from "./FormularioAltaUsuario.module.css";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import BotonVolver from "@/compartido/BotonVolver";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 import { altaProductor } from "@/modulos/usuarios/productores/altaProductor";
+import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 const ROLES_VALIDOS = ["operador", "productor", "administrador"];
@@ -29,14 +31,18 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
     ]);
     const [codigoPais, setCodigoPais] = useState("+598");
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [errores, setErrores] = useState<string[]>([]);
     const [enviando, setEnviando] = useState(false);
+    const envioEnCurso = useRef(false);
+    const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
     const [mostrarPopup, setMostrarPopup] = useState(false);
+    const ahoraNoRef = useRef<HTMLButtonElement>(null);
     const [rolCreado, setRolCreado] = useState("");
     const [idUsuarioCreado, setIdUsuarioCreado] = useState<number | null>(null);
 
     function limpiarFormulario() {
+        setFoto(undefined);
         setNombreUsuario("");
         setContraseña("");
         setConfirmacionContraseña("");
@@ -47,13 +53,13 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
             { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
         ]);
         setErrores([]);
-        cerrarNotificacion();
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        if (envioEnCurso.current) return;
+        envioEnCurso.current = true;
         setErrores([]);
-        cerrarNotificacion();
         setEnviando(true);
 
         try {
@@ -71,7 +77,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         naveId: Number(local.nave),
                         contrato: local.contrato,
                     })),
-                });
+                }, ...argumentosFotoPerfil(foto));
 
                 if (!resultado.esValido) {
                     setErrores(resultado.errores);
@@ -95,7 +101,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     nombre,
                     codigoPais,
                     telefono,
-                });
+                }, ...argumentosFotoPerfil(foto));
 
                 if (!resultado.esValido) {
                     setErrores(resultado.errores);
@@ -114,6 +120,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         } catch {
             notificar("No se pudo registrar el usuario. Intentá de nuevo.", "error");
         } finally {
+            envioEnCurso.current = false;
             setEnviando(false);
         }
     }
@@ -140,7 +147,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
 
     return (
         <section className="contenedor-pagina secciones-pagina">
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <BotonVolver href="/administracion#usuarios">Volver al panel administrativo</BotonVolver>
             <EncabezadoPagina
                 titulo="Alta de usuario"
@@ -150,11 +156,12 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
             <form onSubmit={handleSubmit} className={styles.formulario}>
                 <div className={styles.grilla}>
                     <TextField
+                        disabled={enviando}
                         id="rol"
                         select
                         label="Rol del usuario"
                         value={rol}
-                        onChange={(e) => setRol(e.target.value)}
+                        onChange={(e) => { setRol(e.target.value); setFoto(undefined); }}
                         required
                         fullWidth
                         size="small"
@@ -167,6 +174,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         <MenuItem value="administrador" className={styles.opcionSelect}>Administrador</MenuItem>
                     </TextField>
                     <TextField
+                        disabled={enviando}
                         id="nombreUsuario"
                         label="Nombre de Usuario"
                         value={nombreUsuario}
@@ -179,6 +187,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         className={styles.control}
                     />
                     <TextField
+                        disabled={enviando}
                         id="contraseña"
                         label="Contraseña"
                         type="password"
@@ -193,6 +202,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         className={styles.control}
                     />
                     <TextField
+                        disabled={enviando}
                         id="confirmacionContraseña"
                         label="Confirmación de Contraseña"
                         type="password"
@@ -210,7 +220,9 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
 
                 {(rol === "operador" || rol === "productor") && (
                     <>
+                        <SelectorFotoPerfil key={rol} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={enviando} />
                         <TextField
+                            disabled={enviando}
                             id="nombre"
                             label="Nombre"
                             value={nombre}
@@ -223,6 +235,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         />
                         <div className={styles.filaTelefono}>
                             <TextField
+                                disabled={enviando}
                                 id="codigoPais"
                                 select
                                 label="Código de país"
@@ -240,6 +253,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 <MenuItem value="+595" className={styles.opcionSelect}>+595 (Paraguay)</MenuItem>
                             </TextField>
                             <TextField
+                                disabled={enviando}
                                 id="numero"
                                 label="Número de teléfono (WhatsApp)"
                                 type="tel"
@@ -260,7 +274,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                     <h2 id="titulo-locales" className={styles.subtitulo}>Locales</h2>
                                     <p className={styles.ayuda}>Agregá al menos un local para el operador.</p>
                                 </div>
-                                <button type="button" onClick={agregarLocal} className={styles.botonSecundario}>
+                                <button type="button" onClick={agregarLocal} className={styles.botonSecundario} disabled={enviando}>
                                     + Agregar local
                                 </button>
                             </div>
@@ -271,7 +285,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                         <button
                                             type="button"
                                             onClick={() => eliminarLocal(index)}
-                                            disabled={index === 0}
+                                            disabled={enviando || index === 0}
                                             className={styles.botonEliminar}
                                         >
                                             Eliminar local
@@ -279,6 +293,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                     </div>
                                     <div className={styles.grillaLocal}>
                                         <TextField
+                                            disabled={enviando}
                                             id={`numero-local-${index}`}
                                             label="Número de local"
                                             placeholder="Número de local"
@@ -292,6 +307,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                             className={styles.control}
                                         />
                                         <TextField
+                                            disabled={enviando}
                                             id={`nave-${index}`}
                                             select
                                             label="Nave"
@@ -313,6 +329,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                         {local.mostrarContrato ? (
                                             <div className={styles.contrato}>
                                                 <TextField
+                                                    disabled={enviando}
                                                     id={`contrato-${index}`}
                                                     label="Fin de contrato"
                                                     type="date"
@@ -325,6 +342,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                                 />
                                                 <button
                                                     type="button"
+                                                    disabled={enviando}
                                                     onClick={() => setLocales(locales.map((l, i) =>
                                                         i === index ? { ...l, contrato: "", mostrarContrato: false } : l
                                                     ))}
@@ -336,6 +354,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                         ) : (
                                             <button
                                                 type="button"
+                                                disabled={enviando}
                                                 onClick={() => setLocales(locales.map((l, i) =>
                                                     i === index ? { ...l, mostrarContrato: true } : l
                                                 ))}
@@ -360,6 +379,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     <button
                         type="button"
                         onClick={limpiarFormulario}
+                        disabled={enviando}
                         className={styles.botonSecundario}
                     >
                         Limpiar
@@ -370,43 +390,51 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 </div>
             </form>
 
-            {mostrarPopup && (rolCreado === "operador" || rolCreado === "productor") && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-[var(--padding-exterior-pagina)]">
-                    <div className="w-full max-w-md rounded-[var(--radio-panel)] bg-surface p-[var(--padding-panel)] shadow-xl">
-                        <h2 className={styles.subtitulo}>
-                            {rolCreado === "operador"
-                                ? "Operador creado satisfactoriamente"
-                                : "Productor creado satisfactoriamente"}
-                        </h2>
+            <Dialog
+                open={mostrarPopup && (rolCreado === "operador" || rolCreado === "productor")}
+                onClose={() => setMostrarPopup(false)}
+                maxWidth={false}
+                aria-labelledby="titulo-usuario-creado"
+                aria-describedby="descripcion-usuario-creado"
+                slotProps={{
+                    paper: { sx: { m: 2, width: "calc(100% - 32px)", maxWidth: "28rem", p: "var(--padding-panel)" } },
+                    transition: { onEntered: () => ahoraNoRef.current?.focus() },
+                }}
+            >
+                <h2 id="titulo-usuario-creado" className={styles.subtitulo}>
+                    {rolCreado === "operador"
+                        ? "Operador creado satisfactoriamente"
+                        : "Productor creado satisfactoriamente"}
+                </h2>
 
-                        <p className={styles.descripcionPopup}>
-                            ¿Desea precargar productos para este usuario?
-                        </p>
+                <p id="descripcion-usuario-creado" className={styles.descripcionPopup}>
+                    ¿Desea precargar productos para este usuario?
+                </p>
 
-                        <div className={`${styles.acciones} mt-[var(--espacio-secciones)]`}>
-                            <button
-                                type="button"
-                                onClick={() => setMostrarPopup(false)}
-                                className={styles.botonSecundario}
-                            >
-                                Ahora no
-                            </button>
-                            {idUsuarioCreado !== null && (
-                                <Link
-                                    href={
-                                        rolCreado === "operador"
-                                            ? `/gestion-operadores/${idUsuarioCreado}`
-                                            : `/gestion-productores/${idUsuarioCreado}`
-                                    }
-                                    className={styles.botonConfirmar}
-                                >
-                                    Precargar productos
-                                </Link>
-                            )}
-                        </div>
-                    </div>
+                <div className={`${styles.acciones} mt-[var(--espacio-secciones)]`}>
+                    <button
+                        ref={ahoraNoRef}
+                        type="button"
+                        autoFocus
+                        onClick={() => setMostrarPopup(false)}
+                        className={styles.botonSecundario}
+                    >
+                        Ahora no
+                    </button>
+                    {idUsuarioCreado !== null && (
+                        <Link
+                            href={
+                                rolCreado === "operador"
+                                    ? `/gestion-operadores/${idUsuarioCreado}`
+                                    : `/gestion-productores/${idUsuarioCreado}`
+                            }
+                            className={styles.botonConfirmar}
+                        >
+                            Precargar productos
+                        </Link>
+                    )}
                 </div>
-            )}
+            </Dialog>
         </section>
     );
 }

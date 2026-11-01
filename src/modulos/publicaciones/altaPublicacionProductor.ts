@@ -82,6 +82,7 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
                     publicacionId: publicacionProductor.id,
                     nombreUbicacion: datos.nombreLugar?.trim() || datos.departamento!.trim(),
                     urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${datos.latitud},${datos.longitud}`)}`,
+                    departamento: datos.departamento,
                 });
             }
             return { esValido: true, id: publicacion.id, mensaje: "Publicación creada correctamente." };

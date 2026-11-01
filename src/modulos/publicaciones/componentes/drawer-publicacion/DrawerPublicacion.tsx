@@ -31,7 +31,10 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
     const usuario = publicacion ? publicacion.tipoPublicacion === "PRODUCTOR" ? publicacion.productor : publicacion.operador : null;
     const numeroWhatsApp = usuario?.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
-    const enlacePerfil = publicacion && usuario ? publicacion.tipoPublicacion === "OPERADOR" ? esAdmin ? `/gestion-operadores/${publicacion.operador.id}` : `/operadores/${encodeURIComponent(usuario.nombreFantasia)}?origen=publicaciones` : `/productores/${encodeURIComponent(usuario.nombreFantasia)}?origen=publicaciones` : "";    
+    const rutaPerfil = publicacion?.tipoPublicacion === "PRODUCTOR" ? "productores" : "operadores";
+    const enlacePerfil = usuario
+        ? esAdmin ? `/gestion-${rutaPerfil}/${usuario.id}` : `/${rutaPerfil}/${encodeURIComponent(usuario.nombreFantasia)}?origen=publicaciones`
+        : "";
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     
     const claveFoto = publicacion ? `${publicacion.tipoPublicacion}-${publicacion.id}-${publicacion.foto ?? ""}` : "";
@@ -158,11 +161,11 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                         <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
                             <div className={styles.operador}>
                                 <span className={styles.publicado}>Publicado por</span>{" "}
-                                <span className={styles.nombreOperador}>{usuario.nombreFantasia}</span>
+                                <Link href={enlacePerfil} className={styles.nombreOperador} onClick={() => onOpenChange(false)}>{usuario.nombreFantasia}</Link>
                             </div>
                             <div className={styles.bloqueBotones}>
-                                <Link href={enlacePerfil} className={styles.botonPerfil} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
-                                <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} className={styles.botonWhatsApp} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
+                                <Link href={enlacePerfil} className={`boton-secundario ${styles.botonPerfil}`} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
+                                <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} className={`boton-primario ${styles.botonWhatsApp}`} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                                     <span>WhatsApp</span>
                                 </EnlaceWhatsApp>

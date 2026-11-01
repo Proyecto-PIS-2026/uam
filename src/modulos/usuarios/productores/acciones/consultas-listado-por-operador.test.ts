@@ -41,6 +41,7 @@ function crearConstructor() {
 
 function crearRelacion(activa = true, disponible = true, tipoPublicacion = "PRODUCTOR") {
     return {
+        ubicaciones: [],
         publicacion: {
             publicacionActiva: activa,
             publicacionDisponible: disponible,
@@ -84,6 +85,7 @@ describe("obtenerProductoresPorOperador", () => {
                 nombreFantasia: "Huerta Sur",
                 fotoPerfil: null,
                 cantidadProductos: 1,
+                departamentos: [],
             },
         ]);
         expect(mocks.all).toHaveBeenCalledTimes(1);
@@ -121,14 +123,33 @@ describe("obtenerProductoresPorOperador", () => {
                 nombreFantasia: "Álamo",
                 fotoPerfil: null,
                 cantidadProductos: 0,
+                departamentos: [],
             },
             {
                 id: 1,
                 nombreFantasia: "Zeta",
                 fotoPerfil: "/zeta.jpg",
                 cantidadProductos: 2,
+                departamentos: [],
             },
         ]);
+    });
+
+    it("reúne departamentos sin duplicados sólo de publicaciones visibles", async () => {
+        mocks.all.mockResolvedValue([{
+            id: 1, nombreFantasia: "Huerta Sur", fotoPerfil: null,
+            publicacionesProductor: [
+                { ...crearRelacion(), ubicaciones: [{ departamento: "Salto" }, { departamento: "Canelones" }] },
+                { ...crearRelacion(), ubicaciones: [{ departamento: "Salto" }, { departamento: null }] },
+                { ...crearRelacion(false), ubicaciones: [{ departamento: "Artigas" }] },
+                { ...crearRelacion(true, false), ubicaciones: [{ departamento: "Montevideo" }] },
+                { ...crearRelacion(true, true, "OPERADOR"), ubicaciones: [{ departamento: "Rocha" }] },
+            ],
+        }]);
+        expect(await obtenerProductoresPorOperador()).toEqual([{
+            id: 1, nombreFantasia: "Huerta Sur", fotoPerfil: null, cantidadProductos: 2,
+            departamentos: ["Canelones", "Salto"],
+        }]);
     });
 
     it("propaga errores de la consulta", async () => {

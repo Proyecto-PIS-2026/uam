@@ -29,7 +29,7 @@ function relacionPublicacion(productorId: number, id: number) {
         productorId,
         paisId: 1,
         pais: { nombrePais: "URUGUAY" },
-        ubicaciones: [{ id: id + 200, nombreUbicacion: "Canelones", urlMaps: "https://maps.example/quinta", publicacionId: id + 100 }],
+        ubicaciones: [{ id: id + 200, nombreUbicacion: "Canelones", urlMaps: "https://maps.example/quinta", departamento: "Canelones", publicacionId: id + 100 }],
         publicacion: {
             id,
             foto: null,
@@ -94,7 +94,20 @@ describe("lectura privada de Mi Mercado del productor", () => {
             presentacion: relacionPublicacion(23, 31).publicacion.presentacion,
             categoria: { id: 4, nombreCategoria: "Primera" },
             calibre: { id: 5, nombreCalibre: "Mediano", codigoCalibre: "M" },
-            ubicaciones: [{ id: 231, nombreUbicacion: "Canelones", urlMaps: "https://maps.example/quinta" }],
+            ubicaciones: [{ id: 231, nombreUbicacion: "Canelones", urlMaps: "https://maps.example/quinta", departamento: "Canelones" }],
+        }]);
+    });
+
+    it("conserva el departamento nulo de una ubicación anterior sin deducirlo del nombre", async () => {
+        const relacion = relacionPublicacion(23, 31);
+        mocks.todasPublicaciones.mockResolvedValue([{
+            ...relacion, ubicaciones: [{ ...relacion.ubicaciones[0], departamento: null }],
+        }]);
+
+        const resultado = await obtenerPublicacionesMiMercadoProductor();
+
+        expect(resultado.publicaciones[0].ubicaciones).toStrictEqual([{
+            id: 231, nombreUbicacion: "Canelones", urlMaps: "https://maps.example/quinta", departamento: null,
         }]);
     });
 

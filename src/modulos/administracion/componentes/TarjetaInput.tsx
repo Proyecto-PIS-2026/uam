@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { IconButton, TextField } from "@mui/material";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 
 import styles from "./TarjetaInput.module.css";
 
@@ -17,10 +17,11 @@ interface TarjetaInputProps {
     onGuardarValor?: (valor: string) => Promise<void>;
 }
 
-export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "numero", onChangeValor, onGuardarValor }: TarjetaInputProps) {
+export default function TarjetaInput({ titulo, descripcion, label, valor = "", tipo = "numero", onChangeValor, onGuardarValor }: TarjetaInputProps) {
+    const id = useId();
     const [guardando, setGuardando] = useState(false);
     const [valorInicialGuardado, setValorInicialGuardado] = useState(valor);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     // Mantenemos referencia para resincronizar si cambia desde el servidor/padre
     const [valorPropAnterior, setValorPropAnterior] = useState(valor);
@@ -53,22 +54,25 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
 
     return (
         <div className={styles.tarjeta}>
-            <div className={styles.titulo}>
+            <div id={`${id}-titulo`} className={styles.titulo}>
                 {titulo}
             </div>
-            <div className={styles.descripcion}>
+            <div id={`${id}-descripcion`} className={styles.descripcion}>
                 {descripcion}
             </div>
             <div className={styles.contenedorEdicion}>
                 <TextField 
                     fullWidth 
                     size="small" 
+                    label={label}
                     type={tipo === "url" ? "url" : "text"} 
                     value={valor} 
                     disabled={guardando} 
                     className={styles.selectMui}
                     slotProps={{
                         htmlInput: {
+                            "aria-labelledby": label ? undefined : `${id}-titulo`,
+                            "aria-describedby": `${id}-descripcion`,
                             inputMode: tipo === "url" ? "url" : "numeric",
                             pattern: tipo === "url" ? undefined : "[0-9]*",
                         },
@@ -91,7 +95,6 @@ export default function TarjetaInput({ titulo, descripcion, valor = "", tipo = "
                     </IconButton>
                 </div>
             </div>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </div>
     );
 }

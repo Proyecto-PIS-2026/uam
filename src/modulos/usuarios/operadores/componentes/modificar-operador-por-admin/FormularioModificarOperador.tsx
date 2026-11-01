@@ -1,17 +1,20 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 
-import { useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
 import { useRouter } from "next/navigation";
 import BotonVolver from "@/compartido/BotonVolver";
 
 import { modificarOperador } from "../../acciones/modificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 import type { OperadorParaModificar } from "../../tipos";
+import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 
 import styles from "./FormularioModificarOperador.module.css";
 
@@ -26,13 +29,20 @@ type LocalFormulario = {
     contrato: string;
 };
 
-const CODIGOS_PAIS = ["+598", "+54", "+55", "+56", "+595"];
+const CODIGOS_PAIS = [
+    { codigo: "+598", pais: "Uruguay" },
+    { codigo: "+54", pais: "Argentina" },
+    { codigo: "+55", pais: "Brasil" },
+    { codigo: "+56", pais: "Chile" },
+    { codigo: "+595", pais: "Paraguay" },
+];
 
 export default function FormularioModificarOperador({
     operador,
     naves,
 }: Props) {
     const router = useRouter();
+    const idFormulario = useId();
 
     const [nombre, setNombre] = useState(operador.nombre);
     const [codigoPais, setCodigoPais] = useState(
@@ -53,8 +63,10 @@ export default function FormularioModificarOperador({
     );
 
     const [errores, setErrores] = useState<string[]>([]);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
+    const guardadoEnCurso = useRef(false);
+    const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
 
     function actualizarLocal(
         indice: number,
@@ -107,10 +119,10 @@ export default function FormularioModificarOperador({
     ) {
         evento.preventDefault();
 
-        if (guardando) return;
+        if (guardadoEnCurso.current) return;
+        guardadoEnCurso.current = true;
 
         setErrores([]);
-        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -122,7 +134,7 @@ export default function FormularioModificarOperador({
                 contraseña,
                 confirmacionContraseña,
                 locales,
-            });
+            }, ...argumentosFotoPerfil(foto));
 
             if (!resultado.esValido) {
                 setErrores(resultado.errores);
@@ -141,13 +153,13 @@ export default function FormularioModificarOperador({
                 "error",
             );
         } finally {
+            guardadoEnCurso.current = false;
             setGuardando(false);
         }
     }
 
     return (
         <div className={styles.pagina}>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <div className={styles.contenedor}>
                 <BotonVolver
                     className={styles.volver}
@@ -179,72 +191,49 @@ export default function FormularioModificarOperador({
                             Datos del operador
                         </h2>
 
-                        <label className={styles.campo}>
-                            <span className={styles.etiqueta}>
-                                Nombre
-                            </span>
+                        <SelectorFotoPerfil fotoActual={operador.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
 
-                            <input
-                                className={styles.entrada}
-                                value={nombre}
-                                onChange={(evento) =>
-                                    setNombre(
-                                        evento.target.value,
-                                    )
-                                }
-                                disabled={guardando}
-                            />
-                        </label>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            className={styles.control}
+                            label="Nombre"
+                            value={nombre}
+                            onChange={(evento) => setNombre(evento.target.value)}
+                            disabled={guardando}
+                        />
 
                         <div className={styles.filaTelefono}>
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Código
-                                </span>
+                            <TextField
+                                select
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                id={`${idFormulario}-codigo`}
+                                label="Código de país"
+                                value={codigoPais}
+                                onChange={(evento) => setCodigoPais(evento.target.value)}
+                                disabled={guardando}
+                            >
+                                {CODIGOS_PAIS.map(({ codigo, pais }) => (
+                                    <MenuItem key={codigo} value={codigo}>{codigo} ({pais})</MenuItem>
+                                ))}
+                            </TextField>
 
-                                <select
-                                    className={styles.entrada}
-                                    value={codigoPais}
-                                    onChange={(evento) =>
-                                        setCodigoPais(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    disabled={guardando}
-                                >
-                                    {CODIGOS_PAIS.map(
-                                        (codigo) => (
-                                            <option
-                                                key={codigo}
-                                                value={codigo}
-                                            >
-                                                {codigo}
-                                            </option>
-                                        ),
-                                    )}
-                                </select>
-                            </label>
-
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    WhatsApp
-                                </span>
-
-                                <input
-                                    className={styles.entrada}
-                                    value={telefono}
-                                    onChange={(evento) =>
-                                        setTelefono(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    disabled={guardando}
-                                />
-                            </label>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="WhatsApp"
+                                type="tel"
+                                value={telefono}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
+                                onChange={(evento) => {
+                                    const nuevoTelefono = evento.target.value;
+                                    if (/^[0-9]*$/.test(nuevoTelefono)) setTelefono(nuevoTelefono);
+                                }}
+                                disabled={guardando}
+                            />
                         </div>
                     </section>
 
@@ -314,11 +303,7 @@ export default function FormularioModificarOperador({
                                                         indice,
                                                     )
                                                 }
-                                                /*disabled={
-                                                    guardando ||
-                                                    locales.length ===
-                                                        1
-                                                }*/
+                                                disabled={guardando}
                                             >
                                                 Eliminar
                                             </button>
@@ -329,144 +314,46 @@ export default function FormularioModificarOperador({
                                                 styles.grillaLocal
                                             }
                                         >
-                                            <label
-                                                className={
-                                                    styles.campo
-                                                }
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                size="small"
+                                                className={styles.control}
+                                                id={`${idFormulario}-nave-${indice}`}
+                                                label="Nave"
+                                                value={local.naveId}
+                                                onChange={(evento) => actualizarLocal(indice, "naveId", Number(evento.target.value))}
+                                                disabled={guardando}
                                             >
-                                                <span
-                                                    className={
-                                                        styles.etiqueta
-                                                    }
-                                                >
-                                                    Nave
-                                                </span>
+                                                {naves.map((nave) => (
+                                                    <MenuItem key={nave.id} value={nave.id}>{nave.nombre}</MenuItem>
+                                                ))}
+                                            </TextField>
 
-                                                <select
-                                                    className={
-                                                        styles.entrada
-                                                    }
-                                                    value={
-                                                        local.naveId
-                                                    }
-                                                    onChange={(
-                                                        evento,
-                                                    ) =>
-                                                        actualizarLocal(
-                                                            indice,
-                                                            "naveId",
-                                                            Number(
-                                                                evento
-                                                                    .target
-                                                                    .value,
-                                                            ),
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        guardando
-                                                    }
-                                                >
-                                                    {naves.map(
-                                                        (
-                                                            nave,
-                                                        ) => (
-                                                            <option
-                                                                key={
-                                                                    nave.id
-                                                                }
-                                                                value={
-                                                                    nave.id
-                                                                }
-                                                            >
-                                                                {
-                                                                    nave.nombre
-                                                                }
-                                                            </option>
-                                                        ),
-                                                    )}
-                                                </select>
-                                            </label>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                className={styles.control}
+                                                label="Número de local"
+                                                required
+                                                type="text"
+                                                value={local.nombre}
+                                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
+                                                onChange={(evento) => actualizarLocal(indice, "nombre", evento.target.value)}
+                                                disabled={guardando}
+                                            />
 
-                                            <label
-                                                className={
-                                                    styles.campo
-                                                }
-                                            >
-                                                <span
-                                                    className={
-                                                        styles.etiqueta
-                                                    }
-                                                >
-                                                    Número de
-                                                    local
-                                                </span>
-
-                                                <input
-                                                    className={
-                                                        styles.entrada
-                                                    }
-                                                    value={
-                                                        local.nombre
-                                                    }
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    pattern="[0-9]*"
-                                                    required
-                                                    onChange={(
-                                                        evento,
-                                                    ) =>
-                                                        actualizarLocal(
-                                                            indice,
-                                                            "nombre",
-                                                            evento
-                                                                .target
-                                                                .value,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        guardando
-                                                    }
-                                                />
-                                            </label>
-
-                                            <label
-                                                className={
-                                                    styles.campo
-                                                }
-                                            >
-                                                <span
-                                                    className={
-                                                        styles.etiqueta
-                                                    }
-                                                >
-                                                    Fin de
-                                                    contrato
-                                                </span>
-
-                                                <input
-                                                    className={
-                                                        styles.entrada
-                                                    }
-                                                    type="date"
-                                                    value={
-                                                        local.contrato
-                                                    }
-                                                    onChange={(
-                                                        evento,
-                                                    ) =>
-                                                        actualizarLocal(
-                                                            indice,
-                                                            "contrato",
-                                                            evento
-                                                                .target
-                                                                .value,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        guardando
-                                                    }
-                                                />
-                                            </label>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                className={styles.control}
+                                                label="Fin de contrato"
+                                                type="date"
+                                                value={local.contrato}
+                                                slotProps={{ inputLabel: { shrink: true } }}
+                                                onChange={(evento) => actualizarLocal(indice, "contrato", evento.target.value)}
+                                                disabled={guardando}
+                                            />
                                         </div>
                                     </div>
                                 ),
@@ -489,49 +376,29 @@ export default function FormularioModificarOperador({
                                 styles.grillaContraseña
                             }
                         >
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Nueva contraseña
-                                </span>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Nueva contraseña"
+                                type="password"
+                                value={contraseña}
+                                onChange={(evento) => setContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
 
-                                <input
-                                    className={styles.entrada}
-                                    type="password"
-                                    value={contraseña}
-                                    onChange={(evento) =>
-                                        setContraseña(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    autoComplete="new-password"
-                                    disabled={guardando}
-                                />
-                            </label>
-
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Confirmar contraseña
-                                </span>
-
-                                <input
-                                    className={styles.entrada}
-                                    type="password"
-                                    value={
-                                        confirmacionContraseña
-                                    }
-                                    onChange={(evento) =>
-                                        setConfirmacionContraseña(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    autoComplete="new-password"
-                                    disabled={guardando}
-                                />
-                            </label>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Confirmar contraseña"
+                                type="password"
+                                value={confirmacionContraseña}
+                                onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
                         </div>
                     </section>
 
