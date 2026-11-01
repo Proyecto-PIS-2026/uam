@@ -771,6 +771,16 @@
                   "kind": "scalar"
                 }
               },
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -780,6 +790,13 @@
               },
               "titulo": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "url": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -822,11 +839,17 @@
                 "descripcion": {
                   "column": "descripcion"
                 },
+                "fecha": {
+                  "column": "fecha"
+                },
                 "id": {
                   "column": "id"
                 },
                 "titulo": {
                   "column": "titulo"
+                },
+                "url": {
+                  "column": "url"
                 },
                 "usuarioId": {
                   "column": "usuarioId"
@@ -2470,6 +2493,18 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -2483,6 +2518,11 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "url": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "usuarioId": {
                   "codecId": "pg/int4@1",
@@ -2521,10 +2561,29 @@
               "indexes": [
                 {
                   "columns": [
+                    "usuarioId",
+                    "fecha",
+                    "id"
+                  ],
+                  "name": "notificacion_usuarioId_fecha_id_idx_eb1c24cd",
+                  "prefix": "notificacion_usuarioId_fecha_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "usuarioId"
                   ],
                   "name": "notificacion_usuarioId_idx_5f01c7d6",
                   "prefix": "notificacion_usuarioId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "usuarioId",
+                    "vista"
+                  ],
+                  "name": "notificacion_usuarioId_vista_idx_36fef1d8",
+                  "prefix": "notificacion_usuarioId_vista_idx",
                   "unique": false
                 }
               ],
@@ -3522,7 +3581,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "580baa18385f3be13bd65c632f572151ac3bed83620b4f21eb6d1f5f98c4b59a"
+    "storageHash": "ab324b686f298874a9b085ab4fb43de91ec22d019f9fbd7a4d9a0c6219d8b363"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

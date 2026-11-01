@@ -50,6 +50,7 @@
 
 .botonOperador {
     display: flex;
+    position: relative;
     width: 2.5rem;
     height: 2.5rem;
     padding: 0;
@@ -216,6 +217,50 @@
     align-items: center;
 }
 
+.contadorNotificaciones {
+    display: inline-flex;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding-inline: 0.2rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: var(--color-danger);
+    color: var(--color-surface);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.contadorEsquina {
+    position: absolute;
+    right: -0.15rem;
+    bottom: -0.15rem;
+    z-index: 1;
+    outline: 2px solid var(--color-surface);
+    pointer-events: none;
+}
+
+.desplegableOperador .enlaceNotificaciones,
+.enlaceNotificaciones {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-inline);
+}
+
+.descripcionNotificaciones {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 .overlayMenu {
     display: none;
     position: fixed;
@@ -285,7 +330,9 @@
     }
 
     .navegacionMobileAbierta {
-        max-height: 30rem;
+        max-height: calc(100dvh - 4rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 0.5rem 1rem 1rem;
         visibility: visible;
         opacity: 1;

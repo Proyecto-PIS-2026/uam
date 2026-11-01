@@ -19,6 +19,8 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import { useContadorNotificaciones } from "@/modulos/notificaciones/use-contador-notificaciones";
 import { usePathname } from "next/navigation";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
@@ -267,6 +269,8 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
     const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
     const referenciaMenuUsuario = useRef<HTMLDivElement>(null);
     const rutaActual = usePathname() ?? "";
+    const { noLeidas, refrescar: refrescarNotificaciones } = useContadorNotificaciones(sesion?.usuarioId ?? null);
+    const descripcionNotificacionesId = useId();
     const rutaPrincipal = obtenerRutaPrincipal(rolUsuario);
     const opcionesVisibles = (esProductor ? opcionesMenuProductor : opcionesMenu).filter(
         (opcion) =>
@@ -322,8 +326,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 type="button"
                 className={estilos.botonOperador}
                 aria-label="Abrir menú de usuario"
+                aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined}
                 aria-expanded={menuUsuarioAbierto}
-                onClick={() => cambiarMenuUsuarioAbierto((abierto) => !abierto)}
+                onClick={() => { if (!menuUsuarioAbierto) refrescarNotificaciones(); cambiarMenuUsuarioAbierto((abierto) => !abierto); }}
             >
                 {fotoPerfil && !fotoPerfilFallida ? (
                     <Image
@@ -338,9 +343,14 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 ) : (
                     <AccountCircleIcon className={estilos.iconoOperador} />
                 )}
+                {noLeidas > 0 && <span className={`${estilos.contadorNotificaciones} ${estilos.contadorEsquina}`} aria-hidden="true">{noLeidas > 99 ? "99+" : noLeidas}</span>}
             </button>
             {menuUsuarioAbierto && (
                 <div className={estilos.desplegableOperador} role="menu">
+                    <Link href="/notificaciones" role="menuitem" className={estilos.enlaceNotificaciones} onClick={cerrarMenus} aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined}>
+                        <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
+                        {noLeidas > 0 && <span className={estilos.contadorNotificaciones} aria-hidden="true">{noLeidas > 99 ? "99+" : noLeidas}</span>}
+                    </Link>
                     {!esProductor && (
                         <span className={estilos.opcionDesplegable} role="menuitem">
                             Mi perfil
@@ -430,8 +440,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     <button
                         className={estilos.menuMobile}
                         type="button"
-                        onClick={() => cambiarMenuAbierto((abierto) => !abierto)}
+                        onClick={() => { if (!menuAbierto) refrescarNotificaciones(); cambiarMenuAbierto((abierto) => !abierto); }}
                         aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+                        aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined}
                         aria-expanded={menuAbierto}
                         aria-controls="menu-mobile"
                     >
@@ -441,7 +452,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         <CloseIcon
                             className={`${estilos.iconoMenu} ${menuAbierto ? estilos.iconoCerrarVisible : estilos.iconoCerrarOculto}`}
                         />
+                        {noLeidas > 0 && <span className={`${estilos.contadorNotificaciones} ${estilos.contadorEsquina}`} aria-hidden="true">{noLeidas > 99 ? "99+" : noLeidas}</span>}
                     </button>
+                    {rolUsuario && <span id={descripcionNotificacionesId} className={estilos.descripcionNotificaciones}>{noLeidas} {noLeidas === 1 ? "notificación sin leer" : "notificaciones sin leer"}</span>}
                 </div>
                 <nav
                     id="menu-mobile"
@@ -449,6 +462,10 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     aria-label="Navegación móvil"
                 >
                     {menuPerfilMobile}
+                    {rolUsuario && <Link href="/notificaciones" className={`${estilos.enlaceMobile} ${estilos.enlaceNotificaciones}`} aria-current={esRutaActiva("/notificaciones") ? "page" : undefined} aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined} onClick={cerrarMenus}>
+                        <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
+                        {noLeidas > 0 && <span className={estilos.contadorNotificaciones} aria-hidden="true">{noLeidas > 99 ? "99+" : noLeidas}</span>}
+                    </Link>}
                     {opcionesNavegacion.map((opcion) =>
                         esAdministrador && opcion.ruta === "/publicaciones" ? (
                             <MenuPublicaciones

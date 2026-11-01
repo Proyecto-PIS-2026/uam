@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import estilos from "./HeaderPublico.module.css";
 import HeaderPublico from "./HeaderPublico";
 import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
+import { useContadorNotificaciones } from "@/modulos/notificaciones/use-contador-notificaciones";
+
+vi.mock("@/modulos/notificaciones/use-contador-notificaciones", () => ({ useContadorNotificaciones: vi.fn() }));
 
 vi.mock("next/navigation", () => ({ usePathname: vi.fn() }));
 vi.mock("next/image", () => ({
@@ -33,6 +36,7 @@ const cerrarSesionSimulada = vi.mocked(cerrarSesionYVolverAlInicio);
 describe("HeaderPublico", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(useContadorNotificaciones).mockReturnValue({ noLeidas: 0, refrescar: vi.fn() });
         consultarRutaSimulada.mockReturnValue("/inicio");
     });
 
@@ -109,7 +113,7 @@ describe("HeaderPublico", () => {
 
         for (const nombre of ["Navegación principal", "Navegación móvil"]) {
             const menu = within(screen.getByRole("navigation", { name: nombre }));
-            expect(menu.getAllByRole("link")).toHaveLength(4);
+            expect(menu.getAllByRole("link")).toHaveLength(nombre === "Navegación móvil" ? 5 : 4);
             expect(menu.getByRole("link", { name: "Productores" })).toHaveAttribute("href", "/productores");
             expect(menu.getByRole("link", { name: "Mercado Productores" })).toHaveAttribute("href", "/publicaciones-productor");
             expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado");
@@ -137,13 +141,13 @@ describe("HeaderPublico", () => {
         expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
     });
 
-    it("ofrece solo Mi mercado, precios de referencia e histórico al productor en ambos menús", () => {
+    it("ofrece Mi mercado, precios e histórico al productor y notificaciones en el menú móvil", () => {
         render(<HeaderPublico sesion={{ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 }} />);
         fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
 
         for (const nombre of ["Navegación principal", "Navegación móvil"]) {
             const menu = within(screen.getByRole("navigation", { name: nombre }));
-            expect(menu.getAllByRole("link")).toHaveLength(3);
+            expect(menu.getAllByRole("link")).toHaveLength(nombre === "Navegación móvil" ? 4 : 3);
             expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado/productor");
             expect(menu.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
             expect(menu.getByRole("link", { name: "Histórico de precios" })).toHaveAttribute("href", "/precios-historicos");
@@ -183,7 +187,7 @@ describe("HeaderPublico", () => {
             fireEvent.click(screen.getByRole("button", { name: "Abrir menú de usuario" }));
 
             const menuUsuario = within(screen.getByRole("menu"));
-            expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(2);
+            expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(3);
             expect(menuUsuario.getByRole("menuitem", { name: "Mi perfil" })).toBeInTheDocument();
             expect(menuUsuario.getByRole("menuitem", { name: "Cerrar sesión" })).toBeInTheDocument();
             expect(menuUsuario.queryByRole("link")).not.toBeInTheDocument();
@@ -197,7 +201,7 @@ describe("HeaderPublico", () => {
         fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
 
         const menuUsuario = within(screen.getByRole("menu"));
-        expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(1);
+        expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(2);
         expect(menuUsuario.getByRole("menuitem", { name: "Cerrar sesión" })).toBeInTheDocument();
         expect(within(screen.getByRole("navigation", { name: "Navegación móvil" })).getByRole("button", { name: "Cerrar sesión" })).toBeInTheDocument();
         expect(screen.queryByText("Mi perfil")).not.toBeInTheDocument();
@@ -403,5 +407,44 @@ describe("permisos de navegación", () => {
         } finally {
             regla.mockRestore();
         }
+    });
+});
+
+describe("notificaciones en el encabezado", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        consultarRutaSimulada.mockReturnValue("/inicio");
+        vi.mocked(useContadorNotificaciones).mockReturnValue({ noLeidas: 3, refrescar: vi.fn() });
+    });
+
+    it.each(["OPERADOR", "PRODUCTOR", "ADMINISTRADOR"] as const)("ofrece la bandeja y el contador para %s", (rol) => {
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol, expiraEn: 2000000000 }} />);
+        const hamburguesa = screen.getByRole("button", { name: "Abrir menú" });
+        expect(hamburguesa).toHaveAccessibleDescription("3 notificaciones sin leer");
+        expect(within(hamburguesa).getByText("3")).toBeInTheDocument();
+        fireEvent.click(hamburguesa);
+        const enlace = within(screen.getByRole("navigation", { name: "Navegación móvil" })).getByRole("link", { name: "Notificaciones" });
+        expect(enlace).toHaveAttribute("href", "/notificaciones");
+        expect(within(enlace).getByText("3")).toBeInTheDocument();
+        fireEvent.click(enlace);
+        expect(hamburguesa).toHaveAttribute("aria-expanded", "false");
+        fireEvent.click(screen.getByRole("button", { name: "Abrir menú de usuario" }));
+        expect(screen.getByRole("menuitem", { name: "Notificaciones" })).toHaveAttribute("href", "/notificaciones");
+    });
+
+    it("mantiene acceso a la bandeja vacía sin mostrar un contador cero", () => {
+        vi.mocked(useContadorNotificaciones).mockReturnValue({ noLeidas: 0, refrescar: vi.fn() });
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 }} />);
+        const boton = screen.getByRole("button", { name: "Abrir menú" });
+        expect(boton).not.toHaveAttribute("aria-describedby");
+        const enlace = screen.getByRole("link", { name: "Notificaciones" });
+        expect(within(enlace).queryByText("0")).not.toBeInTheDocument();
+    });
+
+    it("no ofrece notificaciones a visitantes", () => {
+        vi.mocked(useContadorNotificaciones).mockReturnValue({ noLeidas: 0, refrescar: vi.fn() });
+        render(<HeaderPublico sesion={null} />);
+        expect(screen.queryByRole("link", { name: "Notificaciones" })).not.toBeInTheDocument();
+        expect(useContadorNotificaciones).toHaveBeenCalledWith(null);
     });
 });
