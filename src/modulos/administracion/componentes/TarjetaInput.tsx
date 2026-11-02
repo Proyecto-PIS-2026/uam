@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { IconButton, TextField } from "@mui/material";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 
 import styles from "./TarjetaInput.module.css";
 
@@ -21,7 +21,7 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
     const id = useId();
     const [guardando, setGuardando] = useState(false);
     const [valorInicialGuardado, setValorInicialGuardado] = useState(valor);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     // Mantenemos referencia para resincronizar si cambia desde el servidor/padre
     const [valorPropAnterior, setValorPropAnterior] = useState(valor);
@@ -95,7 +95,6 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
                     </IconButton>
                 </div>
             </div>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </div>
     );
 }

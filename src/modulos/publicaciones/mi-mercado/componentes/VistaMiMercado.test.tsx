@@ -112,7 +112,7 @@ describe("VistaMiMercado", () => {
     it("redirige al login sin consultar operadores cuando no hay sesión", async () => {
         mocks.obtenerSesion.mockResolvedValue(null);
         await expect(VistaMiMercado({ abrirAltaInicial: true })).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledWith("/iniciar-sesion");
+        expect(mocks.redirect).toHaveBeenCalledWith("/sesion-finalizada");
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
         expect(mocks.obtenerOperadorPorNombre).not.toHaveBeenCalled();
     });

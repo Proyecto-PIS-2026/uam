@@ -11,7 +11,7 @@ import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlin
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
@@ -40,7 +40,7 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState<"prioridad" | "a-z" | "z-a">("prioridad");
     const [paginaActual, setPaginaActual] = useState(1);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     const textoBuscado = normalizarTexto(busqueda.trim());
     const especiesFiltradas = especies.filter((especie) =>
@@ -86,7 +86,6 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                     ))}
                     {autorizado("preciosReferencia.consultar") && <Link href="/precios-referencia" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></Link>}
                 </nav>
-                <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
                 <section className={styles.especies} aria-labelledby="titulo-especies">
                     <div className={styles.tituloContenedor}>
                         <HojasDecorativas />

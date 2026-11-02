@@ -5,7 +5,7 @@ import YardOutlinedIcon from "@mui/icons-material/YardOutlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { useRouter } from "next/navigation";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EncabezadoPagina from "../../../../compartido/EncabezadoPagina";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
@@ -25,7 +25,7 @@ type Props = {
 
 export default function MiMercadoProductor({ publicaciones, nombreProductor = "", productorId = 0 }: Props) {
     const router = useRouter();
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [seleccionId, setSeleccionId] = useState<number | null>(null);
     const [altaAbierta, setAltaAbierta] = useState(false);
     const [cambiosGuardados, setCambiosGuardados] = useState<{ origen: PublicacionMiMercadoProductor[]; porId: Map<number, PublicacionMiMercadoProductor> } | null>(null);
@@ -95,7 +95,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                         anunciar={false}
                     />
                 ) : (
-                    <div className="grid grid-cols-1 gap-[var(--espacio-controles)] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    <div className="grid grid-cols-1 gap-[var(--espacio-controles)] min-[701px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                         {publicacionesVisibles.map((publicacion) => (
                             <TarjetaPublicacionProductor key={publicacion.id} publicacion={publicacion} alConsultar={() => setSeleccionId(publicacion.id)} />
                         ))}
@@ -104,7 +104,6 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
             </div>
             <DrawerPublicacionProductor publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} alGuardar={guardarPublicacion} alEliminada={(mensaje) => { notificar(mensaje, "success"); router.refresh(); }} />
             {productorId > 0 && <DrawerAltaPublicacionProductor productorId={productorId} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={(mensaje) => { setAltaAbierta(false); notificar(mensaje, "success"); router.refresh(); }} />}
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </main>
     );
 }
