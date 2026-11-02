@@ -185,3 +185,20 @@ describe("validarModificacionProductor", () => {
         });
     });
 });
+
+describe("contacto opcional en la modificación del perfil propio", () => {
+    it.each(["", "   "])("permite eliminar el contacto con %j", (telefono) => {
+        expect(validarModificacionProductor({ ...datosValidos, telefono }, { contactoOpcional: true }))
+            .toMatchObject({ esValido: true, datos: { telefono: "" } });
+    });
+
+    it.each(["123", "---", null, 99123456])("rechaza un contacto inválido %j aunque sea opcional", (telefono) => {
+        expect(validarModificacionProductor({ ...datosValidos, telefono }, { contactoOpcional: true }))
+            .toMatchObject({ esValido: false, errores: ["El teléfono no es válido."] });
+    });
+
+    it("conserva la validación del país al eliminar el contacto", () => {
+        expect(validarModificacionProductor({ ...datosValidos, telefono: "", codigoPais: "+1" }, { contactoOpcional: true }))
+            .toMatchObject({ esValido: false, errores: ["El código de país no es válido."] });
+    });
+});
