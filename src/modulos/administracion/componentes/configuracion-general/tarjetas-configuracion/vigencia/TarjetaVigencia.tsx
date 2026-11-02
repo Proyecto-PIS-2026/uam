@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Collapse, IconButton, Switch, TextField } from "@mui/material";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import styles from "./TarjetaVigencia.module.css";
 
 export interface ConfiguracionVigenciaFotos {
@@ -27,9 +27,14 @@ function sonIguales(primera: ConfiguracionVigenciaFotos, segunda: ConfiguracionV
     return (primera.habilitado === segunda.habilitado && primera.diasVigencia === segunda.diasVigencia && primera.avisosHabilitados === segunda.avisosHabilitados && primera.diasAnticipacion === segunda.diasAnticipacion);
 }
 
-function esEnteroPositivo(valor: string): boolean {
-    const numero = Number(valor);
-    return (/^[0-9]+$/.test(valor) && Number.isSafeInteger(numero) && numero > 0);
+function validarDias(valor: string, campo: "vigencia" | "anticipación"): string | null {
+    if (!/^[0-9]+$/.test(valor) || Number(valor) <= 0) {
+        return `La ${campo} debe ser un número entero mayor que cero.`;
+    }
+    if (!Number.isSafeInteger(Number(valor))) {
+        return `La ${campo} ingresada es demasiado grande.`;
+    }
+    return null;
 }
 
 export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descripcion = "", etiquetaVencimiento = "", ayudaVencimiento = "", ayudaAvisos = "", configuracion, onGuardar }: Props) {
@@ -38,7 +43,7 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
     const [configuracionAnterior, setConfiguracionAnterior] = useState(configuracion);
     const [guardando, setGuardando] = useState(false);
 
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     if (!sonIguales(configuracionAnterior, configuracion)) {
         setConfiguracionAnterior(configuracion);
@@ -59,13 +64,16 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
         if (guardando || !huboCambios) {
             return;
         }
-        if (valores.habilitado && !esEnteroPositivo(valores.diasVigencia)) {
-            notificar("La vigencia debe ser un número entero mayor que cero.", "error");
+        const errorVigencia = valores.habilitado ? validarDias(valores.diasVigencia, "vigencia") : null;
+        if (errorVigencia) {
+            notificar(errorVigencia, "error");
             return;
         }
+
         const avisosActivos = valores.habilitado && valores.avisosHabilitados;
-        if (avisosActivos && !esEnteroPositivo(valores.diasAnticipacion)) {
-            notificar("La anticipación debe ser un número entero mayor que cero.", "error");
+        const errorAnticipacion = avisosActivos ? validarDias(valores.diasAnticipacion, "anticipación") : null;
+        if (errorAnticipacion) {
+            notificar(errorAnticipacion, "error");
             return;
         }
         if (avisosActivos && Number(valores.diasAnticipacion) >= Number(valores.diasVigencia)) {
@@ -136,7 +144,6 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
                     <CheckOutlinedIcon />
                 </IconButton>
             </div>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion}/>
         </div>
     );
     return contenido; 

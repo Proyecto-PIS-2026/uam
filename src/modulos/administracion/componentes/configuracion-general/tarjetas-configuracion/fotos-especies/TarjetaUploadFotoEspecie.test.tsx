@@ -4,6 +4,14 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TarjetaUploadFotoEspecie, { type Especie } from "./TarjetaUploadFotoEspecie";
 
+const mocks = vi.hoisted(() => ({
+    notificar: vi.fn(),
+}));
+
+vi.mock("@/compartido/componentes/NotificacionToast", () => ({
+    useNotificacionToast: () => ({ notificar: mocks.notificar }),
+}));
+
 vi.mock("next/image", () => ({
     default: ({ src, alt, onLoad, onError, style, className }: ImageProps) => (
         // eslint-disable-next-line @next/next/no-img-element
@@ -54,10 +62,10 @@ function buscarEspecie(texto: string) {
 }
 
 beforeEach(() => {
+    vi.clearAllMocks();
     let contador = 0;
     descriptorCrearUrl = Object.getOwnPropertyDescriptor(URL, "createObjectURL");
     descriptorRevocarUrl = Object.getOwnPropertyDescriptor(URL, "revokeObjectURL");
-
     Object.defineProperty(URL, "createObjectURL", { configurable: true, writable: true, value: vi.fn(() => `blob:foto-${++contador}`) });
     Object.defineProperty(URL, "revokeObjectURL", { configurable: true, writable: true, value: vi.fn() });
 });
@@ -108,7 +116,6 @@ describe("TarjetaUploadFotoEspecie", () => {
     it("filtra especies ignorando mayúsculas y tildes", async () => {
         preparar("");
         buscarEspecie("AJI");
-
         expect(await screen.findByRole("option", { name: "Ají" })).toBeInTheDocument();
         expect(screen.queryByRole("option", { name: "Acelga" })).not.toBeInTheDocument();
         expect(screen.queryByRole("option", { name: "Tomate" })).not.toBeInTheDocument();
@@ -145,7 +152,6 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { container, onGuardarFoto } = preparar();
         const archivo = new File(["imagen"], "foto", { type: tipo });
         seleccionarArchivo(container, archivo);
-
         expect(screen.getByAltText("Vista previa de Acelga")).toHaveAttribute("src", "blob:foto-1");
         expect(botonGuardar()).toBeEnabled();
         expect(onGuardarFoto).not.toHaveBeenCalled();
@@ -154,8 +160,7 @@ describe("TarjetaUploadFotoEspecie", () => {
     it("rechaza un formato no permitido", async () => {
         const { container, onGuardarFoto } = preparar();
         seleccionarArchivo(container, new File(["imagen"], "foto.gif", { type: "image/gif" }));
-
-        expect(await screen.findByRole("alert")).toHaveTextContent("La imagen debe ser JPEG, PNG o WebP.");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith("La imagen debe ser JPEG, PNG o WebP.", "error"));
         expect(URL.createObjectURL).not.toHaveBeenCalled();
         expect(onGuardarFoto).not.toHaveBeenCalled();
         expect(botonGuardar()).toBeDisabled();
@@ -166,8 +171,7 @@ describe("TarjetaUploadFotoEspecie", () => {
         const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
         Object.defineProperty(archivo, "size", { value: tamano });
         seleccionarArchivo(container, archivo);
-
-        expect(await screen.findByRole("alert")).toHaveTextContent("La imagen debe pesar entre 1 byte y 10 MB.");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith("La imagen debe pesar menos de 10 MB.", "error"));
         expect(URL.createObjectURL).not.toHaveBeenCalled();
         expect(botonGuardar()).toBeDisabled();
     });
@@ -191,7 +195,6 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { container } = preparar();
         seleccionarArchivo(container, new File(["primera"], "primera.png", { type: "image/png" }));
         seleccionarArchivo(container, new File(["segunda"], "segunda.png", { type: "image/png" }));
-
         expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:foto-1");
         expect(screen.getByAltText("Vista previa de Acelga")).toHaveAttribute("src", "blob:foto-2");
     });
@@ -208,20 +211,17 @@ describe("TarjetaUploadFotoEspecie", () => {
         const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
         seleccionarArchivo(container, archivo);
         fireEvent.click(botonGuardar());
-
         await waitFor(() => expect(onGuardarFoto).toHaveBeenCalledExactlyOnceWith(1, archivo));
-        expect(await screen.findByRole("status")).toHaveTextContent("La foto de la especie se actualizó correctamente.");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La foto de la especie se actualizó correctamente.", "success"));
         expect(screen.getByAltText("Vista previa de Acelga")).toBeInTheDocument();
         expect(botonGuardar()).toBeDisabled();
 
         const actualizadas = especies.map((especie) => especie.id === 1 ? { ...especie, fotoEspecie: "/acelga-nueva.webp" } : especie);
         rerender(<TarjetaUploadFotoEspecie {...props} especies={actualizadas} />);
-
         expect(screen.getByAltText("Vista previa de Acelga")).toBeInTheDocument();
         expect(screen.getByAltText("Foto de Acelga")).toHaveAttribute("src", "/acelga-nueva.webp");
 
         fireEvent.load(screen.getByAltText("Foto de Acelga"));
-
         await waitFor(() => expect(screen.queryByAltText("Vista previa de Acelga")).not.toBeInTheDocument());
         expect(screen.getByRole("button", { name: "Cambiar foto" })).toBeEnabled();
         expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:foto-1");
@@ -231,10 +231,8 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { container } = preparar();
         seleccionarArchivo(container, new File(["imagen"], "foto.png", { type: "image/png" }));
         fireEvent.click(botonGuardar());
-
-        await screen.findByRole("status");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La foto de la especie se actualizó correctamente.", "success"));
         fireEvent.load(screen.getByAltText("Foto de Acelga"));
-
         expect(screen.getByAltText("Vista previa de Acelga")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Cambiar foto" })).toBeDisabled();
     });
@@ -243,19 +241,15 @@ describe("TarjetaUploadFotoEspecie", () => {
         let finalizar!: () => void;
         const onGuardarFoto = vi.fn(() => new Promise<void>((resolve) => { finalizar = resolve; }));
         const { container } = preparar("1", especies, onGuardarFoto);
-
         seleccionarArchivo(container, new File(["imagen"], "foto.png", { type: "image/png" }));
         fireEvent.click(botonGuardar());
-
         expect(screen.getByRole("combobox", { name: "Especie" })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Cambiar foto" })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Quitar foto" })).toBeDisabled();
         expect(entradaArchivo(container)).toBeDisabled();
         expect(botonGuardar()).toBeDisabled();
-
         fireEvent.click(botonGuardar());
         expect(onGuardarFoto).toHaveBeenCalledOnce();
-
         await act(async () => { finalizar(); });
     });
 
@@ -264,8 +258,7 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { container } = preparar("1", especies, onGuardarFoto);
         seleccionarArchivo(container, new File(["imagen"], "foto.png", { type: "image/png" }));
         fireEvent.click(botonGuardar());
-
-        expect(await screen.findByRole("alert")).toHaveTextContent("Error de conexión");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("Error de conexión", "error"));
         expect(screen.getByAltText("Vista previa de Acelga")).toBeInTheDocument();
         await waitFor(() => expect(botonGuardar()).toBeEnabled());
         expect(screen.getByRole("button", { name: "Cambiar foto" })).toBeEnabled();
@@ -275,20 +268,17 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { container } = preparar("1", especies, vi.fn().mockRejectedValue("fallo"));
         seleccionarArchivo(container, new File(["imagen"], "foto.png", { type: "image/png" }));
         fireEvent.click(botonGuardar());
-        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo actualizar la foto.");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("No se pudo actualizar la foto.", "error"));
     });
 
     it("solicita quitar la foto pero no la elimina hasta confirmar", async () => {
         const { onEliminarFoto } = preparar();
         fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
-
         expect(screen.queryByAltText("Foto de Acelga")).not.toBeInTheDocument();
         expect(screen.getByText("Sin foto")).toBeInTheDocument();
         expect(botonGuardar()).toBeEnabled();
         expect(onEliminarFoto).not.toHaveBeenCalled();
-
         fireEvent.click(botonGuardar());
-
         await waitFor(() => expect(onEliminarFoto).toHaveBeenCalledExactlyOnceWith(1));
     });
 
@@ -296,11 +286,10 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { rerender, props } = preparar();
         fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
         fireEvent.click(botonGuardar());
-        await screen.findByRole("status");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La foto de la especie se actualizó correctamente.", "success"));
 
         const actualizadas = especies.map((especie) => especie.id === 1 ? { ...especie, fotoEspecie: null } : especie);
         rerender(<TarjetaUploadFotoEspecie {...props} especies={actualizadas} />);
-
         await waitFor(() => expect(screen.getByRole("button", { name: "Cambiar foto" })).toBeEnabled());
         expect(screen.getByRole("button", { name: "Quitar foto" })).toBeDisabled();
         expect(botonGuardar()).toBeDisabled();
@@ -312,8 +301,7 @@ describe("TarjetaUploadFotoEspecie", () => {
         preparar("1", especies, vi.fn(), onEliminarFoto);
         fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
         fireEvent.click(botonGuardar());
-
-        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo eliminar");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("No se pudo eliminar", "error"));
         await waitFor(() => expect(botonGuardar()).toBeEnabled());
     });
 
@@ -321,7 +309,6 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { container, onEliminarFoto, onGuardarFoto } = preparar("2");
         seleccionarArchivo(container, new File(["imagen"], "foto.png", { type: "image/png" }));
         fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
-
         expect(screen.queryByAltText("Vista previa de Ají")).not.toBeInTheDocument();
         expect(botonGuardar()).toBeDisabled();
         expect(onEliminarFoto).not.toHaveBeenCalled();
@@ -332,7 +319,6 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { container } = preparar();
         fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
         seleccionarArchivo(container, new File(["imagen"], "foto.png", { type: "image/png" }));
-
         expect(screen.getByAltText("Vista previa de Acelga")).toBeInTheDocument();
         expect(screen.getByAltText("Foto de Acelga")).toBeInTheDocument();
         expect(botonGuardar()).toBeEnabled();
@@ -346,11 +332,9 @@ describe("TarjetaUploadFotoEspecie", () => {
 
         const { container } = render(<ComponentePrueba />);
         seleccionarArchivo(container, new File(["imagen"], "foto.png", { type: "image/png" }));
-
         fireEvent.focus(screen.getByRole("combobox", { name: "Especie" }));
         fireEvent.click(screen.getByRole("button", { name: "Abrir opciones" }));
         fireEvent.click(await screen.findByRole("option", { name: "Tomate" }));
-
         expect(screen.getByRole("combobox", { name: "Especie" })).toHaveValue("Tomate");
         expect(screen.queryByAltText("Vista previa de Acelga")).not.toBeInTheDocument();
         expect(botonGuardar()).toBeDisabled();
@@ -360,12 +344,9 @@ describe("TarjetaUploadFotoEspecie", () => {
     it("abre y cierra el visor ampliado de la foto", async () => {
         preparar();
         fireEvent.click(screen.getByRole("button", { name: "Ampliar foto de Acelga" }));
-
         const dialogo = await screen.findByRole("dialog", { name: "Foto ampliada de especie" });
         expect(within(dialogo).getByAltText("Foto ampliada de Acelga")).toHaveAttribute("src", "/acelga.webp");
-
         fireEvent.click(within(dialogo).getByRole("button", { name: "Cerrar foto ampliada" }));
-
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     });
 
@@ -373,7 +354,6 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { container } = preparar();
         seleccionarArchivo(container, new File(["imagen"], "foto.png", { type: "image/png" }));
         fireEvent.click(screen.getByRole("button", { name: "Ampliar foto de Acelga" }));
-
         const dialogo = await screen.findByRole("dialog", { name: "Foto ampliada de especie" });
         expect(within(dialogo).getByAltText("Foto ampliada de Acelga")).toHaveAttribute("src", "blob:foto-1");
     });

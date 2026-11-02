@@ -5,8 +5,8 @@ const obtenerSesion = vi.hoisted(() => vi.fn());
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion }));
 
 describe("comprobación de sesión", () => {
-    beforeEach(() => { obtenerSesion.mockReset(); });
-    afterEach(() => { vi.restoreAllMocks(); });
+    beforeEach(() => { obtenerSesion.mockReset() });
+    afterEach(() => { vi.restoreAllMocks() });
 
     it.each(["OPERADOR", "PRODUCTOR", "ADMINISTRADOR"])("responde sin datos personales cuando la sesión %s sigue vigente", async (rol) => {
         obtenerSesion.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });

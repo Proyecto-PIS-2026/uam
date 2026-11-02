@@ -309,7 +309,7 @@
 
 .selectMui :global(.MuiAutocomplete-clearIndicator),
 .selectMui :global(.MuiAutocomplete-popupIndicator) {
-    color: var(--color-secondary);
+    color: rgba(0, 0, 0, 0.54);
 }
 
 .opcionAutocomplete[aria-selected="true"],

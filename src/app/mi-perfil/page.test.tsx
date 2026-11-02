@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import Pagina from "./page";
 const m = vi.hoisted(() => ({ sesion: vi.fn(), habilitado: vi.fn(), redirect: vi.fn(), notFound: vi.fn(), where: vi.fn(), select: vi.fn(), first: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: m.sesion }));
-vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ get habilitarCambioContrasena() { return m.habilitado(); } }));
+vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ get habilitarCambioContrasena() { return m.habilitado() } }));
 vi.mock("next/navigation", () => ({ redirect: m.redirect, notFound: m.notFound }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: { orm: { public: { Usuario: { where: m.where } } } } }));
 
@@ -12,8 +12,8 @@ describe("acceso al cambio desde mi cuenta", () => {
         vi.resetAllMocks();
         m.sesion.mockResolvedValue({ usuarioId: 7, rol: "OPERADOR" });
         m.habilitado.mockReturnValue(true);
-        m.redirect.mockImplementation(() => { throw new Error("NEXT_REDIRECT"); });
-        m.notFound.mockImplementation(() => { throw new Error("NO_ENCONTRADO"); });
+        m.redirect.mockImplementation(() => { throw new Error("NEXT_REDIRECT") });
+        m.notFound.mockImplementation(() => { throw new Error("NO_ENCONTRADO") });
         m.where.mockReturnValue({ select: m.select });
         m.select.mockReturnValue({ first: m.first });
         m.first.mockResolvedValue({ username: "mi_usuario" });

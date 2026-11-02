@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
     requerirConsulta: vi.fn(),
     obtenerPerfil: vi.fn(),
-    notFound: vi.fn(() => { throw new Error("NOT_FOUND"); }),
+    notFound: vi.fn(() => { throw new Error("NOT_FOUND") }),
 }));
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));

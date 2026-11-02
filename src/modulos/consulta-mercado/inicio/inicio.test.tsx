@@ -7,10 +7,15 @@ type PropsInicio = ComponentProps<typeof Inicio>;
 
 const mocks = vi.hoisted(() => ({
     autorizado: vi.fn(),
+    notificar: vi.fn(),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/permisos", () => ({
     autorizado: mocks.autorizado,
+}));
+
+vi.mock("@/compartido/componentes/NotificacionToast", () => ({
+    useNotificacionToast: () => ({ notificar: mocks.notificar }),
 }));
 
 vi.mock("next/image", () => ({
@@ -48,6 +53,10 @@ function preparar(cambios: Partial<PropsInicio> = {}) {
 
 function nombresVisibles() {
     return screen.queryAllByTestId("tarjeta-especie").map((tarjeta) => tarjeta.textContent);
+}
+
+function tarjetaEspecie(nombre: string) {
+    return screen.getAllByTestId("tarjeta-especie").find((tarjeta) => tarjeta.textContent === nombre);
 }
 
 function crearMuchasEspecies() {
@@ -90,9 +99,28 @@ describe("Inicio", () => {
 
     it("entrega las imágenes y cantidades a las tarjetas", () => {
         preparar();
-        const tarjeta = screen.getAllByTestId("tarjeta-especie").find((elemento) => elemento.textContent === "Tomate");
-        expect(tarjeta).toHaveAttribute("data-operadores", "3");
-        expect(tarjeta).toHaveAttribute("data-imagen", "/tomate.webp");
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-operadores", "3");
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-imagen", "/tomate.webp");
+    });
+
+    it("entrega a la tarjeta la imagen personalizada recibida", () => {
+        const actualizadas = especies.map((especie) => especie.nombreEspecie === "Tomate" ? { ...especie, fotoGenerica: "/imagenes/foto-personalizada.webp" } : especie);
+        preparar({ especies: actualizadas });
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-imagen", "/imagenes/foto-personalizada.webp");
+    });
+
+    it("actualiza la imagen cuando recibe nuevos datos de la especie", () => {
+        const { rerender, props } = preparar();
+        const actualizadas = especies.map((especie) => especie.nombreEspecie === "Tomate" ? { ...especie, fotoGenerica: "/tomate-nuevo.webp" } : especie);
+        rerender(<Inicio {...props} especies={actualizadas} />);
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-imagen", "/tomate-nuevo.webp");
+    });
+
+    it("deja de enviar una imagen cuando la foto recibida es nula", () => {
+        const { rerender, props } = preparar();
+        const actualizadas = especies.map((especie) => especie.nombreEspecie === "Tomate" ? { ...especie, fotoGenerica: null } : especie);
+        rerender(<Inicio {...props} especies={actualizadas} />);
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-imagen", "");
     });
 
     it("no modifica el orden del arreglo recibido", () => {
@@ -115,6 +143,7 @@ describe("Inicio", () => {
         expect(screen.queryByRole("menuitemradio", { name: "Más vendidas" })).not.toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Menor Precio" })).not.toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Mayor Precio" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Más actualizadas" })).not.toBeInTheDocument();
         expect(screen.getAllByRole("menuitemradio")).toHaveLength(2);
     });
 
@@ -219,10 +248,17 @@ describe("Inicio", () => {
         expect(screen.getByRole("link", { name: "Lista inteligente" })).toHaveAttribute("href", "https://uam.com.uy/lista.pdf");
     });
 
-    it("avisa cuando la Lista Inteligente no está disponible", async () => {
+    it("abre la Lista Inteligente en otra pestaña", () => {
+        preparar();
+        const enlace = screen.getByRole("link", { name: "Lista inteligente" });
+        expect(enlace).toHaveAttribute("target", "_blank");
+        expect(enlace).toHaveAttribute("rel", "noopener noreferrer");
+    });
+
+    it("avisa cuando la Lista Inteligente no está disponible", () => {
         preparar({ urlListaInteligente: null });
         fireEvent.click(screen.getByRole("button", { name: "Lista inteligente" }));
-        expect(await screen.findByRole("alert")).toHaveTextContent("La Lista Inteligente no está disponible");
+        expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith("La Lista Inteligente no está disponible", "warning");
     });
 
     it("oculta los accesos que no están autorizados", () => {

@@ -6,9 +6,9 @@ import type { ReactNode } from "react";
 import styles from "./ContenedorConfiguraciones.module.css";
 
 const pestañas = [
-    { id: "general", etiqueta: "General" },
     { id: "estadisticas", etiqueta: "Estadísticas" },
     { id: "usuarios", etiqueta: "Usuarios" },
+    { id: "general", etiqueta: "General" },
 ] as const;
 
 type IdPestaña = typeof pestañas[number]["id"];

@@ -147,7 +147,7 @@ describe("PaginaPublicacionesProductor", () => {
 
     it("espera a que se confirme el acceso antes de consultar datos", async () => {
         let autorizar!: () => void;
-        mocks.requerirConsultaProductores.mockImplementation(() => new Promise<typeof sesionOperador>((resolve) => { autorizar = () => resolve(sesionOperador); }));
+        mocks.requerirConsultaProductores.mockImplementation(() => new Promise<typeof sesionOperador>((resolve) => { autorizar = () => resolve(sesionOperador) }));
         const pendiente = PaginaPublicacionesProductor();
         expect(mocks.consultarPublicacionesProductores).not.toHaveBeenCalled();
         expect(mocks.obtenerConfiguracion).not.toHaveBeenCalled();

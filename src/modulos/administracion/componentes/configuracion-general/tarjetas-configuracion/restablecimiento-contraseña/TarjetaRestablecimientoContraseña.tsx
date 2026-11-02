@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { IconButton, Switch } from "@mui/material";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import styles from "./TarjetaRestablecimientoContraseña.module.css";
 
 interface Props {
@@ -20,7 +20,7 @@ export default function TarjetaConfiguracionSwitch({titulo, descripcion, etiquet
     const [valorAnterior, setValorAnterior] = useState(habilitado);
     const [guardando, setGuardando] = useState(false);
 
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     if (valorAnterior !== habilitado) {
         setValorAnterior(habilitado);
@@ -38,7 +38,7 @@ export default function TarjetaConfiguracionSwitch({titulo, descripcion, etiquet
         try {
             await onGuardar(valor);
             setValorGuardado(valor);
-            notificar("La configuración se guardó correctamente.", "success");
+            notificar("La configuración de restablecimiento de contraseña se guardó correctamente.", "success");
         } catch (error) {
             notificar(error instanceof Error ? error.message: "No se pudo guardar la configuración.", "error");
         } finally {
@@ -59,7 +59,6 @@ export default function TarjetaConfiguracionSwitch({titulo, descripcion, etiquet
                     <CheckOutlinedIcon/>
                 </IconButton>
             </div>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion}/>
         </div>
     );
     return contenido; 

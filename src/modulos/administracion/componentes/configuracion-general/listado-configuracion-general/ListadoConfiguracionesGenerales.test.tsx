@@ -71,15 +71,13 @@ function preparar(configuracion = crearConfiguracion()) {
 }
 
 function propsInput(titulo: string): PropsInput {
-    const llamadas = mocks.input.mock.calls.filter(([props]) => props.titulo === titulo);
-    const ultima = llamadas.at(-1);
+    const ultima = mocks.input.mock.calls.filter(([props]) => props.titulo === titulo).at(-1);
     if (!ultima) throw new Error(`No se encontró la tarjeta ${titulo}`);
     return ultima[0];
 }
 
 function propsVigencia(titulo: string): PropsVigencia {
-    const llamadas = mocks.vigencia.mock.calls.filter(([props]) => props.titulo === titulo);
-    const ultima = llamadas.at(-1);
+    const ultima = mocks.vigencia.mock.calls.filter(([props]) => props.titulo === titulo).at(-1);
     if (!ultima) throw new Error(`No se encontró la tarjeta ${titulo}`);
     return ultima[0];
 }
@@ -112,14 +110,15 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(propsInput("Importe de ajuste rápido de precios")).toMatchObject({ tipo: "numero", valor: "25" });
     });
 
+    it("entrega mensajes de éxito específicos para URL e importe", () => {
+        preparar();
+        expect(propsInput("Lista Inteligente").mensajeExito).toBe("La URL de la Lista Inteligente se guardó correctamente.");
+        expect(propsInput("Importe de ajuste rápido de precios").mensajeExito).toBe("El importe de ajuste rápido de precios se guardó correctamente.");
+    });
+
     it("entrega los tres órdenes por separado", () => {
         preparar();
-        expect(propsOrdenamiento().configuracion).toEqual({
-            habilitado: true,
-            ordenLanding: "nombre_desc",
-            ordenMercadoVirtual: "menor_precio",
-            ordenMercadoProduccion: "mayor_precio",
-        });
+        expect(propsOrdenamiento().configuracion).toEqual({ habilitado: true, ordenLanding: "nombre_desc", ordenMercadoVirtual: "menor_precio", ordenMercadoProduccion: "mayor_precio" });
     });
 
     it("entrega las configuraciones de vigencia por separado", () => {
@@ -139,12 +138,7 @@ describe("ListadoConfiguracionesGenerales", () => {
         preparar({});
         expect(propsInput("Lista Inteligente").valor).toBe("");
         expect(propsInput("Importe de ajuste rápido de precios").valor).toBe("");
-        expect(propsOrdenamiento().configuracion).toEqual({
-            habilitado: false,
-            ordenLanding: "mas_vendidas",
-            ordenMercadoVirtual: "mas_vendidas",
-            ordenMercadoProduccion: "mas_vendidas",
-        });
+        expect(propsOrdenamiento().configuracion).toEqual({ habilitado: false, ordenLanding: "mas_vendidas", ordenMercadoVirtual: "mas_vendidas", ordenMercadoProduccion: "mas_vendidas" });
         expect(propsVigencia("Vigencia de las fotos").configuracion).toEqual({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" });
         expect(propsVigencia("Vigencia de publicaciones de productores").configuracion).toEqual({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" });
         expect(propsRestablecimiento().habilitado).toBe(false);
@@ -161,7 +155,7 @@ describe("ListadoConfiguracionesGenerales", () => {
         { nombre: "Mercado Virtual", clave: "orden_mercado_virtual_default", campo: "ordenMercadoVirtual" },
         { nombre: "Mercado Producción", clave: "orden_mercado_produccion_default", campo: "ordenMercadoProduccion" },
     ] as const)("$nombre", ({ clave, campo }) => {
-        it.each(["menor_precio", "mayor_precio", "nombre_asc", "nombre_desc", "mas_vendidas"])("interpreta el orden %s", (orden) => {
+        it.each(["menor_precio", "mayor_precio", "nombre_asc", "nombre_desc", "mas_vendidas", "mas_actualizadas"])("interpreta el orden %s", (orden) => {
             preparar(crearConfiguracion({ [clave]: orden }));
             expect(propsOrdenamiento().configuracion[campo]).toBe(orden);
             expect(propsOrdenamiento().configuracion.ordenLanding).toBe("nombre_desc");
@@ -172,17 +166,8 @@ describe("ListadoConfiguracionesGenerales", () => {
     });
 
     it("usa Más vendidas cuando recibe órdenes desconocidos", () => {
-        preparar(crearConfiguracion({
-            orden_landing_page_default: "desconocido",
-            orden_mercado_virtual_default: "desconocido",
-            orden_mercado_produccion_default: "desconocido",
-        }));
-        expect(propsOrdenamiento().configuracion).toEqual({
-            habilitado: true,
-            ordenLanding: "mas_vendidas",
-            ordenMercadoVirtual: "mas_vendidas",
-            ordenMercadoProduccion: "mas_vendidas",
-        });
+        preparar(crearConfiguracion({ orden_landing_page_default: "desconocido", orden_mercado_virtual_default: "desconocido", orden_mercado_produccion_default: "desconocido" }));
+        expect(propsOrdenamiento().configuracion).toEqual({ habilitado: true, ordenLanding: "mas_vendidas", ordenMercadoVirtual: "mas_vendidas", ordenMercadoProduccion: "mas_vendidas" });
     });
 
     it("actualiza localmente las entradas sin guardar automáticamente", () => {
@@ -199,7 +184,7 @@ describe("ListadoConfiguracionesGenerales", () => {
 
     it("guarda únicamente la URL y refresca después de guardar", async () => {
         preparar();
-        await act(async () => {await propsInput("Lista Inteligente").onGuardarValor?.("https://uam.com.uy/nueva.pdf")});
+        await act(async () => { await propsInput("Lista Inteligente").onGuardarValor?.("https://uam.com.uy/nueva.pdf") });
         expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({ url_lista_inteligente: "https://uam.com.uy/nueva.pdf" });
         expect(propsInput("Lista Inteligente").valor).toBe("https://uam.com.uy/nueva.pdf");
         expect(mocks.refresh).toHaveBeenCalledOnce();
@@ -207,7 +192,7 @@ describe("ListadoConfiguracionesGenerales", () => {
 
     it("guarda únicamente el importe", async () => {
         preparar();
-        await act(async () => {await propsInput("Importe de ajuste rápido de precios").onGuardarValor?.("50")});
+        await act(async () => { await propsInput("Importe de ajuste rápido de precios").onGuardarValor?.("50") });
         expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({ incremento_precio: "50" });
         expect(propsInput("Importe de ajuste rápido de precios").valor).toBe("50");
         expect(mocks.refresh).toHaveBeenCalledOnce();
@@ -216,12 +201,7 @@ describe("ListadoConfiguracionesGenerales", () => {
     it("guarda las cuatro claves de ordenamiento juntas", async () => {
         preparar();
         await act(async () => {
-            await propsOrdenamiento().onGuardar({
-                habilitado: false,
-                ordenLanding: "nombre_asc",
-                ordenMercadoVirtual: "mayor_precio",
-                ordenMercadoProduccion: "menor_precio",
-            });
+            await propsOrdenamiento().onGuardar({ habilitado: false, ordenLanding: "nombre_asc", ordenMercadoVirtual: "mayor_precio", ordenMercadoProduccion: "menor_precio" });
         });
         expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({
             ordenamiento_habilitado: "false",
@@ -232,9 +212,23 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(mocks.refresh).toHaveBeenCalledOnce();
     });
 
+    it("guarda Más actualizadas para ambos mercados", async () => {
+        preparar();
+        await act(async () => {
+            await propsOrdenamiento().onGuardar({ habilitado: true, ordenLanding: "nombre_asc", ordenMercadoVirtual: "mas_actualizadas", ordenMercadoProduccion: "mas_actualizadas" });
+        });
+        expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({
+            ordenamiento_habilitado: "true",
+            orden_landing_page_default: "nombre_asc",
+            orden_mercado_virtual_default: "mas_actualizadas",
+            orden_mercado_produccion_default: "mas_actualizadas",
+        });
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
     it("guarda la vigencia de fotos con sus propias claves", async () => {
         preparar();
-        await act(async () => {await propsVigencia("Vigencia de las fotos").onGuardar({ habilitado: true, diasVigencia: "60", avisosHabilitados: true, diasAnticipacion: "10" })});
+        await act(async () => { await propsVigencia("Vigencia de las fotos").onGuardar({ habilitado: true, diasVigencia: "60", avisosHabilitados: true, diasAnticipacion: "10" }) });
         expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({
             aging_fotos_habilitado: "true",
             vigencia_fotos: "60",
@@ -246,7 +240,7 @@ describe("ListadoConfiguracionesGenerales", () => {
 
     it("guarda la vigencia de publicaciones con sus propias claves", async () => {
         preparar();
-        await act(async () => {await propsVigencia("Vigencia de publicaciones de productores").onGuardar({ habilitado: true, diasVigencia: "20", avisosHabilitados: true, diasAnticipacion: "3" })});
+        await act(async () => { await propsVigencia("Vigencia de publicaciones de productores").onGuardar({ habilitado: true, diasVigencia: "20", avisosHabilitados: true, diasAnticipacion: "3" }) });
         expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({
             vigencia_publicaciones_productor_habilitada: "true",
             vigencia_publicaciones_productor: "20",
@@ -258,14 +252,14 @@ describe("ListadoConfiguracionesGenerales", () => {
 
     it.each([true, false])("guarda el restablecimiento como texto: %s", async (habilitado) => {
         preparar();
-        await act(async () => {await propsRestablecimiento().onGuardar(habilitado);});
+        await act(async () => { await propsRestablecimiento().onGuardar(habilitado) });
         expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({ restablecimiento_contrasena_habilitado: String(habilitado) });
         expect(mocks.refresh).toHaveBeenCalledOnce();
     });
 
     it("actualiza la selección de especie sin guardar", () => {
         preparar();
-        act(() => { propsFotos().onChangeEspecie("2"); });
+        act(() => { propsFotos().onChangeEspecie("2") });
         expect(propsFotos().especieSeleccionada).toBe("2");
         expect(mocks.guardarFoto).not.toHaveBeenCalled();
         expect(mocks.refresh).not.toHaveBeenCalled();
@@ -274,7 +268,7 @@ describe("ListadoConfiguracionesGenerales", () => {
     it("delega el guardado de la foto y refresca", async () => {
         preparar();
         const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
-        await act(async () => {await propsFotos().onGuardarFoto(2, archivo);});
+        await act(async () => { await propsFotos().onGuardarFoto(2, archivo) });
         expect(mocks.guardarFoto).toHaveBeenCalledExactlyOnceWith(2, archivo);
         expect(mocks.guardarConfiguraciones).not.toHaveBeenCalled();
         expect(mocks.refresh).toHaveBeenCalledOnce();
@@ -282,7 +276,7 @@ describe("ListadoConfiguracionesGenerales", () => {
 
     it("delega la eliminación de la foto y refresca", async () => {
         preparar();
-        await act(async () => {await propsFotos().onEliminarFoto(1)});
+        await act(async () => { await propsFotos().onEliminarFoto(1) });
         expect(mocks.eliminarFoto).toHaveBeenCalledExactlyOnceWith(1);
         expect(mocks.refresh).toHaveBeenCalledOnce();
     });
@@ -300,6 +294,14 @@ describe("ListadoConfiguracionesGenerales", () => {
         preparar();
         await expect(propsInput("Lista Inteligente").onGuardarValor?.("https://uam.com.uy/otra.pdf")).rejects.toThrow("Error al guardar");
         expect(propsInput("Lista Inteligente").valor).toBe("https://uam.com.uy/lista.pdf");
+        expect(mocks.refresh).not.toHaveBeenCalled();
+    });
+
+    it("no actualiza el importe guardado si falla la acción", async () => {
+        mocks.guardarConfiguraciones.mockRejectedValue(new Error("Error al guardar"));
+        preparar();
+        await expect(propsInput("Importe de ajuste rápido de precios").onGuardarValor?.("50")).rejects.toThrow("Error al guardar");
+        expect(propsInput("Importe de ajuste rápido de precios").valor).toBe("25");
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 

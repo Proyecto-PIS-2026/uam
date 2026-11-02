@@ -15,12 +15,13 @@ interface PropsPrueba {
     valorInicial?: string;
     tipo?: "numero" | "url";
     label?: string;
+    mensajeExito?: string;
     onGuardarValor?: (valor: string) => Promise<void>;
 }
 
-function ComponentePrueba({ valorInicial = "10", tipo = "numero", label, onGuardarValor }: PropsPrueba) {
+function ComponentePrueba({ valorInicial = "10", tipo = "numero", label, onGuardarValor, mensajeExito }: PropsPrueba) {
     const [valor, setValor] = useState(valorInicial);
-    return <TarjetaInput titulo="Configuración de prueba" descripcion="Descripción de prueba" label={label} valor={valor} tipo={tipo} onChangeValor={setValor} onGuardarValor={onGuardarValor} />;
+    return <TarjetaInput titulo="Configuración de prueba" descripcion="Descripción de prueba" label={label} valor={valor} tipo={tipo} onChangeValor={setValor} onGuardarValor={onGuardarValor} mensajeExito={mensajeExito} />;
 }
 
 function campo() {
@@ -97,9 +98,7 @@ describe("TarjetaInput", () => {
         expect(campo()).toHaveAttribute("type", "url");
         expect(campo()).toHaveAttribute("inputmode", "url");
         expect(campo()).not.toHaveAttribute("pattern");
-
         fireEvent.change(campo(), { target: { value: "https://uam.com.uy/lista.pdf" } });
-
         expect(campo()).toHaveValue("https://uam.com.uy/lista.pdf");
         expect(botonGuardar()).toBeEnabled();
     });
@@ -109,9 +108,8 @@ describe("TarjetaInput", () => {
         render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
         fireEvent.change(campo(), { target: { value: "25" } });
         fireEvent.click(botonGuardar());
-
         await waitFor(() => expect(onGuardarValor).toHaveBeenCalledExactlyOnceWith("25"));
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración se guardó correctamente.", "success"));
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("", "success"));        
         expect(botonGuardar()).toBeDisabled();
     });
 
@@ -119,32 +117,24 @@ describe("TarjetaInput", () => {
         render(<ComponentePrueba onGuardarValor={vi.fn().mockResolvedValue(undefined)} />);
         fireEvent.change(campo(), { target: { value: "25" } });
         fireEvent.click(botonGuardar());
-
         await waitFor(() => expect(botonGuardar()).toBeDisabled());
-
         fireEvent.change(campo(), { target: { value: "10" } });
         expect(botonGuardar()).toBeEnabled();
-
         fireEvent.change(campo(), { target: { value: "25" } });
         expect(botonGuardar()).toBeDisabled();
     });
 
     it("bloquea el campo y el check durante el guardado", async () => {
         let finalizar!: () => void;
-        const onGuardarValor = vi.fn(() => new Promise<void>((resolve) => { finalizar = resolve; }));
+        const onGuardarValor = vi.fn(() => new Promise<void>((resolve) => { finalizar = resolve }));
         render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
-
         fireEvent.change(campo(), { target: { value: "25" } });
         fireEvent.click(botonGuardar());
-
         expect(campo()).toBeDisabled();
         expect(botonGuardar()).toBeDisabled();
-
         fireEvent.click(botonGuardar());
         expect(onGuardarValor).toHaveBeenCalledOnce();
-
-        await act(async () => { finalizar(); });
-
+        await act(async () => { finalizar() });
         expect(campo()).toBeEnabled();
         expect(botonGuardar()).toBeDisabled();
     });
@@ -160,10 +150,8 @@ describe("TarjetaInput", () => {
         expect(campo()).toHaveValue("25");
         expect(campo()).toBeEnabled();
         expect(botonGuardar()).toBeEnabled();
-
         fireEvent.click(botonGuardar());
-
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración se guardó correctamente.", "success"));
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("", "success"));
         expect(onGuardarValor).toHaveBeenCalledTimes(2);
         expect(botonGuardar()).toBeDisabled();
     });
@@ -172,7 +160,6 @@ describe("TarjetaInput", () => {
         render(<ComponentePrueba onGuardarValor={vi.fn().mockRejectedValue("fallo")} />);
         fireEvent.change(campo(), { target: { value: "25" } });
         fireEvent.click(botonGuardar());
-
         await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("Ocurrió un error al guardar la configuración.", "error"));
         expect(botonGuardar()).toBeEnabled();
     });
@@ -188,6 +175,16 @@ describe("TarjetaInput", () => {
         render(<TarjetaInput titulo="Configuración de prueba" descripcion="Descripción de prueba" valor="10" />);
         fireEvent.change(campo(), { target: { value: "25" } });
         expect(campo()).toHaveValue("10");
+        expect(botonGuardar()).toBeDisabled();
+    });
+
+    it.each([{ tipo: "url", valor: "https://uam.com.uy/lista.pdf", mensaje: "La URL de la Lista Inteligente se guardó correctamente." }, { tipo: "numero", valor: "25", mensaje: "El importe de ajuste rápido de precios se guardó correctamente." }] as const)("muestra el mensaje personalizado para el campo $tipo", async ({ tipo, valor, mensaje }) => {
+        const onGuardarValor = vi.fn().mockResolvedValue(undefined);
+        render(<ComponentePrueba tipo={tipo} valorInicial="" onGuardarValor={onGuardarValor} mensajeExito={mensaje} />);
+        fireEvent.change(campo(), { target: { value: valor } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith(mensaje, "success"));
+        expect(onGuardarValor).toHaveBeenCalledExactlyOnceWith(valor);
         expect(botonGuardar()).toBeDisabled();
     });
 });

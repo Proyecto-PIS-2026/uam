@@ -110,7 +110,7 @@ describe("ContenedorConfiguracionGenerales", () => {
 
     it("inicia ambas consultas sin esperar a que termine la primera", async () => {
         let resolverConfiguraciones!: (filas: []) => void;
-        mocks.obtenerConfiguraciones.mockImplementation(() => new Promise<[]>((resolve) => { resolverConfiguraciones = resolve; }));
+        mocks.obtenerConfiguraciones.mockImplementation(() => new Promise<[]>((resolve) => { resolverConfiguraciones = resolve }));
 
         const pendiente = ContenedorConfiguracionGenerales();
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { IconButton, MenuItem, Switch, TextField } from "@mui/material";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import styles from "./TarjetaOrdenamientoPredeterminado.module.css";
 
 const opcionesOrden = [
@@ -41,7 +41,7 @@ export default function TarjetaConfiguracionOrdenamiento({ configuracion, onGuar
     const [configuracionAnterior, setConfiguracionAnterior] = useState(configuracion);
     const [guardando, setGuardando] = useState(false);
 
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     if (!sonIguales(configuracionAnterior, configuracion)) {
         setConfiguracionAnterior(configuracion);
@@ -117,7 +117,6 @@ export default function TarjetaConfiguracionOrdenamiento({ configuracion, onGuar
                     <CheckOutlinedIcon />
                 </IconButton>
             </div>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion}/>
         </div>
     );
     return contenido; 

@@ -40,8 +40,8 @@ export function ConfirmModal({
 			aria-labelledby={tituloId}
 			aria-describedby={descripcionId}
 			transitionDuration={reducirMovimiento ? 0 : 220}
-			onClose={() => { if (!procesando) alCancelar(); }}
-			onKeyDown={(evento) => { if (evento.key === "Escape") evento.stopPropagation(); }}
+			onClose={() => { if (!procesando) alCancelar() }}
+			onKeyDown={(evento) => { if (evento.key === "Escape") evento.stopPropagation() }}
 			onClick={(evento) => evento.stopPropagation()}
 			slotProps={{
 				paper: {

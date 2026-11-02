@@ -1,6 +1,18 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TarjetaRestablecimientoContraseña from "./TarjetaRestablecimientoContraseña";
+
+const mocks = vi.hoisted(() => ({
+    notificar: vi.fn(),
+}));
+
+vi.mock("@/compartido/componentes/NotificacionToast", () => ({
+    useNotificacionToast: () => ({ notificar: mocks.notificar }),
+}));
+
+beforeEach(() => {
+    vi.clearAllMocks();
+});
 
 afterEach(cleanup);
 
@@ -59,9 +71,8 @@ describe("TarjetaRestablecimientoContraseña", () => {
         const { onGuardar } = preparar(habilitado);
         fireEvent.click(obtenerSwitch());
         fireEvent.click(botonGuardar());
-
         await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith(!habilitado));
-        expect(await screen.findByRole("status")).toHaveTextContent("La configuración se guardó correctamente.");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración de restablecimiento de contraseña se guardó correctamente.", "success"));
         expect(obtenerSwitch()).toHaveProperty("checked", !habilitado);
         expect(botonGuardar()).toBeDisabled();
     });
@@ -70,50 +81,38 @@ describe("TarjetaRestablecimientoContraseña", () => {
         preparar(true);
         fireEvent.click(obtenerSwitch());
         fireEvent.click(botonGuardar());
-
-        await screen.findByRole("status");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración de restablecimiento de contraseña se guardó correctamente.", "success"));
         expect(botonGuardar()).toBeDisabled();
-
         fireEvent.click(obtenerSwitch());
-
         expect(obtenerSwitch()).toBeChecked();
         expect(botonGuardar()).toBeEnabled();
-
         fireEvent.click(obtenerSwitch());
-
         expect(obtenerSwitch()).not.toBeChecked();
         expect(botonGuardar()).toBeDisabled();
     });
 
     it("bloquea los controles mientras guarda y evita envíos repetidos", async () => {
         let finalizar!: () => void;
-        const onGuardar = vi.fn(() => new Promise<void>((resolve) => { finalizar = resolve; }));
+        const onGuardar = vi.fn(() => new Promise<void>((resolve) => { finalizar = resolve }));
         preparar(true, onGuardar);
-
         fireEvent.click(obtenerSwitch());
         fireEvent.click(botonGuardar());
-
         expect(obtenerSwitch()).toBeDisabled();
         expect(botonGuardar()).toBeDisabled();
-
         fireEvent.click(botonGuardar());
         expect(onGuardar).toHaveBeenCalledOnce();
-
-        await act(async () => { finalizar(); });
-
+        await act(async () => { finalizar() });
         expect(obtenerSwitch()).toBeEnabled();
         expect(botonGuardar()).toBeDisabled();
-        expect(await screen.findByRole("status")).toHaveTextContent("La configuración se guardó correctamente.");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración de restablecimiento de contraseña se guardó correctamente.", "success"));
     });
 
     it("muestra el error y conserva el cambio si falla el guardado", async () => {
         const onGuardar = vi.fn().mockRejectedValue(new Error("No se pudo conectar con el servidor"));
         preparar(true, onGuardar);
-
         fireEvent.click(obtenerSwitch());
         fireEvent.click(botonGuardar());
-
-        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo conectar con el servidor");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("No se pudo conectar con el servidor", "error"));
         expect(obtenerSwitch()).not.toBeChecked();
         await waitFor(() => expect(botonGuardar()).toBeEnabled());
         expect(obtenerSwitch()).toBeEnabled();
@@ -122,16 +121,12 @@ describe("TarjetaRestablecimientoContraseña", () => {
     it("permite reintentar después de un error", async () => {
         const onGuardar = vi.fn().mockRejectedValueOnce(new Error("Error temporal")).mockResolvedValueOnce(undefined);
         preparar(true, onGuardar);
-
         fireEvent.click(obtenerSwitch());
         fireEvent.click(botonGuardar());
-
-        expect(await screen.findByRole("alert")).toHaveTextContent("Error temporal");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("Error temporal", "error"));
         await waitFor(() => expect(botonGuardar()).toBeEnabled());
-
         fireEvent.click(botonGuardar());
-
-        expect(await screen.findByRole("status")).toHaveTextContent("La configuración se guardó correctamente.");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración de restablecimiento de contraseña se guardó correctamente.", "success"));
         expect(onGuardar).toHaveBeenCalledTimes(2);
         expect(onGuardar).toHaveBeenNthCalledWith(1, false);
         expect(onGuardar).toHaveBeenNthCalledWith(2, false);
@@ -142,16 +137,13 @@ describe("TarjetaRestablecimientoContraseña", () => {
         preparar(true, vi.fn().mockRejectedValue("fallo"));
         fireEvent.click(obtenerSwitch());
         fireEvent.click(botonGuardar());
-
-        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar la configuración.");
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("No se pudo guardar la configuración.", "error"));
         await waitFor(() => expect(botonGuardar()).toBeEnabled());
     });
 
     it.each([true, false])("sincroniza el switch si el servidor cambia el estado inicial %s", (habilitado) => {
         const { rerender, props } = preparar(habilitado);
-
         rerender(<TarjetaRestablecimientoContraseña {...props} habilitado={!habilitado} />);
-
         expect(obtenerSwitch()).toHaveProperty("checked", !habilitado);
         expect(botonGuardar()).toBeDisabled();
     });
@@ -159,9 +151,7 @@ describe("TarjetaRestablecimientoContraseña", () => {
     it("conserva el cambio local si las props mantienen el mismo valor", () => {
         const { rerender, props } = preparar(true);
         fireEvent.click(obtenerSwitch());
-
         rerender(<TarjetaRestablecimientoContraseña {...props} />);
-
         expect(obtenerSwitch()).not.toBeChecked();
         expect(botonGuardar()).toBeEnabled();
     });

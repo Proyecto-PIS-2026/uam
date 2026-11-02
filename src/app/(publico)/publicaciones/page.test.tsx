@@ -1,9 +1,8 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PaginaPublicaciones, { dynamic } from "./page";
 import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
-import type { ReactNode } from "react";
 
 type PropsContenedor = ComponentProps<typeof import("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones").default>;
 
@@ -51,6 +50,7 @@ function configurar(cambios: Partial<ConfiguracionOrdenamiento> = {}) {
         ordenMercadoProduccion: "mayor_precio",
         ...cambios,
     };
+
     mocks.obtenerConfiguracion.mockResolvedValue(configuracion);
 }
 
@@ -81,11 +81,7 @@ describe("PaginaPublicaciones", () => {
     it("muestra el encabezado con la cantidad total del catálogo", async () => {
         await mostrar();
         expect(screen.getByRole("heading", { name: "Mercado Virtual" })).toBeInTheDocument();
-        expect(mocks.encabezado.mock.calls.at(-1)![0]).toEqual({
-            titulo: "Mercado Virtual",
-            cantidad: 70,
-            subtitulo: "publicaciones en la plataforma",
-        });
+        expect(mocks.encabezado.mock.calls.at(-1)![0]).toEqual({ titulo: "Mercado Virtual", cantidad: 70, subtitulo: "publicaciones en la plataforma" });
     });
 
     it("consulta todas las especies cuando no recibe un filtro", async () => {
@@ -106,11 +102,7 @@ describe("PaginaPublicaciones", () => {
     });
 
     it("utiliza el orden de Mercado Virtual y no los de Inicio o Mercado Producción", async () => {
-        configurar({
-            ordenLanding: "nombre_desc",
-            ordenMercadoVirtual: "menor_precio",
-            ordenMercadoProduccion: "mayor_precio",
-        });
+        configurar({ ordenLanding: "nombre_desc", ordenMercadoVirtual: "menor_precio", ordenMercadoProduccion: "mas_actualizadas" });
         await mostrar();
         expect(propsContenedor().ordenInicial).toBe("precioAsc");
     });
@@ -121,6 +113,7 @@ describe("PaginaPublicaciones", () => {
         { configurado: "mas_vendidas", esperado: "prioridad" },
         { configurado: "menor_precio", esperado: "precioAsc" },
         { configurado: "mayor_precio", esperado: "precioDesc" },
+        { configurado: "mas_actualizadas", esperado: "fechaDesc" },
     ] as const)("convierte el orden de Mercado Virtual $configurado en $esperado", async ({ configurado, esperado }) => {
         configurar({ ordenMercadoVirtual: configurado });
         await mostrar();
@@ -136,10 +129,20 @@ describe("PaginaPublicaciones", () => {
     it("mantiene el orden de Mercado Virtual cuando el switch está apagado", async () => {
         configurar({ habilitado: false, ordenMercadoVirtual: "mayor_precio" });
         await mostrar();
-        expect(propsContenedor()).toMatchObject({
-            ordenInicial: "precioDesc",
-            ordenamientoHabilitado: false,
-        });
+        expect(propsContenedor()).toMatchObject({ ordenInicial: "precioDesc", ordenamientoHabilitado: false });
+    });
+
+    it.each([true, false])("entrega Más actualizadas como predeterminado con habilitado=%s", async (habilitado) => {
+        configurar({ habilitado, ordenMercadoVirtual: "mas_actualizadas" });
+        await mostrar("Papa");
+        expect(propsContenedor()).toMatchObject({ especie: "Papa", ordenInicial: "fechaDesc", ordenamientoHabilitado: habilitado });
+        expect(mocks.obtenerPublicaciones).toHaveBeenCalledExactlyOnceWith({ especie: "Papa" });
+    });
+
+    it("mantiene Más vendidas como orden inicial al filtrar una sola especie", async () => {
+        configurar({ ordenMercadoVirtual: "mas_vendidas" });
+        await mostrar("Papa");
+        expect(propsContenedor()).toMatchObject({ especie: "Papa", ordenInicial: "prioridad" });
     });
 
     it.each([
@@ -158,13 +161,14 @@ describe("PaginaPublicaciones", () => {
         expect(propsContenedor().esAdmin).toBe(false);
     });
 
-    it("comprueba el acceso antes de consultar publicaciones", async () => {
-        mocks.obtenerPublicaciones.mockImplementation(async () => {
-            expect(mocks.redirigirAMercadoPropio).toHaveBeenCalledOnce();
-            return resultado;
-        });
+    it("comprueba el acceso antes de consultar publicaciones y configuración", async () => {
         await mostrar();
+        expect(mocks.redirigirAMercadoPropio).toHaveBeenCalledOnce();
         expect(mocks.obtenerPublicaciones).toHaveBeenCalledOnce();
+        expect(mocks.obtenerConfiguracion).toHaveBeenCalledOnce();
+        const ordenAcceso = mocks.redirigirAMercadoPropio.mock.invocationCallOrder[0];
+        expect(ordenAcceso).toBeLessThan(mocks.obtenerPublicaciones.mock.invocationCallOrder[0]);
+        expect(ordenAcceso).toBeLessThan(mocks.obtenerConfiguracion.mock.invocationCallOrder[0]);
     });
 
     it("no consulta datos si el control de acceso redirige", async () => {
@@ -193,11 +197,13 @@ describe("PaginaPublicaciones", () => {
         const error = new Error("Error de publicaciones");
         mocks.obtenerPublicaciones.mockRejectedValue(error);
         await expect(PaginaPublicaciones({ searchParams: Promise.resolve({}) })).rejects.toBe(error);
+        expect(mocks.contenedor).not.toHaveBeenCalled();
     });
 
     it("propaga los errores al consultar la configuración", async () => {
         const error = new Error("Error de configuración");
         mocks.obtenerConfiguracion.mockRejectedValue(error);
         await expect(PaginaPublicaciones({ searchParams: Promise.resolve({}) })).rejects.toBe(error);
+        expect(mocks.contenedor).not.toHaveBeenCalled();
     });
 });

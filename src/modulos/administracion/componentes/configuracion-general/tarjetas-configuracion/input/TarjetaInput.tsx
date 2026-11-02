@@ -13,11 +13,12 @@ interface TarjetaInputProps {
     label?: string;
     valor?: string;
     tipo?: "numero" | "url";
+    mensajeExito?: string;
     onChangeValor?: (valor: string) => void;
     onGuardarValor?: (valor: string) => Promise<void>;
 }
 
-export default function TarjetaInput({ titulo, descripcion, label, valor = "", tipo = "numero", onChangeValor, onGuardarValor }: TarjetaInputProps) {
+export default function TarjetaInput({ titulo, descripcion, label, valor = "", tipo = "numero", mensajeExito = "", onChangeValor, onGuardarValor }: TarjetaInputProps) {
     const id = useId();
     const [guardando, setGuardando] = useState(false);
     const [valorInicialGuardado, setValorInicialGuardado] = useState(valor);
@@ -41,7 +42,7 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
         try {
             await onGuardarValor?.(valor);
             setValorInicialGuardado(valor);
-            notificar("La configuración se guardó correctamente.", "success");
+            notificar(mensajeExito, "success");
         } catch (error) {
             notificar(error instanceof Error ? error.message : "Ocurrió un error al guardar la configuración.", "error");
         } finally {

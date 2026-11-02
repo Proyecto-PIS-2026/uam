@@ -87,16 +87,42 @@ describe("guardarConfiguraciones", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
-    it.each(["", "https://uam.com.uy/lista.pdf", "http://uam.com.uy/lista.pdf"])("permite guardar la URL %j", async (valor) => {
+    it.each([
+        "",
+        "https://uam.com.uy/lista.pdf",
+        "http://uam.com.uy/lista.pdf",
+        "https://uam.com.uy/lista.PDF",
+        "https://uam.com.uy/lista.pdf?v=2",
+        "https://uam.com.uy/lista.pdf#pagina=1",
+    ])("permite guardar la URL %j", async (valor) => {
         await guardarConfiguraciones({ url_lista_inteligente: valor });
         expect(mocks.exigirAdministrador).toHaveBeenCalledOnce();
         expect(mocks.where).toHaveBeenCalledWith({ nombreConfiguracion: "url_lista_inteligente" });
         expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: valor });
     });
 
-    it.each(["no-es-una-url", "ftp://uam.com.uy/lista.pdf", "javascript:alert(1)", " https://uam.com.uy", "https://uam.com.uy "])("rechaza la URL inválida %j", async (valor) => {
+    it.each([
+        "no-es-una-url",
+        "ftp://uam.com.uy/lista.pdf",
+        "javascript:alert(1)",
+        " https://uam.com.uy/lista.pdf",
+        "https://uam.com.uy/lista.pdf ",
+    ])("rechaza la URL inválida %j", async (valor) => {
         await expect(guardarConfiguraciones({ url_lista_inteligente: valor })).rejects.toThrow();
         expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        "https://www.youtube.com/watch?v=ejemplo",
+        "https://uam.com.uy/lista.html",
+        "https://uam.com.uy/lista.pdf/otra",
+        "https://uam.com.uy/documento?archivo=lista.pdf",
+        "https://uam.com.uy/documento#lista.pdf",
+    ])("rechaza una URL que no corresponde a un PDF: %j", async (valor) => {
+        await expect(guardarConfiguraciones({ url_lista_inteligente: valor })).rejects.toThrow("La URL de la Lista Inteligente debe corresponder a un archivo PDF.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
     });
 
     it.each(["1", "25", "1000"])("permite el importe %s", async (valor) => {
@@ -104,9 +130,15 @@ describe("guardarConfiguraciones", () => {
         expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: valor });
     });
 
-    it.each(["", "0", "-1", "1.5", "abc", " 2", "9007199254740992"])("rechaza el importe %j", async (valor) => {
+    it.each(["", "0", "-1", "1.5", "abc", " 2"])("rechaza el importe %j", async (valor) => {
         await expect(guardarConfiguraciones({ incremento_precio: valor })).rejects.toThrow("El importe debe ser un número entero mayor que cero.");
         expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("rechaza un importe demasiado grande con un mensaje específico", async () => {
+        await expect(guardarConfiguraciones({ incremento_precio: "9007199254740992" })).rejects.toThrow("El importe ingresado es demasiado grande.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
     });
 
     describe("restablecimiento de contraseñas", () => {
@@ -146,15 +178,19 @@ describe("ordenamiento", () => {
         await expect(guardarConfiguraciones(ordenamiento({ orden_landing_page_default: orden }))).resolves.toBeUndefined();
     });
 
-    it.each(["menor_precio", "mayor_precio", "desconocido", ""])("rechaza %j para Inicio", async (orden) => {
+    it.each(["menor_precio", "mayor_precio", "mas_actualizadas", "desconocido", ""])("rechaza %j para Inicio", async (orden) => {
         await expect(guardarConfiguraciones(ordenamiento({ orden_landing_page_default: orden }))).rejects.toThrow();
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
-    describe.each([{ nombre: "Mercado Virtual", clave: "orden_mercado_virtual_default" }, { nombre: "Mercado Producción", clave: "orden_mercado_produccion_default" }])("$nombre", ({ clave }) => {
-        it.each(["nombre_asc", "nombre_desc", "mas_vendidas", "menor_precio", "mayor_precio"])("acepta el orden %s", async (orden) => {
+    describe.each([
+        { nombre: "Mercado Virtual", clave: "orden_mercado_virtual_default" },
+        { nombre: "Mercado Producción", clave: "orden_mercado_produccion_default" },
+    ])("$nombre", ({ clave }) => {
+        it.each(["nombre_asc", "nombre_desc", "mas_vendidas", "menor_precio", "mayor_precio", "mas_actualizadas"])("acepta el orden %s", async (orden) => {
             await expect(guardarConfiguraciones(ordenamiento({ [clave]: orden }))).resolves.toBeUndefined();
         });
+
         it.each(["desconocido", ""])("rechaza el orden inválido %j", async (orden) => {
             await expect(guardarConfiguraciones(ordenamiento({ [clave]: orden }))).rejects.toThrow("El orden seleccionado para el mercado no es válido.");
             expect(mocks.transaction).not.toHaveBeenCalled();
@@ -163,6 +199,21 @@ describe("ordenamiento", () => {
 
     it("permite guardar órdenes diferentes con el switch apagado", async () => {
         const cambios = ordenamiento({ ordenamiento_habilitado: "false" });
+        await guardarConfiguraciones(cambios);
+        expect(mocks.transaction).toHaveBeenCalledOnce();
+        expect(mocks.update).toHaveBeenCalledTimes(4);
+        Object.entries(cambios).forEach(([nombre, valor], indice) => {
+            expect(mocks.where).toHaveBeenNthCalledWith(indice + 1, { nombreConfiguracion: nombre });
+            expect(mocks.update).toHaveBeenNthCalledWith(indice + 1, { valorConfiguracion: valor });
+        });
+    });
+
+    it("permite guardar Más actualizadas para ambos mercados con el switch apagado", async () => {
+        const cambios = ordenamiento({
+            ordenamiento_habilitado: "false",
+            orden_mercado_virtual_default: "mas_actualizadas",
+            orden_mercado_produccion_default: "mas_actualizadas",
+        });
         await guardarConfiguraciones(cambios);
         expect(mocks.transaction).toHaveBeenCalledOnce();
         expect(mocks.update).toHaveBeenCalledTimes(4);
@@ -205,14 +256,26 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
-    it.each(["", "0", "-1", "1.5", "abc", "9007199254740992"])("rechaza vigencia activa con días %j", async (valor) => {
+    it.each(["", "0", "-1", "1.5", "abc"])("rechaza vigencia activa con días %j", async (valor) => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: valor }))).rejects.toThrow("La vigencia debe ser un número entero mayor que cero.");
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
-    it.each(["", "0", "-1", "1.5", "abc", "9007199254740992"])("rechaza avisos activos con anticipación %j", async (valor) => {
+    it("rechaza una vigencia demasiado grande con un mensaje específico", async () => {
+        await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "9007199254740992" }))).rejects.toThrow("La vigencia ingresada es demasiado grande.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it.each(["", "0", "-1", "1.5", "abc"])("rechaza avisos activos con anticipación %j", async (valor) => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.anticipacion]: valor }))).rejects.toThrow("La anticipación debe ser un número entero mayor que cero.");
         expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("rechaza una anticipación demasiado grande con un mensaje específico", async () => {
+        await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.anticipacion]: "9007199254740992" }))).rejects.toThrow("La anticipación ingresada es demasiado grande.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
     });
 
     it.each(["30", "31"])("rechaza anticipación %s con vigencia de 30 días", async (valor) => {

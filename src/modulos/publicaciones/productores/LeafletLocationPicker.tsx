@@ -220,7 +220,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             mapaInstanciaRef.current?.remove();
             mapaInstanciaRef.current = null;
         };
-    }, [elementoMapa, inicial]);
+    }, [elementoMapa, inicial, nombreLugarInicial]);
 
     function cerrar() {
         solicitudBusquedaRef.current += 1;

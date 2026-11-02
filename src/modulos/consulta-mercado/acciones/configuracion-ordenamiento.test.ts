@@ -38,15 +38,16 @@ describe("obtenerConfiguracionOrdenamiento", () => {
     });
 
     it("devuelve el estado y los tres órdenes por separado", async () => {
-        await expect(obtenerConfiguracionOrdenamiento()).resolves.toEqual({
-            habilitado: true,
-            ordenLanding: "nombre_asc",
-            ordenMercadoVirtual: "menor_precio",
-            ordenMercadoProduccion: "mayor_precio",
-        });
+        await expect(obtenerConfiguracionOrdenamiento()).resolves.toEqual({ habilitado: true, ordenLanding: "nombre_asc", ordenMercadoVirtual: "menor_precio", ordenMercadoProduccion: "mayor_precio" });
     });
 
-    it.each([{ valor: "true", esperado: true }, { valor: "false", esperado: false }, { valor: "", esperado: false }, { valor: "TRUE", esperado: false }, { valor: null, esperado: false }])("interpreta el estado $valor como $esperado", async ({ valor, esperado }) => {
+    it.each([
+        { valor: "true", esperado: true },
+        { valor: "false", esperado: false },
+        { valor: "", esperado: false },
+        { valor: "TRUE", esperado: false },
+        { valor: null, esperado: false },
+    ])("interpreta el estado $valor como $esperado", async ({ valor, esperado }) => {
         mocks.obtenerConfiguraciones.mockResolvedValue(crearFilas({ ordenamiento_habilitado: valor }));
         const resultado = await obtenerConfiguracionOrdenamiento();
         expect(resultado.habilitado).toBe(esperado);
@@ -60,14 +61,17 @@ describe("obtenerConfiguracionOrdenamiento", () => {
         expect(resultado.ordenMercadoProduccion).toBe("mayor_precio");
     });
 
-    it.each(["menor_precio", "mayor_precio", "desconocido", "", null])("usa Más vendidas si el orden de Inicio es inválido: %j", async (orden) => {
+    it.each(["menor_precio", "mayor_precio", "mas_actualizadas", "desconocido", "", null])("usa Más vendidas si el orden de Inicio es inválido: %j", async (orden) => {
         mocks.obtenerConfiguraciones.mockResolvedValue(crearFilas({ orden_landing_page_default: orden }));
         const resultado = await obtenerConfiguracionOrdenamiento();
         expect(resultado.ordenLanding).toBe("mas_vendidas");
     });
 
-    describe.each([{ nombre: "Mercado Virtual", clave: "orden_mercado_virtual_default", campo: "ordenMercadoVirtual" }, { nombre: "Mercado Producción", clave: "orden_mercado_produccion_default", campo: "ordenMercadoProduccion" }] as const)("$nombre", ({ clave, campo }) => {
-        it.each(["nombre_asc", "nombre_desc", "mas_vendidas", "menor_precio", "mayor_precio"])("conserva el orden válido %s sin modificar las otras secciones", async (orden) => {
+    describe.each([
+        { nombre: "Mercado Virtual", clave: "orden_mercado_virtual_default", campo: "ordenMercadoVirtual" },
+        { nombre: "Mercado Producción", clave: "orden_mercado_produccion_default", campo: "ordenMercadoProduccion" },
+    ] as const)("$nombre", ({ clave, campo }) => {
+        it.each(["nombre_asc", "nombre_desc", "mas_vendidas", "menor_precio", "mayor_precio", "mas_actualizadas"])("conserva el orden válido %s sin modificar las otras secciones", async (orden) => {
             mocks.obtenerConfiguraciones.mockResolvedValue(crearFilas({ [clave]: orden }));
             const resultado = await obtenerConfiguracionOrdenamiento();
             expect(resultado[campo]).toBe(orden);
@@ -76,6 +80,7 @@ describe("obtenerConfiguracionOrdenamiento", () => {
             const otroOrden = campo === "ordenMercadoVirtual" ? "mayor_precio" : "menor_precio";
             expect(resultado[otroCampo]).toBe(otroOrden);
         });
+
         it.each(["desconocido", "", null])("usa Más vendidas si el orden es inválido: %j", async (orden) => {
             mocks.obtenerConfiguraciones.mockResolvedValue(crearFilas({ [clave]: orden }));
             const resultado = await obtenerConfiguracionOrdenamiento();
@@ -90,25 +95,30 @@ describe("obtenerConfiguracionOrdenamiento", () => {
             orden_mercado_virtual_default: "mayor_precio",
             orden_mercado_produccion_default: "menor_precio",
         }));
-        await expect(obtenerConfiguracionOrdenamiento()).resolves.toEqual({
-            habilitado: false,
-            ordenLanding: "nombre_desc",
-            ordenMercadoVirtual: "mayor_precio",
-            ordenMercadoProduccion: "menor_precio",
-        });
+        await expect(obtenerConfiguracionOrdenamiento()).resolves.toEqual({ habilitado: false, ordenLanding: "nombre_desc", ordenMercadoVirtual: "mayor_precio", ordenMercadoProduccion: "menor_precio" });
+    });
+
+    it.each(["true", "false"])("mantiene Más actualizadas en ambos mercados con ordenamiento habilitado=%s", async (habilitado) => {
+        mocks.obtenerConfiguraciones.mockResolvedValue(crearFilas({
+            ordenamiento_habilitado: habilitado,
+            orden_mercado_virtual_default: "mas_actualizadas",
+            orden_mercado_produccion_default: "mas_actualizadas",
+        }));
+        await expect(obtenerConfiguracionOrdenamiento()).resolves.toEqual({ habilitado: habilitado === "true", ordenLanding: "nombre_asc", ordenMercadoVirtual: "mas_actualizadas", ordenMercadoProduccion: "mas_actualizadas" });
     });
 
     it("usa valores predeterminados si no existen configuraciones", async () => {
         mocks.obtenerConfiguraciones.mockResolvedValue([]);
-        await expect(obtenerConfiguracionOrdenamiento()).resolves.toEqual({
-            habilitado: false,
-            ordenLanding: "mas_vendidas",
-            ordenMercadoVirtual: "mas_vendidas",
-            ordenMercadoProduccion: "mas_vendidas",
-        });
+        await expect(obtenerConfiguracionOrdenamiento()).resolves.toEqual({ habilitado: false, ordenLanding: "mas_vendidas", ordenMercadoVirtual: "mas_vendidas", ordenMercadoProduccion: "mas_vendidas" });
     });
 
-    it.each([{ clave: "orden_landing_page_default", campo: "ordenLanding", valor: "nombre_desc" }, { clave: "orden_mercado_virtual_default", campo: "ordenMercadoVirtual", valor: "menor_precio" }, { clave: "orden_mercado_produccion_default", campo: "ordenMercadoProduccion", valor: "mayor_precio" }] as const)("conserva $clave cuando faltan las otras configuraciones", async ({ clave, campo, valor }) => {
+    it.each([
+        { clave: "orden_landing_page_default", campo: "ordenLanding", valor: "nombre_desc" },
+        { clave: "orden_mercado_virtual_default", campo: "ordenMercadoVirtual", valor: "menor_precio" },
+        { clave: "orden_mercado_produccion_default", campo: "ordenMercadoProduccion", valor: "mayor_precio" },
+        { clave: "orden_mercado_virtual_default", campo: "ordenMercadoVirtual", valor: "mas_actualizadas" },
+        { clave: "orden_mercado_produccion_default", campo: "ordenMercadoProduccion", valor: "mas_actualizadas" },
+    ] as const)("conserva $clave=$valor cuando faltan las otras configuraciones", async ({ clave, campo, valor }) => {
         mocks.obtenerConfiguraciones.mockResolvedValue([{ nombreConfiguracion: clave, valorConfiguracion: valor }]);
         await expect(obtenerConfiguracionOrdenamiento()).resolves.toEqual({
             habilitado: false,

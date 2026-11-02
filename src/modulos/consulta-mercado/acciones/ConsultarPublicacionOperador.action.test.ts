@@ -21,13 +21,7 @@ vi.mock("./PublicacionesOperador", () => ({
     consultarPublicaciones: mocks.consultarPublicaciones,
 }));
 
-const resultado = {
-    publicaciones: [],
-    opciones: [],
-    naves: [],
-    total: 0,
-    totalCatalogo: 0,
-};
+const resultado = { publicaciones: [], opciones: [], naves: [], total: 0, totalCatalogo: 0 };
 
 function crearConfiguracion(cambios: Partial<ConfiguracionOrdenamiento> = {}): ConfiguracionOrdenamiento {
     return {
@@ -73,11 +67,7 @@ describe("obtenerPublicaciones de operadores", () => {
     });
 
     it("utiliza el orden de Mercado Virtual y no los de Inicio o Mercado Producción", async () => {
-        configurar({
-            ordenLanding: "nombre_desc",
-            ordenMercadoVirtual: "menor_precio",
-            ordenMercadoProduccion: "mayor_precio",
-        });
+        configurar({ ordenLanding: "nombre_desc", ordenMercadoVirtual: "menor_precio", ordenMercadoProduccion: "mas_actualizadas" });
         await obtenerPublicaciones();
         expect(mocks.consultarPublicaciones).toHaveBeenCalledExactlyOnceWith({ orden: "precioAsc" });
     });
@@ -88,19 +78,20 @@ describe("obtenerPublicaciones de operadores", () => {
         { configurado: "mas_vendidas", esperado: "prioridad" },
         { configurado: "menor_precio", esperado: "precioAsc" },
         { configurado: "mayor_precio", esperado: "precioDesc" },
+        { configurado: "mas_actualizadas", esperado: "fechaDesc" },
     ])("aplica el predeterminado $configurado cuando no se solicita otro orden", async ({ configurado, esperado }) => {
         configurar({ ordenMercadoVirtual: configurado });
         await obtenerPublicaciones();
         expect(mocks.consultarPublicaciones).toHaveBeenCalledExactlyOnceWith({ orden: esperado });
     });
 
-    it.each<OrdenConsulta>(["precioAsc", "precioDesc", "alfabeticoAsc", "alfabeticoDesc"])("respeta la selección %s cuando el ordenamiento está habilitado", async (orden) => {
+    it.each<OrdenConsulta>(["precioAsc", "precioDesc", "alfabeticoAsc", "alfabeticoDesc", "fechaDesc", "prioridad", "ninguno"])("respeta la selección %s cuando el ordenamiento está habilitado", async (orden) => {
         configurar({ habilitado: true });
         await obtenerPublicaciones({ orden });
         expect(mocks.consultarPublicaciones).toHaveBeenCalledExactlyOnceWith({ orden });
     });
 
-    it.each<OrdenConsulta>(["precioAsc", "precioDesc", "alfabeticoAsc", "alfabeticoDesc", "prioridad", "ninguno"])("ignora la selección %s cuando el ordenamiento está deshabilitado", async (orden) => {
+    it.each<OrdenConsulta>(["precioAsc", "precioDesc", "alfabeticoAsc", "alfabeticoDesc", "fechaDesc", "prioridad", "ninguno"])("ignora la selección %s cuando el ordenamiento está deshabilitado", async (orden) => {
         configurar({ habilitado: false, ordenMercadoVirtual: "nombre_desc" });
         await obtenerPublicaciones({ orden });
         expect(mocks.consultarPublicaciones).toHaveBeenCalledExactlyOnceWith({ orden: "alfabeticoDesc" });
@@ -110,6 +101,12 @@ describe("obtenerPublicaciones de operadores", () => {
         configurar({ habilitado: false, ordenMercadoVirtual: "mas_vendidas" });
         await obtenerPublicaciones();
         expect(mocks.consultarPublicaciones).toHaveBeenCalledExactlyOnceWith({ orden: "prioridad" });
+    });
+
+    it("aplica Más actualizadas como predeterminado cuando el ordenamiento está deshabilitado", async () => {
+        configurar({ habilitado: false, ordenMercadoVirtual: "mas_actualizadas" });
+        await obtenerPublicaciones({ orden: "precioDesc" });
+        expect(mocks.consultarPublicaciones).toHaveBeenCalledExactlyOnceWith({ orden: "fechaDesc" });
     });
 
     it("conserva los demás filtros cuando reemplaza el orden", async () => {
@@ -134,21 +131,23 @@ describe("obtenerPublicaciones de operadores", () => {
     it("conserva los filtros cuando utiliza el predeterminado con el switch activo", async () => {
         configurar({ habilitado: true, ordenMercadoVirtual: "mayor_precio" });
         await obtenerPublicaciones({ especie: "Acelga", precioMinimo: "20" });
-        expect(mocks.consultarPublicaciones).toHaveBeenCalledExactlyOnceWith({
-            especie: "Acelga",
-            precioMinimo: "20",
-            orden: "precioDesc",
-        });
+        expect(mocks.consultarPublicaciones).toHaveBeenCalledExactlyOnceWith({ especie: "Acelga", precioMinimo: "20", orden: "precioDesc" });
+    });
+
+    it("conserva los filtros al solicitar el orden por actualización", async () => {
+        const filtros: FiltrosConsulta = { especie: "Papa", nave: "E", precioMinimo: "50", precioMaximo: "200", orden: "fechaDesc" };
+        await obtenerPublicaciones(filtros);
+        expect(mocks.consultarPublicaciones).toHaveBeenCalledExactlyOnceWith(filtros);
     });
 
     it("consulta la configuración vigente en cada solicitud", async () => {
         configurar({ habilitado: false, ordenMercadoVirtual: "nombre_asc" });
         await obtenerPublicaciones();
-        configurar({ habilitado: false, ordenMercadoVirtual: "nombre_desc" });
+        configurar({ habilitado: false, ordenMercadoVirtual: "mas_actualizadas" });
         await obtenerPublicaciones();
         expect(mocks.obtenerConfiguracionOrdenamiento).toHaveBeenCalledTimes(2);
         expect(mocks.consultarPublicaciones).toHaveBeenNthCalledWith(1, { orden: "alfabeticoAsc" });
-        expect(mocks.consultarPublicaciones).toHaveBeenNthCalledWith(2, { orden: "alfabeticoDesc" });
+        expect(mocks.consultarPublicaciones).toHaveBeenNthCalledWith(2, { orden: "fechaDesc" });
     });
 
     it("propaga el error de configuración sin consultar publicaciones", async () => {

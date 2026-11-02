@@ -145,7 +145,7 @@ describe("PaginaInicio", () => {
 
     it("espera la comprobación de acceso antes de iniciar las consultas", async () => {
         let finalizar!: () => void;
-        mocks.redirigirProductor.mockImplementation(() => new Promise<void>((resolve) => { finalizar = resolve; }));
+        mocks.redirigirProductor.mockImplementation(() => new Promise<void>((resolve) => { finalizar = resolve }));
         const pendiente = PaginaInicio();
         expect(mocks.obtenerEspecies).not.toHaveBeenCalled();
         expect(mocks.obtenerUrlLista).not.toHaveBeenCalled();

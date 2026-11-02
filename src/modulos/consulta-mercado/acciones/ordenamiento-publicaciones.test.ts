@@ -10,6 +10,7 @@ describe("convertirOrdenMercados", () => {
         { configurado: "nombre_asc", esperado: "alfabeticoAsc" },
         { configurado: "nombre_desc", esperado: "alfabeticoDesc" },
         { configurado: "mas_vendidas", esperado: "prioridad" },
+        { configurado: "mas_actualizadas", esperado: "fechaDesc" },
     ])("convierte $configurado en $esperado", ({ configurado, esperado }) => {
         expect(convertirOrdenMercados(configurado)).toBe(esperado);
     });

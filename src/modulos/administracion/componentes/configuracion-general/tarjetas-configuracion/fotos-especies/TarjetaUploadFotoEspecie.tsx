@@ -8,7 +8,7 @@ import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import ImagenPublicacion from "@/modulos/publicaciones/componentes/ImagenPublicacion";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 
 import styles from "./TarjetaUploadFotoEspecie.module.css";
 
@@ -41,7 +41,7 @@ export default function TarjetaUploadFotoEspecie({titulo, especies, especieSelec
     const fotoAnteriorRef = useRef<string | null>(null);
     const fotoCargadaRef = useRef<string | null>(null);
 
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     const especieActual = especies.find((especie) => String(especie.id) === especieSeleccionada);
 
@@ -100,7 +100,7 @@ export default function TarjetaUploadFotoEspecie({titulo, especies, especieSelec
             return;
         }
         if (archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
-            notificar("La imagen debe pesar entre 1 byte y 10 MB.", "error");
+            notificar("La imagen debe pesar menos de 10 MB.", "error");
             return;
         }
         setFotoAmpliada(false);
@@ -230,7 +230,6 @@ export default function TarjetaUploadFotoEspecie({titulo, especies, especieSelec
                     />
                 </div>
             </Dialog>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion}/>
         </div>
     );
     return contenido; 

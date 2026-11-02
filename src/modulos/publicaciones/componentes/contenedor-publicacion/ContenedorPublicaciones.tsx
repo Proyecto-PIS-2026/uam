@@ -89,7 +89,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
     const recargaPendiente = useRef(false);
     const esperasDeCarga = useRef<Array<(actualizado: boolean) => void>>([]);
     const origen = useRef(resultado);
-    const invalidarPeticiones = useCallback(() => { ultimoPedido.current++; }, []);
+    const invalidarPeticiones = useCallback(() => { ultimoPedido.current++ }, []);
 
     const cargar = useCallback(async function cargarActual(): Promise<void> {
         if (!montado.current) return;
@@ -136,7 +136,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
         if (!montado.current) return Promise.resolve(false);
         const finalizacion = new Promise<boolean>((resolver) => esperasDeCarga.current.push(resolver));
         if (!temporizador.current) {
-            temporizador.current = setTimeout(() => { temporizador.current = null; void cargar(); }, 250);
+            temporizador.current = setTimeout(() => { temporizador.current = null; void cargar() }, 250);
         }
         return finalizacion;
     }, [cargar]);

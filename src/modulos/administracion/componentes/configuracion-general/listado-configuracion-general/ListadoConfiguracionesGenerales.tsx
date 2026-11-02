@@ -62,15 +62,16 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
     }
 
     function obtenerOrden(valor: string | null | undefined): OrdenPublicaciones {
-    switch (valor) {
-        case "menor_precio":
-        case "mayor_precio":
-        case "nombre_asc":
-        case "nombre_desc":
-        case "mas_vendidas":
-            return valor;
-        default:
-            return "mas_vendidas";
+        switch (valor) {
+            case "menor_precio":
+            case "mayor_precio":
+            case "nombre_asc":
+            case "nombre_desc":
+            case "mas_vendidas":
+            case "mas_actualizadas":
+                return valor;
+            default:
+                return "mas_vendidas";
         }
     }
 
@@ -141,6 +142,7 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
                 descripcion="Configurá la URL de acceso a la Lista Inteligente."
                 tipo="url"
                 valor={listaInteligente}
+                mensajeExito="La URL de la Lista Inteligente se guardó correctamente."
                 onChangeValor={setListaInteligente}
                 onGuardarValor={guardarListaInteligente}
             />
@@ -150,6 +152,7 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
                 descripcion="Configurá el importe utilizado para aumentar o disminuir rápidamente el precio de una publicación."
                 tipo="numero"
                 valor={importe}
+                mensajeExito="El importe de ajuste rápido de precios se guardó correctamente."
                 onChangeValor={setImporte}
                 onGuardarValor={guardarImporte}
             />

@@ -100,7 +100,7 @@ describe("TextoAjustable", () => {
         const observador = ObservadorDePrueba.instancias[0];
         expect(observador.observe).toHaveBeenCalledExactlyOnceWith(contenedor);
         anchoContenedor = 92;
-        act(() => { observador.cambiarAncho(92); });
+        act(() => { observador.cambiarAncho(92) });
         expect(texto).toHaveStyle({ fontSize: "15px" });
         anchoContenedor = 202;
         act(() => { observador.cambiarAncho(202) });
@@ -110,7 +110,7 @@ describe("TextoAjustable", () => {
     it("no vuelve a medir cuando el observer notifica el mismo ancho", () => {
         render(<TextoAjustable minimo={10} maximo={30}>Tomate</TextoAjustable>);
         const observador = ObservadorDePrueba.instancias[0];
-        act(() => { observador.cambiarAncho(202); });
+        act(() => { observador.cambiarAncho(202) });
         vi.mocked(HTMLSpanElement.prototype.getBoundingClientRect,).mockClear();
         act(() => { observador.cambiarAncho(202) });
         expect(HTMLSpanElement.prototype.getBoundingClientRect).not.toHaveBeenCalled();
@@ -141,7 +141,7 @@ describe("TextoAjustable", () => {
     it("reajusta el tamaño al terminar de cargar nuevas fuentes", () => {
         render(<TextoAjustable minimo={10} maximo={30}>Tomate</TextoAjustable>);
         factorFuente = 2;
-        act(() => { fuentes.dispatchEvent(new Event("loadingdone")); });
+        act(() => { fuentes.dispatchEvent(new Event("loadingdone")) });
         expect(screen.getByText("Tomate")).toHaveStyle({ fontSize: "16.5px" });
     });
 

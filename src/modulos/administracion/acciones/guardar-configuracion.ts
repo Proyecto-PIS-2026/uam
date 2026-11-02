@@ -10,7 +10,6 @@ const clavesOrdenamiento = [
     "orden_mercado_produccion_default",
 ] as const;
 
-// Orden: habilitado, vigencia, avisos, anticipación.
 const clavesVigenciaFotos = [
     "aging_fotos_habilitado",
     "vigencia_fotos",
@@ -68,11 +67,6 @@ const clavesDias = new Set<string>([
     "anticipacion_aviso_publicaciones_productor",
 ]);
 
-function esEnteroPositivo(valor: string): boolean {
-    const numero = Number(valor);
-    return (/^[0-9]+$/.test(valor) && Number.isSafeInteger(numero) && numero > 0);
-}
-
 function validarValor(nombre: string, valor: string): void {
     if (nombre === "url_lista_inteligente") {
         if (valor === "") {
@@ -90,11 +84,17 @@ function validarValor(nombre: string, valor: string): void {
         if (!["http:", "https:"].includes(url.protocol) || !url.hostname) {
             throw new Error("La URL debe comenzar con http:// o https://.");
         }
+        if (!url.pathname.toLowerCase().endsWith(".pdf")) {
+            throw new Error("La URL de la Lista Inteligente debe corresponder a un archivo PDF.");
+        }
         return;
     }
     if (nombre === "incremento_precio") {
-        if (!esEnteroPositivo(valor)) {
+        if (!/^[0-9]+$/.test(valor) || Number(valor) <= 0) {
             throw new Error("El importe debe ser un número entero mayor que cero.");
+        }
+        if (!Number.isSafeInteger(Number(valor))) {
+            throw new Error("El importe ingresado es demasiado grande.");
         }
         return;
     }
@@ -122,24 +122,28 @@ function validarValor(nombre: string, valor: string): void {
     throw new Error("La configuración indicada no es válida.");
 }
 
+function validarDias(valor: string, campo: "vigencia" | "anticipación"): void {
+    if (!/^[0-9]+$/.test(valor) || Number(valor) <= 0) {
+        throw new Error(`La ${campo} debe ser un número entero mayor que cero.`);
+    }
+    if (!Number.isSafeInteger(Number(valor))) {
+        throw new Error(`La ${campo} ingresada es demasiado grande.`);
+    }
+}
+
 function validarVigencia(cambios: Record<string, string>, claves: readonly [string, string, string, string]): void {
-    const [
-        claveHabilitado,
-        claveVigencia,
-        claveAvisos,
-        claveAnticipacion,
-    ] = claves;
+    const [claveHabilitado, claveVigencia, claveAvisos, claveAnticipacion] = claves;
     const configuracionCompleta = claves.every((clave) => Object.hasOwn(cambios, clave));
     if (!configuracionCompleta) {
         throw new Error("Las cuatro opciones de vigencia deben guardarse juntas.");
     }
     const habilitado = cambios[claveHabilitado] === "true";
     const avisosActivos = habilitado && cambios[claveAvisos] === "true";
-    if (habilitado && !esEnteroPositivo(cambios[claveVigencia])) {
-        throw new Error("La vigencia debe ser un número entero mayor que cero.");
+    if (habilitado) {
+        validarDias(cambios[claveVigencia], "vigencia");
     }
-    if (avisosActivos && !esEnteroPositivo(cambios[claveAnticipacion])) {
-        throw new Error("La anticipación debe ser un número entero mayor que cero.");
+    if (avisosActivos) {
+        validarDias(cambios[claveAnticipacion], "anticipación");
     }
     if (avisosActivos && Number(cambios[claveAnticipacion]) >= Number(cambios[claveVigencia])) {
         throw new Error("La anticipación debe ser menor que la vigencia.");

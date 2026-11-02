@@ -95,7 +95,7 @@ describe("PaginaAdministracion", () => {
 
     it("espera a que se confirme el acceso antes de consultar datos", async () => {
         let autorizar!: () => void;
-        mocks.requerirAdministrador.mockImplementation(() => new Promise<void>((resolve) => { autorizar = resolve; }));
+        mocks.requerirAdministrador.mockImplementation(() => new Promise<void>((resolve) => { autorizar = resolve }));
         const pendiente = PaginaAdministracion();
         expect(mocks.consultarUsuarios).not.toHaveBeenCalled();
         expect(mocks.obtenerEstadisticas).not.toHaveBeenCalled();
