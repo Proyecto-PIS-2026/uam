@@ -53,13 +53,21 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   await seleccionarRol(page, "Administrador");
   await expect(filas.getByText(usuariosAdministrativos.administrador.usuario, { exact: true })).toBeVisible();
   await seleccionarRol(page, "Operador");
-  const username = (await filas.first().locator("span").first().innerText()).trim();
-  const nombreOperador = (await filas.first().locator("span").nth(1).innerText()).trim();
+  const columnasOperador = filas.first().locator(":scope > span");
+  const username = (await columnasOperador.first().evaluate((columna) =>
+    Array.from(columna.childNodes)
+      .filter((nodo) => nodo.nodeType === Node.TEXT_NODE)
+      .map((nodo) => nodo.textContent)
+      .join(""),
+  )).trim();
+  const nombreOperador = (await columnasOperador.nth(1).innerText()).trim();
   expect(username).not.toBe("");
   expect(nombreOperador).not.toBe("");
 
   await busqueda.fill(username);
-  const filaOperador = filas.filter({ has: page.getByText(username, { exact: true }) });
+  const filaOperador = filas.filter({
+    has: page.locator(`:scope > span:text-is(${JSON.stringify(username)})`),
+  });
   await expect(filaOperador).toHaveCount(1);
   await expect(filaOperador.getByText("Operador", { exact: true })).toBeVisible();
   await expect(filaOperador.getByText(nombreOperador, { exact: true })).toBeVisible();

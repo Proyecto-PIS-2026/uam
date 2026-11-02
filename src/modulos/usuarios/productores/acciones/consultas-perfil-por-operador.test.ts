@@ -4,6 +4,7 @@ import { obtenerPerfilProductorPorOperador } from "./consultas-perfil-por-operad
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(),
     productorSelect: vi.fn(),
+    productorWhere: vi.fn(),
     first: vi.fn(),
     where: vi.fn(),
     all: vi.fn(),
@@ -18,6 +19,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
         orm: {
             public: {
                 Productor: {
+                    where: mocks.productorWhere,
                     select: mocks.productorSelect,
                 },
                 PublicacionProductor: {
@@ -90,9 +92,24 @@ describe("obtenerPerfilProductorPorOperador", () => {
         vi.resetAllMocks();
         mocks.obtenerSesion.mockResolvedValue({usuarioId: 5, rol: "OPERADOR", expiraEn: 2000000000});
         mocks.productorSelect.mockReturnValue({first: mocks.first});
+        mocks.productorWhere.mockReturnValue({ select: mocks.productorSelect });
         mocks.first.mockResolvedValue(productor);
         mocks.where.mockReturnValue(crearConstructor());
         mocks.all.mockResolvedValue([]);
+    });
+
+    it("excluye perfiles de productores deshabilitados", async () => {
+        mocks.first.mockResolvedValue(null);
+        await expect(obtenerPerfilProductorPorOperador(productor.nombreFantasia)).resolves.toBeNull();
+        const predicado = mocks.productorWhere.mock.calls[0][0];
+        const evaluar = (estado: boolean) => predicado({
+            usuario: { some: (condicion: (usuario: { habilitado: { eq: (valor: boolean) => boolean } }) => boolean) =>
+                condicion({ habilitado: { eq: (valor) => estado === valor } }) },
+        });
+
+        expect(evaluar(false)).toBe(false);
+        expect(evaluar(true)).toBe(true);
+        expect(mocks.where).not.toHaveBeenCalled();
     });
 
     it.each([null, "PRODUCTOR"] as const)("rechaza la consulta con sesión %s antes de acceder a datos", async (rol) => {
