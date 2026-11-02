@@ -109,7 +109,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
 
     // Roles que ya tienen su página de modificación
     function puedeEditar(usuario: UsuarioParaModificar) {
-        return usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR";
+        return usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR" || usuario.rol == "ADMINISTRADOR";
     }
 
     function manejarEditar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
@@ -119,6 +119,9 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
         }
         if (usuario.rol === "PRODUCTOR") {
             router.push(`/gestion-productores/${usuario.productorId}/editar`);
+        }
+        if (usuario.rol === "ADMINISTRADOR") {
+            router.push(`/gestion-administradores/${usuario.administradorId}/editar`);
         }
     }
 
