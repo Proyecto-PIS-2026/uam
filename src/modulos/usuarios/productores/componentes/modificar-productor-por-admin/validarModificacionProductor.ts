@@ -29,6 +29,7 @@ const texto = (valor: unknown) =>
 
 export function validarModificacionProductor(
     valor: unknown,
+    opciones: { contactoOpcional?: boolean } = {},
 ): ResultadoValidacionModificacionProductor {
     if (
         typeof valor !== "object" ||
@@ -80,8 +81,9 @@ export function validarModificacionProductor(
     if (!CODIGOS_PAIS.includes(codigoPais)) {
         errores.push("El código de país no es válido.");
     }
+    const contactoVacio = opciones.contactoOpcional && typeof datos.telefono === "string" && !datos.telefono.trim();
     const reglaTelefono = REGLAS_TELEFONO[codigoPais];
-    if (reglaTelefono && !reglaTelefono.test(numeroSinCodigo)) errores.push("El teléfono no es válido.");
+    if (!contactoVacio && reglaTelefono && !reglaTelefono.test(numeroSinCodigo)) errores.push("El teléfono no es válido.");
 
     if (contraseña || confirmacion) {
         if (contraseña.length < 8) {
@@ -107,7 +109,7 @@ export function validarModificacionProductor(
         datos: {
             productorId: productorId as number,
             nombre,
-            telefono: codigoPais + numeroSinCodigo,
+            telefono: contactoVacio ? "" : codigoPais + numeroSinCodigo,
             contraseña: contraseña || null,
         },
     };

@@ -282,7 +282,40 @@ model HistoricoPrecios {
   historico                Jsonb
   fechaDesde               Date
   fechaHasta               Date
-  fechaUltimaActualizacion  Date
+  fechaUltimaActualizacion Date
 
   @@map("historicoPrecios")
+}
+
+// ESTADISTICA DE VISITAS
+model EstadisticaVisita {
+    id             Int      @id @default(autoincrement())
+    fecha          DateTime 
+    tipoVisitante  String   
+    cantidad       Int      @default(0)
+
+    @@unique([fecha, tipoVisitante])
+    @@map("estadisticaVisita")
+}
+
+// ESTADISTICA DE CONTACTOS
+model EstadisticaContacto {
+    id           Int      @id @default(autoincrement())
+    fecha        DateTime 
+    username     String   
+    cantidad     Int      @default(0)
+
+    @@unique([fecha, username])
+    @@map("estadisticaContacto")
+}
+
+// ESTADISTICA DE PUBLICACIONES
+model EstadisticaPublicacion {
+    id           Int      @id @default(autoincrement())
+    fecha        DateTime 
+    username     String   
+    cantidad     Int      @default(0)
+
+    @@unique([fecha, username])
+    @@map("estadisticaPublicacion")
 }

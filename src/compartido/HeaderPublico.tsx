@@ -383,10 +383,12 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
                         <ContadorNotificaciones cantidad={noLeidas} />
                     </Link>
-                    {!esProductor && (
-                        <span className={estilos.opcionDesplegable} role="menuitem">
+                    {esProductor ? (
+                        <Link href="/mi-perfil/productor" className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>Mi perfil</Link>
+                    ) : (
+                        <Link href="/mi-perfil" className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>
                             Mi perfil
-                        </span>
+                        </Link>
                     )}
                     <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
                         <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
@@ -398,8 +400,15 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
         </div>
     );
 
-    const menuPerfilMobile = rolUsuario && !esProductor && (
-        <button type="button" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`}>
+    const menuPerfilMobile = rolUsuario && (esProductor ? (
+        <Link href="/mi-perfil/productor" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
+            <span className={estilos.etiquetaMenuMobile}>
+                <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
+                Mi perfil
+            </span>
+        </Link>
+    ) : (
+        <Link href="/mi-perfil" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
             <span className={estilos.etiquetaMenuMobile}>
                 <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
                 Mi perfil
@@ -415,8 +424,8 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     onError={() => cambiarFotoPerfilFallida(true)}
                 />
             )}
-        </button>
-    );
+        </Link>
+    ));
 
     const menuCerrarSesionMobile = rolUsuario && (
         <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
