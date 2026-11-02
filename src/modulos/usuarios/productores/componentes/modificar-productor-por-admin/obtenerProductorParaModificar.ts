@@ -10,7 +10,7 @@ export type ProductorParaModificar = {
     telefono: string;
 };
 
-function separarTelefono(whatsApp: string) {
+export function separarTelefono(whatsApp: string) {
     const codigoPais =
         CODIGOS_PAIS.find((codigo) => whatsApp.startsWith(codigo)) ?? "+598";
 
