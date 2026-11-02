@@ -10,6 +10,7 @@ import { ErrorEdicionPublicacion, modificarPublicacionOperador } from "@/modulos
 import type { CambiosPublicacionOperador } from "@/modulos/publicaciones/operadores/tipos";
 import { revalidatePath } from "next/cache";
 import { ErrorCuerpoDemasiadoGrande, leerFormularioLimitado } from "@/infraestructura/http/cuerpo-limitado";
+import { Temporal } from "temporal-polyfill";
 
 export const runtime = "nodejs";
 
@@ -154,6 +155,35 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 			return NextResponse.json({ errores: ["La publicación no pertenece al operador seleccionado."] }, { status: 404 });
 		}
 		const resultado = await modificarPublicacionOperador(operador.usuarioId, vinculo.id, cambios as CambiosPublicacionOperador, fotoNueva);
+		try {
+			const usuarioVinculado = await db.orm.public.Usuario.select("username").where({ id: operador.usuarioId }).first();
+			if (usuarioVinculado?.username) {
+				const ahora = new Date();
+				const anio = ahora.getFullYear();
+				const mes = String(ahora.getMonth() + 1).padStart(2, "0");
+				const dia = String(ahora.getDate()).padStart(2, "0");
+				const fechaStr = `${anio}-${mes}-${dia}`;
+				const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
+				const username = usuarioVinculado.username;
+				const existente = await db.orm.public.EstadisticaPublicacion
+					.where({ fecha: fechaInstant, username })
+					.first();
+
+				if (existente) {
+					await db.orm.public.EstadisticaPublicacion
+						.where({ id: existente.id })
+						.update({ cantidad: existente.cantidad + 1 });
+				} else {
+					await db.orm.public.EstadisticaPublicacion.create({
+						fecha: fechaInstant,
+						username: username,
+						cantidad: 1,
+					});
+				}
+			}
+		} catch (errEst) {
+			console.error("Error al registrar estadística de publicación:", errEst);
+		}
 		actualizarVistas(operador);
 		return NextResponse.json({ ...resultado, mensaje: "Publicación modificada correctamente." });
 	} catch (error) {

@@ -114,7 +114,7 @@ describe("LeafletLocationPicker", () => {
         const vista = await abrirMapa(ubicacion);
         vi.mocked(fetch).mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }));
         await marcar(-34.8, -56.1);
-        vista.rerender(<LeafletLocationPicker abierto coordenadas={{ ...ubicacion }} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto modo="editar" coordenadas={{ ...ubicacion }} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
         expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
         expect(mocks.crearMapa).toHaveBeenCalledOnce();
         expect(mocks.mapa.remove).not.toHaveBeenCalled();
@@ -128,7 +128,7 @@ describe("LeafletLocationPicker", () => {
         const vista = await abrirMapa(ubicacion);
         await marcar(-34.8, -56.1);
         const actualizada = { latitud: -34.7, longitud: -56, departamento: "Canelones", nombreLugar: "Ruta 8" };
-        vista.rerender(<LeafletLocationPicker abierto coordenadas={actualizada} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto modo="editar" coordenadas={actualizada} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
         await waitFor(() => expect(mocks.crearMapa).toHaveBeenCalledTimes(2));
         await act(async () => pendiente.resolver(await respuesta({ address: { country_code: "uy", state: "Montevideo", road: "Ruta 1" } })));
         expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 8");
@@ -144,8 +144,8 @@ describe("LeafletLocationPicker", () => {
         await marcar(-34.8, -56.1);
         expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
         fireEvent.click(screen.getByRole("button", { name: nombre }));
-        vista.rerender(<LeafletLocationPicker abierto={false} coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
-        vista.rerender(<LeafletLocationPicker abierto coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto={false} modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
         await waitFor(() => expect(mocks.crearMapa).toHaveBeenCalledTimes(2));
         expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
         expect(screen.getByLabelText(/^Nombre del punto de retiro/)).not.toHaveValue("Ruta 8");
@@ -188,8 +188,8 @@ describe("LeafletLocationPicker", () => {
         vi.mocked(fetch).mockReturnValueOnce(pendiente.promesa);
         const vista = await abrirMapa(ubicacion);
         await marcar(-34.8, -56.1);
-        vista.rerender(<LeafletLocationPicker abierto={false} coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
-        vista.rerender(<LeafletLocationPicker abierto coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto={false} modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
         await waitFor(() => expect(mocks.crearMapa).toHaveBeenCalledTimes(2));
         await act(async () => pendiente.resolver(await respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }, status)));
         expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
@@ -353,8 +353,8 @@ describe("LeafletLocationPicker", () => {
         const vista = await abrirMapa(ubicacion);
         fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Mercado" } });
         fireEvent.submit(screen.getByRole("searchbox").closest("form")!);
-        vista.rerender(<LeafletLocationPicker abierto={false} coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
-        vista.rerender(<LeafletLocationPicker abierto coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto={false} modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        vista.rerender(<LeafletLocationPicker abierto modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
         await waitFor(() => expect(mocks.crearMapa).toHaveBeenCalledTimes(2));
         await act(async () => pendiente.resolver(await respuesta([{ place_id: 1, display_name: "Mercado Modelo", lat: "-34.8", lon: "-56.1" }], status)));
         expect(screen.getByRole("searchbox")).toHaveValue("");
