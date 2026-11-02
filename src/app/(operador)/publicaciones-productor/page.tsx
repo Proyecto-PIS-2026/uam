@@ -9,12 +9,10 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
     const sesion = await requerirConsultaProductores();
-
     const [resultado, configuracion] = await Promise.all([
         consultarPublicacionesProductores(sesion),
         obtenerConfiguracionOrdenamiento(),
     ]);
-
     const publicaciones = resultado.publicaciones;
     const ordenInicial = convertirOrdenMercados(configuracion.ordenMercadoProduccion);
 

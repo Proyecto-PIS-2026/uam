@@ -64,10 +64,12 @@ describe("TextoAjustable", () => {
         expect(texto).toBeInTheDocument();
         expect(texto.parentElement).toHaveClass("especie");
     });
+    
     it("mantiene el tamaño máximo cuando el texto cabe", () => {
         render(<TextoAjustable minimo={10} maximo={30}>Tomate</TextoAjustable>);
         expect(screen.getByText("Tomate")).toHaveStyle({ fontSize: "30px" });
     });
+
     it("reduce el tamaño hasta que el texto cabe en el ancho disponible", () => {
         anchoContenedor = 92;
         render(<TextoAjustable minimo={10} maximo={30}>Tomate</TextoAjustable>);
@@ -81,6 +83,7 @@ describe("TextoAjustable", () => {
             expect(screen.getByText("Tomate")).toHaveStyle({ fontSize: `${minimo}px` });
         },
     );
+
     it.each([0, 2])(
         "no mide el texto si el contenedor tiene ancho %s",
         (ancho) => {
@@ -89,6 +92,7 @@ describe("TextoAjustable", () => {
             expect(HTMLSpanElement.prototype.getBoundingClientRect).not.toHaveBeenCalled();
         },
     );
+
     it("reduce y vuelve a ampliar el texto cuando cambia el ancho", () => {
         render(<TextoAjustable minimo={10} maximo={30}>Tomate</TextoAjustable>);
         const texto = screen.getByText("Tomate");
@@ -102,6 +106,7 @@ describe("TextoAjustable", () => {
         act(() => { observador.cambiarAncho(202) });
         expect(texto).toHaveStyle({ fontSize: "30px" });
     });
+
     it("no vuelve a medir cuando el observer notifica el mismo ancho", () => {
         render(<TextoAjustable minimo={10} maximo={30}>Tomate</TextoAjustable>);
         const observador = ObservadorDePrueba.instancias[0];
@@ -110,6 +115,7 @@ describe("TextoAjustable", () => {
         act(() => { observador.cambiarAncho(202) });
         expect(HTMLSpanElement.prototype.getBoundingClientRect).not.toHaveBeenCalled();
     });
+
     it("recalcula al cambiar el texto y los límites de tamaño", () => {
         anchoContenedor = 92;
         const { rerender } = render(<TextoAjustable minimo={10} maximo={30}>Tomate</TextoAjustable>);
@@ -124,12 +130,14 @@ describe("TextoAjustable", () => {
         expect(screen.getByText("Uva")).toHaveStyle({ fontSize: "12px" });
         expect(ObservadorDePrueba.instancias[0].disconnect,).toHaveBeenCalledTimes(1);
     });
+
     it("reajusta el tamaño cuando las fuentes iniciales están listas", async () => {
         render(<TextoAjustable minimo={10} maximo={30}>Tomate</TextoAjustable>);
         factorFuente = 2;
         await act(async () => { resolverFuentes(); await fuentesListas });
         expect(screen.getByText("Tomate")).toHaveStyle({ fontSize: "16.5px" });
     });
+
     it("reajusta el tamaño al terminar de cargar nuevas fuentes", () => {
         render(<TextoAjustable minimo={10} maximo={30}>Tomate</TextoAjustable>);
         factorFuente = 2;
@@ -150,6 +158,7 @@ describe("TextoAjustable", () => {
         await act(async () => { observador.cambiarAncho(92); fuentes.dispatchEvent(new Event("loadingdone")); resolverFuentes(); await fuentesListas });
         expect(HTMLSpanElement.prototype.getBoundingClientRect).not.toHaveBeenCalled();
     });
+
     it("termina el efecto si los refs todavía no existen", () => {
         vi.mocked(useLayoutEffect).mockImplementationOnce((efecto) => {
             const cleanup = efecto();

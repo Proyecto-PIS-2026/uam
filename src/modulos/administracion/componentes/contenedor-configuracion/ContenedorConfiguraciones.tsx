@@ -20,11 +20,11 @@ interface ContenedorConfiguracionGeneralProps {
 }
 
 function suscribirCambiosHash(callback: () => void) {
-    if (typeof window === "undefined") return () => {};
-
+    if (typeof window === "undefined") {
+        return () => {};
+    }
     window.addEventListener("hashchange", callback);
     window.addEventListener("popstate", callback);
-
     return () => {
         window.removeEventListener("hashchange", callback);
         window.removeEventListener("popstate", callback);
@@ -52,10 +52,8 @@ export default function ContenedorConfiguracionGeneral({ estadisticas, general, 
         function sincronizarPestaña() {
             setPestañaLocal(null);
         }
-
         window.addEventListener("hashchange", sincronizarPestaña);
         window.addEventListener("popstate", sincronizarPestaña);
-
         return () => {
             window.removeEventListener("hashchange", sincronizarPestaña);
             window.removeEventListener("popstate", sincronizarPestaña);
@@ -70,10 +68,12 @@ export default function ContenedorConfiguracionGeneral({ estadisticas, general, 
 
     function seleccionarPestaña(id: IdPestaña) {
         setPestañaLocal(id);
-        if (window.location.hash !== `#${id}`) router.push(`${window.location.pathname}${window.location.search}#${id}`, { scroll: false });
+        if (window.location.hash !== `#${id}`) {
+            router.push(`${window.location.pathname}${window.location.search}#${id}`, { scroll: false });
+        }
     }
 
-    return (
+    const contenido = (
         <section className={styles.contenedor}>
             <div className={styles.botones} role="group" aria-label="Secciones de configuración">
                 {pestañas.map((pestaña) => (
@@ -82,10 +82,10 @@ export default function ContenedorConfiguracionGeneral({ estadisticas, general, 
                     </button>
                 ))}
             </div>
-
             <div id="panel-configuracion" className={styles.panel}>
                 {contenidos[pestañaSeleccionada]}
             </div>
         </section>
     );
+    return contenido; 
 }

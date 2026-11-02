@@ -645,6 +645,7 @@ async function main() {
     if (!oferta.active) inactivas++;
   }
 
+  
   // Obtener IDs de productores creados para asociar sus publicaciones y ubicaciones
   const productoresDb = await prisma.orm.public.Productor.all();
   const usuariosDb = await prisma.orm.public.Usuario.all();

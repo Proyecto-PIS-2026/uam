@@ -8,52 +8,45 @@ import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import type { ResultadoPublicaciones } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import type { FiltrosConsulta } from "../../../consulta-mercado/acciones/filtros-consulta";
 import obtenerPublicaciones from "../../../consulta-mercado/acciones/ConsultarPublicacionOperador.action";
-import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
 import ListadoPublicaciones from "../listado-publicaciones/ListadoPublicaciones";
 import { useActualizacionesPublicaciones } from "../../tiempo-real/use-actualizaciones-publicaciones";
 import type { OrdenConsulta } from "@/modulos/consulta-mercado/acciones/filtros-consulta";
 import { compararPublicacionesAlfabeticamente } from "../../filtros/FiltrosPublicaciones";
-
+import FiltrosPublicaciones, { compararPublicacionesPorPrioridad, compararPublicacionesOperador } from "../../filtros/FiltrosPublicaciones";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
 
 type Publicacion = PublicacionListado | PublicacionProductorListado;
 const obtenerNombreFantasia = (publicacion: Publicacion) => publicacion.tipoPublicacion === "OPERADOR" ? publicacion.operador.nombreFantasia : publicacion.productor.nombreFantasia;
 
-function ordenarPublicaciones(
-    publicaciones: Publicacion[],
-    orden: OrdenConsulta,
-): Publicacion[] {
+function ordenarPublicaciones(publicaciones: Publicacion[], orden: OrdenConsulta): Publicacion[] {
     const resultado = [...publicaciones];
-
+    if (resultado.every((publicacion): publicacion is PublicacionListado => publicacion.tipoPublicacion === "OPERADOR")) {
+        return resultado.sort((a, b) => compararPublicacionesOperador(a, b, orden));
+    }
     switch (orden) {
         case "prioridad":
             return resultado.sort(compararPublicacionesPorPrioridad);
-
         case "alfabeticoAsc":
             return resultado.sort(compararPublicacionesAlfabeticamente);
-
         case "alfabeticoDesc":
-            return resultado.sort((a, b) =>
-                compararPublicacionesAlfabeticamente(b, a),
-            );
-
+            return resultado.sort((a, b) => compararPublicacionesAlfabeticamente(b, a));
         case "precioAsc":
         case "precioDesc":
             return resultado.sort((a, b) => {
-                if (a.precio == null && b.precio == null) return 0;
-                if (a.precio == null) return 1;
-                if (b.precio == null) return -1;
-
-                return orden === "precioAsc"
-                    ? a.precio - b.precio
-                    : b.precio - a.precio;
+                if (a.precio == null && b.precio == null) {
+                    return 0;
+                }
+                if (a.precio == null) {
+                    return 1;
+                }
+                if (b.precio == null) {
+                    return -1;
+                }
+                return orden === "precioAsc" ? a.precio - b.precio : b.precio - a.precio;
             });
         case "fechaDesc":
-            return resultado.sort((a, b) =>
-                new Date(b.fecha).getTime() -
-                new Date(a.fecha).getTime(),
-            );
+            return resultado.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
         default:
             return resultado;
     }
