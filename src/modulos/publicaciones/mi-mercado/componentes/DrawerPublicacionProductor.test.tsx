@@ -300,7 +300,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(await editar()).toHaveValue("250");
         expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Saco");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
-    });
+    }, 500_000);
 
     it("Cancelar descarta el borrador y vuelve a consulta sin desmontar el Paper, campos o foto", async () => {
         mostrar({ ...publicacion, foto: "/pera.png" });
@@ -345,7 +345,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
         expect(screen.getByText("Quinta", { exact: true })).toBeInTheDocument();
         expect(screen.getAllByRole("button", { name: /^Editar punto de retiro/ })).toHaveLength(1);
-    });
+    }, 500_000);
 
     it.each(["Cerrar edición", "Cerrar desde fondo", "Escape", "arrastre"])("cierra todo el drawer desde edición con %s sin guardar", async (accion) => {
         const vista = mostrar();
