@@ -1,0 +1,156 @@
+.encabezadoBloque {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.encabezadoBloque p {
+    margin: 0;
+    color: var(--color-muted, #6b7280);
+    font-size: var(--tamano-texto-secundario, 0.875rem);
+    font-weight: 400;
+}
+
+.bloqueSeccion {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 1rem;
+    background-color: transparent;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.bloqueSeccion:last-child {
+    border-bottom: none;
+}
+
+.bloqueSeccion h3 {
+    margin: 0;
+    color: var(--color-secondary, #005d29);
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.contenedorFiltros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border-soft, #f3f4f6);
+    width: 100%;
+    min-width: 0;
+}
+
+.filtroUsuario {
+    flex: 2 1 260px;
+    min-width: 200px;
+}
+
+.filtroVisitante,
+.filtroPeriodo {
+    flex: 1 1 180px;
+    min-width: 180px;
+}
+
+.fechasPersonalizadas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 2 1 calc(360px + 1rem);
+    gap: 1rem;
+    min-width: min(100%, 340px);
+}
+
+.filtroFecha {
+    width: 100%;
+    min-width: 0;
+}
+
+.tarjetasMetricas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.tarjetaMetrica {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    background-color: var(--color-surface-muted, #f9fafb);
+    border: 1px solid var(--color-border-soft, #e5e7eb);
+    border-radius: var(--radio-control, 8px);
+}
+
+.tarjetaMetrica .tituloTarjeta {
+    color: var(--color-secondary, #005d29);
+    font-size: 1rem;
+    font-weight: 700;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border-soft, #e5e7eb);
+}
+
+.detalleMetrica {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+}
+
+.detalleMetrica span {
+    color: var(--color-muted, #6b7280);
+    font-size: 0.875rem;
+}
+
+.detalleMetrica strong {
+    color: var(--color-secondary, #005d29);
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+}
+
+.contenedorGrafica {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.etiquetaEje {
+    font-size: 11px !important;
+}
+
+@media (max-width: 612px) {
+    .contenedorFiltros {
+        flex-direction: column;
+        flex-wrap: nowrap;
+    }
+
+    .filtroUsuario,
+    .filtroVisitante,
+    .filtroPeriodo,
+    .fechasPersonalizadas {
+        width: 100%;
+        min-width: 0;
+        flex: none;
+    }
+
+    .tarjetasMetricas {
+        grid-template-columns: 1fr;
+    }
+
+    .etiquetaEje {
+        font-size: 9px !important;
+    }
+}
+
+@media (max-width: 389px) {
+    .fechasPersonalizadas {
+        grid-template-columns: 1fr;
+    }
+}
