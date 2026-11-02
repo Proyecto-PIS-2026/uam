@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import Badge from "@mui/material/Badge";
 
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
@@ -19,6 +20,8 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import { useContadorNotificaciones } from "@/modulos/notificaciones/use-contador-notificaciones";
 import { usePathname } from "next/navigation";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
@@ -30,6 +33,37 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 
 import estilos from "./HeaderPublico.module.css";
+
+function ContadorNotificaciones({ cantidad, enEsquina = false }: { cantidad: number; enEsquina?: boolean }) {
+    if (cantidad <= 0) return null;
+
+    return (
+        <Badge
+            badgeContent={cantidad}
+            max={99}
+            color="error"
+            sx={enEsquina ? {
+                position: "absolute",
+                right: "-0.15rem",
+                bottom: "-0.15rem",
+                zIndex: 1,
+                pointerEvents: "none",
+            } : undefined}
+            slotProps={{
+                badge: {
+                    "aria-hidden": true,
+                    sx: {
+                        position: "static",
+                        transform: "none",
+                        backgroundColor: "var(--color-danger)",
+                        color: "var(--color-surface)",
+                        ...(enEsquina && { outline: "2px solid var(--color-surface)" }),
+                    },
+                },
+            }}
+        />
+    );
+}
 
 type OpcionMenu = {
     nombre: string;
@@ -267,6 +301,8 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
     const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
     const referenciaMenuUsuario = useRef<HTMLDivElement>(null);
     const rutaActual = usePathname() ?? "";
+    const { noLeidas, refrescar: refrescarNotificaciones } = useContadorNotificaciones(sesion?.usuarioId ?? null);
+    const descripcionNotificacionesId = useId();
     const rutaPrincipal = obtenerRutaPrincipal(rolUsuario);
     const opcionesVisibles = (esProductor ? opcionesMenuProductor : opcionesMenu).filter(
         (opcion) =>
@@ -322,8 +358,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 type="button"
                 className={estilos.botonOperador}
                 aria-label="Abrir menú de usuario"
+                aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined}
                 aria-expanded={menuUsuarioAbierto}
-                onClick={() => cambiarMenuUsuarioAbierto((abierto) => !abierto)}
+                onClick={() => { if (!menuUsuarioAbierto) refrescarNotificaciones(); cambiarMenuUsuarioAbierto((abierto) => !abierto); }}
             >
                 {fotoPerfil && !fotoPerfilFallida ? (
                     <Image
@@ -338,15 +375,20 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 ) : (
                     <AccountCircleIcon className={estilos.iconoOperador} />
                 )}
+                <ContadorNotificaciones cantidad={noLeidas} enEsquina />
             </button>
             {menuUsuarioAbierto && (
                 <div className={estilos.desplegableOperador} role="menu">
+                    <Link href="/notificaciones" role="menuitem" className={estilos.enlaceNotificaciones} onClick={cerrarMenus} aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined}>
+                        <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
+                        <ContadorNotificaciones cantidad={noLeidas} />
+                    </Link>
                     {esProductor ? (
                         <Link href="/mi-perfil/productor" className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>Mi perfil</Link>
                     ) : (
-                        <span className={estilos.opcionDesplegable} role="menuitem">
+                        <Link href="/mi-perfil" className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>
                             Mi perfil
-                        </span>
+                        </Link>
                     )}
                     <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
                         <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
@@ -366,7 +408,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
             </span>
         </Link>
     ) : (
-        <button type="button" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`}>
+        <Link href="/mi-perfil" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
             <span className={estilos.etiquetaMenuMobile}>
                 <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
                 Mi perfil
@@ -382,7 +424,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     onError={() => cambiarFotoPerfilFallida(true)}
                 />
             )}
-        </button>
+        </Link>
     ));
 
     const menuCerrarSesionMobile = rolUsuario && (
@@ -439,8 +481,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     <button
                         className={estilos.menuMobile}
                         type="button"
-                        onClick={() => cambiarMenuAbierto((abierto) => !abierto)}
+                        onClick={() => { if (!menuAbierto) refrescarNotificaciones(); cambiarMenuAbierto((abierto) => !abierto); }}
                         aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+                        aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined}
                         aria-expanded={menuAbierto}
                         aria-controls="menu-mobile"
                     >
@@ -450,7 +493,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         <CloseIcon
                             className={`${estilos.iconoMenu} ${menuAbierto ? estilos.iconoCerrarVisible : estilos.iconoCerrarOculto}`}
                         />
+                        <ContadorNotificaciones cantidad={noLeidas} enEsquina />
                     </button>
+                    {rolUsuario && <span id={descripcionNotificacionesId} className={estilos.descripcionNotificaciones}>{noLeidas} {noLeidas === 1 ? "notificación sin leer" : "notificaciones sin leer"}</span>}
                 </div>
                 <nav
                     id="menu-mobile"
@@ -458,6 +503,10 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     aria-label="Navegación móvil"
                 >
                     {menuPerfilMobile}
+                    {rolUsuario && <Link href="/notificaciones" className={`${estilos.enlaceMobile} ${estilos.enlaceNotificaciones}`} aria-current={esRutaActiva("/notificaciones") ? "page" : undefined} aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined} onClick={cerrarMenus}>
+                        <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
+                        <ContadorNotificaciones cantidad={noLeidas} />
+                    </Link>}
                     {opcionesNavegacion.map((opcion) =>
                         esAdministrador && opcion.ruta === "/publicaciones" ? (
                             <MenuPublicaciones
