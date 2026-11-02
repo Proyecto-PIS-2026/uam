@@ -168,7 +168,7 @@
     background-color: var(--color-secondary-hover);
 }
 
-@media (min-width: 48rem) {
+@media (min-width: 701px) {
     .lista {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

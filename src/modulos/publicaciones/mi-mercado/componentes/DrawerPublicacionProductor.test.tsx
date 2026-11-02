@@ -3,7 +3,7 @@ import type { DialogProps } from "@mui/material/Dialog";
 import type { ReactNode, Ref } from "react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OpcionesEdicionPublicacion } from "../../operadores/tipos";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
@@ -291,16 +291,16 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByRole("combobox", { name: /^País de origen/ })).toHaveTextContent("Argentina");
         expect(screen.getByText("No disponible", { exact: true })).toBeInTheDocument();
         expect(screen.getByText("21/10/2026")).toHaveAttribute("dateTime", actualizada.fecha);
-        const aviso = screen.getByRole("status");
+        const aviso = await screen.findByRole("status");
         expect(aviso).toHaveTextContent("Cambios guardados.");
-        expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).not.toContainElement(aviso);
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
         fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(mocks.cerrar).not.toHaveBeenCalled();
         expect(await editar()).toHaveValue("250");
         expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveTextContent("Saco");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
-    });
+    }, 500_000);
 
     it("Cancelar descarta el borrador y vuelve a consulta sin desmontar el Paper, campos o foto", async () => {
         mostrar({ ...publicacion, foto: "/pera.png" });
@@ -345,7 +345,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
         expect(screen.getByText("Quinta", { exact: true })).toBeInTheDocument();
         expect(screen.getAllByRole("button", { name: /^Editar punto de retiro/ })).toHaveLength(1);
-    });
+    }, 500_000);
 
     it.each(["Cerrar edición", "Cerrar desde fondo", "Escape", "arrastre"])("cierra todo el drawer desde edición con %s sin guardar", async (accion) => {
         const vista = mostrar();

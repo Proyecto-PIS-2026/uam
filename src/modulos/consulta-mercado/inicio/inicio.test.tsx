@@ -91,7 +91,6 @@ describe("Inicio", () => {
     it("entrega las imágenes y cantidades a las tarjetas", () => {
         preparar();
         const tarjeta = screen.getAllByTestId("tarjeta-especie").find((elemento) => elemento.textContent === "Tomate");
-
         expect(tarjeta).toHaveAttribute("data-operadores", "3");
         expect(tarjeta).toHaveAttribute("data-imagen", "/tomate.webp");
     });
@@ -99,13 +98,11 @@ describe("Inicio", () => {
     it("no modifica el orden del arreglo recibido", () => {
         const copia = especies.map((especie) => ({ ...especie }));
         preparar({ especies: copia, ordenPredeterminado: "nombre_desc" });
-
         expect(copia).toEqual(especies);
     });
 
     it("oculta Ordenar por cuando el switch está apagado", () => {
         preparar({ ordenamientoHabilitado: false, ordenPredeterminado: "nombre_desc" });
-
         expect(screen.queryByRole("button", { name: "Ordenar por" })).not.toBeInTheDocument();
         expect(nombresVisibles()).toEqual(["Tomate", "Papa", "Banana", "Ají"]);
     });
@@ -113,7 +110,6 @@ describe("Inicio", () => {
     it("muestra únicamente A-Z y Z-A en el menú público", async () => {
         preparar({ ordenPredeterminado: "mas_vendidas" });
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-
         expect(await screen.findByRole("menuitemradio", { name: "A-Z" })).toBeInTheDocument();
         expect(screen.getByRole("menuitemradio", { name: "Z-A" })).toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Más vendidas" })).not.toBeInTheDocument();
@@ -137,9 +133,7 @@ describe("Inicio", () => {
     it("al deshabilitar el ordenamiento ignora la elección local y aplica el predeterminado", async () => {
         const { rerender, props } = preparar();
         await elegirOrden("Z-A");
-
         rerender(<Inicio {...props} ordenamientoHabilitado={false} />);
-
         expect(screen.queryByRole("button", { name: "Ordenar por" })).not.toBeInTheDocument();
         expect(nombresVisibles()).toEqual(["Ají", "Banana", "Papa", "Tomate"]);
     });
@@ -159,10 +153,8 @@ describe("Inicio", () => {
     it("restaura todas las especies al limpiar la búsqueda", () => {
         preparar();
         const buscador = screen.getByRole("searchbox", { name: "Buscar especies" });
-
         fireEvent.change(buscador, { target: { value: "tom" } });
         expect(nombresVisibles()).toEqual(["Tomate"]);
-
         fireEvent.change(buscador, { target: { value: "" } });
         expect(nombresVisibles()).toEqual(["Ají", "Banana", "Papa", "Tomate"]);
     });
@@ -170,34 +162,27 @@ describe("Inicio", () => {
     it("muestra un mensaje cuando no hay coincidencias", () => {
         preparar();
         fireEvent.change(screen.getByRole("searchbox", { name: "Buscar especies" }), { target: { value: "inexistente" } });
-
         expect(screen.getByText("No hay especies que coincidan con la búsqueda.")).toBeInTheDocument();
         expect(nombresVisibles()).toEqual([]);
     });
 
     it("muestra el estado vacío cuando no existen especies", () => {
         preparar({ especies: [] });
-
         expect(screen.getByText("Todavía no hay especies disponibles")).toBeInTheDocument();
         expect(screen.queryByRole("navigation", { name: "Páginas de especies" })).not.toBeInTheDocument();
     });
 
     it("pagina los resultados de 20 en 20", () => {
         preparar({ especies: crearMuchasEspecies() });
-
         expect(nombresVisibles()).toHaveLength(20);
         expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Anterior" })).toBeDisabled();
-
         fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-
         expect(nombresVisibles()).toHaveLength(5);
         expect(nombresVisibles()[0]).toBe("Especie 21");
         expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Siguiente" })).toBeDisabled();
-
         fireEvent.click(screen.getByRole("button", { name: "Anterior" }));
-
         expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
         expect(nombresVisibles()[0]).toBe("Especie 01");
     });
@@ -206,7 +191,6 @@ describe("Inicio", () => {
         preparar({ especies: crearMuchasEspecies() });
         fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
         fireEvent.change(screen.getByRole("searchbox", { name: "Buscar especies" }), { target: { value: "Especie" } });
-
         expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
         expect(nombresVisibles()[0]).toBe("Especie 01");
     });
@@ -214,9 +198,7 @@ describe("Inicio", () => {
     it("vuelve a la primera página al cambiar el orden", async () => {
         preparar({ especies: crearMuchasEspecies() });
         fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-
         await elegirOrden("Z-A");
-
         expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
         expect(nombresVisibles()[0]).toBe("Especie 25");
     });
@@ -224,16 +206,13 @@ describe("Inicio", () => {
     it("ajusta la página visible si disminuye la cantidad de especies", () => {
         const { rerender, props } = preparar({ especies: crearMuchasEspecies() });
         fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-
         rerender(<Inicio {...props} especies={especies} />);
-
         expect(nombresVisibles()).toHaveLength(4);
         expect(screen.queryByRole("navigation", { name: "Páginas de especies" })).not.toBeInTheDocument();
     });
 
     it("muestra los enlaces de acceso autorizados", () => {
         preparar();
-
         expect(screen.getByRole("link", { name: "Ver Mercado Virtual" })).toHaveAttribute("href", "/publicaciones");
         expect(screen.getByRole("link", { name: "Ver operadores" })).toHaveAttribute("href", "/operadores");
         expect(screen.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
@@ -243,14 +222,12 @@ describe("Inicio", () => {
     it("avisa cuando la Lista Inteligente no está disponible", async () => {
         preparar({ urlListaInteligente: null });
         fireEvent.click(screen.getByRole("button", { name: "Lista inteligente" }));
-
         expect(await screen.findByRole("alert")).toHaveTextContent("La Lista Inteligente no está disponible");
     });
 
     it("oculta los accesos que no están autorizados", () => {
         mocks.autorizado.mockReturnValue(false);
         preparar();
-
         expect(screen.queryByRole("link", { name: "Ver Mercado Virtual" })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Ver operadores" })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Lista inteligente" })).not.toBeInTheDocument();

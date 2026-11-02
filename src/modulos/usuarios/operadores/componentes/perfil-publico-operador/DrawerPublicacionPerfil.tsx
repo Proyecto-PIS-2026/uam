@@ -11,7 +11,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
 import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
 import TextoAjustable from "./TextoAjustable";
-
 import styles from "./DrawerPublicacionPerfil.module.css";
 
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -22,6 +21,17 @@ interface DrawerPublicacionProps {
     onOpenChange: (open: boolean) => void;
     publicacion: PublicacionListado | PublicacionProductorListado | null;
 }
+
+const registrarContactoWhatsApp = (tipo: "OPERADOR" | "PRODUCTOR", entidadId: number) => {
+    fetch("/api/estadisticas/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo, entidadId }),
+        keepalive: true,
+    }).catch((err) => {
+        console.error("Error al registrar contacto:", err);
+    });
+};
 
 export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: DrawerPublicacionProps) {
     const esWeb = useMediaQuery("(min-width: 768px)");
@@ -151,7 +161,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                         </div>
                         <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
                             <div className={styles.bloqueBotones}>
-                                <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} className={`boton-primario ${styles.botonWhatsApp}`} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
+                                <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} onClick={() => registrarContactoWhatsApp(publicacion.tipoPublicacion, usuario.id)} className={`boton-primario ${styles.botonWhatsApp}`} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                                     <span>WhatsApp</span>
                                 </EnlaceWhatsApp>

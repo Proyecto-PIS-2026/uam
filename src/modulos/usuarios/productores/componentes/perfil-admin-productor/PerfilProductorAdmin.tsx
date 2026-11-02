@@ -1,6 +1,6 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import BotonVolver from "@/compartido/BotonVolver";
@@ -26,7 +26,7 @@ type PerfilProductorAdminProps = {
 export default function PerfilProductorAdmin({ productor }: PerfilProductorAdminProps) {
     const inicialProductor = productor.nombreFantasia.trim()[0]?.toUpperCase();
     const [altaAbierta, setAltaAbierta] = useState(false);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const router = useRouter();
     const [departamentosActualizados, setDepartamentosActualizados] = useState<{ origen: PerfilAdminProductor["publicaciones"]; departamentos: string[] } | null>(null);
     const departamentos = departamentosActualizados?.origen === productor.publicaciones ? departamentosActualizados.departamentos : productor.departamentos;
@@ -35,7 +35,6 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
     }, [productor.publicaciones]);
 
     function abrirAlta() {
-        cerrarNotificacion();
         setAltaAbierta(true);
     }
 
@@ -47,7 +46,6 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
 
     const contenido = (
         <section className={styles.contenedor} aria-labelledby="nombre-productor">
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <BotonVolver href="/administracion#usuarios" className={styles.volver}>
                 Volver al listado de productores
             </BotonVolver>

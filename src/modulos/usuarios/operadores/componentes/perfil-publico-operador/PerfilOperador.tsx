@@ -1,3 +1,5 @@
+"use client"
+
 import EnlaceWhatsApp from "@/compartido/componentes/EnlaceWhatsApp";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
@@ -7,13 +9,23 @@ import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import BotonVolver from "@/compartido/BotonVolver";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
-
 import styles from "./PerfilOperador.module.css";
 
 type PerfilOperadorProps = {
     operador: PerfilPublicoOperador;
     hrefVolver?: string;
     textoVolver?: string;
+};
+
+const registrarContactoWhatsApp = (tipo: "OPERADOR" | "PRODUCTOR", entidadId: number) => {
+    fetch("/api/estadisticas/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo, entidadId }),
+        keepalive: true,
+    }).catch((err) => {
+        console.error("Error al registrar contacto:", err);
+    });
 };
 
 export default function PerfilOperador({ operador,  hrefVolver = "/operadores", textoVolver = "Volver al listado de operadores"  }: PerfilOperadorProps) {
@@ -66,7 +78,7 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
                 </div>
             </div>
 
-            <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} className={styles.botonWhatsApp} aria-label={`Contactar a ${operador.nombreFantasia} por WhatsApp`}>
+            <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} onClick={() => registrarContactoWhatsApp("OPERADOR", operador.id)} className={styles.botonWhatsApp} aria-label={`Contactar a ${operador.nombreFantasia} por WhatsApp`}>
                 <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                 <span className={styles.textoWhatsApp}>Contactar por WhatsApp</span>
             </EnlaceWhatsApp>

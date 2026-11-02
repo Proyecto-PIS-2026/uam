@@ -142,6 +142,11 @@ async function completarPrecarga(page: Page, calibre: string, precio: string) {
 
 async function precargarProducto(page: Page, productorId: number, calibre: string, precio: string) {
   const alta = await completarPrecarga(page, calibre, precio);
+  const notificacion = page.getByRole("status").filter({ hasText: /^Publicación creada correctamente\.$/ });
+  while (await notificacion.count() > 0) {
+    await notificacion.first().getByRole("button", { name: "Cerrar notificación", exact: true }).click();
+  }
+  await expect(notificacion).toHaveCount(0);
   const [respuesta] = await Promise.all([
     page.waitForResponse((response) => new URL(response.url()).pathname === "/api/publicaciones/productor" && response.request().method() === "POST"),
     alta.getByRole("button", { name: "Confirmar", exact: true }).click(),
@@ -151,7 +156,7 @@ async function precargarProducto(page: Page, productorId: number, calibre: strin
   const resultado = await respuesta.json();
   expect(resultado).toMatchObject({ esValido: true, id: expect.any(Number) });
   await expect(alta).not.toBeVisible();
-  await expect(page.getByRole("status")).toHaveText("Publicación creada correctamente.");
+  await expect(notificacion).toHaveText("Publicación creada correctamente.");
   return resultado.id as number;
 }
 
@@ -216,7 +221,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       await registrarProductor(page, usuariosAdministrativos.administrador, productorAlta);
     });
     await test.step("Comprobar el resultado del alta y la opción de precarga", async () => {
-      await expect(page.getByRole("status")).toHaveText("Productor creado correctamente.");
+      await expect(page.getByRole("status").filter({ hasText: /^Productor creado correctamente\.$/ })).toHaveText("Productor creado correctamente.");
       await expect(page.getByText("¿Desea precargar productos para este usuario?", { exact: true })).toBeVisible();
       await expect(page.getByRole("link", { name: "Precargar productos" })).toHaveAttribute("href", /^\/gestion-productores\/\d+$/);
       await expect(page.getByRole("button", { name: "Ahora no", exact: true })).toBeVisible();

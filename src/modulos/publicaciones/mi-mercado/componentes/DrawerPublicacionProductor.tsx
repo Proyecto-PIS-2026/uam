@@ -1,5 +1,7 @@
 "use client";
 
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
+
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
@@ -17,7 +19,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import type { CambiosPublicacionProductor } from "../../productores/modificar-publicacion";
@@ -164,7 +166,7 @@ function UbicacionesConsulta({ publicacion }: { publicacion: PublicacionMiMercad
 export default function DrawerPublicacionProductor({ publicacion: recibida, alCerrar, alGuardar, alEliminada }: Props) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [estado, setEstado] = useState(() => estadoInicial(recibida));
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const sesionRef = useRef<object | null>(null);
     const operacionRef = useRef<object | null>(null);
     const solicitudOpcionesRef = useRef<object | null>(null);
@@ -177,7 +179,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
 
     if (estado.id !== (recibida?.id ?? null)) {
         setEstado(estadoInicial(recibida));
-        cerrarNotificacion();
     } else if (recibida && !estado.fotoPreparada && !recibida.foto?.trim()) {
         setEstado({ ...estado, fotoPreparada: true });
     }
@@ -239,7 +240,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         solicitudOpcionesRef.current = null;
         sesionRef.current = null;
         setEstado(estadoInicial(recibida));
-        cerrarNotificacion();
         alCerrar();
     }
 
@@ -285,7 +285,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     function cancelarEdicion() {
         if (operacionRef.current === estado.sesion) return;
         setEstado((actual) => ({ ...actual, edicion: null, errores: [] }));
-        cerrarNotificacion();
     }
 
     function seleccionarFoto(evento: ChangeEvent<HTMLInputElement>) {
@@ -304,9 +303,8 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         const solicitud = {};
         solicitudOpcionesRef.current = solicitud;
         setEstado((actual) => ({ ...actual, cargaPara: vigente }));
-        cerrarNotificacion();
         try {
-            const respuesta = await fetch(`/api/publicaciones/productor/${vigente.publicacionProductorId}`, { cache: "no-store" });
+            const respuesta = await fetchConSesion(`/api/publicaciones/productor/${vigente.publicacionProductorId}`, { cache: "no-store" });
             const resultado = await respuesta.json();
             if (solicitud !== solicitudOpcionesRef.current) return;
             if (!respuesta.ok) {
@@ -324,7 +322,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     async function guardar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (!edicion || !borrador || operacionRef.current === estado.sesion) return;
-        cerrarNotificacion();
         if (!precioPublicacionValido(borrador.precio)) {
             setEstado((actual) => ({ ...actual, errores: [PRECIO_PUBLICACION_INVALIDO] }));
             return;
@@ -364,7 +361,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         operacionRef.current = sesion;
         setEstado((actual) => ({ ...actual, guardando: true, errores: [] }));
         try {
-            const respuesta = await fetch(`/api/publicaciones/productor/${edicion.base.publicacionProductorId}`, { method: "PATCH", body: formulario });
+            const respuesta = await fetchConSesion(`/api/publicaciones/productor/${edicion.base.publicacionProductorId}`, { method: "PATCH", body: formulario });
             const resultado = await respuesta.json();
             if (sesionRef.current !== sesion) return;
             if (!respuesta.ok) {
@@ -391,9 +388,8 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         const sesion = estado.sesion;
         operacionRef.current = sesion;
         setEstado((actual) => ({ ...actual, eliminando: true }));
-        cerrarNotificacion();
         try {
-            const respuesta = await fetch(`/api/publicaciones/productor/${vigente.publicacionProductorId}`, { method: "DELETE" });
+            const respuesta = await fetchConSesion(`/api/publicaciones/productor/${vigente.publicacionProductorId}`, { method: "DELETE" });
             const resultado = await respuesta.json().catch(() => ({}));
             if (!respuesta.ok && respuesta.status !== 404) throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
             const mensaje = respuesta.ok ? (resultado.mensaje ?? "Publicación eliminada correctamente.") : "La publicación ya había sido eliminada.";
@@ -411,7 +407,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     }
 
     return <>
-        <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={solicitarCierre} arrastreDeshabilitado={ocupado || confirmando}
             slotProps={{ paper: { ref: panelRef, tabIndex: -1, className: estilosAcciones.panel, role: "dialog", "aria-modal": true, "aria-labelledby": tituloId } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
             {publicacion && especie && <>
@@ -479,7 +474,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                             <button className={estilosAcciones.cancelar} type="button" onClick={cancelarEdicion} disabled={ocupado}>Cancelar</button>
                             <button className={estilosAcciones.guardar} type="submit" disabled={ocupado}>{estado.guardando ? "Guardando..." : "Confirmar"}</button>
                         </> : <>
-                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled={ocupado || cargando} onClick={() => { cerrarNotificacion(); setEstado((actual) => ({ ...actual, confirmacionPara: vigente })); }}>Eliminar</button>
+                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled={ocupado || cargando} onClick={() => { setEstado((actual) => ({ ...actual, confirmacionPara: vigente })); }}>Eliminar</button>
                             <button className={estilosAcciones.guardar} type="button" disabled={cargando || ocupado || confirmando} onClick={comenzarEdicion}>Editar</button>
                         </>}
                     </div>

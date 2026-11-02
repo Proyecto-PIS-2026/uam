@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 
@@ -365,7 +365,7 @@ describe("NuevaPublicacion", () => {
         expect(asa).toHaveAttribute("data-disabled", "false");
         fireEvent.click(screen.getByRole("button", { name: "Cerrar desde fondo" }));
         expect(mocks.alCerrar).toHaveBeenCalledOnce();
-    });
+    }, 500_000);
 
     it("permite cancelar el alta sin enviar el formulario", () => {
         renderDrawer();

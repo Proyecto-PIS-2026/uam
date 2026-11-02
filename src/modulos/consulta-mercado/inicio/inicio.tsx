@@ -11,7 +11,7 @@ import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlin
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
@@ -41,17 +41,13 @@ function normalizarTexto(texto: string) {
 
 export default function Inicio({ especies, urlListaInteligente, ordenamientoHabilitado, ordenPredeterminado }: Props) {
     const [busqueda, setBusqueda] = useState("");
-    const [ordenElegido, setOrdenElegido] =
-        useState<OrdenLanding>(ordenPredeterminado);
+    const [ordenElegido, setOrdenElegido] = useState<OrdenLanding>(ordenPredeterminado);
     const [paginaActual, setPaginaActual] = useState(1);
 
-    const orden = ordenamientoHabilitado
-        ? ordenElegido
-        : ordenPredeterminado;
+    const orden = ordenamientoHabilitado ? ordenElegido : ordenPredeterminado;
 
-    const { notificacion, notificar, cerrarNotificacion } =
-        useNotificacionToast();
-
+    const { notificar } = useNotificacionToast();
+    
     const textoBuscado = normalizarTexto(busqueda.trim());
     const especiesFiltradas = especies.filter((especie) =>
         normalizarTexto(especie.nombreEspecie).includes(textoBuscado)
@@ -59,17 +55,9 @@ export default function Inicio({ especies, urlListaInteligente, ordenamientoHabi
 
     especiesFiltradas.sort((primera, segunda) => {
         if (orden === "mas_vendidas") {
-            return compararEspeciesPorPrioridad(
-                primera.nombreEspecie,
-                segunda.nombreEspecie,
-            );
+            return compararEspeciesPorPrioridad(primera.nombreEspecie, segunda.nombreEspecie);
         }
-
-        const comparacion = primera.nombreEspecie.localeCompare(
-            segunda.nombreEspecie,
-            "es",
-            { sensitivity: "base" },
-        );
+        const comparacion = primera.nombreEspecie.localeCompare(segunda.nombreEspecie, "es", { sensitivity: "base" });
 
         return orden === "nombre_desc" ? -comparacion : comparacion;
     });
@@ -81,8 +69,6 @@ export default function Inicio({ especies, urlListaInteligente, ordenamientoHabi
 
     const contenido = (
         <main className={styles.pagina}>
-
-
             <h1 className={styles.tituloMobile}>Mercado de hoy</h1>
             <section className={styles.hero} aria-labelledby="titulo-home">
                 <div className={styles.heroTexto}>
@@ -93,7 +79,6 @@ export default function Inicio({ especies, urlListaInteligente, ordenamientoHabi
                     <Image src="/generico/slider1-scaled.jpg" alt="Vista aérea del Mercado Agroalimentario" fill sizes="100vw" className={styles.heroFoto} />
                 </div>
             </section>
-
             <div className={styles.contenedor}>
                 <nav className={styles.accesos} aria-label="Accesos principales">
                     {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver Mercado Virtual</span></Link>}
@@ -105,34 +90,20 @@ export default function Inicio({ especies, urlListaInteligente, ordenamientoHabi
                     ))}
                     {autorizado("preciosReferencia.consultar") && <Link href="/precios-referencia" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></Link>}
                 </nav>
-                <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
                 <section className={styles.especies} aria-labelledby="titulo-especies">
                     <div className={styles.tituloContenedor}>
                         <HojasDecorativas />
                         <h2 className={styles.titulo} id="titulo-especies">Especies</h2>
                         <p className={styles.subtitulo}>{especies.length} especies con operadores</p>
                     </div>
-
                     <div className={styles.controles} data-ordenamiento={ordenamientoHabilitado}>
                         <TextField fullWidth size="small" label="Buscar especies" type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }} className={`${styles.selectMui} ${styles.filtroBuscador}`}
                             slotProps={{input: {startAdornment: <SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }} />}}}
                         />
                         {ordenamientoHabilitado && (
-                            <BotonOrdenar<OrdenLanding>
-                                valor={orden}
-                                opciones={[
-                                    { valor: "nombre_asc", etiqueta: "A-Z" },
-                                    { valor: "nombre_desc", etiqueta: "Z-A" },
-                                ]}
-                                alCambiar={(nuevoOrden) => {
-                                    setOrdenElegido(nuevoOrden);
-                                    setPaginaActual(1);
-                                }}
-                                className={styles.filtroOrden}
-                            />
+                            <BotonOrdenar<OrdenLanding> valor={orden} opciones={[{ valor: "nombre_asc", etiqueta: "A-Z" }, { valor: "nombre_desc", etiqueta: "Z-A" }]} alCambiar={(nuevoOrden) => {setOrdenElegido(nuevoOrden); setPaginaActual(1)}} className={styles.filtroOrden}/>
                         )}
                     </div>
-
                     {especiesPagina.length === 0 ? (
                         <EstadoVacio
                             titulo={especies.length === 0 ? "Todavía no hay especies disponibles" : "No hay especies que coincidan con la búsqueda."}
@@ -146,7 +117,6 @@ export default function Inicio({ especies, urlListaInteligente, ordenamientoHabi
                                     <ProductoCard key={especie.nombreEspecie} nombre={especie.nombreEspecie} operadores={especie.cantidadOperadores} imagen={especie.fotoGenerica} />
                                 ))}
                             </div>
-
                             {totalPaginas > 1 && (
                                 <nav className={styles.paginacion} aria-label="Páginas de especies">
                                     <button className={styles.botonPagina} type="button" onClick={() => setPaginaActual(paginaVisible - 1)} disabled={paginaVisible === 1}>Anterior</button>

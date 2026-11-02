@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import type { DrawerProps } from "@mui/material/Drawer";
-import { act, cleanup, createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, createEvent, fireEvent, render, screen, waitFor } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import DrawerEditarPublicacion from "./DrawerEditarPublicacion";
 
@@ -802,7 +802,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(mocks.cerrar).toHaveBeenCalledOnce();
     });
 
-    it("muestra un error genérico ante un rechazo sin mensaje y permite volver a guardar", async () => {
+    it("muestra un error genérico, permite volver a guardar y cerrar el aviso", async () => {
         mocks.guardar.mockRejectedValueOnce(null);
         render(<DrawerEditarPublicacion {...props} />);
         fireEvent.change(screen.getByLabelText("Precio en pesos"), {target: { value: "101" }});
@@ -813,6 +813,8 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         guardarDesdeBoton();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledTimes(2));
         await waitFor(() => expect(mocks.cerrar).toHaveBeenCalledOnce());
+        expect(screen.getByRole("alert")).toHaveTextContent("No se pudieron guardar los cambios. Intentá de nuevo.");
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 

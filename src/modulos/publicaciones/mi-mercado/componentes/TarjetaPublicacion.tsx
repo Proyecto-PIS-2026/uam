@@ -5,7 +5,7 @@ import OutlinedInput from "@mui/material/OutlinedInput";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { Publicacion } from "../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
@@ -31,7 +31,7 @@ export default function TarjetaPublicacion({
     alPrecioActualizado,
     alPublicacionEliminada,
 }: Props) {
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const recibido = { precio: pub.precio === null ? null : Number(pub.precio), version: pub.version, fecha: pub.fecha };
     const [confirmado, setConfirmado] = useState(recibido);
     const actual = confirmado.version > recibido.version ? confirmado : recibido;
@@ -54,7 +54,6 @@ export default function TarjetaPublicacion({
             setErrorPrecio(PRECIO_PUBLICACION_INVALIDO);
             return;
         }
-        cerrarNotificacion();
         guardandoRef.current = true;
         setGuardandoPrecio(true);
         setGuardandoManual(true);
@@ -82,7 +81,6 @@ export default function TarjetaPublicacion({
 
     async function guardarIncrementos() {
         if (guardandoRef.current) return;
-        cerrarNotificacion();
         guardandoRef.current = true;
         setGuardandoPrecio(true);
         setErrorPrecio("");
@@ -253,5 +251,5 @@ export default function TarjetaPublicacion({
             </div>
         </div>
     );
-    return <>{contenido}<NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;
+    return contenido;
 }
