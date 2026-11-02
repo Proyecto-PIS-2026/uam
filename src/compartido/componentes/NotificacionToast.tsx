@@ -47,7 +47,7 @@ function useContenedorNotificaciones(activo: boolean) {
         observador.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-hidden"] });
         return () => observador.disconnect();
     }, [activo]);
-    return contenedor;
+    return contenedor?.isConnected ? contenedor : null;
 }
 
 function useEspacioVisible() {
@@ -86,7 +86,7 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
     const asignarViewport = useCallback((viewport: HTMLDivElement | null) => {
         viewportRef.current = viewport;
         if (!viewport) return;
-        if (typeof viewport.showPopover === "function") {
+        if (viewport.isConnected && typeof viewport.showPopover === "function") {
             viewport.setAttribute("popover", "manual");
             viewport.showPopover();
         }

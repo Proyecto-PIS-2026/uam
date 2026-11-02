@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import SearchIcon from "@mui/icons-material/Search";
@@ -54,7 +54,30 @@ function resultadoValido(valor: unknown): valor is ResultadoBusqueda {
         && coordenadasValidas(Number(resultado.lat), Number(resultado.lon));
 }
 
-export default function LeafletLocationPicker({ abierto, coordenadas, nombreInicial, modo = "agregar", alConfirmar, alCerrar }: Props) {
+export default function LeafletLocationPicker({ abierto, ...props }: Props) {
+    if (!abierto) return null;
+    const claveInicial = JSON.stringify([
+        props.coordenadas?.latitud ?? null,
+        props.coordenadas?.longitud ?? null,
+        props.coordenadas?.departamento ?? null,
+        props.coordenadas?.nombreLugar ?? null,
+        props.nombreInicial ?? null,
+        props.modo ?? "agregar",
+    ]);
+    return <SelectorPuntoRetiro key={claveInicial} {...props} />;
+}
+
+function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alConfirmar, alCerrar }: Omit<Props, "abierto">) {
+    const latitudInicial = coordenadas?.latitud ?? null;
+    const longitudInicial = coordenadas?.longitud ?? null;
+    const departamentoInicial = coordenadas?.departamento ?? "";
+    const nombreLugarInicial = nombreInicial ?? coordenadas?.nombreLugar ?? "";
+    const inicial = useMemo(() => {
+        const departamento = normalizarDepartamento(departamentoInicial);
+        return latitudInicial !== null && longitudInicial !== null && coordenadasValidas(latitudInicial, longitudInicial)
+            ? { latitud: latitudInicial, longitud: longitudInicial, departamento: departamento ?? "", nombreLugar: nombreLugarInicial }
+            : null;
+    }, [latitudInicial, longitudInicial, departamentoInicial, nombreLugarInicial]);
     const id = useId();
     const esMobile = useMediaQuery("(max-width: 767px)");
     const [elementoMapa, setElementoMapa] = useState<HTMLDivElement | null>(null);
@@ -65,9 +88,9 @@ export default function LeafletLocationPicker({ abierto, coordenadas, nombreInic
     const solicitudSeleccionRef = useRef(0);
     const busquedaAbortRef = useRef<AbortController | null>(null);
     const seleccionAbortRef = useRef<AbortController | null>(null);
-    const nombreEditadoRef = useRef(false);
-    const [seleccion, setSeleccion] = useState<UbicacionSeleccionada | null>(null);
-    const [nombre, setNombre] = useState("");
+    const nombreEditadoRef = useRef(Boolean(nombreLugarInicial.trim()));
+    const [seleccion, setSeleccion] = useState<UbicacionSeleccionada | null>(inicial?.departamento ? inicial : null);
+    const [nombre, setNombre] = useState(nombreLugarInicial);
     const [nombreRevisado, setNombreRevisado] = useState(false);
     const [errorSeleccion, setErrorSeleccion] = useState("");
     const [errorBusqueda, setErrorBusqueda] = useState("");
@@ -77,32 +100,12 @@ export default function LeafletLocationPicker({ abierto, coordenadas, nombreInic
     const [buscando, setBuscando] = useState(false);
     const [identificando, setIdentificando] = useState(false);
     const [mapaListo, setMapaListo] = useState(false);
-    const latitudInicial = coordenadas?.latitud ?? null;
-    const longitudInicial = coordenadas?.longitud ?? null;
-    const departamentoInicial = coordenadas?.departamento ?? "";
-    const nombreLugarInicial = nombreInicial ?? coordenadas?.nombreLugar ?? "";
 
     useEffect(() => {
-        if (!abierto || !elementoMapa) return;
-        const departamento = normalizarDepartamento(departamentoInicial);
-        const inicial = latitudInicial !== null && longitudInicial !== null && coordenadasValidas(latitudInicial, longitudInicial)
-            ? { latitud: latitudInicial, longitud: longitudInicial, departamento: departamento ?? "", nombreLugar: nombreLugarInicial }
-            : null;
+        if (!elementoMapa) return;
         let activo = true;
         let observador: ResizeObserver | undefined;
         let temporizadorTamano: ReturnType<typeof setTimeout> | undefined;
-        nombreEditadoRef.current = Boolean(nombreLugarInicial.trim());
-        setNombre(nombreLugarInicial);
-        setNombreRevisado(false);
-        setSeleccion(inicial?.departamento ? inicial : null);
-        setErrorSeleccion("");
-        setErrorBusqueda("");
-        setErrorMapa("");
-        setBusqueda("");
-        setResultados([]);
-        setBuscando(false);
-        setIdentificando(false);
-        setMapaListo(false);
 
         void import("leaflet").then((leaflet) => {
             if (!activo || !elementoMapa.isConnected) return;
@@ -203,7 +206,7 @@ export default function LeafletLocationPicker({ abierto, coordenadas, nombreInic
             mapaInstanciaRef.current?.remove();
             mapaInstanciaRef.current = null;
         };
-    }, [abierto, elementoMapa, latitudInicial, longitudInicial, departamentoInicial, nombreLugarInicial]);
+    }, [elementoMapa, inicial]);
 
     function cerrar() {
         solicitudBusquedaRef.current += 1;
@@ -266,12 +269,12 @@ export default function LeafletLocationPicker({ abierto, coordenadas, nombreInic
 
     const nombreValido = nombre.trim().length > 0 && nombre.trim().length <= 200;
     const puedeConfirmar = mapaListo && !identificando && !errorSeleccion && !errorMapa && Boolean(seleccion?.departamento) && nombreValido;
+
     function confirmar() {
         if (!puedeConfirmar || !seleccion) return;
         alConfirmar({ ...seleccion, nombreLugar: nombre.trim() });
     }
 
-    if (!abierto) return null;
     return <Dialog open onClose={cerrar} fullScreen={esMobile} fullWidth maxWidth="md" aria-labelledby={`${id}-titulo`} aria-describedby={`${id}-ayuda`}
         slotProps={{ paper: { className: styles.modal }, transition: { onEntered: () => mapaInstanciaRef.current?.invalidateSize() } }}>
         <header className={styles.encabezado}>
