@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { validarAltaPublicacionProductor } from "./validarAltaPublicacionProductor";
+import { validarAltaPublicacionOperador } from "./validarAltaPublicacionOperador";
 
 const datosValidos = {
     productorId: 1, especieId: 2, variedadId: 3, presentacionId: 4,
@@ -10,7 +11,7 @@ const datosValidos = {
 
 describe("validarAltaPublicacionProductor", () => {
     it("permite publicar sin precio, cantidad ni fotografía", () => {
-        expect(validarAltaPublicacionProductor(datosValidos)).toEqual({ esValido: true, datos: datosValidos });
+        expect(validarAltaPublicacionProductor(datosValidos)).toEqual({ esValido: true, datos: { ...datosValidos, comentario: null } });
     });
 
     it("acepta varias ubicaciones y normaliza los nombres y enlaces", () => {
@@ -19,7 +20,7 @@ describe("validarAltaPublicacionProductor", () => {
             { nombreUbicacion: " Puesto de retiro ", urlMaps: " https://maps.app.goo.gl/ejemplo " },
         ];
         expect(validarAltaPublicacionProductor({ ...datosValidos, ubicaciones })).toEqual({
-            esValido: true, datos: { ...datosValidos, ubicaciones: [
+            esValido: true, datos: { ...datosValidos, comentario: null,ubicaciones: [
                 { nombreUbicacion: "Chacra norte", urlMaps: "https://www.google.com/maps?q=-34.7,-56.1" },
                 { nombreUbicacion: "Puesto de retiro", urlMaps: "https://maps.app.goo.gl/ejemplo" },
             ] },
@@ -37,7 +38,7 @@ describe("validarAltaPublicacionProductor", () => {
         const ubicacion = { nombreUbicacion: "a".repeat(200), urlMaps: prefijo + "a".repeat(2048 - prefijo.length) };
         const ubicaciones = Array.from({ length: 20 }, () => ({ ...ubicacion }));
         expect(validarAltaPublicacionProductor({ ...datosValidos, ubicaciones })).toEqual({
-            esValido: true, datos: { ...datosValidos, ubicaciones },
+            esValido: true, datos: { ...datosValidos, ubicaciones, comentario: null },
         });
     });
 
@@ -138,5 +139,17 @@ describe("validarAltaPublicacionProductor", () => {
     it("informa todos los campos que deben corregirse", () => {
         const resultado = validarAltaPublicacionProductor({ ...datosValidos, precio: "texto", latitud: null, disponibilidad: null });
         expect(resultado).toEqual({ esValido: false, errores: ["La latitud no es válida.", "La disponibilidad no es válida.", "El precio debe ser un número entero positivo de hasta 10 dígitos, sin decimales."] });
+    });
+
+    it("acepta un comentario y le quita los espacios de los costados", () => {
+        const resultado = validarAltaPublicacionProductor({ ...datosValidos, comentario: "  Cosecha de esta semana  " });
+
+        expect(resultado.esValido && resultado.datos.comentario).toBe("Cosecha de esta semana");
+    });
+
+    it("rechaza un comentario de más de 500 caracteres", () => {
+        const resultado = validarAltaPublicacionProductor({ ...datosValidos, comentario: "a".repeat(501) });
+
+        expect(resultado.esValido ? [] : resultado.errores).toContain("El comentario no puede superar los 500 caracteres.");
     });
 });

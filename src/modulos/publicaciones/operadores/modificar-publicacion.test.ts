@@ -588,4 +588,28 @@ describe("modificarPublicacionOperador", () => {
         await expect(modificarPublicacionOperador(9, 12, { ...cambios, cantidadUnidades: 100 }))
             .resolves.toEqual(resultadoEsperado);
     });
+
+    it("guarda el comentario sin los espacios de los costados", async () => {
+        await modificarPublicacionOperador(9, 12, { ...cambios, comentario: "  Cosecha de esta semana  " });
+
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ comentario: "Cosecha de esta semana" }));
+    });
+
+    it("borra el comentario cuando llega vacío", async () => {
+        await modificarPublicacionOperador(9, 12, { ...cambios, comentario: "   " });
+
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ comentario: null }));
+    });
+
+    it("no modifica el comentario guardado si no se envía", async () => {
+        await modificarPublicacionOperador(9, 12, cambios);
+
+        expect(mocks.publicacion.update.mock.calls[0][0]).not.toHaveProperty("comentario");
+    });
+
+    it("rechaza un comentario de más de 500 caracteres sin guardar", async () => {
+        await expect(modificarPublicacionOperador(9, 12, { ...cambios, comentario: "a".repeat(501) }))
+            .rejects.toThrow("El comentario no puede superar los 500 caracteres.");
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+    });
 });

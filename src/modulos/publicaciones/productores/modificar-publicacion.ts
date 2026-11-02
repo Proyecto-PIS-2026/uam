@@ -8,6 +8,7 @@ import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarIma
 import { limpiarImagenPublicacionNoReferenciada } from "../operadores/limpiar-imagen-publicacion";
 import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
 import { validarUbicacionesProductor, type UbicacionPublicacionProductor } from "./ubicaciones-productor";
+import { validarComentario } from "../validarComentario";
 
 type Cliente = Pick<typeof db, "orm">;
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
@@ -18,6 +19,7 @@ export type CambiosPublicacionProductor = Omit<SeleccionPublicacion, "paisId"> &
     precio: string | null;
     foto?: string | null;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     disponible?: boolean;
     ubicaciones: UbicacionPublicacionProductor[];
 };
@@ -51,8 +53,14 @@ function validarCambios(entrada: unknown): CambiosPublicacionProductor {
     if (datos.foto !== undefined && datos.foto !== null && typeof datos.foto !== "string") datosInvalidos("La fotografía no es válida.");
     const ubicaciones = validarUbicacionesProductor(datos.ubicaciones);
     if (!ubicaciones.esValido) datosInvalidos(ubicaciones.error);
+    let comentario: string | null | undefined;
+    if (datos.comentario !== undefined) {
+        const resultadoComentario = validarComentario(datos.comentario);
+        if (!resultadoComentario.esValido) datosInvalidos(resultadoComentario.error);
+        comentario = resultadoComentario.comentario;
+    }
     return { ...seleccion.seleccion, paisId: datos.paisId === undefined ? undefined : seleccion.seleccion.paisId, precio: normalizarPrecioPublicacion(datos.precio as string | null | undefined), foto: datos.foto as string | null | undefined,
-        cantidadUnidades: datos.cantidadUnidades as number | null | undefined,
+        cantidadUnidades: datos.cantidadUnidades as number | null | undefined, comentario,
         disponible: datos.disponible as boolean | undefined, ubicaciones: ubicaciones.ubicaciones };
 }
 
@@ -63,7 +71,7 @@ async function consultarPublicacion(publicacionProductorId: number, cliente: Cli
         .include("pais", (pais) => pais.select("nombrePais"))
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) => publicacion
-            .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+            .select("id", "foto", "precio", "cantidadUnidades", "comentario", "fecha", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
             .include("presentacion", (presentacion) => presentacion.include("variedad", (variedad) => variedad.include("especie")))
             .include("especie").include("variedad").include("categoria").include("calibre"))
         .first();
@@ -124,6 +132,7 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
                 precio: cambios.precio as PrecioDb, foto, especieId: cambios.especieId, variedadId: cambios.variedadId, presentacionId: cambios.presentacionId,
                 categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,
                 ...(cambios.cantidadUnidades !== undefined ? { cantidadUnidades: cambios.cantidadUnidades as CantidadUnidadesDb } : {}),
+                ...(cambios.comentario !== undefined ? { comentario: cambios.comentario } : {}),
                 ...(cambios.disponible !== undefined ? { publicacionDisponible: cambios.disponible } : {}),
             });
             if (cambios.paisId !== undefined) {

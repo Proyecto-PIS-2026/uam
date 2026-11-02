@@ -5,6 +5,7 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarImagenPublicacion } from "./imagenes-publicacion";
 import type { CambiosPublicacionOperador } from "./tipos";
 import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
+import { validarComentario } from "../validarComentario";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
@@ -65,6 +66,15 @@ export async function modificarPublicacionOperador(
         } else {
             cantidadUnidadesParaGuardar = null;
         }
+    }
+    let comentarioParaGuardar: string | null | undefined = undefined;
+
+    if (cambios.comentario !== undefined) {
+        const resultadoComentario = validarComentario(cambios.comentario);
+        if (!resultadoComentario.esValido) {
+            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", resultadoComentario.error);
+        }
+        comentarioParaGuardar = resultadoComentario.comentario;
     }
 
     let imagenCreada: { url: string; publicacionId: number } | undefined;
@@ -161,6 +171,7 @@ export async function modificarPublicacionOperador(
                     version: cambios.version + 1,
                     precio: precioParaGuardar,
                     cantidadUnidades: cantidadUnidadesParaGuardar,
+                    ...(comentarioParaGuardar !== undefined ? { comentario: comentarioParaGuardar } : {}),
                     foto: fotoActual,
                     especieId: cambios.especieId,
                     variedadId: cambios.variedadId,

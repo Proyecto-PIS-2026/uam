@@ -1,11 +1,13 @@
 import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublicacion } from "./seleccion-publicacion";
 import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
+import { validarComentario } from "./validarComentario";
 
 export type DatosAltaPublicacionOperador = SeleccionPublicacion & {
 	operadorId: number;
 	disponibilidad: boolean;
 	precio?: string | null;
 	cantidadUnidades?: number | null;
+	comentario?: string | null;
 	fotografia?: string;
 };
 
@@ -56,9 +58,10 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 		if (typeof datos.cantidadUnidades !== "number" || !Number.isSafeInteger(datos.cantidadUnidades) || datos.cantidadUnidades < 0 || datos.cantidadUnidades > 2147483647) {
 			errores.push("La cantidad de unidades debe ser un número entero entre 0 y 2147483647.");
 		}
-	}	
+	}
+	const resultadoComentario = validarComentario(datos.comentario);
+    if (!resultadoComentario.esValido) errores.push(resultadoComentario.error);
 
 	if (errores.length > 0) return { esValido: false, errores };
 	if (!seleccion.esValido) return seleccion;
-	return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true } as DatosAltaPublicacionOperador };
-}
+	return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true, comentario: resultadoComentario.esValido ? resultadoComentario.comentario : null } as DatosAltaPublicacionOperador };}
