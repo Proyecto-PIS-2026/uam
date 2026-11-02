@@ -173,8 +173,6 @@ const operadores: OperadorDemo[] = [
   },
 ];
 
-// Cuentas ficticias de productores: cinco de Uruguay y una de Ecuador.
-// Contrase?a de demostraci?n de cada cuenta: su username seguido de 123.
 const productores: ProductorDemo[] = [
   {
     username: "productor_norte_salto",
@@ -364,7 +362,6 @@ function fotoOperador(nombreOperador: string, archivos: Map<string, string>): st
   const base = nombreOperador.toLocaleLowerCase("es")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
   for (const extension of [".webp", ".jpeg", ".jpg", ".png", ".jfif"]) {
@@ -410,6 +407,9 @@ function pesoRepresentable(peso: number): KgPorUnidad {
 }
 
 async function limpiarBase() {
+  await prisma.orm.public.EstadisticaVisita.where(() => all()).deleteAll();
+  await prisma.orm.public.EstadisticaContacto.where(() => all()).deleteAll();
+  await prisma.orm.public.EstadisticaPublicacion.where(() => all()).deleteAll();
   await prisma.orm.public.Imagen.where(() => all()).deleteAll();
   await prisma.orm.public.Notificacion.where(() => all()).deleteAll();
   await prisma.orm.public.PublicacionOperador.where(() => all()).deleteAll();
@@ -737,6 +737,144 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "incremento_precio", valorConfiguracion: "10" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "fecha_consulta_catalogo", valorConfiguracion: consulta.survey_date });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf"});
+
+  // DATOS DE PRUEBA REALES PARA LAS TABLAS DE ESTADISTICAS
+  console.log("Poblando tablas de estadísticas con alta densidad, variedad y cobertura diaria en octubre...");
+
+  const usuariosPool = [
+    "jorge_ferias", "pablo_sappa", "diego_figueroa", "bacigalupi", "lucas_blanco", 
+    "britos_hns", "ciro_gentile", "guarino", "pizzorno", "don_juan", 
+    "caporale", "punto_natural", "pepe", "sandias_de_rivera", "citricola_salto_grande", 
+    "productor_norte_salto", "productor_canelones_verde", "productor_san_jose_agro",
+    "usuario_eliminado_carlos", "ex_operador_roberto"
+  ];
+
+  const visitasSeed = [
+    { fecha: "2026-01-08", tipoVisitante: "comprador", cantidad: 4 },
+    { fecha: "2026-01-15", tipoVisitante: "operador", cantidad: 2 },
+    { fecha: "2026-02-03", tipoVisitante: "comprador", cantidad: 6 },
+    { fecha: "2026-02-20", tipoVisitante: "productor", cantidad: 3 },
+    { fecha: "2026-03-10", tipoVisitante: "comprador", cantidad: 12 },
+    { fecha: "2026-03-22", tipoVisitante: "productor", cantidad: 5 },
+    { fecha: "2026-04-04", tipoVisitante: "comprador", cantidad: 9 },
+    { fecha: "2026-04-18", tipoVisitante: "operador", cantidad: 4 },
+    { fecha: "2026-05-15", tipoVisitante: "operador", cantidad: 3 },
+    { fecha: "2026-05-28", tipoVisitante: "comprador", cantidad: 11 },
+    { fecha: "2026-06-01", tipoVisitante: "comprador", cantidad: 7 },
+    { fecha: "2026-06-19", tipoVisitante: "productor", cantidad: 5 },
+    { fecha: "2026-07-12", tipoVisitante: "comprador", cantidad: 14 },
+    { fecha: "2026-07-26", tipoVisitante: "operador", cantidad: 6 },
+    { fecha: "2026-08-04", tipoVisitante: "comprador", cantidad: 16 },
+    { fecha: "2026-08-12", tipoVisitante: "operador", cantidad: 8 },
+    { fecha: "2026-08-19", tipoVisitante: "comprador", cantidad: 19 },
+    { fecha: "2026-08-28", tipoVisitante: "productor", cantidad: 10 },
+    { fecha: "2026-09-03", tipoVisitante: "comprador", cantidad: 24 },
+    { fecha: "2026-09-10", tipoVisitante: "operador", cantidad: 9 },
+    { fecha: "2026-09-17", tipoVisitante: "comprador", cantidad: 27 },
+    { fecha: "2026-09-24", tipoVisitante: "productor", cantidad: 12 },
+    { fecha: "2026-09-30", tipoVisitante: "comprador", cantidad: 30 },
+  ];
+
+  for (let dia = 1; dia <= 31; dia++) {
+    const fecha = `2026-10-${String(dia).padStart(2, "0")}`;
+    visitasSeed.push({ fecha, tipoVisitante: "comprador", cantidad: 15 + (dia % 25) });
+    visitasSeed.push({ fecha, tipoVisitante: "operador", cantidad: 5 + (dia % 12) });
+    if (dia % 2 === 0) {
+      visitasSeed.push({ fecha, tipoVisitante: "productor", cantidad: 4 + (dia % 10) });
+    }
+  }
+
+  for (const v of visitasSeed) {
+    try {
+      await prisma.orm.public.EstadisticaVisita.create({
+        fecha: Temporal.Instant.from(`${v.fecha}T00:00:00Z`),
+        tipoVisitante: v.tipoVisitante,
+        cantidad: v.cantidad,
+      });
+    } catch {
+    }
+  }
+
+  const contactosSeed = [
+    { fecha: "2026-01-12", username: "jorge_ferias", cantidad: 2 },
+    { fecha: "2026-02-10", username: "pablo_sappa", cantidad: 3 },
+    { fecha: "2026-03-14", username: "productor_norte_salto", cantidad: 6 },
+    { fecha: "2026-03-25", username: "usuario_eliminado_carlos", cantidad: 2 },
+    { fecha: "2026-04-09", username: "diego_figueroa", cantidad: 5 },
+    { fecha: "2026-05-11", username: "bacigalupi", cantidad: 3 },
+    { fecha: "2026-06-18", username: "productor_canelones_verde", cantidad: 7 },
+    { fecha: "2026-07-04", username: "lucas_blanco", cantidad: 4 },
+    { fecha: "2026-08-06", username: "jorge_ferias", cantidad: 9 },
+    { fecha: "2026-08-15", username: "pablo_sappa", cantidad: 8 },
+    { fecha: "2026-08-24", username: "ex_operador_roberto", cantidad: 3 },
+    { fecha: "2026-09-02", username: "jorge_ferias", cantidad: 12 },
+    { fecha: "2026-09-11", username: "citricola_salto_grande", cantidad: 7 },
+    { fecha: "2026-09-19", username: "pablo_sappa", cantidad: 14 },
+    { fecha: "2026-09-26", username: "productor_norte_salto", cantidad: 11 },
+  ];
+
+  for (let dia = 1; dia <= 31; dia++) {
+    const fecha = `2026-10-${String(dia).padStart(2, "0")}`;
+    const user1 = usuariosPool[dia % usuariosPool.length];
+    const user2 = usuariosPool[(dia + 5) % usuariosPool.length];
+    const user3 = usuariosPool[(dia + 11) % usuariosPool.length];
+
+    contactosSeed.push({ fecha, username: user1, cantidad: 3 + (dia % 8) });
+    contactosSeed.push({ fecha, username: user2, cantidad: 2 + (dia % 6) });
+    if (dia % 2 === 0) {
+      contactosSeed.push({ fecha, username: user3, cantidad: 4 + (dia % 7) });
+    }
+  }
+
+  for (const c of contactosSeed) {
+    try {
+      await prisma.orm.public.EstadisticaContacto.create({
+        fecha: Temporal.Instant.from(`${c.fecha}T00:00:00Z`),
+        username: c.username,
+        cantidad: c.cantidad,
+      });
+    } catch {
+    }
+  }
+
+  // Estadísticas de Publicaciones
+  const publicacionesSeed = [
+    { fecha: "2026-01-05", username: "jorge_ferias", cantidad: 3 },
+    { fecha: "2026-02-14", username: "pablo_sappa", cantidad: 4 },
+    { fecha: "2026-03-03", username: "productor_norte_salto", cantidad: 7 },
+    { fecha: "2026-03-20", username: "usuario_eliminado_carlos", cantidad: 3 },
+    { fecha: "2026-04-10", username: "diego_figueroa", cantidad: 5 },
+    { fecha: "2026-05-06", username: "britos_hns", cantidad: 2 },
+    { fecha: "2026-06-15", username: "productor_san_jose_agro", cantidad: 6 },
+    { fecha: "2026-07-22", username: "guarino", cantidad: 3 },
+    { fecha: "2026-08-09", username: "jorge_ferias", cantidad: 8 },
+    { fecha: "2026-08-18", username: "pablo_sappa", cantidad: 9 },
+    { fecha: "2026-08-26", username: "ex_operador_roberto", cantidad: 2 },
+    { fecha: "2026-09-05", username: "jorge_ferias", cantidad: 11 },
+    { fecha: "2026-09-14", username: "punto_natural", cantidad: 6 },
+    { fecha: "2026-09-21", username: "pablo_sappa", cantidad: 10 },
+    { fecha: "2026-09-28", username: "productor_norte_salto", cantidad: 13 },
+  ];
+
+  for (let dia = 1; dia <= 31; dia++) {
+    const fecha = `2026-10-${String(dia).padStart(2, "0")}`;
+    const user1 = usuariosPool[(dia + 2) % usuariosPool.length];
+    const user2 = usuariosPool[(dia + 8) % usuariosPool.length];
+
+    publicacionesSeed.push({ fecha, username: user1, cantidad: 4 + (dia % 9) });
+    publicacionesSeed.push({ fecha, username: user2, cantidad: 2 + (dia % 5) });
+  }
+
+  for (const p of publicacionesSeed) {
+    try {
+      await prisma.orm.public.EstadisticaPublicacion.create({
+        fecha: Temporal.Instant.from(`${p.fecha}T00:00:00Z`),
+        username: p.username,
+        cantidad: p.cantidad,
+      });
+    } catch {
+    }
+  }
 
   console.table({
     especies: consulta.types.reduce((total, tipo) => total + tipo.products.length, 0),
