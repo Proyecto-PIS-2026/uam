@@ -62,10 +62,6 @@ function obtenerNombreRol(rol: UsuarioParaModificar["rol"]) {
     return "Productor";
 }
 
-function puedeEliminar(usuario: UsuarioParaModificar) {
-    return usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR";
-}
-
 function obtenerInformacion(usuario: UsuarioParaModificar) {
     if (usuario.rol === "ADMINISTRADOR") return usuario.email;
     return usuario.nombreFantasia;
@@ -106,6 +102,9 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
         if (usuario.rol === "PRODUCTOR") {
             router.push(`/gestion-productores/${usuario.productorId}`);
         }
+        if (usuario.rol === "ADMINISTRADOR") {
+            router.push(`/gestion-administradores/${usuario.administradorId}`);
+        }
     }
 
     // Roles que ya tienen su página de modificación
@@ -125,7 +124,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
 
     function manejarAbrirEliminar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
         evento.stopPropagation();
-        if (!puedeEliminar(usuario) || !onEliminar || ocupado) return;
+        if (!onEliminar || ocupado) return;
         setUsuarioAEliminar(usuario);
     }
 
@@ -221,7 +220,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
                                 <IconButton size="small" onClick={(e) => manejarAbrirHabilitacion(e, usuario)} disabled={ocupado || !onCambiarHabilitacion || usuario.id === usuarioActualId} title={usuario.id === usuarioActualId ? "No podés deshabilitarte a vos mismo" : usuario.habilitado === false ? "Habilitar usuario" : "Deshabilitar usuario"} aria-label={usuario.habilitado === false ? "Habilitar usuario" : "Deshabilitar usuario"} className={styles.botonHabilitacion}>
                                     {usuario.habilitado === false ? <CheckCircleOutlinedIcon fontSize="small" /> : <BlockIcon fontSize="small" />}
                                 </IconButton>
-                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={ocupado || !puedeEliminar(usuario) || !onEliminar} title={puedeEliminar(usuario) && onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
+                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={ocupado || !onEliminar} title={onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
                                     <DeleteIcon fontSize="small" />
                                 </IconButton>
                             </div>
