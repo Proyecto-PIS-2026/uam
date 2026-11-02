@@ -6,6 +6,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import EncabezadoOperador from "@/compartido/EncabezadoOperador";
 import PiePagina from "@/compartido/PiePagina";
 import TemaAplicacion from "@/compartido/TemaAplicacion";
+import SeguimientoVisita from "@/compartido/componentes/SeguimientoVisita";
 import { ProveedorNotificacionesToast } from "@/compartido/componentes/NotificacionToast";
 
 const geistSans = Geist({
@@ -38,6 +39,7 @@ export default function RootLayout({
           <TemaAplicacion>
             <ProveedorNotificacionesToast>
               <EncabezadoOperador />
+              <SeguimientoVisita />
               {children}
               <PiePagina />
             </ProveedorNotificacionesToast>
