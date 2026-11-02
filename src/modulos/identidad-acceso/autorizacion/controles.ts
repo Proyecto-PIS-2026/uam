@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { obtenerSesion, type RolUsuario } from "../autenticacion/sesiones";
+import { RUTA_SESION_FINALIZADA } from "../autenticacion/rutas-sesion";
 import { obtenerRutaPrincipal } from "./rutas";
 import { autorizado } from "./permisos";
 
@@ -26,7 +27,7 @@ async function exigirRol(rol: RolUsuario): Promise<SesionAutenticada> {
 async function requerirRol(rol: RolUsuario): Promise<SesionAutenticada> {
     const sesion = await obtenerSesion();
     if (!sesion) {
-        redirect("/iniciar-sesion");
+        redirect(RUTA_SESION_FINALIZADA);
     }
     if (sesion.rol !== rol) {
         redirect(obtenerRutaPrincipal(sesion.rol));
@@ -78,7 +79,7 @@ export async function exigirConsultaProductores(mensaje = "No tenés permiso par
 export async function requerirConsultaProductores() {
     const sesion = await obtenerSesion();
     if (!sesion) {
-        redirect("/iniciar-sesion");
+        redirect(RUTA_SESION_FINALIZADA);
     }
     if (!autorizado("productor.publicacion.consultar", sesion)) {
         redirect(obtenerRutaPrincipal(sesion.rol));
