@@ -10,7 +10,7 @@
 }
 
 .lista {
-    --columnas-usuarios: minmax(0, 1fr) minmax(0, 1fr) max-content 5rem;
+    --columnas-usuarios: minmax(0, 1fr) minmax(0, 1fr) max-content 7.5rem;
     --padding-lista-usuarios: var(--padding-panel);
     display: grid;
     grid-template-columns: var(--columnas-usuarios);
@@ -88,6 +88,17 @@
     vertical-align: middle;
 }
 
+.estadoUsuario {
+    display: block;
+    color: var(--color-secondary);
+    font-size: var(--tamano-texto-auxiliar);
+    font-weight: 500;
+}
+
+.estadoUsuario[data-habilitado="false"] {
+    color: var(--color-danger);
+}
+
 .encabezado span:nth-child(2),
 .informacion {
     min-width: 0;
@@ -135,6 +146,10 @@
 }
 
 .botonEditar {
+    color: var(--color-secondary) !important;
+}
+
+.botonHabilitacion {
     color: var(--color-secondary) !important;
 }
 
@@ -208,13 +223,13 @@
     }
 
     .lista {
-        --columnas-usuarios: minmax(auto, 1fr) minmax(8rem, 1fr) max-content 5rem;
+        --columnas-usuarios: minmax(auto, 1fr) minmax(8rem, 1fr) max-content 7.5rem;
     }
 
     .fila.restablecimientoSolicitado .username {
         min-width: auto;
         width: max-content;
-        max-width: min(100%, calc(100cqw - 25rem));
+        max-width: min(100%, calc(100cqw - 27.5rem));
     }
 }
 
@@ -255,7 +270,7 @@
     }
 
     .lista {
-        --columnas-usuarios: minmax(0, 1fr) max-content 5rem;
+        --columnas-usuarios: minmax(0, 1fr) max-content 7.5rem;
         --padding-lista-usuarios: var(--espacio-controles);
         column-gap: var(--espacio-controles);
     }

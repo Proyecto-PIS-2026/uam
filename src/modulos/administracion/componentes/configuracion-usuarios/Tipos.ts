@@ -8,6 +8,7 @@ export interface UsuarioBase {
     username: string;
     rol: TipoUsuario;
     solicitoRestablecimiento?: boolean;
+    habilitado?: boolean;
 }
 
 export interface AdministradorParaModificar extends UsuarioBase {
@@ -35,4 +36,5 @@ export type UsuarioParaModificar =
 
 export interface DatosModificarUsuarios {
     usuarios: UsuarioParaModificar[];
+    usuarioActualId?: number;
 }

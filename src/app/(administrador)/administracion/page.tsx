@@ -13,11 +13,11 @@ import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/c
 export const dynamic = "force-dynamic";
 
 export default async function PaginaAdministracion() {
-    await requerirAdministrador();
+    const sesion = await requerirAdministrador();
 
     const [filasConfiguracion, datosUsuarios, estadisticas] = await Promise.all([
         obtenerConfiguraciones(["incremento_precio"]),
-        consultarDatosModificarUsuarios(),
+        consultarDatosModificarUsuarios(sesion.usuarioId),
         obtenerEstadisticas(),
     ]);
 
