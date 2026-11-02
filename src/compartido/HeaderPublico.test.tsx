@@ -137,13 +137,13 @@ describe("HeaderPublico", () => {
         expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
     });
 
-    it("ofrece solo Mi mercado, precios de referencia e histórico al productor en ambos menús", () => {
+    it("ofrece navegación de mercado y acceso al perfil propio del productor", () => {
         render(<HeaderPublico sesion={{ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 }} />);
         fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
 
         for (const nombre of ["Navegación principal", "Navegación móvil"]) {
             const menu = within(screen.getByRole("navigation", { name: nombre }));
-            expect(menu.getAllByRole("link")).toHaveLength(3);
+            expect(menu.getAllByRole("link")).toHaveLength(nombre === "Navegación móvil" ? 4 : 3);
             expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado/productor");
             expect(menu.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
             expect(menu.getByRole("link", { name: "Histórico de precios" })).toHaveAttribute("href", "/precios-historicos");
@@ -191,16 +191,17 @@ describe("HeaderPublico", () => {
         },
     );
 
-    it("omite Mi perfil del productor y mantiene Cerrar sesión en escritorio y móvil", () => {
+    it("permite al productor abrir su perfil y cerrar sesión en escritorio y móvil", () => {
         render(<HeaderPublico sesion={{ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 }} />);
         fireEvent.click(screen.getByRole("button", { name: "Abrir menú de usuario" }));
         fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
 
         const menuUsuario = within(screen.getByRole("menu"));
-        expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(1);
+        expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(2);
         expect(menuUsuario.getByRole("menuitem", { name: "Cerrar sesión" })).toBeInTheDocument();
         expect(within(screen.getByRole("navigation", { name: "Navegación móvil" })).getByRole("button", { name: "Cerrar sesión" })).toBeInTheDocument();
-        expect(screen.queryByText("Mi perfil")).not.toBeInTheDocument();
+        expect(menuUsuario.getByRole("menuitem", { name: "Mi perfil" })).toHaveAttribute("href", "/mi-perfil/productor");
+        expect(within(screen.getByRole("navigation", { name: "Navegación móvil" })).getByRole("link", { name: "Mi perfil" })).toHaveAttribute("href", "/mi-perfil/productor");
     });
 
     it.each([

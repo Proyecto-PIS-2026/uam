@@ -341,7 +341,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
             </button>
             {menuUsuarioAbierto && (
                 <div className={estilos.desplegableOperador} role="menu">
-                    {!esProductor && (
+                    {esProductor ? (
+                        <Link href="/mi-perfil/productor" className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>Mi perfil</Link>
+                    ) : (
                         <span className={estilos.opcionDesplegable} role="menuitem">
                             Mi perfil
                         </span>
@@ -356,7 +358,14 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
         </div>
     );
 
-    const menuPerfilMobile = rolUsuario && !esProductor && (
+    const menuPerfilMobile = rolUsuario && (esProductor ? (
+        <Link href="/mi-perfil/productor" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
+            <span className={estilos.etiquetaMenuMobile}>
+                <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
+                Mi perfil
+            </span>
+        </Link>
+    ) : (
         <button type="button" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`}>
             <span className={estilos.etiquetaMenuMobile}>
                 <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
@@ -374,7 +383,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 />
             )}
         </button>
-    );
+    ));
 
     const menuCerrarSesionMobile = rolUsuario && (
         <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
