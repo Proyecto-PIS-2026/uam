@@ -10,8 +10,8 @@ import type { Especie } from "../tarjetas-configuracion/fotos-especies/TarjetaUp
 import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracion/acciones/foto-especie";
 import { guardarConfiguraciones } from "@/modulos/administracion/acciones/guardar-configuracion";
 import TarjetaOrdenamientoPredeterminado, { type ConfiguracionOrdenamiento, type OrdenPublicaciones } from "../tarjetas-configuracion/ordenamiento-predeterminado/TarjetaOrdenamientoPredeterminado";
-import TarjetaVigenciaFotos, { type ConfiguracionVigenciaFotos } from "../tarjetas-configuracion/vigencia-fotos/TarjetaConfiguracionVigenciaFotos";
-import TarjetaRestableciomientoContraseña from "./tarjetas-configuracion/TarjetaRestablecimientoContraseña;
+import TarjetaVigencia, { type ConfiguracionVigenciaFotos } from "../tarjetas-configuracion/vigencia/TarjetaVigencia";
+import TarjetaRestablecimientoContraseña from "../tarjetas-configuracion/restablecimiento-contraseña/TarjetaRestablecimientoContraseña";
 
 interface ListadoConfiguracionesGeneralesProps {
     configuracion: Record<string, string | null>;
@@ -77,14 +77,16 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
     const configuracionOrdenamiento: ConfiguracionOrdenamiento = {
         habilitado: configuracion.ordenamiento_habilitado === "true",
         ordenLanding: obtenerOrden(configuracion.orden_landing_page_default),
-        ordenMercados: obtenerOrden(configuracion.orden_mercados_default),
+        ordenMercadoVirtual: obtenerOrden(configuracion.orden_mercado_virtual_default),
+        ordenMercadoProduccion: obtenerOrden(configuracion.orden_mercado_produccion_default),
     };
 
     async function guardarOrdenamiento(valores: ConfiguracionOrdenamiento): Promise<void> {
         await guardarConfiguraciones({
             ordenamiento_habilitado: String(valores.habilitado),
             orden_landing_page_default: valores.ordenLanding,
-            orden_mercados_default: valores.ordenMercados,
+            orden_mercado_virtual_default: valores.ordenMercadoVirtual,
+            orden_mercado_produccion_default: valores.ordenMercadoProduccion,
         });
         router.refresh();
     }
@@ -152,17 +154,22 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
                 onGuardarValor={guardarImporte}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaConfiguracionOrdenamiento
+            <TarjetaOrdenamientoPredeterminado
                 configuracion={configuracionOrdenamiento}
                 onGuardar={guardarOrdenamiento}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaConfiguracionVigenciaFotos
+            <TarjetaVigencia
+                titulo="Vigencia de las fotos"
+                descripcion="Configurá la vigencia de las fotos de publicaciones de operadores y productores y sus avisos de próximo vencimiento."
+                etiquetaVencimiento="Vencimiento de fotos"
+                ayudaVencimiento="Aplicar un período de vigencia a las fotos."
+                ayudaAvisos="Notificar a operadores y productores."
                 configuracion={configuracionVigenciaFotos}
                 onGuardar={guardarVigenciaFotos}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaConfiguracionVigenciaFotos
+            <TarjetaVigencia
                 titulo="Vigencia de publicaciones de productores"
                 descripcion="Configurá la vigencia de las publicaciones de productores y sus avisos de próximo vencimiento."
                 etiquetaVencimiento="Vencimiento de publicaciones"
@@ -172,10 +179,10 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
                 onGuardar={guardarVigenciaPublicaciones}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaConfiguracionSwitch
+            <TarjetaRestablecimientoContraseña
                 titulo="Restablecimiento de contraseñas"
-                descripcion="Configurá si los usuarios pueden solicitar el restablecimiento de su contraseña."
-                etiqueta="Permitir solicitar el restablecimiento de contraseña"
+                descripcion="Configurá si los usuarios pueden restablecer su propia contraseña."
+                etiqueta="Permitir que los usuarios restablezcan su propia contraseña"
                 habilitado={restablecimientoHabilitado}
                 onGuardar={guardarRestablecimiento}
             />
@@ -189,7 +196,6 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
                 onEliminarFoto={eliminarFoto}
             />
         </div>
-
     );
     return contenido; 
 }

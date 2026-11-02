@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import styles from "./ContenedorConfiguracionGeneral.module.css";
+import styles from "./ContenedorConfiguraciones.module.css";
 
 const pestañas = [
     { id: "general", etiqueta: "General" },

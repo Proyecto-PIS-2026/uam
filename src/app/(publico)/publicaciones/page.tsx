@@ -11,9 +11,7 @@ type Props = {
     searchParams: Promise<{ especie?: string }>;
 };
 
-export default async function PaginaPublicaciones({
-    searchParams,
-}: Props) {
+export default async function PaginaPublicaciones({searchParams}: Props) {
     const sesion = await redirigirAMercadoPropio();
     const esAdmin = sesion?.rol === "ADMINISTRADOR";
 
@@ -29,11 +27,9 @@ export default async function PaginaPublicaciones({
         throw new Error("No se pudieron cargar las publicaciones.");
     }
 
-    const ordenInicial = convertirOrdenMercados(
-        configuracion.ordenLanding,
-    );
+    const ordenInicial = convertirOrdenMercados(configuracion.ordenMercadoVirtual);
 
-    return (
+    const contenido = (
         <div className="relative isolate flex-1 bg-background text-foreground">
             <main className="contenedor-pagina relative z-10 flex-1">
                 <div className="secciones-pagina relative z-10">
@@ -42,7 +38,6 @@ export default async function PaginaPublicaciones({
                         cantidad={resultado.totalCatalogo}
                         subtitulo="publicaciones en la plataforma"
                     />
-
                     <ContenedorPublicaciones
                         key={`${especie}-${ordenInicial}-${configuracion.habilitado}`}
                         resultado={resultado}
@@ -55,4 +50,5 @@ export default async function PaginaPublicaciones({
             </main>
         </div>
     );
+    return contenido; 
 }

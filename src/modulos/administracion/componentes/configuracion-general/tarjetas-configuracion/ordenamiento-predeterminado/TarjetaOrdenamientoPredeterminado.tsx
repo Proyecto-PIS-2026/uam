@@ -4,7 +4,7 @@ import { useState } from "react";
 import { IconButton, MenuItem, Switch, TextField } from "@mui/material";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
 import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import styles from "./TarjetaConfiguracionOrdenamiento.module.css";
+import styles from "./TarjetaOrdenamientoPredeterminado.module.css";
 
 const opcionesOrden = [
     { valor: "menor_precio", etiqueta: "Menor precio" },
@@ -21,7 +21,8 @@ export type OrdenPublicaciones = typeof opcionesOrden[number]["valor"];
 export interface ConfiguracionOrdenamiento {
     habilitado: boolean;
     ordenLanding: OrdenPublicaciones;
-    ordenMercados: OrdenPublicaciones;
+    ordenMercadoVirtual: OrdenPublicaciones;
+    ordenMercadoProduccion: OrdenPublicaciones;
 }
 
 interface TarjetaConfiguracionOrdenamientoProps {
@@ -30,7 +31,7 @@ interface TarjetaConfiguracionOrdenamientoProps {
 }
 
 function sonIguales(primera: ConfiguracionOrdenamiento, segunda: ConfiguracionOrdenamiento) {
-    return (primera.habilitado === segunda.habilitado && primera.ordenLanding === segunda.ordenLanding && primera.ordenMercados === segunda.ordenMercados);
+    return (primera.habilitado === segunda.habilitado && primera.ordenLanding === segunda.ordenLanding && primera.ordenMercadoVirtual === segunda.ordenMercadoVirtual && primera.ordenMercadoProduccion === segunda.ordenMercadoProduccion);
 }
 
 export default function TarjetaConfiguracionOrdenamiento({ configuracion, onGuardar }: TarjetaConfiguracionOrdenamientoProps) {
@@ -49,7 +50,7 @@ export default function TarjetaConfiguracionOrdenamiento({ configuracion, onGuar
 
     const huboCambios = !sonIguales(valores, guardado);
 
-    function cambiarOrden(campo: "ordenLanding" | "ordenMercados", valor: string) {
+    function cambiarOrden(campo: "ordenLanding" | "ordenMercadoVirtual" | "ordenMercadoProduccion", valor: string) {
         const opciones = campo === "ordenLanding" ? opcionesOrdenLanding : opcionesOrden;
         const opcion = opciones.find((opcion) => opcion.valor === valor);
         if (!opcion) {
@@ -89,14 +90,21 @@ export default function TarjetaConfiguracionOrdenamiento({ configuracion, onGuar
             </div>
             <div className={styles.filaEdicion}>
                 <div className={styles.selectores}>
-                    <TextField select fullWidth size="small" label="Orden Predeterminado de Inicio y Mercado Virtual" value={valores.ordenLanding} disabled={guardando} onChange={(evento) => cambiarOrden("ordenLanding", evento.target.value)} className={styles.selectMui}>
+                    <TextField select fullWidth size="small" label="Orden predeterminado de Inicio" value={valores.ordenLanding} disabled={guardando} onChange={(evento) => cambiarOrden("ordenLanding", evento.target.value)} className={styles.selectMui}>
                         {opcionesOrdenLanding.map((opcion) => (
                             <MenuItem key={opcion.valor} value={opcion.valor} className={styles.opcionSelect}>
                                 {opcion.etiqueta}
                             </MenuItem>
                         ))}
                     </TextField>
-                    <TextField select fullWidth size="small" label="Orden Predeterminado de Mercado Producción" value={valores.ordenMercados} disabled={guardando} onChange={(evento) => cambiarOrden("ordenMercados", evento.target.value)} className={styles.selectMui}>
+                    <TextField select fullWidth size="small" label="Orden predeterminado de Mercado Virtual" value={valores.ordenMercadoVirtual} disabled={guardando} onChange={(evento) => cambiarOrden("ordenMercadoVirtual", evento.target.value)} className={styles.selectMui}>
+                        {opcionesOrden.map((opcion) => (
+                            <MenuItem key={opcion.valor} value={opcion.valor} className={styles.opcionSelect}>
+                                {opcion.etiqueta}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                    <TextField select fullWidth size="small" label="Orden predeterminado de Mercado Producción" value={valores.ordenMercadoProduccion} disabled={guardando} onChange={(evento) => cambiarOrden("ordenMercadoProduccion", evento.target.value)} className={styles.selectMui}>
                         {opcionesOrden.map((opcion) => (
                             <MenuItem key={opcion.valor} value={opcion.valor} className={styles.opcionSelect}>
                                 {opcion.etiqueta}

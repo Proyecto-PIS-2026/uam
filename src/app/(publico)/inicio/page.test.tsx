@@ -1,100 +1,177 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import Page, { metadata } from "./page";
-import Inicio from "../../../modulos/consulta-mercado/inicio/inicio";
+import type { ComponentProps } from "react";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import PaginaInicio, { dynamic, metadata } from "./page";
+import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
 
-const mockObtenerEspeciesInicio = vi.hoisted(() => vi.fn());
-const mockObtenerUrlListaInteligente = vi.hoisted(() => vi.fn());
-const obtenerSesionMock = vi.hoisted(() => vi.fn());
-const redirectMock = vi.hoisted(() => vi.fn(() => {
-    throw new Error("NEXT_REDIRECT");
+type PropsInicio = ComponentProps<typeof import("@/modulos/consulta-mercado/inicio/inicio").default>;
+
+const mocks = vi.hoisted(() => ({
+    redirigirProductor: vi.fn(),
+    obtenerEspecies: vi.fn(),
+    obtenerUrlLista: vi.fn(),
+    obtenerConfiguracion: vi.fn(),
+    inicio: vi.fn<(props: PropsInicio) => null>(() => null),
 }));
 
-vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
-    obtenerSesion: obtenerSesionMock,
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
+    redirigirProductorAMiMercado: mocks.redirigirProductor,
 }));
 
-vi.mock("next/navigation", () => ({ redirect: redirectMock }));
-
-vi.mock("../../../modulos/consulta-mercado/inicio/consultas-inicio", () => ({
-  obtenerEspeciesInicio: mockObtenerEspeciesInicio,
-  obtenerUrlListaInteligente: mockObtenerUrlListaInteligente,
-}))
-
-vi.mock("../../../modulos/consulta-mercado/inicio/inicio", () => ({
-    default: vi.fn(() => null),
+vi.mock("@/modulos/consulta-mercado/inicio/consultas-inicio", () => ({
+    obtenerEspeciesInicio: mocks.obtenerEspecies,
+    obtenerUrlListaInteligente: mocks.obtenerUrlLista,
 }));
 
-describe("Page (mercado de hoy)", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        obtenerSesionMock.mockResolvedValue(null);
-    });
+vi.mock("@/modulos/consulta-mercado/acciones/configuracion-ordenamiento", () => ({
+    obtenerConfiguracionOrdenamiento: mocks.obtenerConfiguracion,
+}));
 
-    it("permite al operador consultar el inicio sin redirigir a Mi Mercado", async () => {
-        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
-        mockObtenerEspeciesInicio.mockResolvedValue([]);
-        mockObtenerUrlListaInteligente.mockResolvedValue(null);
+vi.mock("@/modulos/consulta-mercado/inicio/inicio", () => ({
+    default: mocks.inicio,
+}));
 
-        const elemento = await Page();
+const especies = [
+    { nombreEspecie: "Acelga", fotoGenerica: "/acelga.webp", cantidadOperadores: 3 },
+    { nombreEspecie: "Tomate", fotoGenerica: null, cantidadOperadores: 5 },
+];
 
-        expect(redirectMock).not.toHaveBeenCalled();
-        expect(mockObtenerEspeciesInicio).toHaveBeenCalledOnce();
-        expect(mockObtenerUrlListaInteligente).toHaveBeenCalledOnce();
-        expect(elemento.type).toBe(Inicio);
-    });
+function configurar(cambios: Partial<ConfiguracionOrdenamiento> = {}) {
+    const configuracion: ConfiguracionOrdenamiento = {
+        habilitado: true,
+        ordenLanding: "nombre_asc",
+        ordenMercadoVirtual: "menor_precio",
+        ordenMercadoProduccion: "mayor_precio",
+        ...cambios,
+    };
+    mocks.obtenerConfiguracion.mockResolvedValue(configuracion);
+}
 
-    it("redirige al productor a su mercado antes de consultar especies o la lista inteligente", async () => {
-        obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 });
+function propsInicio(): PropsInicio {
+    return mocks.inicio.mock.calls.at(-1)![0];
+}
 
-        await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
+beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.redirigirProductor.mockResolvedValue(null);
+    mocks.obtenerEspecies.mockResolvedValue(especies);
+    mocks.obtenerUrlLista.mockResolvedValue("https://uam.com.uy/lista.pdf");
+    mocks.inicio.mockImplementation(() => null);
+    configurar();
+});
 
-        expect(redirectMock).toHaveBeenCalledExactlyOnceWith("/mi-mercado/productor");
-        expect(obtenerSesionMock).toHaveBeenCalledOnce();
-        expect(mockObtenerEspeciesInicio).not.toHaveBeenCalled();
-        expect(mockObtenerUrlListaInteligente).not.toHaveBeenCalled();
-    });
+afterEach(cleanup);
 
-    it.each([null, "ADMINISTRADOR"] as const)("conserva el inicio público para la sesión %s", async (rol) => {
-        obtenerSesionMock.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
-        mockObtenerEspeciesInicio.mockResolvedValue([]);
-        mockObtenerUrlListaInteligente.mockResolvedValue(null);
-
-        const elemento = await Page();
-
-        expect(redirectMock).not.toHaveBeenCalled();
-        expect(mockObtenerEspeciesInicio).toHaveBeenCalledOnce();
-        expect(mockObtenerUrlListaInteligente).toHaveBeenCalledOnce();
-        expect(elemento.type).toBe(Inicio);
-        expect(elemento.props).toEqual({ especies: [], urlListaInteligente: null });
-    });
-
-    it("obtiene las especies y se las pasa al componente Inicio", async () => {
-        const especiesMock = [
-            { nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: null },
-            { nombreEspecie: "Manzana", cantidadOperadores: 5, fotoGenerica: null },
-        ];
-        const urlMock = "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf";
-        mockObtenerEspeciesInicio.mockResolvedValue(especiesMock);
-        mockObtenerUrlListaInteligente.mockResolvedValue(urlMock);
-
-        const elemento = await Page();
-
-        expect(mockObtenerEspeciesInicio).toHaveBeenCalled();
-        expect(mockObtenerUrlListaInteligente).toHaveBeenCalled();
-        expect(elemento.type).toBe(Inicio);
-        expect(elemento.props).toEqual({ especies: especiesMock, urlListaInteligente: urlMock });
-    });
-
-    it("propaga el array vacío si no hay especies con publicaciones activas", async () => {
-        mockObtenerEspeciesInicio.mockResolvedValue([]);
-        mockObtenerUrlListaInteligente.mockResolvedValue(null);
-
-        const elemento = await Page();
-
-        expect(elemento.props).toEqual({ especies: [] , urlListaInteligente: null });
-    });
-
-    it("define el título correcto en los metadatos", () => {
+describe("PaginaInicio", () => {
+    it("configura renderizado dinámico y el título de la página", () => {
+        expect(dynamic).toBe("force-dynamic");
         expect(metadata.title).toBe("Mercado de hoy | UAM");
+    });
+
+    it("entrega las especies y el enlace de la Lista Inteligente", async () => {
+        render(await PaginaInicio());
+        expect(propsInicio().especies).toEqual(especies);
+        expect(propsInicio().urlListaInteligente).toBe("https://uam.com.uy/lista.pdf");
+        expect(mocks.obtenerEspecies).toHaveBeenCalledExactlyOnceWith();
+        expect(mocks.obtenerUrlLista).toHaveBeenCalledExactlyOnceWith();
+    });
+
+    it("utiliza el orden de Inicio y no los configurados para los mercados", async () => {
+        configurar({
+            ordenLanding: "nombre_desc",
+            ordenMercadoVirtual: "menor_precio",
+            ordenMercadoProduccion: "mayor_precio",
+        });
+        render(await PaginaInicio());
+        expect(propsInicio().ordenPredeterminado).toBe("nombre_desc");
+    });
+
+    it.each(["nombre_asc", "nombre_desc", "mas_vendidas"] as const)("entrega el orden predeterminado %s", async (orden) => {
+        configurar({ ordenLanding: orden });
+        render(await PaginaInicio());
+        expect(propsInicio().ordenPredeterminado).toBe(orden);
+    });
+
+    it.each([true, false])("entrega el estado del switch %s", async (habilitado) => {
+        configurar({ habilitado });
+        render(await PaginaInicio());
+        expect(propsInicio().ordenamientoHabilitado).toBe(habilitado);
+    });
+
+    it("conserva el orden predeterminado cuando el switch está apagado", async () => {
+        configurar({ habilitado: false, ordenLanding: "nombre_desc" });
+        render(await PaginaInicio());
+        expect(propsInicio()).toMatchObject({
+            ordenamientoHabilitado: false,
+            ordenPredeterminado: "nombre_desc",
+        });
+    });
+
+    it("permite una lista vacía de especies", async () => {
+        mocks.obtenerEspecies.mockResolvedValue([]);
+        render(await PaginaInicio());
+        expect(propsInicio().especies).toEqual([]);
+    });
+
+    it("permite que la Lista Inteligente no esté configurada", async () => {
+        mocks.obtenerUrlLista.mockResolvedValue(null);
+        render(await PaginaInicio());
+        expect(propsInicio().urlListaInteligente).toBeNull();
+    });
+
+    it("incluye el estado y el orden en la key del componente", async () => {
+        configurar({ habilitado: false, ordenLanding: "nombre_desc" });
+        const resultado = await PaginaInicio();
+        expect(resultado.key).toBe("false-nombre_desc");
+    });
+
+    it("comprueba la redirección antes de consultar datos", async () => {
+        mocks.obtenerEspecies.mockImplementation(async () => {
+            expect(mocks.redirigirProductor).toHaveBeenCalledOnce();
+            return especies;
+        });
+        await PaginaInicio();
+        expect(mocks.obtenerEspecies).toHaveBeenCalledOnce();
+    });
+
+    it("no consulta datos cuando el control de acceso redirige", async () => {
+        const error = new Error("NEXT_REDIRECT");
+        mocks.redirigirProductor.mockRejectedValue(error);
+        await expect(PaginaInicio()).rejects.toBe(error);
+        expect(mocks.obtenerEspecies).not.toHaveBeenCalled();
+        expect(mocks.obtenerUrlLista).not.toHaveBeenCalled();
+        expect(mocks.obtenerConfiguracion).not.toHaveBeenCalled();
+    });
+
+    it("espera la comprobación de acceso antes de iniciar las consultas", async () => {
+        let finalizar!: () => void;
+        mocks.redirigirProductor.mockImplementation(() => new Promise<void>((resolve) => { finalizar = resolve; }));
+        const pendiente = PaginaInicio();
+        expect(mocks.obtenerEspecies).not.toHaveBeenCalled();
+        expect(mocks.obtenerUrlLista).not.toHaveBeenCalled();
+        expect(mocks.obtenerConfiguracion).not.toHaveBeenCalled();
+        finalizar();
+        await pendiente;
+        expect(mocks.obtenerEspecies).toHaveBeenCalledOnce();
+        expect(mocks.obtenerUrlLista).toHaveBeenCalledOnce();
+        expect(mocks.obtenerConfiguracion).toHaveBeenCalledOnce();
+    });
+
+    it("propaga los errores de consulta de especies", async () => {
+        const error = new Error("Error de especies");
+        mocks.obtenerEspecies.mockRejectedValue(error);
+        await expect(PaginaInicio()).rejects.toBe(error);
+    });
+
+    it("propaga los errores de consulta de la Lista Inteligente", async () => {
+        const error = new Error("Error de Lista Inteligente");
+        mocks.obtenerUrlLista.mockRejectedValue(error);
+        await expect(PaginaInicio()).rejects.toBe(error);
+    });
+
+    it("propaga los errores de consulta de configuración", async () => {
+        const error = new Error("Error de configuración");
+        mocks.obtenerConfiguracion.mockRejectedValue(error);
+        await expect(PaginaInicio()).rejects.toBe(error);
     });
 });

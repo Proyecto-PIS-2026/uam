@@ -1,135 +1,126 @@
-import { render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ComponentProps, ReactNode } from "react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import PaginaAdministracion, { dynamic } from "./page";
 
-import PaginaAdministracion from "./page";
+type PropsUsuarios = ComponentProps<typeof import("@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios").default>;
+type DatosUsuarios = PropsUsuarios["datos"];
 
-const { obtenerConfiguracionesMock, consultarDatosModificarUsuariosMock, requerirAdministradorMock } = vi.hoisted(() => ({
-    obtenerConfiguracionesMock: vi.fn(),
-    consultarDatosModificarUsuariosMock: vi.fn(),
-    requerirAdministradorMock: vi.fn(),
+const mocks = vi.hoisted(() => ({
+    requerirAdministrador: vi.fn(),
+    consultarUsuarios: vi.fn(),
+    usuarios: vi.fn<(props: PropsUsuarios) => null>(() => null),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
-    requerirAdministrador: requerirAdministradorMock,
-}));
-
-vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
-    default: obtenerConfiguracionesMock,
+    requerirAdministrador: mocks.requerirAdministrador,
 }));
 
 vi.mock("@/modulos/administracion/componentes/configuracion-usuarios/acciones/ConsultaUsuarios", () => ({
-    default: consultarDatosModificarUsuariosMock,
+    default: mocks.consultarUsuarios,
 }));
 
 vi.mock("@/compartido/EncabezadoPagina", () => ({
-    default: ({
-        titulo,
-        cantidad,
-        subtitulo,
-    }: {
-        titulo: string;
-        cantidad: number | null;
-        subtitulo: string;
-    }) => (
-        <header data-testid="encabezado-pagina">
+    default: ({ titulo, subtitulo }: { titulo: string; subtitulo: string }) => (
+        <header>
             <h1>{titulo}</h1>
             <p>{subtitulo}</p>
-            <span data-testid="cantidad-encabezado">
-                {cantidad === null ? "null" : String(cantidad)}
-            </span>
         </header>
     ),
 }));
 
-vi.mock("@/modulos/administracion/componentes/ContenedorConfiguracionGeneral", () => ({
-    default: ({
-        publicaciones,
-        usuarios,
-        publica,
-    }: {
-        publicaciones: ReactNode;
-        usuarios: ReactNode;
-        publica: ReactNode;
-    }) => (
-        <section data-testid="contenedor-configuracion-general">
-            <div data-testid="panel-publicaciones">{publicaciones}</div>
-            <div data-testid="panel-usuarios">{usuarios}</div>
-            <div data-testid="panel-publica">{publica}</div>
-        </section>
+vi.mock("@/modulos/administracion/componentes/contenedor-configuracion/ContenedorConfiguraciones", () => ({
+    default: ({ general, usuarios }: { general: ReactNode; usuarios: ReactNode }) => (
+        <div>
+            <section aria-label="General">{general}</section>
+            <section aria-label="Usuarios">{usuarios}</section>
+        </div>
     ),
 }));
 
-vi.mock("@/modulos/administracion/componentes/configuracion-publicaciones/ContenedorConfiguracionPublicaciones", () => ({
-    default: ({ configuracion }: { configuracion: Record<string, string | null> }) => (
-        <div data-testid="vista-publicaciones">
-            Contenedor de publicaciones - Incremento: {configuracion.incremento_precio}
-        </div>
-    ),
+vi.mock("@/modulos/administracion/componentes/configuracion-general/contenedor-configuracion-general/ContenedorConfiguracionGenerales", () => ({
+    default: () => <div>Configuraciones generales</div>,
 }));
 
 vi.mock("@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios", () => ({
-    default: () => <div data-testid="vista-usuarios">Contenedor de usuarios</div>,
+    default: mocks.usuarios,
 }));
 
-vi.mock("@/modulos/administracion/componentes/configuracion-general/ContenedorConfiguracionGenerales", () => ({
-    default: () => (
-        <div data-testid="vista-configuracion-publica">
-            <h2>Configuración pública</h2>
-            <p>Esta sección estará disponible próximamente.</p>
-        </div>
-    ),
-}));
+beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.requerirAdministrador.mockResolvedValue(undefined);
+    mocks.consultarUsuarios.mockResolvedValue({ usuarios: [] });
+    mocks.usuarios.mockImplementation(() => null);
+});
+
+afterEach(cleanup);
 
 describe("PaginaAdministracion", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        requerirAdministradorMock.mockResolvedValue(undefined);
-        obtenerConfiguracionesMock.mockResolvedValue([]);
-        consultarDatosModificarUsuariosMock.mockResolvedValue([]);
+    it("configura la página para renderizado dinámico", () => {
+        expect(dynamic).toBe("force-dynamic");
     });
 
-    it("bloquea la página antes de consultar datos cuando el usuario no es administrador", async () => {
-        requerirAdministradorMock.mockRejectedValueOnce(new Error("NEXT_REDIRECT"));
+    it("verifica el acceso antes de consultar los usuarios", async () => {
+        mocks.consultarUsuarios.mockImplementation(async () => {
+            expect(mocks.requerirAdministrador).toHaveBeenCalledOnce();
+            return { usuarios: [] };
+        });
 
-        await expect(PaginaAdministracion()).rejects.toThrow("NEXT_REDIRECT");
-        expect(obtenerConfiguracionesMock).not.toHaveBeenCalled();
-        expect(consultarDatosModificarUsuariosMock).not.toHaveBeenCalled();
+        await PaginaAdministracion();
+
+        expect(mocks.consultarUsuarios).toHaveBeenCalledOnce();
     });
 
-    it("renderiza el encabezado y la estructura general de administración", async () => {
+    it("no consulta usuarios si falla el acceso", async () => {
+        const error = new Error("NEXT_REDIRECT");
+        mocks.requerirAdministrador.mockRejectedValue(error);
+
+        await expect(PaginaAdministracion()).rejects.toBe(error);
+
+        expect(mocks.consultarUsuarios).not.toHaveBeenCalled();
+        expect(mocks.usuarios).not.toHaveBeenCalled();
+    });
+
+    it("espera a que se confirme el acceso antes de consultar datos", async () => {
+        let autorizar!: () => void;
+        mocks.requerirAdministrador.mockImplementation(() => new Promise<void>((resolve) => { autorizar = resolve; }));
+
+        const pendiente = PaginaAdministracion();
+
+        expect(mocks.consultarUsuarios).not.toHaveBeenCalled();
+
+        autorizar();
+        await pendiente;
+
+        expect(mocks.consultarUsuarios).toHaveBeenCalledOnce();
+    });
+
+    it("muestra el encabezado y las secciones General y Usuarios", async () => {
         render(await PaginaAdministracion());
 
         expect(screen.getByRole("heading", { name: "Panel Administrativo" })).toBeInTheDocument();
         expect(screen.getByText("Configuración")).toBeInTheDocument();
-        expect(screen.getByTestId("cantidad-encabezado")).toHaveTextContent("null");
-        expect(screen.getByTestId("contenedor-configuracion-general")).toBeInTheDocument();
-        expect(document.querySelector("main.contenedor-pagina")).toBeInTheDocument();
+        expect(screen.getByRole("region", { name: "General" })).toBeInTheDocument();
+        expect(screen.getByRole("region", { name: "Usuarios" })).toBeInTheDocument();
+        expect(screen.getByText("Configuraciones generales")).toBeInTheDocument();
     });
 
-    it("incluye los contenedores de publicaciones, usuarios y configuración pública", async () => {
-        render(await PaginaAdministracion());
-
-        expect(screen.getByTestId("vista-publicaciones")).toBeInTheDocument();
-        expect(screen.getByTestId("vista-usuarios")).toBeInTheDocument();
-        expect(screen.getByRole("heading", { name: "Configuración pública" })).toBeInTheDocument();
-        expect(screen.getByText("Esta sección estará disponible próximamente.")).toBeInTheDocument();
-
-        expect(screen.getByTestId("panel-publicaciones")).toContainElement(screen.getByTestId("vista-publicaciones"));
-        expect(screen.getByTestId("panel-usuarios")).toContainElement(screen.getByTestId("vista-usuarios"));
-        expect(screen.getByTestId("panel-publica")).toContainElement(
-            screen.getByTestId("vista-configuracion-publica"),
-        );
-    });
-
-    it("consulta y transforma únicamente la configuración usada por publicaciones", async () => {
-        obtenerConfiguracionesMock.mockResolvedValue([
-            { nombreConfiguracion: "incremento_precio", valorConfiguracion: "15" },
-        ]);
+    it("entrega a la sección Usuarios los datos consultados", async () => {
+        const datos = { usuarios: [] } as DatosUsuarios;
+        mocks.consultarUsuarios.mockResolvedValue(datos);
 
         render(await PaginaAdministracion());
 
-        expect(obtenerConfiguracionesMock).toHaveBeenCalledExactlyOnceWith(["incremento_precio"]);
-        expect(screen.getByTestId("vista-publicaciones")).toHaveTextContent("Contenedor de publicaciones - Incremento: 15");
+        expect(mocks.usuarios).toHaveBeenCalled();
+        expect(mocks.usuarios.mock.calls.at(-1)![0].datos).toBe(datos);
+    });
+
+    it("propaga los errores de consulta de usuarios", async () => {
+        const error = new Error("No se pudieron cargar los usuarios");
+        mocks.consultarUsuarios.mockRejectedValue(error);
+
+        await expect(PaginaAdministracion()).rejects.toBe(error);
+
+        expect(mocks.usuarios).not.toHaveBeenCalled();
     });
 });

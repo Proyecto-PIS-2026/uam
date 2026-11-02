@@ -56,7 +56,12 @@
 .panel {
     width: 100%;
     min-width: 0;
-    padding: var(--espacio-secciones) 0 0;
+    box-sizing: border-box;
+    margin-top: 1rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background-color: var(--color-surface);
 }
 
 @media (max-width: 480px) {

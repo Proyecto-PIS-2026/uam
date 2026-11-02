@@ -119,8 +119,8 @@
 
 .selectores {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--espacio-controles);
+    grid-template-columns: minmax(0, 1fr); 
+    gap: 1.5rem;
     flex: 1;
     min-width: 0;
 }
@@ -175,8 +175,12 @@
 }
 
 @media (max-width: 767px) {
+    .filaEdicion {
+        margin-top: 0.5rem;
+    }
+
     .selectores {
         grid-template-columns: minmax(0, 1fr);
-        gap: var(--espacio-secciones);
+        gap: 1.5rem;
     }
 }

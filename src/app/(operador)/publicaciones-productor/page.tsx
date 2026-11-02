@@ -17,9 +17,7 @@ export default async function Page() {
 
     const publicaciones = resultado?.publicaciones ?? [];
 
-    const ordenInicial = convertirOrdenMercados(
-        configuracion.ordenMercados,
-    );
+    const ordenInicial = convertirOrdenMercados(configuracion.ordenMercadoProduccion);
 
     return (
         <div className="relative isolate flex-1 bg-background text-foreground">

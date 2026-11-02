@@ -1,83 +1,193 @@
-import { describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@/test-utils";
 import { useState } from "react";
-
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TarjetaInput from "./TarjetaInput";
+
+const mocks = vi.hoisted(() => ({
+    notificar: vi.fn(),
+}));
+
+vi.mock("@/compartido/componentes/NotificacionToast", () => ({
+    useNotificacionToast: () => ({ notificar: mocks.notificar }),
+}));
 
 interface PropsPrueba {
     valorInicial?: string;
     tipo?: "numero" | "url";
+    label?: string;
     onGuardarValor?: (valor: string) => Promise<void>;
 }
 
-function ComponentePrueba({valorInicial = "10", tipo = "numero", onGuardarValor = vi.fn().mockResolvedValue(undefined)}: PropsPrueba) {
+function ComponentePrueba({ valorInicial = "10", tipo = "numero", label, onGuardarValor }: PropsPrueba) {
     const [valor, setValor] = useState(valorInicial);
-    return (
-        <TarjetaInput
-            titulo="Configuración de prueba"
-            descripcion="Descripción de prueba"
-            tipo={tipo}
-            valor={valor}
-            onChangeValor={setValor}
-            onGuardarValor={onGuardarValor}
-        />
-    );
+    return <TarjetaInput titulo="Configuración de prueba" descripcion="Descripción de prueba" label={label} valor={valor} tipo={tipo} onChangeValor={setValor} onGuardarValor={onGuardarValor} />;
 }
 
+function campo() {
+    return screen.getByRole("textbox", { name: "Configuración de prueba" });
+}
+
+function botonGuardar() {
+    return screen.getByRole("button", { name: "Guardar cambios" });
+}
+
+beforeEach(() => {
+    vi.clearAllMocks();
+});
+
+afterEach(cleanup);
+
 describe("TarjetaInput", () => {
-    it("muestra el título, la descripción y el valor inicial habilitado", () => {
+    it("muestra el título, la descripción y el valor inicial", () => {
         render(<ComponentePrueba />);
         expect(screen.getByText("Configuración de prueba")).toBeInTheDocument();
         expect(screen.getByText("Descripción de prueba")).toBeInTheDocument();
-        expect(screen.getByRole("textbox")).toBeEnabled();
-        expect(screen.getByRole("textbox")).toHaveValue("10");
+        expect(campo()).toHaveValue("10");
+        expect(campo()).toHaveAccessibleDescription("Descripción de prueba");
+        expect(botonGuardar()).toBeDisabled();
     });
 
-    it("mantiene el botón de guardar deshabilitado cuando no hay cambios", () => {
-        render(<ComponentePrueba />);
-        expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+    it("usa la etiqueta del campo cuando se proporciona", () => {
+        render(<ComponentePrueba label="Importe" />);
+        expect(screen.getByRole("textbox", { name: "Importe" })).toHaveValue("10");
     });
 
-    it("habilita el botón de guardar cuando se modifica el texto", () => {
-        render(<ComponentePrueba />);
-        fireEvent.change(screen.getByRole("textbox"), { target: { value: "25" } });
-        expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+    it("usa valor vacío y modo numérico por defecto", () => {
+        render(<TarjetaInput titulo="Configuración de prueba" descripcion="Descripción de prueba" />);
+        expect(campo()).toHaveValue("");
+        expect(campo()).toHaveAttribute("type", "text");
+        expect(campo()).toHaveAttribute("inputmode", "numeric");
+        expect(campo()).toHaveAttribute("pattern", "[0-9]*");
+        expect(botonGuardar()).toBeDisabled();
     });
 
-    it("guarda el nuevo valor al hacer clic en el tick, muestra alerta de éxito y luego lo deshabilita", async () => {
+    it("habilita guardar al editar y no guarda automáticamente", () => {
         const onGuardarValor = vi.fn().mockResolvedValue(undefined);
         render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
-        fireEvent.change(screen.getByRole("textbox"), { target: { value: "20" } });
-        const botonGuardar = screen.getByRole("button", { name: "Guardar cambios" });
-        fireEvent.click(botonGuardar);
-        await waitFor(() => {
-            expect(onGuardarValor).toHaveBeenCalledExactlyOnceWith("20");
-            expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
-            expect(screen.getByText("La configuración se guardó correctamente.")).toBeInTheDocument();
-        });
+        fireEvent.change(campo(), { target: { value: "25" } });
+        expect(campo()).toHaveValue("25");
+        expect(botonGuardar()).toBeEnabled();
+        expect(onGuardarValor).not.toHaveBeenCalled();
     });
 
-    it("muestra alerta de error cuando ocurre un fallo al guardar", async () => {
-        const onGuardarValor = vi.fn().mockRejectedValue(new Error("Error al guardar en BD"));
-        render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
-        fireEvent.change(screen.getByRole("textbox"), { target: { value: "20" } });
-        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
-        await waitFor(() => {
-            expect(screen.getByText("Error al guardar en BD")).toBeInTheDocument();
-        });
+    it("deshabilita guardar al restaurar el valor original", () => {
+        render(<ComponentePrueba />);
+        fireEvent.change(campo(), { target: { value: "25" } });
+        expect(botonGuardar()).toBeEnabled();
+        fireEvent.change(campo(), { target: { value: "10" } });
+        expect(botonGuardar()).toBeDisabled();
     });
 
-    it("deshabilita los controles mientras se guardan los cambios", async () => {
-        let resolverGuardado!: () => void;
-        const onGuardarValor = vi.fn(() => new Promise<void>((resolve) => { resolverGuardado = resolve; }));
+    it.each(["abc", "-1", "1.5", " 2", "1e2"])("rechaza la entrada numérica %j", (valor) => {
+        render(<ComponentePrueba />);
+        fireEvent.change(campo(), { target: { value: valor } });
+        expect(campo()).toHaveValue("10");
+        expect(botonGuardar()).toBeDisabled();
+    });
+
+    it("permite vaciar el campo para editarlo", () => {
+        render(<ComponentePrueba />);
+        fireEvent.change(campo(), { target: { value: "" } });
+        expect(campo()).toHaveValue("");
+        expect(botonGuardar()).toBeEnabled();
+    });
+
+    it("configura el campo para URL y permite escribir una dirección", () => {
+        render(<ComponentePrueba tipo="url" valorInicial="" />);
+        expect(campo()).toHaveAttribute("type", "url");
+        expect(campo()).toHaveAttribute("inputmode", "url");
+        expect(campo()).not.toHaveAttribute("pattern");
+
+        fireEvent.change(campo(), { target: { value: "https://uam.com.uy/lista.pdf" } });
+
+        expect(campo()).toHaveValue("https://uam.com.uy/lista.pdf");
+        expect(botonGuardar()).toBeEnabled();
+    });
+
+    it("guarda el valor editado y notifica el resultado", async () => {
+        const onGuardarValor = vi.fn().mockResolvedValue(undefined);
         render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
-        fireEvent.change(screen.getByRole("textbox"), { target: { value: "30" } });
-        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
-        expect(screen.getByRole("textbox")).toBeDisabled();
-        expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
-        resolverGuardado();
-        await waitFor(() => {
-            expect(screen.getByRole("textbox")).toBeEnabled();
-        });
+        fireEvent.change(campo(), { target: { value: "25" } });
+        fireEvent.click(botonGuardar());
+
+        await waitFor(() => expect(onGuardarValor).toHaveBeenCalledExactlyOnceWith("25"));
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración se guardó correctamente.", "success"));
+        expect(botonGuardar()).toBeDisabled();
+    });
+
+    it("usa el último valor guardado como referencia para nuevas ediciones", async () => {
+        render(<ComponentePrueba onGuardarValor={vi.fn().mockResolvedValue(undefined)} />);
+        fireEvent.change(campo(), { target: { value: "25" } });
+        fireEvent.click(botonGuardar());
+
+        await waitFor(() => expect(botonGuardar()).toBeDisabled());
+
+        fireEvent.change(campo(), { target: { value: "10" } });
+        expect(botonGuardar()).toBeEnabled();
+
+        fireEvent.change(campo(), { target: { value: "25" } });
+        expect(botonGuardar()).toBeDisabled();
+    });
+
+    it("bloquea el campo y el check durante el guardado", async () => {
+        let finalizar!: () => void;
+        const onGuardarValor = vi.fn(() => new Promise<void>((resolve) => { finalizar = resolve; }));
+        render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
+
+        fireEvent.change(campo(), { target: { value: "25" } });
+        fireEvent.click(botonGuardar());
+
+        expect(campo()).toBeDisabled();
+        expect(botonGuardar()).toBeDisabled();
+
+        fireEvent.click(botonGuardar());
+        expect(onGuardarValor).toHaveBeenCalledOnce();
+
+        await act(async () => { finalizar(); });
+
+        expect(campo()).toBeEnabled();
+        expect(botonGuardar()).toBeDisabled();
+    });
+
+    it("conserva la edición y permite reintentar cuando falla", async () => {
+        const onGuardarValor = vi.fn().mockRejectedValueOnce(new Error("Error temporal")).mockResolvedValueOnce(undefined);
+        render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
+
+        fireEvent.change(campo(), { target: { value: "25" } });
+        fireEvent.click(botonGuardar());
+
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("Error temporal", "error"));
+        expect(campo()).toHaveValue("25");
+        expect(campo()).toBeEnabled();
+        expect(botonGuardar()).toBeEnabled();
+
+        fireEvent.click(botonGuardar());
+
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración se guardó correctamente.", "success"));
+        expect(onGuardarValor).toHaveBeenCalledTimes(2);
+        expect(botonGuardar()).toBeDisabled();
+    });
+
+    it("notifica un error genérico cuando el rechazo no es un Error", async () => {
+        render(<ComponentePrueba onGuardarValor={vi.fn().mockRejectedValue("fallo")} />);
+        fireEvent.change(campo(), { target: { value: "25" } });
+        fireEvent.click(botonGuardar());
+
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("Ocurrió un error al guardar la configuración.", "error"));
+        expect(botonGuardar()).toBeEnabled();
+    });
+
+    it("no guarda si no existen cambios", () => {
+        const onGuardarValor = vi.fn();
+        render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
+        fireEvent.click(botonGuardar());
+        expect(onGuardarValor).not.toHaveBeenCalled();
+    });
+
+    it("permite renderizar el campo sin callback de edición", () => {
+        render(<TarjetaInput titulo="Configuración de prueba" descripcion="Descripción de prueba" valor="10" />);
+        fireEvent.change(campo(), { target: { value: "25" } });
+        expect(campo()).toHaveValue("10");
+        expect(botonGuardar()).toBeDisabled();
     });
 });

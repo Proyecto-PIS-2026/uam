@@ -1,145 +1,162 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import obtenerConfiguraciones, { obtenerConfiguracion, actualizarConfiguracion,} from "./consultas-configuracion";
+import obtenerConfiguraciones, { actualizarConfiguracion, obtenerConfiguracion } from "./consultas-configuracion";
 
 const mocks = vi.hoisted(() => ({
-    select: vi.fn(),
     where: vi.fn(),
+    select: vi.fn(),
     all: vi.fn(),
     first: vi.fn(),
     update: vi.fn(),
 }));
 
-vi.mock("../../infraestructura/persistencia/prisma/db", () => {
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
+    db: {
+        orm: {
+            public: {
+                Configuracion: {
+                    where: mocks.where,
+                },
+            },
+        },
+    },
+}));
+
+beforeEach(() => {
+    vi.resetAllMocks();
+
     const consulta = {
-        select: mocks.select,
         where: mocks.where,
+        select: mocks.select,
         all: mocks.all,
         first: mocks.first,
         update: mocks.update,
     };
-    return {
-        db: {
-            orm: {
-                public: {
-                    Configuracion: consulta,
-                },
-            },
-        },
-    };
+
+    mocks.where.mockReturnValue(consulta);
+    mocks.select.mockReturnValue(consulta);
 });
 
-describe("consulta-configuracion", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        const consulta = {
-            select: mocks.select,
-            where: mocks.where,
-            all: mocks.all,
-            first: mocks.first,
-            update: mocks.update,
-        };
-        mocks.select.mockReturnValue(consulta);
-        mocks.where.mockReturnValue(consulta);
+describe("obtenerConfiguraciones", () => {
+    it("consulta únicamente los nombres solicitados", async () => {
+        const nombres = ["url_lista_inteligente", "incremento_precio"];
+        const filas = [
+            { nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/lista.pdf" },
+            { nombreConfiguracion: "incremento_precio", valorConfiguracion: "25" },
+        ];
+        mocks.all.mockResolvedValue(filas);
+
+        const resultado = await obtenerConfiguraciones(nombres);
+
+        expect(mocks.where).toHaveBeenCalledOnce();
+
+        const incluir = vi.fn();
+        const filtrar = mocks.where.mock.calls[0][0];
+        filtrar({ nombreConfiguracion: { in: incluir } });
+
+        expect(incluir).toHaveBeenCalledExactlyOnceWith(nombres);
+        expect(mocks.select).toHaveBeenCalledExactlyOnceWith("nombreConfiguracion", "valorConfiguracion");
+        expect(mocks.all).toHaveBeenCalledOnce();
+        expect(resultado).toEqual(filas);
     });
 
-    describe("obtenerConfiguraciones", () => {
-        it("consulta sólo las configuraciones solicitadas", async () => {
-            const configuraciones = [{nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/lista.pdf"}, {nombreConfiguracion: "incremento_precio", valorConfiguracion: "10"}];
-            mocks.all.mockResolvedValue(configuraciones);
-            const nombres = ["url_lista_inteligente", "incremento_precio"];
-            const resultado = await obtenerConfiguraciones(nombres);
-            expect(mocks.where).toHaveBeenCalledOnce();
-            const incluir = vi.fn();
-            mocks.where.mock.calls[0][0]({ nombreConfiguracion: { in: incluir } });
-            expect(incluir).toHaveBeenCalledExactlyOnceWith(nombres);
-            expect(mocks.select).toHaveBeenCalledExactlyOnceWith("nombreConfiguracion", "valorConfiguracion");
-            expect(mocks.all).toHaveBeenCalledOnce();
-            expect(resultado).toEqual(configuraciones);
-        });
+    it("no consulta la base cuando la lista de nombres está vacía", async () => {
+        await expect(obtenerConfiguraciones([])).resolves.toEqual([]);
 
-        it("devuelve un arreglo vacío cuando no existen configuraciones", async () => {
-            mocks.all.mockResolvedValue([]);
-            const resultado = await obtenerConfiguraciones(["incremento_precio"]);
-            expect(resultado).toEqual([]);
-            expect(mocks.all).toHaveBeenCalledOnce();
-        });
-
-        it("propaga el error cuando falla la consulta", async () => {
-            mocks.all.mockRejectedValue(new Error("Error al consultar configuraciones"));
-            await expect(obtenerConfiguraciones(["incremento_precio"])).rejects.toThrow("Error al consultar configuraciones");
-        });
-
-        it("no consulta la tabla si no se solicita ninguna configuración", async () => {
-            expect(await obtenerConfiguraciones([])).toEqual([]);
-            expect(mocks.where).not.toHaveBeenCalled();
-            expect(mocks.all).not.toHaveBeenCalled();
-        });
+        expect(mocks.where).not.toHaveBeenCalled();
+        expect(mocks.all).not.toHaveBeenCalled();
     });
 
-    describe("obtenerConfiguracion", () => {
-        it("obtiene el valor de una configuración existente", async () => {
-            mocks.first.mockResolvedValue({valorConfiguracion: "25"});
-            const resultado = await obtenerConfiguracion("incremento_precio");
-            expect(mocks.where).toHaveBeenCalledExactlyOnceWith({nombreConfiguracion: "incremento_precio"});
-            expect(mocks.select).toHaveBeenCalledExactlyOnceWith("valorConfiguracion");
-            expect(mocks.first).toHaveBeenCalledOnce();
-            expect(resultado).toBe("25");
-        });
+    it("devuelve un arreglo vacío si no encuentra configuraciones", async () => {
+        mocks.all.mockResolvedValue([]);
 
-        it("devuelve null cuando la configuración no existe", async () => {
-            mocks.first.mockResolvedValue(null);
-            const resultado = await obtenerConfiguracion("configuracion_inexistente");
-            expect(mocks.where).toHaveBeenCalledExactlyOnceWith({nombreConfiguracion: "configuracion_inexistente"});
-            expect(resultado).toBeNull();
-        });
-
-        it("devuelve null cuando el resultado es undefined", async () => {
-            mocks.first.mockResolvedValue(undefined);
-            const resultado = await obtenerConfiguracion("incremento_precio");
-            expect(resultado).toBeNull();
-        });
-
-        it("propaga el error cuando falla la consulta", async () => {
-            mocks.first.mockRejectedValue(new Error("Error al obtener configuración"));
-            await expect(obtenerConfiguracion("incremento_precio")).rejects.toThrow("Error al obtener configuración");
-        });
+        await expect(obtenerConfiguraciones(["inexistente"])).resolves.toEqual([]);
     });
 
-    describe("actualizarConfiguracion", () => {
-        it("actualiza correctamente una configuración existente", async () => {
-            mocks.update.mockResolvedValue({valorConfiguracion: "25"});
-            const resultado = await actualizarConfiguracion("incremento_precio", "25");
-            expect(mocks.where).toHaveBeenCalledExactlyOnceWith({nombreConfiguracion: "incremento_precio"});
-            expect(mocks.select).toHaveBeenCalledExactlyOnceWith("valorConfiguracion");
-            expect(mocks.update).toHaveBeenCalledExactlyOnceWith({valorConfiguracion: "25"});
-            expect(resultado).toBe("25");
-        });
+    it("conserva los valores vacíos y booleanos almacenados como texto", async () => {
+        const filas = [
+            { nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "" },
+            { nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "false" },
+        ];
+        mocks.all.mockResolvedValue(filas);
 
-        it("permite actualizar la URL de la Lista Inteligente", async () => {
-            const nuevaUrl = "https://uam.com.uy/nueva-lista.pdf";
-            mocks.update.mockResolvedValue({valorConfiguracion: nuevaUrl});
-            const resultado = await actualizarConfiguracion("url_lista_inteligente", nuevaUrl);
-            expect(mocks.where).toHaveBeenCalledExactlyOnceWith({nombreConfiguracion: "url_lista_inteligente",});
-            expect(mocks.update).toHaveBeenCalledExactlyOnceWith({valorConfiguracion: nuevaUrl});
-            expect(resultado).toBe(nuevaUrl);
-        });
+        await expect(obtenerConfiguraciones(["vigencia_fotos", "aging_fotos_habilitado"])).resolves.toEqual(filas);
+    });
 
-        it("permite restablecer una configuración a su valor por defecto", async () => {
-            mocks.update.mockResolvedValue({valorConfiguracion: "10"});
-            const resultado = await actualizarConfiguracion("incremento_precio", "10");
-            expect(mocks.update).toHaveBeenCalledExactlyOnceWith({valorConfiguracion: "10"});
-            expect(resultado).toBe("10");
-        });
+    it("propaga los errores de consulta", async () => {
+        const error = new Error("Error al consultar configuraciones");
+        mocks.all.mockRejectedValue(error);
 
-        it("lanza un error cuando la configuración no existe", async () => {
-            mocks.update.mockResolvedValue(null);
-            await expect(actualizarConfiguracion("configuracion_inexistente", "25")).rejects.toThrow("No existe la configuración configuracion_inexistente.");
-        });
+        await expect(obtenerConfiguraciones(["incremento_precio"])).rejects.toBe(error);
+    });
+});
 
-        it("propaga el error cuando falla la actualización", async () => {
-            mocks.update.mockRejectedValue(new Error("Error de base de datos"));
-            await expect(actualizarConfiguracion("incremento_precio", "25")).rejects.toThrow("Error de base de datos");
-        });
+describe("obtenerConfiguracion", () => {
+    it("devuelve el valor de la configuración solicitada", async () => {
+        mocks.first.mockResolvedValue({ valorConfiguracion: "25" });
+
+        const resultado = await obtenerConfiguracion("incremento_precio");
+
+        expect(mocks.where).toHaveBeenCalledExactlyOnceWith({ nombreConfiguracion: "incremento_precio" });
+        expect(mocks.select).toHaveBeenCalledExactlyOnceWith("valorConfiguracion");
+        expect(mocks.first).toHaveBeenCalledOnce();
+        expect(resultado).toBe("25");
+    });
+
+    it("devuelve null si la configuración no existe", async () => {
+        mocks.first.mockResolvedValue(null);
+
+        await expect(obtenerConfiguracion("inexistente")).resolves.toBeNull();
+    });
+
+    it("conserva una cadena vacía como valor válido", async () => {
+        mocks.first.mockResolvedValue({ valorConfiguracion: "" });
+
+        await expect(obtenerConfiguracion("url_lista_inteligente")).resolves.toBe("");
+    });
+
+    it("conserva el booleano falso almacenado como texto", async () => {
+        mocks.first.mockResolvedValue({ valorConfiguracion: "false" });
+
+        await expect(obtenerConfiguracion("restablecimiento_contrasena_habilitado")).resolves.toBe("false");
+    });
+
+    it("propaga los errores de consulta", async () => {
+        const error = new Error("Error de conexión");
+        mocks.first.mockRejectedValue(error);
+
+        await expect(obtenerConfiguracion("incremento_precio")).rejects.toBe(error);
+    });
+});
+
+describe("actualizarConfiguracion", () => {
+    it("actualiza la configuración indicada y devuelve el valor guardado", async () => {
+        mocks.update.mockResolvedValue({ valorConfiguracion: "50" });
+
+        const resultado = await actualizarConfiguracion("incremento_precio", "50");
+
+        expect(mocks.where).toHaveBeenCalledExactlyOnceWith({ nombreConfiguracion: "incremento_precio" });
+        expect(mocks.select).toHaveBeenCalledExactlyOnceWith("valorConfiguracion");
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: "50" });
+        expect(resultado).toBe("50");
+    });
+
+    it("permite guardar una cadena vacía", async () => {
+        mocks.update.mockResolvedValue({ valorConfiguracion: "" });
+
+        await expect(actualizarConfiguracion("url_lista_inteligente", "")).resolves.toBe("");
+        expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: "" });
+    });
+
+    it("informa cuando la configuración no existe", async () => {
+        mocks.update.mockResolvedValue(null);
+
+        await expect(actualizarConfiguracion("inexistente", "10")).rejects.toThrow("No existe la configuración inexistente.");
+    });
+
+    it("propaga los errores de actualización", async () => {
+        const error = new Error("No se pudo actualizar");
+        mocks.update.mockRejectedValue(error);
+
+        await expect(actualizarConfiguracion("incremento_precio", "50")).rejects.toBe(error);
     });
 });

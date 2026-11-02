@@ -1,11 +1,4 @@
-import {
-  render,
-  act,
-  screen,
-  fireEvent,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { render, act, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../../operadores/tipos";
@@ -189,9 +182,9 @@ function idsTarjetas() {
   return screen.getAllByTestId(/^publicacion-/).map((tarjeta) => tarjeta.getAttribute("data-testid"));
 }
 
-function elegirOrden(nombre: "A-Z" | "Z-A" | "Menor Precio" | "Mayor Precio") {
-  fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-  fireEvent.click(screen.getByRole("menuitemradio", { name: nombre }));
+function elegirOrden(nombre: "A-Z" | "Z-A" | "Menor precio" | "Mayor precio") {
+    fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: nombre }));
 }
 
 describe("MiMercado", () => {
@@ -721,10 +714,10 @@ describe("MiMercado", () => {
 
     expect(idsTarjetas()).toEqual(["publicacion-2", "publicacion-4", "publicacion-1", "publicacion-3"]);
 
-    elegirOrden("Menor Precio");
+    elegirOrden("Menor precio");
     expect(idsTarjetas()).toEqual(["publicacion-3", "publicacion-2", "publicacion-1", "publicacion-4"]);
 
-    elegirOrden("Mayor Precio");
+    elegirOrden("Mayor precio");
     expect(idsTarjetas()).toEqual(["publicacion-4", "publicacion-1", "publicacion-2", "publicacion-3"]);
   });
 

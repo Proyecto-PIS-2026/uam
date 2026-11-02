@@ -1,24 +1,17 @@
 import obtenerConfiguraciones from "@/modulos/administracion/acciones/consultas-configuracion";
 
-export type OrdenLanding =
-    | "nombre_asc"
-    | "nombre_desc"
-    | "mas_vendidas";
+export type OrdenLanding = "nombre_asc" | "nombre_desc" | "mas_vendidas";
 
-export type OrdenMercados =
-    | OrdenLanding
-    | "menor_precio"
-    | "mayor_precio";
+export type OrdenMercados = OrdenLanding | "menor_precio" | "mayor_precio";
 
 export interface ConfiguracionOrdenamiento {
     habilitado: boolean;
     ordenLanding: OrdenLanding;
-    ordenMercados: OrdenMercados;
+    ordenMercadoVirtual: OrdenMercados;
+    ordenMercadoProduccion: OrdenMercados;
 }
 
-function interpretarOrdenLanding(
-    valor: string | null | undefined,
-): OrdenLanding {
+function interpretarOrdenLanding(valor: string | null | undefined): OrdenLanding {
     switch (valor) {
         case "nombre_asc":
         case "nombre_desc":
@@ -29,9 +22,7 @@ function interpretarOrdenLanding(
     }
 }
 
-function interpretarOrdenMercados(
-    valor: string | null | undefined,
-): OrdenMercados {
+function interpretarOrdenMercados(valor: string | null | undefined): OrdenMercados {
     switch (valor) {
         case "menor_precio":
         case "mayor_precio":
@@ -49,7 +40,8 @@ export async function obtenerConfiguracionOrdenamiento():
     const filas = await obtenerConfiguraciones([
         "ordenamiento_habilitado",
         "orden_landing_page_default",
-        "orden_mercados_default",
+        "orden_mercado_virtual_default",
+        "orden_mercado_produccion_default",
     ]);
 
     const valores = new Map(
@@ -64,8 +56,11 @@ export async function obtenerConfiguracionOrdenamiento():
         ordenLanding: interpretarOrdenLanding(
             valores.get("orden_landing_page_default"),
         ),
-        ordenMercados: interpretarOrdenMercados(
-            valores.get("orden_mercados_default"),
+        ordenMercadoVirtual: interpretarOrdenMercados(
+            valores.get("orden_mercado_virtual_default"),
+        ),
+        ordenMercadoProduccion: interpretarOrdenMercados(
+            valores.get("orden_mercado_produccion_default"),
         ),
     };
 }

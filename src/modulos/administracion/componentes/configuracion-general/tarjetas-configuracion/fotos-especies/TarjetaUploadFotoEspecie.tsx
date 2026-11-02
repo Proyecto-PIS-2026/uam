@@ -151,7 +151,7 @@ export default function TarjetaUploadFotoEspecie({titulo, especies, especieSelec
         }
     }
 
-    return (
+    const contenido = (
         <div className={styles.tarjeta}>
             <div className={styles.titulo}>{titulo}</div>
             <span className={styles.descripcion}>Seleccioná una especie para actualizar o quitar su foto.</span>
@@ -212,12 +212,10 @@ export default function TarjetaUploadFotoEspecie({titulo, especies, especieSelec
                         <IconButton aria-label="Quitar foto" disabled={!especieActual || ocupado || !fotoVisible} className={styles.botonEliminar} onClick={solicitarEliminarImagen}>
                             <DeleteOutlinedIcon />
                         </IconButton>
-
                     </div>
                 </div>
             </div>
-
-            <Dialog open={fotoAmpliada && Boolean(fotoVisible)} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada de especie" slotProps={{paper: { className: styles.modalFoto }, backdrop: {sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" }}}}>
+                <Dialog open={fotoAmpliada && Boolean(fotoVisible)} onClose={() => setFotoAmpliada(false)} maxWidth={false} fullWidth aria-label="Foto ampliada de especie" slotProps={{paper: {className: styles.modalFoto, "aria-label": "Foto ampliada de especie"}, backdrop: {sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" }}}}>                
                 <button type="button" autoFocus aria-label="Cerrar foto ampliada" className={styles.cerrarFoto} onClick={() => setFotoAmpliada(false)}>
                     <CloseOutlinedIcon fontSize="small" />
                 </button>
@@ -232,8 +230,8 @@ export default function TarjetaUploadFotoEspecie({titulo, especies, especieSelec
                     />
                 </div>
             </Dialog>
-
             <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion}/>
         </div>
     );
+    return contenido; 
 }

@@ -739,7 +739,8 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "ordenamiento_habilitado", valorConfiguracion: "true"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_landing_page_default", valorConfiguracion: "mas_vendidas"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercados_default", valorConfiguracion: "mas_vendidas"});
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_virtual_default", valorConfiguracion: "mas_vendidas"});
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_produccion_default", valorConfiguracion: "mas_vendidas"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "false"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "30"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "false"});

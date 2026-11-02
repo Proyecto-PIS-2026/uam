@@ -10,13 +10,30 @@ vi.mock("../../../consulta-mercado/acciones/ConsultarPublicacionOperador.action"
 vi.mock("../../tiempo-real/use-actualizaciones-publicaciones", () => ({ useActualizacionesPublicaciones: escuchar }));
 vi.mock("../listado-publicaciones/ListadoPublicaciones", () => ({ default: ({ publicaciones }: ResultadoPublicaciones) => <div data-testid="listado">{publicaciones.map((p) => <span key={p.id}>{p.especie} {p.precio}</span>)}</div> }));
 vi.mock("../../filtros/FiltrosPublicaciones", () => ({
-    default: function FiltrosSimulados({ alConsultar, especieFiltro, navesDisponibles }: { alConsultar: (consulta: FiltrosConsulta) => void; especieFiltro: string; navesDisponibles: string[] }) {
-        useEffect(() => { alConsultar({ especie: especieFiltro, orden: "prioridad" }); }, [alConsultar, especieFiltro]);
+    default: function FiltrosSimulados({
+        alConsultar,
+        especieFiltro,
+        navesDisponibles,
+        ordenInicial = "prioridad",
+        ordenamientoHabilitado = true,
+    }: {
+        alConsultar: (consulta: FiltrosConsulta) => void;
+        especieFiltro: string;
+        navesDisponibles: string[];
+        ordenInicial?: FiltrosConsulta["orden"];
+        ordenamientoHabilitado?: boolean;
+    }) {
+        useEffect(() => {
+            alConsultar({ especie: especieFiltro, orden: ordenInicial });
+        }, [alConsultar, especieFiltro, ordenInicial]);
+
         return (
             <>
-                <button onClick={() => alConsultar({ especie: "Limón", orden: "precioAsc" })}>Filtrar limón</button>
-                <button onClick={() => alConsultar({ especie: "Limón", nave: "A", orden: "precioAsc" })}>Filtrar nave A</button>
+                <button onClick={() => alConsultar({ especie: "Limón", orden: ordenamientoHabilitado ? "precioAsc" : ordenInicial })}>Filtrar limón</button>
+                <button onClick={() => alConsultar({ especie: "Limón", nave: "A", orden: ordenamientoHabilitado ? "precioAsc" : ordenInicial })}>Filtrar nave A</button>
                 <span data-testid="naves">{navesDisponibles.join(", ")}</span>
+                <span data-testid="orden-inicial">{ordenInicial}</span>
+                <span data-testid="ordenamiento-habilitado">{String(ordenamientoHabilitado)}</span>
             </>
         );
     },
@@ -176,4 +193,46 @@ it("espera la consulta vigente si los filtros cambian durante una actualización
     });
     expect(confirmado).toHaveBeenCalledExactlyOnceWith(true);
     expect(screen.getByTestId("listado")).toHaveTextContent("600");
+});
+
+it("entrega el orden configurado a los filtros sin consultar nuevamente al montar", () => {
+    render(<ContenedorPublicaciones resultado={resultado()} ordenInicial="alfabeticoDesc" ordenamientoHabilitado={false} />);
+
+    expect(screen.getByTestId("orden-inicial")).toHaveTextContent("alfabeticoDesc");
+    expect(screen.getByTestId("ordenamiento-habilitado")).toHaveTextContent("false");
+    expect(cargar).not.toHaveBeenCalled();
+});
+
+it("conserva el orden configurado en las actualizaciones de tiempo real", async () => {
+    render(<ContenedorPublicaciones resultado={resultado()} especie="Tomate" ordenInicial="alfabeticoDesc" ordenamientoHabilitado={false} />);
+
+    act(() => { void escuchar.mock.calls.at(-1)![0](); });
+
+    await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Tomate", orden: "alfabeticoDesc" }));
+});
+
+it("mantiene el predeterminado al filtrar con el ordenamiento deshabilitado", async () => {
+    render(<ContenedorPublicaciones resultado={resultado()} ordenInicial="alfabeticoDesc" ordenamientoHabilitado={false} />);
+
+    fireEvent.click(screen.getByText("Filtrar limón"));
+
+    await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Limón", orden: "alfabeticoDesc" }));
+});
+
+it("permite enviar otro orden cuando el ordenamiento está habilitado", async () => {
+    render(<ContenedorPublicaciones resultado={resultado()} ordenInicial="alfabeticoDesc" ordenamientoHabilitado />);
+
+    expect(screen.getByTestId("ordenamiento-habilitado")).toHaveTextContent("true");
+
+    fireEvent.click(screen.getByText("Filtrar limón"));
+
+    await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Limón", orden: "precioAsc" }));
+});
+
+it("conserva el orden configurado al filtrar por nave con el switch apagado", async () => {
+    render(<ContenedorPublicaciones resultado={resultado()} ordenInicial="alfabeticoAsc" ordenamientoHabilitado={false} />);
+
+    fireEvent.click(screen.getByText("Filtrar nave A"));
+
+    await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Limón", nave: "A", orden: "alfabeticoAsc" }));
 });
