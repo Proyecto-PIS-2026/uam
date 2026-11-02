@@ -9,6 +9,7 @@ import TextField from "@mui/material/TextField";
 import { useRouter } from "next/navigation";
 import BotonVolver from "@/compartido/BotonVolver";
 
+import { modificarMiPerfilProductor } from "../../perfil-propio/modificarMiPerfilProductor";
 import { modificarProductor } from "./modificarProductor";
 import type { ProductorParaModificar } from "./obtenerProductorParaModificar";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
@@ -17,6 +18,7 @@ import styles from "./FormularioModificarProductor.module.css";
 
 type Props = {
     productor: ProductorParaModificar;
+    perfilPropio?: boolean;
 };
 
 const CODIGOS_PAIS = [
@@ -27,7 +29,7 @@ const CODIGOS_PAIS = [
     { codigo: "+595", pais: "Paraguay" },
 ];
 
-export default function FormularioModificarProductor({ productor }: Props) {
+export default function FormularioModificarProductor({ productor, perfilPropio = false }: Props) {
     const router = useRouter();
     const idFormulario = useId();
 
@@ -48,7 +50,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
 
     function cancelar() {
-        router.push(`/gestion-productores/${productor.id}`);
+        router.push(perfilPropio ? "/mi-perfil/productor" : `/gestion-productores/${productor.id}`);
     }
 
     async function guardar(
@@ -63,21 +65,23 @@ export default function FormularioModificarProductor({ productor }: Props) {
         setGuardando(true);
 
         try {
-            const resultado = await modificarProductor({
-                productorId: productor.id,
+            const datos = {
                 nombre,
                 codigoPais,
                 telefono,
-                contraseña,
-                confirmacionContraseña,
-            }, ...argumentosFotoPerfil(foto));
+            };
+            const resultado = perfilPropio
+                ? await modificarMiPerfilProductor(datos, ...argumentosFotoPerfil(foto))
+                : await modificarProductor({ ...datos, productorId: productor.id, contraseña, confirmacionContraseña }, ...argumentosFotoPerfil(foto));
 
             if (!resultado.esValido) {
                 setErrores(resultado.errores);
                 return;
             }
 
-            router.push(`/gestion-productores/${resultado.id}`);
+            if (perfilPropio) notificar(resultado.mensaje, "success");
+            router.push(perfilPropio ? "/mi-perfil/productor" : `/gestion-productores/${resultado.id}`);
+            if (perfilPropio) router.refresh();
         } catch (error) {
             console.error(
                 "Error al modificar productor:",
@@ -108,7 +112,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <h1 className={styles.titulo}>
-                        Modificar productor
+                        {perfilPropio ? "Modificar mi perfil" : "Modificar productor"}
                     </h1>
 
                     <p className={styles.descripcion}>
@@ -124,7 +128,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
                 >
                     <section className={styles.seccion}>
                         <h2 className={styles.subtitulo}>
-                            Datos del productor
+                            {perfilPropio ? "Datos de mi perfil" : "Datos del productor"}
                         </h2>
 
                         <SelectorFotoPerfil fotoActual={productor.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
@@ -160,7 +164,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
                                 fullWidth
                                 size="small"
                                 className={styles.control}
-                                label="WhatsApp"
+                                label={perfilPropio ? "Número de contacto (opcional)" : "WhatsApp"}
                                 type="tel"
                                 value={telefono}
                                 slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
@@ -173,7 +177,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
                         </div>
                     </section>
 
-                    <section className={styles.seccion}>
+                    {!perfilPropio && <section className={styles.seccion}>
                         <h2 className={styles.subtitulo}>
                             Cambiar contraseña
                         </h2>
@@ -212,7 +216,7 @@ export default function FormularioModificarProductor({ productor }: Props) {
                                 disabled={guardando}
                             />
                         </div>
-                    </section>
+                    </section>}
 
                     {errores.length > 0 && (
                         <div

@@ -28,6 +28,18 @@
       "model": "Especie",
       "namespace": "public"
     },
+    "estadisticaContacto": {
+      "model": "EstadisticaContacto",
+      "namespace": "public"
+    },
+    "estadisticaPublicacion": {
+      "model": "EstadisticaPublicacion",
+      "namespace": "public"
+    },
+    "estadisticaVisita": {
+      "model": "EstadisticaVisita",
+      "namespace": "public"
+    },
     "historicoPrecios": {
       "model": "HistoricoPrecios",
       "namespace": "public"
@@ -515,6 +527,159 @@
               "table": "especie"
             }
           },
+          "EstadisticaContacto": {
+            "fields": {
+              "cantidad": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "username": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "cantidad": {
+                  "column": "cantidad"
+                },
+                "fecha": {
+                  "column": "fecha"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "username": {
+                  "column": "username"
+                }
+              },
+              "namespaceId": "public",
+              "table": "estadisticaContacto"
+            }
+          },
+          "EstadisticaPublicacion": {
+            "fields": {
+              "cantidad": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "username": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "cantidad": {
+                  "column": "cantidad"
+                },
+                "fecha": {
+                  "column": "fecha"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "username": {
+                  "column": "username"
+                }
+              },
+              "namespaceId": "public",
+              "table": "estadisticaPublicacion"
+            }
+          },
+          "EstadisticaVisita": {
+            "fields": {
+              "cantidad": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "tipoVisitante": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "cantidad": {
+                  "column": "cantidad"
+                },
+                "fecha": {
+                  "column": "fecha"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "tipoVisitante": {
+                  "column": "tipoVisitante"
+                }
+              },
+              "namespaceId": "public",
+              "table": "estadisticaVisita"
+            }
+          },
           "HistoricoPrecios": {
             "fields": {
               "especieId": {
@@ -771,6 +936,16 @@
                   "kind": "scalar"
                 }
               },
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -780,6 +955,13 @@
               },
               "titulo": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "url": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -822,11 +1004,17 @@
                 "descripcion": {
                   "column": "descripcion"
                 },
+                "fecha": {
+                  "column": "fecha"
+                },
                 "id": {
                   "column": "id"
                 },
                 "titulo": {
                   "column": "titulo"
+                },
+                "url": {
+                  "column": "url"
                 },
                 "usuarioId": {
                   "column": "usuarioId"
@@ -2267,6 +2455,147 @@
                 }
               ]
             },
+            "estadisticaContacto": {
+              "columns": {
+                "cantidad": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "username": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "fecha",
+                    "username"
+                  ]
+                }
+              ]
+            },
+            "estadisticaPublicacion": {
+              "columns": {
+                "cantidad": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "username": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "fecha",
+                    "username"
+                  ]
+                }
+              ]
+            },
+            "estadisticaVisita": {
+              "columns": {
+                "cantidad": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "tipoVisitante": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "fecha",
+                    "tipoVisitante"
+                  ]
+                }
+              ]
+            },
             "historicoPrecios": {
               "columns": {
                 "especieId": {
@@ -2480,6 +2809,18 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -2493,6 +2834,11 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "url": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "usuarioId": {
                   "codecId": "pg/int4@1",
@@ -2531,10 +2877,29 @@
               "indexes": [
                 {
                   "columns": [
+                    "usuarioId",
+                    "fecha",
+                    "id"
+                  ],
+                  "name": "notificacion_usuarioId_fecha_id_idx_eb1c24cd",
+                  "prefix": "notificacion_usuarioId_fecha_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "usuarioId"
                   ],
                   "name": "notificacion_usuarioId_idx_5f01c7d6",
                   "prefix": "notificacion_usuarioId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "usuarioId",
+                    "vista"
+                  ],
+                  "name": "notificacion_usuarioId_vista_idx_36fef1d8",
+                  "prefix": "notificacion_usuarioId_vista_idx",
                   "unique": false
                 }
               ],
@@ -3537,7 +3902,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "00a5c4d0c5097c79610099c4b873c840008171e7667a703de42c1134851046e6"
+    "storageHash": "b72f67d61ed79fbd975aa468cca108514f199d30f938321fe21fa6ceddbe54fe"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",
