@@ -109,7 +109,7 @@ describe("HeaderPublico", () => {
 
         for (const nombre of ["Navegación principal", "Navegación móvil"]) {
             const menu = within(screen.getByRole("navigation", { name: nombre }));
-            expect(menu.getAllByRole("link")).toHaveLength(4);
+            expect(menu.getAllByRole("link")).toHaveLength(nombre === "Navegación móvil" ? 5 : 4);
             expect(menu.getByRole("link", { name: "Productores" })).toHaveAttribute("href", "/productores");
             expect(menu.getByRole("link", { name: "Mercado Producción" })).toHaveAttribute("href", "/publicaciones-productor");
             expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado");
@@ -184,7 +184,8 @@ describe("HeaderPublico", () => {
 
             const menuUsuario = within(screen.getByRole("menu"));
             expect(menuUsuario.getAllByRole("menuitem")).toHaveLength(2);
-            expect(menuUsuario.getByRole("menuitem", { name: "Mi perfil" })).toBeInTheDocument();
+            expect(menuUsuario.getByRole("menuitem", { name: "Mi perfil" })).toHaveAttribute("href", "/mi-perfil");
+            expect(within(screen.getByRole("navigation", { name: "Navegación móvil" })).getByRole("link", { name: "Mi perfil" })).toHaveAttribute("href", "/mi-perfil");
             expect(menuUsuario.getByRole("menuitem", { name: "Cerrar sesión" })).toBeInTheDocument();
             expect(menuUsuario.queryByRole("link")).not.toBeInTheDocument();
             expect(screen.queryByRole("link", { name: "Iniciar sesión" })).not.toBeInTheDocument();

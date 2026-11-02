@@ -344,9 +344,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     {esProductor ? (
                         <Link href="/mi-perfil/productor" className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>Mi perfil</Link>
                     ) : (
-                        <span className={estilos.opcionDesplegable} role="menuitem">
+                        <Link href="/mi-perfil" className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>
                             Mi perfil
-                        </span>
+                        </Link>
                     )}
                     <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
                         <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
@@ -366,7 +366,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
             </span>
         </Link>
     ) : (
-        <button type="button" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`}>
+        <Link href="/mi-perfil" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
             <span className={estilos.etiquetaMenuMobile}>
                 <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
                 Mi perfil
@@ -382,7 +382,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     onError={() => cambiarFotoPerfilFallida(true)}
                 />
             )}
-        </button>
+        </Link>
     ));
 
     const menuCerrarSesionMobile = rolUsuario && (
