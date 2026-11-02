@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GET } from "./route";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { cookies } from "next/headers";
@@ -25,6 +25,26 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 describe("GET /api/estadisticas/visitas", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.stubEnv("DISABLE_VISIT_TRACKING", "false");
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it("debería omitir completamente el seguimiento si está desactivado", async () => {
+        vi.stubEnv("DISABLE_VISIT_TRACKING", "true");
+
+        const res = await GET();
+        const data = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(data).toEqual({ ok: true, omitido: true });
+
+        expect(obtenerSesion).not.toHaveBeenCalled();
+        expect(cookies).not.toHaveBeenCalled();
+        expect(db.orm.public.EstadisticaVisita.where).not.toHaveBeenCalled();
+        expect(db.orm.public.EstadisticaVisita.create).not.toHaveBeenCalled();
     });
 
     it("debería omitir el conteo si hay una sesión activa", async () => {

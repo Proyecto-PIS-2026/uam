@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/infraestructura/persistencia/prisma/db";
@@ -7,11 +8,15 @@ import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones
 export const runtime = "nodejs";
 
 export async function GET() {
+    if (process.env.DISABLE_VISIT_TRACKING === "true") {
+        return NextResponse.json({ ok: true, omitido: true });
+    }
+
     try {
         const sesion = await obtenerSesion();
 
         if (sesion) return NextResponse.json({ ok: true, omitido: true });
-        
+
         const ahora = new Date();
         const anio = ahora.getFullYear();
         const mes = String(ahora.getMonth() + 1).padStart(2, "0");
