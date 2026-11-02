@@ -1,7 +1,7 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 
 type Transaccion = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type TipoPerfil = "operador" | "productor";
+type TipoPerfil = "operador" | "productor" | "administrador";
 
 function mensajeConflicto(error: unknown, perfil: TipoPerfil): string | null {
     const revisados = new Set<object>();
