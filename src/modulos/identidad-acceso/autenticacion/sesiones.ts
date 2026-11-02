@@ -11,6 +11,7 @@ export type DatosSesion = {
     usuarioId: number;
     rol: RolUsuario;
     expiraEn: number;
+    segundoFactorVerificado?: true;
 };
 
 function obtenerSecretoSesion() {
@@ -32,9 +33,12 @@ function serializar(datos: DatosSesion) {
     return `${contenido}.${firmar(contenido)}`;
 }
 
-export async function crearSesion(usuarioId: number, rol: DatosSesion["rol"]) {
+export async function crearSesion(usuarioId: number, rol: DatosSesion["rol"], segundoFactorVerificado = false) {
+    if (rol === "ADMINISTRADOR" && !segundoFactorVerificado) {
+        throw new Error("Completá la verificación en dos pasos para iniciar sesión.");
+    }
     const expiraEn = Math.floor(Date.now() / 1000) + duracionSesionEnSegundos;
-    const valor = serializar({ usuarioId, rol, expiraEn });
+    const valor = serializar({ usuarioId, rol, expiraEn, ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true as const } : {}) });
     const cookiesSesion = await cookies();
 
     cookiesSesion.set(nombreCookieSesion, valor, {
@@ -94,6 +98,9 @@ export async function obtenerSesion(): Promise<DatosSesion | null> {
             .first();
 
         if (!usuario || usuario.rol !== datos.rol) {
+            return null;
+        }
+        if (datos.rol === "ADMINISTRADOR" && (datos.segundoFactorVerificado !== true || !usuario.twoFactorEnabled || !usuario.twoFactorSecret)) {
             return null;
         }
 
