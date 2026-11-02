@@ -98,6 +98,9 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
         if (usuario.rol === "PRODUCTOR") {
             router.push(`/gestion-productores/${usuario.productorId}`);
         }
+        if (usuario.rol === "ADMINISTRADOR") {
+            router.push(`/gestion-administradores/${usuario.administradorId}`);
+        }
     }
 
     // Roles que ya tienen su página de modificación
