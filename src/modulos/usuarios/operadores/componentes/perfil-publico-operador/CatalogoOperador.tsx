@@ -93,7 +93,9 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
                                     ) : (
                                         <ViewModuleIcon fontSize="small" />
                                     )}
-                                        {agruparPorEspecie ? "Desagrupar" : "Agrupar por especie"}
+                                    {agruparPorEspecie ? "Desagrupar" : (
+                                        <span>Agrupar<span className={styles.detalleAgrupar}> por especie</span></span>
+                                    )}
                                 </span>
                             </button>
                         </div>

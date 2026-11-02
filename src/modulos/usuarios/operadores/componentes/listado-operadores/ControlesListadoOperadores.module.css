@@ -23,16 +23,13 @@
 
 .controles {
     display: flex;
+    min-width: 0;
+    max-width: 100%;
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
     gap: var(--espacio-controles);
     margin-left: auto;
-}
-
-.controles .selectMui {
-    width: max-content;
-    min-width: 7.5rem;
 }
 
 .selectorNave {
@@ -66,15 +63,15 @@
 }
 
 .selectMui :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
 }
 
 .selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
 }
 
 .selectMui :global(.MuiInputLabel-root.Mui-focused) {
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .selectMui :global(.MuiInputBase-input) {
@@ -82,5 +79,5 @@
 }
 
 .opcionSelect:global(.Mui-selected) {
-    background-color: var(--color-primary-soft) !important;
+    background-color: var(--color-secondary-soft) !important;
 }

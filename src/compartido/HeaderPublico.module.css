@@ -50,6 +50,7 @@
 
 .botonOperador {
     display: flex;
+    position: relative;
     width: 2.5rem;
     height: 2.5rem;
     padding: 0;
@@ -57,15 +58,15 @@
     justify-content: center;
     border: 1px solid var(--color-border);
     border-radius: 999px;
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
     cursor: pointer;
     transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 .botonOperador:hover,
 .botonOperador:focus-visible {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
     background: var(--color-surface);
     outline: none;
 }
@@ -126,8 +127,8 @@
 .desplegableOperador button:hover,
 .opcionDesplegable:hover {
     border-radius: 0.25rem;
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
 }
 
 .enlace {
@@ -143,7 +144,7 @@
 }
 
 .enlaceActivo {
-    color: var(--color-primary);
+    color: var(--color-secondary);
     font-weight: 600;
 }
 
@@ -155,7 +156,7 @@
     left: 0.75rem;
     height: 2px;
     border-radius: 2px 2px 0 0;
-    background-color: var(--color-primary);
+    background-color: var(--color-secondary);
 }
 
 .menuMobile {
@@ -171,6 +172,11 @@
     background: none;
     color: var(--color-foreground);
     cursor: pointer;
+}
+
+.menuMobile > :global(.MuiBadge-root) {
+    right: 2px;
+    bottom: 2px;
 }
 
 .iconoMenu {
@@ -214,6 +220,24 @@
     display: inline-flex;
     min-width: 0;
     align-items: center;
+}
+
+.desplegableOperador .enlaceNotificaciones,
+.enlaceNotificaciones {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-inline);
+}
+
+.descripcionNotificaciones {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
 
 .overlayMenu {
@@ -270,6 +294,7 @@
         padding: 0 1rem;
         flex-direction: column;
         overflow: hidden;
+        scrollbar-gutter: stable;
         visibility: hidden;
         opacity: 0;
         transform: translateY(-0.5rem);
@@ -285,7 +310,9 @@
     }
 
     .navegacionMobileAbierta {
-        max-height: 30rem;
+        max-height: calc(100dvh - 4rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 0.5rem 1rem 1rem;
         visibility: visible;
         opacity: 1;
@@ -310,8 +337,8 @@
     }
 
     .enlaceMobile:hover {
-        background-color: var(--color-primary-soft);
-        color: var(--color-primary);
+        background-color: var(--color-secondary-soft);
+        color: var(--color-secondary);
     }
 
         .perfilMobile {
@@ -358,7 +385,7 @@
 }
 
 .botonPublicaciones:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-secondary);
     outline-offset: -2px;
 }
 
@@ -428,8 +455,8 @@
 .opcionPublicaciones:hover,
 .opcionPublicaciones:focus-visible,
 .opcionPublicacionesActiva {
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
 }
 
 .opcionPublicacionesActiva {

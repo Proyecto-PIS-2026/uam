@@ -7,6 +7,8 @@ import { ErrorEdicionPublicacionProductor, modificarPublicacionProductor, obtene
 import { bajaPublicacionProductorAutorizada, ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada";
 import { ErrorCuerpoDemasiadoGrande, leerFormularioLimitado } from "@/infraestructura/http/cuerpo-limitado";
 import { ocultarFotosVencidas } from "@/modulos/publicaciones/fotos-vigentes";
+import { Temporal } from "temporal-polyfill";
+import { db } from "@/infraestructura/persistencia/prisma/db";
 
 export const runtime = "nodejs";
 type Contexto = { params: Promise<{ id: string }> };
@@ -31,6 +33,42 @@ async function contextoAutorizado(contexto: Contexto) {
         throw new ErrorEdicionPublicacionProductor("DATOS_INVALIDOS", "La publicación no es válida.");
     }
     return { sesion, publicacionProductorId };
+}
+
+async function registrarEstadisticaPublicacionPorProductorId(productorId: number) {
+    try {
+        const productorRecord = await db.orm.public.Productor.where({ id: productorId }).select("usuarioId").first();
+        if (productorRecord) {
+            const usuarioVinculado = await db.orm.public.Usuario.select("username").where({ id: productorRecord.usuarioId }).first();
+            if (usuarioVinculado?.username) {
+                const ahora = new Date();
+                const anio = ahora.getFullYear();
+                const mes = String(ahora.getMonth() + 1).padStart(2, "0");
+                const dia = String(ahora.getDate()).padStart(2, "0");
+                const fechaStr = `${anio}-${mes}-${dia}`;
+                const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
+                const username = usuarioVinculado.username;
+
+                const existente = await db.orm.public.EstadisticaPublicacion
+                    .where({ fecha: fechaInstant, username })
+                    .first();
+
+                if (existente) {
+                    await db.orm.public.EstadisticaPublicacion
+                        .where({ id: existente.id })
+                        .update({ cantidad: existente.cantidad + 1 });
+                } else {
+                    await db.orm.public.EstadisticaPublicacion.create({
+                        fecha: fechaInstant,
+                        username: username,
+                        cantidad: 1,
+                    });
+                }
+            }
+        }
+    } catch (errEst) {
+        console.error("Error al registrar estadística de publicación (modificación productor):", errEst);
+    }
 }
 
 export async function GET(_solicitud: Request, contexto: Contexto) {
@@ -60,6 +98,7 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
             throw new ErrorEdicionPublicacionProductor("DATOS_INVALIDOS", "No se pudieron leer los cambios de la publicación.");
         }
         const resultado = await modificarPublicacionProductor(sesion, publicacionProductorId, cambios, foto);
+        await registrarEstadisticaPublicacionPorProductorId(resultado.productorId);
         for (const ruta of ["/mi-mercado/productor", `/gestion-productores/${resultado.productorId}`, "/publicaciones-productor", "/inicio"]) {
             try {
                 revalidatePath(ruta);

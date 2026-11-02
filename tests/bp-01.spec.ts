@@ -281,7 +281,7 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       await page.getByRole("link", { name: "Editar operador" }).click();
 
       // CP-08/09/10: entradas inválidas.
-      await page.getByRole("textbox", { name: "WhatsApp" }).fill("abc");
+      await page.getByRole("textbox", { name: "WhatsApp" }).fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
       await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("El teléfono no es válido.");
       await page.getByRole("textbox", { name: "WhatsApp" }).fill("99234567");

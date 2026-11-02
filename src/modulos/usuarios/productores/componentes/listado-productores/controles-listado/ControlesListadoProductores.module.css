@@ -32,14 +32,9 @@
     margin-left: auto;
 }
 
-.controles .selectMui {
-    width: max-content;
-    max-width: 100%;
-    min-width: 7.5rem;
-}
-
 .controles .selectorDepartamento {
     width: 14rem;
+    max-width: 100%;
     min-width: 0;
 }
 
@@ -48,12 +43,8 @@
         width: 100%;
     }
 
-    .controles .selectMui {
-        flex: 1 1 7.5rem;
-    }
-
     .controles .selectorDepartamento {
-        flex-basis: 14rem;
+        flex: 1 1 14rem;
     }
 }
 
@@ -66,15 +57,15 @@
 }
 
 .selectMui :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
 }
 
 .selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
 }
 
 .selectMui :global(.MuiInputLabel-root.Mui-focused) {
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .selectMui :global(.MuiInputBase-input) {
@@ -82,5 +73,5 @@
 }
 
 .opcionSelect:global(.Mui-selected) {
-    background-color: var(--color-primary-soft) !important;
+    background-color: var(--color-secondary-soft) !important;
 }

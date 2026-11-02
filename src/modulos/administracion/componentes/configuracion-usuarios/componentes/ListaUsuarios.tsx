@@ -9,7 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 
 import EditIcon from "@mui/icons-material/Edit";
@@ -58,10 +58,6 @@ function obtenerNombreRol(rol: UsuarioParaModificar["rol"]) {
     return "Productor";
 }
 
-function puedeEliminar(usuario: UsuarioParaModificar) {
-    return usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR";
-}
-
 function obtenerInformacion(usuario: UsuarioParaModificar) {
     if (usuario.rol === "ADMINISTRADOR") return usuario.email;
     return usuario.nombreFantasia;
@@ -72,7 +68,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
     const [idsEliminados, setIdsEliminados] = useState<number[]>([]);
     const [pagina, setPagina] = useState(1);
     const [usuarioAEliminar, setUsuarioAEliminar] = useState<UsuarioParaModificar | null>(null);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [eliminando, setEliminando] = useState(false);
 
     const esMobile = useEsMobileSSR();
@@ -98,6 +94,9 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
         if (usuario.rol === "PRODUCTOR") {
             router.push(`/gestion-productores/${usuario.productorId}`);
         }
+        if (usuario.rol === "ADMINISTRADOR") {
+            router.push(`/gestion-administradores/${usuario.administradorId}`);
+        }
     }
 
     // Roles que ya tienen su página de modificación
@@ -117,7 +116,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
 
     function manejarAbrirEliminar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
         evento.stopPropagation();
-        if (!puedeEliminar(usuario) || !onEliminar || eliminando) return;
+        if (!onEliminar || eliminando) return;
         setUsuarioAEliminar(usuario);
     }
 
@@ -187,7 +186,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
                                 <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} disabled={eliminando || !puedeEditar(usuario)} title={puedeEditar(usuario) ? "Editar perfil" : "Edición todavía no disponible"} className={styles.botonEditar}>
                                     <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={eliminando || !puedeEliminar(usuario) || !onEliminar} title={puedeEliminar(usuario) && onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
+                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={eliminando  || !onEliminar} title={ onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
                                     <DeleteIcon fontSize="small" />
                                 </IconButton>
                             </div>
@@ -198,7 +197,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
 
             {cantidadPaginas > 1 && (
                 <div className={styles.paginacion}>
-                    <Pagination count={cantidadPaginas} page={paginaActual} onChange={cambiarPagina} color="primary" shape="rounded" size={esMobile ? "small" : "medium"} />
+                    <Pagination count={cantidadPaginas} page={paginaActual} onChange={cambiarPagina} color="secondary" shape="rounded" size={esMobile ? "small" : "medium"} />
                 </div>
             )}
 
@@ -219,7 +218,6 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
                 </DialogActions>
             </Dialog>
 
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </div>
     );
 }

@@ -62,6 +62,29 @@ export function agruparPreciosPorFecha(registros: readonly RegistroGrafica[]): P
     return [...puntosPorFecha.values()].sort((a, b) => a.fecha.localeCompare(b.fecha));
 }
 
+export function separarPuntosDistantes(puntos: readonly PuntoGraficaHistorica[]): PuntoGraficaHistorica[] {
+    const intervaloMaximo = 7 * 24 * 60 * 60 * 1000;
+    const separados: PuntoGraficaHistorica[] = [];
+
+    for (let indice = 0; indice < puntos.length; indice += 1) {
+        const punto = puntos[indice];
+        const anterior = puntos[indice - 1];
+        if (anterior && punto.marcaDeTiempo - anterior.marcaDeTiempo > intervaloMaximo) {
+            const marcaDeTiempo = anterior.marcaDeTiempo + (punto.marcaDeTiempo - anterior.marcaDeTiempo) / 2;
+            separados.push({
+                fecha: new Date(marcaDeTiempo).toISOString().slice(0, 10),
+                marcaDeTiempo,
+                minimo: null,
+                maximo: null,
+                cantidad: 0,
+            });
+        }
+        separados.push(punto);
+    }
+
+    return separados;
+}
+
 export function obtenerExtremos(puntos: readonly PuntoGraficaHistorica[]): {
     minimo: ExtremoHistorico | null;
     maximo: ExtremoHistorico | null;

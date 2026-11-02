@@ -53,7 +53,7 @@ describe ('TarjetaPublicacionProductorAdmin', () => {
         expect(screen.getAllByText(/Grande/).length).toBeGreaterThan(0);
         expect(screen.getAllByText(/Extra/).length).toBeGreaterThan(0);
         expect(screen.getByText("por Cajón")).toBeInTheDocument();
-        expect(screen.getByText(/90/)).toBeInTheDocument();
+        expect(screen.getByText("$ 90")).toBeInTheDocument();
     });
 
     // Si la variedad es "-", el nombre es solo la especie

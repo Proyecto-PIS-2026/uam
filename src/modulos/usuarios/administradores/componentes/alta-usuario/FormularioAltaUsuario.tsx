@@ -1,9 +1,10 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import Link from "next/link";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import Dialog from "@mui/material/Dialog";
 import styles from "./FormularioAltaUsuario.module.css";
 import { useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
@@ -11,6 +12,7 @@ import BotonVolver from "@/compartido/BotonVolver";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
 import { altaProductor } from "@/modulos/usuarios/productores/altaProductor";
+import { altaAdministrador } from "@/modulos/usuarios/administradores/altaAdministrador";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
@@ -30,12 +32,14 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
     ]);
     const [codigoPais, setCodigoPais] = useState("+598");
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [errores, setErrores] = useState<string[]>([]);
     const [enviando, setEnviando] = useState(false);
     const envioEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
+    const [email, setEmail] = useState("");
     const [mostrarPopup, setMostrarPopup] = useState(false);
+    const ahoraNoRef = useRef<HTMLButtonElement>(null);
     const [rolCreado, setRolCreado] = useState("");
     const [idUsuarioCreado, setIdUsuarioCreado] = useState<number | null>(null);
 
@@ -50,8 +54,8 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         setLocales([
             { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
         ]);
+        setEmail("");
         setErrores([]);
-        cerrarNotificacion();
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -59,7 +63,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         if (envioEnCurso.current) return;
         envioEnCurso.current = true;
         setErrores([]);
-        cerrarNotificacion();
         setEnviando(true);
 
         try {
@@ -115,8 +118,26 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 setMostrarPopup(true);
                 return;
             }
-            // Pendiente: administrador
-            setErrores(["Esta alta todavía no está disponible para el rol seleccionado."]);
+
+            if (rol === "administrador") {
+                const resultado = await altaAdministrador({
+                    rol,
+                    nombreUsuario,
+                    contraseña,
+                    confirmacionContraseña: confirmacioncontraseña,
+                    email,
+                });
+
+                if (!resultado.esValido) {
+                    setErrores(resultado.errores);
+                    return;
+                }
+
+                limpiarFormulario();
+                notificar(resultado.mensaje, "success");
+                return;
+            }
+
         } catch {
             notificar("No se pudo registrar el usuario. Intentá de nuevo.", "error");
         } finally {
@@ -147,7 +168,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
 
     return (
         <section className="contenedor-pagina secciones-pagina">
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <BotonVolver href="/administracion#usuarios">Volver al panel administrativo</BotonVolver>
             <EncabezadoPagina
                 titulo="Alta de usuario"
@@ -218,6 +238,23 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                         className={styles.control}
                     />
                 </div>
+
+                {rol === "administrador" && (
+                    <TextField
+                        disabled={enviando}
+                        id="email"
+                        label="Email"
+                        type="email"
+                        value={email}
+                        required
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Ingresar correo electrónico"
+                        autoComplete="email"
+                        fullWidth
+                        size="small"
+                        className={styles.control}
+                    />
+                )}
 
                 {(rol === "operador" || rol === "productor") && (
                     <>
@@ -391,43 +428,51 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 </div>
             </form>
 
-            {mostrarPopup && (rolCreado === "operador" || rolCreado === "productor") && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-[var(--padding-exterior-pagina)]">
-                    <div className="w-full max-w-md rounded-[var(--radio-panel)] bg-surface p-[var(--padding-panel)] shadow-xl">
-                        <h2 className={styles.subtitulo}>
-                            {rolCreado === "operador"
-                                ? "Operador creado satisfactoriamente"
-                                : "Productor creado satisfactoriamente"}
-                        </h2>
+            <Dialog
+                open={mostrarPopup && (rolCreado === "operador" || rolCreado === "productor")}
+                onClose={() => setMostrarPopup(false)}
+                maxWidth={false}
+                aria-labelledby="titulo-usuario-creado"
+                aria-describedby="descripcion-usuario-creado"
+                slotProps={{
+                    paper: { sx: { m: 2, width: "calc(100% - 32px)", maxWidth: "28rem", p: "var(--padding-panel)" } },
+                    transition: { onEntered: () => ahoraNoRef.current?.focus() },
+                }}
+            >
+                <h2 id="titulo-usuario-creado" className={styles.subtitulo}>
+                    {rolCreado === "operador"
+                        ? "Operador creado satisfactoriamente"
+                        : "Productor creado satisfactoriamente"}
+                </h2>
 
-                        <p className={styles.descripcionPopup}>
-                            ¿Desea precargar productos para este usuario?
-                        </p>
+                <p id="descripcion-usuario-creado" className={styles.descripcionPopup}>
+                    ¿Desea precargar productos para este usuario?
+                </p>
 
-                        <div className={`${styles.acciones} mt-[var(--espacio-secciones)]`}>
-                            <button
-                                type="button"
-                                onClick={() => setMostrarPopup(false)}
-                                className={styles.botonSecundario}
-                            >
-                                Ahora no
-                            </button>
-                            {idUsuarioCreado !== null && (
-                                <Link
-                                    href={
-                                        rolCreado === "operador"
-                                            ? `/gestion-operadores/${idUsuarioCreado}`
-                                            : `/gestion-productores/${idUsuarioCreado}`
-                                    }
-                                    className={styles.botonConfirmar}
-                                >
-                                    Precargar productos
-                                </Link>
-                            )}
-                        </div>
-                    </div>
+                <div className={`${styles.acciones} mt-[var(--espacio-secciones)]`}>
+                    <button
+                        ref={ahoraNoRef}
+                        type="button"
+                        autoFocus
+                        onClick={() => setMostrarPopup(false)}
+                        className={styles.botonSecundario}
+                    >
+                        Ahora no
+                    </button>
+                    {idUsuarioCreado !== null && (
+                        <Link
+                            href={
+                                rolCreado === "operador"
+                                    ? `/gestion-operadores/${idUsuarioCreado}`
+                                    : `/gestion-productores/${idUsuarioCreado}`
+                            }
+                            className={styles.botonConfirmar}
+                        >
+                            Precargar productos
+                        </Link>
+                    )}
                 </div>
-            )}
+            </Dialog>
         </section>
     );
 }

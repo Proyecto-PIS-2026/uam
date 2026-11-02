@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import type { ChangeEvent, MouseEvent, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UsuarioParaModificar } from "../Tipos";
@@ -291,9 +291,10 @@ describe("ListaUsuarios", () => {
         expect(onSeleccionar).toHaveBeenNthCalledWith(2, usuarios[1]);
         expect(onSeleccionar).toHaveBeenNthCalledWith(3, usuarios[2]);
 
-        expect(estadoTest.routerPush).toHaveBeenCalledTimes(2);
-        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(1, "/gestion-operadores/201");
-        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(2, "/gestion-productores/301");
+        expect(estadoTest.routerPush).toHaveBeenCalledTimes(3);
+        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(1, "/gestion-administradores/101");
+        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(2, "/gestion-operadores/201");
+        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(3, "/gestion-productores/301");
 
     });
 
@@ -308,7 +309,8 @@ describe("ListaUsuarios", () => {
 
         fireEvent.click(obtenerFila("ana.admin"));
 
-        expect(estadoTest.routerPush).toHaveBeenCalledTimes(2);
+        expect(estadoTest.routerPush).toHaveBeenCalledTimes(3);
+        expect(estadoTest.routerPush).toHaveBeenLastCalledWith("/gestion-administradores/101");
     });
 
     it("navega a editar sin propagar el click a la fila", () => {

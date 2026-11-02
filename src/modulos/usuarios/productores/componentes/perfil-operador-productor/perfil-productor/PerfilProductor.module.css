@@ -41,7 +41,7 @@
     overflow: hidden;
     border: 2px solid rgb(255 255 255 / 65%);
     border-radius: var(--radio-panel);
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
     color: var(--color-secondary);
     font-size: 2rem;
     font-weight: 700;
@@ -91,7 +91,7 @@
 
 .departamentos svg {
     flex-shrink: 0;
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .listaLocales {
@@ -109,14 +109,14 @@
     padding: var(--espacio-controles) 0.875rem;
     align-items: center;
     gap: var(--espacio-inline);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);
     border-radius: var(--radio-control);
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
     font-size: var(--tamano-texto-secundario);
 }
 
 .nombreNave {
-    color: var(--color-primary-hover);
+    color: var(--color-secondary-hover);
     font-weight: 600;
 }
 
@@ -147,7 +147,7 @@
 }
 
 .botonWhatsApp:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    outline: 3px solid color-mix(in srgb, var(--color-secondary) 25%, transparent);
     outline-offset: 2px;
 }
 

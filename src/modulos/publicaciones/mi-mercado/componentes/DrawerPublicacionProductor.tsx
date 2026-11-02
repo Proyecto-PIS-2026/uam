@@ -1,5 +1,7 @@
 "use client";
 
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
+
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
@@ -8,6 +10,7 @@ import Dialog from "@mui/material/Dialog";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -16,7 +19,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import type { CambiosPublicacionProductor } from "../../productores/modificar-publicacion";
@@ -24,6 +27,7 @@ import type { OpcionesEdicionPublicacion } from "../../operadores/tipos";
 import { ordenarOpcionesPorNombre } from "../../operadores/ordenar-opciones";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import UbicacionesEdicionProductor, { type UbicacionEdicionProductor } from "../../productores/UbicacionesEdicionProductor";
+import { validarUbicacionesProductor } from "../../productores/ubicaciones-productor";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import styles from "./DrawerPublicacionProductor.module.css";
@@ -162,7 +166,7 @@ function UbicacionesConsulta({ publicacion }: { publicacion: PublicacionMiMercad
 export default function DrawerPublicacionProductor({ publicacion: recibida, alCerrar, alGuardar, alEliminada }: Props) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [estado, setEstado] = useState(() => estadoInicial(recibida));
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const sesionRef = useRef<object | null>(null);
     const operacionRef = useRef<object | null>(null);
     const solicitudOpcionesRef = useRef<object | null>(null);
@@ -175,7 +179,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
 
     if (estado.id !== (recibida?.id ?? null)) {
         setEstado(estadoInicial(recibida));
-        cerrarNotificacion();
     } else if (recibida && !estado.fotoPreparada && !recibida.foto?.trim()) {
         setEstado({ ...estado, fotoPreparada: true });
     }
@@ -237,7 +240,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         solicitudOpcionesRef.current = null;
         sesionRef.current = null;
         setEstado(estadoInicial(recibida));
-        cerrarNotificacion();
         alCerrar();
     }
 
@@ -283,7 +285,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     function cancelarEdicion() {
         if (operacionRef.current === estado.sesion) return;
         setEstado((actual) => ({ ...actual, edicion: null, errores: [] }));
-        cerrarNotificacion();
     }
 
     function seleccionarFoto(evento: ChangeEvent<HTMLInputElement>) {
@@ -302,9 +303,8 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         const solicitud = {};
         solicitudOpcionesRef.current = solicitud;
         setEstado((actual) => ({ ...actual, cargaPara: vigente }));
-        cerrarNotificacion();
         try {
-            const respuesta = await fetch(`/api/publicaciones/productor/${vigente.publicacionProductorId}`, { cache: "no-store" });
+            const respuesta = await fetchConSesion(`/api/publicaciones/productor/${vigente.publicacionProductorId}`, { cache: "no-store" });
             const resultado = await respuesta.json();
             if (solicitud !== solicitudOpcionesRef.current) return;
             if (!respuesta.ok) {
@@ -322,7 +322,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     async function guardar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (!edicion || !borrador || operacionRef.current === estado.sesion) return;
-        cerrarNotificacion();
         if (!precioPublicacionValido(borrador.precio)) {
             setEstado((actual) => ({ ...actual, errores: [PRECIO_PUBLICACION_INVALIDO] }));
             return;
@@ -341,6 +340,11 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             setEstado((actual) => ({ ...actual, errores: ["Elegí una especie, variedad, presentación, categoría, calibre y país válidos."] }));
             return;
         }
+        const validacionUbicaciones = validarUbicacionesProductor(borrador.ubicaciones);
+        if (!validacionUbicaciones.esValido) {
+            setEstado((actual) => ({ ...actual, errores: [validacionUbicaciones.error] }));
+            return;
+        }
         const formulario = new FormData();
         const cambios: CambiosPublicacionProductor = {
             precio: normalizarPrecioPublicacion(borrador.precio),
@@ -349,7 +353,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             presentacionId: borrador.presentacionId || null, categoriaId: borrador.categoriaId || null, calibreId: borrador.calibreId || null,
             paisId: borrador.paisId || null, disponible: borrador.disponible,
             foto: borrador.foto,
-            ubicaciones: borrador.ubicaciones.map(({ nombreUbicacion, urlMaps, departamento }) => ({ nombreUbicacion: nombreUbicacion.trim(), urlMaps: urlMaps.trim(), departamento })),
+            ubicaciones: validacionUbicaciones.ubicaciones,
         };
         formulario.set("cambios", JSON.stringify(cambios));
         if (borrador.archivo) formulario.set("foto", borrador.archivo);
@@ -357,7 +361,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         operacionRef.current = sesion;
         setEstado((actual) => ({ ...actual, guardando: true, errores: [] }));
         try {
-            const respuesta = await fetch(`/api/publicaciones/productor/${edicion.base.publicacionProductorId}`, { method: "PATCH", body: formulario });
+            const respuesta = await fetchConSesion(`/api/publicaciones/productor/${edicion.base.publicacionProductorId}`, { method: "PATCH", body: formulario });
             const resultado = await respuesta.json();
             if (sesionRef.current !== sesion) return;
             if (!respuesta.ok) {
@@ -384,9 +388,8 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         const sesion = estado.sesion;
         operacionRef.current = sesion;
         setEstado((actual) => ({ ...actual, eliminando: true }));
-        cerrarNotificacion();
         try {
-            const respuesta = await fetch(`/api/publicaciones/productor/${vigente.publicacionProductorId}`, { method: "DELETE" });
+            const respuesta = await fetchConSesion(`/api/publicaciones/productor/${vigente.publicacionProductorId}`, { method: "DELETE" });
             const resultado = await respuesta.json().catch(() => ({}));
             if (!respuesta.ok && respuesta.status !== 404) throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
             const mensaje = respuesta.ok ? (resultado.mensaje ?? "Publicación eliminada correctamente.") : "La publicación ya había sido eliminada.";
@@ -404,11 +407,10 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     }
 
     return <>
-        <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={solicitarCierre} arrastreDeshabilitado={ocupado || confirmando}
             slotProps={{ paper: { ref: panelRef, tabIndex: -1, className: estilosAcciones.panel, role: "dialog", "aria-modal": true, "aria-labelledby": tituloId } }} transitionDuration={{ enter: 400, exit: 400 }} ModalProps={{ keepMounted: true }}>
             {publicacion && especie && <>
-                <header className={`${estilosAcciones.encabezado} ${estilosAcciones.encabezadoConAsa}`}>
+                <header className={estilosAcciones.encabezado}>
                     <div className={estilosAcciones.bloqueSuperior}>
                         <h2 className={estilosAcciones.titulo} id={tituloId}>{editando ? "Editar publicación" : "Consulta de publicación"}</h2>
                         <div className={estilosAcciones.informacionDetallada}>
@@ -422,14 +424,14 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                     <div ref={contenidoRef} className={estilosAcciones.cuerpo}>
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-precio`}>Precio en pesos</label>
-                            <input className={estilosAcciones.entrada} id={`publicacion-productor-${publicacion.id}-precio`} inputMode="numeric" maxLength={MAXIMO_DIGITOS_PRECIO}
+                            <OutlinedInput color="secondary" className={estilosAcciones.entrada} size="small" id={`publicacion-productor-${publicacion.id}-precio`} slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                                 value={borrador?.precio ?? (publicacion.precio === null ? "" : String(Number(publicacion.precio)))} placeholder={editando ? "Ingresar precio aquí" : "Consultar precio"} readOnly={!editando} disabled={ocupado}
                                 onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} />
                             {editando && <small className={estilosAcciones.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
                         </div>
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-unidades`}>Unidades{nombrePresentacion ? ` (${nombrePresentacion})` : ""}</label>
-                            <input className={estilosAcciones.entrada} id={`publicacion-productor-${publicacion.id}-unidades`} inputMode="numeric" maxLength={10}
+                            <OutlinedInput color="secondary" className={estilosAcciones.entrada} size="small" id={`publicacion-productor-${publicacion.id}-unidades`} slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }}
                                 value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "-"} readOnly={!editando} disabled={ocupado}
                                 onChange={(evento) => escribirCantidadUnidades(evento.target.value)} />
                             {editando && <small className={estilosAcciones.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small>}
@@ -472,7 +474,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                             <button className={estilosAcciones.cancelar} type="button" onClick={cancelarEdicion} disabled={ocupado}>Cancelar</button>
                             <button className={estilosAcciones.guardar} type="submit" disabled={ocupado}>{estado.guardando ? "Guardando..." : "Confirmar"}</button>
                         </> : <>
-                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled={ocupado || cargando} onClick={() => { cerrarNotificacion(); setEstado((actual) => ({ ...actual, confirmacionPara: vigente })); }}>Eliminar</button>
+                            <button className={`${estilosAcciones.cancelar} ${estilosAcciones.eliminar}`} type="button" disabled={ocupado || cargando} onClick={() => { setEstado((actual) => ({ ...actual, confirmacionPara: vigente })); }}>Eliminar</button>
                             <button className={estilosAcciones.guardar} type="button" disabled={cargando || ocupado || confirmando} onClick={comenzarEdicion}>Editar</button>
                         </>}
                     </div>

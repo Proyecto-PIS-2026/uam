@@ -1,14 +1,8 @@
+import { formatearPrecio } from "@/compartido/formatear-precio";
 import ImagenPublicacion from "../ImagenPublicacion";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import styles from "./TarjetaPublicacionSinOperador.module.css";
-
-const formatoPrecio = new Intl.NumberFormat("es-UY", {
-    style: "currency",
-    currency: "UYU",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-});
 
 type TarjetaPublicacionProps = {
     publicacion: PublicacionListado;
@@ -59,7 +53,7 @@ export default function TarjetaPublicacionSinOperador({publicacion, onClick}: Ta
                         {publicacion.precio == null ? (
                             <span className={styles.consultarPrecio}> Consultar precio </span>
                         ) : (
-                            <span className={styles.precio}> {formatoPrecio.format(publicacion.precio)} </span>
+                            <span className={styles.precio}> {formatearPrecio(publicacion.precio)} </span>
                         )}
                         {publicacion.presentacion?.trim() && publicacion.presentacion.trim() !== "-" && (
                             <span className={styles.presentacionPrecio} title={`por ${publicacion.presentacion.trim()}`}> por {publicacion.presentacion.trim()} </span>

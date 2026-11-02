@@ -50,11 +50,11 @@
 }
 
 .selectMui :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
 }
 
 .selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
 }
 
 .accionesEdicion {
@@ -75,13 +75,13 @@
 
 /* Estado activo cuando hay cambios pendientes */
 .botonGuardarActivo {
-    background-color: var(--color-primary-soft) !important;
-    color: var(--color-primary) !important;
+    background-color: var(--color-secondary-soft) !important;
+    color: var(--color-secondary) !important;
 }
 
 .botonGuardarActivo:hover {
     transform: scale(1.06);
-    background-color: var(--color-primary-soft) !important;
+    background-color: var(--color-secondary-soft) !important;
 }
 
 @media (min-width: 768px) {

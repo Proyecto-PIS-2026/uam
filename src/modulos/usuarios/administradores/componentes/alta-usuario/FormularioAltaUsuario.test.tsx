@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import FormularioAltaUsuario from "./FormularioAltaUsuario";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
@@ -359,37 +359,6 @@ describe("FormularioAltaUsuario", () => {
         ).toHaveLength(1);
     });
 
-    it("muestra error cuando se selecciona administrador", async () => {
-        render(<FormularioAltaUsuario naves={naves} />);
-
-        seleccionarOpcion("Rol del usuario", "Administrador");
-
-        fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
-            target: { value: "usuario1" },
-        });
-
-        fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
-            target: { value: "clave12345" },
-        });
-
-        fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
-            target: { value: "clave12345" },
-        });
-
-        fireEvent.submit(
-            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
-        );
-
-        expect(
-            await screen.findByText(
-                "Esta alta todavía no está disponible para el rol seleccionado.",
-            ),
-        ).toBeInTheDocument();
-
-        expect(altaOperador).not.toHaveBeenCalled();
-        expect(altaProductor).not.toHaveBeenCalled();
-    });
-
     it("envía correctamente el alta de un operador conservando ceros iniciales del local", async () => {
         vi.mocked(altaOperador).mockResolvedValue({
             esValido: true,
@@ -641,7 +610,7 @@ describe("FormularioAltaUsuario", () => {
         ).not.toBeInTheDocument();
     });
 
-    it("cierra el popup al seleccionar Ahora no", async () => {
+    it.each(["Ahora no", "Escape"])("el diálogo de alta enfoca su acción inicial y cierra con %s", async (cierre) => {
         vi.mocked(altaOperador).mockResolvedValue({
             esValido: true,
             id: 25,
@@ -662,13 +631,17 @@ describe("FormularioAltaUsuario", () => {
             await screen.findByText("Operador creado satisfactoriamente"),
         ).toBeInTheDocument();
 
-        fireEvent.click(
-            screen.getByRole("button", { name: "Ahora no" }),
-        );
+        expect(screen.getByRole("dialog", { name: "Operador creado satisfactoriamente" })).toHaveAttribute("aria-modal", "true");
+        expect(screen.getByRole("button", { name: "Ahora no" })).toHaveFocus();
+        if (cierre === "Escape") {
+            fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+            expect(screen.queryByRole("status")).not.toBeInTheDocument();
+            fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+        } else {
+            fireEvent.click(screen.getByRole("button", { name: "Ahora no" }));
+        }
 
-        expect(
-            screen.queryByText("Operador creado satisfactoriamente"),
-        ).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     });
 
     it("avisa si falla el alta sin borrar los datos ni abrir la precarga", async () => {
@@ -721,6 +694,7 @@ describe("FormularioAltaUsuario", () => {
             mensaje: "Operador creado correctamente.",
         });
 
+        fireEvent.click(await screen.findByRole("button", { name: "Ahora no" }));
         await waitFor(() => {
             expect(
                 screen.getByRole("button", { name: "Registrar usuario" }),

@@ -1,41 +1,110 @@
+
 // @vitest-environment node
- 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { iniciarSesion } from "./acciones";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const funcionesSimuladas = vi.hoisted(() => ({
     autenticarUsuario: vi.fn(),
     crearSesion: vi.fn(),
+    existeUsuarioPorNombre: vi.fn(),
+    obtenerRutaPrincipal: vi.fn(),
     redirect: vi.fn(),
     redireccion: new Error("REDIRECCION"),
+    modelos: {
+        EstadisticaVisita: {
+            where: vi.fn(),
+            first: vi.fn(),
+            update: vi.fn(),
+            create: vi.fn(),
+        },
+        Usuario: {
+            where: vi.fn(),
+            update: vi.fn(),
+        },
+    },
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/autenticarUsuario", () => ({
     autenticarUsuario: funcionesSimuladas.autenticarUsuario,
 }));
+
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     crearSesion: funcionesSimuladas.crearSesion,
 }));
-vi.mock("next/navigation", () => ({ redirect: funcionesSimuladas.redirect }));
+
+vi.mock("@/modulos/identidad-acceso/autenticacion/consultasAutenticacion", () => ({
+    existeUsuarioPorNombre: funcionesSimuladas.existeUsuarioPorNombre,
+}));
+
+vi.mock("@/modulos/identidad-acceso/autorizacion/rutas", () => ({
+    obtenerRutaPrincipal: funcionesSimuladas.obtenerRutaPrincipal,
+}));
+
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
+    db: {
+        orm: {
+            public: funcionesSimuladas.modelos,
+        },
+    },
+}));
+
+vi.mock("next/navigation", () => ({
+    redirect: funcionesSimuladas.redirect,
+}));
+
+import { iniciarSesion, solicitarRecuperacion } from "./acciones";
 
 function crearFormulario(
     identificador: string | Blob | null = "huerta_productora",
     contrasena: string | Blob | null = "contrasena-de-prueba",
 ) {
     const formulario = new FormData();
+
     if (identificador !== null) formulario.set("identificador", identificador);
     if (contrasena !== null) formulario.set("contrasena", contrasena);
+
     return formulario;
+}
+
+function configurarMocksBase() {
+    vi.resetAllMocks();
+
+    funcionesSimuladas.autenticarUsuario.mockResolvedValue(null);
+    funcionesSimuladas.crearSesion.mockResolvedValue(undefined);
+    funcionesSimuladas.existeUsuarioPorNombre.mockResolvedValue(true);
+
+    funcionesSimuladas.obtenerRutaPrincipal.mockImplementation((rol: string) => {
+        const rutas: Record<string, string> = {
+            ADMINISTRADOR: "/inicio",
+            OPERADOR: "/mi-mercado",
+            PRODUCTOR: "/mi-mercado/productor",
+        };
+
+        return rutas[rol];
+    });
+
+    funcionesSimuladas.redirect.mockImplementation(() => {
+        throw funcionesSimuladas.redireccion;
+    });
+
+    funcionesSimuladas.modelos.EstadisticaVisita.where.mockReturnThis();
+    funcionesSimuladas.modelos.EstadisticaVisita.first.mockResolvedValue(null);
+    funcionesSimuladas.modelos.EstadisticaVisita.update.mockResolvedValue(1);
+    funcionesSimuladas.modelos.EstadisticaVisita.create.mockResolvedValue({ id: 1 });
+
+    funcionesSimuladas.modelos.Usuario.where.mockReturnThis();
+    funcionesSimuladas.modelos.Usuario.update.mockResolvedValue(1);
 }
 
 describe("iniciarSesion", () => {
     beforeEach(() => {
-        vi.resetAllMocks();
-        funcionesSimuladas.autenticarUsuario.mockResolvedValue(null);
-        funcionesSimuladas.crearSesion.mockResolvedValue(undefined);
-        funcionesSimuladas.redirect.mockImplementation(() => {
-            throw funcionesSimuladas.redireccion;
-        });
+        configurarMocksBase();
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(2026, 9, 20, 12));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
     });
 
     it.each([
@@ -49,18 +118,36 @@ describe("iniciarSesion", () => {
     ])("rechaza credenciales incompletas o de tipo incorrecto: %#", async (datos) => {
         const formulario = crearFormulario(datos.identificador, datos.contrasena);
 
-        expect(await iniciarSesion({}, formulario))
-            .toEqual({ error: "Ingresá tus credenciales para continuar." });
+        expect(await iniciarSesion({}, formulario)).toEqual({
+            error: "Ingresá tus credenciales para continuar.",
+        });
+
         expect(funcionesSimuladas.autenticarUsuario).not.toHaveBeenCalled();
         expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
         expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
     });
 
-    it("devuelve un error generico si las credenciales no son validas", async () => {
-        expect(await iniciarSesion({}, crearFormulario()))
-            .toEqual({ error: "Las credenciales ingresadas no son correctas." });
+    it("devuelve un error genérico si las credenciales no son válidas", async () => {
+        expect(await iniciarSesion({}, crearFormulario())).toEqual({
+            error: "Las credenciales ingresadas no son correctas.",
+        });
+
         expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
         expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
+    });
+
+    it("devuelve un error cuando el usuario no tiene un contrato vigente", async () => {
+        funcionesSimuladas.autenticarUsuario.mockResolvedValue({
+            error: "CONTRATO_NO_VIGENTE",
+        });
+
+        expect(await iniciarSesion({}, crearFormulario())).toEqual({
+            error: "No tenés ningún contrato vigente para iniciar sesión. Comunicate con los administradores de la UAM.",
+        });
+
+        expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -68,35 +155,353 @@ describe("iniciarSesion", () => {
         ["OPERADOR", "/mi-mercado"],
         ["PRODUCTOR", "/mi-mercado/productor"],
     ] as const)(
-        "inicia la sesion de %s usando el rol de la base",
+        "inicia la sesión de %s usando el rol de la base",
         async (rol, destino) => {
-            funcionesSimuladas.autenticarUsuario.mockResolvedValue({ usuarioId: 4, rol });
-            const formulario = crearFormulario("  identificador  ", " clave con espacios ");
+            funcionesSimuladas.autenticarUsuario.mockResolvedValue({
+                usuarioId: 4,
+                rol,
+            });
+
+            const formulario = crearFormulario(
+                "  identificador  ",
+                " clave con espacios ",
+            );
+
             formulario.set("rol", "ADMINISTRADOR");
 
             await expect(iniciarSesion({}, formulario))
                 .rejects.toBe(funcionesSimuladas.redireccion);
-            expect(funcionesSimuladas.autenticarUsuario).toHaveBeenCalledWith({
+
+            expect(funcionesSimuladas.autenticarUsuario).toHaveBeenCalledExactlyOnceWith({
                 identificador: "identificador",
                 contrasena: " clave con espacios ",
             });
-            expect(funcionesSimuladas.crearSesion).toHaveBeenCalledWith(4, rol);
-            expect(funcionesSimuladas.redirect).toHaveBeenCalledWith(destino);
+
+            expect(funcionesSimuladas.crearSesion).toHaveBeenCalledExactlyOnceWith(
+                4,
+                rol,
+            );
+
+            expect(funcionesSimuladas.obtenerRutaPrincipal).toHaveBeenCalledExactlyOnceWith(
+                rol,
+            );
+
+            expect(funcionesSimuladas.redirect).toHaveBeenCalledExactlyOnceWith(
+                destino,
+            );
         },
     );
 
-    it("no crea una sesion si falla la consulta de autenticacion", async () => {
-        funcionesSimuladas.autenticarUsuario.mockRejectedValue(new Error("Base no disponible"));
+    it.each(["OPERADOR", "PRODUCTOR"] as const)(
+        "registra una nueva estadística de visita para %s",
+        async (rol) => {
+            funcionesSimuladas.autenticarUsuario.mockResolvedValue({
+                usuarioId: 4,
+                rol,
+            });
 
-        await expect(iniciarSesion({}, crearFormulario())).rejects.toThrow("Base no disponible");
-        expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
+            await expect(iniciarSesion({}, crearFormulario()))
+                .rejects.toBe(funcionesSimuladas.redireccion);
+
+            expect(funcionesSimuladas.modelos.EstadisticaVisita.where)
+                .toHaveBeenCalledExactlyOnceWith(
+                    expect.objectContaining({
+                        tipoVisitante: rol,
+                    }),
+                );
+
+            const filtro = funcionesSimuladas.modelos.EstadisticaVisita.where.mock.calls[0][0];
+
+            expect(filtro.fecha.toString()).toBe("2026-10-20T00:00:00Z");
+
+            expect(funcionesSimuladas.modelos.EstadisticaVisita.create)
+                .toHaveBeenCalledExactlyOnceWith({
+                    fecha: expect.objectContaining({
+                        toString: expect.any(Function),
+                    }),
+                    tipoVisitante: rol,
+                    cantidad: 1,
+                });
+
+            expect(funcionesSimuladas.modelos.EstadisticaVisita.update).not.toHaveBeenCalled();
+
+            expect(funcionesSimuladas.crearSesion).toHaveBeenCalledExactlyOnceWith(
+                4,
+                rol,
+            );
+
+            expect(funcionesSimuladas.redirect).toHaveBeenCalledOnce();
+        },
+    );
+
+    it.each(["OPERADOR", "PRODUCTOR"] as const)(
+        "incrementa la estadística existente al iniciar sesión como %s",
+        async (rol) => {
+            funcionesSimuladas.autenticarUsuario.mockResolvedValue({
+                usuarioId: 4,
+                rol,
+            });
+
+            funcionesSimuladas.modelos.EstadisticaVisita.first.mockResolvedValue({
+                id: 25,
+                cantidad: 6,
+            });
+
+            await expect(iniciarSesion({}, crearFormulario()))
+                .rejects.toBe(funcionesSimuladas.redireccion);
+
+            expect(funcionesSimuladas.modelos.EstadisticaVisita.where).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({
+                    tipoVisitante: rol,
+                }),
+            );
+
+            expect(funcionesSimuladas.modelos.EstadisticaVisita.where).toHaveBeenNthCalledWith(
+                2,
+                { id: 25 },
+            );
+
+            expect(funcionesSimuladas.modelos.EstadisticaVisita.update)
+                .toHaveBeenCalledExactlyOnceWith({
+                    cantidad: 7,
+                });
+
+            expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
+            expect(funcionesSimuladas.crearSesion).toHaveBeenCalledOnce();
+            expect(funcionesSimuladas.redirect).toHaveBeenCalledOnce();
+        },
+    );
+
+    it("no registra visitas para el rol Administrador", async () => {
+        funcionesSimuladas.autenticarUsuario.mockResolvedValue({
+            usuarioId: 4,
+            rol: "ADMINISTRADOR",
+        });
+
+        await expect(iniciarSesion({}, crearFormulario()))
+            .rejects.toBe(funcionesSimuladas.redireccion);
+
+        expect(funcionesSimuladas.modelos.EstadisticaVisita.where).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.EstadisticaVisita.update).not.toHaveBeenCalled();
+
+        expect(funcionesSimuladas.crearSesion).toHaveBeenCalledExactlyOnceWith(
+            4,
+            "ADMINISTRADOR",
+        );
+
+        expect(funcionesSimuladas.redirect).toHaveBeenCalledWith("/inicio");
     });
 
-    it("no redirige si falla la creacion de la sesion", async () => {
-        funcionesSimuladas.autenticarUsuario.mockResolvedValue({ usuarioId: 4, rol: "PRODUCTOR" });
-        funcionesSimuladas.crearSesion.mockRejectedValue(new Error("Falta el secreto"));
+    it("no impide iniciar sesión si falla el registro de la estadística", async () => {
+        funcionesSimuladas.autenticarUsuario.mockResolvedValue({
+            usuarioId: 4,
+            rol: "PRODUCTOR",
+        });
 
-        await expect(iniciarSesion({}, crearFormulario())).rejects.toThrow("Falta el secreto");
+        funcionesSimuladas.modelos.EstadisticaVisita.first.mockRejectedValue(
+            new Error("Base no disponible"),
+        );
+
+        const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        await expect(iniciarSesion({}, crearFormulario()))
+            .rejects.toBe(funcionesSimuladas.redireccion);
+
+        expect(registrarError).toHaveBeenCalledWith(
+            "Error al registrar estadística de visita:",
+            expect.any(Error),
+        );
+
+        expect(funcionesSimuladas.crearSesion).toHaveBeenCalledExactlyOnceWith(
+            4,
+            "PRODUCTOR",
+        );
+
+        expect(funcionesSimuladas.redirect).toHaveBeenCalledWith(
+            "/mi-mercado/productor",
+        );
+    });
+
+    it("no impide iniciar sesión si falla la creación de una estadística", async () => {
+        funcionesSimuladas.autenticarUsuario.mockResolvedValue({
+            usuarioId: 4,
+            rol: "OPERADOR",
+        });
+
+        funcionesSimuladas.modelos.EstadisticaVisita.create.mockRejectedValue(
+            new Error("No se pudo crear la estadística"),
+        );
+
+        const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        await expect(iniciarSesion({}, crearFormulario()))
+            .rejects.toBe(funcionesSimuladas.redireccion);
+
+        expect(registrarError).toHaveBeenCalledOnce();
+        expect(funcionesSimuladas.crearSesion).toHaveBeenCalledOnce();
+        expect(funcionesSimuladas.redirect).toHaveBeenCalledWith("/mi-mercado");
+    });
+
+    it("no crea una sesión si falla la consulta de autenticación", async () => {
+        funcionesSimuladas.autenticarUsuario.mockRejectedValue(
+            new Error("Base no disponible"),
+        );
+
+        await expect(iniciarSesion({}, crearFormulario()))
+            .rejects.toThrow("Base no disponible");
+
+        expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
         expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
+    });
+
+    it("no redirige si falla la creación de la sesión", async () => {
+        funcionesSimuladas.autenticarUsuario.mockResolvedValue({
+            usuarioId: 4,
+            rol: "PRODUCTOR",
+        });
+
+        funcionesSimuladas.crearSesion.mockRejectedValue(
+            new Error("Falta el secreto"),
+        );
+
+        await expect(iniciarSesion({}, crearFormulario()))
+            .rejects.toThrow("Falta el secreto");
+
+        expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
+    });
+});
+
+describe("solicitarRecuperacion", () => {
+    beforeEach(() => {
+        configurarMocksBase();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("rechaza un nombre de usuario vacío", async () => {
+        const resultado = await solicitarRecuperacion("");
+
+        expect(resultado).toEqual({
+            error: "Ingresá tu nombre de usuario para solicitar la recuperación.",
+        });
+
+        expect(funcionesSimuladas.existeUsuarioPorNombre).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.Usuario.where).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.Usuario.update).not.toHaveBeenCalled();
+    });
+
+    it("rechaza un nombre de usuario compuesto solamente por espacios", async () => {
+        const resultado = await solicitarRecuperacion("     ");
+
+        expect(resultado).toEqual({
+            error: "Ingresá tu nombre de usuario para solicitar la recuperación.",
+        });
+
+        expect(funcionesSimuladas.existeUsuarioPorNombre).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.Usuario.update).not.toHaveBeenCalled();
+    });
+
+    it("informa cuando el usuario no existe", async () => {
+        funcionesSimuladas.existeUsuarioPorNombre.mockResolvedValue(false);
+
+        const resultado = await solicitarRecuperacion("usuario_inexistente");
+
+        expect(resultado).toEqual({
+            error: "No existe ningún usuario con ese nombre.",
+        });
+
+        expect(funcionesSimuladas.existeUsuarioPorNombre)
+            .toHaveBeenCalledExactlyOnceWith("usuario_inexistente");
+
+        expect(funcionesSimuladas.modelos.Usuario.where).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.Usuario.update).not.toHaveBeenCalled();
+    });
+
+    it("registra correctamente una solicitud de recuperación", async () => {
+        const resultado = await solicitarRecuperacion("usuario_existente");
+
+        expect(resultado).toEqual({
+            exito: "La solicitud de recuperación fue realizada correctamente.",
+        });
+
+        expect(funcionesSimuladas.existeUsuarioPorNombre)
+            .toHaveBeenCalledExactlyOnceWith("usuario_existente");
+
+        expect(funcionesSimuladas.modelos.Usuario.where)
+            .toHaveBeenCalledExactlyOnceWith({
+                username: "usuario_existente",
+            });
+
+        expect(funcionesSimuladas.modelos.Usuario.update)
+            .toHaveBeenCalledExactlyOnceWith({
+                solicitoRestablecimiento: true,
+            });
+    });
+
+    it("normaliza el nombre de usuario antes de consultar y registrar la solicitud", async () => {
+        const resultado = await solicitarRecuperacion("   usuario_existente   ");
+
+        expect(resultado).toEqual({
+            exito: "La solicitud de recuperación fue realizada correctamente.",
+        });
+
+        expect(funcionesSimuladas.existeUsuarioPorNombre)
+            .toHaveBeenCalledExactlyOnceWith("usuario_existente");
+
+        expect(funcionesSimuladas.modelos.Usuario.where)
+            .toHaveBeenCalledExactlyOnceWith({
+                username: "usuario_existente",
+            });
+
+        expect(funcionesSimuladas.modelos.Usuario.update)
+            .toHaveBeenCalledExactlyOnceWith({
+                solicitoRestablecimiento: true,
+            });
+    });
+
+    it("devuelve un error operacional si falla la consulta de existencia", async () => {
+        funcionesSimuladas.existeUsuarioPorNombre.mockRejectedValue(
+            new Error("Base de datos no disponible"),
+        );
+
+        const resultado = await solicitarRecuperacion("usuario_existente");
+
+        expect(resultado).toEqual({
+            error: "No se pudo registrar la solicitud. Intentá nuevamente.",
+            tipoError: "operacion",
+        });
+
+        expect(funcionesSimuladas.modelos.Usuario.where).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.Usuario.update).not.toHaveBeenCalled();
+    });
+
+    it("devuelve un error operacional si falla el registro de la solicitud", async () => {
+        funcionesSimuladas.modelos.Usuario.update.mockRejectedValue(
+            new Error("No se pudo actualizar el usuario"),
+        );
+
+        const resultado = await solicitarRecuperacion("usuario_existente");
+
+        expect(resultado).toEqual({
+            error: "No se pudo registrar la solicitud. Intentá nuevamente.",
+            tipoError: "operacion",
+        });
+
+        expect(funcionesSimuladas.existeUsuarioPorNombre)
+            .toHaveBeenCalledExactlyOnceWith("usuario_existente");
+
+        expect(funcionesSimuladas.modelos.Usuario.where)
+            .toHaveBeenCalledExactlyOnceWith({
+                username: "usuario_existente",
+            });
+
+        expect(funcionesSimuladas.modelos.Usuario.update)
+            .toHaveBeenCalledExactlyOnceWith({
+                solicitoRestablecimiento: true,
+            });
     });
 });

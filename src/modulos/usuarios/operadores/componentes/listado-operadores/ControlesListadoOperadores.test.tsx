@@ -34,18 +34,18 @@ describe("ControlesListadoOperadores", () => {
 
     it("Mostrar el selector de orden", () => {
         render(<ControlesListadoOperadores {...propsIniciales} />);
-        expect(screen.getByRole("combobox", {name: "Ordenar por",})).toBeInTheDocument();
+        expect(screen.getByRole("button", {name: "Ordenar por",})).toBeInTheDocument();
     });
 
     it("Mostrar opciones de orden", () => {
         render(<ControlesListadoOperadores {...propsIniciales} />);
 
-        const selectorOrden = screen.getByRole("combobox", {name: "Ordenar por",});
+        const selectorOrden = screen.getByRole("button", {name: "Ordenar por",});
 
-        fireEvent.mouseDown(selectorOrden);
+        fireEvent.click(selectorOrden);
 
-        expect(screen.getByRole("option", { name: "A-Z" })).toBeInTheDocument();
-        expect(screen.getByRole("option", { name: "Z-A" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Z-A" })).toBeInTheDocument();
     });
 
     it("Llama al callback cuando se escribe una búsqueda", () => {
@@ -76,9 +76,9 @@ describe("ControlesListadoOperadores", () => {
 
         render(<ControlesListadoOperadores {...propsIniciales} alCambiarOrden={alCambiarOrden}/>);
 
-        const selectorOrden = screen.getByRole("combobox", {name: "Ordenar por",});
+        const selectorOrden = screen.getByRole("button", {name: "Ordenar por",});
 
-        fireEvent.mouseDown(selectorOrden);
+        fireEvent.click(selectorOrden);
         fireEvent.click(screen.getByText("Z-A"));
 
         expect(alCambiarOrden).toHaveBeenCalledWith("z-a");

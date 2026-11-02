@@ -1,14 +1,15 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
 import { useRouter } from "next/navigation";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import BotonVolver from "@/compartido/BotonVolver";
 
+import { modificarMiPerfilProductor } from "../../perfil-propio/modificarMiPerfilProductor";
 import { modificarProductor } from "./modificarProductor";
 import type { ProductorParaModificar } from "./obtenerProductorParaModificar";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
@@ -17,12 +18,18 @@ import styles from "./FormularioModificarProductor.module.css";
 
 type Props = {
     productor: ProductorParaModificar;
+    perfilPropio?: boolean;
 };
 
-const CODIGOS_PAIS = ["+598", "+54", "+55", "+56", "+595"];
-const propiedadesMenuSelect = { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } as const;
+const CODIGOS_PAIS = [
+    { codigo: "+598", pais: "Uruguay" },
+    { codigo: "+54", pais: "Argentina" },
+    { codigo: "+55", pais: "Brasil" },
+    { codigo: "+56", pais: "Chile" },
+    { codigo: "+595", pais: "Paraguay" },
+];
 
-export default function FormularioModificarProductor({ productor }: Props) {
+export default function FormularioModificarProductor({ productor, perfilPropio = false }: Props) {
     const router = useRouter();
     const idFormulario = useId();
 
@@ -37,13 +44,13 @@ export default function FormularioModificarProductor({ productor }: Props) {
         useState("");
 
     const [errores, setErrores] = useState<string[]>([]);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
 
     function cancelar() {
-        router.push(`/gestion-productores/${productor.id}`);
+        router.push(perfilPropio ? "/mi-perfil/productor" : `/gestion-productores/${productor.id}`);
     }
 
     async function guardar(
@@ -55,25 +62,26 @@ export default function FormularioModificarProductor({ productor }: Props) {
         guardadoEnCurso.current = true;
 
         setErrores([]);
-        cerrarNotificacion();
         setGuardando(true);
 
         try {
-            const resultado = await modificarProductor({
-                productorId: productor.id,
+            const datos = {
                 nombre,
                 codigoPais,
                 telefono,
-                contraseña,
-                confirmacionContraseña,
-            }, ...argumentosFotoPerfil(foto));
+            };
+            const resultado = perfilPropio
+                ? await modificarMiPerfilProductor(datos, ...argumentosFotoPerfil(foto))
+                : await modificarProductor({ ...datos, productorId: productor.id, contraseña, confirmacionContraseña }, ...argumentosFotoPerfil(foto));
 
             if (!resultado.esValido) {
                 setErrores(resultado.errores);
                 return;
             }
 
-            router.push(`/gestion-productores/${resultado.id}`);
+            if (perfilPropio) notificar(resultado.mensaje, "success");
+            router.push(perfilPropio ? "/mi-perfil/productor" : `/gestion-productores/${resultado.id}`);
+            if (perfilPropio) router.refresh();
         } catch (error) {
             console.error(
                 "Error al modificar productor:",
@@ -92,22 +100,19 @@ export default function FormularioModificarProductor({ productor }: Props) {
 
     return (
         <div className={styles.pagina}>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <div className={styles.contenedor}>
-                <button
-                    type="button"
+                <BotonVolver
                     className={styles.volver}
                     onClick={cancelar}
                     disabled={guardando}
                 >
-                    <ArrowBackIcon aria-hidden="true" fontSize="inherit" />
                     Volver al perfil
-                </button>
+                </BotonVolver>
 
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <h1 className={styles.titulo}>
-                        Modificar productor
+                        {perfilPropio ? "Modificar mi perfil" : "Modificar productor"}
                     </h1>
 
                     <p className={styles.descripcion}>
@@ -123,86 +128,56 @@ export default function FormularioModificarProductor({ productor }: Props) {
                 >
                     <section className={styles.seccion}>
                         <h2 className={styles.subtitulo}>
-                            Datos del productor
+                            {perfilPropio ? "Datos de mi perfil" : "Datos del productor"}
                         </h2>
 
                         <SelectorFotoPerfil fotoActual={productor.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
 
-                        <label className={styles.campo}>
-                            <span className={styles.etiqueta}>
-                                Nombre
-                            </span>
-
-                            <input
-                                className={styles.entrada}
-                                value={nombre}
-                                onChange={(evento) =>
-                                    setNombre(
-                                        evento.target.value,
-                                    )
-                                }
-                                disabled={guardando}
-                            />
-                        </label>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            className={styles.control}
+                            label="Nombre"
+                            value={nombre}
+                            onChange={(evento) => setNombre(evento.target.value)}
+                            disabled={guardando}
+                        />
 
                         <div className={styles.filaTelefono}>
-                            <div className={styles.campo}>
-                                <span
-                                    id={`${idFormulario}-codigo-etiqueta`}
-                                    className={styles.etiqueta}
-                                >
-                                    Código
-                                </span>
+                            <TextField
+                                select
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                id={`${idFormulario}-codigo`}
+                                label="Código de país"
+                                value={codigoPais}
+                                onChange={(evento) => setCodigoPais(evento.target.value)}
+                                disabled={guardando}
+                            >
+                                {CODIGOS_PAIS.map(({ codigo, pais }) => (
+                                    <MenuItem key={codigo} value={codigo}>{codigo} ({pais})</MenuItem>
+                                ))}
+                            </TextField>
 
-                                <Select
-                                    id={`${idFormulario}-codigo`}
-                                    labelId={`${idFormulario}-codigo-etiqueta`}
-                                    fullWidth
-                                    size="small"
-                                    MenuProps={propiedadesMenuSelect}
-                                    value={codigoPais}
-                                    onChange={(evento) =>
-                                        setCodigoPais(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    disabled={guardando}
-                                >
-                                    {CODIGOS_PAIS.map(
-                                        (codigo) => (
-                                            <MenuItem
-                                                key={codigo}
-                                                value={codigo}
-                                            >
-                                                {codigo}
-                                            </MenuItem>
-                                        ),
-                                    )}
-                                </Select>
-                            </div>
-
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    WhatsApp
-                                </span>
-
-                                <input
-                                    className={styles.entrada}
-                                    value={telefono}
-                                    onChange={(evento) =>
-                                        setTelefono(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    disabled={guardando}
-                                />
-                            </label>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label={perfilPropio ? "Número de contacto (opcional)" : "WhatsApp"}
+                                type="tel"
+                                value={telefono}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
+                                onChange={(evento) => {
+                                    const nuevoTelefono = evento.target.value;
+                                    if (/^[0-9]*$/.test(nuevoTelefono)) setTelefono(nuevoTelefono);
+                                }}
+                                disabled={guardando}
+                            />
                         </div>
                     </section>
 
-                    <section className={styles.seccion}>
+                    {!perfilPropio && <section className={styles.seccion}>
                         <h2 className={styles.subtitulo}>
                             Cambiar contraseña
                         </h2>
@@ -217,51 +192,31 @@ export default function FormularioModificarProductor({ productor }: Props) {
                                 styles.grillaContraseña
                             }
                         >
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Nueva contraseña
-                                </span>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Nueva contraseña"
+                                type="password"
+                                value={contraseña}
+                                onChange={(evento) => setContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
 
-                                <input
-                                    className={styles.entrada}
-                                    type="password"
-                                    value={contraseña}
-                                    onChange={(evento) =>
-                                        setContraseña(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    autoComplete="new-password"
-                                    disabled={guardando}
-                                />
-                            </label>
-
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Confirmar contraseña
-                                </span>
-
-                                <input
-                                    className={styles.entrada}
-                                    type="password"
-                                    value={
-                                        confirmacionContraseña
-                                    }
-                                    onChange={(evento) =>
-                                        setConfirmacionContraseña(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    autoComplete="new-password"
-                                    disabled={guardando}
-                                />
-                            </label>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Confirmar contraseña"
+                                type="password"
+                                value={confirmacionContraseña}
+                                onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
                         </div>
-                    </section>
+                    </section>}
 
                     {errores.length > 0 && (
                         <div

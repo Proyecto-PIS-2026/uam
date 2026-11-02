@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef } from "react";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import Dialog from "@mui/material/Dialog";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import estilos from "./ConfirmModal.module.css";
 
 type ConfirmModalProps = {
 	abierto: boolean;
@@ -24,58 +27,53 @@ export function ConfirmModal({
 	alConfirmar,
 	alCancelar,
 }: ConfirmModalProps) {
-	const dialogoRef = useRef<HTMLDialogElement>(null);
 	const cancelarRef = useRef<HTMLButtonElement>(null);
-	const [visible, setVisible] = useState(false);
+	const reducirMovimiento = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const tituloId = useId();
 	const descripcionId = useId();
 
-	useEffect(() => {
-		const dialogo = dialogoRef.current;
-		if (!dialogo) return;
-
-		if (abierto) {
-			if (!dialogo.open) dialogo.showModal();
-			const frame = requestAnimationFrame(() => {
-				setVisible(true);
-				cancelarRef.current?.focus();
-			});
-			return () => cancelAnimationFrame(frame);
-		}
-
-		if (dialogo.open) {
-			setVisible(false);
-			const duracion = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 220;
-			const temporizador = window.setTimeout(() => dialogo.close(), duracion);
-			return () => window.clearTimeout(temporizador);
-		}
-	}, [abierto]);
-
 	return (
-		<dialog
-			ref={dialogoRef}
-			className="confirm-modal fixed inset-0 m-auto w-[min(90vw,28rem)] max-w-none rounded-[var(--radio-panel)] border border-border bg-surface p-0 text-foreground shadow-2xl"
-			data-state={visible ? "open" : "closed"}
+		<Dialog
+			open={abierto}
+			maxWidth={false}
 			role="alertdialog"
 			aria-labelledby={tituloId}
 			aria-describedby={descripcionId}
-			aria-modal="true"
-			onClose={(evento) => evento.stopPropagation()}
+			transitionDuration={reducirMovimiento ? 0 : 220}
+			onClose={() => { if (!procesando) alCancelar(); }}
 			onKeyDown={(evento) => { if (evento.key === "Escape") evento.stopPropagation(); }}
-			onCancel={(evento) => { evento.preventDefault(); if (!procesando) alCancelar(); }}
-			onClick={(evento) => { if (evento.target === evento.currentTarget && !procesando) alCancelar(); }}
+			onClick={(evento) => evento.stopPropagation()}
+			slotProps={{
+				paper: {
+					className: "shadow-2xl",
+					sx: {
+						m: 2,
+						width: "28rem",
+						maxWidth: "calc(100% - 32px)",
+						maxHeight: "calc(100% - 32px)",
+						borderRadius: "var(--radio-panel)",
+						border: "1px solid var(--color-border)",
+						backgroundColor: "var(--color-surface)",
+						color: "var(--color-foreground)",
+					},
+				},
+				backdrop: { sx: { backgroundColor: "rgb(15 23 42 / 48%)" } },
+				transition: { onEntered: () => cancelarRef.current?.focus() },
+			}}
 		>
-            <div className="p-[var(--padding-panel)]">
-				<div className="mb-[var(--espacio-secciones)] flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger" aria-hidden="true">
-					<DeleteOutlinedIcon aria-hidden="true" className="h-6 w-6" />
+			<div className={estilos.contenido}>
+				<div className={estilos.encabezado}>
+					<div className={estilos.icono} aria-hidden="true">
+						<DeleteOutlinedIcon aria-hidden="true" fontSize="small" />
+					</div>
+					<h2 id={tituloId} className={`titulo-seccion ${estilos.titulo}`}>{titulo}</h2>
 				</div>
-				<h2 id={tituloId} className="titulo-seccion">{titulo}</h2>
-				<p id={descripcionId} className="mt-[var(--espacio-inline)] text-[length:var(--tamano-texto-secundario)] leading-[var(--interlineado-texto)] text-muted">{descripcion}</p>
-                <div className="mt-[var(--espacio-secciones)] flex flex-col-reverse gap-[var(--espacio-controles)] sm:flex-row sm:justify-end">
+				<p id={descripcionId} className={estilos.descripcion}>{descripcion}</p>
+				<div className={estilos.acciones}>
 					<button ref={cancelarRef} type="button" onClick={alCancelar} disabled={procesando} className="boton-secundario">{textoCancelar}</button>
 					<button type="button" onClick={alConfirmar} disabled={procesando} className="boton-peligro">{procesando ? "Eliminando..." : textoConfirmar}</button>
 				</div>
 			</div>
-		</dialog>
+		</Dialog>
 	);
 }
