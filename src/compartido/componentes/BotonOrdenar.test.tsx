@@ -5,7 +5,7 @@ import BotonOrdenar from "./BotonOrdenar";
 const opciones = [
     { valor: "nombre_asc", etiqueta: "A-Z" },
     { valor: "nombre_desc", etiqueta: "Z-A" },
-    { valor: "menor_precio", etiqueta: "Menor precio" },
+    { valor: "menor_precio", etiqueta: "Menor Precio" },
 ] as const;
 
 describe("BotonOrdenar", () => {
@@ -24,7 +24,7 @@ describe("BotonOrdenar", () => {
         expect(screen.getAllByRole("menuitemradio")).toHaveLength(3);
         expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toBeInTheDocument();
         expect(screen.getByRole("menuitemradio", { name: "Z-A" })).toBeInTheDocument();
-        expect(screen.getByRole("menuitemradio", { name: "Menor precio" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Menor Precio" })).toBeInTheDocument();
     });
 
     it("marca únicamente la opción seleccionada", () => {
@@ -32,14 +32,14 @@ describe("BotonOrdenar", () => {
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         expect(screen.getByRole("menuitemradio", { name: "Z-A" })).toHaveAttribute("aria-checked", "true");
         expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toHaveAttribute("aria-checked", "false");
-        expect(screen.getByRole("menuitemradio", { name: "Menor precio" })).toHaveAttribute("aria-checked", "false");
+        expect(screen.getByRole("menuitemradio", { name: "Menor Precio" })).toHaveAttribute("aria-checked", "false");
     });
 
     it("comunica el valor elegido y cierra el menú", async () => {
         const alCambiar = vi.fn();
         render(<BotonOrdenar valor="nombre_asc" opciones={opciones} alCambiar={alCambiar} />);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor precio" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
         expect(alCambiar).toHaveBeenCalledExactlyOnceWith("menor_precio");
         await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
     });

@@ -40,6 +40,7 @@ const ordenesMercados = [
     ...ordenesLanding,
     "menor_precio",
     "mayor_precio",
+    "mas_actualizadas",
 ];
 
 const clavesPermitidas = new Set<string>([

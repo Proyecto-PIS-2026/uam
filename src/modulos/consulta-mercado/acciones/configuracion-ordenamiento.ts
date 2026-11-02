@@ -2,7 +2,7 @@ import obtenerConfiguraciones from "@/modulos/administracion/acciones/consultas-
 
 export type OrdenLanding = "nombre_asc" | "nombre_desc" | "mas_vendidas";
 
-export type OrdenMercados = OrdenLanding | "menor_precio" | "mayor_precio";
+export type OrdenMercados = OrdenLanding | "menor_precio" | "mayor_precio" | "mas_actualizadas";
 
 export interface ConfiguracionOrdenamiento {
     habilitado: boolean;
@@ -29,6 +29,7 @@ function interpretarOrdenMercados(valor: string | null | undefined): OrdenMercad
         case "nombre_asc":
         case "nombre_desc":
         case "mas_vendidas":
+        case "mas_actualizadas":
             return valor;
         default:
             return "mas_vendidas";

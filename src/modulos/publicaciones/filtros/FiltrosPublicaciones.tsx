@@ -9,7 +9,7 @@ import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-espe
 import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 import styles from "./FiltrosPublicaciones.module.css";
 
-import type { FiltrosConsulta, OpcionProducto } from "../../consulta-mercado/acciones/filtros-consulta";
+import type { FiltrosConsulta, OpcionProducto, OrdenConsulta } from "../../consulta-mercado/acciones/filtros-consulta";
 
 type PublicacionFiltrable = {
     especie: string;
@@ -19,6 +19,7 @@ type PublicacionFiltrable = {
     calibre: string;
     codigoCalibre: string;
     precio: number | null;
+    fecha: string;
 };
 
 type FiltrosPublicacionesProps<T extends PublicacionFiltrable> = {
@@ -54,7 +55,7 @@ const compararPrecios = (a: PublicacionFiltrable, b: PublicacionFiltrable, ascen
     return ascendente ? a.precio - b.precio : b.precio - a.precio;
 };
 
-export type OrdenPublicaciones = "ninguno" | "prioridad" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
+export type OrdenPublicaciones = OrdenConsulta;
 
 export function compararPublicacionesAlfabeticamente(a: Pick<PublicacionFiltrable, "especie" | "variedad">, b: Pick<PublicacionFiltrable, "especie" | "variedad">) {
     const especie = compararOpciones(a.especie, b.especie);
@@ -271,7 +272,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (orden === "prioridad") return [...filtradas].sort(compararPublicacionesPorPrioridad);
         if (orden === "alfabeticoAsc") return [...filtradas].sort(compararPublicacionesAlfabeticamente);
         if (orden === "alfabeticoDesc") return [...filtradas].sort((a, b) => compararPublicacionesAlfabeticamente(b, a));
-
+        if (orden === "fechaDesc") {return [...filtradas].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())}
         return filtradas;
     }, [publicaciones, opcionesRemotas, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden, obtenerNombreFantasia]);
 
@@ -499,10 +500,11 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                             alCambiar={cambiarOrden}
                             className={styles.botonOrdenar}
                             opciones={[
-                                { valor: "precioAsc", etiqueta: "Menor precio" },
-                                { valor: "precioDesc", etiqueta: "Mayor precio" },
+                                { valor: "precioAsc", etiqueta: "Menor Precio" },
+                                { valor: "precioDesc", etiqueta: "Mayor Precio" },
                                 { valor: "alfabeticoAsc", etiqueta: "A-Z" },
                                 { valor: "alfabeticoDesc", etiqueta: "Z-A" },
+                                { valor: "fechaDesc", etiqueta: "Más actualizadas" },
                             ]}
                         />
                     )}

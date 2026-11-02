@@ -7,14 +7,15 @@ import NotificacionToast, { useNotificacionToast } from "@/compartido/componente
 import styles from "./TarjetaOrdenamientoPredeterminado.module.css";
 
 const opcionesOrden = [
-    { valor: "menor_precio", etiqueta: "Menor precio" },
-    { valor: "mayor_precio", etiqueta: "Mayor precio" },
+    { valor: "menor_precio", etiqueta: "Menor Precio" },
+    { valor: "mayor_precio", etiqueta: "Mayor Precio" },
     { valor: "nombre_asc", etiqueta: "A-Z" },
     { valor: "nombre_desc", etiqueta: "Z-A" },
     { valor: "mas_vendidas", etiqueta: "Más vendidas" },
+    { valor: "mas_actualizadas", etiqueta: "Más actualizadas" },
 ] as const;
 
-const opcionesOrdenLanding = opcionesOrden.filter((opcion) => opcion.valor !== "menor_precio" && opcion.valor !== "mayor_precio");
+const opcionesOrdenLanding = opcionesOrden.filter((opcion) => opcion.valor !== "menor_precio" && opcion.valor !== "mayor_precio" && opcion.valor !== "mas_actualizadas");
 
 export type OrdenPublicaciones = typeof opcionesOrden[number]["valor"];
 

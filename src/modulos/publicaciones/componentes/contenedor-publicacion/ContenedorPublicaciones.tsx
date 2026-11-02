@@ -49,7 +49,11 @@ function ordenarPublicaciones(
                     ? a.precio - b.precio
                     : b.precio - a.precio;
             });
-
+        case "fechaDesc":
+            return resultado.sort((a, b) =>
+                new Date(b.fecha).getTime() -
+                new Date(a.fecha).getTime(),
+            );
         default:
             return resultado;
     }

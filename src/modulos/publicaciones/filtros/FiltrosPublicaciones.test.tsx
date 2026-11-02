@@ -275,7 +275,7 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Frutas del Sur" } });
         fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "50" } });
         fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "200" } });
-        seleccionarOrden("Mayor precio");
+        seleccionarOrden("Mayor Precio");
 
         expect(alConsultar).toHaveBeenLastCalledWith({
             busqueda: "Frutas del Sur", especie: "Manzana", variedad: "Gala", presentacion: "Caja",
@@ -432,7 +432,7 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Manzana" } });
         fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "50" } });
         fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "200" } });
-        seleccionarOrden("Menor precio");
+        seleccionarOrden("Menor Precio");
 
         const actualizadas = [{ ...publicaciones[0], precio: 150 }, { ...publicaciones[0], id: 2, precio: 75 }];
         vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
@@ -610,9 +610,9 @@ describe("FiltrosPublicaciones", () => {
         const selectorOrden = screen.getByRole("button", { name: "Ordenar por" });
         fireEvent.click(selectorOrden);
         expect(selectorOrden).toHaveAttribute("aria-expanded", "true");
-        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor precio" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
         expect(selectorOrden).toHaveAttribute("aria-expanded", "false");
-        comprobarOrdenActivo("Menor precio");
+        comprobarOrdenActivo("Menor Precio");
     });
 
     it("mantiene el orden recibido cuando no se indica orden inicial", () => {
@@ -631,12 +631,12 @@ describe("FiltrosPublicaciones", () => {
 
         fireEvent.click(selectorOrden);
         expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toHaveAttribute("aria-checked", "true");
-        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor precio" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
 
-        comprobarOrdenActivo("Menor precio");
+        comprobarOrdenActivo("Menor Precio");
 
         fireEvent.click(selectorOrden);
-        expect(screen.getByRole("menuitemradio", { name: "Menor precio" })).toHaveAttribute("aria-checked", "true");
+        expect(screen.getByRole("menuitemradio", { name: "Menor Precio" })).toHaveAttribute("aria-checked", "true");
         expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toHaveAttribute("aria-checked", "false");
     });
 
@@ -917,7 +917,7 @@ describe("FiltrosPublicaciones", () => {
     it("ordena las publicaciones por precio ascendente", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
-        seleccionarOrden("Menor precio");
+        seleccionarOrden("Menor Precio");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => publicacion.precio)).toEqual([100, 200, 300, 400]);
     });
@@ -925,7 +925,7 @@ describe("FiltrosPublicaciones", () => {
     it("ordena las publicaciones por precio descendente", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
-        seleccionarOrden("Mayor precio");
+        seleccionarOrden("Mayor Precio");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => publicacion.precio)).toEqual([400, 300, 200, 100]);
     });
@@ -954,7 +954,7 @@ describe("FiltrosPublicaciones", () => {
         const alCambiarOrden = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
 
-        seleccionarOrden("Mayor precio");
+        seleccionarOrden("Mayor Precio");
         expect(alCambiarOrden).toHaveBeenLastCalledWith("precioDesc");
         expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([4, 3, 2, 1]);
 
@@ -1046,7 +1046,7 @@ describe("FiltrosPublicaciones", () => {
     it("coloca las publicaciones sin precio al final al ordenar por precio", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
-        seleccionarOrden("Menor precio");
+        seleccionarOrden("Menor Precio");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
         expect(resultado).toHaveLength(3);
         expect(resultado[0].precio).toBe(200);
@@ -1057,7 +1057,7 @@ describe("FiltrosPublicaciones", () => {
     it("mantiene las publicaciones sin precio al final al ordenar por precio descendente", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
-        seleccionarOrden("Mayor precio");
+        seleccionarOrden("Mayor Precio");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0];
         expect(resultado).toHaveLength(3);
         expect(resultado[0].precio).toBe(200);
@@ -1355,8 +1355,8 @@ describe("ordenamiento configurado por el administrador", () => {
         prepararOrdenamiento("prioridad");
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
 
-        expect(await screen.findByRole("menuitemradio", { name: "Menor precio" })).toBeInTheDocument();
-        expect(screen.getByRole("menuitemradio", { name: "Mayor precio" })).toBeInTheDocument();
+        expect(await screen.findByRole("menuitemradio", { name: "Menor Precio" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Mayor Precio" })).toBeInTheDocument();
         expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toBeInTheDocument();
         expect(screen.getByRole("menuitemradio", { name: "Z-A" })).toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Más vendidas" })).not.toBeInTheDocument();
@@ -1378,7 +1378,7 @@ describe("ordenamiento configurado por el administrador", () => {
 
     it("permite elegir otro orden cuando está habilitado", async () => {
         const { props } = prepararOrdenamiento();
-        await elegirOrdenConfigurado("Mayor precio");
+        await elegirOrdenConfigurado("Mayor Precio");
 
         expect(props.alCambiarOrden).toHaveBeenCalledExactlyOnceWith("precioDesc");
         expect(nombresFiltrados(props.alFiltrar)).toEqual(["Acelga", "Tomate", "Papa"]);

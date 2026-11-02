@@ -7,6 +7,7 @@ const equivalencias: Record<OrdenMercados, OrdenConsulta> = {
     nombre_asc: "alfabeticoAsc",
     nombre_desc: "alfabeticoDesc",
     mas_vendidas: "prioridad",
+    mas_actualizadas: "fechaDesc",
 };
 
 export function convertirOrdenMercados(

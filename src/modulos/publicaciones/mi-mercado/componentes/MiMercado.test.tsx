@@ -182,7 +182,7 @@ function idsTarjetas() {
   return screen.getAllByTestId(/^publicacion-/).map((tarjeta) => tarjeta.getAttribute("data-testid"));
 }
 
-function elegirOrden(nombre: "A-Z" | "Z-A" | "Menor precio" | "Mayor precio") {
+function elegirOrden(nombre: "A-Z" | "Z-A" | "Menor Precio" | "Mayor Precio") {
     fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
     fireEvent.click(screen.getByRole("menuitemradio", { name: nombre }));
 }
@@ -714,10 +714,10 @@ describe("MiMercado", () => {
 
     expect(idsTarjetas()).toEqual(["publicacion-2", "publicacion-4", "publicacion-1", "publicacion-3"]);
 
-    elegirOrden("Menor precio");
+    elegirOrden("Menor Precio");
     expect(idsTarjetas()).toEqual(["publicacion-3", "publicacion-2", "publicacion-1", "publicacion-4"]);
 
-    elegirOrden("Mayor precio");
+    elegirOrden("Mayor Precio");
     expect(idsTarjetas()).toEqual(["publicacion-4", "publicacion-1", "publicacion-2", "publicacion-3"]);
   });
 

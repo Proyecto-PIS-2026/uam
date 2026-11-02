@@ -117,8 +117,8 @@ describe("Inicio", () => {
         expect(await screen.findByRole("menuitemradio", { name: "A-Z" })).toBeInTheDocument();
         expect(screen.getByRole("menuitemradio", { name: "Z-A" })).toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Más vendidas" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("menuitemradio", { name: "Menor precio" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("menuitemradio", { name: "Mayor precio" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Menor Precio" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Mayor Precio" })).not.toBeInTheDocument();
         expect(screen.getAllByRole("menuitemradio")).toHaveLength(2);
     });
 

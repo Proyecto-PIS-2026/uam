@@ -94,6 +94,7 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
                 CASE WHEN ${consulta.orden} IN ('prioridad', 'alfabeticoAsc') THEN translate(lower(variedad), 'áéíóúüñ', 'aeiouun') END ASC,
                 CASE WHEN ${consulta.orden} = 'alfabeticoDesc' THEN translate(lower(especie), 'áéíóúüñ', 'aeiouun') END DESC,
                 CASE WHEN ${consulta.orden} = 'alfabeticoDesc' THEN translate(lower(variedad), 'áéíóúüñ', 'aeiouun') END DESC,
+                CASE WHEN ${consulta.orden} = 'fechaDesc' THEN fecha END DESC NULLS LAST,
                 id
             ) AS posicion FROM filtradas
         )
