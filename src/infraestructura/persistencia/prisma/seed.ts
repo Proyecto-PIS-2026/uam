@@ -582,6 +582,62 @@ async function crearOperadores(archivos: Map<string, string>) {
   return operadorIds;
 }
 
+async function crearNotificacionesDemo(usuarios: { id: number; rol: "ADMINISTRADOR" | "OPERADOR" | "PRODUCTOR" }[]) {
+  const ahora = Date.now();
+  const rutasPorRol = {
+    ADMINISTRADOR: "/administracion",
+    OPERADOR: "/mi-mercado",
+    PRODUCTOR: "/mi-mercado/productor",
+  };
+  let cantidad = 0;
+
+  for (const usuario of usuarios) {
+    const avisos = [
+      {
+        titulo: "Precios de referencia",
+        descripcion: "Ya podés consultar los precios de referencia del mercado.",
+        url: "/precios-referencia",
+        vista: false,
+        horasAntes: 1,
+      },
+      {
+        titulo: "Tu espacio de trabajo",
+        descripcion: usuario.rol === "ADMINISTRADOR"
+          ? "Desde el panel de administración podés gestionar los usuarios y la configuración del mercado."
+          : "Revisá tus publicaciones y mantené actualizado tu catálogo para que otros usuarios puedan consultar tu oferta.",
+        url: rutasPorRol[usuario.rol],
+        vista: false,
+        horasAntes: 6,
+      },
+      {
+        titulo: "Recordatorio",
+        descripcion: "Recordá mantener tus datos de contacto actualizados para facilitar la comunicación con otros usuarios.",
+        url: null,
+        vista: false,
+        horasAntes: 24,
+      },
+      {
+        titulo: "Bienvenida",
+        descripcion: "Te damos la bienvenida al mercado. En esta sección vas a encontrar los avisos y novedades de tu cuenta.",
+        url: null,
+        vista: true,
+        horasAntes: 72,
+      },
+    ];
+
+    for (const { horasAntes, ...aviso } of avisos) {
+      await prisma.orm.public.Notificacion.create({
+        ...aviso,
+        usuarioId: usuario.id,
+        fecha: Temporal.Instant.fromEpochMilliseconds(ahora - horasAntes * 3_600_000),
+      });
+      cantidad++;
+    }
+  }
+
+  return cantidad;
+}
+
 async function main() {
   const consulta = cargarConsultaUam();
   const conversiones = validarFuente(consulta);
@@ -738,13 +794,15 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "fecha_consulta_catalogo", valorConfiguracion: consulta.survey_date });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf"});
 
+  const cantidadNotificaciones = await crearNotificacionesDemo(usuariosDb);
+
   // DATOS DE PRUEBA REALES PARA LAS TABLAS DE ESTADISTICAS
   console.log("Poblando tablas de estadísticas con alta densidad, variedad y cobertura diaria en octubre...");
 
   const usuariosPool = [
-    "jorge_ferias", "pablo_sappa", "diego_figueroa", "bacigalupi", "lucas_blanco", 
-    "britos_hns", "ciro_gentile", "guarino", "pizzorno", "don_juan", 
-    "caporale", "punto_natural", "pepe", "sandias_de_rivera", "citricola_salto_grande", 
+    "jorge_ferias", "pablo_sappa", "diego_figueroa", "bacigalupi", "lucas_blanco",
+    "britos_hns", "ciro_gentile", "guarino", "pizzorno", "don_juan",
+    "caporale", "punto_natural", "pepe", "sandias_de_rivera", "citricola_salto_grande",
     "productor_norte_salto", "productor_canelones_verde", "productor_san_jose_agro",
     "usuario_eliminado_carlos", "ex_operador_roberto"
   ];
@@ -884,6 +942,7 @@ async function main() {
     calibres: calibreIds.size,
     operadores: operadorIds.size,
     productores: productores.length,
+    notificaciones: cantidadNotificaciones,
     publicacionesOperadores: ofertas.length,
     publicacionesProductores: ofertasProductores.length,
     conPrecio,

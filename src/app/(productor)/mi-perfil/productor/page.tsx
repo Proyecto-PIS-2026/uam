@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { habilitarCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import { notFound } from "next/navigation";
 import { requerirProductor } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerMiPerfilProductor } from "@/modulos/usuarios/productores/perfil-propio/consultas-mi-perfil-productor";
@@ -27,6 +28,7 @@ export default async function PaginaMiPerfilProductor() {
                 <p><strong>Número de contacto:</strong> {productor.telefono ? `${productor.codigoPais} ${productor.telefono}` : "Sin número de contacto"}</p>
                 <div className={styles.acciones}>
                     <Link href="/mi-perfil/productor/editar" className="boton-primario">Modificar mi perfil</Link>
+                    {habilitarCambioContrasena && <Link href="/mi-perfil/cambiar-contrasena" className="boton-secundario">Cambiar contraseña</Link>}
                 </div>
             </section>
         </div>

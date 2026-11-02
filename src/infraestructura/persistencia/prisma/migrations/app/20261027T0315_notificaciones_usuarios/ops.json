@@ -1,0 +1,164 @@
+[
+  {
+    "id": "column.public.notificacion.fecha",
+    "label": "Add column \"fecha\" to \"notificacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "fecha",
+        "table": "notificacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"fecha\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "notificacion",
+          "fecha"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"fecha\"",
+        "sql": "ALTER TABLE \"public\".\"notificacion\" ADD COLUMN \"fecha\" timestamptz(3) DEFAULT (now()) NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"fecha\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "notificacion",
+          "fecha"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.notificacion.url",
+    "label": "Add column \"url\" to \"notificacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "url",
+        "table": "notificacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"url\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "notificacion",
+          "url"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"url\"",
+        "sql": "ALTER TABLE \"public\".\"notificacion\" ADD COLUMN \"url\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"url\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "notificacion",
+          "url"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.notificacion.notificacion_usuarioId_fecha_id_idx_eb1c24cd",
+    "label": "Create index \"notificacion_usuarioId_fecha_id_idx_eb1c24cd\" on \"notificacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "notificacion_usuarioId_fecha_id_idx_eb1c24cd",
+        "table": "notificacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"notificacion_usuarioId_fecha_id_idx_eb1c24cd\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notificacion_usuarioId_fecha_id_idx_eb1c24cd\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"notificacion_usuarioId_fecha_id_idx_eb1c24cd\"",
+        "sql": "CREATE INDEX \"notificacion_usuarioId_fecha_id_idx_eb1c24cd\" ON \"public\".\"notificacion\" (\"usuarioId\", \"fecha\", \"id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"notificacion_usuarioId_fecha_id_idx_eb1c24cd\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notificacion_usuarioId_fecha_id_idx_eb1c24cd\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.notificacion.notificacion_usuarioId_vista_idx_36fef1d8",
+    "label": "Create index \"notificacion_usuarioId_vista_idx_36fef1d8\" on \"notificacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "notificacion_usuarioId_vista_idx_36fef1d8",
+        "table": "notificacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"notificacion_usuarioId_vista_idx_36fef1d8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notificacion_usuarioId_vista_idx_36fef1d8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"notificacion_usuarioId_vista_idx_36fef1d8\"",
+        "sql": "CREATE INDEX \"notificacion_usuarioId_vista_idx_36fef1d8\" ON \"public\".\"notificacion\" (\"usuarioId\", \"vista\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"notificacion_usuarioId_vista_idx_36fef1d8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notificacion_usuarioId_vista_idx_36fef1d8\""
+        ]
+      }
+    ]
+  }
+]
