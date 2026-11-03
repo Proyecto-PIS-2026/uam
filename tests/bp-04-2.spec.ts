@@ -1,15 +1,13 @@
-import { test, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./usuarios-administrativos";
 import {
   iniciarSesionAdministrador
 } from "./autenticacion";
 
 const rutaInicioSesion = "/iniciar-sesion";
 
-test("BP-04.2: inicio de sesión de Administrador", async ({ page }) => {
-  const administrador = {
-    usuario: process.env.E2E_ADMINISTRADOR_USU ?? "",
-    contrasena: process.env.E2E_ADMINISTRADOR_PASS ?? "",
-  };
+test("BP-04.2: inicio de sesión de Administrador", async ({ page, usuariosAdministrativos }) => {
+  const administrador = usuariosAdministrativos.administrador;
 
   const mensajeError = page.locator("form").getByRole("alert");
   const menuUsuario = page.getByRole("button", { name: "Abrir menú de usuario" });
