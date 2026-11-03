@@ -1,6 +1,7 @@
 
 import { randomUUID } from "node:crypto";
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+import { test } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador } from "./autenticacion";
 
 // Este archivo crea, modifica y elimina un operador de prueba
@@ -12,15 +13,6 @@ test.use({
   screenshot: "only-on-failure",
   trace: "retain-on-failure",
 });
-
-async function entrarComoAdmin(page: Page) {
-  const usuario = process.env.E2E_ADMINISTRADOR_USU || process.env.E2E_ADMIN_USU;
-  const contrasena = process.env.E2E_ADMINISTRADOR_PASS || process.env.E2E_ADMIN_PASS;
-  if (!usuario || !contrasena) {
-    throw new Error("Configurá E2E_ADMIN_USU y E2E_ADMIN_PASS antes de ejecutar BP-01.");
-  }
-  await iniciarSesionAdministrador(page, { usuario, contrasena });
-}
 
 async function abrirGestionUsuarios(page: Page) {
   await page.goto("/administracion#usuarios");
@@ -92,9 +84,9 @@ test("CP-01.1-25: sin sesión no se puede acceder al alta", async ({ page }) => 
   await expect(page).toHaveURL(/\/iniciar-sesion(?:\?.*)?$/);
 });
 
-test("BP-01.1: validaciones de alta y controles del formulario", async ({ page }, info) => {
+test("BP-01.1: validaciones de alta y controles del formulario", async ({ page, usuariosAdministrativos }, info) => {
   test.setTimeout(120_000);
-  await entrarComoAdmin(page);
+  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
   await page.goto("/alta-usuario");
   await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Rol del usuario/ }), "Operador");
   const sufijo = randomUUID().slice(0, 8);
@@ -175,9 +167,9 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page }
   await expect(page.getByPlaceholder("Número de local").first()).toHaveValue("");
 });
 
-test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, browser }, info) => {
+test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, browser, usuariosAdministrativos }, info) => {
   test.setTimeout(240_000);
-  await entrarComoAdmin(page);
+  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
 
   const sufijo = randomUUID().slice(0, 8);
   const usuario = `e2e_${sufijo}`;

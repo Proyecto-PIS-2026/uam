@@ -1,7 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { crearSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { cerrarSesion, crearSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { cancelarSegundoFactor, iniciarSegundoFactor } from "@/modulos/identidad-acceso/autenticacion/segundo-factor";
+import { borrarCookieSegundoFactor, guardarCookieSegundoFactor, obtenerTokenSegundoFactor } from "@/modulos/identidad-acceso/autenticacion/cookie-segundo-factor";
 import { autenticarUsuario } from "@/modulos/identidad-acceso/autenticacion/autenticarUsuario";
 import { existeUsuarioPorNombre } from "@/modulos/identidad-acceso/autenticacion/consultasAutenticacion";
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
@@ -113,6 +115,15 @@ export async function iniciarSesion(
         };
     }
 
+    await cancelarSegundoFactor(await obtenerTokenSegundoFactor());
+    await borrarCookieSegundoFactor();
+    if (usuario.rol === "ADMINISTRADOR") {
+        await cerrarSesion();
+        const resultado = await iniciarSegundoFactor(usuario.usuarioId);
+        if ("error" in resultado) return resultado;
+        await guardarCookieSegundoFactor(resultado.token);
+        redirect("/iniciar-sesion/segundo-factor");
+    }
     if (usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR") {
         await registrarVisitaLogin(usuario.rol);
     }

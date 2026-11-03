@@ -2000,10 +2000,52 @@
                   "kind": "scalar"
                 }
               },
+              "twoFactorChallengeHash": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "twoFactorEnabled": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "twoFactorExpiresAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "twoFactorFailedAttempts": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "twoFactorLastStep": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "twoFactorLockedUntil": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "twoFactorPendingSecret": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -2056,8 +2098,26 @@
                 "solicitoRestablecimiento": {
                   "column": "solicitoRestablecimiento"
                 },
+                "twoFactorChallengeHash": {
+                  "column": "twoFactorChallengeHash"
+                },
                 "twoFactorEnabled": {
                   "column": "twoFactorEnabled"
+                },
+                "twoFactorExpiresAt": {
+                  "column": "twoFactorExpiresAt"
+                },
+                "twoFactorFailedAttempts": {
+                  "column": "twoFactorFailedAttempts"
+                },
+                "twoFactorLastStep": {
+                  "column": "twoFactorLastStep"
+                },
+                "twoFactorLockedUntil": {
+                  "column": "twoFactorLockedUntil"
+                },
+                "twoFactorPendingSecret": {
+                  "column": "twoFactorPendingSecret"
                 },
                 "twoFactorSecret": {
                   "column": "twoFactorSecret"
@@ -3786,6 +3846,11 @@
                   "nativeType": "bool",
                   "nullable": false
                 },
+                "twoFactorChallengeHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "twoFactorEnabled": {
                   "codecId": "pg/bool@1",
                   "default": {
@@ -3794,6 +3859,35 @@
                   },
                   "nativeType": "bool",
                   "nullable": false
+                },
+                "twoFactorExpiresAt": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "twoFactorFailedAttempts": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "twoFactorLastStep": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "twoFactorLockedUntil": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "twoFactorPendingSecret": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "twoFactorSecret": {
                   "codecId": "pg/text@1",
@@ -3817,6 +3911,11 @@
                 {
                   "columns": [
                     "username"
+                  ]
+                },
+                {
+                  "columns": [
+                    "twoFactorChallengeHash"
                   ]
                 }
               ]
@@ -3921,7 +4020,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "587d00b79527ec81141f638af26883b9e798538aeb430f58bbb416f5b1c05588"
+    "storageHash": "d5efabd362361b30e8605fcbda72e058bc06328b97ce4850c8f4656180df0075"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { expect, test, type BrowserContext, type Page, type TestInfo } from "@playwright/test";
+import { expect, type BrowserContext, type Page, type TestInfo } from "@playwright/test";
+import { test } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador, iniciarSesionProductor } from "./autenticacion";
 
 /**
@@ -7,8 +8,8 @@ import { iniciarSesionAdministrador, iniciarSesionProductor } from "./autenticac
  * Crea UN productor ficticio por ejecución y lo elimina al terminar.
  * No usa ni elimina productores de la seed.
  *
- * Requiere la aplicación ya funcionando y las variables
- * E2E_BP02_ADMIN_USU / E2E_BP02_ADMIN_PASS (sin interferir con el config de Playwright).
+ * Requiere la aplicación funcionando y DATABASE_URL apuntando a su base.
+ * Cada prueba usa una cuenta administrativa propia para completar el segundo factor.
  */
 const CLAVE = "Prueba12345!";
 
@@ -23,15 +24,6 @@ type Catalogos = {
   calibres: Opcion[];
   paises: Opcion[];
 };
-
-async function accederComoAdmin(page: Page) {
-  const usuario = process.env.E2E_BP02_ADMIN_USU || process.env.E2E_ADMINISTRADOR_USU;
-  const contrasena = process.env.E2E_BP02_ADMIN_PASS || process.env.E2E_ADMINISTRADOR_PASS;
-  if (!usuario || !contrasena) {
-    throw new Error("Configurá E2E_BP02_ADMIN_USU y E2E_BP02_ADMIN_PASS antes de ejecutar BP-02.");
-  }
-  await iniciarSesionAdministrador(page, { usuario, contrasena });
-}
 
 async function abrirGestion(page: Page) {
   await page.goto("/administracion#usuarios");
@@ -127,7 +119,7 @@ test("BP-02: sin sesión no se accede al alta, listado ni perfiles administrativ
   }
 });
 
-test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo Productor", async ({ page, browser }, info) => {
+test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo Productor", async ({ page, browser, usuariosAdministrativos }, info) => {
   test.setTimeout(240_000);
   const sufijo = randomUUID().slice(0, 8);
   const username = `e2e_bp02_${sufijo}`;
@@ -139,7 +131,7 @@ test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo P
   let contextoProductor: BrowserContext | undefined;
   let segundaPestana: Page | undefined;
 
-  await accederComoAdmin(page);
+  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
   try {
     await test.step("BP-02.1: validaciones del formulario (matriz: campos y datos inválidos)", async () => {
       await abrirAltaProductor(page);
