@@ -1,0 +1,329 @@
+.tarjeta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+    box-sizing: border-box;
+    width: 100%;
+    padding: var(--padding-panel);
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+.titulo {
+    margin: 0;
+    color: var(--color-secondary);
+    font-family: inherit;
+    font-size: 1.25rem;
+    line-height: var(--interlineado-titulo-pagina);
+    font-weight: 700;
+}
+
+.descripcion {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.contenedorFiltro {
+    width: 100%;
+    min-width: 0;
+}
+
+.contenedorBusqueda {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.selectMui {
+    width: 100%;
+    min-width: 0;
+}
+
+.selectMui :global(.MuiOutlinedInput-root) {
+    background-color: var(--color-surface);
+}
+
+.selectMui :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.selectMui :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-secondary) !important;
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-secondary) !important;
+    border-width: 2px;
+}
+
+.selectMui :global(.MuiInputLabel-root.Mui-focused) {
+    color: var(--color-secondary) !important;
+}
+
+.selectMui :global(.MuiInputBase-input) {
+    color: var(--color-foreground);
+}
+
+.opcionSelect:global(.Mui-selected),
+.opcionSelect:global(.Mui-selected):hover {
+    background-color: var(--color-secondary-soft) !important;
+}
+
+.selectMui :global(input[type="search"])::-webkit-search-cancel-button {
+    filter: invert(94.63%) sepia(94%) saturate(1606%) hue-rotate(73.59deg) brightness(50.79%) contrast(173.72%);
+}
+
+.selectMui.selectorEspecie {
+    width: calc(100% - 2.5rem - var(--espacio-controles));
+    max-width: none;
+}
+
+.pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.resultados {
+    color: var(--color-foreground);
+    font-size: 0.8rem;
+}
+
+.limpiar {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.limpiar:hover {
+    text-decoration: underline;
+}
+
+.limpiar:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.filaEspecie {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-controles);
+    width: 100%;
+    min-width: 0;
+}
+
+.filaEspecie .selectMui {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+}
+
+.filaEspecie .botonGuardar {
+    flex-shrink: 0;
+}
+
+.seccionImagen {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.contenedorImagen {
+    position: relative;
+    width: 9rem;
+    height: 9rem;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    background-color: var(--color-secondary-soft);
+}
+
+.imagen {
+    object-fit: cover;
+}
+
+.sinFoto {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    background-color: var(--color-secondary-soft);
+    color: var(--color-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.iconoFoto {
+    font-size: 1.7rem !important;
+}
+
+.detalleFoto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+    box-sizing: border-box;
+    padding-top: 0.25rem;
+}
+
+.tituloFoto {
+    color: var(--color-secondary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.ayudaFoto {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.accionesImagen {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.capaPreview {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: inherit;
+    background-color: var(--color-secondary-soft);
+}
+
+.botonAccion,
+.botonEliminar,
+.botonGuardar {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+}
+
+.botonAccion:not(:disabled),
+.botonGuardar:not(:disabled) {
+    color: var(--color-secondary) !important;
+}
+
+.botonGuardar:not(:disabled) {
+    background-color: var(--color-secondary-soft) !important;
+}
+
+.botonAccion:not(:disabled):hover,
+.botonGuardar:not(:disabled):hover {
+    background-color: var(--color-secondary-soft) !important;
+}
+
+.botonEliminar:not(:disabled) {
+    color: #dc2626 !important;
+}
+
+.botonEliminar:not(:disabled):hover {
+    background-color: #fee2e2 !important;
+}
+
+.ampliarFoto {
+    position: absolute;
+    inset: 0;
+    border: none;
+    border-radius: inherit;
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.ampliarFoto:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: -4px;
+}
+
+.modalFoto.modalFoto {
+    position: relative;
+    width: min(32rem, calc(100vw - 1.5rem));
+    margin: var(--espacio-controles);
+    padding: 0;
+    border-radius: var(--radio-panel);
+    overflow: hidden;
+    background-color: var(--color-surface);
+}
+
+.fotoAmpliada {
+    position: relative;
+    width: 100%;
+    height: min(30rem, 75dvh);
+}
+
+.imagenAmpliada {
+    object-fit: cover;
+    object-position: center;
+}
+
+.cerrarFoto {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--alto-control);
+    height: var(--alto-control);
+    padding: 0;
+    box-sizing: border-box;
+    border: 1px solid var(--color-secondary);
+    border-radius: var(--radio-control);
+    background-color: var(--color-surface);
+    color: var(--color-secondary);
+    cursor: pointer;
+}
+
+.cerrarFoto:hover {
+    background-color: var(--color-surface);
+}
+
+.cerrarFoto:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: -4px;
+}
+
+.selectMui :global(.MuiAutocomplete-clearIndicator),
+.selectMui :global(.MuiAutocomplete-popupIndicator) {
+    color: rgba(0, 0, 0, 0.54);
+}
+
+.opcionAutocomplete[aria-selected="true"],
+.opcionAutocomplete[aria-selected="true"]:global(.Mui-focused) {
+    background-color: var(--color-secondary-soft) !important;
+}
+
+@media (min-width: 768px) {
+    .modalFoto.modalFoto {
+        width: min(50rem, calc(100vw - 2rem));
+        margin: var(--espacio-secciones);
+    }
+
+    .fotoAmpliada {
+        height: min(38rem, 80dvh);
+    }
+}

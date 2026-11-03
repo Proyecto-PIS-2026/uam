@@ -108,7 +108,21 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
         let temporizadorTamano: ReturnType<typeof setTimeout> | undefined;
 
         void import("leaflet").then((leaflet) => {
-            if (!activo || !elementoMapa.isConnected) return;
+            if (!activo || !elementoMapa.isConnected) {
+                return;
+            }
+            nombreEditadoRef.current = Boolean(nombreLugarInicial.trim());
+            setNombre(nombreLugarInicial);
+            setNombreRevisado(false);
+            setSeleccion(inicial?.departamento ? inicial : null);
+            setErrorSeleccion("");
+            setErrorBusqueda("");
+            setErrorMapa("");
+            setBusqueda("");
+            setResultados([]);
+            setBuscando(false);
+            setIdentificando(false);
+            setMapaListo(false);
             const centro: [number, number] = inicial ? [inicial.latitud, inicial.longitud] : CENTRO_URUGUAY;
             const mapa = leaflet.map(elementoMapa).setView(centro, inicial ? 14 : 6);
             mapaInstanciaRef.current = mapa;
@@ -206,7 +220,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             mapaInstanciaRef.current?.remove();
             mapaInstanciaRef.current = null;
         };
-    }, [elementoMapa, inicial]);
+    }, [elementoMapa, inicial, nombreLugarInicial]);
 
     function cerrar() {
         solicitudBusquedaRef.current += 1;

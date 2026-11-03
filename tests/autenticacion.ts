@@ -29,11 +29,14 @@ export async function iniciarSesionAdministrador(page: Page, credenciales: Crede
   await page.getByRole("button", { name: /^(Confirmar|Verificar) e ingresar$/ }).click();
   await expect(page).toHaveURL(/\/inicio$/, { timeout: 30_000 });
   secretosVinculados.set(credenciales.usuario, { secreto, ultimoPaso });
-  await page.getByRole("link", { name: "Administración", exact: true }).click();
-  await expect(page).toHaveURL(/\/administracion$/, { timeout: 30_000 });
-  await expect(
-    page.getByRole("heading", { name: "Panel Administrativo", exact: true, level: 1 }),
-  ).toBeVisible();
+
+  const enlace = page.getByRole("link", { name: "Administración", exact: true });
+  await expect(enlace).toHaveAttribute("href", "/administracion");
+
+  const respuesta = await page.goto("/administracion");
+  expect(respuesta?.status(), "Administración debe responder correctamente").toBe(200);
+  await expect(page).toHaveURL(/\/administracion$/);
+  await expect(page.getByRole("heading", { name: "Panel Administrativo", exact: true, level: 1 })).toBeVisible();
 }
 
 export async function iniciarSesionProductor(page: Page, credenciales: Credenciales) {

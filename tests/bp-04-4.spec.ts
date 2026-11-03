@@ -260,7 +260,7 @@ test("BP-04.4 CA-5 CP-09: mercado de otro Operador", async ({ page, request, bro
   const operadores = await obtenerOperadores(request);
   await iniciarSesionOperador(page);
   const [propio] = await obtenerOperadores(page.request);
-  const ajeno = operadores.find((operador) => operador.nombre === "Jorge Ferias");
+  const ajeno = operadores.find((operador) => operador.id !== propio.id);
   expect(ajeno).toBeDefined();
   expect(ajeno!.id).not.toBe(propio.id);
 

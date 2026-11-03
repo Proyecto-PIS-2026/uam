@@ -1,6 +1,6 @@
 import { esEntradaPrecioPublicacion } from "@/modulos/publicaciones/precio-publicacion";
 
-export type OrdenConsulta = "ninguno" | "prioridad" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
+export type OrdenConsulta = "ninguno" | "prioridad" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc" | "fechaDesc";
 
 export type FiltrosConsulta = {
     busqueda?: string;
@@ -39,7 +39,7 @@ export function normalizarFiltros(valor: FiltrosConsulta = {}) {
         return numero;
     };
     const orden = valor.orden ?? "prioridad";
-    if (!["ninguno", "prioridad", "precioAsc", "precioDesc", "alfabeticoAsc", "alfabeticoDesc"].includes(orden)) throw new Error("El orden no es válido.");
+    if (!["ninguno", "prioridad", "precioAsc", "precioDesc", "alfabeticoAsc", "alfabeticoDesc", "fechaDesc"].includes(orden)) throw new Error("El orden no es válido.");
     return {
         busqueda: texto("busqueda", 200).toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
         especie: texto("especie"), variedad: texto("variedad"), presentacion: texto("presentacion"),

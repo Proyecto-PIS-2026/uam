@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     obtenerOperadorActual: vi.fn(),
-    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
     obtenerSesion: vi.fn(),
 }));
 

@@ -7,9 +7,11 @@ import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
+import { compararPorPonderacionYFecha } from "../ponderacion-publicacion";
+import type { PublicacionListado } from "../../consulta-mercado/acciones/PublicacionesOperador";
 import styles from "./FiltrosPublicaciones.module.css";
 
-import type { FiltrosConsulta, OpcionProducto } from "../../consulta-mercado/acciones/filtros-consulta";
+import type { FiltrosConsulta, OpcionProducto, OrdenConsulta } from "../../consulta-mercado/acciones/filtros-consulta";
 
 type PublicacionFiltrable = {
     especie: string;
@@ -19,6 +21,8 @@ type PublicacionFiltrable = {
     calibre: string;
     codigoCalibre: string;
     precio: number | null;
+    fecha: string;
+    tipoPublicacion?: "OPERADOR" | "PRODUCTOR";
 };
 
 type FiltrosPublicacionesProps<T extends PublicacionFiltrable> = {
@@ -34,6 +38,7 @@ type FiltrosPublicacionesProps<T extends PublicacionFiltrable> = {
     alCambiarEspecie?: (especie: string) => void;
     ordenInicial?: OrdenPublicaciones;
     alCambiarOrden?: (orden: OrdenPublicaciones) => void;
+    ordenamientoHabilitado?: boolean;
 };
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
@@ -53,7 +58,7 @@ const compararPrecios = (a: PublicacionFiltrable, b: PublicacionFiltrable, ascen
     return ascendente ? a.precio - b.precio : b.precio - a.precio;
 };
 
-export type OrdenPublicaciones = "ninguno" | "prioridad" | "precioAsc" | "precioDesc" | "alfabeticoAsc" | "alfabeticoDesc";
+export type OrdenPublicaciones = OrdenConsulta;
 
 export function compararPublicacionesAlfabeticamente(a: Pick<PublicacionFiltrable, "especie" | "variedad">, b: Pick<PublicacionFiltrable, "especie" | "variedad">) {
     const especie = compararOpciones(a.especie, b.especie);
@@ -65,7 +70,32 @@ export function compararPublicacionesPorPrioridad(a: Pick<PublicacionFiltrable, 
     return especie !== 0 ? especie : compararOpciones(a.variedad, b.variedad);
 }
 
-export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({publicaciones, especieFiltro, obtenerNombreFantasia, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, navesDisponibles, totalRemoto, alConsultar}: FiltrosPublicacionesProps<T>) {
+export function compararPublicacionesOperador(a: PublicacionListado, b: PublicacionListado, orden: OrdenConsulta): number {
+    let comparacion = 0;
+    switch (orden) {
+        case "precioAsc":
+            comparacion = compararPrecios(a, b, true);
+            break;
+        case "precioDesc":
+            comparacion = compararPrecios(a, b, false);
+            break;
+        case "alfabeticoAsc":
+            comparacion = compararOpciones(a.especie, b.especie);
+            break;
+        case "alfabeticoDesc":
+            comparacion = compararOpciones(b.especie, a.especie);
+            break;
+        case "prioridad":
+            comparacion = compararEspeciesPorPrioridad(a.especie, b.especie);
+            break;
+        case "fechaDesc":
+            comparacion = new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+            break;
+    }
+    return comparacion || compararPorPonderacionYFecha(a, b);
+}
+
+export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({publicaciones, especieFiltro, obtenerNombreFantasia, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, navesDisponibles, totalRemoto, alConsultar, ordenamientoHabilitado = true}: FiltrosPublicacionesProps<T>) {
     const opciones: OpcionProducto[] = opcionesRemotas ?? publicaciones;
     const mostrarNave = navesDisponibles !== undefined;
     // Hooks useState para los filtros
@@ -89,7 +119,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     const idFiltrosExtendidos = useId();
 
     // Filtros de Ordenamiento
-    const [orden, setOrden] = useState<OrdenPublicaciones>(ordenInicial);
+    const [ordenElegido, setOrden] = useState<OrdenPublicaciones>(ordenInicial);
+    const orden = ordenamientoHabilitado ? ordenElegido : ordenInicial;
 
     const [publicacionesAnteriores, setPublicacionesAnteriores] = useState(opciones);
     const especieNotificada = useRef(especie);
@@ -264,12 +295,13 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         });
 
         // Ordenamiento
+        if (filtradas.every((publicacion): publicacion is T & PublicacionListado => publicacion.tipoPublicacion === "OPERADOR")) return [...filtradas].sort((a, b) => compararPublicacionesOperador(a, b, orden)); 
         if (orden === "precioAsc") return [...filtradas].sort((a, b) => compararPrecios(a, b, true));
         if (orden === "precioDesc") return [...filtradas].sort((a, b) => compararPrecios(a, b, false));
         if (orden === "prioridad") return [...filtradas].sort(compararPublicacionesPorPrioridad);
         if (orden === "alfabeticoAsc") return [...filtradas].sort(compararPublicacionesAlfabeticamente);
         if (orden === "alfabeticoDesc") return [...filtradas].sort((a, b) => compararPublicacionesAlfabeticamente(b, a));
-
+        if (orden === "fechaDesc") {return [...filtradas].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())}
         return filtradas;
     }, [publicaciones, opcionesRemotas, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden, obtenerNombreFantasia]);
 
@@ -491,18 +523,20 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                     <BotonDesplegable className={styles.botonExtendidos} abierto={mostrarFiltros} aria-controls={idFiltrosExtendidos} onClick={() => setMostrarFiltros((valorActual) => !valorActual)}>
                         Más filtros
                     </BotonDesplegable>
-                    <BotonOrdenar<OrdenPublicaciones>
-                        valor={orden}
-                        alCambiar={cambiarOrden}
-                        className={styles.botonOrdenar}
-                        opciones={[
-                            ...(ordenInicial !== "prioridad" ? [{ valor: "ninguno" as const, etiqueta: "Sin ordenar" }] : []),
-                            { valor: "precioAsc", etiqueta: "Menor Precio" },
-                            { valor: "precioDesc", etiqueta: "Mayor Precio" },
-                            { valor: "alfabeticoAsc", etiqueta: "A-Z" },
-                            { valor: "alfabeticoDesc", etiqueta: "Z-A" },
-                        ]}
-                    />
+                    {ordenamientoHabilitado && (
+                        <BotonOrdenar<OrdenPublicaciones>
+                            valor={orden}
+                            alCambiar={cambiarOrden}
+                            className={styles.botonOrdenar}
+                            opciones={[
+                                { valor: "precioAsc", etiqueta: "Menor Precio" },
+                                { valor: "precioDesc", etiqueta: "Mayor Precio" },
+                                { valor: "alfabeticoAsc", etiqueta: "A-Z" },
+                                { valor: "alfabeticoDesc", etiqueta: "Z-A" },
+                                { valor: "fechaDesc", etiqueta: "Más actualizadas" },
+                            ]}
+                        />
+                    )}
                 </div>
             </div>
 

@@ -3,30 +3,28 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import styles from "./ContenedorConfiguracionGeneral.module.css";
+import styles from "./ContenedorConfiguraciones.module.css";
 
 const pestañas = [
     { id: "estadisticas", etiqueta: "Estadísticas" },
-    { id: "publicaciones", etiqueta: "Publicaciones" },
     { id: "usuarios", etiqueta: "Usuarios" },
-    { id: "publico", etiqueta: "Público" },
+    { id: "general", etiqueta: "General" },
 ] as const;
 
 type IdPestaña = typeof pestañas[number]["id"];
 
 interface ContenedorConfiguracionGeneralProps {
+    general: ReactNode;
     estadisticas: ReactNode;
-    publicaciones: ReactNode;
     usuarios: ReactNode;
-    publica: ReactNode;
 }
 
 function suscribirCambiosHash(callback: () => void) {
-    if (typeof window === "undefined") return () => {};
-
+    if (typeof window === "undefined") {
+        return () => {};
+    }
     window.addEventListener("hashchange", callback);
     window.addEventListener("popstate", callback);
-
     return () => {
         window.removeEventListener("hashchange", callback);
         window.removeEventListener("popstate", callback);
@@ -42,7 +40,7 @@ function obtenerPestañaServidor(): IdPestaña {
     return pestañas[0].id;
 }
 
-export default function ContenedorConfiguracionGeneral({ estadisticas, publicaciones, usuarios, publica }: ContenedorConfiguracionGeneralProps) {
+export default function ContenedorConfiguracionGeneral({ estadisticas, general, usuarios }: ContenedorConfiguracionGeneralProps) {
     const router = useRouter();
     const [pestañaLocal, setPestañaLocal] = useState<IdPestaña | null>(null);
 
@@ -54,10 +52,8 @@ export default function ContenedorConfiguracionGeneral({ estadisticas, publicaci
         function sincronizarPestaña() {
             setPestañaLocal(null);
         }
-
         window.addEventListener("hashchange", sincronizarPestaña);
         window.addEventListener("popstate", sincronizarPestaña);
-
         return () => {
             window.removeEventListener("hashchange", sincronizarPestaña);
             window.removeEventListener("popstate", sincronizarPestaña);
@@ -65,18 +61,19 @@ export default function ContenedorConfiguracionGeneral({ estadisticas, publicaci
     }, []);
 
     const contenidos: Record<IdPestaña, ReactNode> = {
+        "general": general,
         "estadisticas": estadisticas,
-        "publicaciones": publicaciones,
         "usuarios": usuarios,
-        "publico": publica,
     };
 
     function seleccionarPestaña(id: IdPestaña) {
         setPestañaLocal(id);
-        if (window.location.hash !== `#${id}`) router.push(`${window.location.pathname}${window.location.search}#${id}`, { scroll: false });
+        if (window.location.hash !== `#${id}`) {
+            router.push(`${window.location.pathname}${window.location.search}#${id}`, { scroll: false });
+        }
     }
 
-    return (
+    const contenido = (
         <section className={styles.contenedor}>
             <div className={styles.botones} role="group" aria-label="Secciones de configuración">
                 {pestañas.map((pestaña) => (
@@ -85,10 +82,10 @@ export default function ContenedorConfiguracionGeneral({ estadisticas, publicaci
                     </button>
                 ))}
             </div>
-
             <div id="panel-configuracion" className={styles.panel}>
                 {contenidos[pestañaSeleccionada]}
             </div>
         </section>
     );
+    return contenido; 
 }
