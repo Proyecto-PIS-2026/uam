@@ -1,46 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { test as testBase } from "./usuarios-administrativos";
+import { test } from "./usuarios-administrativos";
+import { test as testPrecarga } from "./precarga-operadores";
 import { iniciarSesionAdministrador, iniciarSesionOperador, iniciarSesionProductor } from "./autenticacion";
-
-type RegistrarLimpieza = (accion: () => Promise<void>) => void;
-
-async function ejecutarCambioPrecio(page: Page, tarjeta: Locator, accion: () => Promise<void>) {
-    const [respuesta] = await Promise.all([
-        page.waitForResponse((respuesta) =>
-            respuesta.request().method() === "POST" &&
-            respuesta.request().headers()["next-action"] !== undefined,
-            { timeout: 30_000 }
-        ),
-        accion(),
-    ]);
-
-    expect(respuesta.ok(), "La acción de cambio de precio debe responder correctamente").toBe(true);
-    await expect(botonPrecio(tarjeta)).toBeEnabled({ timeout: 30_000 });
-}
-
-const test = testBase.extend<{ registrarLimpieza: RegistrarLimpieza }>({
-    registrarLimpieza: [async ({ page }, usar) => {
-        const acciones: Array<() => Promise<void>> = [];
-
-        try {
-            await usar((accion) => acciones.push(accion));
-        } finally {
-            const errores: unknown[] = [];
-
-            for (const accion of acciones.reverse()) {
-                try {
-                    await accion();
-                } catch (error) {
-                    errores.push(error);
-                }
-            }
-
-            if (errores.length > 0) {
-                throw new AggregateError(errores, `Falló la restauración de datos. Página: ${page.url()}`);
-            }
-        }
-    }, { timeout: 60_000 }],
-});
 
 const tituloImporte = "Importe de ajuste rápido de precios";
 const confirmacionGuardado = "El importe de ajuste rápido de precios se guardó correctamente.";
@@ -78,42 +39,22 @@ async function restaurarImporte(page: Page, original: string) {
     expect(await lectura.json()).toMatchObject({ valor: original });
 }
 
-function tarjetaProducto(page: Page, nombre: string) {
-    return page.getByTitle(nombre, { exact: true }).locator('xpath=ancestor::div[./button[starts-with(@aria-label, "Ver detalle de ")]][1]');
-}
-
 function botonPrecio(tarjeta: Locator) {
     return tarjeta.getByRole("button").and(tarjeta.getByTitle("Editar precio", { exact: true }));
 }
 
-async function buscarProductoConPrecio(page: Page) {
-    const precios = page.getByRole("button").and(page.getByTitle("Editar precio", { exact: true }));
-    await expect(precios.first()).toBeVisible();
+async function ejecutarCambioPrecio(page: Page, tarjeta: Locator, accion: () => Promise<void>) {
+    const [respuesta] = await Promise.all([
+        page.waitForResponse((respuesta) =>
+            respuesta.request().method() === "POST" &&
+            respuesta.request().headers()["next-action"] !== undefined,
+            { timeout: 30_000 }
+        ),
+        accion(),
+    ]);
 
-    for (let indice = 0; indice < await precios.count(); indice++) {
-        const precio = precios.nth(indice);
-        const texto = (await precio.innerText()).trim();
-        if (!/^\$[1-9]\d*$/.test(texto)) continue;
-
-        const tarjeta = precio.locator('xpath=ancestor::div[./button[starts-with(@aria-label, "Ver detalle de ")] and .//div[@title]][1]');
-        const nombreProducto = tarjeta.locator("div[title]");
-        await expect(nombreProducto).toHaveCount(1);
-
-        const nombre = await nombreProducto.getAttribute("title");
-        if (!nombre || await page.getByTitle(nombre, { exact: true }).count() !== 1) continue;
-
-        const valor = Number(texto.slice(1));
-        if (!Number.isSafeInteger(valor) || valor + 37 > 9999999999) continue;
-
-        return { nombre, precio: valor };
-    }
-
-    throw new Error("Se necesita una publicación con precio positivo y nombre único para probar el ajuste rápido.");
-}
-
-async function leerPrecios(page: Page) {
-    const precios = page.getByRole("button").and(page.getByTitle("Editar precio", { exact: true }));
-    return (await precios.allTextContents()).map((texto) => texto.trim()).sort();
+    expect(respuesta.ok(), "La acción de cambio de precio debe responder correctamente").toBe(true);
+    await expect(botonPrecio(tarjeta)).toBeEnabled({ timeout: 30_000 });
 }
 
 test("BP-18.6: muestra los paneles en el orden configurado y abre General", async ({ page, usuariosAdministrativos }) => {
@@ -271,76 +212,97 @@ test("BP-18.2: rechaza cero sin reemplazar el importe guardado", async ({ page, 
     await expect(campoImporte(page)).toHaveValue(original);
 });
 
-test("BP-18.2: guarda el importe y lo aplica al ajuste rápido del operador", async ({ page, browser, usuariosAdministrativos, registrarLimpieza }) => {
-    test.setTimeout(180_000);
-    await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
+testPrecarga("BP-18.2: guarda el importe y lo aplica al ajuste rápido del operador", async ({ page, browser, precargaOperadores }) => {
+    testPrecarga.setTimeout(180_000);
+
+    const { db, operadorA } = precargaOperadores;
+    const precioInicial = 100;
+    const especie = await db.orm.public.Especie.select("id").first();
+    expect(especie).not.toBeNull();
+    if (!especie) throw new Error("No hay especies para preparar la publicación.");
+
+    type Precio = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
+
+    const publicacion = await db.transaction(async (tx) => {
+        const creada = await tx.orm.public.Publicacion.create({
+            especieId: especie.id,
+            tipoPublicacion: "OPERADOR",
+            precio: String(precioInicial) as Precio,
+            publicacionActiva: true,
+            publicacionDisponible: true,
+        });
+
+        await tx.orm.public.PublicacionOperador.create({ publicacionId: creada.id, operadorId: operadorA.id });
+        return creada;
+    });
+
+    await iniciarSesionAdministrador(page, precargaOperadores.administrador);
     await abrirGeneral(page);
 
     const original = await campoImporte(page).inputValue();
     expect(original).toMatch(/^[1-9]\d*$/);
     const nuevo = original === "25" ? "37" : "25";
-
     const operador = await browser.newPage();
-    registrarLimpieza(async () => {
-        if (!operador.isClosed()) await operador.close();
-    });
 
-    await iniciarSesionOperador(operador);
-    const producto = await buscarProductoConPrecio(operador);
-    const tarjeta = tarjetaProducto(operador, producto.nombre);
-    const precio = botonPrecio(tarjeta);
-    const preciosOriginales = await leerPrecios(operador);
-    let precioRestaurado = false;
+    async function comprobarPrecioGuardado(esperado: number) {
+        await expect.poll(async () => {
+            const guardada = await db.orm.public.Publicacion.where({ id: publicacion.id }).select("precio").first();
+            return guardada?.precio == null ? null : Number(guardada.precio);
+        }, { timeout: 30_000 }).toBe(esperado);
+    }
 
-    registrarLimpieza(() => restaurarImporte(page, original));
+    try {
+        await operador.goto("/iniciar-sesion");
+        await operador.getByLabel("Correo electrónico o nombre de usuario").fill(operadorA.credenciales.usuario);
+        await operador.getByLabel("Contraseña", { exact: true }).fill(operadorA.credenciales.contrasena);
+        await operador.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
+        await expect(operador).toHaveURL((url) => decodeURIComponent(url.pathname) === `/mi-mercado/${operadorA.nombre}`, { timeout: 30_000 });
+        await expect(operador.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible({ timeout: 30_000 });
 
-    await test.step("Guardar y comprobar persistencia", async () => {
-        await campoImporte(page).fill(nuevo);
-        await guardarImporte(page).click();
-        await expect(page.getByRole("status").filter({ hasText: confirmacionGuardado })).toBeVisible({ timeout: 30_000 });
-        await expect(guardarImporte(page)).toBeDisabled();
-
-        await page.reload({ waitUntil: "domcontentloaded" });
-        await expect(campoImporte(page)).toHaveValue(nuevo);
-
-        await operador.reload({ waitUntil: "domcontentloaded" });
-        await expect.poll(() => leerPrecios(operador)).toEqual(preciosOriginales);
-    });
-
-    registrarLimpieza(async () => {
-        if (precioRestaurado) return;
-        await operador.goto("/mi-mercado", { waitUntil: "domcontentloaded" });
-        const tarjeta = tarjetaProducto(operador, producto.nombre);
+        const tarjeta = operador.getByRole("main");
         const precio = botonPrecio(tarjeta);
-        await expect(precio).toBeEnabled();
+        const aumentar = tarjeta.getByRole("button", { name: "Aumentar precio", exact: true });
+        const disminuir = tarjeta.getByRole("button", { name: "Disminuir precio", exact: true });
 
-        if ((await precio.innerText()).trim() !== `$${producto.precio}`) {
-            await precio.click();
-            const entrada = tarjeta.getByRole("textbox", { name: "Editar precio", exact: true });
-            await entrada.fill(String(producto.precio));
-            await ejecutarCambioPrecio(operador, tarjeta, () => entrada.press("Enter"));
-            await expect(precio).toHaveText(`$${producto.precio}`);
-            await expect(precio).toBeEnabled();
+        await expect(precio).toHaveCount(1);
+        await expect(precio).toHaveText(`$${precioInicial}`);
+
+        await testPrecarga.step("Guardar el importe y comprobar persistencia", async () => {
+            await campoImporte(page).fill(nuevo);
+            await guardarImporte(page).click();
+            await expect(page.getByRole("status").filter({ hasText: confirmacionGuardado })).toBeVisible({ timeout: 30_000 });
+            await expect(guardarImporte(page)).toBeDisabled();
+
+            await page.reload({ waitUntil: "domcontentloaded" });
+            await expect(campoImporte(page)).toHaveValue(nuevo);
+            await comprobarPrecioGuardado(precioInicial);
+
+            await operador.reload({ waitUntil: "domcontentloaded" });
+            await expect(precio).toHaveText(`$${precioInicial}`);
+        });
+
+        await testPrecarga.step("Aumentar y comprobar persistencia", async () => {
+            await ejecutarCambioPrecio(operador, tarjeta, () => aumentar.click());
+            await expect(precio).toHaveText(`$${precioInicial + Number(nuevo)}`);
+            await comprobarPrecioGuardado(precioInicial + Number(nuevo));
+
+            await operador.reload({ waitUntil: "domcontentloaded" });
+            await expect(precio).toHaveText(`$${precioInicial + Number(nuevo)}`);
+        });
+
+        await testPrecarga.step("Disminuir y comprobar persistencia", async () => {
+            await ejecutarCambioPrecio(operador, tarjeta, () => disminuir.click());
+            await expect(precio).toHaveText(`$${precioInicial}`);
+            await comprobarPrecioGuardado(precioInicial);
+
+            await operador.reload({ waitUntil: "domcontentloaded" });
+            await expect(precio).toHaveText(`$${precioInicial}`);
+        });
+    } finally {
+        try {
+            await restaurarImporte(page, original);
+        } finally {
+            await operador.close();
         }
-    });
-
-    await test.step("Aumentar y comprobar persistencia", async () => {
-        await ejecutarCambioPrecio(operador, tarjeta, () => tarjeta.getByRole("button", { name: "Aumentar precio", exact: true }).click());
-        await expect(precio).toHaveText(`$${producto.precio + Number(nuevo)}`);
-        await expect(precio).toBeEnabled();
-
-        await operador.reload({ waitUntil: "domcontentloaded" });
-        await expect(precio).toHaveText(`$${producto.precio + Number(nuevo)}`);
-    });
-
-    await test.step("Disminuir y comprobar persistencia", async () => {
-        await ejecutarCambioPrecio(operador, tarjeta, () => tarjeta.getByRole("button", { name: "Disminuir precio", exact: true }).click());
-        await expect(precio).toHaveText(`$${producto.precio}`);
-        await expect(precio).toBeEnabled();
-
-        await operador.reload({ waitUntil: "domcontentloaded" });
-        await expect(precio).toHaveText(`$${producto.precio}`);
-        await expect.poll(() => leerPrecios(operador)).toEqual(preciosOriginales);
-        precioRestaurado = true;
-    });
+    }
 });
