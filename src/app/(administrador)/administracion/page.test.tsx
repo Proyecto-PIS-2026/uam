@@ -59,9 +59,15 @@ vi.mock("@/modulos/administracion/componentes/estadistica/ContenedorEstadistica"
     ),
 }));
 
+const sesionAdministrador = {
+    usuarioId: 7,
+    rol: "ADMINISTRADOR",
+    expiraEn: 2000000000,
+};
+
 beforeEach(() => {
     vi.resetAllMocks();
-    mocks.requerirAdministrador.mockResolvedValue(undefined);
+    mocks.requerirAdministrador.mockResolvedValue(sesionAdministrador);
     mocks.consultarUsuarios.mockResolvedValue({ usuarios: [] });
     mocks.obtenerEstadisticas.mockResolvedValue({ visitas: [], contactos: [], publicaciones: [] });
     mocks.usuarios.mockImplementation(() => null);
@@ -84,6 +90,12 @@ describe("PaginaAdministracion", () => {
         expect(ordenAcceso).toBeLessThan(mocks.obtenerEstadisticas.mock.invocationCallOrder[0]);
     });
 
+    it.each([7, 23])("envía el ID %s del administrador actual a la consulta de usuarios", async (usuarioId) => {
+        mocks.requerirAdministrador.mockResolvedValue({ ...sesionAdministrador, usuarioId });
+        render(await PaginaAdministracion());
+        expect(mocks.consultarUsuarios).toHaveBeenCalledExactlyOnceWith(usuarioId);
+    });
+
     it("no consulta datos si falla el acceso", async () => {
         const error = new Error("NEXT_REDIRECT");
         mocks.requerirAdministrador.mockRejectedValue(error);
@@ -95,13 +107,15 @@ describe("PaginaAdministracion", () => {
 
     it("espera a que se confirme el acceso antes de consultar datos", async () => {
         let autorizar!: () => void;
-        mocks.requerirAdministrador.mockImplementation(() => new Promise<void>((resolve) => { autorizar = resolve }));
+        mocks.requerirAdministrador.mockImplementation(() => new Promise<typeof sesionAdministrador>((resolve) => {
+            autorizar = () => resolve(sesionAdministrador);
+        }));
         const pendiente = PaginaAdministracion();
         expect(mocks.consultarUsuarios).not.toHaveBeenCalled();
         expect(mocks.obtenerEstadisticas).not.toHaveBeenCalled();
         autorizar();
         await pendiente;
-        expect(mocks.consultarUsuarios).toHaveBeenCalledOnce();
+        expect(mocks.consultarUsuarios).toHaveBeenCalledExactlyOnceWith(sesionAdministrador.usuarioId);
         expect(mocks.obtenerEstadisticas).toHaveBeenCalledOnce();
     });
 

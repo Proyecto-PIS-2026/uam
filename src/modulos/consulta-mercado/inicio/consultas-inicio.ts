@@ -19,6 +19,8 @@ export async function obtenerEspeciesConPublicacionesActivas() {
             COUNT(DISTINCT po."operadorId")::int AS "cantidadOperadores"
         FROM publicacion p
         JOIN "publicacionOperador" po ON po."publicacionId" = p.id
+        JOIN operador o ON o.id = po."operadorId"
+        JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true
         JOIN especie e ON e.id = p."especieId"
         WHERE p."publicacionDisponible" = true
             AND p."publicacionActiva" = true

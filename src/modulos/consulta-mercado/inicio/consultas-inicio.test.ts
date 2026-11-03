@@ -70,6 +70,13 @@ describe("obtenerEspeciesConPublicacionesActivas", () => {
         expect(sql).not.toContain("JOIN local");
     });
 
+    it("incluye el filtro de usuarios habilitados en el conteo de operadores por especie", async () => {
+        await obtenerEspeciesConPublicacionesActivas();
+        const sql = mocks.sql.mock.calls[0][0].join("?");
+        expect(sql).toContain('JOIN operador o ON o.id = po."operadorId"');
+        expect(sql).toContain('JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true');
+    });
+
     it("rechaza la consulta cuando no tiene permisos", async () => {
         mocks.autorizado.mockReturnValue(false);
         await expect(obtenerEspeciesConPublicacionesActivas()).rejects.toThrow("No tiene permisos para consultar publicaciones de Operadores.");

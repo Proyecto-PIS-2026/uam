@@ -11,6 +11,8 @@ import ListaUsuarios from "./ListaUsuarios";
 import styles from "./ModificarUsuario.module.css";
 import { bajaOperador } from "@/modulos/usuarios/operadores/bajaOperador";
 import { bajaProductor } from "@/modulos/usuarios/productores/bajaProductor";
+import { cambiarHabilitacionUsuario } from "../acciones/cambiarHabilitacionUsuario";
+import { bajaAdministrador } from "@/modulos/usuarios/administradores/bajaAdministrador";
 
 interface ModificarUsuarioProps {
     datos: DatosModificarUsuarios;
@@ -59,7 +61,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         } else if (usuario.rol === "PRODUCTOR") {
             resultado = await bajaProductor({ productorId: usuario.productorId });
         } else {
-            throw new Error("La baja de este tipo de usuario todavía no está disponible.");
+            resultado = await bajaAdministrador({ administradorId: usuario.administradorId });
         }
 
         if (!resultado.esValido) {
@@ -67,6 +69,17 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         }
 
         setUsuarioSeleccionado(null);
+        router.refresh();
+    }
+
+    async function cambiarHabilitacion(usuario: UsuarioParaModificar) {
+        const resultado = await cambiarHabilitacionUsuario({
+            usuarioId: usuario.id,
+            habilitado: usuario.habilitado === false,
+        });
+        if (!resultado.esValido) {
+            throw new Error(resultado.errores.join(" "));
+        }
         router.refresh();
     }
 
@@ -84,7 +97,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
             </div>
             <div className={styles.contenido}>
                 <BuscadorUsuarios busqueda={busqueda} tipoUsuario={tipoUsuario} onBusquedaChange={cambiarBusqueda} onTipoUsuarioChange={cambiarTipoUsuario} restablecimiento={restablecimiento} onRestablecimientoChange={cambiarRestablecimiento}/>
-                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} hayFiltrosActivos={datos.usuarios.length > 0 && (busqueda.trim().length > 0 || tipoUsuario !== "TODOS" || restablecimiento !== "TODOS")} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario}/>
+                <ListaUsuarios usuarios={usuariosFiltrados} usuarioSeleccionadoId={usuarioSeleccionado?.id ?? null} usuarioActualId={datos.usuarioActualId} hayFiltrosActivos={datos.usuarios.length > 0 && (busqueda.trim().length > 0 || tipoUsuario !== "TODOS" || restablecimiento !== "TODOS")} onSeleccionar={setUsuarioSeleccionado} onEliminar={eliminarUsuario} onCambiarHabilitacion={cambiarHabilitacion}/>
             </div>
         </section>
     );

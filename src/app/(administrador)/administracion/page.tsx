@@ -10,11 +10,13 @@ import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/c
 export const dynamic = "force-dynamic";
 
 export default async function PaginaAdministracion() {
-    await requerirAdministrador();
+    const sesion = await requerirAdministrador();
+
     const [datosUsuarios, estadisticas] = await Promise.all([
-        consultarDatosModificarUsuarios(),
+        consultarDatosModificarUsuarios(sesion.usuarioId),
         obtenerEstadisticas(),
     ]);
+
     const contenido = (
         <div className="relative isolate flex-1 bg-background text-foreground">
             <main className="contenedor-pagina relative z-10 flex-1">
@@ -27,11 +29,12 @@ export default async function PaginaAdministracion() {
                     <ContenedorConfiguracionGeneral
                         general={<ContenedorConfiguracionGenerales />}
                         usuarios={<ConfiguracionUsuarios datos={datosUsuarios} />}
-                        estadisticas={<ContenedorEstadistica datosIniciales={estadisticas}/>}
+                        estadisticas={<ContenedorEstadistica datosIniciales={estadisticas} />}
                     />
                 </div>
             </main>
         </div>
     );
-    return contenido; 
+
+    return contenido;
 }

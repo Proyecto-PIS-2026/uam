@@ -117,6 +117,30 @@ describe("normalizarFiltros", () => {
     it("normaliza tildes, filtros vacíos y valores por defecto", () => {
         expect(normalizarFiltros({ busqueda: "  LIMÓN Ñandú ", especie: "Todas" })).toMatchObject({ busqueda: "limon nandu", especie: "", nave: "", orden: "prioridad", precioMinimo: null });
     });
+    
+    it("excluye publicaciones de usuarios deshabilitados de los resultados y sus filtros", async () => {
+        await consultarPublicaciones();
+        const plan = query.mock.calls[0][0];
+
+        expect(plan.texto).toContain('JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true');
+        expect(plan.texto).toContain('JOIN operador o ON o.id = po."operadorId"');
+        expect(plan.texto).toContain("FROM visibles");
+    });
+
+    it("parametriza filtros y orden sin interpolar SQL recibido del cliente", async () => {
+        const busqueda = "tomate '; drop table publicacion; --";
+        const nave = "A' OR 1=1 --";
+        await consultarPublicaciones({ busqueda, especie: "Tomate", nave, precioMinimo: "12", precioMaximo: "80", orden: "precioDesc" });
+        const plan = query.mock.calls[0][0];
+        expect(plan.texto).not.toContain(busqueda);
+        expect(plan.valores).toContain(busqueda);
+        expect(plan.texto).not.toContain(nave);
+        expect(plan.valores).toContain(nave);
+        expect(plan.valores).toContain(12);
+        expect(plan.valores).toContain("Tomate");
+        expect(plan.valores).toContain("precioDesc");
+        expect(plan.valores).not.toContain(null);
+    });
 
     it.each<OrdenConsulta>(["ninguno", "prioridad", "precioAsc", "precioDesc", "alfabeticoAsc", "alfabeticoDesc", "fechaDesc"])("acepta el orden %s", (orden) => {
         expect(normalizarFiltros({ orden }).orden).toBe(orden);
