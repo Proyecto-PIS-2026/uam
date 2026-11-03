@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'9e35ff1bcc54871c0831cc55b70ab97eb906a463b6cc7fb7fe07a7d1ff076cac'>;
+  StorageHashBase<'50650e5cb247debea4ab8752f6bfb873090723ca76796b3fff32d6361a04d46f'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -401,6 +401,7 @@ export type FieldOutputTypes = {
       readonly twoFactorSecret: CodecTypes['pg/text@1']['output'] | null;
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['output'];
       readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['output'];
+      readonly habilitado: CodecTypes['pg/bool@1']['output'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
     };
     readonly Variedad: {
@@ -574,6 +575,7 @@ export type FieldInputTypes = {
       readonly twoFactorSecret: CodecTypes['pg/text@1']['input'] | null;
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['input'];
       readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['input'];
+      readonly habilitado: CodecTypes['pg/bool@1']['input'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
     };
     readonly Variedad: {
@@ -741,6 +743,7 @@ export type StorageColumnTypes = {
       readonly urlMaps: CodecTypes['pg/text@1']['output'];
     };
     readonly usuario: {
+      readonly habilitado: CodecTypes['pg/bool@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly passwordHash: CodecTypes['pg/text@1']['output'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
@@ -914,6 +917,7 @@ export type StorageColumnInputTypes = {
       readonly urlMaps: CodecTypes['pg/text@1']['input'];
     };
     readonly usuario: {
+      readonly habilitado: CodecTypes['pg/bool@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly passwordHash: CodecTypes['pg/text@1']['input'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
@@ -2224,6 +2228,15 @@ type ContractBase = Omit<
                   readonly default: {
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly habilitado: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
                   };
                 };
                 readonly rol: {
@@ -3627,6 +3640,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
+              readonly habilitado: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly rol: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -3655,6 +3672,7 @@ type ContractBase = Omit<
                 readonly twoFactorSecret: { readonly column: 'twoFactorSecret' };
                 readonly twoFactorEnabled: { readonly column: 'twoFactorEnabled' };
                 readonly solicitoRestablecimiento: { readonly column: 'solicitoRestablecimiento' };
+                readonly habilitado: { readonly column: 'habilitado' };
                 readonly rol: { readonly column: 'rol' };
               };
             };

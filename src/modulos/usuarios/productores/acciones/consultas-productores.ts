@@ -29,6 +29,7 @@ function publicacionVisible(publicacion: {
 export async function obtenerProductoresDisponibles(): Promise<ProductorListado[]> {
     await exigirConsultaProductores("No tenés permiso para consultar productores.",);
     const productores = await db.orm.public.Productor
+        .where((productor) => productor.usuario.some((usuario) => usuario.habilitado.eq(true)))
         .select("id", "nombreFantasia", "fotoPerfil")
         .include("usuario", (usuario) => usuario.select("rol"))
         .include("publicacionesProductor", (publicaciones) => publicaciones

@@ -45,6 +45,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
 
     // await porque la consulta a la base de datos es asincrona pero quiero esperar a la respuesta antes de seguir
     const operador = await db.orm.public.Operador
+        .where((operador) => operador.usuario.some((usuario) => usuario.habilitado.eq(true)))
         .select("id", "nombreFantasia", "fotoPerfil", "whatsApp") // Que columnas quiero recuperar de la tabla de operador
         .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
             .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales

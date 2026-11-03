@@ -36,7 +36,7 @@ describe.each([
     { nombre: "obtenerUsuarioOperadorPorNombre", consultar: obtenerUsuarioOperadorPorNombre, rol: "OPERADOR" },
     { nombre: "obtenerUsuarioProductorPorNombre", consultar: obtenerUsuarioProductorPorNombre, rol: "PRODUCTOR" },
 ])("$nombre", ({ consultar, rol }) => {
-    it("busca por nombre de usuario y restringe el rol", async () => {
+    it("busca por nombre de usuario y restringe el rol y el estado habilitado", async () => {
         const usuario = { id: 4, passwordHash: "hash", rol };
         baseSimulada.usuario.first.mockResolvedValue(usuario);
 
@@ -44,7 +44,7 @@ describe.each([
 
         expect(resultado).toEqual(usuario);
         expect(baseSimulada.usuario.select).toHaveBeenCalledWith("id", "passwordHash", "rol");
-        expect(baseSimulada.usuario.where).toHaveBeenCalledWith({ username: "huerta", rol });
+        expect(baseSimulada.usuario.where).toHaveBeenCalledWith({ username: "huerta", rol, habilitado: true });
     });
 
     it("devuelve null si no existe un usuario de ese rol", async () => {
@@ -53,7 +53,7 @@ describe.each([
 });
 
 describe("obtenerUsuarioAdministradorPorCorreo", () => {
-    it("busca el correo y obtiene al usuario con rol administrador", async () => {
+    it("busca el correo y obtiene al usuario administrador habilitado", async () => {
         const usuario = { id: 1, passwordHash: "hash", rol: "ADMINISTRADOR" };
         baseSimulada.administrador.first.mockResolvedValue({ usuarioId: 1 });
         baseSimulada.usuario.first.mockResolvedValue(usuario);
@@ -63,7 +63,7 @@ describe("obtenerUsuarioAdministradorPorCorreo", () => {
         expect(baseSimulada.administrador.where)
             .toHaveBeenCalledWith({ email: "admin@ejemplo.com" });
         expect(baseSimulada.usuario.where)
-            .toHaveBeenCalledWith({ id: 1, rol: "ADMINISTRADOR" });
+            .toHaveBeenCalledWith({ id: 1, rol: "ADMINISTRADOR", habilitado: true });
     });
 
     it("rechaza un correo que no pertenece a un administrador", async () => {

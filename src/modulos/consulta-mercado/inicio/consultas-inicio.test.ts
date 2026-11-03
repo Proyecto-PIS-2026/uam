@@ -51,6 +51,15 @@ describe("consultas-inicio", () => {
 
     describe("obtenerEspeciesConPublicacionesActivas", () => {
 
+        it("excluye usuarios deshabilitados del conteo de operadores por especie", async () => {
+            mockDb.query.mockResolvedValue([]);
+            await obtenerEspeciesConPublicacionesActivas();
+            const sql = mockDb.sql.mock.calls[0][0].join("");
+
+            expect(sql).toContain('JOIN operador o ON o.id = po."operadorId"');
+            expect(sql).toContain('JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true');
+        });
+
         it("obtiene las especies con publicaciones activas", async () => {
             const especiesMock = [
                 { nombreEspecie: "Banana", cantidadOperadores: 3 },

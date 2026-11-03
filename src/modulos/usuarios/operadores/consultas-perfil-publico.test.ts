@@ -5,6 +5,7 @@ import { obtenerPerfilPublicoOperador } from "./consultas-perfil-publico";
 // Sirve para construir una base de datos falsa, metodos falsos y simular las consultas
 const mockDb = vi.hoisted(() => ({
     operador: {
+        where: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         include: vi.fn().mockReturnThis(),
         first: vi.fn(),
@@ -65,6 +66,19 @@ describe("obtenerPerfilPublicoOperador", () => {
                 return mockDb.publicaciones;
             }
         );
+    });
+
+    it("oculta el perfil cuando el usuario está deshabilitado", async () => {
+        await obtenerPerfilPublicoOperador("Frutas del Norte");
+        const predicado = mockDb.operador.where.mock.calls[0][0];
+        const evaluar = (estado: boolean) => predicado({
+            usuario: { some: (condicion: (usuario: { habilitado: { eq: (valor: boolean) => boolean } }) => boolean) =>
+                condicion({ habilitado: { eq: (valor) => estado === valor } }) },
+        });
+
+        expect(evaluar(false)).toBe(false);
+        expect(evaluar(true)).toBe(true);
+        expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
     });
 
     // Verifica que nombres vacíos sean rechazados sin consultar la base de datos
