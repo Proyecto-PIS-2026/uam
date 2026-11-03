@@ -59,6 +59,7 @@ function configurarCookie(datos: unknown) {
         buscarUsuario.mockResolvedValue({
             id: datos.usuarioId,
             rol: datos.rol,
+            habilitado: true,
         });
     }
 }
@@ -69,6 +70,7 @@ beforeEach(() => {
     buscarUsuario.mockImplementation(async () => ({
         id: 4,
         rol: "OPERADOR",
+        habilitado: true,
     }));
 
     vi.stubEnv("SESSION_SECRET", secretoPrueba);
@@ -143,6 +145,7 @@ describe("obtenerSesion", () => {
         buscarUsuario.mockResolvedValue({
             id: 4,
             rol: "PRODUCTOR",
+            habilitado: true,
         });
 
         expect(await obtenerSesion()).toEqual({
@@ -151,6 +154,19 @@ describe("obtenerSesion", () => {
             expiraEn: segundosActuales + 28800,
         });
     });
+
+    it.each(["ADMINISTRADOR", "OPERADOR", "PRODUCTOR"] as const)(
+        "rechaza una sesión ya iniciada cuando se deshabilita al %s",
+        async (rol) => {
+            const datos = { usuarioId: 4, rol, expiraEn: segundosActuales + 60 };
+            configurarCookie(datos);
+            await expect(obtenerSesion()).resolves.toEqual(datos);
+
+            buscarUsuario.mockResolvedValue({ id: 4, rol, habilitado: false });
+
+            await expect(obtenerSesion()).resolves.toBeNull();
+        },
+    );
 
     it("rechaza la sesión de un operador eliminado de la base de datos", async () => {
         const datos = {
@@ -182,7 +198,7 @@ describe("obtenerSesion", () => {
 
     it("sigue rechazando una sesión cuyo rol cambió en la base de datos", async () => {
         configurarCookie({ usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60 });
-        buscarUsuario.mockResolvedValue({ id: 4, rol: "OPERADOR" });
+        buscarUsuario.mockResolvedValue({ id: 4, rol: "OPERADOR", habilitado: true });
 
         await expect(obtenerSesion()).resolves.toBeNull();
     });

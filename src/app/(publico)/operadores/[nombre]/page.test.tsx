@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
     refresh: vi.fn(),
     obtenerSesion: vi.fn(),
     obtenerOperadorActual: vi.fn(),
-    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
     notFound: vi.fn(() => {
         throw new Error("PERFIL_NO_ENCONTRADO");
     }),

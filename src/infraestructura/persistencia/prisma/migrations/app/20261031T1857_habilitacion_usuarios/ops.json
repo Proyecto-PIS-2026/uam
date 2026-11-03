@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.usuario.habilitado",
+    "label": "Add column \"habilitado\" to \"usuario\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "habilitado",
+        "table": "usuario"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"habilitado\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "usuario",
+          "habilitado"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"habilitado\"",
+        "sql": "ALTER TABLE \"public\".\"usuario\" ADD COLUMN \"habilitado\" bool DEFAULT true NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"habilitado\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "usuario",
+          "habilitado"
+        ]
+      }
+    ]
+  }
+]

@@ -316,6 +316,14 @@
     white-space: nowrap;
 }
 
+.controles[data-ordenamiento="false"] {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.controles[data-ordenamiento="false"] .filtroBuscador {
+    grid-column: 1 / -1;
+}
+
 @media (min-width: 768px) {
     .filtroBuscador {
         grid-column: 1;

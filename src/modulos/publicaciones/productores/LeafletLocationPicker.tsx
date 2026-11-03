@@ -56,14 +56,15 @@ function resultadoValido(valor: unknown): valor is ResultadoBusqueda {
 
 export default function LeafletLocationPicker({ abierto, ...props }: Props) {
     if (!abierto) return null;
-    const { coordenadas, nombreInicial } = props;
-    const clave = JSON.stringify([
-        coordenadas?.latitud ?? null,
-        coordenadas?.longitud ?? null,
-        coordenadas?.departamento ?? "",
-        nombreInicial ?? coordenadas?.nombreLugar ?? "",
+    const claveInicial = JSON.stringify([
+        props.coordenadas?.latitud ?? null,
+        props.coordenadas?.longitud ?? null,
+        props.coordenadas?.departamento ?? null,
+        props.coordenadas?.nombreLugar ?? null,
+        props.nombreInicial ?? null,
+        props.modo ?? "agregar",
     ]);
-    return <SelectorPuntoRetiro key={clave} {...props} />;
+    return <SelectorPuntoRetiro key={claveInicial} {...props} />;
 }
 
 function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alConfirmar, alCerrar }: Omit<Props, "abierto">) {
@@ -99,6 +100,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
     const [buscando, setBuscando] = useState(false);
     const [identificando, setIdentificando] = useState(false);
     const [mapaListo, setMapaListo] = useState(false);
+
     useEffect(() => {
         if (!elementoMapa) return;
         let activo = true;
@@ -106,7 +108,21 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
         let temporizadorTamano: ReturnType<typeof setTimeout> | undefined;
 
         void import("leaflet").then((leaflet) => {
-            if (!activo || !elementoMapa.isConnected) return;
+            if (!activo || !elementoMapa.isConnected) {
+                return;
+            }
+            nombreEditadoRef.current = Boolean(nombreLugarInicial.trim());
+            setNombre(nombreLugarInicial);
+            setNombreRevisado(false);
+            setSeleccion(inicial?.departamento ? inicial : null);
+            setErrorSeleccion("");
+            setErrorBusqueda("");
+            setErrorMapa("");
+            setBusqueda("");
+            setResultados([]);
+            setBuscando(false);
+            setIdentificando(false);
+            setMapaListo(false);
             const centro: [number, number] = inicial ? [inicial.latitud, inicial.longitud] : CENTRO_URUGUAY;
             const mapa = leaflet.map(elementoMapa).setView(centro, inicial ? 14 : 6);
             mapaInstanciaRef.current = mapa;
@@ -204,7 +220,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             mapaInstanciaRef.current?.remove();
             mapaInstanciaRef.current = null;
         };
-    }, [elementoMapa, inicial]);
+    }, [elementoMapa, inicial, nombreLugarInicial]);
 
     function cerrar() {
         solicitudBusquedaRef.current += 1;
@@ -267,6 +283,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
 
     const nombreValido = nombre.trim().length > 0 && nombre.trim().length <= 200;
     const puedeConfirmar = mapaListo && !identificando && !errorSeleccion && !errorMapa && Boolean(seleccion?.departamento) && nombreValido;
+
     function confirmar() {
         if (!puedeConfirmar || !seleccion) return;
         alConfirmar({ ...seleccion, nombreLugar: nombre.trim() });

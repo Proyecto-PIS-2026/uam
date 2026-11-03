@@ -15,7 +15,7 @@ import DrawerEditarPublicacion from "../../operadores/componentes/DrawerEditarPu
 import type { Publicacion } from "../tipos";
 import type { PublicacionParaEditar, OpcionesEdicionPublicacion, CambiosPublicacionOperador } from "../../operadores/tipos";
 import NuevaPublicacion from "../../operadores/componentes/NuevaPublicacion";
-import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
+import FiltrosPublicaciones, { compararPublicacionesOperador } from "../../filtros/FiltrosPublicaciones";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
@@ -60,15 +60,15 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
         especie: publicacion.especie.nombreEspecie,
         variedad: publicacion.variedad?.nombreVariedad ?? "",
         presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
-        cantidadUnidades: publicacion.cantidadUnidades === null ? null : Number(publicacion.cantidadUnidades),
+        cantidadUnidades: publicacion.cantidadUnidades == null ? null : Number(publicacion.cantidadUnidades),
         categoria: publicacion.categoria?.nombreCategoria ?? "",
         calibre: publicacion.calibre?.nombreCalibre ?? "",
         codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
-        pais: "",
+        pais: opcionesEdicion.paises.find((pais) => pais.id === publicacion.paisId)?.nombre ?? "",
         tipoPublicacion: "OPERADOR",
         operador: { id: operadorId, nombreFantasia: nombreOperador, whatsApp: "" },
-    })), [publicacionesVigentes, operadorId, nombreOperador]);
-    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
+    })), [publicacionesVigentes, operadorId, nombreOperador, opcionesEdicion.paises]);
+    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort((a, b) => compararPublicacionesOperador(a, b, "prioridad")));
     const publicacionesPorId = new Map(publicacionesVigentes.map((publicacion) => [publicacion.id, publicacion]));
     const publicacionesVisibles: Publicacion[] = [];
     for (const publicacionFiltrada of publicacionesFiltradas) {

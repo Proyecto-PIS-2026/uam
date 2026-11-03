@@ -7,7 +7,7 @@ vi.mock("@mui/material/Drawer", () => ({
     default: ({ open, anchor, children, onClose }: DrawerProps) => <section
         role="dialog" className="MuiDrawer-paper" hidden={!open} data-anchor={anchor}
         style={{ transform: "none", transition: "transform 225ms ease" }}
-        onKeyDown={(evento) => { if (evento.key === "Escape") onClose?.(evento, "escapeKeyDown"); }}
+        onKeyDown={(evento) => { if (evento.key === "Escape") onClose?.(evento, "escapeKeyDown") }}
     >{children}</section>,
 }));
 

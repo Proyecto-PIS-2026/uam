@@ -31,7 +31,7 @@ vi.mock("../../operadores/consultas-edicion-publicacion", () => ({
 
 vi.mock("./MiMercado", () => ({ default: mocks.miMercado }));
 
-vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
+vi.mock("@/modulos/administracion/acciones/consultas-configuracion", () => ({
     obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 

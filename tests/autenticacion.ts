@@ -12,11 +12,14 @@ async function enviarCredenciales(page: Page, usuario: string, contrasena: strin
 export async function iniciarSesionAdministrador(page: Page, credenciales: Credenciales) {
   await enviarCredenciales(page, credenciales.usuario, credenciales.contrasena);
   await expect(page).toHaveURL(/\/inicio$/, { timeout: 30_000 });
-  await page.getByRole("link", { name: "Administración", exact: true }).click();
+
+  const enlace = page.getByRole("link", { name: "Administración", exact: true });
+  await expect(enlace).toHaveAttribute("href", "/administracion");
+
+  const respuesta = await page.goto("/administracion");
+  expect(respuesta?.status(), "Administración debe responder correctamente").toBe(200);
   await expect(page).toHaveURL(/\/administracion$/);
-  await expect(
-    page.getByRole("heading", { name: "Panel Administrativo", exact: true, level: 1 }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Panel Administrativo", exact: true, level: 1 })).toBeVisible();
 }
 
 export async function iniciarSesionProductor(page: Page, credenciales: Credenciales) {

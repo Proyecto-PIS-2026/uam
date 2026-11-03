@@ -25,8 +25,8 @@ vi.mock("../../../../modulos/usuarios/operadores/consultas-perfil-admin", () => 
     obtenerPerfilAdminOperador: mocks.obtenerPerfil,
 }));
 
-vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({ 
-    obtenerConfiguracion: mocks.obtenerConfiguracion 
+vi.mock("@/modulos/administracion/acciones/consultas-configuracion", () => ({
+    obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 
 vi.mock("../../../../modulos/publicaciones/operadores/consultas-edicion-publicacion", () => ({

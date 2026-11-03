@@ -23,6 +23,7 @@ model Usuario {
   twoFactorSecret  String?
   twoFactorEnabled Boolean        @default(false)
   solicitoRestablecimiento Boolean        @default(false)
+  habilitado       Boolean        @default(true)
   rol              RolUsuario
 
   notificaciones   Notificacion[]
@@ -247,10 +248,14 @@ model Notificacion {
   titulo      String
   descripcion String
   vista       Boolean @default(false)
+  url         String?
+  fecha       Timestamptz(3) @default(now())
 
   usuarioId   Int
   usuario     Usuario @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
 
+  @@index([usuarioId, vista])
+  @@index([usuarioId, fecha, id])
   @@map("notificacion")
 }
 
@@ -278,7 +283,40 @@ model HistoricoPrecios {
   historico                Jsonb
   fechaDesde               Date
   fechaHasta               Date
-  fechaUltimaActualizacion  Date
+  fechaUltimaActualizacion Date
 
   @@map("historicoPrecios")
+}
+
+// ESTADISTICA DE VISITAS
+model EstadisticaVisita {
+    id             Int      @id @default(autoincrement())
+    fecha          DateTime 
+    tipoVisitante  String   
+    cantidad       Int      @default(0)
+
+    @@unique([fecha, tipoVisitante])
+    @@map("estadisticaVisita")
+}
+
+// ESTADISTICA DE CONTACTOS
+model EstadisticaContacto {
+    id           Int      @id @default(autoincrement())
+    fecha        DateTime 
+    username     String   
+    cantidad     Int      @default(0)
+
+    @@unique([fecha, username])
+    @@map("estadisticaContacto")
+}
+
+// ESTADISTICA DE PUBLICACIONES
+model EstadisticaPublicacion {
+    id           Int      @id @default(autoincrement())
+    fecha        DateTime 
+    username     String   
+    cantidad     Int      @default(0)
+
+    @@unique([fecha, username])
+    @@map("estadisticaPublicacion")
 }

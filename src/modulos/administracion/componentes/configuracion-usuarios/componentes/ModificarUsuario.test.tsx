@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     bajaOperador: vi.fn(),
     refresh: vi.fn(),
     lista: vi.fn(),
+    cambiarHabilitacion: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -15,6 +16,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/modulos/usuarios/operadores/bajaOperador", () => ({
     bajaOperador: mocks.bajaOperador,
+}));
+
+vi.mock("../acciones/cambiarHabilitacionUsuario", () => ({
+    cambiarHabilitacionUsuario: mocks.cambiarHabilitacion,
 }));
 
 interface BuscadorMockProps {
@@ -31,6 +36,8 @@ interface ListaMockProps {
     usuarioSeleccionadoId: number | null;
     onSeleccionar: (usuario: UsuarioParaModificar) => void;
     onEliminar: (usuario: UsuarioParaModificar) => Promise<void>;
+    usuarioActualId?: number;
+    onCambiarHabilitacion: (usuario: UsuarioParaModificar) => Promise<void>;
 }
 
 vi.mock("./BuscadorUsuario", () => ({
@@ -141,6 +148,29 @@ describe("ModificarUsuario", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.bajaOperador.mockResolvedValue({ esValido: true, mensaje: "Operador eliminado correctamente." });
+        mocks.cambiarHabilitacion.mockResolvedValue({ esValido: true });
+    });
+
+    it.each([true, false])("guarda el cambio inverso al estado habilitado=%s y actualiza el listado", async (habilitado) => {
+        const usuario = { ...usuarios[1], habilitado };
+        render(<ModificarUsuario datos={{ usuarios: [usuario], usuarioActualId: 1 }} />);
+        const props = mocks.lista.mock.lastCall?.[0] as ListaMockProps;
+
+        expect(props.usuarioActualId).toBe(1);
+        expect(props.usuarios).toEqual([usuario]);
+        await act(() => props.onCambiarHabilitacion(usuario));
+
+        expect(mocks.cambiarHabilitacion).toHaveBeenCalledWith({ usuarioId: 2, habilitado: !habilitado });
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("propaga el rechazo del cambio de estado sin recargar el listado", async () => {
+        mocks.cambiarHabilitacion.mockResolvedValue({ esValido: false, errores: ["No se pudo cambiar el estado."] });
+        render(<ModificarUsuario datos={datos} />);
+        const props = mocks.lista.mock.lastCall?.[0] as ListaMockProps;
+
+        await expect(props.onCambiarHabilitacion(usuarios[1])).rejects.toThrow("No se pudo cambiar el estado.");
+        expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
     it("conecta la baja real con el id del operador y recarga los datos después del éxito", async () => {

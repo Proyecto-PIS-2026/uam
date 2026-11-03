@@ -2,20 +2,23 @@ import { Temporal } from "@js-temporal/polyfill";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerOperadoresPublicos } from "./consultas-listado-publico";
 
-const { allMock, selectMock, includeMock } = vi.hoisted(() => ({
+const { allMock, selectMock, includeMock, whereMock } = vi.hoisted(() => ({
     allMock: vi.fn(),
     selectMock: vi.fn(),
     includeMock: vi.fn(),
+    whereMock: vi.fn(),
 }));
 
 vi.mock("../../../infraestructura/persistencia/prisma/db", () => {
     const consulta = {
+        where: whereMock,
         select: selectMock,
         include: includeMock,
         all: allMock,
     };
 
     selectMock.mockReturnValue(consulta);
+    whereMock.mockReturnValue(consulta);
     includeMock.mockImplementation(
         (_relacion: string, configurar: (subconsulta: typeof consulta) => unknown) => {
             configurar(consulta);
@@ -49,6 +52,19 @@ describe("obtenerOperadoresPublicos", () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it("restringe el listado a usuarios habilitados", async () => {
+        allMock.mockResolvedValue([]);
+        await obtenerOperadoresPublicos();
+        const predicado = whereMock.mock.calls[0][0];
+        const evaluar = (estado: boolean) => predicado({
+            usuario: { some: (condicion: (usuario: { habilitado: { eq: (valor: boolean) => boolean } }) => boolean) =>
+                condicion({ habilitado: { eq: (valor) => estado === valor } }) },
+        });
+
+        expect(evaluar(false)).toBe(false);
+        expect(evaluar(true)).toBe(true);
     });
 
     it("devuelve una lista vacía cuando no hay operadores", async () => {

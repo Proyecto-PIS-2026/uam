@@ -8,8 +8,8 @@ import type { PerfilProductorPorOperador } from "@/modulos/usuarios/productores/
 
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(), listado: vi.fn(), perfil: vi.fn(),
-    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
-    notFound: vi.fn(() => { throw new Error("NEXT_NOT_FOUND"); }),
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
+    notFound: vi.fn(() => { throw new Error("NEXT_NOT_FOUND") }),
 }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));

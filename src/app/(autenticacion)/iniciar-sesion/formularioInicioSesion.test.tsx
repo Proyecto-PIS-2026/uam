@@ -123,7 +123,7 @@ describe("FormularioInicioSesion", () => {
 
     it("mantiene abierto el aviso mientras se envía la solicitud", async () => {
         let resolver!: (resultado: Awaited<ReturnType<typeof solicitarRecuperacion>>) => void;
-        solicitarRecuperacionSimulada.mockImplementation(() => new Promise((resolve) => { resolver = resolve; }));
+        solicitarRecuperacionSimulada.mockImplementation(() => new Promise((resolve) => { resolver = resolve }));
         render(<FormularioInicioSesion />);
         fireEvent.click(screen.getByRole("button", { name: "Solicitar recuperación de contraseña" }));
         fireEvent.change(screen.getByLabelText("Nombre de usuario"), { target: { value: "mercado_verde" } });

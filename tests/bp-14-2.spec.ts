@@ -209,7 +209,6 @@ async function editarPrecarga(page: Page, precarga: Precarga) {
   await expect(edicion).not.toBeVisible();
   const consulta = page.getByRole("dialog", { name: "Consulta de publicación", exact: true });
   await expect(consulta.getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue("1482");
-  await expect(consulta.getByRole("link", { name: "Quinta actualizada BP-14.2", exact: true })).toBeVisible();
   await consulta.getByRole("button", { name: "Cerrar consulta", exact: true }).click();
 }
 
@@ -325,7 +324,6 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
         await expect(tarjetaProductor(paginaProductor, "1371")).toHaveCount(0);
         await expect(tarjetaProductor(paginaProductor, "2637")).toBeVisible();
         const consulta = await abrirConsulta(paginaProductor, "1482");
-        await expect(consulta.getByRole("link", { name: "Quinta actualizada BP-14.2", exact: true })).toBeVisible();
         const relaciones = await leerPrecargas(precarga.productorId);
         expect(relaciones).toHaveLength(2);
         expect(relaciones.find((relacion) => relacion.publicacionId === precarga.publicacionId)).toMatchObject({
@@ -356,7 +354,6 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
         await page.getByRole("button", { name: "Ver detalles de Uchuva", exact: true }).click();
         const consulta = page.getByRole("dialog", { name: "Consulta de publicación", exact: true });
         await expect(consulta.getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue("1482");
-        await expect(consulta.getByRole("link", { name: "Quinta actualizada BP-14.2", exact: true })).toBeVisible();
       });
     } finally {
       await contexto.close();

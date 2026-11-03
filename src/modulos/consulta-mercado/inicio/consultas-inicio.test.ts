@@ -1,163 +1,168 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { obtenerEspeciesConPublicacionesActivas, obtenerEspeciesInicio } from "./consultas-inicio";
+import { obtenerEspeciesConPublicacionesActivas, obtenerEspeciesInicio, obtenerUrlListaInteligente } from "./consultas-inicio";
 
-// Mocks hoisteados: se declaran antes de que vi.mock los referencie internamente
-const mockDb = vi.hoisted(() => ({
+const mocks = vi.hoisted(() => ({
     query: vi.fn(),
-    sql: vi.fn((fragmentos: TemplateStringsArray, ...valores: unknown[]) => {
-        void fragmentos;
-        void valores;
-        return {returnsRow: () => ({build: () => ({})})};
-    }),
+    autorizado: vi.fn(),
+    sql: vi.fn((fragmentos: TemplateStringsArray, ...valores: unknown[]) => ({
+        returnsRow: () => ({
+            build: () => ({ texto: fragmentos.join("?"), valores }),
+        }),
+    })),
 }));
 
-const mockFs = vi.hoisted(() => ({
-    readdir: vi.fn(),
+vi.mock("../../identidad-acceso/autorizacion/permisos", () => ({
+    autorizado: mocks.autorizado,
 }));
 
-// En el archivo original se hace un import de db con ruta relativa
-// (el alias "@/..." no resuelve en el entorno de test, así que en
-// consultas-inicio.ts el import también debe usar la ruta relativa)
 vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
     db: {
-        runtime: () => ({
-            query: mockDb.query,
-        }),
+        runtime: () => ({ query: mocks.query }),
+        raw: { sql: mocks.sql },
         sql: {
             public: {
                 especie: {
                     columns: {
                         nombreEspecie: "nombreEspecie",
+                        fotoEspecie: "fotoEspecie",
+                    },
+                },
+                configuracion: {
+                    columns: {
+                        valorConfiguracion: "valorConfiguracion",
                     },
                 },
             },
         },
-        raw: {sql: mockDb.sql},
     },
 }));
 
-vi.mock("node:fs/promises", () => ({
-    readdir: mockFs.readdir,
-    default: {
-        readdir: mockFs.readdir,
-    },
-}));
+beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.autorizado.mockReturnValue(true);
+    mocks.query.mockResolvedValue([]);
+});
 
-describe("consultas-inicio", () => {
-
-    beforeEach(() => {
-        vi.clearAllMocks();
+describe("obtenerEspeciesConPublicacionesActivas", () => {
+    it("devuelve las especies con sus fotos y cantidad de operadores", async () => {
+        const especies = [
+            { nombreEspecie: "Banana", fotoEspecie: "/generico/banana.webp", cantidadOperadores: 3 },
+            { nombreEspecie: "Manzana", fotoEspecie: null, cantidadOperadores: 5 },
+        ];
+        mocks.query.mockResolvedValue(especies);
+        expect(await obtenerEspeciesConPublicacionesActivas()).toEqual(especies);
+        expect(mocks.query).toHaveBeenCalledOnce();
     });
 
-    describe("obtenerEspeciesConPublicacionesActivas", () => {
-
-        it("obtiene las especies con publicaciones activas", async () => {
-            const especiesMock = [
-                { nombreEspecie: "Banana", cantidadOperadores: 3 },
-                { nombreEspecie: "Manzana", cantidadOperadores: 5 },
-            ];
-
-            mockDb.query.mockResolvedValue(especiesMock);
-
-            const resultado = await obtenerEspeciesConPublicacionesActivas();
-
-            expect(resultado).toEqual(especiesMock);
-            expect(mockDb.query).toHaveBeenCalled();
-            const sql = mockDb.sql.mock.calls[0][0].join("");
-            expect(sql).toContain('GROUP BY e."nombreEspecie"');
-            expect(sql).toContain('COUNT(DISTINCT po."operadorId")');
-            expect(sql).toContain('AND EXISTS');
-            expect(sql).toContain('l."operadorId" = po."operadorId"');
-            expect(sql).toContain('l."finContrato" IS NULL');
-            expect(sql).toContain("AT TIME ZONE 'America/Montevideo')::date >= ");
-            expect(sql).not.toContain('JOIN local');
-        });
-
+    it("consulta la foto de la base y cuenta operadores distintos con publicaciones visibles y locales vigentes", async () => {
+        await obtenerEspeciesConPublicacionesActivas();
+        const sql = mocks.sql.mock.calls[0][0].join("?");
+        expect(sql).toContain('e."fotoEspecie"');
+        expect(sql).toContain('COUNT(DISTINCT po."operadorId")');
+        expect(sql).toContain('p."publicacionDisponible" = true');
+        expect(sql).toContain('p."publicacionActiva" = true');
+        expect(sql).toContain('p."tipoPublicacion" = \'OPERADOR\'');
+        expect(sql).toContain("AND EXISTS");
+        expect(sql).toContain('l."operadorId" = po."operadorId"');
+        expect(sql).toContain('l."finContrato" IS NULL');
+        expect(sql).toContain("AT TIME ZONE 'America/Montevideo')::date >= ");
+        expect(sql).toContain('GROUP BY e.id, e."nombreEspecie", e."fotoEspecie"');
+        expect(sql).not.toContain("JOIN local");
     });
 
-    describe("obtenerEspeciesInicio", () => {
-
-        it("devuelve las especies con su foto genérica", async () => {
-            mockDb.query.mockResolvedValue([
-                { nombreEspecie: "Banana", cantidadOperadores: 3 },
-            ]);
-            mockFs.readdir.mockResolvedValue(["banana.webp"]);
-
-            const resultado = await obtenerEspeciesInicio();
-
-            expect(resultado).toEqual([
-                { nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: "/generico/banana.webp" },
-            ]);
-        });
-
-        it("devuelve null cuando la especie no tiene foto genérica", async () => {
-            mockDb.query.mockResolvedValue([
-                { nombreEspecie: "Banana", cantidadOperadores: 3 },
-            ]);
-            mockFs.readdir.mockResolvedValue([]);
-
-            const resultado = await obtenerEspeciesInicio();
-
-            expect(resultado).toEqual([
-                { nombreEspecie: "Banana", cantidadOperadores: 3, fotoGenerica: null },
-            ]);
-        });
-
-        it("usa una foto PNG cuando no existe WEBP", async () => {
-            mockDb.query.mockResolvedValue([
-                { nombreEspecie: "Manzana", cantidadOperadores: 5 },
-            ]);
-            mockFs.readdir.mockResolvedValue(["manzana.png"]);
-
-            const resultado = await obtenerEspeciesInicio();
-
-            expect(resultado[0].fotoGenerica).toBe("/generico/manzana.png");
-        });
-
-        it("usa una foto JPG cuando no existe WEBP ni PNG", async () => {
-            mockDb.query.mockResolvedValue([
-                { nombreEspecie: "Sandía", cantidadOperadores: 1 },
-            ]);
-            mockFs.readdir.mockResolvedValue(["sandia.jpg"]);
-
-            const resultado = await obtenerEspeciesInicio();
-
-            expect(resultado[0].fotoGenerica).toBe("/generico/sandia.jpg");
-        });
-
-        it("ignora tildes y mayúsculas al buscar el archivo genérico", async () => {
-            mockDb.query.mockResolvedValue([
-                { nombreEspecie: "Sandía", cantidadOperadores: 1 },
-            ]);
-            mockFs.readdir.mockResolvedValue(["sandia.webp"]);
-
-            const resultado = await obtenerEspeciesInicio();
-
-            expect(resultado[0].fotoGenerica).toBe("/generico/sandia.webp");
-        });
-
-        it("devuelve fotoGenerica null si la carpeta /public/generico no existe (ENOENT)", async () => {
-            mockDb.query.mockResolvedValue([
-                { nombreEspecie: "Kiwi", cantidadOperadores: 1 },
-            ]);
-
-            const error = Object.assign(new Error("no existe"), { code: "ENOENT" });
-            mockFs.readdir.mockRejectedValue(error);
-
-            const resultado = await obtenerEspeciesInicio();
-
-            expect(resultado[0].fotoGenerica).toBeNull();
-        });
-
-        it("propaga otros errores de filesystem distintos de ENOENT", async () => {
-            mockDb.query.mockResolvedValue([]);
-
-            const error = Object.assign(new Error("permiso denegado"), { code: "EACCES" });
-            mockFs.readdir.mockRejectedValue(error);
-
-            await expect(obtenerEspeciesInicio()).rejects.toThrow("permiso denegado");
-        });
-
+    it("incluye el filtro de usuarios habilitados en el conteo de operadores por especie", async () => {
+        await obtenerEspeciesConPublicacionesActivas();
+        const sql = mocks.sql.mock.calls[0][0].join("?");
+        expect(sql).toContain('JOIN operador o ON o.id = po."operadorId"');
+        expect(sql).toContain('JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true');
     });
 
+    it("rechaza la consulta cuando no tiene permisos", async () => {
+        mocks.autorizado.mockReturnValue(false);
+        await expect(obtenerEspeciesConPublicacionesActivas()).rejects.toThrow("No tiene permisos para consultar publicaciones de Operadores.");
+        expect(mocks.query).not.toHaveBeenCalled();
+    });
+
+    it("propaga los errores de la base", async () => {
+        mocks.query.mockRejectedValue(new Error("Sin conexión"));
+        await expect(obtenerEspeciesConPublicacionesActivas()).rejects.toThrow("Sin conexión");
+    });
+});
+
+describe("obtenerEspeciesInicio", () => {
+    it("usa la fotografía guardada en la base aunque el nombre del archivo no coincida con la especie", async () => {
+        mocks.query.mockResolvedValue([{ nombreEspecie: "Banana", fotoEspecie: "/imagenes/foto-personalizada.webp", cantidadOperadores: 3 }]);
+        expect(await obtenerEspeciesInicio()).toEqual([{ nombreEspecie: "Banana", fotoGenerica: "/imagenes/foto-personalizada.webp", cantidadOperadores: 3 }]);
+    });
+
+    it("conserva una URL completa guardada en la base", async () => {
+        const foto = "https://imagenes.example.com/especies/manzana.webp?v=2";
+        mocks.query.mockResolvedValue([{ nombreEspecie: "Manzana", fotoEspecie: foto, cantidadOperadores: 5 }]);
+        const resultado = await obtenerEspeciesInicio();
+        expect(resultado[0].fotoGenerica).toBe(foto);
+    });
+
+    it("devuelve null cuando la especie no tiene fotografía", async () => {
+        mocks.query.mockResolvedValue([{ nombreEspecie: "Banana", fotoEspecie: null, cantidadOperadores: 3 }]);
+        expect(await obtenerEspeciesInicio()).toEqual([{ nombreEspecie: "Banana", fotoGenerica: null, cantidadOperadores: 3 }]);
+    });
+
+    it("refleja una fotografía actualizada en la siguiente consulta", async () => {
+        mocks.query.mockResolvedValueOnce([{ nombreEspecie: "Tomate", fotoEspecie: "/foto-anterior.webp", cantidadOperadores: 2 }]);
+        mocks.query.mockResolvedValueOnce([{ nombreEspecie: "Tomate", fotoEspecie: "/foto-nueva.webp", cantidadOperadores: 2 }]);
+        expect((await obtenerEspeciesInicio())[0].fotoGenerica).toBe("/foto-anterior.webp");
+        expect((await obtenerEspeciesInicio())[0].fotoGenerica).toBe("/foto-nueva.webp");
+    });
+
+    it("refleja la eliminación de la fotografía sin recuperar una imagen genérica", async () => {
+        mocks.query.mockResolvedValueOnce([{ nombreEspecie: "Tomate", fotoEspecie: "/generico/tomate.webp", cantidadOperadores: 2 }]);
+        mocks.query.mockResolvedValueOnce([{ nombreEspecie: "Tomate", fotoEspecie: null, cantidadOperadores: 2 }]);
+        expect((await obtenerEspeciesInicio())[0].fotoGenerica).toBe("/generico/tomate.webp");
+        expect((await obtenerEspeciesInicio())[0].fotoGenerica).toBeNull();
+    });
+
+    it("devuelve una lista vacía cuando no hay especies disponibles", async () => {
+        expect(await obtenerEspeciesInicio()).toEqual([]);
+    });
+
+    it("propaga los errores de la consulta", async () => {
+        mocks.query.mockRejectedValue(new Error("No se pudieron cargar las especies"));
+        await expect(obtenerEspeciesInicio()).rejects.toThrow("No se pudieron cargar las especies");
+    });
+});
+
+describe("obtenerUrlListaInteligente", () => {
+    it("devuelve la URL guardada", async () => {
+        const url = "https://uam.com.uy/lista-inteligente.pdf";
+        mocks.query.mockResolvedValue([{ valorConfiguracion: url }]);
+        expect(await obtenerUrlListaInteligente()).toBe(url);
+        expect(mocks.query).toHaveBeenCalledOnce();
+    });
+
+    it("consulta la configuración de la Lista Inteligente", async () => {
+        await obtenerUrlListaInteligente();
+        const sql = mocks.sql.mock.calls[0][0].join("?");
+        expect(sql).toContain("FROM public.configuracion");
+        expect(sql).toContain("c.\"nombreConfiguracion\" = 'url_lista_inteligente'");
+    });
+
+    it("devuelve null cuando no existe la configuración", async () => {
+        expect(await obtenerUrlListaInteligente()).toBeNull();
+    });
+
+    it("devuelve null cuando el valor guardado es nulo", async () => {
+        mocks.query.mockResolvedValue([{ valorConfiguracion: null }]);
+        expect(await obtenerUrlListaInteligente()).toBeNull();
+    });
+
+    it("rechaza la consulta cuando no tiene permisos", async () => {
+        mocks.autorizado.mockReturnValue(false);
+        await expect(obtenerUrlListaInteligente()).rejects.toThrow("No tiene permisos para consultar la Lista Inteligente.");
+        expect(mocks.query).not.toHaveBeenCalled();
+    });
+
+    it("propaga los errores de la base", async () => {
+        mocks.query.mockRejectedValue(new Error("Sin conexión"));
+        await expect(obtenerUrlListaInteligente()).rejects.toThrow("Sin conexión");
+    });
 });

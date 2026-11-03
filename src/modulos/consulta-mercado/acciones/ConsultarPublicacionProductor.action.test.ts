@@ -26,7 +26,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (importOrigin
 }));
 
 vi.mock("next/navigation", () => ({
-    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
 }));
 
 import obtenerPublicaciones from "./ConsultarPublicacionProductor.action";

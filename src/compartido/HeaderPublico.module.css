@@ -50,6 +50,7 @@
 
 .botonOperador {
     display: flex;
+    position: relative;
     width: 2.5rem;
     height: 2.5rem;
     padding: 0;
@@ -173,6 +174,11 @@
     cursor: pointer;
 }
 
+.menuMobile > :global(.MuiBadge-root) {
+    right: 2px;
+    bottom: 2px;
+}
+
 .iconoMenu {
     position: absolute;
     font-size: 1.75rem !important;
@@ -214,6 +220,24 @@
     display: inline-flex;
     min-width: 0;
     align-items: center;
+}
+
+.desplegableOperador .enlaceNotificaciones,
+.enlaceNotificaciones {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-inline);
+}
+
+.descripcionNotificaciones {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
 
 .overlayMenu {
@@ -270,6 +294,7 @@
         padding: 0 1rem;
         flex-direction: column;
         overflow: hidden;
+        scrollbar-gutter: stable;
         visibility: hidden;
         opacity: 0;
         transform: translateY(-0.5rem);
@@ -285,7 +310,9 @@
     }
 
     .navegacionMobileAbierta {
-        max-height: 30rem;
+        max-height: calc(100dvh - 4rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 0 0.2rem 0.5rem;
         visibility: visible;
         opacity: 1;

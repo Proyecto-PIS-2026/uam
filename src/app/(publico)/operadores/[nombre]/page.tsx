@@ -12,7 +12,7 @@ import styles from "./page.module.css";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-    params: Promise<{ nombre: string; }>;
+    params: Promise<{ nombre: string }>;
     searchParams: Promise<{ origen?: string | string[] }>;
 };
 

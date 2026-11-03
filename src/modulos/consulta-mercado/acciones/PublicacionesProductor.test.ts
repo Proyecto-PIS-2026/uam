@@ -45,16 +45,18 @@ type PredicadoPublicacion = {
 
 type NodoPredicado = {
     publicacion: { some: (predicado?: (publicacion: PredicadoPublicacion) => unknown) => unknown };
-    productor: { some: () => boolean };
+    productor: { some: (predicado?: (productor: {
+        usuario: { some: (predicado: (usuario: { habilitado: { eq: (valor: boolean) => boolean } }) => unknown) => unknown };
+    }) => unknown) => unknown };
     pais: { some: () => boolean };
 };
 
-function crearNodoPredicado(): NodoPredicado {
+function crearNodoPredicado(habilitado = true, disponible = true, activa = true): NodoPredicado {
     const somePublicacion = vi.fn((predicado?: (publicacion: PredicadoPublicacion) => unknown) => {
         if (predicado) {
             return predicado({
-                publicacionActiva: { eq: () => true },
-                publicacionDisponible: { eq: () => true },
+                publicacionActiva: { eq: (valor) => activa === valor },
+                publicacionDisponible: { eq: (valor) => disponible === valor },
             });
         }
         return true;
@@ -62,7 +64,9 @@ function crearNodoPredicado(): NodoPredicado {
 
     return {
         publicacion: { some: somePublicacion },
-        productor: { some: () => true },
+        productor: { some: (predicado) => predicado ? predicado({
+            usuario: { some: (condicion) => condicion({ habilitado: { eq: (valor) => habilitado === valor } }) },
+        }) : true },
         pais: { some: () => true },
     };
 }
@@ -199,6 +203,18 @@ describe("consultarPublicacionesProductores", () => {
             "ubicaciones",
         ]);
         expect(mocks.all).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        { habilitado: false, disponible: true, activa: true, visible: false },
+        { habilitado: true, disponible: true, activa: true, visible: true },
+        { habilitado: true, disponible: false, activa: true, visible: false },
+        { habilitado: true, disponible: true, activa: false, visible: false },
+    ])("aplica el estado del usuario sin alterar la disponibilidad de la publicación: %j", async ({ habilitado, disponible, activa, visible }) => {
+        await consultarPublicacionesProductores(sesionOperador);
+        const predicados = [mocks.primerWhere.mock.calls[0][0], ...mocks.where.mock.calls.map(([predicado]) => predicado)];
+
+        expect(predicados.every((predicado) => predicado(crearNodoPredicado(habilitado, disponible, activa)))).toBe(visible);
     });
 
     it("devuelve una lista vacía cuando el ORM no encuentra publicaciones", async () => {

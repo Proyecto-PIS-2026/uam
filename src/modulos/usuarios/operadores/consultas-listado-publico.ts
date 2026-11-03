@@ -22,6 +22,7 @@ export async function obtenerOperadoresPublicos(): Promise<OperadorListado[]> {
 
     
     const consulta = db.orm.public.Operador
+        .where((operador) => operador.usuario.some((usuario) => usuario.habilitado.eq(true)))
         .select("id", "nombreFantasia", "fotoPerfil", "enLicencia")
         .include("locales", (locales) =>
             locales
@@ -73,7 +74,7 @@ export async function obtenerOperadoresPublicos(): Promise<OperadorListado[]> {
             fotoPerfil: operador.fotoPerfil,
             cantidadProductos,
             locales: localesVigentes,
-            ...(operador.enLicencia ? { enLicencia: true } : {}),
+            enLicencia: operador.enLicencia,
         });
     }
 
