@@ -31,11 +31,24 @@ function formatearFecha(fecha: string): string {
     return `${dia}/${mes}/${anio}`;
 }
 
+function extraerLicencia(comentario: string | null | undefined) {
+    const coincidencia = comentario?.match(/^Licencia:\s*(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})\s*(?:\r?\n\r?\n)?([\s\S]*)$/);
+    return {
+        inicio: coincidencia?.[1] ?? "",
+        fin: coincidencia?.[2] ?? "",
+        comentario: coincidencia?.[3]?.trim() ?? comentario?.trim() ?? "",
+    };
+}
+
 export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrecio }: PerfilOperadorAdminProps) {
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(false);
     const { notificar } = useNotificacionToast();
+    const licencia = extraerLicencia(operador.comentario);
+    const fechasLicencia = licencia.inicio && licencia.fin
+        ? `${formatearFecha(licencia.inicio)} - ${formatearFecha(licencia.fin)}`
+        : "Fechas no especificadas";
 
     function abrirAlta() {
         setAltaAbierta(true);
@@ -78,6 +91,18 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                     <p className={styles.dato}>
                         <span className={styles.etiqueta}>Whatsapp:</span> {operador.whatsApp}
                     </p>
+                    <h2 className={styles.subtitulo}>Licencia</h2>
+                    <p className={operador.enLicencia ? styles.licenciaActiva : styles.licenciaInactiva}>
+                        {operador.enLicencia ? `Licencia: ${fechasLicencia}` : "No hay licencia registrada."}
+                    </p>
+                    {operador.enLicencia && licencia.comentario && (
+                        <>
+                            <h2 className={styles.subtitulo}>Mensaje de recomendación</h2>
+                            <div className={styles.comentario}>
+                                <p>{licencia.comentario}</p>
+                            </div>
+                        </>
+                    )}
 
                     <h2 className={styles.subtitulo}>Locales</h2>
                     {operador.locales.length === 0 ? (

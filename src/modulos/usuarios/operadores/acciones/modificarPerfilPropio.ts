@@ -10,6 +10,9 @@ type DatosPerfil = {
     nombre?: unknown;
     codigoPais?: unknown;
     telefono?: unknown;
+    enLicencia?: unknown;
+    inicioLicencia?: unknown;
+    finLicencia?: unknown;
     comentario?: unknown;
 };
 
@@ -25,10 +28,10 @@ const REGLAS_TELEFONO: Record<string, RegExp> = {
     "+595": /^9\d{8}$/,
 };
 
-function validarDatos(valor: unknown): { datos: { nombre: string; telefono: string; comentario: string | null }; errores: string[] } {
+function validarDatos(valor: unknown): { datos: { nombre: string; telefono: string; enLicencia: boolean; inicioLicencia: string | null; finLicencia: string | null; comentario: string | null }; errores: string[] } {
     const errores: string[] = [];
     if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-        return { datos: { nombre: "", telefono: "", comentario: null }, errores: ["Los datos del perfil no son válidos."] };
+        return { datos: { nombre: "", telefono: "", enLicencia: false, inicioLicencia: null, finLicencia: null, comentario: null }, errores: ["Los datos del perfil no son válidos."] };
     }
     const entrada = valor as DatosPerfil;
     const nombre = typeof entrada.nombre === "string" ? entrada.nombre.trim() : "";
@@ -42,6 +45,27 @@ function validarDatos(valor: unknown): { datos: { nombre: string; telefono: stri
     if (numero && (!REGLAS_TELEFONO[codigoPais] || !REGLAS_TELEFONO[codigoPais].test(numero))) {
         errores.push("El número de contacto no es válido.");
     }
+    const enLicencia = entrada.enLicencia === true;
+    const inicioLicencia = typeof entrada.inicioLicencia === "string" && /^\d{4}-\d{2}-\d{2}$/.test(entrada.inicioLicencia)
+        ? entrada.inicioLicencia
+        : null;
+    const finLicencia = typeof entrada.finLicencia === "string" && /^\d{4}-\d{2}-\d{2}$/.test(entrada.finLicencia)
+        ? entrada.finLicencia
+        : null;
+    if (enLicencia && (!inicioLicencia || !finLicencia)) {
+        errores.push("Ingresá las fechas de inicio y fin de la licencia.");
+    }
+    if (enLicencia && inicioLicencia && finLicencia) {
+        try {
+            const hoy = Temporal.Now.plainDateISO("America/Montevideo");
+            const inicio = Temporal.PlainDate.from(inicioLicencia);
+            const fin = Temporal.PlainDate.from(finLicencia);
+            if (Temporal.PlainDate.compare(inicio, hoy) < 0) errores.push("La fecha de inicio no puede ser anterior a hoy.");
+            if (Temporal.PlainDate.compare(inicio, fin) > 0) errores.push("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        } catch {
+            errores.push("Las fechas de licencia no son válidas.");
+        }
+    }
     const comentario = typeof entrada.comentario === "string" ? entrada.comentario.trim() : "";
     if (entrada.comentario !== undefined && typeof entrada.comentario !== "string") {
         errores.push("El mensaje de recomendación no es válido.");
@@ -50,7 +74,12 @@ function validarDatos(valor: unknown): { datos: { nombre: string; telefono: stri
         datos: {
             nombre,
             telefono,
-            comentario: comentario || null,
+            enLicencia,
+            inicioLicencia,
+            finLicencia,
+            comentario: enLicencia && inicioLicencia && finLicencia
+                ? `Licencia: ${inicioLicencia} - ${finLicencia}\n\n${comentario}`
+                : null,
         },
         errores,
     };
@@ -87,6 +116,7 @@ export async function modificarPerfilPropio(valor: unknown, foto?: FormData): Pr
             await tx.orm.public.Operador.where({ id: operador.id }).update({
                 nombreFantasia: validacion.datos.nombre,
                 whatsApp: validacion.datos.telefono,
+                enLicencia: validacion.datos.enLicencia,
                 comentario: validacion.datos.comentario,
                 ...(fotoPerfil !== undefined ? { fotoPerfil } : {}),
             });

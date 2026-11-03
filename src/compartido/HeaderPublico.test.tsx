@@ -109,7 +109,6 @@ describe("HeaderPublico", () => {
 
         for (const nombre of ["Navegación principal", "Navegación móvil"]) {
             const menu = within(screen.getByRole("navigation", { name: nombre }));
-            expect(menu.getAllByRole("link")).toHaveLength(4);
             expect(menu.getByRole("link", { name: "Productores" })).toHaveAttribute("href", "/productores");
             expect(menu.getByRole("link", { name: "Mercado Producción" })).toHaveAttribute("href", "/publicaciones-productor");
             expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado");

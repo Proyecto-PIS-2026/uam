@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
+import Switch from "@mui/material/Switch";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 import { modificarPerfilPropio } from "../../acciones/modificarPerfilPropio";
 import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
@@ -25,13 +26,26 @@ function separar(contacto: string | null) {
     return { codigo, telefono };
 }
 
+function extraerLicencia(comentario: string | null) {
+    const coincidencia = comentario?.match(/^Licencia:\s*(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})\s*(?:\r?\n\r?\n)?([\s\S]*)$/);
+    return {
+        inicio: coincidencia?.[1] ?? "",
+        fin: coincidencia?.[2] ?? "",
+        comentario: coincidencia?.[3] ?? comentario ?? "",
+    };
+}
+
 export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil: PerfilPropioOperador; alCancelar: () => void }) {
     const router = useRouter();
     const actual = separar(perfil.contacto);
     const [codigoPais, setCodigoPais] = useState(actual.codigo);
     const [telefono, setTelefono] = useState(actual.telefono);
     const [nombre, setNombre] = useState(perfil.nombre);
-    const [comentario, setComentario] = useState(perfil.comentario ?? "");
+    const licencia = extraerLicencia(perfil.comentario);
+    const [enLicencia, setEnLicencia] = useState(perfil.enLicencia);
+    const [inicioLicencia, setInicioLicencia] = useState(licencia.inicio);
+    const [finLicencia, setFinLicencia] = useState(licencia.fin);
+    const [comentario, setComentario] = useState(licencia.comentario);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
     const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
@@ -47,6 +61,9 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                 nombre,
                 codigoPais,
                 telefono,
+                enLicencia,
+                inicioLicencia,
+                finLicencia,
                 comentario,
             }, ...argumentosFotoPerfil(foto));
             if (!resultado.esValido) {
@@ -86,8 +103,42 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                             </TextField>
                             <TextField label="WhatsApp" type="tel" value={telefono} onChange={(event) => { if (/^[0-9]*$/.test(event.target.value)) setTelefono(event.target.value); }} disabled={guardando} />
                         </div>
-                        {perfil.enLicencia && (
+                        <label className={styles.licencia} htmlFor="perfil-propio-licencia" data-activa={enLicencia}>
+                            <span className={styles.textoLicencia}>
+                                <span className={styles.etiquetaLicencia}>En licencia</span>
+                                <span className={styles.estadoLicencia}>{enLicencia ? "Sí" : "No"}</span>
+                            </span>
+                            <Switch
+                                checked={enLicencia}
+                                onChange={(_, valor) => setEnLicencia(valor)}
+                                disabled={guardando}
+                                slotProps={{ input: { id: "perfil-propio-licencia", role: "switch", "aria-label": "En licencia" } }}
+                            />
+                        </label>
+                        {enLicencia && (
+                            <>
+                                <div className={styles.fechasLicencia}>
+                                    <TextField
+                                        label="Inicio de licencia"
+                                        type="date"
+                                        value={inicioLicencia}
+                                        onChange={(event) => setInicioLicencia(event.target.value)}
+                                        disabled={guardando}
+                                        slotProps={{ input: { min: new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }}
+                                        size="small"
+                                    />
+                                    <TextField
+                                        label="Fin de licencia"
+                                        type="date"
+                                        value={finLicencia}
+                                        onChange={(event) => setFinLicencia(event.target.value)}
+                                        disabled={guardando}
+                                        slotProps={{ input: { min: inicioLicencia || new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }}
+                                        size="small"
+                                    />
+                                </div>
                             <TextField label="Mensaje de recomendación (opcional)" multiline minRows={3} value={comentario} onChange={(event) => setComentario(event.target.value)} disabled={guardando} fullWidth />
+                            </>
                         )}
                     </section>
                     {errores.length > 0 && <div className={styles.error} role="alert">{errores.map((error) => <p key={error}>{error}</p>)}</div>}

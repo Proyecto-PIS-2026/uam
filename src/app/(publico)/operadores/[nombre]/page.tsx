@@ -44,7 +44,7 @@ export default async function Page({ params, searchParams }: PageProps) {
         <main className={styles.pagina}>
             <div className={styles.contenido}>
                 <PerfilOperador operador={perfil} hrefVolver={hrefVolver} textoVolver={textoVolver}/>
-                <CatalogoOperador key={perfil.id} publicaciones={perfil.publicaciones} whatsAppOperador={perfil.whatsApp} idOperador={perfil.id} nombreOperador={perfil.nombreFantasia} />
+                <CatalogoOperador key={perfil.id} publicaciones={perfil.enLicencia ? [] : perfil.publicaciones} whatsAppOperador={perfil.whatsApp} idOperador={perfil.id} nombreOperador={perfil.nombreFantasia} enLicencia={perfil.enLicencia} comentario={perfil.comentario} />
             </div>
         </main>
     );

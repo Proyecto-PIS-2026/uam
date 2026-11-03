@@ -5,6 +5,7 @@ import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente
 import { useMemo, useRef, useState } from "react";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.o
 type Props = {
     operadorId: number;
     nombreOperador?: string;
+    enLicencia?: boolean;
     abrirAltaInicial?: boolean;
     puedeCrear: boolean;
     puedeModificar: boolean;
@@ -36,7 +38,7 @@ type Props = {
     opcionesEdicion: OpcionesEdicionPublicacion;
 };
 
-export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaInicial = false, puedeCrear, puedeModificar, puedeEliminar, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
+export default function MiMercado({ operadorId, nombreOperador = "", enLicencia = false, abrirAltaInicial = false, puedeCrear, puedeModificar, puedeEliminar, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(abrirAltaInicial && puedeCrear);
     const [seleccion, setSeleccion] = useState<{ publicacion: Publicacion; listado: Publicacion[] } | null>(null);
@@ -247,6 +249,12 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
                     </div>
+                )}
+                {enLicencia && (
+                    <p className={styles.avisoLicencia} role="status">
+                        <WarningAmberOutlinedIcon aria-hidden="true" />
+                        <span>Estas de licencia, productos ocultos al publico</span>
+                    </p>
                 )}
                 <div className={`${styles.encabezadoCatalogo} flex-wrap`}>
                     <h2 className={styles.titulo}>Publicaciones</h2>

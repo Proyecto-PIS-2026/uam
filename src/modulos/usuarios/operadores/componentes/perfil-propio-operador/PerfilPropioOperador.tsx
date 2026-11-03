@@ -19,10 +19,23 @@ function formatearFecha(fecha: string): string {
     return `${dia}/${mes}/${anio}`;
 }
 
+function extraerLicencia(comentario: string | null | undefined) {
+    const coincidencia = comentario?.match(/^Licencia:\s*(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})\s*(?:\r?\n\r?\n)?([\s\S]*)$/);
+    return {
+        inicio: coincidencia?.[1] ?? "",
+        fin: coincidencia?.[2] ?? "",
+        comentario: coincidencia?.[3]?.trim() ?? comentario?.trim() ?? "",
+    };
+}
+
 export default function PerfilPropioOperador({ perfil }: { perfil: PerfilPropioOperador }) {
     const [editando, setEditando] = useState(false);
     const [fotoPerfilFallida, setFotoPerfilFallida] = useState(false);
     const inicial = perfil.nombre.trim()[0]?.toUpperCase() ?? "?";
+    const licencia = extraerLicencia(perfil.comentario);
+    const fechasLicencia = licencia.inicio && licencia.fin
+        ? `${formatearFecha(licencia.inicio)} - ${formatearFecha(licencia.fin)}`
+        : "Fechas no especificadas";
 
     if (editando) return <FormularioPerfilPropio perfil={perfil} alCancelar={() => setEditando(false)} />;
 
@@ -80,12 +93,14 @@ export default function PerfilPropioOperador({ perfil }: { perfil: PerfilPropioO
                     )}
                     <h2 className={styles.subtitulo}>Licencia</h2>
                     <p className={perfil.enLicencia ? styles.licenciaActiva : styles.licenciaInactiva}>
-                        {perfil.enLicencia ? "El operador se encuentra en licencia." : "No hay licencia registrada."}
+                        {perfil.enLicencia ? `${fechasLicencia}` : "No hay licencia registrada."}
                     </p>
-                    {perfil.comentario && (
+                    {perfil.enLicencia && licencia.comentario && (
                         <>
                             <h2 className={styles.subtitulo}>Mensaje de recomendación</h2>
-                            <p className={styles.comentario}>{perfil.comentario}</p>
+                            <div className={styles.comentario}>
+                                <p>{licencia.comentario}</p>
+                            </div>
                         </>
                     )}
                      <p className={styles.aviso}>

@@ -32,5 +32,5 @@ export default async function VistaMiMercado({ abrirAltaInicial = false, operado
     ]);
     const publicaciones = mapearPublicacionesMiMercado(publicacionesBD);
     const incrementoPrecio = Number(incrementoPrecioConfiguracion); 
-    return <MiMercado key={operador.id} publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} nombreOperador={operador.nombreFantasia} abrirAltaInicial={abrirAltaInicial} puedeCrear={puedeCrear} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} />;
+    return <MiMercado key={operador.id} publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} nombreOperador={operador.nombreFantasia} enLicencia={operador.enLicencia} abrirAltaInicial={abrirAltaInicial} puedeCrear={puedeCrear} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} />;
 }
