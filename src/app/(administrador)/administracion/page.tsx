@@ -3,19 +3,22 @@ import ContenedorConfiguracionGeneral from "@/modulos/administracion/componentes
 import ContenedorConfiguracionPublicaciones from "@/modulos/administracion/componentes/configuracion-publicaciones/ContenedorConfiguracionPublicaciones";
 import ContenedorConfiguracionGenerales from "@/modulos/administracion/componentes/configuracion-general/ContenedorConfiguracionGenerales";
 import ConfiguracionUsuarios from "@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios";
+import ContenedorEstadistica from "@/modulos/administracion/componentes/estadistica/ContenedorEstadistica";
 
-import obtenerConfiguraciones from "@/modulos/administracion/ConsultaConfiguracion";
+import obtenerConfiguraciones, { obtenerEstadisticas } from "@/modulos/administracion/ConsultaConfiguracion";
 import consultarDatosModificarUsuarios from "@/modulos/administracion/componentes/configuracion-usuarios/acciones/ConsultaUsuarios";
+
 import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaAdministracion() {
-    await requerirAdministrador();
+    const sesion = await requerirAdministrador();
 
-    const [filasConfiguracion, datosUsuarios] = await Promise.all([
+    const [filasConfiguracion, datosUsuarios, estadisticas] = await Promise.all([
         obtenerConfiguraciones(["incremento_precio"]),
-        consultarDatosModificarUsuarios(),
+        consultarDatosModificarUsuarios(sesion.usuarioId),
+        obtenerEstadisticas(),
     ]);
 
     const configuracion: Record<string, string | null> = Object.fromEntries(
@@ -31,6 +34,7 @@ export default async function PaginaAdministracion() {
                 <div className="secciones-pagina relative z-10">
                     <EncabezadoPagina titulo="Panel Administrativo" cantidad={null} subtitulo="Configuración" />
                     <ContenedorConfiguracionGeneral
+                        estadisticas={<ContenedorEstadistica datosIniciales={estadisticas} />}
                         publicaciones={<ContenedorConfiguracionPublicaciones configuracion={configuracion} />}
                         usuarios={<ConfiguracionUsuarios datos={datosUsuarios} />}
                         publica={<ContenedorConfiguracionGenerales/>}

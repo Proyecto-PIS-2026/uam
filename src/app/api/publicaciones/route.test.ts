@@ -1,46 +1,50 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LIMITE_JSON_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
-
 const mocks = vi.hoisted(() => ({
-  operadores: vi.fn(),
-  especies: vi.fn(),
-  variedades: vi.fn(),
-  presentaciones: vi.fn(),
-  categorias: vi.fn(),
-  calibres: vi.fn(),
-  paises: vi.fn(),
-  altaPublicacionOperador: vi.fn(),
-  obtenerOperadorAutorizado: vi.fn(),
-  obtenerSesion: vi.fn(),
+    operadores: vi.fn(),
+    especies: vi.fn(),
+    variedades: vi.fn(),
+    presentaciones: vi.fn(),
+    categorias: vi.fn(),
+    calibres: vi.fn(),
+    paises: vi.fn(),
+    altaPublicacionOperador: vi.fn(),
+    obtenerOperadorAutorizado: vi.fn(),
+    obtenerSesion: vi.fn(),
+    usuarioSelect: vi.fn(),
+    estadisticaWhere: vi.fn(),
+    estadisticaCreate: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
-  obtenerSesion: mocks.obtenerSesion,
+    obtenerSesion: mocks.obtenerSesion,
 }));
 vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
-  obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado,
+    obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado,
 }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
-  db: {
-    orm: {
-      public: {
-        Operador: { all: mocks.operadores },
-        Especie: { all: mocks.especies },
-        Variedad: { all: mocks.variedades },
-        Presentacion: { all: mocks.presentaciones },
-        Categoria: { all: mocks.categorias },
-        Calibre: { all: mocks.calibres },
-        Pais: { all: mocks.paises },
-      },
+    db: {
+        orm: {
+            public: {
+                Operador: { all: mocks.operadores },
+                Especie: { all: mocks.especies },
+                Variedad: { all: mocks.variedades },
+                Presentacion: { all: mocks.presentaciones },
+                Categoria: { all: mocks.categorias },
+                Calibre: { all: mocks.calibres },
+                Pais: { all: mocks.paises },
+                Usuario: { select: mocks.usuarioSelect },
+                EstadisticaPublicacion: { where: mocks.estadisticaWhere, create: mocks.estadisticaCreate },
+            },
+        },
     },
-  },
 }));
 
 vi.mock("@/modulos/publicaciones/altaPublicacionOperador", () => ({
-  altaPublicacionOperador: mocks.altaPublicacionOperador,
+    altaPublicacionOperador: mocks.altaPublicacionOperador,
 }));
 
 import { GET, POST } from "./route";
@@ -64,11 +68,11 @@ describe("GET /api/publicaciones", () => {
     it.each([null, "ADMINISTRADOR"] as const)("devuelve los catálogos de publicaciones para %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
         mocks.operadores.mockResolvedValue([
-        { id: 1, nombreFantasia: "Operador 1" },
+            { id: 1, nombreFantasia: "Operador 1" },
         ]);
 
         mocks.especies.mockResolvedValue([
-        { id: 1, nombreEspecie: "Manzana", especieActiva: true },
+            { id: 1, nombreEspecie: "Manzana", especieActiva: true },
         ]);
 
         mocks.variedades.mockResolvedValue([]);
@@ -83,11 +87,11 @@ describe("GET /api/publicaciones", () => {
         expect(respuesta.status).toBe(200);
 
         expect(cuerpo.operadores).toEqual([
-        { id: 1, nombre: "Operador 1" },
+            { id: 1, nombre: "Operador 1" },
         ]);
 
         expect(cuerpo.especies).toEqual([
-        { id: 1, nombre: "Manzana" },
+            { id: 1, nombre: "Manzana" },
         ]);
         expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
         expect(mocks.operadores).toHaveBeenCalledOnce();
@@ -145,7 +149,7 @@ describe("GET /api/publicaciones", () => {
         expect(mocks.operadores).not.toHaveBeenCalled();
         expect(mocks.especies).not.toHaveBeenCalled();
     });
-  
+ 
     it("devuelve 500 si ocurre un error al cargar los catálogos", async () => {
         mocks.operadores.mockRejectedValue(new Error("Error de base de datos"));
 
@@ -166,6 +170,15 @@ describe("POST /api/publicaciones", () => {
         vi.clearAllMocks();
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" });
+        mocks.usuarioSelect.mockReturnValue({
+            where: vi.fn().mockReturnValue({
+                first: vi.fn().mockResolvedValue({ username: "op1" }),
+            }),
+        });
+        mocks.estadisticaWhere.mockReturnValue({
+            first: vi.fn().mockResolvedValue(null),
+        });
+        mocks.estadisticaCreate.mockResolvedValue({});
     });
 
     it("devuelve 413 sin guardar una solicitud demasiado grande", async () => {
@@ -403,6 +416,15 @@ describe("autorización de alta de publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Propio" });
+        mocks.usuarioSelect.mockReturnValue({
+            where: vi.fn().mockReturnValue({
+                first: vi.fn().mockResolvedValue({ username: "propio" }),
+            }),
+        });
+        mocks.estadisticaWhere.mockReturnValue({
+            first: vi.fn().mockResolvedValue({ id: 1, cantidad: 2 }),
+            update: vi.fn().mockResolvedValue({}),
+        });
     });
 
     it.each([null, "PRODUCTOR"] as const)(
@@ -440,6 +462,15 @@ describe("alta de publicaciones como administrador", () => {
             { id: 7, usuarioId: 70, nombreFantasia: "Operador 7" },
             { id: 8, usuarioId: 80, nombreFantasia: "Operador 8" },
         ]);
+        mocks.usuarioSelect.mockReturnValue({
+            where: vi.fn().mockReturnValue({
+                first: vi.fn().mockResolvedValue({ username: "op7" }),
+            }),
+        });
+        mocks.estadisticaWhere.mockReturnValue({
+            first: vi.fn().mockResolvedValue(null),
+        });
+        mocks.estadisticaCreate.mockResolvedValue({});
     });
 
     it("crea la publicación para el operador indicado sin buscar el operador de la sesión", async () => {

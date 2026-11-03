@@ -97,7 +97,7 @@ export async function obtenerSesion(): Promise<DatosSesion | null> {
             .where({ id: datos.usuarioId })
             .first();
 
-        if (!usuario || usuario.rol !== datos.rol) {
+        if (!usuario || !usuario.habilitado || usuario.rol !== datos.rol) {
             return null;
         }
         if (datos.rol === "ADMINISTRADOR" && (datos.segundoFactorVerificado !== true || !usuario.twoFactorEnabled || !usuario.twoFactorSecret)) {

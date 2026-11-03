@@ -8,6 +8,7 @@ import { autenticarUsuario } from "@/modulos/identidad-acceso/autenticacion/aute
 import { existeUsuarioPorNombre } from "@/modulos/identidad-acceso/autenticacion/consultasAutenticacion";
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { Temporal } from "temporal-polyfill";
 
 export type EstadoInicioSesion = {
     error?: string;
@@ -18,6 +19,35 @@ export type EstadoRecuperacion = {
     exito?: string;
     tipoError?: "operacion";
 };
+
+async function registrarVisitaLogin(tipoVisitante: "OPERADOR" | "PRODUCTOR") {
+    try {
+        const ahora = new Date();
+        const anio = ahora.getFullYear();
+        const mes = String(ahora.getMonth() + 1).padStart(2, "0");
+        const dia = String(ahora.getDate()).padStart(2, "0");
+        const fechaStr = `${anio}-${mes}-${dia}`;
+        const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
+
+        const existente = await db.orm.public.EstadisticaVisita
+            .where({ fecha: fechaInstant, tipoVisitante })
+            .first();
+
+        if (existente) {
+            await db.orm.public.EstadisticaVisita
+                .where({ id: existente.id })
+                .update({ cantidad: existente.cantidad + 1 });
+        } else {
+            await db.orm.public.EstadisticaVisita.create({
+                fecha: fechaInstant,
+                tipoVisitante,
+                cantidad: 1,
+            });
+        }
+    } catch (error) {
+        console.error("Error al registrar estadística de visita:", error);
+    }
+}
 
 export async function solicitarRecuperacion(
     nombreUsuario: string,
@@ -94,6 +124,10 @@ export async function iniciarSesion(
         await guardarCookieSegundoFactor(resultado.token);
         redirect("/iniciar-sesion/segundo-factor");
     }
+    if (usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR") {
+        await registrarVisitaLogin(usuario.rol);
+    }
+
     await crearSesion(usuario.usuarioId, usuario.rol);
     redirect(obtenerRutaPrincipal(usuario.rol));
 }

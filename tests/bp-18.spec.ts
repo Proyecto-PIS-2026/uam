@@ -1,3 +1,4 @@
+
 import { expect, type Page } from "@playwright/test";
 import { test } from "./usuarios-administrativos";
 import {
@@ -19,12 +20,15 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
 
   const secciones = page.getByRole("group", { name: "Secciones de configuración" });
-  await expect(secciones.getByRole("button")).toHaveCount(3);
-  for (const nombre of ["Publicaciones", "Usuarios", "Público"]) {
+  // TODO: volver a 3 cuando se complete la integración final de las secciones de configuración.
+  await expect(secciones.getByRole("button")).toHaveCount(4);
+  for (const nombre of ["Estadísticas", "Publicaciones", "Usuarios", "Público"]) {
     await expect(secciones.getByRole("button", { name: nombre, exact: true })).toBeVisible();
   }
 
+  await secciones.getByRole("button", { name: "Publicaciones", exact: true }).click();
   await expect(page.getByText("Importe de ajuste rápido de precios", { exact: true })).toBeVisible();
+
   await secciones.getByRole("button", { name: "Público", exact: true }).click();
   await expect(page).toHaveURL(/\/administracion#publico$/);
   await expect(page.getByText("Lista Inteligente", { exact: true })).toBeVisible();
@@ -49,13 +53,21 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   await seleccionarRol(page, "Administrador");
   await expect(filas.getByText(usuariosAdministrativos.administrador.usuario, { exact: true })).toBeVisible();
   await seleccionarRol(page, "Operador");
-  const username = (await filas.first().locator("span").first().innerText()).trim();
-  const nombreOperador = (await filas.first().locator("span").nth(1).innerText()).trim();
+  const columnasOperador = filas.first().locator(":scope > span");
+  const username = (await columnasOperador.first().evaluate((columna) =>
+    Array.from(columna.childNodes)
+      .filter((nodo) => nodo.nodeType === Node.TEXT_NODE)
+      .map((nodo) => nodo.textContent)
+      .join(""),
+  )).trim();
+  const nombreOperador = (await columnasOperador.nth(1).innerText()).trim();
   expect(username).not.toBe("");
   expect(nombreOperador).not.toBe("");
 
   await busqueda.fill(username);
-  const filaOperador = filas.filter({ has: page.getByText(username, { exact: true }) });
+  const filaOperador = filas.filter({
+    has: page.locator(`:scope > span:text-is(${JSON.stringify(username)})`),
+  });
   await expect(filaOperador).toHaveCount(1);
   await expect(filaOperador.getByText("Operador", { exact: true })).toBeVisible();
   await expect(filaOperador.getByText(nombreOperador, { exact: true })).toBeVisible();
@@ -79,8 +91,13 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
   await secciones.getByRole("button", { name: "Usuarios", exact: true }).click();
   await seleccionarRol(page, "Operador");
   await busqueda.fill(username);
-  await filaOperador.getByTitle("Editar perfil", { exact: true }).click();
-  await expect(page).toHaveURL(`${rutaPerfil}/editar`, { timeout: 30_000 });
+
+  const rutaEdicion = `${rutaPerfil}/editar`;
+  const botonEditar = filaOperador.getByTitle("Editar perfil", { exact: true });
+
+  await expect(botonEditar).toBeEnabled();
+  await botonEditar.click();
+  await expect(page).toHaveURL(rutaEdicion, { timeout: 30_000 });
   await expect(page.getByRole("heading", { name: "Modificar operador", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Volver al perfil/ }).click();
   await expect(page).toHaveURL(rutaPerfil);
@@ -113,6 +130,8 @@ test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa
 test("BP-18.2: el importe guardado se aplica al ajuste rápido del operador", async ({ page, browser, usuariosAdministrativos }) => {
   test.slow();
   await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
+  await page.getByRole("group", { name: "Secciones de configuración" }).getByRole("button", { name: "Publicaciones", exact: true }).click();
+  await expect(page.getByText("Importe de ajuste rápido de precios", { exact: true })).toBeVisible();
   const campoImporte = page.getByRole("textbox");
   const importeOriginal = await campoImporte.inputValue();
   expect(importeOriginal).toMatch(/^[1-9]\d*$/);
