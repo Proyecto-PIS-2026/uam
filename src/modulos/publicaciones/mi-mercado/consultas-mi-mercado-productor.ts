@@ -20,7 +20,7 @@ async function consultarPublicacionesProductor(productorId: number) {
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) =>
             publicacion
-                .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible")
+                .select("id", "foto", "precio", "cantidadUnidades", "comentario", "fecha", "publicacionActiva", "publicacionDisponible")
                 .include("especie")
                 .include("variedad")
                 .include("presentacion")
@@ -45,6 +45,7 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
             publicacionActiva: publicacion.publicacionActiva,
             publicacionDisponible: publicacion.publicacionDisponible,
             cantidadUnidades: publicacion.cantidadUnidades,
+            comentario: publicacion.comentario,
             especie: {
                 id: publicacion.especie.id,
                 nombreEspecie: publicacion.especie.nombreEspecie,

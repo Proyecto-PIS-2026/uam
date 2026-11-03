@@ -20,6 +20,7 @@ import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionPresentacion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import styles from "./DrawerEditarPublicacion.module.css";
+import CampoComentario from "../../componentes/CampoComentario";
 
 type DrawerEditarPublicacionProps = {
     abierto: boolean;
@@ -62,6 +63,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const publicacion = editando ? baseEdicion : vigente;
     const [precioEditado, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
     const [cantidadUnidadesEditado, setCantidadUnidades] = useState(() => publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
+    const [comentarioEditado, setComentario] = useState(() => publicacion.comentario ?? "");
     const [fotoEditado, setFoto] = useState(publicacion.foto);
     const [fotoNueva, setFotoNueva] = useState<File | null>(null);
     const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
@@ -74,6 +76,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const [disponibleEditado, setDisponible] = useState(publicacion.disponible);
     const precio = editando ? precioEditado : (precioParaEdicion(publicacion.precio));
     const cantidadUnidades = editando ? cantidadUnidadesEditado : (publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
+    const comentario = editando ? comentarioEditado : (publicacion.comentario ?? "");
     const foto = editando ? fotoEditado : (publicacion.foto);
     const especieId = editando ? especieIdEditado : (publicacion.especieId);
     const variedadId = editando ? variedadIdEditado : (publicacion.variedadId ?? 0);
@@ -190,6 +193,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         setFoto(vigente.foto);
         setPrecio(precioParaEdicion(vigente.precio));
         setCantidadUnidades(vigente.cantidadUnidades == null ? "" : String(vigente.cantidadUnidades));
+        setComentario(vigente.comentario ?? "");
         setEspecieId(vigente.especieId);
         setVariedadId(vigente.variedadId ?? 0);
         setPresentacionId(vigente.presentacionId ?? 0);
@@ -241,10 +245,13 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         const cantidadUnidadesNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
         const cantidadFinal = (cantidadUnidadesNormalizada === "" ? null : Number(cantidadUnidadesNormalizada)) as number | null;
         const cantidadOriginal = publicacion.cantidadUnidades ?? null;
+        const comentarioFinal = comentario.trim() || null;
+        const comentarioOriginal = publicacion.comentario ?? null;
 
         const sinCambios =
             precioNuevo === precioOriginal &&
             cantidadFinal === cantidadOriginal &&
+            comentarioFinal === comentarioOriginal &&
             foto === publicacion.foto &&
             fotoNueva === null &&
             especieId === publicacion.especieId &&
@@ -269,6 +276,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             version: publicacion.version ?? 0,
             precio: precioNuevo,
             cantidadUnidades: cantidadFinal,
+            comentario: comentarioFinal,
             foto: foto === publicacion.foto ? undefined : foto,
             especieId,
             variedadId: variedadId || null,
@@ -404,6 +412,17 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             {editando && <small className={styles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>}
         </div>
     );
+    const campoComentario = (
+        <CampoComentario
+            key="comentario"
+            id={`${idBase}-comentario`}
+            valor={comentario}
+            alCambiar={setComentario}
+            editando={editando}
+            deshabilitado={ocupado}
+            clases={{ campo: styles.campo, etiqueta: styles.etiqueta, entrada: styles.entrada, ayuda: styles.ayuda }}
+        />
+    );
     const errorFormulario = (error || errorConsulta) ? <p key="error" className={styles.error} role="alert">{error || errorConsulta}</p> : null;
     return (
         <>
@@ -421,7 +440,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             </div>
             <form className={styles.formulario} onSubmit={solicitarGuardado} aria-busy={ocupado}>
                 <div className={styles.cuerpo}>
-                    {[campoPrecio, campoUnidades, seccionFoto, accionesPublicacion, datosProducto, errorFormulario]}
+                    {[campoPrecio, campoUnidades, campoComentario, seccionFoto, accionesPublicacion, datosProducto, errorFormulario]}
                 </div>
                 <div className={styles.pie}>
                     {editando ? (

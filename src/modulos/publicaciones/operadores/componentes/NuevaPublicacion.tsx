@@ -22,6 +22,7 @@ import type { DatosAltaPublicacionOperador } from "../../validarAltaPublicacionO
 import { ordenarOpcionesPorNombre } from "../ordenar-opciones";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import drawerStyles from "./DrawerEditarPublicacion.module.css";
+import CampoComentario from "../../componentes/CampoComentario";
 
 type Opcion = { id: number; nombre: string };
 type OpcionRelacionada = Opcion & { especieId?: number | null; variedadId?: number };
@@ -33,7 +34,7 @@ type Catalogos = {
     calibres: Opcion[];
     paises: Opcion[];
 };
-type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia" | "variedadId" | "presentacionId" | "categoriaId" | "calibreId" | "paisId"> & { precio: string; cantidadUnidades: string; fotografia: string; variedadId: number; presentacionId: number; categoriaId: number; calibreId: number; paisId: number };
+type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "comentario" | "fotografia" | "variedadId" | "presentacionId" | "categoriaId" | "calibreId" | "paisId"> & { precio: string; cantidadUnidades: string; comentario: string; fotografia: string; variedadId: number; presentacionId: number; categoriaId: number; calibreId: number; paisId: number };
 type NuevaPublicacionProps = {
     operadorId: number;
     incrementoPrecio?: number;
@@ -75,6 +76,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
         precio: "",
         cantidadUnidades: "",
         fotografia: "",
+        comentario: "",
     });
     const [errores, setErrores] = useState<string[]>([]);
     const [errorCarga, setErrorCarga] = useState("");
@@ -179,7 +181,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                 precio: normalizarPrecioPublicacion(datos.precio),
                 cantidadUnidades: datos.cantidadUnidades.trim() !== ""
                     ? parseInt(datos.cantidadUnidades, 10)
-                    : null
+                    : null,
+                comentario: datos.comentario,
             };
             const respuesta = await fetchConSesion("/api/publicaciones", {
                 method: "POST",
@@ -277,6 +280,13 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                             </div>
                         );
                     })()}
+                    <CampoComentario
+                        id="nueva-publicacion-comentario"
+                        valor={datos.comentario}
+                        alCambiar={(comentario) => actualizar({ comentario })}
+                        deshabilitado={deshabilitado}
+                        clases={{ campo: drawerStyles.campo, etiqueta: drawerStyles.etiqueta, entrada: drawerStyles.entrada, ayuda: drawerStyles.ayuda }}
+                    />
 
                     {errores.length > 0 && <div role="alert" className={drawerStyles.error}>{errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}
 

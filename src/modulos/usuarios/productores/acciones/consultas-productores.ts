@@ -60,7 +60,7 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
             .include("pais", (pais) => pais.select("nombrePais"))
             .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion", "departamento"))
             .include("publicacion", (publicacion) => publicacion
-                .select("id", "foto", "precio", "fecha", "cantidadUnidades", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+                .select("id", "foto", "precio", "fecha", "cantidadUnidades", "comentario", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
                 .include("especie").include("variedad").include("presentacion")
                 .include("categoria")
                 .include("calibre")))
@@ -87,6 +87,7 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
                 variedad: publicacion.variedad?.nombreVariedad ?? "",
                 presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
                 cantidadUnidades: publicacion.cantidadUnidades,
+                comentario: publicacion.comentario,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: relacion.pais?.nombrePais ?? "",

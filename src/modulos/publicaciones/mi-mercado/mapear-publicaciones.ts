@@ -17,6 +17,7 @@ export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion):
             publicacionActiva: pub.publicacionActiva as boolean,
             publicacionDisponible: pub.publicacionDisponible as boolean,
             cantidadUnidades: pub.cantidadUnidades as number | null,
+            comentario: pub.comentario as string | null,
             especie: { id: pub.especie.id, nombreEspecie: pub.especie.nombreEspecie, fotoEspecie: pub.especie.fotoEspecie },
             variedad: pub.variedad ? { id: pub.variedad.id, nombreVariedad: pub.variedad.nombreVariedad } : null,
             presentacion: pub.presentacion ? { id: pub.presentacion.id, nombrePresentacion: pub.presentacion.nombrePresentacion } : null,
