@@ -1,4 +1,4 @@
-import { db } from "../../infraestructura/persistencia/prisma/db";
+import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 export default async function obtenerConfiguraciones(nombres: readonly string[]) {
     if (nombres.length === 0) return [];

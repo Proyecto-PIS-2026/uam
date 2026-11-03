@@ -217,10 +217,12 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
       });
       expect(Number(publicacion!.precio)).toBe(Number(precios[indice]));
       const calibre = await db.orm.public.Calibre.where({ id: seleccion.calibres[indice].id }).select("codigoCalibre").first();
+          expect(calibre).not.toBeNull();
       const tarjeta = page.getByRole("button", { name: /^Ver detalles de/ }).filter({
-        has: page.getByText(`${calibre!.codigoCalibre} · Categoría ${seleccion.categoria.nombre}`, { exact: true }),
+        has: page.getByText(calibre!.codigoCalibre, { exact: true }),
       });
       await expect(tarjeta).toHaveCount(1);
+      await expect(tarjeta).toContainText(`Categoría ${seleccion.categoria.nombre}`);
       await expect(tarjeta).toContainText(new Intl.NumberFormat("es-UY").format(Number(precios[indice])));
     }
     for (const otro of [operadorA, operadorB]) {

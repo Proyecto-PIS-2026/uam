@@ -7,7 +7,7 @@ import Home from "./page";
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: vi.fn() }));
 vi.mock("next/navigation", () => ({
-    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
 }));
 
 describe("entrada principal", () => {

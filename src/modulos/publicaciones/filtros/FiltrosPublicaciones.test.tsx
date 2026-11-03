@@ -1,9 +1,11 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import styles from "./FiltrosPublicaciones.module.css";
 import FiltrosPublicaciones from "./FiltrosPublicaciones";
 import type { PublicacionListado } from "../../consulta-mercado/acciones/PublicacionesOperador";
 import type { PublicacionProductorListado } from "../../consulta-mercado/acciones/PublicacionesProductor";
 import { MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { OrdenPublicaciones } from "./FiltrosPublicaciones";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 const obtenerNombreProductor = (publicacion: PublicacionProductorListado) => publicacion.productor.nombreFantasia;
@@ -467,7 +469,7 @@ describe("FiltrosPublicaciones", () => {
 
         // Opciones de ordenamiento
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        expect(screen.getByRole("menuitemradio", { name: /sin ordenar/i })).toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: /sin ordenar/i })).not.toBeInTheDocument();
         expect(screen.getByRole("menuitemradio", { name: /menor precio/i })).toBeInTheDocument();
         expect(screen.getByRole("menuitemradio", { name: /mayor precio/i })).toBeInTheDocument();
         expect(screen.getByRole("menuitemradio", { name: /^a-z$/i })).toBeInTheDocument();
@@ -613,26 +615,29 @@ describe("FiltrosPublicaciones", () => {
         comprobarOrdenActivo("Menor Precio");
     });
 
-    it("mantiene Sin ordenar y el orden recibido cuando no se indica orden inicial", () => {
+    it("mantiene el orden recibido cuando no se indica orden inicial", () => {
         const alFiltrar = vi.fn();
         const alCambiarOrden = vi.fn();
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
-        comprobarOrdenActivo("Sin ordenar");
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden} />);
+
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => publicacion.id)).toEqual([1, 2, 3, 4]);
         expect(alCambiarOrden).not.toHaveBeenCalled();
     });
 
     it("cambia visualmente la opción activa del ordenamiento", () => {
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro="" ordenInicial="alfabeticoAsc" />);
         const selectorOrden = screen.getByRole("button", { name: "Ordenar por" });
+
         fireEvent.click(selectorOrden);
-        expect(screen.getByRole("menuitemradio", { name: "Sin ordenar" })).toHaveAttribute("aria-checked", "true");
+        expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toHaveAttribute("aria-checked", "true");
         fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
+
         comprobarOrdenActivo("Menor Precio");
+
         fireEvent.click(selectorOrden);
         expect(screen.getByRole("menuitemradio", { name: "Menor Precio" })).toHaveAttribute("aria-checked", "true");
-        expect(screen.getByRole("menuitemradio", { name: "Sin ordenar" })).toHaveAttribute("aria-checked", "false");
+        expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toHaveAttribute("aria-checked", "false");
     });
 
     it("muestra la cantidad de publicaciones inicial", () => {
@@ -885,17 +890,16 @@ describe("FiltrosPublicaciones", () => {
 
     it("quitar ambos límites restaura publicaciones con y sin precio", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar}/>);
-        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo);
-
+        const ordenEsperado = [publicacionesConPrecioNulo[1], publicacionesConPrecioNulo[0], publicacionesConPrecioNulo[2]];
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesConPrecioNulo} especieFiltro="" alFiltrar={alFiltrar} />);
+        expect(alFiltrar).toHaveBeenLastCalledWith(ordenEsperado);
         fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "1" } });
         fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "300" } });
-        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo.filter((publicacion) => publicacion.precio !== null));
-
+        expect(alFiltrar).toHaveBeenLastCalledWith([publicacionesConPrecioNulo[1]]);
         fireEvent.change(screen.getByLabelText("Precio Mínimo"), { target: { value: "" } });
-        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo.filter((publicacion) => publicacion.precio !== null));
+        expect(alFiltrar).toHaveBeenLastCalledWith([publicacionesConPrecioNulo[1]]);
         fireEvent.change(screen.getByLabelText("Precio Máximo"), { target: { value: "" } });
-        expect(alFiltrar).toHaveBeenLastCalledWith(publicacionesConPrecioNulo);
+        expect(alFiltrar).toHaveBeenLastCalledWith(ordenEsperado);
     });
 
     it("no devuelve publicaciones cuando el rango de precio es inválido", () => {
@@ -927,37 +931,34 @@ describe("FiltrosPublicaciones", () => {
 
     it("ordena las publicaciones alfabéticamente de A a Z", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} />);
         seleccionarOrden("A-Z");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
-        expect(resultado.map((publicacion) => [publicacion.especie, publicacion.variedad])).toEqual([["Manzana", "Gala"], ["Manzana", "Red"], ["Pera", "Packham"], ["Pera", "Williams"]]);
+        expect(resultado.map((publicacion) => [publicacion.especie, publicacion.variedad])).toEqual([["Manzana", "Gala"], ["Manzana", "Red"], ["Pera", "Williams"], ["Pera", "Packham"]]);
     });
 
     it("aplica A-Z desde el inicio cuando se indica ordenInicial", () => {
         const alFiltrar = vi.fn();
         const alCambiarOrden = vi.fn();
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
-
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden} />);
         comprobarOrdenActivo("A-Z");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
-        expect(resultado.map((publicacion) => publicacion.id)).toEqual([1, 2, 4, 3]);
+        expect(resultado.map((publicacion) => publicacion.id)).toEqual([1, 2, 3, 4]);
         expect(alCambiarOrden).not.toHaveBeenCalled();
     });
 
     it("restaura el orden inicial A-Z y avisa al limpiar filtros", () => {
         const alFiltrar = vi.fn();
         const alCambiarOrden = vi.fn();
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden}/>);
-
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden} />);
         seleccionarOrden("Mayor Precio");
         expect(alCambiarOrden).toHaveBeenLastCalledWith("precioDesc");
         expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([4, 3, 2, 1]);
-
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
         comprobarOrdenActivo("A-Z");
         expect(alCambiarOrden).toHaveBeenCalledTimes(2);
         expect(alCambiarOrden).toHaveBeenLastCalledWith("alfabeticoAsc");
-        expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([1, 2, 4, 3]);
+        expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([1, 2, 3, 4]);
     });
 
     it("aplica la prioridad solo como orden inicial y no permite seleccionarla en el menú público", () => {
@@ -970,18 +971,17 @@ describe("FiltrosPublicaciones", () => {
             { ...publicaciones[0], id: 5, especie: "Acelga", variedad: "-" },
             { ...publicaciones[0], id: 6, especie: "Banana", variedad: "-" },
         ];
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar} />);
         const ids = () => (alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id);
-
-        expect(ids()).toEqual([3, 6, 4, 2, 5, 1]);
+        expect(ids()).toEqual([3, 6, 2, 4, 5, 1]);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         expect(screen.queryByRole("menuitemradio", { name: "Sin ordenar" })).not.toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Orden predeterminado" })).not.toBeInTheDocument();
         fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "manzana" } });
-        expect(ids()).toEqual([4, 2]);
+        expect(ids()).toEqual([2, 4]);
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-        expect(ids()).toEqual([3, 6, 4, 2, 5, 1]);
+        expect(ids()).toEqual([3, 6, 2, 4, 5, 1]);
     });
 
     it("conserva A-Z después de limpiar filtros y solo vuelve a prioridad al montar de nuevo", () => {
@@ -1014,9 +1014,8 @@ describe("FiltrosPublicaciones", () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} />);
         seleccionarOrden("Z-A");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
-        expect(resultado.map((publicacion) => [ publicacion.especie, publicacion.variedad])).toEqual([["Pera", "Williams"], ["Pera", "Packham"], ["Manzana", "Red"], ["Manzana", "Gala"]]);
+        expect(resultado.map((publicacion) => [publicacion.especie, publicacion.variedad])).toEqual([["Pera", "Williams"], ["Pera", "Packham"], ["Manzana", "Gala"], ["Manzana", "Red"]]);
     });
-
 
     it("filtra por varias palabras sin distinguir mayúsculas y minúsculas", () => {
         const alFiltrar = vi.fn();
@@ -1030,11 +1029,12 @@ describe("FiltrosPublicaciones", () => {
         expect(resultado[0].operador.nombreFantasia).toBe("Mercado Verde");
     });
 
-    it("permite volver a seleccionar Sin ordenar", () => {
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro=""/>);
-        seleccionarOrden("Menor Precio");
-        seleccionarOrden("Sin ordenar");
-        comprobarOrdenActivo("Sin ordenar");
+    it("no ofrece Sin ordenar en el menú público", () => {
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" />);
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        expect(screen.queryByRole("menuitemradio", { name: "Sin ordenar" })).not.toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Más actualizadas" })).toBeInTheDocument();
+        expect(screen.getAllByRole("menuitemradio")).toHaveLength(5);
     });
 
     it("coloca las publicaciones sin precio al final al ordenar por precio", () => {
@@ -1293,5 +1293,323 @@ describe("FiltrosPublicaciones", () => {
         expect(screen.queryByRole("combobox", { name: "Nave" })).not.toBeInTheDocument();
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), {target: { value: "mercado verde" }});
         expect(alFiltrar).toHaveBeenLastCalledWith([base]);
+    });
+});
+
+describe("ordenamiento configurado por el administrador", () => {
+    const datosOrdenamiento = [
+        { especie: "Tomate", variedad: "", presentacion: "Caja", categoria: "I", calibre: "M", codigoCalibre: "M", precio: 30, fecha: "2026-11-01T12:00:00.000Z" },
+        { especie: "Acelga", variedad: "", presentacion: "Caja", categoria: "I", calibre: "M", codigoCalibre: "M", precio: 50, fecha: "2026-11-01T12:00:01.000Z" },
+        { especie: "Papa", variedad: "", presentacion: "Caja", categoria: "I", calibre: "M", codigoCalibre: "M", precio: 10, fecha: "2026-11-01T12:00:02.000Z" },
+    ];
+
+    const obtenerNombre = () => "Operador de prueba";
+
+    function prepararOrdenamiento(ordenInicial: OrdenPublicaciones = "alfabeticoAsc", ordenamientoHabilitado = true) {
+        const props = {
+            publicaciones: datosOrdenamiento,
+            especieFiltro: "",
+            obtenerNombreFantasia: obtenerNombre,
+            ordenInicial,
+            ordenamientoHabilitado,
+            alFiltrar: vi.fn(),
+            alConsultar: vi.fn(),
+            alCambiarOrden: vi.fn(),
+        };
+
+        return { ...render(<FiltrosPublicaciones {...props} />), props };
+    }
+
+    function nombresFiltrados(callback: ReturnType<typeof vi.fn>) {
+        const ultimaLlamada = callback.mock.calls.at(-1);
+        return (ultimaLlamada?.[0] as typeof datosOrdenamiento).map((publicacion) => publicacion.especie);
+    }
+
+    async function elegirOrdenConfigurado(etiqueta: string) {
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(await screen.findByRole("menuitemradio", { name: etiqueta }));
+        await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    }
+
+    afterEach(cleanup);
+
+    it("oculta Ordenar por cuando está deshabilitado", () => {
+        prepararOrdenamiento("alfabeticoAsc", false);
+        expect(screen.queryByRole("button", { name: "Ordenar por" })).not.toBeInTheDocument();
+    });
+
+    it("mantiene disponibles la búsqueda y los demás filtros", () => {
+        prepararOrdenamiento("alfabeticoAsc", false);
+        expect(screen.getByRole("searchbox", { name: "Buscar publicaciones" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Más filtros" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Limpiar filtros" })).toBeEnabled();
+    });
+
+    it("ofrece las cinco opciones públicas", async () => {
+        prepararOrdenamiento("prioridad");
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        expect(await screen.findByRole("menuitemradio", { name: "Menor Precio" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Mayor Precio" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Z-A" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Más actualizadas" })).toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Más vendidas" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Sin ordenar" })).not.toBeInTheDocument();
+        expect(screen.getAllByRole("menuitemradio")).toHaveLength(5);
+    });
+
+    it.each([
+        { orden: "alfabeticoAsc", esperado: ["Acelga", "Papa", "Tomate"] },
+        { orden: "alfabeticoDesc", esperado: ["Tomate", "Papa", "Acelga"] },
+        { orden: "precioAsc", esperado: ["Papa", "Tomate", "Acelga"] },
+        { orden: "precioDesc", esperado: ["Acelga", "Tomate", "Papa"] },
+        { orden: "prioridad", esperado: ["Papa", "Tomate", "Acelga"] },
+    ] satisfies { orden: OrdenPublicaciones; esperado: string[] }[])("aplica el predeterminado $orden con el switch apagado", ({ orden, esperado }) => {
+        const { props } = prepararOrdenamiento(orden, false);
+        expect(nombresFiltrados(props.alFiltrar)).toEqual(esperado);
+        expect(props.alConsultar.mock.calls.at(-1)![0]).toMatchObject({ orden });
+    });
+
+    it("permite elegir otro orden cuando está habilitado", async () => {
+        const { props } = prepararOrdenamiento();
+        await elegirOrdenConfigurado("Mayor Precio");
+
+        expect(props.alCambiarOrden).toHaveBeenCalledExactlyOnceWith("precioDesc");
+        expect(nombresFiltrados(props.alFiltrar)).toEqual(["Acelga", "Tomate", "Papa"]);
+        expect(props.alConsultar.mock.calls.at(-1)![0]).toMatchObject({ orden: "precioDesc" });
+    });
+
+    it("ignora la selección local al deshabilitar el ordenamiento", async () => {
+        const { rerender, props } = prepararOrdenamiento();
+        await elegirOrdenConfigurado("Z-A");
+        expect(nombresFiltrados(props.alFiltrar)).toEqual(["Tomate", "Papa", "Acelga"]);
+
+        rerender(<FiltrosPublicaciones {...props} ordenamientoHabilitado={false} />);
+
+        expect(screen.queryByRole("button", { name: "Ordenar por" })).not.toBeInTheDocument();
+        expect(nombresFiltrados(props.alFiltrar)).toEqual(["Acelga", "Papa", "Tomate"]);
+        expect(props.alConsultar.mock.calls.at(-1)![0]).toMatchObject({ orden: "alfabeticoAsc" });
+    });
+
+    it("respeta un nuevo predeterminado cuando el switch está apagado", () => {
+        const { rerender, props } = prepararOrdenamiento("alfabeticoAsc", false);
+
+        rerender(<FiltrosPublicaciones {...props} ordenInicial="precioDesc" />);
+
+        expect(nombresFiltrados(props.alFiltrar)).toEqual(["Acelga", "Tomate", "Papa"]);
+        expect(props.alConsultar.mock.calls.at(-1)![0]).toMatchObject({ orden: "precioDesc" });
+    });
+
+    it("mantiene el predeterminado al buscar con el switch apagado", () => {
+        const { props } = prepararOrdenamiento("alfabeticoDesc", false);
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar publicaciones" }), { target: { value: "Papa" } });
+
+        expect(nombresFiltrados(props.alFiltrar)).toEqual(["Papa"]);
+        expect(props.alConsultar.mock.calls.at(-1)![0]).toMatchObject({ orden: "alfabeticoDesc" });
+    });
+
+    it("restaura el orden inicial al limpiar filtros si no es prioridad", async () => {
+        const { props } = prepararOrdenamiento();
+        await elegirOrdenConfigurado("Z-A");
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+
+        expect(nombresFiltrados(props.alFiltrar)).toEqual(["Acelga", "Papa", "Tomate"]);
+        expect(props.alCambiarOrden).toHaveBeenLastCalledWith("alfabeticoAsc");
+    });
+});
+
+describe("ponderación y actualización de publicaciones", () => {
+    afterEach(cleanup);
+
+    function crearPublicacion(cambios: Partial<PublicacionListado> = {}): PublicacionListado {
+        return {
+            id: 1,
+            precio: 100,
+            fecha: "2026-11-01T12:00:00.000Z",
+            foto: null,
+            especie: "Tomate",
+            variedad: "",
+            presentacion: "",
+            cantidadUnidades: null,
+            categoria: "",
+            calibre: "",
+            codigoCalibre: "",
+            pais: "",
+            tipoPublicacion: "OPERADOR",
+            operador: { id: 1, nombreFantasia: "Huerta del Sur", whatsApp: "099123456" },
+            ...cambios,
+        };
+    }
+
+    function preparar(publicaciones: PublicacionListado[], ordenInicial: OrdenPublicaciones = "prioridad", especieFiltro = "") {
+        const alFiltrar = vi.fn();
+        const alConsultar = vi.fn();
+        const alCambiarOrden = vi.fn();
+        render(<FiltrosPublicaciones publicaciones={publicaciones} especieFiltro={especieFiltro} obtenerNombreFantasia={obtenerNombreOperador} ordenInicial={ordenInicial} alFiltrar={alFiltrar} alConsultar={alConsultar} alCambiarOrden={alCambiarOrden} />);
+        return { alFiltrar, alConsultar, alCambiarOrden };
+    }
+
+    function idsFiltrados(callback: ReturnType<typeof vi.fn>): number[] {
+        return (callback.mock.calls.at(-1)![0] as PublicacionListado[]).map((publicacion) => publicacion.id);
+    }
+
+    async function elegirOrden(etiqueta: string) {
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(await screen.findByRole("menuitemradio", { name: etiqueta }));
+        await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    }
+
+    it("respeta el menor precio aunque la publicación más cara tenga más datos", () => {
+        const barata = crearPublicacion({ id: 1, precio: 100 });
+        const completa = crearPublicacion({ id: 2, precio: 200, foto: "/tomate.webp" });
+        const { alFiltrar } = preparar([completa, barata], "precioAsc");
+        expect(idsFiltrados(alFiltrar)).toEqual([1, 2]);
+    });
+
+    it("respeta el mayor precio aunque la publicación más barata tenga más datos", () => {
+        const cara = crearPublicacion({ id: 1, precio: 200 });
+        const completa = crearPublicacion({ id: 2, precio: 100, foto: "/tomate.webp" });
+        const { alFiltrar } = preparar([completa, cara], "precioDesc");
+        expect(idsFiltrados(alFiltrar)).toEqual([1, 2]);
+    });
+
+    it.each(["precioAsc", "precioDesc"] as const)("desempata precios iguales por puntos entre especies distintas con %s", (orden) => {
+        const acelga = crearPublicacion({ id: 1, especie: "Acelga" });
+        const tomate = crearPublicacion({ id: 2, foto: "/tomate.webp" });
+        const { alFiltrar } = preparar([acelga, tomate], orden);
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+    });
+
+    it.each(["precioAsc", "precioDesc"] as const)("desempata precios y puntos iguales por fecha con %s", (orden) => {
+        const antigua = crearPublicacion({ id: 1, especie: "Acelga" });
+        const reciente = crearPublicacion({ id: 2, fecha: "2026-11-01T12:00:01.000Z" });
+        const { alFiltrar } = preparar([antigua, reciente], orden);
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+    });
+
+    it.each(["precioAsc", "precioDesc"] as const)("mantiene las publicaciones sin precio al final con %s", (orden) => {
+        const conPrecio = crearPublicacion({ id: 1 });
+        const sinPrecio = crearPublicacion({ id: 2, precio: null, foto: "/tomate.webp" });
+        const { alFiltrar } = preparar([sinPrecio, conPrecio], orden);
+        expect(idsFiltrados(alFiltrar)).toEqual([1, 2]);
+    });
+
+    it.each(["precioAsc", "precioDesc"] as const)("desempata publicaciones sin precio por puntos con %s", (orden) => {
+        const incompleta = crearPublicacion({ id: 1, precio: null });
+        const completa = crearPublicacion({ id: 2, precio: null, foto: "/tomate.webp" });
+        const { alFiltrar } = preparar([incompleta, completa], orden);
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+    });
+
+    it.each([
+        { orden: "alfabeticoAsc", esperado: [1, 2] },
+        { orden: "alfabeticoDesc", esperado: [2, 1] },
+    ] as const)("respeta la especie antes de comparar puntos con $orden", ({ orden, esperado }) => {
+        const acelga = crearPublicacion({ id: 1, especie: "Acelga" });
+        const tomate = crearPublicacion({ id: 2, foto: "/tomate.webp" });
+        const { alFiltrar } = preparar([tomate, acelga], orden);
+        expect(idsFiltrados(alFiltrar)).toEqual(esperado);
+    });
+
+    it.each(["alfabeticoAsc", "alfabeticoDesc"] as const)("prioriza los puntos sobre la variedad dentro de la misma especie con %s", (orden) => {
+        const incompleta = crearPublicacion({ id: 1, variedad: "Americano" });
+        const completa = crearPublicacion({ id: 2, variedad: "Perita", foto: "/tomate.webp" });
+        const { alFiltrar } = preparar([incompleta, completa], orden);
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+    });
+
+    it.each(["alfabeticoAsc", "alfabeticoDesc"] as const)("mantiene la fecha descendente al empatar especie y puntos con %s", (orden) => {
+        const antigua = crearPublicacion({ id: 1 });
+        const reciente = crearPublicacion({ id: 2, fecha: "2026-11-01T12:00:01.000Z" });
+        const { alFiltrar } = preparar([antigua, reciente], orden);
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+    });
+
+    it("respeta las especies prioritarias antes de comparar los puntos", () => {
+        const papa = crearPublicacion({ id: 1, especie: "Papa" });
+        const tomate = crearPublicacion({ id: 2, foto: "/tomate.webp" });
+        const acelga = crearPublicacion({ id: 3, especie: "Acelga", foto: "/acelga.webp", variedad: "Verde" });
+        const { alFiltrar } = preparar([acelga, tomate, papa]);
+        expect(idsFiltrados(alFiltrar)).toEqual([1, 2, 3]);
+    });
+
+    it("ordena las especies no prioritarias alfabéticamente", () => {
+        const ajo = crearPublicacion({ id: 1, especie: "Ajo" });
+        const acelga = crearPublicacion({ id: 2, especie: "Acelga" });
+        const { alFiltrar } = preparar([ajo, acelga]);
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+    });
+
+    it("aplica puntos y fecha al filtrar una sola especie con Más vendidas", () => {
+        const incompleta = crearPublicacion({ id: 1, especie: "Papa", fecha: "2026-11-01T12:00:05.000Z" });
+        const completaAntigua = crearPublicacion({ id: 2, especie: "Papa", foto: "/papa.webp" });
+        const completaReciente = crearPublicacion({ id: 3, especie: "Papa", foto: "/papa.webp", fecha: "2026-11-01T12:00:01.000Z" });
+        const tomate = crearPublicacion({ id: 4 });
+        const { alFiltrar } = preparar([incompleta, completaAntigua, tomate, completaReciente], "prioridad", "Papa");
+        expect(idsFiltrados(alFiltrar)).toEqual([3, 2, 1]);
+    });
+
+    it("prioriza la actualización sobre los puntos al ordenar por fecha", () => {
+        const completaAntigua = crearPublicacion({ id: 1, foto: "/tomate.webp" });
+        const incompletaReciente = crearPublicacion({ id: 2, fecha: "2026-11-01T12:00:01.000Z" });
+        const { alFiltrar } = preparar([completaAntigua, incompletaReciente], "fechaDesc");
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+    });
+
+    it("desempata fechas iguales por puntos entre especies distintas", () => {
+        const acelga = crearPublicacion({ id: 1, especie: "Acelga" });
+        const tomate = crearPublicacion({ id: 2, foto: "/tomate.webp" });
+        const { alFiltrar } = preparar([acelga, tomate], "fechaDesc");
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+    });
+
+    it.each<OrdenPublicaciones>(["prioridad", "precioAsc", "precioDesc", "alfabeticoAsc", "alfabeticoDesc", "fechaDesc", "ninguno"])("desempata por ID cuando los demás criterios coinciden con %s", (orden) => {
+        const primera = crearPublicacion({ id: 1 });
+        const segunda = crearPublicacion({ id: 2 });
+        const { alFiltrar } = preparar([segunda, primera], orden);
+        expect(idsFiltrados(alFiltrar)).toEqual([1, 2]);
+    });
+
+    it("permite seleccionar Más actualizadas y comunica el orden al padre", async () => {
+        const antigua = crearPublicacion({ id: 1 });
+        const reciente = crearPublicacion({ id: 2, fecha: "2026-11-01T12:00:01.000Z" });
+        const { alFiltrar, alConsultar, alCambiarOrden } = preparar([antigua, reciente]);
+        await elegirOrden("Más actualizadas");
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+        expect(alCambiarOrden).toHaveBeenCalledExactlyOnceWith("fechaDesc");
+        expect(alConsultar).toHaveBeenLastCalledWith(expect.objectContaining({ orden: "fechaDesc" }));
+    });
+
+    it("conserva el desempate por puntos después de buscar", () => {
+        const incompleta = crearPublicacion({ id: 1 });
+        const completa = crearPublicacion({ id: 2, foto: "/tomate.webp" });
+        const otraEspecie = crearPublicacion({ id: 3, especie: "Papa" });
+        const { alFiltrar } = preparar([incompleta, otraEspecie, completa], "precioAsc");
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar publicaciones" }), { target: { value: "Tomate" } });
+        expect(idsFiltrados(alFiltrar)).toEqual([2, 1]);
+    });
+
+    it("ordena productores por actualización sin aplicar la ponderación de operadores", () => {
+        const base = crearPublicacion();
+        const antigua: PublicacionProductorListado = {
+            id: base.id,
+            precio: base.precio,
+            fecha: base.fecha,
+            foto: "/tomate.webp",
+            especie: base.especie,
+            variedad: "Perita",
+            presentacion: "Caja",
+            categoria: "I",
+            calibre: "Grande",
+            codigoCalibre: "G",
+            pais: "Uruguay",
+            tipoPublicacion: "PRODUCTOR",
+            productor: { id: 1, nombreFantasia: "Quinta del Sur", fotoPerfil: null, whatsApp: "099123456" },
+            ubicaciones: [],
+        };
+        const reciente: PublicacionProductorListado = { ...antigua, id: 2, foto: null, fecha: "2026-11-01T12:00:01.000Z" };
+        const alFiltrar = vi.fn();
+        render(<FiltrosPublicaciones publicaciones={[antigua, reciente]} especieFiltro="" obtenerNombreFantasia={obtenerNombreProductor} ordenInicial="fechaDesc" alFiltrar={alFiltrar} />);
+        expect((alFiltrar.mock.calls.at(-1)![0] as PublicacionProductorListado[]).map((publicacion) => publicacion.id)).toEqual([2, 1]);
     });
 });

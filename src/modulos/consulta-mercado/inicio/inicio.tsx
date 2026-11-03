@@ -16,6 +16,7 @@ import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
+import type { OrdenLanding } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
 import ProductoCard from "./tarjetaProducto";
 import styles from "./inicio.module.css";
 
@@ -27,7 +28,9 @@ type EspecieInicio = {
 
 type Props = {
     especies: EspecieInicio[];
-    urlListaInteligente: string | null; 
+    urlListaInteligente: string | null;
+    ordenamientoHabilitado: boolean;
+    ordenPredeterminado: OrdenLanding;
 };
 
 const especiesPorPagina = 20;
@@ -36,25 +39,29 @@ function normalizarTexto(texto: string) {
     return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-export default function Inicio({ especies, urlListaInteligente }: Props) {
+export default function Inicio({ especies, urlListaInteligente, ordenamientoHabilitado, ordenPredeterminado }: Props) {
     const [busqueda, setBusqueda] = useState("");
-    const [orden, setOrden] = useState<"prioridad" | "a-z" | "z-a">("prioridad");
+    const [ordenElegido, setOrdenElegido] = useState<OrdenLanding>(ordenPredeterminado);
     const [paginaActual, setPaginaActual] = useState(1);
-    const { notificar } = useNotificacionToast();
 
+    const orden = ordenamientoHabilitado ? ordenElegido : ordenPredeterminado;
+
+    const { notificar } = useNotificacionToast();
+    
     const textoBuscado = normalizarTexto(busqueda.trim());
     const especiesFiltradas = especies.filter((especie) =>
         normalizarTexto(especie.nombreEspecie).includes(textoBuscado)
     );
 
     especiesFiltradas.sort((primera, segunda) => {
-        if (orden === "prioridad") {
+        if (orden === "mas_vendidas") {
             return compararEspeciesPorPrioridad(primera.nombreEspecie, segunda.nombreEspecie);
         }
         const comparacion = primera.nombreEspecie.localeCompare(segunda.nombreEspecie, "es", { sensitivity: "base" });
-        return orden === "z-a" ? -comparacion : comparacion;
-    });
 
+        return orden === "nombre_desc" ? -comparacion : comparacion;
+    });
+    
     const totalPaginas = Math.ceil(especiesFiltradas.length / especiesPorPagina);
     const paginaVisible = Math.min(paginaActual, Math.max(1, totalPaginas));
     const indiceInicial = (paginaVisible - 1) * especiesPorPagina;
@@ -62,8 +69,6 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
 
     const contenido = (
         <main className={styles.pagina}>
-
-
             <h1 className={styles.tituloMobile}>Mercado de hoy</h1>
             <section className={styles.hero} aria-labelledby="titulo-home">
                 <div className={styles.heroTexto}>
@@ -74,7 +79,6 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                     <Image src="/generico/slider1-scaled.jpg" alt="Vista aérea del Mercado Agroalimentario" fill sizes="100vw" className={styles.heroFoto} />
                 </div>
             </section>
-
             <div className={styles.contenedor}>
                 <nav className={styles.accesos} aria-label="Accesos principales">
                     {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver Mercado Virtual</span></Link>}
@@ -92,19 +96,14 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                         <h2 className={styles.titulo} id="titulo-especies">Especies</h2>
                         <p className={styles.subtitulo}>{especies.length} especies con operadores</p>
                     </div>
-
-                    <div className={styles.controles}>
+                    <div className={styles.controles} data-ordenamiento={ordenamientoHabilitado}>
                         <TextField fullWidth size="small" label="Buscar especies" type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }} className={`${styles.selectMui} ${styles.filtroBuscador}`}
                             slotProps={{input: {startAdornment: <SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }} />}}}
                         />
-                        <BotonOrdenar<"prioridad" | "a-z" | "z-a">
-                            valor={orden}
-                            opciones={[{ valor: "a-z", etiqueta: "A-Z" }, { valor: "z-a", etiqueta: "Z-A" }]}
-                            alCambiar={(nuevoOrden) => { setOrden(nuevoOrden); setPaginaActual(1); }}
-                            className={styles.filtroOrden}
-                        />
+                        {ordenamientoHabilitado && (
+                            <BotonOrdenar<OrdenLanding> valor={orden} opciones={[{ valor: "nombre_asc", etiqueta: "A-Z" }, { valor: "nombre_desc", etiqueta: "Z-A" }]} alCambiar={(nuevoOrden) => {setOrdenElegido(nuevoOrden); setPaginaActual(1)}} className={styles.filtroOrden}/>
+                        )}
                     </div>
-
                     {especiesPagina.length === 0 ? (
                         <EstadoVacio
                             titulo={especies.length === 0 ? "Todavía no hay especies disponibles" : "No hay especies que coincidan con la búsqueda."}
@@ -118,7 +117,6 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                                     <ProductoCard key={especie.nombreEspecie} nombre={especie.nombreEspecie} operadores={especie.cantidadOperadores} imagen={especie.fotoGenerica} />
                                 ))}
                             </div>
-
                             {totalPaginas > 1 && (
                                 <nav className={styles.paginacion} aria-label="Páginas de especies">
                                     <button className={styles.botonPagina} type="button" onClick={() => setPaginaActual(paginaVisible - 1)} disabled={paginaVisible === 1}>Anterior</button>

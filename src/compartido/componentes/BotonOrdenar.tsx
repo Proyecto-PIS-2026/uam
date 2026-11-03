@@ -52,6 +52,7 @@ export default function BotonOrdenar<T extends string>({ valor, opciones, alCamb
                     <MenuItem
                         key={opcion.valor}
                         role="menuitemradio"
+                        aria-checked={opcion.valor === valor}
                         selected={opcion.valor === valor}
                         className={styles.opcion}
                         onClick={() => {
