@@ -46,7 +46,7 @@ describe("acceso al cambio desde mi cuenta", () => {
         m.sesion.mockResolvedValue({ usuarioId: 7, rol });
         render(await Pagina());
         expect(m.obtenerPerfilOperador).toHaveBeenCalledOnce();
-        expect(m.perfilOperador).toHaveBeenCalledWith({ perfil: { id: 13, nombre: "Operador" } });
+        expect(m.perfilOperador).toHaveBeenCalledWith({ perfil: { id: 13, nombre: "Operador" } }, undefined);
         expect(m.where).not.toHaveBeenCalled();
     });
     it("oculta el enlace si no está habilitado", async () => {
