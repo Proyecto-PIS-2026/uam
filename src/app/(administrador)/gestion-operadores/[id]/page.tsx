@@ -3,7 +3,7 @@ import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/c
 
 import { obtenerPerfilAdminOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-admin";
 import { obtenerOpcionesEdicionPublicacion } from "../../../../modulos/publicaciones/operadores/consultas-edicion-publicacion";
-import { obtenerConfiguracion } from "@/modulos/administracion/ConsultaConfiguracion";
+import { obtenerConfiguracion } from "@/modulos/administracion/acciones/consultas-configuracion";
 import PerfilOperadorAdmin from "../../../../modulos/usuarios/operadores/componentes/perfil-admin-operador/PerfilOperadorAdmin";
 
 export const dynamic = "force-dynamic"; // Consultar la base en cada visita, sin cachear la página

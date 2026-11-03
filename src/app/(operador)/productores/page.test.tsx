@@ -8,8 +8,8 @@ import type { PerfilProductorPorOperador } from "@/modulos/usuarios/productores/
 
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(), listado: vi.fn(), perfil: vi.fn(),
-    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
-    notFound: vi.fn(() => { throw new Error("NEXT_NOT_FOUND"); }),
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
+    notFound: vi.fn(() => { throw new Error("NEXT_NOT_FOUND") }),
 }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
@@ -74,7 +74,7 @@ describe("Listado y navegación de productores", () => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
         await expect(Page()).rejects.toThrow("NEXT_REDIRECT");
         await expect(PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(perfil.nombreFantasia) }), searchParams: Promise.resolve({}) })).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/mi-mercado/productor" : "/iniciar-sesion");
+        expect(mocks.redirect).toHaveBeenCalledWith(rol ? "/mi-mercado/productor" : "/sesion-finalizada");
         expect(mocks.listado).not.toHaveBeenCalled();
         expect(mocks.perfil).not.toHaveBeenCalled();
     });

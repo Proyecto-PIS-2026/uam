@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 
 import FormularioModificarOperador from "./FormularioModificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
@@ -204,6 +204,10 @@ describe("FormularioModificarOperador", () => {
             nombre: "Caporale Hermanos",
             codigoPais: "+54",
             telefono: "1123456789",
+            enLicencia: false,
+            inicioLicencia: "",
+            finLicencia: "",
+            comentario: "",
             contraseña: "",
             confirmacionContraseña: "",
             locales: [{ nombre: "022", naveId: 1, contrato: "2026-12-31" }],

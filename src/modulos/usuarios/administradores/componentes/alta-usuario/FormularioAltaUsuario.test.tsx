@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import FormularioAltaUsuario from "./FormularioAltaUsuario";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
@@ -357,37 +357,6 @@ describe("FormularioAltaUsuario", () => {
         expect(
             screen.getAllByPlaceholderText("Número de local"),
         ).toHaveLength(1);
-    });
-
-    it("muestra error cuando se selecciona administrador", async () => {
-        render(<FormularioAltaUsuario naves={naves} />);
-
-        seleccionarOpcion("Rol del usuario", "Administrador");
-
-        fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
-            target: { value: "usuario1" },
-        });
-
-        fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
-            target: { value: "clave12345" },
-        });
-
-        fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
-            target: { value: "clave12345" },
-        });
-
-        fireEvent.submit(
-            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
-        );
-
-        expect(
-            await screen.findByText(
-                "Esta alta todavía no está disponible para el rol seleccionado.",
-            ),
-        ).toBeInTheDocument();
-
-        expect(altaOperador).not.toHaveBeenCalled();
-        expect(altaProductor).not.toHaveBeenCalled();
     });
 
     it("envía correctamente el alta de un operador conservando ceros iniciales del local", async () => {

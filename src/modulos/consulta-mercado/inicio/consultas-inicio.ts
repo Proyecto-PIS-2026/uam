@@ -1,107 +1,76 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
-import { readdir } from "node:fs/promises";
-import { join } from "node:path";
 import { Temporal } from "@js-temporal/polyfill";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 const runtime = db.runtime();
 
 export async function obtenerEspeciesConPublicacionesActivas() {
-  if (!autorizado("operador.publicacion.consultar")) {
-      throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
-  }
+    if (!autorizado("operador.publicacion.consultar")) {
+        throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
+    }
 
-  const especie = db.sql.public.especie;
-  const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
+    const especie = db.sql.public.especie;
+    const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
 
-  const plan = db.raw.sql`
-    SELECT
-      e."nombreEspecie",
-      COUNT(DISTINCT po."operadorId")::int AS "cantidadOperadores"
-    FROM publicacion p
-    JOIN "publicacionOperador" po ON po."publicacionId" = p.id
-    JOIN especie e ON e.id = p."especieId"
-    WHERE p."publicacionDisponible" = true
-      AND p."publicacionActiva" = true
-      AND EXISTS (
-        SELECT 1
-        FROM local l
-        WHERE l."operadorId" = po."operadorId"
-          AND (
-            l."finContrato" IS NULL
-            OR (l."finContrato" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date
-          )
-      )
-    GROUP BY e."nombreEspecie"
-    ORDER BY e."nombreEspecie"
-  `
-    .returnsRow({
-      nombreEspecie: especie.columns.nombreEspecie,
-      cantidadOperadores: "pg/int4@1",
-    })
-    .build();
+    const plan = db.raw.sql`
+        SELECT
+            e."nombreEspecie",
+            e."fotoEspecie",
+            COUNT(DISTINCT po."operadorId")::int AS "cantidadOperadores"
+        FROM publicacion p
+        JOIN "publicacionOperador" po ON po."publicacionId" = p.id
+        JOIN operador o ON o.id = po."operadorId"
+        JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true
+        JOIN especie e ON e.id = p."especieId"
+        WHERE p."publicacionDisponible" = true
+            AND p."publicacionActiva" = true
+            AND p."tipoPublicacion" = 'OPERADOR'
+            AND EXISTS (
+                SELECT 1
+                FROM local l
+                WHERE l."operadorId" = po."operadorId"
+                    AND (
+                        l."finContrato" IS NULL
+                        OR (l."finContrato" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date
+                    )
+            )
+        GROUP BY e.id, e."nombreEspecie", e."fotoEspecie"
+        ORDER BY e."nombreEspecie"
+    `.returnsRow({
+        nombreEspecie: especie.columns.nombreEspecie,
+        fotoEspecie: especie.columns.fotoEspecie,
+        cantidadOperadores: "pg/int4@1",
+    }).build();
 
-  return runtime.query(plan);
-}
-
-function nombreArchivoEspecie(nombre: string) {
-  return nombre
-    .toLocaleLowerCase("es")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-async function obtenerArchivosGenericos() {
-  try {
-    return new Set(await readdir(join(process.cwd(), "public", "generico")));
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Set<string>();
-    throw error;
-  }
-}
-
-function buscarFotoGenerica(nombre: string, archivos: Set<string>) {
-  const nombreBase = nombreArchivoEspecie(nombre);
-
-  for (const extension of [".webp", ".png", ".jpg"]) {
-    const archivo = `${nombreBase}${extension}`;
-    if (archivos.has(archivo)) return `/generico/${archivo}`;
-  }
-
-  return null;
+    return runtime.query(plan);
 }
 
 export async function obtenerEspeciesInicio() {
-  const [especies, archivosGenericos] = await Promise.all([
-    obtenerEspeciesConPublicacionesActivas(),
-    obtenerArchivosGenericos(),
-  ]);
+    const especies = await obtenerEspeciesConPublicacionesActivas();
 
-  return especies.map((especie) => ({
-    nombreEspecie: especie.nombreEspecie,
-    cantidadOperadores: especie.cantidadOperadores,
-    fotoGenerica: buscarFotoGenerica(especie.nombreEspecie, archivosGenericos),
-  }));
+    return especies.map((especie) => ({
+        nombreEspecie: especie.nombreEspecie,
+        cantidadOperadores: especie.cantidadOperadores,
+        fotoGenerica: especie.fotoEspecie,
+    }));
 }
 
 export async function obtenerUrlListaInteligente() {
-  if (!autorizado("listaInteligente.consultar")) {
-      throw new Error("No tiene permisos para consultar la Lista Inteligente.");
-  }
+    if (!autorizado("listaInteligente.consultar")) {
+        throw new Error("No tiene permisos para consultar la Lista Inteligente.");
+    }
 
-  const configuracion = db.sql.public.configuracion;
-  const plan = db.raw.sql`
-    SELECT c."valorConfiguracion"
-    FROM public.configuracion c
-    WHERE c."nombreConfiguracion" = 'url_lista_inteligente'
-    LIMIT 1
-  `
-    .returnsRow({
-      valorConfiguracion: configuracion.columns.valorConfiguracion,
-    })
-    .build();
-  const [resultado] = await runtime.query(plan);
-  return resultado?.valorConfiguracion ?? null;
+    const configuracion = db.sql.public.configuracion;
+
+    const plan = db.raw.sql`
+        SELECT c."valorConfiguracion"
+        FROM public.configuracion c
+        WHERE c."nombreConfiguracion" = 'url_lista_inteligente'
+        LIMIT 1
+    `.returnsRow({
+        valorConfiguracion: configuracion.columns.valorConfiguracion,
+    }).build();
+
+    const [resultado] = await runtime.query(plan);
+    return resultado?.valorConfiguracion ?? null;
 }

@@ -102,6 +102,11 @@ async function completarProducto(page: Page, formulario: Locator, seleccion: Sel
 }
 
 async function confirmarAlta(page: Page, formulario: Locator) {
+  const notificacion = page.getByRole("status").filter({ hasText: /^Publicación creada correctamente\.$/ });
+  while (await notificacion.count() > 0) {
+    await notificacion.first().getByRole("button", { name: "Cerrar notificación", exact: true }).click();
+  }
+  await expect(notificacion).toHaveCount(0);
   const guardado = page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === rutaApi && respuesta.request().method() === "POST");
   await formulario.getByRole("button", { name: "Confirmar", exact: true }).click();
   const respuesta = await guardado;
@@ -109,7 +114,7 @@ async function confirmarAlta(page: Page, formulario: Locator) {
   const resultado = await respuesta.json();
   expect(resultado.esValido).toBe(true);
   await expect(formulario).not.toBeVisible();
-  await expect(page.getByRole("status")).toHaveText("Publicación creada correctamente.");
+  await expect(notificacion).toHaveText("Publicación creada correctamente.");
   return resultado.id as number;
 }
 
@@ -212,10 +217,12 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
       });
       expect(Number(publicacion!.precio)).toBe(Number(precios[indice]));
       const calibre = await db.orm.public.Calibre.where({ id: seleccion.calibres[indice].id }).select("codigoCalibre").first();
+          expect(calibre).not.toBeNull();
       const tarjeta = page.getByRole("button", { name: /^Ver detalles de/ }).filter({
-        has: page.getByText(`${calibre!.codigoCalibre} · Categoría ${seleccion.categoria.nombre}`, { exact: true }),
+        has: page.getByText(calibre!.codigoCalibre, { exact: true }),
       });
       await expect(tarjeta).toHaveCount(1);
+      await expect(tarjeta).toContainText(`Categoría ${seleccion.categoria.nombre}`);
       await expect(tarjeta).toContainText(new Intl.NumberFormat("es-UY").format(Number(precios[indice])));
     }
     for (const otro of [operadorA, operadorB]) {

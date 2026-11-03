@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
     refresh: vi.fn(),
     obtenerSesion: vi.fn(),
     obtenerOperadorActual: vi.fn(),
-    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
     notFound: vi.fn(() => {
         throw new Error("PERFIL_NO_ENCONTRADO");
     }),
@@ -138,6 +138,21 @@ describe("Página pública del operador", () => {
         expect(screen.getByRole("heading", {name: "Frutas del Norte"})).toBeInTheDocument();
         expect(screen.getByRole("heading", {name: "Publicaciones"})).toBeInTheDocument();
         expect(screen.getByText("Tomate - Perita")).toBeInTheDocument();
+    });
+
+    it("oculta las publicaciones y muestra el aviso cuando el operador está de licencia", async () => {
+        mocks.obtenerPerfil.mockResolvedValue({
+            ...perfil,
+            enLicencia: true,
+            comentario: "Licencia: 2026-11-05 - 2026-11-12\n\nConsultar disponibilidad.",
+        });
+
+        render(await Page({ params: Promise.resolve({ nombre: encodeURIComponent("Frutas del Norte") }), searchParams: Promise.resolve({}) }));
+
+        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Licencia: 05/11/2026 - 12/11/2026");
+        expect(screen.getByText("Consultar disponibilidad.")).toBeInTheDocument();
+        expect(screen.getByText("Sin publicaciones, esta de licencia")).toBeInTheDocument();
+        expect(screen.queryByText("Tomate - Perita")).not.toBeInTheDocument();
     });
 
     it("llama a notFound cuando el operador no existe", async () => {

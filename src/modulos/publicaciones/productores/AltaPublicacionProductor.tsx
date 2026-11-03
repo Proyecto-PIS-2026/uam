@@ -1,7 +1,9 @@
 "use client";
 
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
+
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../precio-publicacion";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import MenuItem from "@mui/material/MenuItem";
@@ -65,7 +67,7 @@ function opciones<T extends Opcion>(opciones: T[]) {
 }
 
 async function cargarCatalogos() {
-    const respuesta = await fetch("/api/publicaciones/productor");
+    const respuesta = await fetchConSesion("/api/publicaciones/productor");
     if (!respuesta.ok) throw new Error("No se pudieron cargar los datos.");
     const datos = await respuesta.json() as Catalogos;
     return {
@@ -132,7 +134,7 @@ export default function AltaPublicacionProductor({ productorId }: { productorId:
     const esWeb = useMediaQuery("(min-width: 768px)");
     const { catalogos, error, cargando, reintentar } = useCatalogosPublicacion();
     const [abierto, setAbierto] = useState(false);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
 
     useEffect(() => {
         if (error && !cargando) notificar(error, "error");
@@ -140,11 +142,10 @@ export default function AltaPublicacionProductor({ productorId }: { productorId:
 
     return <main className="contenedor-pagina secciones-pagina flex-1">
         <header className="encabezado-pagina"><h1 className="titulo-pagina">Alta de publicación de Productor</h1></header>
-        <button type="button" className={styles.guardar} onClick={() => { cerrarNotificacion(); setAbierto(true); }} disabled={cargando || !catalogos || !productorId} aria-busy={cargando}>Agregar producto</button>
-        {error && <button type="button" className={styles.cancelar} style={{ flex: "0 0 auto", gap: "var(--espacio-inline)" }} onClick={() => { cerrarNotificacion(); reintentar(); }} disabled={cargando} aria-busy={cargando}><RefreshIcon fontSize="small" />Reintentar carga</button>}
+        <button type="button" className={styles.guardar} onClick={() => { setAbierto(true); }} disabled={cargando || !catalogos || !productorId} aria-busy={cargando}>Agregar producto</button>
+        {error && <button type="button" className={styles.cancelar} style={{ flex: "0 0 auto", gap: "var(--espacio-inline)" }} onClick={() => { reintentar(); }} disabled={cargando} aria-busy={cargando}><RefreshIcon fontSize="small" />Reintentar carga</button>}
         {productorId > 0 && <DrawerProductor key={productorId} catalogos={catalogos} cargando={cargando} productorId={productorId} abierto={abierto} esWeb={esWeb}
             alCerrar={() => setAbierto(false)} alCrear={(texto) => { setAbierto(false); notificar(texto, "success"); }} />}
-        <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
     </main>;
 }
 
@@ -158,7 +159,7 @@ export function DrawerAltaPublicacionProductor({ productorId, disponibilidadInic
 function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCarga, productorId, disponibilidadInicial = true, abierto, esWeb, alCerrar, alCrear }: {
     catalogos: Catalogos | null; cargando: boolean; errorCarga?: string; alReintentarCarga?: () => void; productorId: number; disponibilidadInicial?: boolean; abierto: boolean; esWeb: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void;
 }) {
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [datos, setDatos] = useState<Formulario>(() => formularioInicial(productorId, disponibilidadInicial));
     const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
@@ -198,7 +199,7 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
         } catch { setErrores(["No se pudo leer la fotografía."]); } finally { setLeyendoFoto(false); }
     }
     async function enviar(evento: FormEvent) {
-        evento.preventDefault(); if (deshabilitado || leyendoFoto) return; cerrarNotificacion(); setErrores([]);
+        evento.preventDefault(); if (deshabilitado || leyendoFoto) return; setErrores([]);
         if (!precioPublicacionValido(datos.precio)) {
             setErrores([PRECIO_PUBLICACION_INVALIDO]);
             return;
@@ -222,7 +223,7 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
                 precio: normalizarPrecioPublicacion(datos.precio),
                 cantidadUnidades: cantidad === "" ? null : Number(cantidad),
             };
-            const respuesta = await fetch("/api/publicaciones/productor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datosParaGuardar) });
+            const respuesta = await fetchConSesion("/api/publicaciones/productor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datosParaGuardar) });
             const resultado = await respuesta.json();
             if (!respuesta.ok) {
                 const mensajes = resultado.errores ?? ["No se pudo guardar la publicación."];
@@ -238,7 +239,7 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
         slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
         <header className={styles.encabezado}><h2 className={styles.titulo}>Nueva publicación</h2><button className={styles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button></header>
         <form className={styles.formulario} onSubmit={enviar} aria-busy={cargando}><div className={styles.cuerpo}>
-            {errorCarga && alReintentarCarga && <button type="button" className={styles.cancelar} style={{ flex: "0 0 auto", gap: "var(--espacio-inline)" }} onClick={() => { cerrarNotificacion(); alReintentarCarga(); }} disabled={cargando} aria-busy={cargando}><RefreshIcon fontSize="small" />Reintentar carga</button>}
+            {errorCarga && alReintentarCarga && <button type="button" className={styles.cancelar} style={{ flex: "0 0 auto", gap: "var(--espacio-inline)" }} onClick={() => { alReintentarCarga(); }} disabled={cargando} aria-busy={cargando}><RefreshIcon fontSize="small" />Reintentar carga</button>}
             <div className={styles.datosProducto}>
                 <Campo nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(id) => cambiar({ especieId: id, variedadId: 0, presentacionId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
                 <Campo nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(id) => cambiar({ variedadId: id, presentacionId: 0 })} deshabilitado={deshabilitado || !datos.especieId} />
@@ -261,5 +262,5 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
             </div></div>
             {errores.length > 0 && <div role="alert" className={styles.error}>{errores.map((error) => <p key={error}>{error}</p>)}</div>}
         </div><div className={styles.pie}><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={deshabilitado || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
-    </DrawerDeslizable><NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} /></>;
+    </DrawerDeslizable></>;
 }

@@ -1,10 +1,13 @@
 "use client";
 
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
+
 import { useMemo, useRef, useState } from "react";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { useRouter } from "next/navigation";
 import EncabezadoPagina from "../../../../compartido/EncabezadoPagina";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
@@ -12,7 +15,7 @@ import DrawerEditarPublicacion from "../../operadores/componentes/DrawerEditarPu
 import type { Publicacion } from "../tipos";
 import type { PublicacionParaEditar, OpcionesEdicionPublicacion, CambiosPublicacionOperador } from "../../operadores/tipos";
 import NuevaPublicacion from "../../operadores/componentes/NuevaPublicacion";
-import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
+import FiltrosPublicaciones, { compararPublicacionesOperador } from "../../filtros/FiltrosPublicaciones";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
@@ -25,6 +28,7 @@ const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.o
 type Props = {
     operadorId: number;
     nombreOperador?: string;
+    enLicencia?: boolean;
     abrirAltaInicial?: boolean;
     puedeCrear: boolean;
     puedeModificar: boolean;
@@ -34,7 +38,7 @@ type Props = {
     opcionesEdicion: OpcionesEdicionPublicacion;
 };
 
-export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaInicial = false, puedeCrear, puedeModificar, puedeEliminar, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
+export default function MiMercado({ operadorId, nombreOperador = "", enLicencia = false, abrirAltaInicial = false, puedeCrear, puedeModificar, puedeEliminar, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(abrirAltaInicial && puedeCrear);
     const [seleccion, setSeleccion] = useState<{ publicacion: Publicacion; listado: Publicacion[] } | null>(null);
@@ -44,7 +48,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
     const [publicacionPendiente, setPublicacionPendiente] = useState<Publicacion | null>(null);
     const [eliminando, setEliminando] = useState(false);
     const [error, setError] = useState("");
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [idsEliminados, setIdsEliminados] = useState<number[]>([]);
     const publicacionesActuales = listadoRecargado?.origen === publicaciones ? listadoRecargado.datos : publicaciones;
     const publicacionesVigentes = useMemo(() => publicacionesActuales.filter((publicacion) => !idsEliminados.includes(publicacion.id)), [publicacionesActuales, idsEliminados]);
@@ -56,15 +60,15 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         especie: publicacion.especie.nombreEspecie,
         variedad: publicacion.variedad?.nombreVariedad ?? "",
         presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
-        cantidadUnidades: publicacion.cantidadUnidades === null ? null : Number(publicacion.cantidadUnidades),
+        cantidadUnidades: publicacion.cantidadUnidades == null ? null : Number(publicacion.cantidadUnidades),
         categoria: publicacion.categoria?.nombreCategoria ?? "",
         calibre: publicacion.calibre?.nombreCalibre ?? "",
         codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
-        pais: "",
+        pais: opcionesEdicion.paises.find((pais) => pais.id === publicacion.paisId)?.nombre ?? "",
         tipoPublicacion: "OPERADOR",
         operador: { id: operadorId, nombreFantasia: nombreOperador, whatsApp: "" },
-    })), [publicacionesVigentes, operadorId, nombreOperador]);
-    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
+    })), [publicacionesVigentes, operadorId, nombreOperador, opcionesEdicion.paises]);
+    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort((a, b) => compararPublicacionesOperador(a, b, "prioridad")));
     const publicacionesPorId = new Map(publicacionesVigentes.map((publicacion) => [publicacion.id, publicacion]));
     const publicacionesVisibles: Publicacion[] = [];
     for (const publicacionFiltrada of publicacionesFiltradas) {
@@ -102,7 +106,6 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
 
     function abrirAlta() {
         setError("");
-        cerrarNotificacion();
         setAltaAbierta(true);
     }
 
@@ -134,7 +137,6 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
             return datos;
         } catch {
             if (recarga !== ultimaRecarga.current) return false;
-            cerrarNotificacion();
             setError("No se pudo actualizar el listado. Recargá la página.");
             return false;
         } finally {
@@ -143,21 +145,18 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
     }
 
     function publicacionCreada(aviso: string) {
+        notificar(aviso, "success");
         cerrarAlta();
-        void sincronizarPublicaciones().then((actualizado) => {
-            if (actualizado) notificar(aviso, "success");
-        });
+        void sincronizarPublicaciones();
     }
 
     function consultarPublicacion(publicacion: Publicacion) {
         setError("");
-        cerrarNotificacion();
         setSeleccion({ publicacion, listado: publicacionesActuales });
     }
 
     function solicitarBaja(publicacion: Publicacion) {
         setError("");
-        cerrarNotificacion();
         setPublicacionPendiente(publicacion);
     }
 
@@ -171,7 +170,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         formulario.set("cambios", JSON.stringify(cambios));
         if (fotoNueva) formulario.set("fotografia", fotoNueva);
 
-        const respuesta = await fetch(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "PATCH", body: formulario });
+        const respuesta = await fetchConSesion(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "PATCH", body: formulario });
         const resultado = await respuesta.json();
         if (!respuesta.ok) {
             if (respuesta.status === 404) {
@@ -186,10 +185,8 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         }
 
         const datos = await sincronizarPublicaciones();
-        if (datos) {
-            const sigueDisponible = datos.some((publicacion) => publicacion.id === publicacionSeleccionada.id);
-            notificar(sigueDisponible ? resultado.mensaje ?? "Publicación actualizada." : "La publicación ya no está disponible. Se actualizó el listado.", sigueDisponible ? "success" : "info");
-        }
+        const eliminada = datos && !datos.some((publicacion) => publicacion.id === publicacionSeleccionada.id);
+        notificar(eliminada ? "La publicación ya no está disponible. Se actualizó el listado." : resultado.mensaje ?? "Publicación actualizada.", eliminada ? "info" : "success");
     }
 
     async function eliminarPublicacion() {
@@ -198,7 +195,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         setEliminando(true);
         setError("");
         try {
-            const respuesta = await fetch(`/api/publicaciones/${publicacion.id}?operadorId=${operadorId}`, { method: "DELETE" });
+            const respuesta = await fetchConSesion(`/api/publicaciones/${publicacion.id}?operadorId=${operadorId}`, { method: "DELETE" });
             const resultado = await respuesta.json();
             if (!respuesta.ok) {
                 if (respuesta.status === 404) {
@@ -216,9 +213,8 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
             setIdsEliminados((actuales) => [...actuales, publicacion.id]);
             setPublicacionPendiente(null);
             setSeleccion((actual) => actual?.publicacion.id === publicacion.id ? null : actual);
-            if (await sincronizarPublicaciones()) {
-                notificar(resultado.mensaje ?? "Publicación eliminada.", "success");
-            }
+            await sincronizarPublicaciones();
+            notificar(resultado.mensaje ?? "Publicación eliminada.", "success");
         } catch (error) {
             notificar(error instanceof Error ? error.message : "No se pudo conectar con el servidor.", "error");
             setPublicacionPendiente(null);
@@ -253,6 +249,12 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
                     </div>
+                )}
+                {enLicencia && (
+                    <p className={styles.avisoLicencia} role="status">
+                        <WarningAmberOutlinedIcon aria-hidden="true" />
+                        <span>Estas de licencia, productos ocultos al publico</span>
+                    </p>
                 )}
                 <div className={`${styles.encabezadoCatalogo} flex-wrap`}>
                     <h2 className={styles.titulo}>Publicaciones</h2>
@@ -293,14 +295,13 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
             </div>
             {puedeCrear && altaAbierta && <NuevaPublicacion operadorId={operadorId} incrementoPrecio={incrementoPrecio} abierto={altaAbierta} alCerrar={cerrarAlta} alCrear={publicacionCreada} />}
             <DrawerEditarPublicacion incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }}
-            alCompartir={() => { cerrarNotificacion(); void compartir(); }}
+            alCompartir={() => { void compartir(); }}
             compartiendo={compartiendo || preparandoFoto}
             eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
 
                 <ConfirmModal abierto={publicacionPendiente !== null} titulo="Eliminar publicación" descripcion={publicacionPendiente ? `¿Querés eliminar la publicación de ${publicacionPendiente.especie.nombreEspecie}? Esta acción no se puede deshacer.` : ""} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setPublicacionPendiente(null); }} alConfirmar={() => void eliminarPublicacion()} />
 
             </DrawerEditarPublicacion>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
         </main>
     );
 }

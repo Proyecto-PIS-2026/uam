@@ -31,7 +31,7 @@ vi.mock("../../operadores/consultas-edicion-publicacion", () => ({
 
 vi.mock("./MiMercado", () => ({ default: mocks.miMercado }));
 
-vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
+vi.mock("@/modulos/administracion/acciones/consultas-configuracion", () => ({
     obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 
@@ -101,6 +101,14 @@ describe("VistaMiMercado", () => {
         expect(vista.props.incrementoPrecio).toBe(25);
     });
 
+    it("propaga el estado de licencia al mercado propio", async () => {
+        mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Operador 13", enLicencia: true });
+
+        const vista = await VistaMiMercado({});
+
+        expect(vista.props.enLicencia).toBe(true);
+    });
+
     it("no carga publicaciones cuando el nombre corresponde a otro operador", async () => {
         mocks.obtenerOperadorPorNombre.mockResolvedValue({ id: 37, usuarioId: 11, nombreFantasia: "Ajeno" });
         await expect(VistaMiMercado({ operadorNombre: "Ajeno" })).rejects.toThrow("NEXT_REDIRECT");
@@ -112,7 +120,7 @@ describe("VistaMiMercado", () => {
     it("redirige al login sin consultar operadores cuando no hay sesión", async () => {
         mocks.obtenerSesion.mockResolvedValue(null);
         await expect(VistaMiMercado({ abrirAltaInicial: true })).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledWith("/iniciar-sesion");
+        expect(mocks.redirect).toHaveBeenCalledWith("/sesion-finalizada");
         expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
         expect(mocks.obtenerOperadorPorNombre).not.toHaveBeenCalled();
     });

@@ -1,6 +1,6 @@
 "use client";
 
-import NotificacionToast, { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
@@ -8,6 +8,7 @@ import HojasDecorativas from "@/compartido/HojasDecorativas";
 import { useId, useRef, useState, type FormEvent } from "react";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import Switch from "@mui/material/Switch";
 import { useRouter } from "next/navigation";
 import BotonVolver from "@/compartido/BotonVolver";
 
@@ -37,6 +38,15 @@ const CODIGOS_PAIS = [
     { codigo: "+595", pais: "Paraguay" },
 ];
 
+function extraerLicencia(comentario: string | null | undefined) {
+    const coincidencia = comentario?.match(/^Licencia:\s*(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})\s*(?:\r?\n\r?\n)?([\s\S]*)$/);
+    return {
+        inicio: coincidencia?.[1] ?? "",
+        fin: coincidencia?.[2] ?? "",
+        comentario: coincidencia?.[3] ?? comentario ?? "",
+    };
+}
+
 export default function FormularioModificarOperador({
     operador,
     naves,
@@ -49,6 +59,11 @@ export default function FormularioModificarOperador({
         operador.codigoPais,
     );
     const [telefono, setTelefono] = useState(operador.telefono);
+    const licencia = extraerLicencia(operador.comentario);
+    const [enLicencia, setEnLicencia] = useState(operador.enLicencia ?? false);
+    const [inicioLicencia, setInicioLicencia] = useState(licencia.inicio);
+    const [finLicencia, setFinLicencia] = useState(licencia.fin);
+    const [comentario, setComentario] = useState(licencia.comentario);
 
     const [contraseña, setContraseña] = useState("");
     const [confirmacionContraseña, setConfirmacionContraseña] =
@@ -63,7 +78,7 @@ export default function FormularioModificarOperador({
     );
 
     const [errores, setErrores] = useState<string[]>([]);
-    const { notificacion, notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
@@ -123,7 +138,6 @@ export default function FormularioModificarOperador({
         guardadoEnCurso.current = true;
 
         setErrores([]);
-        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -132,6 +146,10 @@ export default function FormularioModificarOperador({
                 nombre,
                 codigoPais,
                 telefono,
+                enLicencia,
+                inicioLicencia,
+                finLicencia,
+                comentario,
                 contraseña,
                 confirmacionContraseña,
                 locales,
@@ -161,7 +179,6 @@ export default function FormularioModificarOperador({
 
     return (
         <div className={styles.pagina}>
-            <NotificacionToast notificacion={notificacion} alCerrar={cerrarNotificacion} />
             <div className={styles.contenedor}>
                 <BotonVolver
                     className={styles.volver}
@@ -361,6 +378,30 @@ export default function FormularioModificarOperador({
                                 ),
                             )}
                         </div>
+                    </section>
+
+                    <section className={styles.seccion}>
+                        <label className={styles.licencia} htmlFor={`${idFormulario}-licencia`} data-activa={enLicencia}>
+                            <span className={styles.textoLicencia}>
+                                <span className={styles.etiquetaLicencia}>En licencia</span>
+                                <span className={styles.estadoLicencia}>{enLicencia ? "Sí" : "No"}</span>
+                            </span>
+                            <Switch
+                                checked={enLicencia}
+                                onChange={(_, valor) => setEnLicencia(valor)}
+                                disabled={guardando}
+                                slotProps={{ input: { id: `${idFormulario}-licencia`, role: "switch", "aria-label": "En licencia" } }}
+                            />
+                        </label>
+                        {enLicencia && (
+                            <>
+                                <div className={styles.fechasLicencia}>
+                                    <TextField label="Inicio de licencia" type="date" value={inicioLicencia} onChange={(evento) => setInicioLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
+                                    <TextField label="Fin de licencia" type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: inicioLicencia || new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
+                                </div>
+                                <TextField label="Mensaje de recomendación (opcional)" multiline minRows={3} value={comentario} onChange={(evento) => setComentario(evento.target.value)} disabled={guardando} fullWidth />
+                            </>
+                        )}
                     </section>
 
                     <section className={styles.seccion}>

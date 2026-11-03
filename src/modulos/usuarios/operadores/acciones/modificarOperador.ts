@@ -6,6 +6,7 @@ import argon2 from "argon2";
 import { validarModificacionOperador } from "../validaciones/validarModificacionOperador";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { notificarCambioCatalogoOperador } from "@/infraestructura/tiempo-real/publicaciones";
 import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "../../fotos-perfil";
 
@@ -17,7 +18,7 @@ export async function modificarOperador(
     valor: unknown,
     foto?: FormData,
 ): Promise<ResultadoModificacionOperador> {
-    await exigirAdministrador();
+    await controlarSesionEnAccion(exigirAdministrador);
 
     const validacion = validarModificacionOperador(valor);
 
@@ -102,6 +103,8 @@ export async function modificarOperador(
             .update({
                 nombreFantasia: datos.nombre,
                 whatsApp: datos.telefono,
+                enLicencia: datos.enLicencia,
+                comentario: datos.comentario,
                 ...(fotoPerfil !== undefined ? { fotoPerfil } : {}),
             });
 

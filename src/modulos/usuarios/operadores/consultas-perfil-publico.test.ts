@@ -5,6 +5,7 @@ import { obtenerPerfilPublicoOperador } from "./consultas-perfil-publico";
 // Sirve para construir una base de datos falsa, metodos falsos y simular las consultas
 const mockDb = vi.hoisted(() => ({
     operador: {
+        where: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         include: vi.fn().mockReturnThis(),
         first: vi.fn(),
@@ -65,6 +66,19 @@ describe("obtenerPerfilPublicoOperador", () => {
                 return mockDb.publicaciones;
             }
         );
+    });
+
+    it("oculta el perfil cuando el usuario está deshabilitado", async () => {
+        await obtenerPerfilPublicoOperador("Frutas del Norte");
+        const predicado = mockDb.operador.where.mock.calls[0][0];
+        const evaluar = (estado: boolean) => predicado({
+            usuario: { some: (condicion: (usuario: { habilitado: { eq: (valor: boolean) => boolean } }) => boolean) =>
+                condicion({ habilitado: { eq: (valor) => estado === valor } }) },
+        });
+
+        expect(evaluar(false)).toBe(false);
+        expect(evaluar(true)).toBe(true);
+        expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
     });
 
     // Verifica que nombres vacíos sean rechazados sin consultar la base de datos
@@ -165,6 +179,28 @@ describe("obtenerPerfilPublicoOperador", () => {
         expect(resultado?.locales).toEqual([
             { numeroLocal: "18", nombreNave: "B" },
         ]);
+    });
+
+    it("devuelve el perfil sin consultar publicaciones cuando el operador está de licencia", async () => {
+        mockDb.operador.first.mockResolvedValue({
+            ...operadorConLocal,
+            enLicencia: true,
+            comentario: "Licencia: 2026-11-05 - 2026-11-12",
+        });
+
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
+
+        expect(resultado).toEqual({
+            id: 13,
+            nombreFantasia: "Frutas del Norte",
+            fotoPerfil: "/operadores/frutas-del-norte.jpg",
+            whatsApp: "+59899100001",
+            enLicencia: true,
+            comentario: "Licencia: 2026-11-05 - 2026-11-12",
+            locales: [{ numeroLocal: "18", nombreNave: "B" }],
+            publicaciones: [],
+        });
+        expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
     });
 
     // Verifica que solo se devuelvan publicaciones activas, disponibles y de tipo OPERADOR
