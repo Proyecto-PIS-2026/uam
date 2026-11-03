@@ -25,10 +25,10 @@ function formulario(codigo = "123456") {
 
 describe("acciones del segundo factor", () => {
     it("emite una sesión solamente para el usuario confirmado en el servidor", async () => {
-        mocks.confirmar.mockResolvedValue({ usuarioId: 7 });
+        mocks.confirmar.mockResolvedValue({ usuarioId: 7, versionSegundoFactor: "version-confirmada" });
         await expect(verificarSegundoFactor({}, formulario())).rejects.toThrow("/inicio");
         expect(mocks.confirmar).toHaveBeenCalledWith("token-servidor", "123456");
-        expect(mocks.crearSesion).toHaveBeenCalledWith(7, "ADMINISTRADOR", true);
+        expect(mocks.crearSesion).toHaveBeenCalledWith(7, "ADMINISTRADOR", "version-confirmada");
         expect(mocks.borrarCookie).toHaveBeenCalledOnce();
     });
 

@@ -3,6 +3,7 @@
 import { createHmac as crearFirmaHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cerrarSesion, crearSesion, obtenerSesion } from "./sesiones";
+import { obtenerVersionSegundoFactor } from "./segundo-factor-criptografia";
 
 const cookiesSimuladas = vi.hoisted(() => ({
     get: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
     },
 }));
 
+const versionSegundoFactor = obtenerVersionSegundoFactor("secreto-cifrado");
 const secretoPrueba = "secreto-aleatorio-exclusivo-para-las-pruebas";
 const fechaPrueba = new Date("2030-01-01T12:00:00Z");
 const segundosActuales = Math.floor(fechaPrueba.getTime() / 1000);
@@ -94,10 +96,10 @@ describe("crearSesion", () => {
     it.each(["ADMINISTRADOR", "OPERADOR", "PRODUCTOR"] as const)(
         "crea una cookie firmada de ocho horas para %s",
         async (rol) => {
-            await crearSesion(4, rol, rol === "ADMINISTRADOR");
+            await crearSesion(4, rol, rol === "ADMINISTRADOR" ? versionSegundoFactor : undefined);
 
             const [nombre, valor, opciones] = cookiesSimuladas.set.mock.calls[0];
-            const datosEsperados = { usuarioId: 4, rol, expiraEn: segundosActuales + 28800, ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true } : {}) };
+            const datosEsperados = { usuarioId: 4, rol, expiraEn: segundosActuales + 28800, ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true, versionSegundoFactor } : {}) };
             const contenido = Buffer.from(JSON.stringify(datosEsperados)).toString("base64url");
 
             expect(nombre).toBe("uam_sesion");
@@ -130,6 +132,16 @@ describe("crearSesion", () => {
 });
 
 describe("obtenerSesion", () => {
+    it("invalida la sesión tras restablecer el segundo factor y no la recupera al vincular otro", async () => {
+        const datos = { usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60, segundoFactorVerificado: true, versionSegundoFactor };
+        configurarCookie(datos);
+        expect(await obtenerSesion()).toEqual(datos);
+        buscarUsuario.mockResolvedValue({ id: 4, rol: "ADMINISTRADOR", habilitado: true, twoFactorEnabled: false, twoFactorSecret: null });
+        expect(await obtenerSesion()).toBeNull();
+        buscarUsuario.mockResolvedValue({ id: 4, rol: "ADMINISTRADOR", habilitado: true, twoFactorEnabled: true, twoFactorSecret: "otra-vinculacion" });
+        expect(await obtenerSesion()).toBeNull();
+    });
+
     it("rechaza sesiones administrativas anteriores a la implementación de 2FA", async () => {
         configurarCookie({ usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60 });
         expect(await obtenerSesion()).toBeNull();
@@ -139,14 +151,14 @@ describe("obtenerSesion", () => {
         { twoFactorEnabled: false, twoFactorSecret: "secreto" },
         { twoFactorEnabled: true, twoFactorSecret: null },
     ])("rechaza una sesión administrativa sin vinculación confirmada: %j", async (campos) => {
-        configurarCookie({ usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60, segundoFactorVerificado: true });
-        buscarUsuario.mockResolvedValue({ id: 4, rol: "ADMINISTRADOR", ...campos });
+        configurarCookie({ usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60, segundoFactorVerificado: true, versionSegundoFactor });
+        buscarUsuario.mockResolvedValue({ id: 4, rol: "ADMINISTRADOR", habilitado: true, ...campos });
         expect(await obtenerSesion()).toBeNull();
     });
     it.each(["ADMINISTRADOR", "OPERADOR", "PRODUCTOR"] as const)(
         "recupera una sesion vigente de %s",
         async (rol) => {
-            const datos = { usuarioId: 4, rol, expiraEn: segundosActuales + 60, ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true } : {}) };
+            const datos = { usuarioId: 4, rol, expiraEn: segundosActuales + 60, ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true, versionSegundoFactor } : {}) };
             configurarCookie(datos);
 
             expect(await obtenerSesion()).toEqual(datos);
@@ -179,7 +191,7 @@ describe("obtenerSesion", () => {
         async (rol) => {
             const datos = {
                 usuarioId: 4, rol, expiraEn: segundosActuales + 60,
-                ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true as const } : {}),
+                ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true as const, versionSegundoFactor } : {}),
             };
             configurarCookie(datos);
             await expect(obtenerSesion()).resolves.toEqual(datos);

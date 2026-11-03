@@ -1,5 +1,9 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { Secret, TOTP } from "otpauth";
+
+export function obtenerVersionSegundoFactor(secretoCifrado: string): string {
+    return createHash("sha256").update(secretoCifrado).digest("hex");
+}
 
 function obtenerClaveCifrado() {
     const valor = process.env.TWO_FACTOR_ENCRYPTION_KEY;

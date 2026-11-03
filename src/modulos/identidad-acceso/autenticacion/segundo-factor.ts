@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { cifrarSecreto, descifrarSecreto, generarSecreto, verificarCodigo } from "./segundo-factor-criptografia";
+import { cifrarSecreto, descifrarSecreto, generarSecreto, obtenerVersionSegundoFactor, verificarCodigo } from "./segundo-factor-criptografia";
 
 export const DURACION_SEGUNDO_FACTOR = 10 * 60;
 const MAXIMO_INTENTOS = 5;
@@ -105,7 +105,7 @@ export async function confirmarSegundoFactor(token: string, codigo: string) {
             twoFactorFailedAttempts: 0,
             twoFactorLockedUntil: null,
         });
-        return { usuarioId: usuario.id };
+        return { usuarioId: usuario.id, versionSegundoFactor: obtenerVersionSegundoFactor(secretoCifrado) };
     });
 }
 

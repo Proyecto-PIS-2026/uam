@@ -70,7 +70,7 @@ describe("segundo factor obligatorio de administradores", () => {
         expect(await confirmarSegundoFactor(token, codigo(secreto))).toHaveProperty("error");
         // Permite un código nuevo sin reemplazar el secreto vinculado.
         await db.orm.public.Usuario.where({ id: usuarioId }).update({ twoFactorLastStep: paso - 1 });
-        expect(await confirmarSegundoFactor(token, codigo(secreto))).toEqual({ usuarioId });
+        expect(await confirmarSegundoFactor(token, codigo(secreto))).toMatchObject({ usuarioId, versionSegundoFactor: expect.any(String) });
     });
 
     it("cancela la vinculación y obliga a utilizar una clave nueva al reiniciar", async () => {

@@ -17,7 +17,7 @@ export async function verificarSegundoFactor(_anterior: EstadoSegundoFactor, dat
         redirect(`/iniciar-sesion?segundoFactor=${resultado ? "bloqueado" : "vencido"}`);
     }
     if ("error" in resultado) return { error: resultado.error };
-    await crearSesion(resultado.usuarioId, "ADMINISTRADOR", true);
+    await crearSesion(resultado.usuarioId, "ADMINISTRADOR", resultado.versionSegundoFactor);
     await borrarCookieSegundoFactor();
     redirect(obtenerRutaPrincipal("ADMINISTRADOR"));
 }
