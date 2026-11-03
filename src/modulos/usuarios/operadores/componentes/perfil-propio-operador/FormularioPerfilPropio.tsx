@@ -124,7 +124,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                                         value={inicioLicencia}
                                         onChange={(event) => setInicioLicencia(event.target.value)}
                                         disabled={guardando}
-                                        slotProps={{ input: { min: new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }}
+                                        slotProps={{ htmlInput: { min: new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }}
                                         size="small"
                                     />
                                     <TextField
@@ -133,7 +133,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                                         value={finLicencia}
                                         onChange={(event) => setFinLicencia(event.target.value)}
                                         disabled={guardando}
-                                        slotProps={{ input: { min: inicioLicencia || new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }}
+                                        slotProps={{ htmlInput: { min: inicioLicencia || new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }}
                                         size="small"
                                     />
                                 </div>

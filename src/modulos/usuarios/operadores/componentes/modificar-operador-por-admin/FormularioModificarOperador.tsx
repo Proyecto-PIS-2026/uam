@@ -396,8 +396,8 @@ export default function FormularioModificarOperador({
                         {enLicencia && (
                             <>
                                 <div className={styles.fechasLicencia}>
-                                    <TextField label="Inicio de licencia" type="date" value={inicioLicencia} onChange={(evento) => setInicioLicencia(evento.target.value)} disabled={guardando} slotProps={{ input: { min: new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
-                                    <TextField label="Fin de licencia" type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ input: { min: inicioLicencia || new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
+                                    <TextField label="Inicio de licencia" type="date" value={inicioLicencia} onChange={(evento) => setInicioLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
+                                    <TextField label="Fin de licencia" type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: inicioLicencia || new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
                                 </div>
                                 <TextField label="Mensaje de recomendación (opcional)" multiline minRows={3} value={comentario} onChange={(evento) => setComentario(evento.target.value)} disabled={guardando} fullWidth />
                             </>
