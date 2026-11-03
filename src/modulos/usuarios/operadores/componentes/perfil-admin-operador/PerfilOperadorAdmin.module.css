@@ -87,6 +87,36 @@
     font-size: var(--tamano-texto-secundario);
 }
 
+.comentario {
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    padding: var(--padding-panel);
+    border: 1px solid color-mix(in srgb, var(--color-secondary) 35%, var(--color-border));
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
+    white-space: pre-wrap;
+}
+
+.comentario p {
+    margin: 0;
+}
+
+.licenciaActiva,
+.licenciaInactiva {
+    margin: 0;
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 500;
+}
+
+.licenciaActiva {
+    color: var(--color-secondary);
+}
+
+.licenciaInactiva {
+    color: var(--color-muted);
+}
+
 .etiqueta {
     font-weight: 600;
 }

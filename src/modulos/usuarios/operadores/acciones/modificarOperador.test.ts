@@ -217,6 +217,8 @@ describe("modificarOperador", () => {
         expect(mockDb.operador.update).toHaveBeenCalledWith({
             nombreFantasia: "Frutas del Norte",
             whatsApp: "+59899100001",
+            enLicencia: false,
+            comentario: null,
         });
         expect(mockDb.local.delete).toHaveBeenCalledTimes(2); // Tenía dos locales
         expect(mockDb.local.create).toHaveBeenCalledTimes(1); // Queda con uno

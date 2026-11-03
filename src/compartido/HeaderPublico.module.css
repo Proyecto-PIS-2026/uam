@@ -313,7 +313,7 @@
         max-height: calc(100dvh - 4rem);
         overflow-y: auto;
         overscroll-behavior: contain;
-        padding: 0.5rem 1rem 1rem;
+        padding: 0 0.2rem 0.5rem;
         visibility: visible;
         opacity: 1;
         transform: translateY(0);
@@ -358,11 +358,20 @@
 
         .cerrarSesionMobile {
             width: 100%;
+            padding: 0.75rem;
+            border: 0;
+            border-top: 1px solid var(--color-border);
             background: transparent;
             font: inherit;
+            font-size: var(--tamano-texto-secundario);
+            font-weight: 500;
             text-align: left;
             cursor: pointer;
             color: var(--color-foreground);
+        }
+
+        form:has(.cerrarSesionMobile) {
+            width: 100%;
         }
     }
 
