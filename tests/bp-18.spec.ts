@@ -258,9 +258,14 @@ test("BP-18.2: rechaza cero sin reemplazar el importe guardado", async ({ page, 
     await campoImporte(page).fill("0");
     await guardarImporte(page).click();
 
-    await expect(page.getByRole("alert").filter({ hasText: "El importe debe ser un número entero mayor que cero." })).toBeVisible();
+    const notificaciones = page.getByRole("region", { name: "Notificaciones", exact: true });
+    await expect(notificaciones.getByRole("alert")).toBeVisible();
     await expect(campoImporte(page)).toHaveValue("0");
     await expect(guardarImporte(page)).toBeEnabled();
+
+    const respuesta = await page.request.get("/api/configuracion/incremento_precio");
+    expect(respuesta.ok()).toBe(true);
+    expect(await respuesta.json()).toMatchObject({ valor: original });
 
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(campoImporte(page)).toHaveValue(original);
