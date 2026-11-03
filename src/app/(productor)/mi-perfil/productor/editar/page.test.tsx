@@ -7,7 +7,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ requerirPr
 vi.mock("@/modulos/usuarios/productores/perfil-propio/consultas-mi-perfil-productor", () => ({ obtenerMiPerfilProductor: mocks.consultar }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 vi.mock("@/modulos/usuarios/productores/componentes/modificar-productor-por-admin/FormularioModificarProductor", () => ({
-    default: (props: unknown) => { mocks.propsFormulario(props); return <div>Formulario propio</div>; },
+    default: (props: unknown) => { mocks.propsFormulario(props); return <div>Formulario propio</div> },
 }));
 const productor = { id: 5, nombre: "Granja Norte", codigoPais: "+598", telefono: "99123456", fotoPerfil: null };
 
@@ -15,7 +15,7 @@ describe("edición de mi perfil como Productor", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         mocks.consultar.mockResolvedValue(productor);
-        mocks.notFound.mockImplementation(() => { throw new Error("NO_ENCONTRADO"); });
+        mocks.notFound.mockImplementation(() => { throw new Error("NO_ENCONTRADO") });
     });
     afterEach(cleanup);
 

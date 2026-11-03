@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const notFoundMock = vi.hoisted(() => vi.fn(() => { throw new Error("NOT_FOUND"); }));
+const notFoundMock = vi.hoisted(() => vi.fn(() => { throw new Error("NOT_FOUND") }));
 
 vi.mock("next/navigation", () => ({ notFound: notFoundMock }));
 vi.mock("../../../../modulos/publicaciones/mi-mercado/componentes/VistaMiMercado", () => ({

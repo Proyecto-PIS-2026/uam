@@ -1,0 +1,162 @@
+.tarjeta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+    box-sizing: border-box;
+    width: 100%;
+    padding: var(--padding-panel);
+}
+
+.titulo {
+    margin: 0;
+    color: var(--color-secondary);
+    font-family: inherit;
+    font-size: var(--tamano-titulo-seccion);
+    line-height: var(--interlineado-titulo-pagina);
+    font-weight: 700;
+}
+
+.descripcion {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+}
+
+.filaEdicion {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--espacio-controles);
+    width: 100%;
+    min-width: 0;
+}
+
+.opciones {
+    flex: 1;
+    min-width: 0;
+}
+
+.filaSwitch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-controles);
+    box-sizing: border-box;
+    min-height: 4rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background-color: var(--color-surface);
+    cursor: pointer;
+}
+
+.filaSwitch[data-habilitado="true"] {
+    border-color: var(--color-secondary);
+    background-color: var(--color-secondary-soft);
+}
+
+.filaSwitch[data-guardando="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.textoSwitch {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-textos);
+    min-width: 0;
+}
+
+.etiquetaSwitch {
+    color: var(--color-foreground);
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
+}
+
+.ayudaSwitch {
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-auxiliar);
+    line-height: 1.4;
+}
+
+.filaSwitch[data-habilitado="true"] .ayudaSwitch {
+    color: var(--color-secondary);
+}
+
+.switch {
+    flex-shrink: 0;
+}
+
+.switch :global(.MuiSwitch-switchBase.Mui-checked) {
+    color: var(--color-secondary);
+}
+
+.switch :global(.MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track) {
+    background-color: var(--color-secondary);
+}
+
+.switch :global(.MuiSwitch-switchBase:hover) {
+    background-color: var(--color-secondary-soft);
+}
+
+.switch :global(.Mui-focusVisible) {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 2px;
+}
+
+.opcionesDesplegadas {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-top: 1.5rem;
+}
+
+.opcionesDesplegadas > .filaSwitch {
+    margin-top: 1.5rem;
+}
+
+.anticipacionDesplegada {
+    padding-top: 1.5rem;
+}
+
+.selectMui {
+    width: 100%;
+    min-width: 0;
+}
+
+.selectMui :global(.MuiOutlinedInput-root) {
+    background-color: var(--color-surface);
+}
+
+.selectMui :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.selectMui :global(.MuiOutlinedInput-root:not(.Mui-error):hover .MuiOutlinedInput-notchedOutline),
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-secondary);
+}
+
+.selectMui :global(.MuiInputLabel-root.Mui-focused:not(.Mui-error)) {
+    color: var(--color-secondary);
+}
+
+.selectMui :global(.MuiInputBase-input) {
+    color: var(--color-foreground);
+}
+
+.botonGuardar {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    flex-shrink: 0;
+    margin-top: 0.75rem !important;
+}
+
+.botonGuardar:not(:disabled) {
+    color: var(--color-secondary) !important;
+    background-color: var(--color-secondary-soft) !important;
+}
+
+.botonGuardar:not(:disabled):hover {
+    background-color: var(--color-secondary-soft) !important;
+}

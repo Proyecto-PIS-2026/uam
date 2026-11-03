@@ -260,7 +260,7 @@ describe("POST /api/publicaciones", () => {
     it("confirma la creacion aunque falle una revalidacion posterior", async () => {
         const resultado = { esValido: true, id: 15, errores: [] };
         mocks.altaPublicacionOperador.mockResolvedValue(resultado);
-        vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache"); });
+        vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache") });
         const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
 
         try {

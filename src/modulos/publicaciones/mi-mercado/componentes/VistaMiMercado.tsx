@@ -4,7 +4,7 @@ import { mapearPublicacionesMiMercado } from "../mapear-publicaciones";
 import { obtenerOpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
 import { obtenerOperadorActual, obtenerOperadorPorNombre } from "../../../usuarios/operadores/operador-actual";
 import { autorizado } from "../../../identidad-acceso/autorizacion/permisos";
-import { obtenerConfiguracion } from "@/modulos/administracion/ConsultaConfiguracion";
+import { obtenerConfiguracion } from "@/modulos/administracion/acciones/consultas-configuracion";
 import { notFound, redirect } from "next/navigation";
 import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
