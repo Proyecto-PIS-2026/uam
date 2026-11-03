@@ -1,338 +1,322 @@
-import { chromium, request as playwrightRequest } from "@playwright/test";
+import assert from "node:assert/strict";
+import { writeFile } from "node:fs/promises";
+import { chromium } from "@playwright/test";
+import { crearComprador, identificarConsultaPublica } from "./carga-e03/compradores.mjs";
+import { cambiarPrecio, cambiarPrecioDesdePantalla, crearPublicacion, crearPublicacionDesdePantalla, enviarPrecio, identificarOperador, iniciarSesion, leerPropias, prepararInterfazOperador, verificarConflictoEnPantalla, verificarVistas } from "./carga-e03/operadores.mjs";
 
 const BASE_URL = (process.env.E03_BASE_URL ?? "https://uam-testing.bravesea-7e3d1ed9.brazilsouth.azurecontainerapps.io").replace(/\/$/, "");
 const PASSWORD = process.env.E03_TEST_PASSWORD;
-const OPERATORS = Array.from({ length: 30 }, (_, index) => `carga_e03_${String(index + 1).padStart(2, "0")}`);
-const BUYER_LEVELS = [50, 75, 100];
-const BROWSER_BUYERS = 10;
-const REQUEST_TIMEOUT_MS = 45_000;
-
+const CUENTAS = Array.from({ length: 30 }, (_, i) => "carga_e03_" + String(i + 1).padStart(2, "0"));
+const NIVELES = [50, 75, 100];
+const RONDAS = 2;
+// Cada comprador tiene contexto y página de navegador propios. Esto prueba el
+// recorrido real de la aplicación con 50/75/100 compradores concurrentes.
+const compradoresUiPorNivel = nivel => nivel;
+const TIMEOUT = 45_000;
+const TIMEOUT_LOGIN = 120_000;
 if (!PASSWORD) {
-  console.error("Definí E03_TEST_PASSWORD con la contraseña temporal de las cuentas carga_e03_01 a carga_e03_15.");
+  console.error("Definí E03_TEST_PASSWORD para las cuentas carga_e03_01 a carga_e03_30.");
   process.exit(2);
 }
 
-const metrics = new Map();
-function bucket(name) {
-  if (!metrics.has(name)) metrics.set(name, { latenciesMs: [], completed: 0, errors: 0, statuses: {}, bytes: 0 });
-  return metrics.get(name);
+const reporte = {
+  prueba: "BP-E03", destino: BASE_URL, inicio: new Date().toISOString(),
+  sesionesOperadorPorNivel: CUENTAS.length, nivelesCompradores: NIVELES,
+  compradoresUiPorNivel: Object.fromEntries(NIVELES.map(nivel => [nivel, compradoresUiPorNivel(nivel)])),
+  canalCompradores: "interfaz web con contexto de navegador aislado por comprador",
+  rondasPorNivel: RONDAS, dispositivosMismaCuenta: 10,
+  casos: {}, metricas: {}, operaciones: [], verificaciones: [], publicacionesDePrueba: [], errores: [],
+};
+const creadas = [];
+const operadores = [];
+const resultadoNivel = new Map();
+const sesionesPorRecorrido = nivel => ({
+  navegacion: nivel, busqueda: nivel, filtro_precio: nivel,
+  consulta_propia: CUENTAS.length, cambio_precio: CUENTAS.length,
+  drawer_publico: compradoresUiPorNivel(nivel),
+  alta_publicacion_ui: CUENTAS.length,
+});
+// Playwright incluye cabeceras y cookies en su «Call log». El informe guarda
+// el motivo del fallo sin copiar credenciales ni identificadores de sesión.
+const fallo = e => (e instanceof Error ? e.message : String(e)).split(/\r?\nCall log:/)[0];
+
+async function enGrupos(items, limite, accion) {
+  for (let inicio = 0; inicio < items.length; inicio += limite) {
+    const resultados = await Promise.allSettled(items.slice(inicio, inicio + limite).map((v, i) => accion(v, inicio + i)));
+    const fallos = resultados.filter(r => r.status === "rejected");
+    if (fallos.length) throw new Error(fallos.map(r => fallo(r.reason)).join("\n"));
+  }
 }
 
-async function measure(name, operation) {
-  const result = bucket(name);
-  const started = performance.now();
+async function verificar(nombre, fn, contexto = {}) {
   try {
-    const response = await operation();
-    const status = typeof response === "number" ? response : response.status();
-    result.latenciesMs.push(performance.now() - started);
-    result.statuses[status] = (result.statuses[status] ?? 0) + 1;
-    if (status >= 200 && status < 400) result.completed++;
-    else result.errors++;
-    if (typeof response !== "number") {
-      try { result.bytes += (await response.body()).byteLength; } catch { /* métricas de latencia no dependen del cuerpo */ }
-    }
-    return { status, response };
-  } catch (error) {
-    result.latenciesMs.push(performance.now() - started);
-    result.errors++;
-    result.statuses.NETWORK_ERROR = (result.statuses.NETWORK_ERROR ?? 0) + 1;
-    return { status: 0, error: error instanceof Error ? error.message : String(error) };
+    const datos = await fn();
+    reporte.verificaciones.push({ nombre, ...contexto, datos, ok: true });
+    return true;
+  } catch (e) {
+    const error = fallo(e);
+    reporte.verificaciones.push({ nombre, ...contexto, ok: false, error });
+    reporte.errores.push({ fase: nombre, ...contexto, error });
+    console.error(nombre, contexto, error.split("\n")[0]);
+    return false;
   }
 }
 
-function percentile(values, fraction) {
-  if (!values.length) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  return Number(sorted[Math.min(sorted.length - 1, Math.ceil(fraction * sorted.length) - 1)].toFixed(1));
-}
-
-function summarizeMetrics() {
-  return Object.fromEntries([...metrics.entries()].map(([name, value]) => [name, {
-    completadas: value.completed,
-    errores: value.errors,
-    estados: value.statuses,
-    p50Ms: percentile(value.latenciesMs, 0.50),
-    p95Ms: percentile(value.latenciesMs, 0.95),
-    maxMs: value.latenciesMs.length ? Number(Math.max(...value.latenciesMs).toFixed(1)) : null,
-    bytesRecibidos: value.bytes,
-  }]));
-}
-
-async function iniciarContexto(browser, username) {
-  const context = await browser.newContext({ baseURL: BASE_URL });
-  const page = await context.newPage();
-  page.setDefaultTimeout(REQUEST_TIMEOUT_MS);
-  await page.goto("/iniciar-sesion", { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Correo electrónico o nombre de usuario").fill(username);
-  await page.getByLabel("Contraseña", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
-  await page.waitForURL(/\/mi-mercado(?:\/|$)/, { timeout: REQUEST_TIMEOUT_MS });
-  return { context, page, username };
-}
-
-async function requestJson(context, path, init) {
-  const response = await context.request.fetch(path, { timeout: REQUEST_TIMEOUT_MS, ...init });
-  let body = {};
-  try { body = await response.json(); } catch { /* se devuelve el estado para su diagnóstico */ }
-  return { response, body };
-}
-
-async function prepararPublicacion(context, accountIndex) {
-  const catalogResult = await requestJson(context, "/api/publicaciones");
-  if (!catalogResult.response.ok()) throw new Error(`No se pudieron consultar catálogos (${catalogResult.response.status()}).`);
-  const operador = catalogResult.body.operadores?.[0];
-  const especie = catalogResult.body.especies?.[accountIndex % catalogResult.body.especies.length];
-  if (!operador?.id || !especie?.id) throw new Error("El catálogo no devolvió un operador y una especie activos.");
-
-  const ownPath = `/api/publicaciones/operador/${operador.id}`;
-  const before = await requestJson(context, ownPath);
-  if (!before.response.ok()) throw new Error(`No se pudieron consultar publicaciones propias (${before.response.status()}).`);
-
-  // Las cuentas fueron creadas para esta prueba. Crear una publicación propia permite
-  // medir lecturas, cambios de precio y persistencia sin tocar publicaciones ajenas.
-  const especies = catalogResult.body.especies ?? [];
-  let publicationId;
-  let selectedSpecies;
-  for (let offset = 0; offset < especies.length; offset++) {
-    const candidate = especies[(accountIndex + offset) % especies.length];
-    const result = await requestJson(context, "/api/publicaciones", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      data: {
-        operadorId: operador.id,
-        especieId: candidate.id,
-        variedadId: null,
-        presentacionId: null,
-        categoriaId: null,
-        calibreId: null,
-        paisId: null,
-        disponibilidad: true,
-        precio: "1000",
-        cantidadUnidades: null,
-        fotografia: "",
-      },
-    });
-    if (result.response.status() === 201) {
-      publicationId = result.body.id;
-      selectedSpecies = candidate;
-      break;
-    }
-    if (result.response.status() !== 400 || !(result.body.errores ?? []).some((message) => /ya tiene una publicación/i.test(message))) {
-      throw new Error(`No se pudo preparar publicación para ${OPERATORS[accountIndex]} (${result.response.status()}): ${(result.body.errores ?? []).join(" ")}`);
-    }
-  }
-  if (!publicationId) throw new Error(`No se encontró una combinación de especie libre para ${OPERATORS[accountIndex]}.`);
-
-  const after = await requestJson(context, ownPath);
-  const own = (after.body.publicaciones ?? []).find((item) => item.id === publicationId);
-  if (!after.response.ok() || !own) throw new Error(`La publicación de prueba no aparece en el catálogo propio de ${OPERATORS[accountIndex]}.`);
-
-  return {
-    username: OPERATORS[accountIndex],
-    operatorId: operador.id,
-    publicationId,
-    speciesId: selectedSpecies.id,
-    speciesName: selectedSpecies.nombre,
-    version: 1,
-    price: Number(own.precio),
-    ownPath,
-  };
-}
-
-async function leerPropias(context, operatorId) {
-  return context.request.get(`/api/publicaciones/operador/${operatorId}`, { timeout: REQUEST_TIMEOUT_MS });
-}
-
-async function actualizarPrecio(context, record, newPrice, metricName) {
-  const changes = {
-    version: record.version,
-    precio: String(newPrice),
-    cantidadUnidades: null,
-    foto: null,
-    especieId: record.speciesId,
-    variedadId: null,
-    presentacionId: null,
-    categoriaId: null,
-    calibreId: null,
-    paisId: null,
-    disponible: true,
-  };
-  const result = await measure(metricName, async () => context.request.patch(`/api/publicaciones/${record.publicationId}?operadorId=${record.operatorId}`, {
-    multipart: { cambios: JSON.stringify(changes) },
-    timeout: REQUEST_TIMEOUT_MS,
-  }));
-  if (result.status >= 200 && result.status < 300) {
-    record.version++;
-    record.price = newPrice;
-  }
-  return result;
-}
-
-async function uiBuyerActivity(browser, index, searchTerm) {
-  const context = await browser.newContext({ baseURL: BASE_URL });
-  const page = await context.newPage();
-  page.setDefaultTimeout(REQUEST_TIMEOUT_MS);
-  const started = performance.now();
+async function medir(nivel, ronda, sesion, canal, operacion, fn, datos = {}) {
+  const inicio = Date.now();
+  const fila = { nivel, ronda, sesion, canal, operacion, inicio, ...datos };
   try {
-    await page.goto("/publicaciones", { waitUntil: "domcontentloaded" });
-    const search = page.getByRole("searchbox", { name: "Buscar publicaciones" });
-    await search.fill(searchTerm);
-    await page.waitForTimeout(350);
-    const species = page.getByRole("combobox", { name: "Especie", exact: true });
-    if (await species.count()) {
-      await species.click();
-      const option = page.getByRole("option").filter({ hasText: /.+/ }).nth((index % 5) + 1);
-      if (await option.count()) await option.click();
-      else await page.keyboard.press("Escape");
-    }
-    const minPrice = page.getByRole("textbox", { name: "Precio Mínimo", exact: true });
-    if (await minPrice.count()) {
-      await minPrice.fill(String(100 + (index % 5) * 100));
-      await page.waitForTimeout(350);
-    }
-    return { status: 200, elapsedMs: performance.now() - started };
+    const resultado = await fn();
+    fila.estado = resultado && typeof resultado === "object"
+      ? resultado.http ?? resultado.status ?? "OK"
+      : resultado ?? "OK";
+    fila.ok = true;
+  } catch (e) {
+    fila.ok = false;
+    if (Number.isInteger(e.actual) && e.actual >= 400 && e.actual <= 599) fila.estado = e.actual;
+    fila.error = fallo(e);
+    reporte.errores.push({ fase: operacion, nivel, ronda, sesion, error: fila.error });
   } finally {
-    await context.close();
+    fila.duracionMs = Date.now() - inicio;
+    reporte.operaciones.push(fila);
   }
+}
+
+function resumir(rows) {
+  const tiempos = rows.map(v => v.duracionMs).sort((a, b) => a - b);
+  const pct = k => tiempos[Math.ceil(tiempos.length * k) - 1] ?? null;
+  const estados = {};
+  for (const row of rows) {
+    const estado = row.estado ?? "ERROR";
+    estados[estado] = (estados[estado] ?? 0) + 1;
+  }
+  return { completadas: rows.filter(r => r.ok).length, errores: rows.filter(r => !r.ok).length, estados, p50Ms: pct(0.5), p95Ms: pct(0.95), maxMs: tiempos.at(-1) ?? null };
+}
+
+async function ejecutarNivel(browser, nivel, plantilla) {
+  const compradores = [];
+  try {
+    await enGrupos(Array.from({ length: nivel }, (_, i) => i), 10, async i => {
+      compradores[i] = await crearComprador(browser, BASE_URL, plantilla, true, TIMEOUT);
+    });
+    for (let ronda = 1; ronda <= RONDAS; ronda++) {
+      function compradoresActivos(operacion, accion) {
+        return compradores.map((c, i) => medir(nivel, ronda, i + 1, c.canal, operacion,
+          () => accion(c, operadores[(i + ronda - 1) % operadores.length].registro.especie)));
+      }
+      // Las lecturas y escrituras de los operadores se solapan con la actividad
+      // de compradores. Las barreras permiten comparar la misma mezcla en cada ronda.
+      await Promise.all([
+        ...compradoresActivos("navegacion", (c, especie) => c.navegar(especie)),
+        ...operadores.map(o => medir(nivel, ronda, o.usuario, "operador", "consulta_propia", async () => {
+          const item = (await leerPropias(o)).find(p => p.id === o.registro.id);
+          assert.ok(item && Number(item.precio) === o.registro.precio);
+          return 200;
+        }, { publicacion: o.registro.id })),
+      ]);
+      const compradoresConInterfaz = compradores
+        .map((comprador, index) => ({ comprador, index }))
+        .filter(({ comprador }) => comprador.canal === "ui");
+      await Promise.all([
+        ...compradoresConInterfaz.map(({ comprador, index }) =>
+          medir(nivel, ronda, index + 1, comprador.canal, "drawer_publico",
+            () => comprador.abrirDetalle(operadores[(index + ronda - 1) % operadores.length].registro.especie))),
+        ...operadores.map(async o => {
+          const reg = o.registro, previo = reg.precio, nuevo = previo + 1;
+          await medir(nivel, ronda, o.usuario, "ui_operador", "cambio_precio", () => cambiarPrecioDesdePantalla(o, reg, nuevo),
+            { publicacion: reg.id, previo, nuevo });
+          if (ronda === 1) {
+            await medir(nivel, ronda, o.usuario, "ui_operador", "alta_publicacion_ui",
+              () => crearPublicacionDesdePantalla(o, Number(o.usuario.slice(-2)), creadas));
+          }
+        }),
+      ]);
+      await Promise.all(compradores.map((c, i) => (async () => {
+        const especie = operadores[(i + ronda - 1) % operadores.length].registro.especie;
+        await medir(nivel, ronda, i + 1, c.canal, "busqueda", () => c.consultar(especie));
+        await medir(nivel, ronda, i + 1, c.canal, "filtro_precio", () => c.consultar(especie, "100"));
+      })()));
+    }
+    const filas = reporte.operaciones.filter(r => r.nivel === nivel);
+    const distribucion = {};
+    for (const [op, cantidad] of Object.entries(sesionesPorRecorrido(nivel))) {
+      const rows = filas.filter(r => r.operacion === op);
+      distribucion[op] = rows.length;
+      for (let ronda = 1; ronda <= RONDAS; ronda++) {
+        const activas = rows.filter(r => r.ronda === ronda && r.ok);
+        const esperadoEnRonda = op === "alta_publicacion_ui" && ronda > 1 ? 0 : cantidad;
+        assert.equal(new Set(activas.map(r => r.sesion)).size, esperadoEnRonda, "Faltan sesiones con " + op + " completada en ronda " + ronda);
+      }
+    }
+    return distribucion;
+  } finally {
+    await Promise.allSettled(compradores.filter(Boolean).map(c => c.cerrar()));
+  }
+}
+
+async function probarDispositivos(browser) {
+  const propietario = operadores[0];
+  const dispositivos = [propietario];
+  const registros = [];
+  try {
+    await enGrupos(Array.from({ length: 9 }, (_, i) => i + 1), 1, async i => {
+      dispositivos[i] = await iniciarSesion(browser, BASE_URL, propietario.usuario, PASSWORD, TIMEOUT_LOGIN);
+      dispositivos[i].operadorId = propietario.operadorId;
+    });
+    // Un timeout de escritura deja incierta la versión de esa publicación. El
+    // caso de diez dispositivos usa una nueva si la carga anterior dejó dudas.
+    if (!reporte.operaciones.some(r => r.sesion === propietario.usuario && r.operacion === "cambio_precio" && !r.ok)) registros.push(propietario.registro);
+    while (registros.length < dispositivos.length) registros.push(await crearPublicacion(propietario, registros.length, creadas));
+    for (let i = 0; i < dispositivos.length; i++) {
+      dispositivos[i].registro = registros[i];
+      await prepararInterfazOperador(dispositivos[i]);
+    }
+    const cp03 = await verificar("diez_publicaciones_distintas", async () => {
+      const lecturas = await Promise.all(dispositivos.map(d => leerPropias(d)));
+      const escrituras = await Promise.all(dispositivos.map((d, i) => verificar("escritura_dispositivo", async () => {
+        const reg = registros[i], previo = reg.precio, nuevo = previo + 100 + i;
+        assert.equal(Number(lecturas[i].find(p => p.id === reg.id)?.precio), previo);
+        const resultado = await cambiarPrecioDesdePantalla(d, reg, nuevo);
+        return { id: reg.id, previo, nuevo, http: resultado.http };
+      }, { dispositivo: i + 1 })));
+      assert.ok(escrituras.every(Boolean), "No se confirmaron las diez escrituras");
+      await Promise.all(dispositivos.map(async (d, i) => {
+        const otro = registros[(i + 1) % registros.length];
+        assert.equal(Number((await leerPropias(d)).find(p => p.id === otro.id)?.precio), otro.precio);
+      }));
+      return { sesiones: dispositivos.length, ids: registros.map(r => r.id), relecturasDesdeOtraSesion: dispositivos.length };
+    });
+    if (cp03) reporte.casos["CP-E03-03"] = "Aprobado";
+
+    const reg = registros[0];
+    const carrera = await verificar("misma_version_diez_dispositivos", async () => {
+      const version = reg.version;
+      const respuestas = await Promise.all(dispositivos.map(async (d, i) => {
+        const precio = 1600 + i;
+        const r = await enviarPrecio(d, reg, precio, version);
+        const body = await r.json();
+        return { dispositivo: i + 1, precio, status: r.status(), id: body.publicacionId, mensaje: body.errores?.[0] };
+      }));
+      const exitos = respuestas.filter(r => r.status === 200 && r.id === reg.id);
+      reporte.cambiosDePrecioExitososMismaCuenta = exitos.length;
+      assert.equal(exitos.length, 1);
+      reg.version++; reg.precio = exitos[0].precio;
+      assert.equal(respuestas.filter(r => r.status === 409 && r.mensaje).length, 9);
+      assert.equal(Number((await leerPropias(propietario)).find(p => p.id === reg.id)?.precio), reg.precio);
+      return { publicacion: reg.id, version, respuestas };
+    });
+    const ui = await verificar("conflicto_visible_sin_sobrescritura", () => verificarConflictoEnPantalla(propietario, dispositivos[1], reg));
+    if (carrera && ui) reporte.casos["CP-E03-05"] = "Aprobado";
+  } finally {
+    await Promise.allSettled(dispositivos.slice(1).filter(Boolean).map(d => d.context.close()));
+  }
+}
+
+async function verificarFinal(browser) {
+  const aislamiento = [];
+  for (let i = 0; i < operadores.length; i++) {
+    const origen = operadores[i], objetivo = operadores[(i + 1) % operadores.length], reg = objetivo.registro;
+    aislamiento.push(await verificar("aislamiento", async () => {
+      const antes = await leerPropias(objetivo);
+      const lectura = await origen.context.request.get("/api/publicaciones/operador/" + objetivo.operadorId);
+      const escritura = await enviarPrecio(origen, reg, reg.precio + 500);
+      assert.ok([403, 404].includes(lectura.status()), "Lectura ajena HTTP " + lectura.status());
+      assert.ok([403, 404].includes(escritura.status()), "Escritura ajena HTTP " + escritura.status());
+      assert.deepEqual(await leerPropias(objetivo), antes);
+      return { objetivo: objetivo.usuario, publicacion: reg.id, lectura: lectura.status(), escritura: escritura.status() };
+    }, { usuario: origen.usuario }));
+  }
+  const vistas = [];
+  await enGrupos(operadores, 1, async o => {
+    vistas.push(await verificar("persistencia_y_vista_publica", async () => {
+      const nueva = await iniciarSesion(browser, BASE_URL, o.usuario, PASSWORD, TIMEOUT_LOGIN);
+      try { return await verificarVistas(browser, BASE_URL, nueva, o, creadas.filter(r => r.usuario === o.usuario)); }
+      finally { await nueva.context.close(); }
+    }, { usuario: o.usuario }));
+  });
+  const persistencia = vistas.length === CUENTAS.length && vistas.every(Boolean);
+  reporte.consistenciaFinal = persistencia ? "verificada" : "con diferencias";
+  if (persistencia) reporte.casos["CP-E03-04"] = "Aprobado";
+  if (persistencia && aislamiento.every(Boolean)) reporte.casos["CP-E03-07"] = "Aprobado";
 }
 
 async function main() {
-  const browser = await chromium.launch({
-    headless: true,
-    channel: process.env.E03_BROWSER_CHANNEL ?? "chrome",
-    args: ["--disable-crash-reporter", "--disable-crashpad"],
-  });
-  const anonymous = await playwrightRequest.newContext({ baseURL: BASE_URL, timeout: REQUEST_TIMEOUT_MS });
-  const operatorContexts = [];
-  const errors = [];
-  const records = [];
-  const started = new Date();
+  let browser;
   try {
-    console.log(`BP-E03: destino ${BASE_URL}; preparación de ${OPERATORS.length} cuentas y publicaciones de prueba.`);
-    for (let index = 0; index < OPERATORS.length; index++) {
-      try {
-        const session = await iniciarContexto(browser, OPERATORS[index]);
-        const record = await prepararPublicacion(session.context, index);
-        records.push(record);
-        operatorContexts.push({ ...session, record });
-        console.log(`Preparada ${record.username}: publicación ${record.publicationId}, especie ${record.speciesName}.`);
-      } catch (error) {
-        errors.push({ fase: "preparacion", usuario: OPERATORS[index], error: error instanceof Error ? error.message : String(error) });
+    browser = await chromium.launch({ headless: true, channel: process.env.E03_BROWSER_CHANNEL ?? "chrome", args: ["--disable-crash-reporter", "--disable-crashpad"] });
+    console.log("BP-E03: preparando las 30 cuentas de prueba en " + BASE_URL);
+    await enGrupos(CUENTAS, 1, async (usuario, i) => {
+      const sesion = await iniciarSesion(browser, BASE_URL, usuario, PASSWORD, TIMEOUT_LOGIN);
+      operadores[i] = sesion;
+      await identificarOperador(sesion);
+      sesion.registro = await crearPublicacion(sesion, i, creadas);
+      await prepararInterfazOperador(sesion);
+      console.log("Preparada " + usuario + ": publicación " + sesion.registro.id);
+    });
+    let plantilla;
+    const consultaDisponible = await verificar("preparar_consulta_publica", async () => {
+      plantilla = await identificarConsultaPublica(browser, BASE_URL, operadores[0].registro.especie);
+    });
+    if (consultaDisponible) {
+      for (const nivel of NIVELES) {
+        console.log("Carga: 30 operadores y " + nivel + " compradores, " + RONDAS + " rondas.");
+        const ok = await verificar("carga", () => ejecutarNivel(browser, nivel, plantilla), { nivel });
+        resultadoNivel.set(nivel, ok);
       }
     }
-
-    if (records.length !== OPERATORS.length) {
-      throw new Error(`Solo se prepararon ${records.length}/${OPERATORS.length} operadores; se cancela la carga para no generar métricas incompletas.`);
-    }
-
-    for (const buyerCount of BUYER_LEVELS) {
-      console.log(`Ejecutando nivel de carga: 30 sesiones de Operador y ${buyerCount} Compradores.`);
-      const browserBuyerCount = Math.min(BROWSER_BUYERS, buyerCount);
-      const queryBuyers = buyerCount - browserBuyerCount;
-      const publicSpecies = records.map((record) => record.speciesName);
-
-      const tasks = [];
-      for (let index = 0; index < browserBuyerCount; index++) {
-        tasks.push((async () => {
-          const startedAt = performance.now();
-          try {
-            await uiBuyerActivity(browser, index, publicSpecies[index % publicSpecies.length]);
-            const result = bucket(`nivel_${buyerCount}_compradores_ui`);
-            result.completed++;
-            result.latenciesMs.push(performance.now() - startedAt);
-            result.statuses[200] = (result.statuses[200] ?? 0) + 1;
-          } catch (error) {
-            const result = bucket(`nivel_${buyerCount}_compradores_ui`);
-            result.errors++;
-            result.statuses.UI_ERROR = (result.statuses.UI_ERROR ?? 0) + 1;
-            errors.push({ fase: `nivel_${buyerCount}_compradores_ui`, error: error instanceof Error ? error.message : String(error) });
-          }
-        })());
-      }
-      for (let index = 0; index < queryBuyers; index++) {
-        const species = publicSpecies[index % publicSpecies.length];
-        tasks.push(measure(`nivel_${buyerCount}_compradores_http`, async () => anonymous.get(`/publicaciones?especie=${encodeURIComponent(species)}`)));
-      }
-      for (let index = 0; index < operatorContexts.length; index++) {
-        const session = operatorContexts[index];
-        tasks.push(measure(`nivel_${buyerCount}_operadores_lectura`, async () => leerPropias(session.context, session.record.operatorId)));
-      }
-      await Promise.all(tasks);
-
-      const writers = operatorContexts;
-      await Promise.all(writers.map((session, index) => actualizarPrecio(
-        session.context,
-        session.record,
-        session.record.price + 10 + (buyerCount === 50 ? 1 : buyerCount === 75 ? 2 : 3),
-        `nivel_${buyerCount}_operadores_cambio_precio`,
-      ).then((result) => {
-        if (result.status !== 200) errors.push({ fase: `nivel_${buyerCount}_cambio_precio`, usuario: session.username, estado: result.status });
-      })));
-    }
-
-    console.log("Ejecutando 10 dispositivos simultáneos en la cuenta carga_e03_01 para medir conflictos de edición y consistencia.");
-    const sameAccount = [operatorContexts[0]];
-    for (let device = 1; device < 10; device++) sameAccount.push(await iniciarContexto(browser, OPERATORS[0]));
-    operatorContexts.push(...sameAccount.slice(1));
-    const record = records[0];
-    const currentVersion = record.version;
-    const raceResponses = await Promise.all(sameAccount.map(async (session) => {
-      await measure("misma_cuenta_10_dispositivos_lectura", async () => leerPropias(session.context, record.operatorId));
-      const result = await actualizarPrecio(session.context, { ...record, version: currentVersion }, 1200, "misma_cuenta_10_dispositivos_cambio_precio");
-      if (result.status === 409) {
-        const body = await result.response.json().catch(() => ({}));
-        const reported = Array.isArray(body.errores) && body.errores.length > 0;
-        const stats = bucket("misma_cuenta_10_dispositivos_conflictos_informados");
-        if (reported) stats.completed++;
-        else stats.errors++;
-        stats.statuses[reported ? "409_INFORMADO" : "409_SIN_MENSAJE"] = (stats.statuses[reported ? "409_INFORMADO" : "409_SIN_MENSAJE"] ?? 0) + 1;
-      }
-      return result.status;
-    }));
-    const successfulRaceWrites = raceResponses.filter((status) => status === 200).length;
-    record.version += successfulRaceWrites;
-    record.price = successfulRaceWrites ? 1200 : record.price;
-
-    for (const item of records) {
-      const session = operatorContexts.find((candidate) => candidate.username === item.username && candidate.record?.publicationId === item.publicationId);
-      const result = await measure("consistencia_final_consulta_propia", async () => leerPropias(session.context, item.operatorId));
-      if (!result.response?.ok()) {
-        errors.push({ fase: "consistencia", usuario: item.username, estado: result.status });
-        continue;
-      }
-      const body = await result.response.json();
-      const publication = body.publicaciones?.find((entry) => entry.id === item.publicationId);
-      if (!publication || Number(publication.precio) !== item.price) {
-        errors.push({ fase: "consistencia", usuario: item.username, esperado: item.price, observado: publication?.precio ?? null });
-      }
-    }
-
-    const report = {
-      prueba: "BP-E03",
-      destino: BASE_URL,
-      inicio: started.toISOString(),
-      fin: new Date().toISOString(),
-      cuentasOperador: records.length,
-      sesionesOperadorPorNivel: 30,
-      nivelesCompradores: BUYER_LEVELS,
-      compradoresUiPorNivel: BROWSER_BUYERS,
-      dispositivosMismaCuenta: 10,
-      cambiosDePrecioExitososMismaCuenta: successfulRaceWrites,
-      consistenciaFinal: errors.some((item) => item.fase === "consistencia") ? "con diferencias" : "verificada",
-      metricas: summarizeMetrics(),
-      errores: errors,
-      publicacionesDePrueba: records.map(({ username, publicationId, speciesName, price }) => ({ usuario: username, publicacionId: publicationId, especie: speciesName, precioFinal: price })),
-    };
-    console.log(JSON.stringify(report, null, 2));
-    if (errors.length) process.exitCode = 1;
+    if (resultadoNivel.get(50)) reporte.casos["CP-E03-01"] = "Aprobado";
+    if (resultadoNivel.get(100)) reporte.casos["CP-E03-02"] = "Aprobado";
+    const actividad = NIVELES.every(nivel => {
+      const filas = reporte.operaciones.filter(r => r.nivel === nivel && r.ok);
+      return Object.entries(sesionesPorRecorrido(nivel))
+        .every(([op, cantidad]) => new Set(filas.filter(r => r.operacion === op).map(r => r.sesion)).size === cantidad);
+    });
+    if (actividad) reporte.casos["CP-E03-08"] = "Aprobado";
+    const totalEsperado = RONDAS * NIVELES.reduce((s, n) => s + 4 * n + 2 * CUENTAS.length, 0)
+      + NIVELES.length * CUENTAS.length;
+    if (reporte.operaciones.length === totalEsperado && reporte.operaciones.every(r => Number.isFinite(r.duracionMs) && (r.ok || r.error))) reporte.casos["CP-E03-06"] = "Aprobado";
+    console.log("Concurrencia: 10 sesiones de la misma cuenta, publicaciones distintas y conflicto controlado.");
+    await verificar("dispositivos", () => probarDispositivos(browser));
+    console.log("Persistencia, vistas públicas y aislamiento entre cuentas.");
+    await verificarFinal(browser);
+  } catch (error) {
+    reporte.errores.push({ fase: "ejecucion", error: fallo(error) });
+    console.error(fallo(error));
   } finally {
-    await Promise.allSettled(operatorContexts.map((session) => session.context.close()));
-    await anonymous.dispose();
-    await browser.close();
+    // Por defecto se conservan las publicaciones, igual que en el script original.
+    // La limpieza optativa se limita a IDs cuya alta confirmó esta ejecución.
+    if (process.env.E03_LIMPIAR === "1") {
+      await enGrupos(creadas, 3, reg => verificar("limpieza", async () => {
+        const o = operadores.find(s => s?.usuario === reg.usuario);
+        let status;
+        for (let intento = 0; intento < 3; intento++) {
+          const r = await o.context.request.delete("/api/publicaciones/" + reg.id + "?operadorId=" + reg.operadorId);
+          status = r.status();
+          if ([200, 404].includes(status) || status < 500) break;
+          await new Promise(resolve => setTimeout(resolve, 1000 * (intento + 1)));
+        }
+        assert.ok([200, 404].includes(status), "Baja de fixture HTTP " + status);
+        return status;
+      }, { publicacion: reg.id }));
+    }
+    if (browser) await browser.close().catch(error => reporte.errores.push({ fase: "cerrar_navegador", error: fallo(error) }));
+    for (let i = 1; i <= 8; i++) reporte.casos["CP-E03-0" + i] ??= "Sin aprobar";
+    reporte.cuentasOperador = operadores.filter(o => o?.registro).length;
+    reporte.publicacionesDePrueba = creadas.map(r => ({ usuario: r.usuario, operadorId: r.operadorId, publicacionId: r.id, especie: r.especie, precioFinal: r.precio }));
+    for (const nivel of NIVELES) {
+      const filas = reporte.operaciones.filter(r => r.nivel === nivel);
+      for (const tipo of new Set(filas.map(r => r.operacion))) reporte.metricas["nivel_" + nivel + "_" + tipo] = resumir(filas.filter(r => r.operacion === tipo));
+    }
+    reporte.fin = new Date().toISOString();
+    if (process.env.E03_REPORT_PATH) {
+      await writeFile(process.env.E03_REPORT_PATH, JSON.stringify(reporte, null, 2) + "\n", "utf8");
+      const { operaciones, verificaciones, ...resumen } = reporte;
+      console.log(JSON.stringify({ ...resumen, operacionesRegistradas: operaciones.length, verificacionesRegistradas: verificaciones.length }, null, 2));
+    } else {
+      console.log(JSON.stringify(reporte, null, 2));
+    }
+    if (reporte.errores.length || Object.values(reporte.casos).some(v => v !== "Aprobado")) process.exitCode = 1;
   }
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.stack : error);
-  process.exitCode = 1;
-});
+main().catch(error => { console.error(fallo(error)); process.exitCode = 1; });
