@@ -38,8 +38,8 @@ test("BP-06: modificación rápida del precio", async ({ page, precargaOperadore
     await page.getByLabel("Correo electrónico o nombre de usuario").fill(operadorA.credenciales.usuario);
     await page.getByLabel("Contraseña", { exact: true }).fill(operadorA.credenciales.contrasena);
     await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
-    await expect(page).toHaveURL((url) => url.pathname.startsWith("/mi-mercado"), { timeout: 30_000 });
-    await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible();
+    await expect(page).toHaveURL((url) => decodeURIComponent(url.pathname) === `/mi-mercado/${operadorA.nombre}`, { timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible({ timeout: 30_000 });
 
     const precio = page.getByRole("button").and(page.getByTitle("Editar precio", { exact: true }));
     const aumentar = page.getByRole("button", { name: "Aumentar precio", exact: true });
