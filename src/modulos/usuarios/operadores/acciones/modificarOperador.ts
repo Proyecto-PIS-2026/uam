@@ -103,6 +103,8 @@ export async function modificarOperador(
             .update({
                 nombreFantasia: datos.nombre,
                 whatsApp: datos.telefono,
+                enLicencia: datos.enLicencia,
+                comentario: datos.comentario,
                 ...(fotoPerfil !== undefined ? { fotoPerfil } : {}),
             });
 

@@ -5,7 +5,7 @@ export async function obtenerOperadorPorId(operadorId: number) {
     if (!Number.isSafeInteger(operadorId) || operadorId <= 0) return null;
 
     return db.orm.public.Operador
-        .select("id", "usuarioId", "nombreFantasia")
+        .select("id", "usuarioId", "nombreFantasia", "enLicencia")
         .where({ id: operadorId })
         .first();
 }
@@ -14,7 +14,7 @@ export async function obtenerOperadorPorNombre(nombreFantasia: string) {
     if (!nombreFantasia.trim()) return null;
 
     return db.orm.public.Operador
-        .select("id", "usuarioId", "nombreFantasia")
+        .select("id", "usuarioId", "nombreFantasia", "enLicencia")
         .where({ nombreFantasia })
         .first();
 }
@@ -22,7 +22,7 @@ export async function obtenerOperadorPorNombre(nombreFantasia: string) {
 export async function obtenerOperadorActual() {
     const sesion = await exigirOperador();
     const operador = await db.orm.public.Operador
-        .select("id", "usuarioId", "nombreFantasia")
+        .select("id", "usuarioId", "nombreFantasia", "enLicencia")
         .where({ usuarioId: sesion.usuarioId })
         .first();
 

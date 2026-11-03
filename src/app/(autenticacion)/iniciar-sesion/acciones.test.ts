@@ -5,6 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const funcionesSimuladas = vi.hoisted(() => ({
     autenticarUsuario: vi.fn(),
     crearSesion: vi.fn(),
+    cerrarSesion: vi.fn(),
+    iniciarSegundoFactor: vi.fn(),
+    guardarCookieSegundoFactor: vi.fn(),
     existeUsuarioPorNombre: vi.fn(),
     obtenerRutaPrincipal: vi.fn(),
     redirect: vi.fn(),
@@ -29,6 +32,16 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/autenticarUsuario", () => ({
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     crearSesion: funcionesSimuladas.crearSesion,
+    cerrarSesion: funcionesSimuladas.cerrarSesion,
+}));
+vi.mock("@/modulos/identidad-acceso/autenticacion/segundo-factor", () => ({
+    iniciarSegundoFactor: funcionesSimuladas.iniciarSegundoFactor,
+    cancelarSegundoFactor: vi.fn(),
+}));
+vi.mock("@/modulos/identidad-acceso/autenticacion/cookie-segundo-factor", () => ({
+    obtenerTokenSegundoFactor: vi.fn(async () => ""),
+    borrarCookieSegundoFactor: vi.fn(),
+    guardarCookieSegundoFactor: funcionesSimuladas.guardarCookieSegundoFactor,
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/consultasAutenticacion", () => ({
@@ -70,6 +83,7 @@ function configurarMocksBase() {
 
     funcionesSimuladas.autenticarUsuario.mockResolvedValue(null);
     funcionesSimuladas.crearSesion.mockResolvedValue(undefined);
+    funcionesSimuladas.iniciarSegundoFactor.mockResolvedValue({ token: "token-pendiente" });
     funcionesSimuladas.existeUsuarioPorNombre.mockResolvedValue(true);
 
     funcionesSimuladas.obtenerRutaPrincipal.mockImplementation((rol: string) => {
@@ -151,7 +165,6 @@ describe("iniciarSesion", () => {
     });
 
     it.each([
-        ["ADMINISTRADOR", "/inicio"],
         ["OPERADOR", "/mi-mercado"],
         ["PRODUCTOR", "/mi-mercado/productor"],
     ] as const)(
@@ -191,6 +204,25 @@ describe("iniciarSesion", () => {
             );
         },
     );
+
+    it("solicita el segundo factor sin crear una sesión administrativa", async () => {
+        funcionesSimuladas.autenticarUsuario.mockResolvedValue({ usuarioId: 4, rol: "ADMINISTRADOR" });
+        funcionesSimuladas.iniciarSegundoFactor.mockResolvedValue({ token: "token-pendiente" });
+        await expect(iniciarSesion({}, crearFormulario())).rejects.toBe(funcionesSimuladas.redireccion);
+        expect(funcionesSimuladas.cerrarSesion).toHaveBeenCalled();
+        expect(funcionesSimuladas.iniciarSegundoFactor).toHaveBeenCalledWith(4);
+        expect(funcionesSimuladas.guardarCookieSegundoFactor).toHaveBeenCalledWith("token-pendiente");
+        expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.redirect).toHaveBeenCalledWith("/iniciar-sesion/segundo-factor");
+    });
+
+    it("no permite reiniciar la verificación de una cuenta bloqueada", async () => {
+        funcionesSimuladas.autenticarUsuario.mockResolvedValue({ usuarioId: 4, rol: "ADMINISTRADOR" });
+        funcionesSimuladas.iniciarSegundoFactor.mockResolvedValue({ error: "Cuenta bloqueada" });
+        expect(await iniciarSesion({}, crearFormulario())).toEqual({ error: "Cuenta bloqueada" });
+        expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.guardarCookieSegundoFactor).not.toHaveBeenCalled();
+    });
 
     it.each(["OPERADOR", "PRODUCTOR"] as const)(
         "registra una nueva estadística de visita para %s",
@@ -286,12 +318,9 @@ describe("iniciarSesion", () => {
         expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
         expect(funcionesSimuladas.modelos.EstadisticaVisita.update).not.toHaveBeenCalled();
 
-        expect(funcionesSimuladas.crearSesion).toHaveBeenCalledExactlyOnceWith(
-            4,
-            "ADMINISTRADOR",
-        );
-
-        expect(funcionesSimuladas.redirect).toHaveBeenCalledWith("/inicio");
+        expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.iniciarSegundoFactor).toHaveBeenCalledWith(4);
+        expect(funcionesSimuladas.redirect).toHaveBeenCalledWith("/iniciar-sesion/segundo-factor");
     });
 
     it("no impide iniciar sesión si falla el registro de la estadística", async () => {

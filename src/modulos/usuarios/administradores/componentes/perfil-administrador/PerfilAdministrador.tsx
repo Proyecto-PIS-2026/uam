@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import EditIcon from "@mui/icons-material/Edit";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 import BotonVolver from "@/compartido/BotonVolver";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { restablecerSegundoFactorAdministrador } from "../../restablecerSegundoFactorAdministrador";
 import type { PerfilAdministrador as DatosPerfilAdministrador } from "../../acciones/consultas-perfil-administrador";
 import styles from "./PerfilAdministrador.module.css";
 
@@ -18,7 +26,33 @@ type PerfilAdministradorProps = {
 };
 
 export default function PerfilAdministrador({ administrador, esPropiaCuenta }: PerfilAdministradorProps) {
+    const router = useRouter();
+    const { notificar } = useNotificacionToast();
+    const [confirmando, setConfirmando] = useState(false);
+    const [procesando, setProcesando] = useState(false);
+    const restablecimientoEnCurso = useRef(false);
     const inicial = administrador.nombreUsuario.trim()[0]?.toUpperCase();
+
+    async function restablecer() {
+        if (restablecimientoEnCurso.current) return;
+        restablecimientoEnCurso.current = true;
+        setProcesando(true);
+        try {
+            const resultado = await restablecerSegundoFactorAdministrador(administrador.id);
+            if (!resultado.esValido) {
+                notificar(resultado.errores.join(" "), "error");
+                return;
+            }
+            setConfirmando(false);
+            notificar(resultado.mensaje, "success");
+            router.refresh();
+        } catch {
+            notificar("No se pudo restablecer el segundo factor. Intentá de nuevo.", "error");
+        } finally {
+            restablecimientoEnCurso.current = false;
+            setProcesando(false);
+        }
+    }
 
     // La propia cuenta se edita desde Mi perfil; la de otro, desde la modificación de administradores
     const enlaceEditar = esPropiaCuenta ? RUTA_MI_PERFIL : `/gestion-administradores/${administrador.id}/editar`;
@@ -81,12 +115,11 @@ export default function PerfilAdministrador({ administrador, esPropiaCuenta }: P
                                 Configurar segundo factor
                             </Link>
                         ) : (
-                            // Solo interfaz: la lógica se conecta en la integración con el segundo factor
                             <button
                                 type="button"
-                                disabled
-                                title="Próximamente"
-                                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-muted sm:w-auto"
+                                onClick={() => setConfirmando(true)}
+                                disabled={procesando}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-secondary px-4 py-2 text-sm font-semibold text-secondary hover:bg-primary-soft sm:w-auto"
                             >
                                 <ShieldOutlinedIcon fontSize="small" aria-hidden="true" />
                                 Restablecer segundo factor
@@ -95,6 +128,16 @@ export default function PerfilAdministrador({ administrador, esPropiaCuenta }: P
                     </div>
                 </div>
             </div>
+            <Dialog open={confirmando} onClose={() => { if (!procesando) setConfirmando(false); }} maxWidth="xs" fullWidth aria-labelledby="titulo-restablecer-segundo-factor" aria-describedby="descripcion-restablecer-segundo-factor">
+                <DialogTitle id="titulo-restablecer-segundo-factor">Restablecer segundo factor</DialogTitle>
+                <DialogContent id="descripcion-restablecer-segundo-factor">
+                    Se cerrarán las sesiones de {administrador.nombreUsuario}. Deberá volver a vincular su aplicación al iniciar sesión.
+                </DialogContent>
+                <DialogActions>
+                    <button type="button" className="boton-secundario" disabled={procesando} onClick={() => setConfirmando(false)}>Cancelar</button>
+                    <button type="button" className="boton-primario" disabled={procesando} onClick={restablecer}>{procesando ? "Restableciendo..." : "Restablecer"}</button>
+                </DialogActions>
+            </Dialog>
         </section>
     );
 }

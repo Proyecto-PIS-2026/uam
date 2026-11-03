@@ -101,6 +101,14 @@ describe("VistaMiMercado", () => {
         expect(vista.props.incrementoPrecio).toBe(25);
     });
 
+    it("propaga el estado de licencia al mercado propio", async () => {
+        mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Operador 13", enLicencia: true });
+
+        const vista = await VistaMiMercado({});
+
+        expect(vista.props.enLicencia).toBe(true);
+    });
+
     it("no carga publicaciones cuando el nombre corresponde a otro operador", async () => {
         mocks.obtenerOperadorPorNombre.mockResolvedValue({ id: 37, usuarioId: 11, nombreFantasia: "Ajeno" });
         await expect(VistaMiMercado({ operadorNombre: "Ajeno" })).rejects.toThrow("NEXT_REDIRECT");
