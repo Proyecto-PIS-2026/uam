@@ -1,5 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPublicacionesMiMercadoProductor } from "./consultas-mi-mercado-productor";
+
+vi.mock("../configuracion-aging-fotos", () => ({
+    CONFIGURACION_AGING_FOTOS: { habilitado: true, diasVigencia: 3, diasAnticipacionAviso: 1 },
+}));
 
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(),
@@ -9,6 +13,8 @@ const mocks = vi.hoisted(() => ({
     filtrarPublicaciones: vi.fn(),
     incluir: vi.fn(),
     todasPublicaciones: vi.fn(),
+    seleccionarImagenes: vi.fn(),
+    listarImagenes: vi.fn(),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
@@ -18,6 +24,7 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
             public: {
                 Productor: { select: mocks.seleccionarProductor },
                 PublicacionProductor: { where: mocks.filtrarPublicaciones },
+                Imagen: { select: mocks.seleccionarImagenes },
             },
         },
     },
@@ -67,6 +74,39 @@ describe("lectura privada de Mi Mercado del productor", () => {
             return builder;
         });
         mocks.todasPublicaciones.mockResolvedValue([]);
+        mocks.seleccionarImagenes.mockReturnValue({ where: () => ({ all: mocks.listarImagenes }) });
+        mocks.listarImagenes.mockResolvedValue([]);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("mantiene la foto visible hasta el borrado y solo entonces muestra el estado de eliminada", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-04T03:00:00Z"));
+        const archivo = "12345678-1234-4234-8234-123456789abc.webp";
+        const foto = `/api/publicaciones/imagenes/31/${archivo}`;
+        const relacion = relacionPublicacion(23, 31);
+        mocks.todasPublicaciones.mockResolvedValue([{
+            ...relacion, publicacion: { ...relacion.publicacion, foto },
+        }]);
+        mocks.listarImagenes.mockResolvedValue([{
+            clave: `publicaciones/31/${archivo}`, cargadaEn: "2026-11-01T03:00:00Z",
+        }]);
+
+        const antes = await obtenerPublicacionesMiMercadoProductor();
+        expect(antes.publicaciones[0]).toMatchObject({ id: 31, foto, estadoFoto: "por-vencer" });
+
+        mocks.todasPublicaciones.mockResolvedValue([{
+            ...relacion, publicacion: {
+                ...relacion.publicacion, foto: null, fotoEliminadaPorVencimientoEn: "2026-11-04T03:00:00Z",
+            },
+        }]);
+        mocks.listarImagenes.mockResolvedValue([]);
+
+        const despues = await obtenerPublicacionesMiMercadoProductor();
+        expect(despues.publicaciones[0]).toMatchObject({ id: 31, foto: null, estadoFoto: "eliminada" });
     });
 
     it("consulta exclusivamente publicaciones del perfil obtenido de la sesión y serializa sus datos", async () => {
@@ -84,6 +124,7 @@ describe("lectura privada de Mi Mercado del productor", () => {
             paisId: 1,
             pais: "URUGUAY",
             foto: null,
+            estadoFoto: null,
             precio: "125.00",
             cantidadUnidades: 10,
             fecha: "2026-10-16T12:00:00Z",
@@ -109,6 +150,19 @@ describe("lectura privada de Mi Mercado del productor", () => {
         expect(resultado.publicaciones[0].ubicaciones).toStrictEqual([{
             id: 231, nombreUbicacion: "Canelones", urlMaps: "https://maps.example/quinta", departamento: null,
         }]);
+    });
+
+    it("muestra la eliminación por aging y no expone su marca interna al cliente", async () => {
+        const relacion = relacionPublicacion(23, 31);
+        mocks.todasPublicaciones.mockResolvedValue([{ ...relacion, publicacion: {
+            ...relacion.publicacion, fotoEliminadaPorVencimientoEn: { toString: () => "2026-11-04T03:00:00Z" },
+        } }]);
+
+        const resultado = await obtenerPublicacionesMiMercadoProductor();
+
+        expect(resultado.publicaciones[0]).toMatchObject({ id: 31, foto: null, estadoFoto: "eliminada" });
+        expect(resultado.publicaciones[0]).not.toHaveProperty("fotoEliminadaPorVencimientoEn");
+        expect(mocks.filtrarPublicaciones).toHaveBeenCalledExactlyOnceWith({ productorId: 23 });
     });
 
     it("aísla los resultados entre dos productores autenticados", async () => {

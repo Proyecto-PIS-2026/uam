@@ -47,7 +47,7 @@ describe("/mi-mercado", () => {
         const vista = await Page();
 
         expect(vista.type).toBe(VistaMiMercado);
-        expect(vista.props).toEqual({});
+        expect(vista.props).toEqual({ publicacionInicialId: null });
         expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
         expect(mocks.redirect).not.toHaveBeenCalled();
     });
@@ -56,6 +56,31 @@ describe("/mi-mercado", () => {
         mocks.obtenerOperadorActual.mockRejectedValue(new Error("No se encontr\u00f3 ning\u00fan operador de Mi Mercado."));
 
         await expect(Page()).rejects.toThrow("No se encontr\u00f3 ning\u00fan operador de Mi Mercado.");
+        expect(mocks.redirect).not.toHaveBeenCalled();
+    });
+
+    it("conserva la publicación del aviso al redirigir al nombre codificado del operador", async () => {
+        mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, nombreFantasia: "Frutas & Más" });
+
+        await expect(Page({ searchParams: Promise.resolve({ publicacion: "123" }) })).rejects.toThrow("NEXT_REDIRECT");
+
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado/Frutas%20%26%20M%C3%A1s?publicacion=123");
+    });
+
+    it.each(["0", "-1", "1.5", "2147483648", ["1", "2"]].map((publicacion) => ({ publicacion })))("descarta la publicación inválida $publicacion del destino", async ({ publicacion }) => {
+        mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, nombreFantasia: "Frutas" });
+
+        await expect(Page({ searchParams: Promise.resolve({ publicacion }) })).rejects.toThrow("NEXT_REDIRECT");
+
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado/Frutas");
+    });
+
+    it("entrega la publicación a la vista del operador con nombre reservado productor", async () => {
+        mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, nombreFantasia: "productor" });
+
+        const vista = await Page({ searchParams: Promise.resolve({ publicacion: "123" }) });
+
+        expect(vista.props.publicacionInicialId).toBe(123);
         expect(mocks.redirect).not.toHaveBeenCalled();
     });
 });

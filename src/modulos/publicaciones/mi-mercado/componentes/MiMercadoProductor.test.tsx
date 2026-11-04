@@ -92,6 +92,56 @@ describe("MiMercadoProductor", () => {
         vi.unstubAllGlobals();
     });
 
+    it("abre desde el aviso la consulta de la publicación propia por su id base", () => {
+        const fetch = vi.fn();
+        vi.stubGlobal("fetch", fetch);
+
+        render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} publicacionInicialId={1} />);
+
+        const detalle = screen.getByRole("dialog", { name: "Consulta de publicación" });
+        expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("100");
+        expect(within(detalle).getByLabelText("Precio en pesos")).toHaveAttribute("readonly");
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it.each([999, 101])("informa el aviso ajeno, eliminado o con id de relación %s sin buscarlo externamente", (publicacionInicialId) => {
+        const fetch = vi.fn();
+        vi.stubGlobal("fetch", fetch);
+
+        render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} publicacionInicialId={publicacionInicialId} />);
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("conserva el cierre tras refresh y abre otro aviso sin perder los filtros", () => {
+        const publicaciones = [crearPublicacion(1, "Pera", "100"), crearPublicacion(2, "Manzana", "80")];
+        const { rerender } = render(<MiMercadoProductor publicaciones={publicaciones} publicacionInicialId={1} />);
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar publicaciones" }), { target: { value: "Pera" } });
+
+        rerender(<MiMercadoProductor publicaciones={[...publicaciones]} publicacionInicialId={1} />);
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+        rerender(<MiMercadoProductor publicaciones={publicaciones} publicacionInicialId={2} />);
+        expect(within(screen.getByRole("dialog", { name: "Consulta de publicación" })).getByLabelText("Precio en pesos")).toHaveValue("80");
+        expect(screen.getByRole("searchbox", { name: "Buscar publicaciones" })).toHaveValue("Pera");
+        expect(screen.queryByRole("button", { name: "Ver detalle de Manzana" })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
+        rerender(<MiMercadoProductor publicaciones={[...publicaciones]} publicacionInicialId={2} />);
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("cierra la consulta del aviso y avisa si desaparece del listado propio", () => {
+        const { rerender } = render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} publicacionInicialId={1} />);
+
+        rerender(<MiMercadoProductor publicaciones={[]} publicacionInicialId={1} />);
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+    });
+
     it("muestra las publicaciones propias sin agrupar y el botón de alta junto al listado", () => {
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera"), crearPublicacion(2, "Manzana")]} nombreProductor="Mi quinta" />);
 

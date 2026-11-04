@@ -198,7 +198,7 @@ test("BP-29.5: incluso el administrador sólo consulta y modifica sus propios av
     }
 });
 
-test("BP-29.6: el contador móvil se actualiza, el menú se cierra y abrir un enlace no marca leído", async ({ page, usuariosAdministrativos, avisos }) => {
+test("BP-29.6: el contador móvil se actualiza, el menú se cierra y abrir un enlace marca leído", async ({ page, usuariosAdministrativos, avisos }) => {
     const aviso = await avisos.enviar("Abrir mi mercado", { usuarios: [avisos.productorId], url: "/mi-mercado/productor" });
     await iniciarSesionProductor(page, usuariosAdministrativos.productor);
     await page.setViewportSize({ width: 390, height: 844 });
@@ -215,16 +215,19 @@ test("BP-29.6: el contador móvil se actualiza, el menú se cierra y abrir un en
     await expect(menu).not.toBeVisible();
     await fila(page, aviso.texto).getByRole("link", { name: aviso.texto, exact: true }).click();
     await expect(page).toHaveURL(/\/mi-mercado\/productor$/);
-    const sinLeer = await consultar(page);
-    expect(sinLeer).toMatchObject({ noLeidas: 1, notificaciones: [{ texto: aviso.texto, leida: false }] });
-    await esperarContador(abrirMenu, 1);
+    const leida = await consultar(page);
+    expect(leida).toMatchObject({ noLeidas: 0, notificaciones: [{ texto: aviso.texto, leida: true }] });
+    await esperarContador(abrirMenu, 0);
     await abrirMenu.click();
     await menu.getByRole("link", { name: "Notificaciones", exact: true }).click();
-    await fila(page, aviso.texto).getByRole("button", { name: "Marcar como leída", exact: true }).click();
+    await expect(page).toHaveURL(/\/notificaciones$/);
+    await expect(fila(page, aviso.texto)).toHaveAttribute("data-leida", "true");
+    await expect(fila(page, aviso.texto).getByRole("button", { name: "Notificación leída", exact: true })).toBeDisabled();
     await esperarContador(abrirMenu, 0);
     await page.reload();
     await expect(fila(page, aviso.texto)).toHaveAttribute("data-leida", "true");
     await esperarContador(abrirMenu, 0);
+    expect(await consultar(page)).toMatchObject({ noLeidas: 0, notificaciones: [{ texto: aviso.texto, leida: true }] });
 });
 
 test("BP-29.7: abrir el menú trae avisos nuevos y leer desde otra pestaña actualiza el contador", async ({ page, context, usuariosAdministrativos, avisos }) => {

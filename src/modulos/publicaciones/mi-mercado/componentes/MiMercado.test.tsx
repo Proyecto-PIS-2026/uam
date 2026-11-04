@@ -14,6 +14,7 @@ type DrawerMockProps = {
   alGuardar: (publicacionOperadorId: number, cambios: CambiosPublicacionOperador, fotoNueva: File | null) => void | Promise<void>;
   publicacion: PublicacionParaEditar | null;
   modoInicial?: "consulta" | "edicion";
+  mostrarAvisoFoto?: boolean;
   eliminando?: boolean;
   actualizando?: boolean;
   errorConsulta?: string;
@@ -182,6 +183,12 @@ function obtenerPropsDrawer(): DrawerMockProps {
   return props;
 }
 
+function mercadoDesdeAviso(publicaciones: Publicacion[], publicacionInicialId: number) {
+  return <MiMercado operadorId={9} publicaciones={publicaciones} publicacionInicialId={publicacionInicialId}
+    puedeCrear={true} puedeModificar={true} puedeEliminar={true} incrementoPrecio={5}
+    opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }} />;
+}
+
 function idsTarjetas() {
   return screen.getAllByTestId(/^publicacion-/).map((tarjeta) => tarjeta.getAttribute("data-testid"));
 }
@@ -198,6 +205,71 @@ describe("MiMercado", () => {
     mocks.cargarPublicaciones.mockReset();
     vi.stubGlobal("fetch", mocks.solicitud);
     vi.stubGlobal("open", mocks.abrirWhatsApp);
+  });
+
+  it("abre desde el aviso la consulta de la publicación propia por su id base", () => {
+    const publicacion = { ...crearPublicacion(23, 1, "Pera"), publicacionOperadorId: 987, estadoFoto: "eliminada" as const };
+
+    render(mercadoDesdeAviso([publicacion], 23));
+
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-modo", "consulta");
+    expect(obtenerPropsDrawer().publicacion).toMatchObject({ publicacionId: 23, publicacionOperadorId: 987, estadoFoto: "eliminada" });
+    expect(obtenerPropsDrawer().mostrarAvisoFoto).toBe(true);
+    expect(mocks.solicitud).not.toHaveBeenCalled();
+    expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
+  });
+
+  it("actualiza el aviso del drawer cuando la foto vence o se reemplaza", async () => {
+    const publicacion: Publicacion = { ...crearPublicacion(23, 1, "Pera"), foto: "/foto-original.webp", estadoFoto: "por-vencer" };
+    render(mercadoDesdeAviso([publicacion], 23));
+    expect(obtenerPropsDrawer().publicacion?.estadoFoto).toBe("por-vencer");
+
+    mocks.cargarPublicaciones.mockResolvedValue([{ ...publicacion, foto: null, estadoFoto: "eliminada", version: 2 }]);
+    await act(async () => { await mocks.suscribirActualizaciones.mock.lastCall?.[0](); });
+    expect(obtenerPropsDrawer().publicacion).toMatchObject({ foto: null, estadoFoto: "eliminada" });
+
+    mocks.cargarPublicaciones.mockResolvedValue([{ ...publicacion, foto: "/foto-nueva.webp", estadoFoto: null, version: 3 }]);
+    await act(async () => { await mocks.suscribirActualizaciones.mock.lastCall?.[0](); });
+    expect(obtenerPropsDrawer().publicacion).toMatchObject({ foto: "/foto-nueva.webp", estadoFoto: null });
+  });
+
+  it.each([999, 987])("informa el aviso ajeno, eliminado o con id de relación %s sin buscarlo externamente", (publicacionInicialId) => {
+    const publicacion = { ...crearPublicacion(23, 1, "Pera"), publicacionOperadorId: 987 };
+
+    render(mercadoDesdeAviso([publicacion], publicacionInicialId));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+    expect(mocks.solicitud).not.toHaveBeenCalled();
+    expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
+  });
+
+  it("conserva el cierre después de refresh y tiempo real, y abre otro aviso sin perder los filtros", async () => {
+    const publicaciones = [crearPublicacion(1, 1, "Pera"), crearPublicacion(2, 2, "Manzana")];
+    const { rerender } = render(mercadoDesdeAviso(publicaciones, 1));
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
+    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar publicaciones" }), { target: { value: "Pera" } });
+
+    rerender(mercadoDesdeAviso([...publicaciones], 1));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    mocks.cargarPublicaciones.mockResolvedValue(publicaciones);
+    await act(async () => { await mocks.suscribirActualizaciones.mock.lastCall?.[0](); });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    rerender(mercadoDesdeAviso(publicaciones, 2));
+    expect(obtenerPropsDrawer().publicacion?.publicacionId).toBe(2);
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveTextContent("Manzana");
+    expect(screen.getByRole("searchbox", { name: "Buscar publicaciones" })).toHaveValue("Pera");
+    expect(screen.queryByTestId("publicacion-2")).not.toBeInTheDocument();
+  });
+
+  it("cierra la consulta del aviso y avisa si desaparece del listado propio", () => {
+    const { rerender } = render(mercadoDesdeAviso([crearPublicacion(1, 1, "Pera")], 1));
+
+    rerender(mercadoDesdeAviso([], 1));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
   });
 
   afterEach(() => {

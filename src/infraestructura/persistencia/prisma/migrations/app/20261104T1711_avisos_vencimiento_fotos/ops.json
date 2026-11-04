@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.imagen.avisoVencimientoEn",
+    "label": "Add column \"avisoVencimientoEn\" to \"imagen\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "avisoVencimientoEn",
+        "table": "imagen"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"avisoVencimientoEn\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "imagen",
+          "avisoVencimientoEn"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"avisoVencimientoEn\"",
+        "sql": "ALTER TABLE \"public\".\"imagen\" ADD COLUMN \"avisoVencimientoEn\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"avisoVencimientoEn\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "imagen",
+          "avisoVencimientoEn"
+        ]
+      }
+    ]
+  }
+]
