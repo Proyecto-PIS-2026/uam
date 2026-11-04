@@ -34,8 +34,25 @@ describe("/mi-mercado/productor", () => {
         expect(screen.getByRole("heading", { name: "Mi Mercado" })).toBeInTheDocument();
         expect(screen.getByText("Mi huerta")).toBeInTheDocument();
         expect(obtenerPublicacionesMiMercadoProductor).toHaveBeenCalledExactlyOnceWith();
-        expect(vi.mocked(MiMercadoProductor).mock.calls[0][0]).toEqual({ publicaciones: [], nombreProductor: "Mi huerta", productorId: 21 });
+        expect(vi.mocked(MiMercadoProductor).mock.calls[0][0]).toEqual({ publicaciones: [], nombreProductor: "Mi huerta", productorId: 21, publicacionInicialId: null });
         expect(redireccionSimulada).not.toHaveBeenCalled();
+    });
+
+    it("entrega la publicación del aviso junto con las publicaciones propias", async () => {
+        vi.mocked(obtenerSesion).mockResolvedValue({ usuarioId: 1, rol: "PRODUCTOR", expiraEn: 2000000000 });
+
+        const contenido = await PaginaMiMercadoProductor({ searchParams: Promise.resolve({ publicacion: "123" }) });
+
+        expect(contenido.props.publicacionInicialId).toBe(123);
+        expect(obtenerPublicacionesMiMercadoProductor).toHaveBeenCalledExactlyOnceWith();
+    });
+
+    it.each(["0", "-1", "1.5", "2147483648", ["1", "2"]].map((publicacion) => ({ publicacion })))("ignora el identificador inválido $publicacion", async ({ publicacion }) => {
+        vi.mocked(obtenerSesion).mockResolvedValue({ usuarioId: 1, rol: "PRODUCTOR", expiraEn: 2000000000 });
+
+        const contenido = await PaginaMiMercadoProductor({ searchParams: Promise.resolve({ publicacion }) });
+
+        expect(contenido.props.publicacionInicialId).toBeNull();
     });
 
     it("redirige a iniciar sesion si no hay usuario autenticado", async () => {

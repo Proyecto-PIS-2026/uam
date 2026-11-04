@@ -236,6 +236,29 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
+    it.each([null, undefined, FOTO_ANTERIOR])("conserva la marca del aging al editar sin cargar otra foto: %s", async (foto) => {
+        mocks.publicacion.first.mockResolvedValue({
+            version: 1, tipoPublicacion: "OPERADOR", foto: null,
+            fotoEliminadaPorVencimientoEn: "2026-11-04T03:00:00Z",
+        });
+        await modificarPublicacionOperador(9, 12, { ...cambios, foto });
+        const escritura = mocks.publicacion.update.mock.calls[0][0];
+        expect(escritura).toMatchObject({ foto: null });
+        expect(escritura).not.toHaveProperty("fotoEliminadaPorVencimientoEn");
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+    });
+
+    it("quita la marca de eliminación por aging al cargar una foto de reemplazo", async () => {
+        mocks.publicacion.first.mockResolvedValue({
+            version: 1, tipoPublicacion: "OPERADOR", foto: null,
+            fotoEliminadaPorVencimientoEn: "2026-11-04T03:00:00Z",
+        });
+        await modificarPublicacionOperador(9, 12, { ...cambios, foto: null }, archivoNuevo());
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({
+            foto: FOTO_NUEVA, fotoEliminadaPorVencimientoEn: null,
+        }));
+    });
+
     it("rechaza una combinación ya publicada por el mismo operador y limpia la foto nueva", async () => {
         mocks.vinculo.all.mockResolvedValue([
             { id: 12, publicacionId: 20, operadorId: 3, paisId: 5 },
@@ -437,7 +460,7 @@ describe("modificarPublicacionOperador", () => {
 
     it("borra la foto de la publicación y limpia el archivo anterior", async () => {
         await modificarPublicacionOperador(9, 12, { ...cambios, foto: null });
-        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: null }));
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: null, fotoEliminadaPorVencimientoEn: null }));
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
         expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_ANTERIOR, 20);
     });

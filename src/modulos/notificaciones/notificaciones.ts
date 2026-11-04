@@ -60,10 +60,10 @@ function validarEnvio(entrada: DestinatariosNotificacion) {
     return { texto: entrada.texto.trim(), url, usuarios: [...new Set(usuarios)], roles: [...new Set(roles)] };
 }
 
-export async function enviarNotificacion(entrada: DestinatariosNotificacion): Promise<{ enviadas: number }> {
+export async function enviarNotificacion(entrada: DestinatariosNotificacion, cliente?: Pick<typeof db, "orm">): Promise<{ enviadas: number }> {
     const { texto, url, usuarios, roles } = validarEnvio(entrada);
     if (usuarios.length === 0 && roles.length === 0) return { enviadas: 0 };
-    return db.transaction(async (tx) => {
+    const crearNotificaciones = async (tx: Pick<typeof db, "orm">) => {
         const destinatarios = new Set<number>();
         if (usuarios.length > 0) {
             const existentes = await tx.orm.public.Usuario.select("id").where((usuario) => usuario.id.in(usuarios)).all();
@@ -77,7 +77,8 @@ export async function enviarNotificacion(entrada: DestinatariosNotificacion): Pr
             await tx.orm.public.Notificacion.create({ titulo: "Notificación", descripcion: texto, url, usuarioId });
         }
         return { enviadas: destinatarios.size };
-    });
+    };
+    return cliente ? crearNotificaciones(cliente) : db.transaction(crearNotificaciones);
 }
 
 export async function consultarNotificaciones(sesion: DatosSesion | null): Promise<NotificacionesUsuario> {

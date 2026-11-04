@@ -162,6 +162,8 @@ export async function modificarPublicacionOperador(
                     precio: precioParaGuardar,
                     cantidadUnidades: cantidadUnidadesParaGuardar,
                     foto: fotoActual,
+                    ...(imagenCreada || (cambios.foto === null && publicacion.foto !== null)
+                        ? { fotoEliminadaPorVencimientoEn: null } : {}),
                     especieId: cambios.especieId,
                     variedadId: cambios.variedadId,
                     categoriaId: cambios.categoriaId,

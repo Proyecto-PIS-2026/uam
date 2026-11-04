@@ -4,6 +4,9 @@ import VistaNotificaciones from "./VistaNotificaciones";
 import { notificarCambioNotificaciones } from "../cliente";
 import type { NotificacionesUsuario } from "../tipos";
 
+const { navegar } = vi.hoisted(() => ({ navegar: vi.fn() }));
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: navegar }) }));
 vi.mock("../cliente", () => ({ notificarCambioNotificaciones: vi.fn() }));
 
 const modalOriginal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "showModal");
@@ -92,23 +95,117 @@ describe("VistaNotificaciones", () => {
         expect(notificarCambioNotificaciones).toHaveBeenLastCalledWith(7, 0);
     });
 
-    it("permite navegar desde el texto sin marcar automáticamente la notificación como leída", async () => {
+    it("espera la lectura confirmada antes de navegar y bloquea clics repetidos mientras guarda", async () => {
         await abrir();
+        const lectura = pendiente();
+        vi.mocked(fetch).mockReturnValueOnce(lectura.promesa);
         const enlace = screen.getByRole("link", { name: listado().notificaciones[0].texto });
         expect(enlace).toHaveAttribute("href", "/mi-mercado?publicacion=5");
-        enlace.addEventListener("click", (evento) => evento.preventDefault());
         fireEvent.click(enlace);
-        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(fetch).toHaveBeenLastCalledWith("/api/notificaciones/11", expect.objectContaining({ method: "PATCH", signal: expect.any(AbortSignal) }));
+        expect(enlace).toHaveAttribute("aria-busy", "true");
+        expect(enlace).toHaveAttribute("aria-disabled", "true");
+        expect(navegar).not.toHaveBeenCalled();
+        expect(notificarCambioNotificaciones).toHaveBeenLastCalledWith(7, 1);
         expect(within(fila(listado().notificaciones[0].texto)).getByText("No leída")).toBeVisible();
-        expect(screen.queryByRole("link", { name: listado().notificaciones[1].texto })).not.toBeInTheDocument();
+        fireEvent.click(enlace);
+        expect(fetch).toHaveBeenCalledTimes(2);
+        await act(async () => lectura.resolver(respuesta({ noLeidas: 0 })));
+        expect(fila(listado().notificaciones[0].texto)).toHaveAttribute("data-leida", "true");
+        expect(notificarCambioNotificaciones).toHaveBeenLastCalledWith(7, 0);
+        expect(navegar).toHaveBeenCalledExactlyOnceWith("/mi-mercado?publicacion=5");
+        expect(vi.mocked(notificarCambioNotificaciones).mock.invocationCallOrder[1]).toBeLessThan(navegar.mock.invocationCallOrder[0]);
+        expect(screen.queryByText("Notificación marcada como leída.")).not.toBeInTheDocument();
     });
 
-    it.each(["https://externo.example/destino", "//externo.example", "javascript:alert(1)"])("no convierte una URL insegura de datos anteriores en enlace: %s", async (url) => {
+    it("no aborta el PATCH confirmado al desmontarse por la navegación", async () => {
+        const vista = await abrir();
+        vi.mocked(fetch).mockResolvedValueOnce(respuesta({ noLeidas: 0 }));
+        navegar.mockImplementationOnce(() => vista.unmount());
+        fireEvent.click(screen.getByRole("link", { name: listado().notificaciones[0].texto }), { detail: 0 });
+        await waitFor(() => expect(navegar).toHaveBeenCalledExactlyOnceWith("/mi-mercado?publicacion=5"));
+        expect(vi.mocked(fetch).mock.calls[1][1]!.signal!.aborted).toBe(false);
+    });
+
+    it("abre una notificación ya leída sin enviar otro PATCH", async () => {
+        const datos = listado();
+        datos.notificaciones[0].leida = true;
+        datos.noLeidas = 0;
+        await abrir(datos);
+        fireEvent.click(screen.getByRole("link", { name: datos.notificaciones[0].texto }));
+        expect(navegar).toHaveBeenCalledExactlyOnceWith("/mi-mercado?publicacion=5");
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(notificarCambioNotificaciones).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(["servidor", "red"])("mantiene el aviso sin leer y permite reintentar si falla la lectura al abrir por un error de %s", async (origen) => {
+        await abrir();
+        if (origen === "servidor") vi.mocked(fetch).mockResolvedValueOnce(respuesta({ errores: ["No se pudo guardar la lectura."] }, 503));
+        else vi.mocked(fetch).mockRejectedValueOnce(new TypeError("Failed to fetch"));
+        const enlace = screen.getByRole("link", { name: listado().notificaciones[0].texto });
+        fireEvent.click(enlace);
+        expect(await screen.findByRole("alert")).toHaveTextContent(origen === "servidor" ? "No se pudo guardar la lectura." : "No se pudieron marcar las notificaciones como leídas. Intentá nuevamente.");
+        expect(fila(listado().notificaciones[0].texto)).toHaveAttribute("data-leida", "false");
+        expect(enlace).toHaveAttribute("aria-disabled", "false");
+        expect(navegar).not.toHaveBeenCalled();
+        expect(notificarCambioNotificaciones).toHaveBeenCalledTimes(1);
+        vi.mocked(fetch).mockResolvedValueOnce(respuesta({ noLeidas: 0 }));
+        fireEvent.click(enlace);
+        await waitFor(() => expect(navegar).toHaveBeenCalledExactlyOnceWith("/mi-mercado?publicacion=5"));
+    });
+
+    it.each(["ctrlKey", "metaKey", "shiftKey"])("conserva la apertura nativa con %s y confirma la lectura sin navegar la pestaña actual", async (modificador) => {
+        await abrir();
+        vi.mocked(fetch).mockResolvedValueOnce(respuesta({ noLeidas: 0 }));
+        let aperturaImpedida: boolean | undefined;
+        document.addEventListener("click", (evento) => {
+            aperturaImpedida = evento.defaultPrevented;
+            evento.preventDefault();
+        }, { once: true });
+        fireEvent.click(screen.getByRole("link", { name: listado().notificaciones[0].texto }), { [modificador]: true });
+        expect(aperturaImpedida).toBe(false);
+        await waitFor(() => expect(fila(listado().notificaciones[0].texto)).toHaveAttribute("data-leida", "true"));
+        expect(fetch).toHaveBeenLastCalledWith("/api/notificaciones/11", expect.objectContaining({ method: "PATCH" }));
+        expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it("marca como leído al abrir con el botón central sin reemplazar la navegación del navegador", async () => {
+        await abrir();
+        vi.mocked(fetch).mockResolvedValueOnce(respuesta({ noLeidas: 0 }));
+        const evento = new MouseEvent("auxclick", { button: 1, bubbles: true, cancelable: true });
+        fireEvent(screen.getByRole("link", { name: listado().notificaciones[0].texto }), evento);
+        expect(evento.defaultPrevented).toBe(false);
+        await waitFor(() => expect(fila(listado().notificaciones[0].texto)).toHaveAttribute("data-leida", "true"));
+        expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it("permite marcar desde el texto accesible de un aviso sin URL y no navega", async () => {
+        const datos = listado();
+        datos.notificaciones[0].url = null;
+        await abrir(datos);
+        vi.mocked(fetch).mockResolvedValueOnce(respuesta({ noLeidas: 0 }));
+        const texto = screen.getByRole("button", { name: datos.notificaciones[0].texto });
+        expect(texto).toBeEnabled();
+        fireEvent.click(texto);
+        await waitFor(() => expect(fila(datos.notificaciones[0].texto)).toHaveAttribute("data-leida", "true"));
+        expect(texto).toBeDisabled();
+        expect(fetch).toHaveBeenLastCalledWith("/api/notificaciones/11", expect.objectContaining({ method: "PATCH" }));
+        expect(notificarCambioNotificaciones).toHaveBeenLastCalledWith(7, 0);
+        expect(navegar).not.toHaveBeenCalled();
+        fireEvent.click(texto);
+        expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(["https://externo.example/destino", "//externo.example", "javascript:alert(1)"])("permite leer un aviso con URL insegura sin convertirlo en enlace ni navegar: %s", async (url) => {
         const datos = listado();
         datos.notificaciones[0].url = url;
         await abrir(datos);
-        expect(screen.getByText(datos.notificaciones[0].texto)).toBeVisible();
         expect(screen.queryByRole("link")).not.toBeInTheDocument();
+        vi.mocked(fetch).mockResolvedValueOnce(respuesta({ noLeidas: 0 }));
+        fireEvent.click(screen.getByRole("button", { name: datos.notificaciones[0].texto }));
+        await waitFor(() => expect(fila(datos.notificaciones[0].texto)).toHaveAttribute("data-leida", "true"));
+        expect(navegar).not.toHaveBeenCalled();
+        expect(notificarCambioNotificaciones).toHaveBeenLastCalledWith(7, 0);
     });
 
     it("marca únicamente el aviso elegido y comunica el contador confirmado al encabezado", async () => {

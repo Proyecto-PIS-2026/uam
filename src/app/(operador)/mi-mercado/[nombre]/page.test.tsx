@@ -22,4 +22,16 @@ describe("/mi-mercado/[nombre]", () => {
         await expect(Page({ params: Promise.resolve({ nombre: encodeURIComponent(nombre) }) })).rejects.toThrow("NOT_FOUND");
         expect(notFoundMock).toHaveBeenCalledOnce();
     });
+
+    it("entrega a la vista la publicación validada del aviso", async () => {
+        const contenido = await Page({ params: Promise.resolve({ nombre: "Frutas" }), searchParams: Promise.resolve({ publicacion: "123" }) });
+
+        expect(contenido.props).toEqual({ operadorNombre: "Frutas", publicacionInicialId: 123 });
+    });
+
+    it.each(["-1", "1.5", "2147483648", ["1", "2"]].map((publicacion) => ({ publicacion })))("ignora una publicación inválida $publicacion", async ({ publicacion }) => {
+        const contenido = await Page({ params: Promise.resolve({ nombre: "Frutas" }), searchParams: Promise.resolve({ publicacion }) });
+
+        expect(contenido.props.publicacionInicialId).toBeNull();
+    });
 });
