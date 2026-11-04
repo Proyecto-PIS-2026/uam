@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({ guardar: vi.fn(), guardarAdmin: vi.fn(), push:
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }) }));
 vi.mock("./modificarMiPerfilProductor", () => ({ modificarMiPerfilProductor: mocks.guardar }));
 vi.mock("../componentes/modificar-productor-por-admin/modificarProductor", () => ({ modificarProductor: mocks.guardarAdmin }));
-const productor = { id: 5, nombre: "Granja Norte", codigoPais: "+598", telefono: "99123456", fotoPerfil: "/api/imagenes/actual" };
+const productor = { id: 5, nombre: "Granja Norte", nombreUsuario: "granja_norte", codigoPais: "+598", telefono: "99123456", fotoPerfil: "/api/imagenes/actual" };
 const guardar = () => fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
 describe("formulario de mi perfil como Productor", () => {
@@ -18,7 +18,8 @@ describe("formulario de mi perfil como Productor", () => {
 
     it("muestra nombre, contacto y fotografía actuales", () => {
         render(<FormularioModificarProductor productor={productor} perfilPropio />);
-        expect(screen.getByRole("heading", { name: "Modificar mi perfil" })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Editar mi perfil" })).toBeInTheDocument();
+        expect(screen.getByText("granja_norte")).toBeInTheDocument();
         expect(screen.getByLabelText("Nombre")).toHaveValue("Granja Norte");
         expect(screen.getByLabelText("Número de contacto (opcional)")).toHaveValue("99123456");
         expect(screen.getByRole("img", { name: "Vista previa de la foto de perfil" })).toHaveAttribute("src", expect.stringContaining(productor.fotoPerfil));

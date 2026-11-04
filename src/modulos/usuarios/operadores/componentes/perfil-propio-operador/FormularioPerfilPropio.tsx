@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
@@ -37,6 +38,7 @@ function extraerLicencia(comentario: string | null) {
 
 export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil: PerfilPropioOperador; alCancelar: () => void }) {
     const router = useRouter();
+    const { notificar } = useNotificacionToast();
     const actual = separar(perfil.contacto);
     const [codigoPais, setCodigoPais] = useState(actual.codigo);
     const [telefono, setTelefono] = useState(actual.telefono);
@@ -70,7 +72,8 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                 setErrores(resultado.errores);
                 return;
             }
-            router.push("/mi-perfil");
+            notificar(resultado.mensaje, "success");
+            alCancelar();
             router.refresh();
         } catch {
             setErrores(["No se pudieron guardar los cambios. Intentá nuevamente."]);
