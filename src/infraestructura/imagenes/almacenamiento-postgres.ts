@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import { db } from "../persistencia/prisma/db";
 import {
     type AlmacenamientoImagenes,
