@@ -1,6 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerOperadoresPublicos } from "./consultas-listado-publico";
+import "temporal-polyfill/full/global";
 
 const { allMock, selectMock, includeMock, whereMock } = vi.hoisted(() => ({
     allMock: vi.fn(),
@@ -32,13 +33,15 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => {
 function relacionPublicacion(
     publicacionActiva: boolean,
     publicacionDisponible: boolean,
-    tipoPublicacion: "OPERADOR" | "PRODUCTOR"
+    tipoPublicacion: "OPERADOR" | "PRODUCTOR",
+    fechaVigencia: Temporal.Instant | null = null
 ) {
     return {
         publicacion: {
             publicacionActiva,
             publicacionDisponible,
             tipoPublicacion,
+            fechaVigencia,
         },
     };
 }
@@ -181,5 +184,74 @@ describe("obtenerOperadoresPublicos", () => {
     it("propaga un error de la consulta", async () => {
         allMock.mockRejectedValue(new Error("Falló la base de datos"));
         await expect(obtenerOperadoresPublicos()).rejects.toThrow("Falló la base de datos");
+    });
+    describe("vigencia de las publicaciones", () => {
+        const DIA = 86_400_000;
+        const enDias = (dias: number) =>
+            Temporal.Instant.fromEpochMilliseconds(Date.now() + dias * DIA);
+
+        const operadorConPublicaciones = (publicacionesOperador: unknown[]) => ({
+            id: 1,
+            nombreFantasia: "Frutas del Norte",
+            fotoPerfil: null,
+            locales: [{ numeroLocal: "1", finContrato: null, nave: { nombreNave: "A" } }],
+            publicacionesOperador,
+        });
+
+        it("excluye publicaciones con fechaVigencia vencida del conteo de productos del operador", async () => {
+            allMock.mockResolvedValue([
+                operadorConPublicaciones([relacionPublicacion(true, true, "OPERADOR", enDias(-3))]),
+            ]);
+
+            const operadores = await obtenerOperadoresPublicos();
+
+            expect(operadores[0].cantidadProductos).toBe(0);
+        });
+
+        it("incluye publicaciones con fechaVigencia futura en el conteo", async () => {
+            allMock.mockResolvedValue([
+                operadorConPublicaciones([relacionPublicacion(true, true, "OPERADOR", enDias(15))]),
+            ]);
+
+            const operadores = await obtenerOperadoresPublicos();
+
+            expect(operadores[0].cantidadProductos).toBe(1);
+        });
+
+        it("incluye publicaciones sin fechaVigencia (null) en el conteo", async () => {
+            allMock.mockResolvedValue([
+                operadorConPublicaciones([relacionPublicacion(true, true, "OPERADOR", null)]),
+            ]);
+
+            const operadores = await obtenerOperadoresPublicos();
+
+            expect(operadores[0].cantidadProductos).toBe(1);
+        });
+
+        it("cuenta solo las vigentes cuando conviven con una vencida", async () => {
+            allMock.mockResolvedValue([
+                operadorConPublicaciones([
+                    relacionPublicacion(true, true, "OPERADOR", enDias(-3)),
+                    relacionPublicacion(true, true, "OPERADOR", enDias(15)),
+                    relacionPublicacion(true, true, "OPERADOR", null),
+                ]),
+            ]);
+
+            const operadores = await obtenerOperadoresPublicos();
+
+            expect(operadores[0].cantidadProductos).toBe(2);
+        });
+
+        it("mantiene al operador en el listado aunque todas sus publicaciones estén vencidas", async () => {
+            allMock.mockResolvedValue([
+                operadorConPublicaciones([relacionPublicacion(true, true, "OPERADOR", enDias(-1))]),
+            ]);
+
+            const operadores = await obtenerOperadoresPublicos();
+
+            expect(operadores).toEqual([
+                expect.objectContaining({ nombreFantasia: "Frutas del Norte", cantidadProductos: 0 }),
+            ]);
+        });
     });
 });
