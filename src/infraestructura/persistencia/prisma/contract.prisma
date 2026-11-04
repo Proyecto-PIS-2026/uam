@@ -193,6 +193,7 @@ model Imagen {
   clave     String @id
   contenido Bytes
   cargadaEn DateTime?
+  avisoVencimientoEn DateTime?
 
   @@map("imagen")
 }
@@ -216,6 +217,7 @@ model Publicacion {
   precio                Numeric(12, 2)?
   cantidadUnidades      Int?
   foto                  String?
+  fotoEliminadaPorVencimientoEn DateTime?
   tipoPublicacion       TipoPublicacion
   especieId             Int
   especie               Especie              @relation(fields:[especieId], references:[id])

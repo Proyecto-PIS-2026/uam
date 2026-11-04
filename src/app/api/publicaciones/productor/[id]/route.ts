@@ -6,7 +6,7 @@ import { obtenerOpcionesEdicionPublicacion } from "@/modulos/publicaciones/opera
 import { ErrorEdicionPublicacionProductor, modificarPublicacionProductor, obtenerPublicacionProductorEditable } from "@/modulos/publicaciones/productores/modificar-publicacion";
 import { bajaPublicacionProductorAutorizada, ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada";
 import { ErrorCuerpoDemasiadoGrande, leerFormularioLimitado } from "@/infraestructura/http/cuerpo-limitado";
-import { ocultarFotosVencidas } from "@/modulos/publicaciones/fotos-vigentes";
+import { agregarEstadoFotosPropias } from "@/modulos/publicaciones/estado-fotos-propias";
 import { Temporal } from "temporal-polyfill";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 
@@ -106,7 +106,7 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
                 console.error(`No se pudo revalidar ${ruta} tras guardar la publicación:`, error);
             }
         }
-        const [publicacion] = await ocultarFotosVencidas([resultado.publicacion]);
+        const [publicacion] = await agregarEstadoFotosPropias([resultado.publicacion]);
         return NextResponse.json({ publicacion });
     } catch (error) {
         return respuestaError(error);

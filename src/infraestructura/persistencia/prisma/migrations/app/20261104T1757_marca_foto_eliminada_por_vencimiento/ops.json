@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.publicacion.fotoEliminadaPorVencimientoEn",
+    "label": "Add column \"fotoEliminadaPorVencimientoEn\" to \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "fotoEliminadaPorVencimientoEn",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"fotoEliminadaPorVencimientoEn\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "fotoEliminadaPorVencimientoEn"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"fotoEliminadaPorVencimientoEn\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ADD COLUMN \"fotoEliminadaPorVencimientoEn\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"fotoEliminadaPorVencimientoEn\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "fotoEliminadaPorVencimientoEn"
+        ]
+      }
+    ]
+  }
+]

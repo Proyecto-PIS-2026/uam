@@ -814,6 +814,13 @@
           },
           "Imagen": {
             "fields": {
+              "avisoVencimientoEn": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "cargadaEn": {
                 "nullable": true,
                 "type": {
@@ -839,6 +846,9 @@
             "relations": {},
             "storage": {
               "fields": {
+                "avisoVencimientoEn": {
+                  "column": "avisoVencimientoEn"
+                },
                 "cargadaEn": {
                   "column": "cargadaEn"
                 },
@@ -1543,6 +1553,13 @@
                   "kind": "scalar"
                 }
               },
+              "fotoEliminadaPorVencimientoEn": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1706,6 +1723,9 @@
                 },
                 "foto": {
                   "column": "foto"
+                },
+                "fotoEliminadaPorVencimientoEn": {
+                  "column": "fotoEliminadaPorVencimientoEn"
                 },
                 "id": {
                   "column": "id"
@@ -2819,6 +2839,11 @@
             },
             "imagen": {
               "columns": {
+                "avisoVencimientoEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "cargadaEn": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
@@ -3410,6 +3435,11 @@
                 "foto": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": true
+                },
+                "fotoEliminadaPorVencimientoEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "id": {
@@ -4122,7 +4152,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "b04e63ad43f1b21150b2480a803730162a5ed496146d474aeade96f7f1abe0b6"
+    "storageHash": "11093c0a4410813bc236981926bf1e3d54e19cbfd09f4df7f31280f49164cca4"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

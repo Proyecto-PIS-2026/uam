@@ -1,11 +1,20 @@
-import { eliminarFotosVencidas } from "../../modulos/publicaciones/eliminar-fotos-vencidas";
-import { obtenerVigenciaFotosDias } from "../../modulos/publicaciones/vigencia-fotos";
+import { procesarVencimientosFotos } from "../../modulos/publicaciones/procesar-vencimientos-fotos";
+import { obtenerConfiguracionAgingFotos, type ConfiguracionAgingFotos } from "../../modulos/publicaciones/vigencia-fotos";
 import type { TareaDiaria } from "./tipos";
 
 export function obtenerTareasDiarias(): readonly TareaDiaria[] {
-    obtenerVigenciaFotosDias();
     return [{
         nombre: "publicaciones.eliminar-fotos-vencidas",
-        ejecutar: (contexto) => eliminarFotosVencidas(contexto, obtenerVigenciaFotosDias()),
+        habilitada: () => obtenerConfiguracionAgingFotos().habilitado,
+        ejecutar: async (contexto) => {
+            let configuracion: ConfiguracionAgingFotos;
+            try {
+                configuracion = obtenerConfiguracionAgingFotos();
+            } catch (error) {
+                console.error("No se ejecutó el aging de fotos: su configuración es inválida.", error);
+                throw error;
+            }
+            return procesarVencimientosFotos(contexto, configuracion);
+        },
     }];
 }

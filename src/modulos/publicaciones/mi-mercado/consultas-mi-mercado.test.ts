@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { actualizarPrecioPublicacion, ConflictoPublicacionError, incrementarPrecioPublicacion, obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
+import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
+
+const configuracion = vi.hoisted(() => ({ habilitado: false, diasVigencia: 30, diasAnticipacionAviso: 3 }));
+vi.mock("../configuracion-aging-fotos", () => ({ CONFIGURACION_AGING_FOTOS: configuracion }));
 
 const mocks = vi.hoisted(() => {
     const consulta = () => {
@@ -23,7 +27,7 @@ describe("precios de Mi Mercado", () => {
     let fila: { id: number; precio: string | null; version: number; fecha: string };
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.stubEnv("VIGENCIA_FOTOS_DIAS", "");
+        Object.assign(configuracion, { habilitado: false, diasVigencia: 30, diasAnticipacionAviso: 3 });
         fila = { id: 20, precio: "100.00", version: 1, fecha: "2026-10-10T16:30:00Z" };
         let turno = Promise.resolve();
         mocks.transaction.mockImplementation((callback) => {
@@ -37,17 +41,30 @@ describe("precios de Mi Mercado", () => {
     });
 
     afterEach(() => {
-        vi.unstubAllEnvs();
         vi.useRealTimers();
     });
 
     it("consulta solamente las publicaciones del operador", async () => {
-        expect(await obtenerPublicacionesDeOperador(10)).toEqual([{ id: 1, publicacionId: 20, publicacion: { ...fila, foto: null } }]);
+        expect(await obtenerPublicacionesDeOperador(10)).toEqual([{ id: 1, publicacionId: 20, publicacion: { ...fila, foto: null, estadoFoto: null } }]);
         expect(mocks.relacion.where).toHaveBeenCalledWith({ operadorId: 10 });
     });
 
-    it("oculta solamente la foto vencida sin perder publicaciones, precios ni versiones", async () => {
-        vi.stubEnv("VIGENCIA_FOTOS_DIAS", "30");
+    it("conserva el estado de eliminación para el dueño sin serializar la marca interna de la base", async () => {
+        mocks.relacion.all.mockResolvedValue([{ id: 1, publicacionId: 20, paisId: null, publicacion: {
+            ...fila, foto: null, fotoEliminadaPorVencimientoEn: "2026-11-04T03:00:00Z",
+            publicacionActiva: true, publicacionDisponible: true, cantidadUnidades: null,
+            especie: { id: 3, nombreEspecie: "Papa", fotoEspecie: null },
+            variedad: null, presentacion: null, categoria: null, calibre: null,
+        } }]);
+
+        const [publicacion] = mapearPublicacionesMiMercado(await obtenerPublicacionesDeOperador(10));
+
+        expect(publicacion).toMatchObject({ id: 20, publicacionOperadorId: 1, foto: null, estadoFoto: "eliminada" });
+        expect(publicacion).not.toHaveProperty("fotoEliminadaPorVencimientoEn");
+    });
+
+    it("mantiene visible la foto con aviso amarillo hasta que la tarea la borre, sin perder precios ni versiones", async () => {
+        configuracion.habilitado = true;
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-11-02T12:00:00Z"));
         const archivo = "12345678-1234-4234-8234-123456789abc.webp";
@@ -62,8 +79,8 @@ describe("precios de Mi Mercado", () => {
         ]);
 
         expect(await obtenerPublicacionesDeOperador(10)).toEqual([
-            { ...relaciones[0], publicacion: { ...relaciones[0].publicacion, foto: null } },
-            relaciones[1],
+            { ...relaciones[0], publicacion: { ...relaciones[0].publicacion, estadoFoto: "por-vencer" } },
+            { ...relaciones[1], publicacion: { ...relaciones[1].publicacion, estadoFoto: null } },
         ]);
         expect(relaciones[0].publicacion.foto).toBe(`/api/publicaciones/imagenes/20/${archivo}`);
     });

@@ -111,8 +111,8 @@ function respuesta(datos: object, ok = true, status = ok ? 200 : 400) {
     return { ok, status, json: async () => datos };
 }
 
-function mostrar(publicacionInicial = publicacion) {
-    return render(<DrawerPublicacionProductor publicacion={publicacionInicial} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} alEliminada={mocks.eliminada} />);
+function mostrar(publicacionInicial = publicacion, mostrarAvisoFoto = false) {
+    return render(<DrawerPublicacionProductor publicacion={publicacionInicial} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} alEliminada={mocks.eliminada} mostrarAvisoFoto={mostrarAvisoFoto} />);
 }
 
 async function editar() {
@@ -157,6 +157,55 @@ describe("DrawerPublicacionProductor: edición", () => {
         cleanup();
         vi.unstubAllGlobals();
         vi.restoreAllMocks();
+    });
+
+    it.each([
+        { estadoFoto: "por-vencer", mensaje: "La foto está por vencer." },
+        { estadoFoto: "eliminada", mensaje: "La foto venció y fue eliminada." },
+    ] as const)("explica el estado $estadoFoto al consultar la publicación", ({ estadoFoto, mensaje }) => {
+        mostrar({ ...publicacion, estadoFoto }, true);
+        expect(screen.getByRole("status")).toHaveTextContent(mensaje);
+    });
+
+    it("no muestra aviso de vencimiento para una publicación que nunca tuvo foto", () => {
+        mostrar(publicacion, true);
+        expect(screen.queryByText(/La foto (está por vencer|venció)/)).not.toBeInTheDocument();
+    });
+
+    it("omite el aviso fuera de Mi Mercado aunque el dato privado esté presente", () => {
+        mostrar({ ...publicacion, estadoFoto: "eliminada" });
+        expect(screen.queryByText(/La foto (está por vencer|venció)/)).not.toBeInTheDocument();
+    });
+
+    it("mantiene el aviso al cancelar la foto elegida y lo retira al recibir su reemplazo guardado", async () => {
+        mostrar({ ...publicacion, estadoFoto: "eliminada" }, true);
+        const aviso = "La foto venció y fue eliminada. Podés cargar una nueva foto.";
+        await editar();
+        fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [new File(["foto"], "nueva.webp", { type: "image/webp" })] } });
+        expect(screen.getByText(aviso)).toBeVisible();
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+        expect(screen.getByText(aviso)).toBeVisible();
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        await editar();
+        fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [new File(["foto"], "nueva.webp", { type: "image/webp" })] } });
+        const actualizada = { ...publicacion, foto: "/foto-nueva.webp", estadoFoto: null };
+        mocks.fetch.mockResolvedValueOnce(respuesta({ publicacion: actualizada }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
+        expect(screen.queryByText(aviso)).not.toBeInTheDocument();
+    });
+
+    it("guardar otro campo conserva el aviso de la foto eliminada y no solicita borrarla nuevamente", async () => {
+        const inicial = { ...publicacion, estadoFoto: "eliminada" as const };
+        mostrar(inicial, true);
+        await editar();
+        fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "200" } });
+        const actualizada = { ...inicial, precio: "200" };
+        mocks.fetch.mockResolvedValueOnce(respuesta({ publicacion: actualizada }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
+        expect(solicitudGuardado().cambios).not.toHaveProperty("foto");
+        expect(screen.getByRole("status")).toHaveTextContent("La foto venció y fue eliminada.");
     });
 
     it("conserva la prioridad UAM en el selector interno sin cambiar el catálogo ni la selección", async () => {
@@ -273,7 +322,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         const { url, datos, cambios } = solicitudGuardado();
         expect(url).toBe("/api/publicaciones/productor/1042");
         expect(cambios).toEqual({
-            especieId: 1, variedadId: 12, precio: "250", foto: "/pera.png", presentacionId: 121, categoriaId: 5, calibreId: 8,
+            especieId: 1, variedadId: 12, precio: "250", presentacionId: 121, categoriaId: 5, calibreId: 8,
             paisId: 2, cantidadUnidades: 25, disponible: false,
             ubicaciones: [{ nombreUbicacion: "Nuevo retiro", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" }],
         });
@@ -410,7 +459,7 @@ describe("DrawerPublicacionProductor: edición", () => {
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         expect(solicitudGuardado().cambios).toEqual({
-            especieId: 2, variedadId: 21, precio: "100", foto: null, presentacionId: 211, categoriaId: 6, calibreId: 4,
+            especieId: 2, variedadId: 21, precio: "100", presentacionId: 211, categoriaId: 6, calibreId: 4,
             paisId: 1, cantidadUnidades: 12, disponible: true,
             ubicaciones: [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=Salto" }],
         });
@@ -519,7 +568,7 @@ describe("DrawerPublicacionProductor: edición", () => {
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         expect(solicitudGuardado().cambios).toEqual({
-            especieId: 1, variedadId: 11, precio: null, foto: null, presentacionId: 111, categoriaId: 3, calibreId: 4,
+            especieId: 1, variedadId: 11, precio: null, presentacionId: 111, categoriaId: 3, calibreId: 4,
             paisId: 1, cantidadUnidades: null, disponible: false,
             ubicaciones: [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=Salto" }],
         });

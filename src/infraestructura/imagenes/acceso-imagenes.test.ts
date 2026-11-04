@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "@js-temporal/polyfill";
 import { GET } from "@/app/api/publicaciones/imagenes/[publicacionId]/[archivo]/route";
 import { GET as obtenerOtraImagen } from "@/app/api/imagenes/[categoria]/[id]/[archivo]/route";
 import { ErrorImagenNoEncontrada } from "./almacenamiento-imagenes";
 
 const mocks = vi.hoisted(() => ({
     sesion: vi.fn(), leer: vi.fn(), publicacion: vi.fn(), productor: vi.fn(), relacionProductor: vi.fn(),
-    operador: vi.fn(), relacionOperador: vi.fn(), especie: vi.fn(), locales: vi.fn(),
+    operador: vi.fn(), relacionOperador: vi.fn(), especie: vi.fn(), locales: vi.fn(), imagen: vi.fn(),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.sesion }));
@@ -18,6 +19,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => {
         Publicacion: entidad(mocks.publicacion), Productor: entidad(mocks.productor),
         PublicacionProductor: entidad(mocks.relacionProductor), Operador: entidad(mocks.operador),
         PublicacionOperador: entidad(mocks.relacionOperador), Especie: entidad(mocks.especie), Local: entidad(mocks.locales),
+        Imagen: entidad(mocks.imagen),
     } } } };
 });
 
@@ -36,6 +38,7 @@ beforeEach(() => {
     mocks.publicacion.mockResolvedValue({ foto: URL, tipoPublicacion: "OPERADOR", publicacionActiva: true, publicacionDisponible: true });
     mocks.relacionOperador.mockResolvedValue({ operadorId: 5 });
     mocks.locales.mockResolvedValue([{ finContrato: null }]);
+    mocks.imagen.mockResolvedValue([{ clave: `publicaciones/42/${ARCHIVO}`, cargadaEn: Temporal.Now.instant() }]);
     mocks.leer.mockResolvedValue(Buffer.from("imagen"));
 });
 
@@ -48,6 +51,27 @@ describe("acceso a imágenes", () => {
         expect(respuesta.headers.get("Vary")).toBe("Cookie");
         expect(respuesta.headers.get("X-Content-Type-Options")).toBe("nosniff");
         expect(await respuesta.text()).toBe("imagen");
+    });
+
+    it.each([null, { rol: "ADMINISTRADOR", usuarioId: 1 }])("entrega una foto antigua hasta que la limpieza la elimine: %o", async (sesion) => {
+        mocks.sesion.mockResolvedValue(sesion);
+        mocks.imagen.mockResolvedValue([{
+            clave: `publicaciones/42/${ARCHIVO}`,
+            cargadaEn: Temporal.Now.instant().subtract({ hours: 31 * 24 }),
+        }]);
+
+        const respuesta = await pedir();
+
+        expect(respuesta.status).toBe(200);
+        expect(mocks.leer).toHaveBeenCalledExactlyOnceWith("publicaciones", 42, ARCHIVO);
+        expect(mocks.imagen).not.toHaveBeenCalled();
+    });
+
+    it("deja de entregar la foto cuando la limpieza elimina su referencia", async () => {
+        mocks.publicacion.mockResolvedValue({ foto: null, tipoPublicacion: "OPERADOR", publicacionActiva: true, publicacionDisponible: true });
+
+        expect((await pedir()).status).toBe(404);
+        expect(mocks.leer).not.toHaveBeenCalled();
     });
 
     it("mantiene el acceso de operadores limitado a sus publicaciones", async () => {

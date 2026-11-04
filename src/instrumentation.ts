@@ -5,13 +5,6 @@ export function register() {
         || process.env.NEXT_PRIVATE_BUILD_WORKER === "1"
         || process.env.NODE_ENV === "test") return;
 
-    const habilitadas = process.env.TAREAS_PROGRAMADAS_HABILITADAS?.trim().toLowerCase();
-    if (habilitadas === "false") return;
-    if (habilitadas && habilitadas !== "true") {
-        console.warn("Tareas diarias desactivadas: TAREAS_PROGRAMADAS_HABILITADAS debe ser true o false.");
-        return;
-    }
-
     void import("./infraestructura/tareas-programadas/iniciar-en-servidor")
         .then(({ iniciarTareasEnServidor }) => iniciarTareasEnServidor())
         .catch((error: unknown) => {

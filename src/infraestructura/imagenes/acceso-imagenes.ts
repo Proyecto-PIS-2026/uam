@@ -1,7 +1,6 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
-import { fotoPublicacionVigente } from "@/modulos/publicaciones/fotos-vigentes";
 import { type CategoriaImagen, urlImagen } from "./almacenamiento-imagenes";
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -40,7 +39,6 @@ export async function puedeLeerImagen(categoria: CategoriaImagen, id: number, ar
         .select("foto", "tipoPublicacion", "publicacionActiva", "publicacionDisponible")
         .where({ id }).first();
     if (!publicacion || publicacion.foto !== url) return false;
-    if (!await fotoPublicacionVigente(url)) return false;
     const sesion = await obtenerSesion();
     if (publicacion.tipoPublicacion === "PRODUCTOR") {
         if (autorizado("productor.publicacion.consultar", sesion)) {

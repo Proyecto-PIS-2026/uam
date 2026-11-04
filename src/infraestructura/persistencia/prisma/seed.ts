@@ -1,5 +1,6 @@
 import "dotenv/config";
-import { readdirSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { readFileSync, readdirSync } from "node:fs";
 
 import "temporal-polyfill/full/global";
 import "temporal-polyfill/types/global";
@@ -12,6 +13,8 @@ import contractJson from "./contract.json" with { type: "json" };
 import { cargarConsultaUam, type ConsultaUam } from "./catalogo-consulta";
 import { crearOfertasDemo, type OfertaDemo } from "./ofertas-demo";
 import { crearOfertasProductoresDemo } from "./ofertas-productores-demo";
+import { especiesPrioritarias } from "../../../compartido/prioridad-especies";
+import { claveImagen, urlImagen } from "../../imagenes/almacenamiento-imagenes";
 
 const prisma = postgres<Contract>({
   contractJson,
@@ -238,6 +241,14 @@ const operadorInhabilitado: OperadorDemo = {
   locales: [{ nave: "E", numero: "999", finContrato: "2020-12-31T23:59:59Z" }],
 };
 
+const operadorVigencia: OperadorDemo = {
+  username: "op_aging",
+  passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$994nl3BFaYdq/bgEmkxAZg$9sjiUNNHyx+2Mj2/F9Lc92SpTOmj8YhcuOWvDjdQI6E",
+  nombreFantasia: "op_aging",
+  whatsApp: "+598919",
+  locales: [{ nave: "E", numero: "998", finContrato: null }],
+};
+
 type KgPorUnidad = Parameters<typeof prisma.orm.public.Presentacion.create>[0]["kgPorUnidad"];
 type PrecioPublicacion = Parameters<typeof prisma.orm.public.Publicacion.create>[0]["precio"];
 
@@ -407,6 +418,7 @@ function pesoRepresentable(peso: number): KgPorUnidad {
 }
 
 async function limpiarBase() {
+  await prisma.orm.public.EjecucionTareaProgramada.where(() => all()).deleteAll();
   await prisma.orm.public.EstadisticaVisita.where(() => all()).deleteAll();
   await prisma.orm.public.EstadisticaContacto.where(() => all()).deleteAll();
   await prisma.orm.public.EstadisticaPublicacion.where(() => all()).deleteAll();
@@ -520,7 +532,7 @@ async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, nu
 }
 
 async function crearOperadores(archivos: Map<string, string>) {
-  const todosLosOperadores = [...operadores, operadorInhabilitado];
+  const todosLosOperadores = [...operadores, operadorInhabilitado, operadorVigencia];
   const nombresNave = new Set(todosLosOperadores.flatMap((operador) => operador.locales.map((local) => local.nave)));
   for (const nombreNave of nombresNave) {
     await prisma.orm.public.Nave.create({ nombreNave });
@@ -564,7 +576,9 @@ async function crearOperadores(archivos: Map<string, string>) {
       nombreFantasia: datos.nombreFantasia,
       fotoPerfil: fotoOperador(datos.nombreFantasia, archivos),
       enLicencia: false,
-      comentario: null,
+      comentario: datos.username === operadorVigencia.username
+        ? "Fotos de prueba cargadas del 01/11/2026 al 15/11/2026, una por día a las 00:00 de Uruguay."
+        : null,
       whatsApp: datos.whatsApp,
     });
     operadorIds.set(datos.username, operador.id);
@@ -580,6 +594,50 @@ async function crearOperadores(archivos: Map<string, string>) {
   }
 
   return operadorIds;
+}
+
+async function crearPublicacionesVigencia(operadorId: number, archivos: Set<string>) {
+  const especies = await prisma.orm.public.Especie.select("id", "nombreEspecie").all();
+  const muestras = especiesPrioritarias.slice(0, 15).map((nombre, indice) => {
+    const especie = especies.find((fila) => fila.nombreEspecie === nombre);
+    const foto = fotoGenerica(nombre, archivos);
+    if (!especie || !foto) throw new Error(`Faltan la especie o la foto de ${nombre} para la prueba de vigencia.`);
+    const dia = String(indice + 1).padStart(2, "0");
+    return {
+      especie,
+      dia,
+      cargadaEn: Temporal.Instant.from(`2026-11-${dia}T00:00:00-03:00`),
+      contenido: readFileSync(new URL(`../../../../public${foto}`, import.meta.url)),
+      extension: foto.slice(foto.lastIndexOf(".")),
+    };
+  });
+
+  return prisma.transaction(async (tx) => {
+    const publicaciones = [];
+    for (const muestra of muestras) {
+      const publicacion = await tx.orm.public.Publicacion.create({
+        fecha: muestra.cargadaEn,
+        tipoPublicacion: "OPERADOR",
+        especieId: muestra.especie.id,
+        publicacionActiva: true,
+        publicacionDisponible: true,
+      });
+      await tx.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId });
+      const archivo = `${randomUUID()}${muestra.extension}`;
+      await tx.orm.public.Imagen.create({
+        clave: claveImagen("publicaciones", publicacion.id, archivo),
+        contenido: muestra.contenido,
+        cargadaEn: muestra.cargadaEn,
+        avisoVencimientoEn: null,
+      });
+      await tx.orm.public.Publicacion.where({ id: publicacion.id }).update({
+        foto: urlImagen("publicaciones", publicacion.id, archivo),
+        fecha: muestra.cargadaEn,
+      });
+      publicaciones.push({ publicacion: publicacion.id, especie: muestra.especie.nombreEspecie, carga: `${muestra.dia}/11/2026` });
+    }
+    return publicaciones;
+  });
 }
 
 async function crearNotificacionesDemo(usuarios: { id: number; rol: "ADMINISTRADOR" | "OPERADOR" | "PRODUCTOR" }[]) {
@@ -702,6 +760,11 @@ async function main() {
   }
 
   
+  const fotosVigencia = await crearPublicacionesVigencia(
+    idRequerido(operadorIds, operadorVigencia.username, "operador de prueba de vigencia"), archivos,
+  );
+  sinPrecio += fotosVigencia.length;
+
   // Obtener IDs de productores creados para asociar sus publicaciones y ubicaciones
   const productoresDb = await prisma.orm.public.Productor.all();
   const usuariosDb = await prisma.orm.public.Usuario.all();
@@ -809,7 +872,9 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "restablecimiento_contrasena_habilitado", valorConfiguracion: "true" });
   
 
-  const cantidadNotificaciones = await crearNotificacionesDemo(usuariosDb);
+  const cantidadNotificaciones = await crearNotificacionesDemo(
+    usuariosDb.filter((usuario) => usuario.username !== operadorVigencia.username),
+  );
 
   // DATOS DE PRUEBA REALES PARA LAS TABLAS DE ESTADISTICAS
   console.log("Poblando tablas de estadísticas con alta densidad, variedad y cobertura diaria en octubre...");
@@ -958,13 +1023,16 @@ async function main() {
     operadores: operadorIds.size,
     productores: productores.length,
     notificaciones: cantidadNotificaciones,
-    publicacionesOperadores: ofertas.length,
+    publicacionesOperadores: ofertas.length + fotosVigencia.length,
+    publicacionesPruebaVigencia: fotosVigencia.length,
     publicacionesProductores: ofertasProductores.length,
     conPrecio,
     sinPrecio,
     noDisponibles,
     inactivas,
   });
+  console.log(`Fotos para probar vigencia con ${operadorVigencia.username}:`);
+  console.table(fotosVigencia);
   console.log("Seed completada con éxito.");
 }
 

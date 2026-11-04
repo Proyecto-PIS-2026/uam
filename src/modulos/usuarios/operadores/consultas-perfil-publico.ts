@@ -1,6 +1,5 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import { ocultarFotosVencidas } from "../../publicaciones/fotos-vigentes";
 
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -147,7 +146,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
         fotoPerfil: operador.fotoPerfil,
         whatsApp: operador.whatsApp,
         locales,
-        publicaciones: await ocultarFotosVencidas(publicaciones),
+        publicaciones,
     };
 
     return operadorResultante;

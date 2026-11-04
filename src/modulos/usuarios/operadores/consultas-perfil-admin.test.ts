@@ -71,7 +71,6 @@ const publicacionBase = {
 describe("obtenerPerfilAdminOperador", () => {
 
     afterEach(() => {
-        vi.unstubAllEnvs();
         vi.restoreAllMocks();
     });
 
@@ -220,8 +219,7 @@ describe("obtenerPerfilAdminOperador", () => {
         ]);
     });
 
-    it("conserva la licencia y el comentario mientras oculta solo las fotos vencidas", async () => {
-        vi.stubEnv("VIGENCIA_FOTOS_DIAS", "1");
+    it("conserva las fotos antiguas, la licencia y el comentario hasta que se eliminen las fotos", async () => {
         vi.spyOn(Temporal.Now, "instant").mockReturnValue(Temporal.Instant.from("2026-11-04T03:00:00Z"));
         const archivo = "12345678-1234-4123-8123-123456789abc.webp";
         const fotoVencida = `/api/publicaciones/imagenes/101/${archivo}`;
@@ -232,8 +230,8 @@ describe("obtenerPerfilAdminOperador", () => {
             { publicacion: { ...publicacionBase, id: 102, foto: fotoVigente }, pais: null },
         ]);
         mockDb.imagenes.all.mockResolvedValue([
-            { clave: `publicaciones/101/${archivo}`, cargadaEn: Temporal.Instant.from("2026-11-03T03:00:00Z") },
-            { clave: `publicaciones/102/${archivo}`, cargadaEn: Temporal.Instant.from("2026-11-03T03:00:01Z") },
+            { clave: `publicaciones/101/${archivo}`, cargadaEn: Temporal.Instant.from("2026-10-01T03:00:00Z") },
+            { clave: `publicaciones/102/${archivo}`, cargadaEn: Temporal.Instant.from("2026-11-03T03:00:00Z") },
         ]);
 
         const resultado = await obtenerPerfilAdminOperador(13);
@@ -242,11 +240,11 @@ describe("obtenerPerfilAdminOperador", () => {
             enLicencia: true,
             comentario: "Retoma la actividad la semana siguiente.",
             publicaciones: [
-                { id: 101, foto: null, precio: "120.00" },
+                { id: 101, foto: fotoVencida, precio: "120.00" },
                 { id: 102, foto: fotoVigente, precio: "120.00" },
             ],
         });
-        expect(mockDb.imagenes.all).toHaveBeenCalledOnce();
+        expect(mockDb.imagenes.all).not.toHaveBeenCalled();
     });
 
 });

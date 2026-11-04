@@ -2,6 +2,7 @@ import { db } from "../persistencia/prisma/db";
 import { ZONA_HORARIA_TAREAS, type ResultadoTareaDiaria, type TareaDiaria } from "./tipos";
 
 async function ejecutarTarea(tarea: TareaDiaria): Promise<ResultadoTareaDiaria> {
+    if (tarea.habilitada && !await tarea.habilitada()) return { nombre: tarea.nombre, estado: "deshabilitada" };
     return db.transaction(async (tx): Promise<ResultadoTareaDiaria> => {
         await tx.execute(db.raw.sql`
             SELECT set_config('lock_timeout', '5s', true) AS bloqueo,

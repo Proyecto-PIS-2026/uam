@@ -1,5 +1,4 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import { ocultarFotosVencidas } from "../../publicaciones/fotos-vigentes";
 
 // Datos de una publicación tal como los ve el administrador
 export type PublicacionPerfilAdmin = {
@@ -149,7 +148,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         whatsApp: operador.whatsApp,
         enLicencia: operador.enLicencia,
         locales,
-        publicaciones: await ocultarFotosVencidas(publicaciones),
+        publicaciones,
         ...(operador.comentario ? { comentario: operador.comentario } : {}),
     };
 

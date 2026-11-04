@@ -1,0 +1,54 @@
+.advertencia {
+    --color-icono-aviso: #d69b00;
+    --color-texto-aviso: var(--color-warning);
+    --fondo-aviso: var(--color-warning-soft);
+}
+
+.peligro {
+    --color-icono-aviso: var(--color-danger);
+    --color-texto-aviso: var(--color-danger);
+    --fondo-aviso: var(--color-danger-soft);
+}
+
+.indicador {
+    position: absolute;
+    z-index: 1;
+    inset-block-start: var(--espacio-inline);
+    inset-inline-end: var(--espacio-inline);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    background: #fff;
+    color: var(--color-icono-aviso);
+    box-shadow: var(--sombra-panel);
+}
+
+.indicador svg,
+.aviso svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    color: var(--color-icono-aviso);
+}
+
+.aviso {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-inline);
+    padding: var(--espacio-controles);
+    border: 1px solid color-mix(in srgb, var(--color-texto-aviso) 25%, var(--color-surface));
+    border-radius: var(--radio-control);
+    background: var(--fondo-aviso);
+    color: var(--color-texto-aviso);
+    font-size: var(--tamano-texto-auxiliar);
+    line-height: 1.5;
+}
+
+.aviso p {
+    min-width: 0;
+    margin: 0;
+}
