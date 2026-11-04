@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@/test-utils";
 import { describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
 import FormularioPerfilPropio from "./FormularioPerfilPropio";
 
@@ -7,10 +8,15 @@ const mocks = vi.hoisted(() => ({
     push: vi.fn(),
     refresh: vi.fn(),
     modificar: vi.fn(),
+    notificar: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }) }));
 vi.mock("../../acciones/modificarPerfilPropio", () => ({ modificarPerfilPropio: mocks.modificar }));
+vi.mock("@/compartido/componentes/NotificacionToast", () => ({
+    useNotificacionToast: () => ({ notificar: mocks.notificar }),
+    ProveedorNotificacionesToast: ({ children }: { children: ReactNode }) => children,
+}));
 vi.mock("@/modulos/usuarios/componentes/SelectorFotoPerfil", () => ({
     default: () => <div data-testid="selector-foto" />,
     argumentosFotoPerfil: () => [],
@@ -41,8 +47,9 @@ describe("FormularioPerfilPropio", () => {
 
         fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Nuevo nombre" } });
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
-        await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/mi-perfil"));
+        await waitFor(() => expect(cancelar).toHaveBeenCalledOnce());
         expect(mocks.refresh).toHaveBeenCalledOnce();
+        expect(mocks.notificar).toHaveBeenCalledWith("ok", "success");
         expect(mocks.modificar).toHaveBeenCalledWith(expect.objectContaining({
             nombre: "Nuevo nombre",
             enLicencia: true,
