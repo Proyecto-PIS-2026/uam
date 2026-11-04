@@ -46,7 +46,8 @@
     min-width: 0;
 }
 
-.filtroUsuario {
+.filtroUsuario,
+.filtroEspecie {
     flex: 2 1 260px;
     min-width: 200px;
 }
@@ -125,13 +126,14 @@
     font-size: 11px !important;
 }
 
-@media (max-width: 612px) {
+@media (max-width: 699px) {
     .contenedorFiltros {
         flex-direction: column;
         flex-wrap: nowrap;
     }
 
     .filtroUsuario,
+    .filtroEspecie,
     .filtroVisitante,
     .filtroPeriodo,
     .fechasPersonalizadas {

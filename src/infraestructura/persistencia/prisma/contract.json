@@ -28,8 +28,16 @@
       "model": "Especie",
       "namespace": "public"
     },
+    "estadisticaCantidadPublicacion": {
+      "model": "EstadisticaCantidadPublicacion",
+      "namespace": "public"
+    },
     "estadisticaContacto": {
       "model": "EstadisticaContacto",
+      "namespace": "public"
+    },
+    "estadisticaContactoPublicacion": {
+      "model": "EstadisticaContactoPublicacion",
       "namespace": "public"
     },
     "estadisticaPublicacion": {
@@ -527,6 +535,57 @@
               "table": "especie"
             }
           },
+          "EstadisticaCantidadPublicacion": {
+            "fields": {
+              "cantidad": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "username": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "cantidad": {
+                  "column": "cantidad"
+                },
+                "fecha": {
+                  "column": "fecha"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "username": {
+                  "column": "username"
+                }
+              },
+              "namespaceId": "public",
+              "table": "estadisticaCantidadPublicacion"
+            }
+          },
           "EstadisticaContacto": {
             "fields": {
               "cantidad": {
@@ -576,6 +635,67 @@
               },
               "namespaceId": "public",
               "table": "estadisticaContacto"
+            }
+          },
+          "EstadisticaContactoPublicacion": {
+            "fields": {
+              "cantidad": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "especie": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "username": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "cantidad": {
+                  "column": "cantidad"
+                },
+                "especie": {
+                  "column": "especie"
+                },
+                "fecha": {
+                  "column": "fecha"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "username": {
+                  "column": "username"
+                }
+              },
+              "namespaceId": "public",
+              "table": "estadisticaContactoPublicacion"
             }
           },
           "EstadisticaPublicacion": {
@@ -2525,6 +2645,53 @@
                 }
               ]
             },
+            "estadisticaCantidadPublicacion": {
+              "columns": {
+                "cantidad": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "username": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "fecha",
+                    "username"
+                  ]
+                }
+              ]
+            },
             "estadisticaContacto": {
               "columns": {
                 "cantidad": {
@@ -2568,6 +2735,59 @@
                   "columns": [
                     "fecha",
                     "username"
+                  ]
+                }
+              ]
+            },
+            "estadisticaContactoPublicacion": {
+              "columns": {
+                "cantidad": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "especie": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "username": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "fecha",
+                    "username",
+                    "especie"
                   ]
                 }
               ]
@@ -4020,7 +4240,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d5efabd362361b30e8605fcbda72e058bc06328b97ce4850c8f4656180df0075"
+    "storageHash": "f28ff2fb1e16269215d5546217031823c5ab1e5876c017cc4e73849f448af8df"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

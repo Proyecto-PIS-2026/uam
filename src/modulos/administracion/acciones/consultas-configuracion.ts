@@ -31,16 +31,26 @@ export async function actualizarConfiguracion(nombre: string, valor: string) {
 }
 
 export async function obtenerEstadisticas() {
-    const [visitas, contactos, publicaciones] = await Promise.all([
+    const [
+        visitas,
+        contactos,
+        publicaciones,
+        contactosPorPublicacion,
+        cantidadPublicaciones,
+    ] = await Promise.all([
         db.orm.public.EstadisticaVisita.all(),
         db.orm.public.EstadisticaContacto.all(),
         db.orm.public.EstadisticaPublicacion.all(),
+        db.orm.public.EstadisticaContactoPublicacion.all(),
+        db.orm.public.EstadisticaCantidadPublicacion.all(),
     ]);
+
     const corregirFechaLocal = (fechaDb: { toString(): string }) => {
         const isoString = new Date(fechaDb.toString()).toISOString();
         const [anio, mes, dia] = isoString.split("T")[0].split("-").map(Number);
         return new Date(anio, mes - 1, dia);
     };
+
     return {
         visitas: visitas.map((v) => ({
             ...v,
@@ -51,6 +61,14 @@ export async function obtenerEstadisticas() {
             fecha: corregirFechaLocal(c.fecha),
         })),
         publicaciones: publicaciones.map((p) => ({
+            ...p,
+            fecha: corregirFechaLocal(p.fecha),
+        })),
+        contactosPorPublicacion: contactosPorPublicacion.map((c) => ({
+            ...c,
+            fecha: corregirFechaLocal(c.fecha),
+        })),
+        cantidadPublicaciones: cantidadPublicaciones.map((p) => ({
             ...p,
             fecha: corregirFechaLocal(p.fecha),
         })),

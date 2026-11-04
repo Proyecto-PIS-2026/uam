@@ -25,11 +25,11 @@ interface DrawerPublicacionProps {
     esAdmin?: boolean;
 }
 
-const registrarContactoWhatsApp = (tipo: "OPERADOR" | "PRODUCTOR", entidadId: number) => {
+const registrarContactoWhatsApp = (tipo: "OPERADOR" | "PRODUCTOR", entidadId: number, publicacionId: number) => {
     fetch("/api/estadisticas/whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo, entidadId }),
+        body: JSON.stringify({ tipo, entidadId, publicacionId }),
         keepalive: true,
     }).catch((err) => {
         console.error("Error al registrar contacto:", err);
@@ -176,7 +176,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             </div>
                             <div className={styles.bloqueBotones}>
                                 <Link href={enlacePerfil} className={`boton-secundario ${styles.botonPerfil}`} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
-                                <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} onClick={() => registrarContactoWhatsApp(publicacion.tipoPublicacion, usuario.id)} className={`boton-primario ${styles.botonWhatsApp}`} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
+                                <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} onClick={() => registrarContactoWhatsApp(publicacion.tipoPublicacion, usuario.id, publicacion.id)} className={`boton-primario ${styles.botonWhatsApp}`} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
                                     <span>WhatsApp</span>
                                 </EnlaceWhatsApp>

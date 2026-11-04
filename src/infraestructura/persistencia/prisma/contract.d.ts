@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'d5efabd362361b30e8605fcbda72e058bc06328b97ce4850c8f4656180df0075'>;
+  StorageHashBase<'f28ff2fb1e16269215d5546217031823c5ab1e5876c017cc4e73849f448af8df'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -273,10 +273,23 @@ export type FieldOutputTypes = {
       readonly especieActiva: CodecTypes['pg/bool@1']['output'];
       readonly fotoEspecie: CodecTypes['pg/text@1']['output'] | null;
     };
+    readonly EstadisticaCantidadPublicacion: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly username: CodecTypes['pg/text@1']['output'];
+      readonly cantidad: CodecTypes['pg/int4@1']['output'];
+    };
     readonly EstadisticaContacto: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly username: CodecTypes['pg/text@1']['output'];
+      readonly cantidad: CodecTypes['pg/int4@1']['output'];
+    };
+    readonly EstadisticaContactoPublicacion: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly username: CodecTypes['pg/text@1']['output'];
+      readonly especie: CodecTypes['pg/text@1']['output'];
       readonly cantidad: CodecTypes['pg/int4@1']['output'];
     };
     readonly EstadisticaPublicacion: {
@@ -446,10 +459,23 @@ export type FieldInputTypes = {
       readonly especieActiva: CodecTypes['pg/bool@1']['input'];
       readonly fotoEspecie: CodecTypes['pg/text@1']['input'] | null;
     };
+    readonly EstadisticaCantidadPublicacion: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly username: CodecTypes['pg/text@1']['input'];
+      readonly cantidad: CodecTypes['pg/int4@1']['input'];
+    };
     readonly EstadisticaContacto: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly username: CodecTypes['pg/text@1']['input'];
+      readonly cantidad: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly EstadisticaContactoPublicacion: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly username: CodecTypes['pg/text@1']['input'];
+      readonly especie: CodecTypes['pg/text@1']['input'];
       readonly cantidad: CodecTypes['pg/int4@1']['input'];
     };
     readonly EstadisticaPublicacion: {
@@ -619,8 +645,21 @@ export type StorageColumnTypes = {
       readonly nombreEspecie: CodecTypes['pg/text@1']['output'];
       readonly uamId: CodecTypes['pg/int4@1']['output'] | null;
     };
+    readonly estadisticaCantidadPublicacion: {
+      readonly cantidad: CodecTypes['pg/int4@1']['output'];
+      readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly username: CodecTypes['pg/text@1']['output'];
+    };
     readonly estadisticaContacto: {
       readonly cantidad: CodecTypes['pg/int4@1']['output'];
+      readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly username: CodecTypes['pg/text@1']['output'];
+    };
+    readonly estadisticaContactoPublicacion: {
+      readonly cantidad: CodecTypes['pg/int4@1']['output'];
+      readonly especie: CodecTypes['pg/text@1']['output'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly username: CodecTypes['pg/text@1']['output'];
@@ -792,8 +831,21 @@ export type StorageColumnInputTypes = {
       readonly nombreEspecie: CodecTypes['pg/text@1']['input'];
       readonly uamId: CodecTypes['pg/int4@1']['input'] | null;
     };
+    readonly estadisticaCantidadPublicacion: {
+      readonly cantidad: CodecTypes['pg/int4@1']['input'];
+      readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly username: CodecTypes['pg/text@1']['input'];
+    };
     readonly estadisticaContacto: {
       readonly cantidad: CodecTypes['pg/int4@1']['input'];
+      readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly username: CodecTypes['pg/text@1']['input'];
+    };
+    readonly estadisticaContactoPublicacion: {
+      readonly cantidad: CodecTypes['pg/int4@1']['input'];
+      readonly especie: CodecTypes['pg/text@1']['input'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly username: CodecTypes['pg/text@1']['input'];
@@ -1161,6 +1213,42 @@ type ContractBase = Omit<
               indexes: readonly [];
               foreignKeys: readonly [];
             };
+            readonly estadisticaCantidadPublicacion: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly fecha: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly username: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly cantidad: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['fecha', 'username'] }];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
             readonly estadisticaContacto: {
               columns: {
                 readonly id: {
@@ -1194,6 +1282,47 @@ type ContractBase = Omit<
               };
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [{ readonly columns: readonly ['fecha', 'username'] }];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
+            readonly estadisticaContactoPublicacion: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly fecha: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly username: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly especie: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly cantidad: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['fecha', 'username', 'especie'] }];
               indexes: readonly [];
               foreignKeys: readonly [];
             };
@@ -2388,9 +2517,17 @@ type ContractBase = Omit<
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'EstadisticaContacto';
     };
+    readonly estadisticaContactoPublicacion: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'EstadisticaContactoPublicacion';
+    };
     readonly estadisticaPublicacion: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'EstadisticaPublicacion';
+    };
+    readonly estadisticaCantidadPublicacion: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'EstadisticaCantidadPublicacion';
     };
   };
   readonly domain: {
@@ -2655,6 +2792,40 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly EstadisticaCantidadPublicacion: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly fecha: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly username: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly cantidad: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'estadisticaCantidadPublicacion';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly fecha: { readonly column: 'fecha' };
+                readonly username: { readonly column: 'username' };
+                readonly cantidad: { readonly column: 'cantidad' };
+              };
+            };
+          };
           readonly EstadisticaContacto: {
             readonly fields: {
               readonly id: {
@@ -2685,6 +2856,45 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly fecha: { readonly column: 'fecha' };
                 readonly username: { readonly column: 'username' };
+                readonly cantidad: { readonly column: 'cantidad' };
+              };
+            };
+          };
+          readonly EstadisticaContactoPublicacion: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly fecha: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly username: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly especie: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly cantidad: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'estadisticaContactoPublicacion';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly fecha: { readonly column: 'fecha' };
+                readonly username: { readonly column: 'username' };
+                readonly especie: { readonly column: 'especie' };
                 readonly cantidad: { readonly column: 'cantidad' };
               };
             };

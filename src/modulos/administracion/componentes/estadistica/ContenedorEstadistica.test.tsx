@@ -5,10 +5,21 @@ import { render, screen } from "@testing-library/react";
 import type {
     EstadisticaVisitaItem,
     EstadisticaContactoItem,
+    EstadisticaContactoPublicacionItem,
     EstadisticaPublicacionItem,
+    EstadisticaCantidadPublicacionItem,
 } from "./Tipos";
 
 import ContenedorEstadistica from "./ContenedorEstadistica";
+
+type DatoMock = {
+    id: number;
+    fecha: Date | string;
+    cantidad: number;
+    tipoVisitante?: string;
+    username?: string;
+    especie?: string;
+};
 
 vi.mock("./BloqueEstadistica", () => ({
     default: ({
@@ -18,10 +29,10 @@ vi.mock("./BloqueEstadistica", () => ({
     }: {
         titulo: string;
         tipo: string;
-        datos: EstadisticaVisitaItem[];
+        datos: DatoMock[];
     }) => (
         <div
-            data-testid="bloque-visitas"
+            data-testid={`bloque-${tipo}`}
             data-titulo={titulo}
             data-tipo={tipo}
             data-datos={JSON.stringify(datos)}
@@ -29,38 +40,20 @@ vi.mock("./BloqueEstadistica", () => ({
     ),
 }));
 
-vi.mock("./BloqueEstadisticaComparativa", () => ({
-    default: ({
-        contactos,
-        publicaciones,
-        opcionesFiltroEspecifico,
-    }: {
-        contactos: EstadisticaContactoItem[];
-        publicaciones: EstadisticaPublicacionItem[];
-        opcionesFiltroEspecifico: Array<{
-            valor: string;
-            etiqueta: string;
-        }>;
-    }) => (
-        <div
-            data-testid="bloque-comparativo"
-            data-contactos={JSON.stringify(contactos)}
-            data-publicaciones={JSON.stringify(publicaciones)}
-            data-opciones={JSON.stringify(opcionesFiltroEspecifico)}
-        />
-    ),
-}));
-
 interface DatosIniciales {
     visitas: EstadisticaVisitaItem[];
     contactos: EstadisticaContactoItem[];
+    contactosPorPublicacion: EstadisticaContactoPublicacionItem[];
     publicaciones: EstadisticaPublicacionItem[];
+    cantidadPublicaciones: EstadisticaCantidadPublicacionItem[];
 }
+
+const fecha = new Date("2026-10-20T12:00:00.000Z");
 
 const datosVisitas: EstadisticaVisitaItem[] = [
     {
         id: 1,
-        fecha: new Date("2026-10-20T12:00:00.000Z"),
+        fecha,
         cantidad: 15,
         tipoVisitante: "comprador",
     },
@@ -75,7 +68,7 @@ const datosVisitas: EstadisticaVisitaItem[] = [
 const datosContactos: EstadisticaContactoItem[] = [
     {
         id: 11,
-        fecha: new Date("2026-10-20T12:00:00.000Z"),
+        fecha,
         cantidad: 5,
         username: "usuario1",
     },
@@ -87,10 +80,27 @@ const datosContactos: EstadisticaContactoItem[] = [
     },
 ];
 
+const datosContactosPorPublicacion: EstadisticaContactoPublicacionItem[] = [
+    {
+        id: 31,
+        fecha,
+        cantidad: 4,
+        username: "usuario1",
+        especie: "Tomate",
+    },
+    {
+        id: 32,
+        fecha: new Date("2026-10-21T12:00:00.000Z"),
+        cantidad: 6,
+        username: "usuario2",
+        especie: "Manzana",
+    },
+];
+
 const datosPublicaciones: EstadisticaPublicacionItem[] = [
     {
         id: 21,
-        fecha: new Date("2026-10-20T12:00:00.000Z"),
+        fecha,
         cantidad: 4,
         username: "usuario2",
     },
@@ -102,58 +112,56 @@ const datosPublicaciones: EstadisticaPublicacionItem[] = [
     },
 ];
 
+const datosCantidadPublicaciones: EstadisticaCantidadPublicacionItem[] = [
+    {
+        id: 41,
+        fecha,
+        cantidad: 12,
+        username: "usuario1",
+    },
+    {
+        id: 42,
+        fecha: new Date("2026-10-21T12:00:00.000Z"),
+        cantidad: 18,
+        username: "usuario2",
+    },
+];
+
 const datosIniciales: DatosIniciales = {
     visitas: datosVisitas,
     contactos: datosContactos,
+    contactosPorPublicacion: datosContactosPorPublicacion,
     publicaciones: datosPublicaciones,
+    cantidadPublicaciones: datosCantidadPublicaciones,
 };
 
-function renderizarContenedor(
-    datos: DatosIniciales = datosIniciales,
-) {
+function renderizarContenedor(datos: DatosIniciales = datosIniciales) {
     return render(
         <ContenedorEstadistica datosIniciales={datos} />,
     );
 }
 
-function obtenerOpcionesComparativas() {
-    const bloque = screen.getByTestId("bloque-comparativo");
-
-    return JSON.parse(
-        bloque.getAttribute("data-opciones") ?? "[]",
-    ) as Array<{
-        valor: string;
-        etiqueta: string;
-    }>;
-}
-
-function obtenerDatosVisitas() {
-    const bloque = screen.getByTestId("bloque-visitas");
+function obtenerDatos<T>(tipo: string): T[] {
+    const bloque = screen.getByTestId(`bloque-${tipo}`);
 
     return JSON.parse(
         bloque.getAttribute("data-datos") ?? "[]",
-    ) as Array<{
-        id: number;
-        fecha: string;
-        cantidad: number;
-        tipoVisitante: string;
-    }>;
+    ) as T[];
 }
 
-function obtenerDatosContactos() {
-    const bloque = screen.getByTestId("bloque-comparativo");
+function verificarBloque(
+    tipo: string,
+    titulo: string,
+    cantidadEsperada: number,
+) {
+    const bloque = screen.getByTestId(`bloque-${tipo}`);
 
-    return JSON.parse(
-        bloque.getAttribute("data-contactos") ?? "[]",
-    ) as EstadisticaContactoItem[];
-}
-
-function obtenerDatosPublicaciones() {
-    const bloque = screen.getByTestId("bloque-comparativo");
-
-    return JSON.parse(
-        bloque.getAttribute("data-publicaciones") ?? "[]",
-    ) as EstadisticaPublicacionItem[];
+    expect(bloque).toBeInTheDocument();
+    expect(bloque).toHaveAttribute("data-titulo", titulo);
+    expect(bloque).toHaveAttribute("data-tipo", tipo);
+    expect(JSON.parse(bloque.getAttribute("data-datos") ?? "[]")).toHaveLength(
+        cantidadEsperada,
+    );
 }
 
 describe("ContenedorEstadistica", () => {
@@ -173,314 +181,209 @@ describe("ContenedorEstadistica", () => {
         ).toBeInTheDocument();
     });
 
-    it("renderiza los dos bloques estadísticos", () => {
+    it("renderiza los cinco bloques estadísticos independientes", () => {
         renderizarContenedor();
 
-        expect(
-            screen.getByTestId("bloque-visitas"),
-        ).toBeInTheDocument();
-
-        expect(
-            screen.getByTestId("bloque-comparativo"),
-        ).toBeInTheDocument();
+        verificarBloque("visitas", "Visitas", 2);
+        verificarBloque("contactos", "Contactos por perfil", 2);
+        verificarBloque("contactosPorPublicacion", "Contactos por publicación", 2);
+        verificarBloque("publicaciones", "Publicaciones modificadas", 2);
+        verificarBloque("cantidadPublicaciones", "Cantidad de publicaciones", 2);
     });
 
-    it("renderiza el bloque de visitas con las propiedades correspondientes", () => {
+    it("pasa los registros originales de visitas", () => {
         renderizarContenedor();
 
-        const bloque = screen.getByTestId("bloque-visitas");
-
-        expect(bloque).toHaveAttribute("data-titulo", "Visitas");
-        expect(bloque).toHaveAttribute("data-tipo", "visitas");
-
-        expect(obtenerDatosVisitas()).toHaveLength(2);
-
-        expect(obtenerDatosVisitas()[0]).toMatchObject({
-            id: 1,
-            cantidad: 15,
-            tipoVisitante: "comprador",
-        });
+        expect(obtenerDatos<EstadisticaVisitaItem>("visitas")).toEqual(
+            JSON.parse(JSON.stringify(datosVisitas)),
+        );
     });
 
-    it("pasa los registros originales de contactos y publicaciones al bloque comparativo", () => {
+    it("pasa los registros originales de contactos por perfil", () => {
         renderizarContenedor();
 
-        expect(obtenerDatosContactos()).toHaveLength(2);
+        expect(obtenerDatos<EstadisticaContactoItem>("contactos")).toEqual(
+            JSON.parse(JSON.stringify(datosContactos)),
+        );
+    });
 
-        expect(obtenerDatosContactos()[0]).toMatchObject({
-            id: 11,
-            cantidad: 5,
-            username: "usuario1",
-        });
+    it("pasa los registros originales de contactos por publicación y especie", () => {
+        renderizarContenedor();
 
-        expect(obtenerDatosPublicaciones()).toHaveLength(2);
+        const resultado = obtenerDatos<EstadisticaContactoPublicacionItem>(
+            "contactosPorPublicacion",
+        );
 
-        expect(obtenerDatosPublicaciones()[0]).toMatchObject({
-            id: 21,
+        expect(resultado).toHaveLength(2);
+
+        expect(resultado[0]).toMatchObject({
+            id: 31,
             cantidad: 4,
+            username: "usuario1",
+            especie: "Tomate",
+        });
+
+        expect(resultado[1]).toMatchObject({
+            id: 32,
+            cantidad: 6,
             username: "usuario2",
+            especie: "Manzana",
         });
     });
 
-    it("combina los usuarios de contactos y publicaciones sin duplicarlos", () => {
+    it("pasa los registros originales de publicaciones modificadas", () => {
         renderizarContenedor();
 
-        expect(obtenerOpcionesComparativas()).toEqual([
-            {
-                valor: "usuario1",
-                etiqueta: "usuario1",
-            },
-            {
-                valor: "usuario2",
-                etiqueta: "usuario2",
-            },
-            {
-                valor: "usuario3",
-                etiqueta: "usuario3",
-            },
-        ]);
+        expect(obtenerDatos<EstadisticaPublicacionItem>("publicaciones")).toEqual(
+            JSON.parse(JSON.stringify(datosPublicaciones)),
+        );
     });
 
-    it("incluye usuarios que aparecen exclusivamente en contactos", () => {
-        const datos: DatosIniciales = {
-            visitas: datosVisitas,
+    it("pasa los registros originales de cantidad de publicaciones", () => {
+        renderizarContenedor();
+
+        expect(
+            obtenerDatos<EstadisticaCantidadPublicacionItem>("cantidadPublicaciones"),
+        ).toEqual(JSON.parse(JSON.stringify(datosCantidadPublicaciones)));
+    });
+
+    it("mantiene independientes las colecciones de cada estadística", () => {
+        renderizarContenedor();
+
+        expect(obtenerDatos<EstadisticaVisitaItem>("visitas")).toHaveLength(2);
+        expect(obtenerDatos<EstadisticaContactoItem>("contactos")).toHaveLength(2);
+        expect(
+            obtenerDatos<EstadisticaContactoPublicacionItem>("contactosPorPublicacion"),
+        ).toHaveLength(2);
+        expect(obtenerDatos<EstadisticaPublicacionItem>("publicaciones")).toHaveLength(2);
+        expect(
+            obtenerDatos<EstadisticaCantidadPublicacionItem>("cantidadPublicaciones"),
+        ).toHaveLength(2);
+
+        expect(
+            screen.getByTestId("bloque-contactos"),
+        ).not.toHaveAttribute("data-tipo", "contactosPorPublicacion");
+
+        expect(
+            screen.getByTestId("bloque-publicaciones"),
+        ).not.toHaveAttribute("data-tipo", "cantidadPublicaciones");
+    });
+
+    it("actualiza los cinco bloques cuando cambian los datos iniciales", () => {
+        const { rerender } = renderizarContenedor();
+
+        const nuevosDatos: DatosIniciales = {
+            visitas: [
+                {
+                    id: 3,
+                    fecha: new Date("2026-10-22T12:00:00.000Z"),
+                    cantidad: 25,
+                    tipoVisitante: "productor",
+                },
+            ],
             contactos: [
                 {
                     id: 13,
-                    fecha: new Date("2026-10-20T12:00:00.000Z"),
-                    cantidad: 5,
-                    username: "usuario_exclusivo_contactos",
-                },
-            ],
-            publicaciones: [],
-        };
-
-        renderizarContenedor(datos);
-
-        expect(obtenerOpcionesComparativas()).toEqual([
-            {
-                valor: "usuario_exclusivo_contactos",
-                etiqueta: "usuario_exclusivo_contactos",
-            },
-        ]);
-    });
-
-    it("incluye usuarios que aparecen exclusivamente en publicaciones", () => {
-        const datos: DatosIniciales = {
-            visitas: datosVisitas,
-            contactos: [],
-            publicaciones: [
-                {
-                    id: 23,
-                    fecha: new Date("2026-10-20T12:00:00.000Z"),
-                    cantidad: 5,
-                    username: "usuario_exclusivo_publicaciones",
-                },
-            ],
-        };
-
-        renderizarContenedor(datos);
-
-        expect(obtenerOpcionesComparativas()).toEqual([
-            {
-                valor: "usuario_exclusivo_publicaciones",
-                etiqueta: "usuario_exclusivo_publicaciones",
-            },
-        ]);
-    });
-
-    it("devuelve opciones vacías cuando no existen contactos ni publicaciones", () => {
-        const datos: DatosIniciales = {
-            visitas: datosVisitas,
-            contactos: [],
-            publicaciones: [],
-        };
-
-        renderizarContenedor(datos);
-
-        expect(obtenerOpcionesComparativas()).toEqual([]);
-    });
-
-    it("devuelve una única opción cuando un usuario aparece varias veces en ambas estadísticas", () => {
-        const datos: DatosIniciales = {
-            visitas: datosVisitas,
-            contactos: [
-                {
-                    id: 14,
-                    fecha: new Date("2026-10-20T12:00:00.000Z"),
-                    cantidad: 2,
-                    username: "usuario1",
-                },
-                {
-                    id: 15,
-                    fecha: new Date("2026-10-21T12:00:00.000Z"),
-                    cantidad: 3,
-                    username: "usuario1",
-                },
-            ],
-            publicaciones: [
-                {
-                    id: 24,
-                    fecha: new Date("2026-10-20T12:00:00.000Z"),
-                    cantidad: 4,
-                    username: "usuario1",
-                },
-                {
-                    id: 25,
-                    fecha: new Date("2026-10-21T12:00:00.000Z"),
-                    cantidad: 5,
-                    username: "usuario1",
-                },
-            ],
-        };
-
-        renderizarContenedor(datos);
-
-        expect(obtenerOpcionesComparativas()).toEqual([
-            {
-                valor: "usuario1",
-                etiqueta: "usuario1",
-            },
-        ]);
-    });
-
-    it("actualiza las opciones comparativas cuando cambian los contactos y publicaciones", () => {
-        const { rerender } = renderizarContenedor();
-
-        expect(obtenerOpcionesComparativas()).toEqual([
-            {
-                valor: "usuario1",
-                etiqueta: "usuario1",
-            },
-            {
-                valor: "usuario2",
-                etiqueta: "usuario2",
-            },
-            {
-                valor: "usuario3",
-                etiqueta: "usuario3",
-            },
-        ]);
-
-        const nuevosDatos: DatosIniciales = {
-            visitas: datosVisitas,
-            contactos: [
-                {
-                    id: 16,
                     fecha: new Date("2026-10-22T12:00:00.000Z"),
                     cantidad: 9,
                     username: "usuario4",
                 },
             ],
+            contactosPorPublicacion: [
+                {
+                    id: 33,
+                    fecha: new Date("2026-10-22T12:00:00.000Z"),
+                    cantidad: 7,
+                    username: "usuario4",
+                    especie: "Pera",
+                },
+            ],
             publicaciones: [
                 {
-                    id: 26,
-                    fecha: new Date("2026-10-23T12:00:00.000Z"),
+                    id: 23,
+                    fecha: new Date("2026-10-22T12:00:00.000Z"),
                     cantidad: 6,
                     username: "usuario5",
                 },
             ],
-        };
-
-        rerender(
-            <ContenedorEstadistica datosIniciales={nuevosDatos} />,
-        );
-
-        expect(obtenerOpcionesComparativas()).toEqual([
-            {
-                valor: "usuario4",
-                etiqueta: "usuario4",
-            },
-            {
-                valor: "usuario5",
-                etiqueta: "usuario5",
-            },
-        ]);
-    });
-
-    it("mantiene los datos de visitas independientes de las opciones comparativas", () => {
-        const { rerender } = renderizarContenedor();
-
-        const nuevasVisitas: EstadisticaVisitaItem[] = [
-            {
-                id: 3,
-                fecha: new Date("2026-10-22T12:00:00.000Z"),
-                cantidad: 25,
-                tipoVisitante: "productor",
-            },
-        ];
-
-        const nuevosDatos: DatosIniciales = {
-            visitas: nuevasVisitas,
-            contactos: [
+            cantidadPublicaciones: [
                 {
-                    id: 17,
+                    id: 43,
                     fecha: new Date("2026-10-22T12:00:00.000Z"),
-                    cantidad: 3,
+                    cantidad: 20,
                     username: "usuario4",
                 },
             ],
-            publicaciones: [],
         };
 
         rerender(
             <ContenedorEstadistica datosIniciales={nuevosDatos} />,
         );
 
-        expect(obtenerDatosVisitas()).toHaveLength(1);
-
-        expect(obtenerDatosVisitas()[0]).toMatchObject({
-            id: 3,
-            cantidad: 25,
-            tipoVisitante: "productor",
-        });
-
-        expect(obtenerOpcionesComparativas()).toEqual([
+        expect(obtenerDatos<EstadisticaVisitaItem>("visitas")).toMatchObject([
             {
-                valor: "usuario4",
-                etiqueta: "usuario4",
+                id: 3,
+                cantidad: 25,
+                tipoVisitante: "productor",
+            },
+        ]);
+
+        expect(obtenerDatos<EstadisticaContactoItem>("contactos")).toMatchObject([
+            {
+                id: 13,
+                cantidad: 9,
+                username: "usuario4",
+            },
+        ]);
+
+        expect(
+            obtenerDatos<EstadisticaContactoPublicacionItem>("contactosPorPublicacion"),
+        ).toMatchObject([
+            {
+                id: 33,
+                cantidad: 7,
+                username: "usuario4",
+                especie: "Pera",
+            },
+        ]);
+
+        expect(obtenerDatos<EstadisticaPublicacionItem>("publicaciones")).toMatchObject([
+            {
+                id: 23,
+                cantidad: 6,
+                username: "usuario5",
+            },
+        ]);
+
+        expect(
+            obtenerDatos<EstadisticaCantidadPublicacionItem>("cantidadPublicaciones"),
+        ).toMatchObject([
+            {
+                id: 43,
+                cantidad: 20,
+                username: "usuario4",
             },
         ]);
     });
 
-    it("renderiza ambos bloques cuando todas las estadísticas están vacías", () => {
+    it("renderiza los cinco bloques cuando todas las estadísticas están vacías", () => {
         renderizarContenedor({
             visitas: [],
             contactos: [],
+            contactosPorPublicacion: [],
             publicaciones: [],
+            cantidadPublicaciones: [],
         });
 
-        expect(
-            screen.getByTestId("bloque-visitas"),
-        ).toBeInTheDocument();
-
-        expect(
-            screen.getByTestId("bloque-comparativo"),
-        ).toBeInTheDocument();
-
-        expect(obtenerDatosVisitas()).toEqual([]);
-        expect(obtenerDatosContactos()).toEqual([]);
-        expect(obtenerDatosPublicaciones()).toEqual([]);
-        expect(obtenerOpcionesComparativas()).toEqual([]);
+        verificarBloque("visitas", "Visitas", 0);
+        verificarBloque("contactos", "Contactos por perfil", 0);
+        verificarBloque("contactosPorPublicacion", "Contactos por publicación", 0);
+        verificarBloque("publicaciones", "Publicaciones modificadas", 0);
+        verificarBloque("cantidadPublicaciones", "Cantidad de publicaciones", 0);
     });
 
-    it("no recalcula las opciones cuando únicamente cambian las visitas", () => {
-        const contactos = [...datosContactos];
-        const publicaciones = [...datosPublicaciones];
-
-        const mapContactos = vi.spyOn(contactos, "map");
-        const mapPublicaciones = vi.spyOn(publicaciones, "map");
-
-        const datos: DatosIniciales = {
-            visitas: datosVisitas,
-            contactos,
-            publicaciones,
-        };
-
-        const { rerender } = renderizarContenedor(datos);
-
-        expect(mapContactos).toHaveBeenCalledOnce();
-        expect(mapPublicaciones).toHaveBeenCalledOnce();
+    it("conserva los datos de las demás estadísticas al actualizar solamente una colección", () => {
+        const { rerender } = renderizarContenedor();
 
         const nuevasVisitas: EstadisticaVisitaItem[] = [
             {
@@ -494,37 +397,34 @@ describe("ContenedorEstadistica", () => {
         rerender(
             <ContenedorEstadistica
                 datosIniciales={{
+                    ...datosIniciales,
                     visitas: nuevasVisitas,
-                    contactos,
-                    publicaciones,
                 }}
             />,
         );
 
-        expect(mapContactos).toHaveBeenCalledOnce();
-        expect(mapPublicaciones).toHaveBeenCalledOnce();
-
-        expect(obtenerOpcionesComparativas()).toEqual([
-            {
-                valor: "usuario1",
-                etiqueta: "usuario1",
-            },
-            {
-                valor: "usuario2",
-                etiqueta: "usuario2",
-            },
-            {
-                valor: "usuario3",
-                etiqueta: "usuario3",
-            },
-        ]);
-
-        expect(obtenerDatosVisitas()).toMatchObject([
+        expect(obtenerDatos<EstadisticaVisitaItem>("visitas")).toMatchObject([
             {
                 id: 3,
                 cantidad: 30,
                 tipoVisitante: "productor",
             },
         ]);
+
+        expect(obtenerDatos<EstadisticaContactoItem>("contactos")).toEqual(
+            JSON.parse(JSON.stringify(datosContactos)),
+        );
+
+        expect(
+            obtenerDatos<EstadisticaContactoPublicacionItem>("contactosPorPublicacion"),
+        ).toEqual(JSON.parse(JSON.stringify(datosContactosPorPublicacion)));
+
+        expect(obtenerDatos<EstadisticaPublicacionItem>("publicaciones")).toEqual(
+            JSON.parse(JSON.stringify(datosPublicaciones)),
+        );
+
+        expect(
+            obtenerDatos<EstadisticaCantidadPublicacionItem>("cantidadPublicaciones"),
+        ).toEqual(JSON.parse(JSON.stringify(datosCantidadPublicaciones)));
     });
 });
