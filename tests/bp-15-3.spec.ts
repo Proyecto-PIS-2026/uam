@@ -7,14 +7,14 @@ const detalle = (page: Page) => page.getByRole("dialog", { name: "Consulta de pu
 const edicion = (page: Page) => page.getByRole("dialog", { name: "Editar publicación", exact: true });
 const tarjetas = (page: Page) => page.getByRole("button", { name: /^Ver detalle de / });
 const tarjeta = (page: Page, producto: string) => page.getByRole("button", { name: `Ver detalle de ${producto}`, exact: true });
-const camposProducto = ["Especie", "Variedad", "Presentación", "País de origen", "Categoría", "Calibre"];
+const camposProducto = ["Especie", "Variedad", "Envase", "Kilos del empaquetado", "País de origen", "Categoría", "Calibre"];
 
 async function datosConsulta(page: Page) {
     const panel = detalle(page);
 
     return {
         precio: await panel.getByRole("textbox", { name: "Precio en pesos", exact: true }).inputValue(),
-        unidades: await panel.getByRole("textbox", { name: /^Unidades \(/ }).inputValue(),
+        unidades: await panel.getByRole("textbox", { name: /^Unidades(?: \(|$)/ }).inputValue(),
         selectores: await Promise.all(camposProducto.map(async (campo) => ({
             campo,
             valor: await panel.getByRole("combobox", { name: campo, exact: true }).innerText(),
@@ -94,7 +94,7 @@ test.describe("BP-15.3: modificación de publicaciones del productor", () => {
         }
 
         await expect(panel.getByRole("textbox", { name: "Precio en pesos", exact: true })).toBeEditable();
-        await expect(panel.getByRole("textbox", { name: /^Unidades \(/ })).toBeEditable();
+        await expect(panel.getByRole("textbox", { name: /^Unidades(?: \(|$)/ })).toBeEditable();
         await expect(panel.getByRole("switch", { name: "Publicación disponible", exact: true })).toBeEnabled();
         await expect(panel.getByRole("button", { name: "Editar foto", exact: true })).toBeEnabled();
         await expect(panel.locator('input[type="file"][aria-label="Fotografía"]')).toHaveAttribute("accept", "image/png,image/jpeg,image/webp");

@@ -98,7 +98,7 @@ function configurarMocksBase() {
     mocks.editable.mockResolvedValue({ id: 12 });
     mocks.opciones.mockResolvedValue({
         categorias: [],
-        presentaciones: [],
+        envases: [], kilos: [],
         calibres: [],
     });
 
@@ -131,7 +131,7 @@ function configurarMocksBase() {
 
 function solicitud(cambios: unknown = {
     precio: "125",
-    presentacionId: 8,
+    envaseId: 8, kilosId: null,
     categoriaId: 4,
     calibreId: 2,
     ubicaciones: [],
@@ -231,7 +231,7 @@ describe("GET /api/publicaciones/productor/[id]", () => {
             variedades: [
                 { id: 21, nombre: "Williams", especieId: 2 },
             ],
-            presentaciones: [
+            envases: [
                 { id: 31, nombre: "Cajón", variedadId: 21 },
             ],
             categorias: [
@@ -393,7 +393,7 @@ describe("PATCH /api/publicaciones/productor/[id]", () => {
         async (cantidadUnidades) => {
             const cambios = {
                 precio: null,
-                presentacionId: 31,
+                envaseId: 31, kilosId: null,
                 categoriaId: 41,
                 calibreId: 51,
                 paisId: 62,

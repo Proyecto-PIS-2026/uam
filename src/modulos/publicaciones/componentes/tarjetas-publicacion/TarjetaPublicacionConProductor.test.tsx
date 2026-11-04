@@ -31,7 +31,7 @@ const crearPublicacion = (
     foto: "/imagenes/tomate.jpg",
     especie: "Tomate",
     variedad: "Cherry",
-    presentacion: "Caja de 10 kg",
+    envase: "Caja de 10 kg", kilos: "",
     cantidadUnidades: 10,
     categoria: "I",
     calibre: "Mediano",

@@ -7,7 +7,8 @@ type Opcion = { id: number; nombre: string };
 type Catalogos = {
   especies: Opcion[];
   variedades: (Opcion & { especieId: number })[];
-  presentaciones: (Opcion & { variedadId: number })[];
+  envases: Opcion[];
+  kilos: Opcion[];
   categorias: (Opcion & { especieId: number | null })[];
   calibres: Opcion[];
   paises: Opcion[];
@@ -20,21 +21,23 @@ async function obtenerSeleccion(request: APIRequestContext) {
   const especie = catalogos.especies.find((opcion) => opcion.nombre === "Uchuva");
   expect(especie, "La seed debe incluir Uchuva para distinguir los productos de prueba").toBeDefined();
   const variedad = catalogos.variedades.find((opcion) => opcion.especieId === especie!.id)!;
-  const presentacion = catalogos.presentaciones.find((opcion) => opcion.variedadId === variedad.id)!;
+  const envase = catalogos.envases.find((opcion) => opcion.nombre === "Cajon")!;
+  const kilos = catalogos.kilos.find((opcion) => opcion.nombre === "20")!;
   const categoria = catalogos.categorias.find((opcion) => opcion.especieId === null || opcion.especieId === especie!.id)!;
   const pais = catalogos.paises.find((opcion) => opcion.nombre === "URUGUAY")!;
   expect(catalogos.calibres.length).toBeGreaterThanOrEqual(3);
-  expect(presentacion).toBeDefined();
+  expect(envase).toBeDefined();
+  expect(kilos).toBeDefined();
   expect(categoria).toBeDefined();
   expect(pais).toBeDefined();
-  return { especie: especie!, variedad, presentacion, categoria, pais, calibres: catalogos.calibres, catalogos };
+  return { especie: especie!, variedad, envase, kilos, categoria, pais, calibres: catalogos.calibres, catalogos };
 }
 type Seleccion = Awaited<ReturnType<typeof obtenerSeleccion>>;
 
 function datosValidos(operadorId: number, seleccion: Seleccion, indice = 0, precio = "1371") {
   return {
     operadorId, especieId: seleccion.especie.id, variedadId: seleccion.variedad.id,
-    presentacionId: seleccion.presentacion.id, categoriaId: seleccion.categoria.id,
+    envaseId: seleccion.envase.id, kilosId: seleccion.kilos.id, categoriaId: seleccion.categoria.id,
     calibreId: seleccion.calibres[indice].id, paisId: seleccion.pais.id,
     disponibilidad: true, precio, cantidadUnidades: 12,
   };
@@ -93,7 +96,8 @@ async function seleccionar(page: Page, formulario: Locator, campo: string, opcio
 async function completarProducto(page: Page, formulario: Locator, seleccion: Seleccion, indice = 0, precio = "1371") {
   await seleccionar(page, formulario, "Especie", seleccion.especie.nombre);
   await seleccionar(page, formulario, "Variedad", seleccion.variedad.nombre);
-  await seleccionar(page, formulario, "Presentación", seleccion.presentacion.nombre);
+  await seleccionar(page, formulario, "Envase", seleccion.envase.nombre);
+  await seleccionar(page, formulario, "Kilos del empaquetado", `${seleccion.kilos.nombre} kg`);
   await seleccionar(page, formulario, "País de origen", seleccion.pais.nombre);
   await seleccionar(page, formulario, "Categoría", seleccion.categoria.nombre);
   await seleccionar(page, formulario, "Calibre", seleccion.calibres[indice].nombre);
@@ -188,7 +192,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
         await completarProducto(page, formulario, seleccion, indice, precio);
         for (const [campo, valor] of [
           ["Especie", seleccion.especie.nombre], ["Variedad", seleccion.variedad.nombre],
-          ["Presentación", seleccion.presentacion.nombre], ["Categoría", seleccion.categoria.nombre],
+          ["Envase", seleccion.envase.nombre], ["Kilos del empaquetado", `${seleccion.kilos.nombre} kg`], ["Categoría", seleccion.categoria.nombre],
           ["Calibre", seleccion.calibres[indice].nombre], ["País de origen", seleccion.pais.nombre],
         ]) {
           await expect(formulario.getByRole("combobox", { name: campo, exact: true })).toContainText(valor);
@@ -212,7 +216,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
     for (const [indice, id] of ids.entries()) {
       const publicacion = await db.orm.public.Publicacion.where({ id }).first();
       expect(publicacion).toMatchObject({
-        presentacionId: seleccion.presentacion.id, categoriaId: seleccion.categoria.id,
+        envaseId: seleccion.envase.id, kilosId: seleccion.kilos.id, categoriaId: seleccion.categoria.id,
         calibreId: seleccion.calibres[indice].id, cantidadUnidades: 12, tipoPublicacion: "OPERADOR",
       });
       expect(Number(publicacion!.precio)).toBe(Number(precios[indice]));
@@ -389,18 +393,18 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
     delete datos.operadorId;
     const inexistente = Math.max(...(await db.orm.public.Operador.select("id").all()).map((operador) => operador.id)) + 1000;
     const otraVariedad = seleccion.catalogos.variedades.find((variedad) => variedad.especieId !== seleccion.especie.id);
-    const otraPresentacion = seleccion.catalogos.presentaciones.find((presentacion) => presentacion.variedadId !== seleccion.variedad.id);
+    const envaseInexistente = Math.max(...seleccion.catalogos.envases.map((envase) => envase.id)) + 1000;
+    const kilosInexistentes = Math.max(...seleccion.catalogos.kilos.map((kilos) => kilos.id)) + 1000;
     expect(otraVariedad).toBeDefined();
-    expect(otraPresentacion).toBeDefined();
     const invalidos = [
       { datos, estado: 400 },
       { datos: { ...datosValidos(inexistente, seleccion) }, estado: 404 },
       { datos: { operadorId: operadorA.id }, estado: 400 },
       { datos: { ...datosValidos(operadorA.id, seleccion), especieId: 0 }, estado: 400 },
-      ...["variedadId", "presentacionId", "categoriaId", "calibreId", "paisId"].map((campo) => ({ datos: { ...datosValidos(operadorA.id, seleccion), [campo]: -1 }, estado: 400 })),
-      { datos: { ...datosValidos(operadorA.id, seleccion), variedadId: 0 }, estado: 400 },
+      ...["variedadId", "envaseId", "kilosId", "categoriaId", "calibreId", "paisId"].map((campo) => ({ datos: { ...datosValidos(operadorA.id, seleccion), [campo]: -1 }, estado: 400 })),
       { datos: { ...datosValidos(operadorA.id, seleccion), variedadId: otraVariedad!.id }, estado: 400 },
-      { datos: { ...datosValidos(operadorA.id, seleccion), presentacionId: otraPresentacion!.id }, estado: 400 },
+      { datos: { ...datosValidos(operadorA.id, seleccion), envaseId: envaseInexistente }, estado: 400 },
+      { datos: { ...datosValidos(operadorA.id, seleccion), kilosId: kilosInexistentes }, estado: 400 },
       { datos: { ...datosValidos(operadorA.id, seleccion), precio: "texto" }, estado: 400 },
     ];
     const cantidadPublicaciones = await db.orm.public.Publicacion.select("id").all();
@@ -417,7 +421,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
     expect(await db.orm.public.Publicacion.where({ id }).first()).not.toBeNull();
     const duplicada = await page.request.post(rutaApi, { data: datosValidos(operadorA.id, seleccion) });
     expect(duplicada.status()).toBe(400);
-    expect(await duplicada.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] });
+    expect(await duplicada.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] });
     expect(await db.orm.public.Publicacion.select("id").all()).toHaveLength(cantidadPublicaciones.length + 1);
     expect(await db.orm.public.PublicacionOperador.select("id").all()).toHaveLength(cantidadRelaciones.length + 1);
   });
@@ -429,14 +433,24 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
     const minimos = { operadorId: operadorA.id, especieId: seleccion.especie.id };
     const cantidadPublicaciones = (await db.orm.public.Publicacion.select("id").all()).length;
     const cantidadRelaciones = (await db.orm.public.PublicacionOperador.select("id").all()).length;
-    for (const variedadId of [undefined, seleccion.variedad.id]) {
-      const respuesta = await page.request.post(rutaApi, { data: { ...minimos, variedadId } });
+    const otroKilos = seleccion.catalogos.kilos.find((kilos) => kilos.id !== seleccion.kilos.id)!;
+    expect(otroKilos).toBeDefined();
+    const combinaciones = [
+      { variedadId: null, envaseId: null, kilosId: null },
+      { variedadId: seleccion.variedad.id, envaseId: null, kilosId: null },
+      { variedadId: null, envaseId: seleccion.envase.id, kilosId: null },
+      { variedadId: null, envaseId: null, kilosId: seleccion.kilos.id },
+      { variedadId: null, envaseId: seleccion.envase.id, kilosId: seleccion.kilos.id },
+      { variedadId: null, envaseId: seleccion.envase.id, kilosId: otroKilos.id },
+    ];
+    for (const combinacion of combinaciones) {
+      const respuesta = await page.request.post(rutaApi, { data: { ...minimos, ...combinacion } });
       expect(respuesta.status()).toBe(201);
       const resultado = await respuesta.json();
       expect(resultado.esValido).toBe(true);
       expect(await db.orm.public.Publicacion.where({ id: resultado.id }).first()).toMatchObject({
-        especieId: seleccion.especie.id, variedadId: variedadId ?? null,
-        presentacionId: null, categoriaId: null, calibreId: null,
+        especieId: seleccion.especie.id, ...combinacion,
+        categoriaId: null, calibreId: null,
         precio: null, foto: null, cantidadUnidades: null,
       });
       expect(await db.orm.public.PublicacionOperador.where({ publicacionId: resultado.id }).first()).toMatchObject({
@@ -445,18 +459,20 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
     }
     for (const vacio of [undefined, null, 0, ""]) {
       const datosDuplicados = {
-        ...minimos, variedadId: vacio, presentacionId: vacio, categoriaId: vacio,
+        ...minimos, variedadId: vacio, envaseId: vacio, kilosId: vacio, categoriaId: vacio,
         calibreId: vacio, paisId: vacio, precio: "200", disponibilidad: false,
       };
       const respuesta = await page.request.post(rutaApi, { data: datosDuplicados });
       expect(respuesta.status()).toBe(400);
-      expect(await respuesta.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] });
+      expect(await respuesta.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] });
     }
-    const repetidaConVariedad = await page.request.post(rutaApi, { data: { ...minimos, variedadId: seleccion.variedad.id } });
-    expect(repetidaConVariedad.status()).toBe(400);
-    expect(await repetidaConVariedad.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] });
-    expect(await db.orm.public.Publicacion.select("id").all()).toHaveLength(cantidadPublicaciones + 2);
-    expect(await db.orm.public.PublicacionOperador.select("id").all()).toHaveLength(cantidadRelaciones + 2);
+    for (const combinacion of combinaciones) {
+      const repetida = await page.request.post(rutaApi, { data: { ...minimos, ...combinacion } });
+      expect(repetida.status()).toBe(400);
+      expect(await repetida.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] });
+    }
+    expect(await db.orm.public.Publicacion.select("id").all()).toHaveLength(cantidadPublicaciones + combinaciones.length);
+    expect(await db.orm.public.PublicacionOperador.select("id").all()).toHaveLength(cantidadRelaciones + combinaciones.length);
   });
 
   test("CP-09: verificar roles y propiedad al crear publicaciones", async ({ page, precargaOperadores }) => {

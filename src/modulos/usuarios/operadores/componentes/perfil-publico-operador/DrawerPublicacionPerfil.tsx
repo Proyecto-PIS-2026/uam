@@ -134,8 +134,12 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                             </div>
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Presentación</span>
-                                    <span className={styles.valorInformacion}>{publicacion.presentacion?.trim() || "-"}</span>
+                                    <span className={styles.nombreInformacion}>Envase</span>
+                                    <span className={styles.valorInformacion}>{publicacion.envase?.trim() || "-"}</span>
+                                </div>
+                                <div className={styles.informacionDetallada}>
+                                    <span className={styles.nombreInformacion}>Kilos</span>
+                                    <span className={styles.valorInformacion}>{publicacion.kilos?.trim() && publicacion.kilos !== "-" ? `${publicacion.kilos} kg` : "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Calibre</span>
@@ -146,7 +150,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                                     <span className={styles.valorInformacion}>{publicacion.categoria?.trim() || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Unidades ({publicacion.presentacion?.trim() || "-"})</span>
+                                    <span className={styles.nombreInformacion}>Unidades</span>
                                     <span className={styles.valorInformacion}>{publicacion.cantidadUnidades ?? "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>

@@ -35,7 +35,8 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
 
     await seleccionar(alta, "Especie", "Uchuva");
     await seleccionar(alta, "Variedad", "-");
-    await seleccionar(alta, "Presentación", "Unidad");
+    await seleccionar(alta, "Envase", "Cajon");
+    await seleccionar(alta, "Kilos del empaquetado", "20 kg");
     await seleccionar(alta, "País de origen", "URUGUAY");
     await seleccionar(alta, "Categoría", "-");
     await seleccionar(alta, "Calibre", calibre);

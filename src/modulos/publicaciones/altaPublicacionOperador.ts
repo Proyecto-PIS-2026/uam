@@ -51,12 +51,13 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 				const coincidencias = await tx.orm.public.Publicacion.where({
 					especieId: datos.especieId,
 					variedadId: datos.variedadId,
-					presentacionId: datos.presentacionId,
+					envaseId: datos.envaseId,
+					kilosId: datos.kilosId,
 					categoriaId: datos.categoriaId,
 					calibreId: datos.calibreId,
 				}).select("id").all();
 				if (coincidencias.some((publicacion) => ids.has(publicacion.id))) {
-					return { esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] };
+					return { esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] };
 				}
 			}
 
@@ -69,7 +70,8 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 				cantidadUnidades: datos.cantidadUnidades,
 				especieId: datos.especieId,
 				variedadId: datos.variedadId,
-				presentacionId: datos.presentacionId,
+				envaseId: datos.envaseId,
+				kilosId: datos.kilosId,
 				categoriaId: datos.categoriaId,
 				calibreId: datos.calibreId,
 			});

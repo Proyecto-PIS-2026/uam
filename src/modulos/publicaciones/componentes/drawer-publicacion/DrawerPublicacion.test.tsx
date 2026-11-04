@@ -186,7 +186,7 @@ function crearPublicacion(): PublicacionListado {
         precio: 150,
         fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
-        presentacion: "Cajón",
+        envase: "Cajón", kilos: "",
         categoria: "Primera",
         calibre: "Mediano",
         codigoCalibre: "M",
@@ -204,7 +204,7 @@ function crearPublicacionProductor(): PublicacionProductorListado {
         precio: 120,
         fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         cantidadUnidades: 20,
         categoria: "Primera",
         calibre: "Grande",
@@ -299,10 +299,10 @@ describe("DrawerPublicacion con operadores", () => {
     });
 
     it("muestra guiones cuando los datos opcionales están vacíos o son nulos", () => {
-        const publicacion = { ...crearPublicacion(), variedad: " ", presentacion: " ", calibre: " ", categoria: " ", pais: " ", cantidadUnidades: null };
+        const publicacion = { ...crearPublicacion(), variedad: " ", envase: " ", kilos: "", calibre: " ", categoria: " ", pais: " ", cantidadUnidades: null };
         render(<DrawerPublicacion publicacion={publicacion} open onOpenChange={vi.fn()} />);
         expect(screen.getByText("Tomate")).toBeInTheDocument();
-        for (const etiqueta of ["Presentación", "Calibre", "Categoría", "País"]) {
+        for (const etiqueta of ["Envase", "Calibre", "Categoría", "País"]) {
             expect(screen.getByText(etiqueta).nextElementSibling).toHaveTextContent("-");
         }
         expect(screen.getByText(/^Unidades/).nextElementSibling).toHaveTextContent("-");

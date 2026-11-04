@@ -122,12 +122,13 @@ async function completarPrecarga(page: Page, calibre: string, precio: string) {
   await expect(alta).toBeVisible();
   await seleccionar(page, alta, "Especie", "Uchuva");
   await seleccionar(page, alta, "Variedad", "-");
-  await seleccionar(page, alta, "Presentación", "Unidad");
+  await seleccionar(page, alta, "Envase", "Cajon");
+  await seleccionar(page, alta, "Kilos del empaquetado", "20 kg");
   await seleccionar(page, alta, "Categoría", "-");
   await seleccionar(page, alta, "Calibre", calibre);
   await seleccionar(page, alta, "País de origen", "URUGUAY");
   await alta.getByLabel("Precio en pesos").fill(precio);
-  await alta.getByLabel("Cantidad (kg)").fill("25");
+  await alta.getByLabel("Unidades (Cajon)").fill("25");
 
   await alta.getByRole("button", { name: "Agregar punto de retiro" }).click();
   const mapa = page.getByRole("dialog", { name: "Agregar punto de retiro", exact: true });
@@ -323,7 +324,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
         await expect(paginaProductor.getByRole("button", { name: "Ver detalle de Uchuva", exact: true })).toHaveCount(2);
         await expect(tarjetaProductor(paginaProductor, "1371")).toHaveCount(0);
         await expect(tarjetaProductor(paginaProductor, "2637")).toBeVisible();
-        const consulta = await abrirConsulta(paginaProductor, "1482");
+        await abrirConsulta(paginaProductor, "1482");
         const relaciones = await leerPrecargas(precarga.productorId);
         expect(relaciones).toHaveLength(2);
         expect(relaciones.find((relacion) => relacion.publicacionId === precarga.publicacionId)).toMatchObject({
@@ -434,7 +435,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       alta.getByRole("button", { name: "Confirmar", exact: true }).click(),
     ]);
     expect(respuesta.status()).toBe(400);
-    await expect(alta.getByRole("alert")).toContainText("Este Productor ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país.");
+    await expect(alta.getByRole("alert")).toContainText("Este Productor ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país.");
     await expect(alta.getByLabel("Precio en pesos")).toHaveValue("9999");
     await alta.getByRole("button", { name: "Cancelar", exact: true }).click();
     await page.reload();
@@ -450,7 +451,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
     const endpoint = `/api/publicaciones/productor/${precarga.publicacionProductorId}`;
     const cambios = { precio: "9999", especieId: relacion.publicacion.especieId,
       variedadId: relacion.publicacion.variedadId, paisId: relacion.paisId,
-      presentacionId: relacion.publicacion.presentacionId,
+      envaseId: relacion.publicacion.envaseId, kilosId: relacion.publicacion.kilosId,
       categoriaId: relacion.publicacion.categoriaId, calibreId: relacion.publicacion.calibreId,
       ubicaciones: relacion.ubicaciones.map(({ nombreUbicacion, urlMaps }) => ({ nombreUbicacion, urlMaps })) };
     await test.step("Rechazar solicitudes sin iniciar sesión", async () => {

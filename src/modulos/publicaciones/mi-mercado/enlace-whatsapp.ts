@@ -8,7 +8,8 @@ export function crearMensajeWhatsApp(publicacion: Publicacion, nombreOperador: s
     const enlacePerfil = `${origen}/operadores/${encodeURIComponent(nombreOperador)}`;
     return [
         `🌿 ${nombreProducto}`,
-        ...(publicacion.presentacion ? [`📦 Presentación: ${publicacion.presentacion.nombrePresentacion}`] : []),
+        ...(publicacion.envase ? [`📦 Envase: ${publicacion.envase.nombreEnvase}`] : []),
+        ...(publicacion.kilos ? [`⚖️ Kilos: ${publicacion.kilos.valor} kg`] : []),
         ...(publicacion.categoria ? [`🏷️ Categoría: ${publicacion.categoria.nombreCategoria}`] : []),
         ...(publicacion.calibre ? [`📏 Calibre: ${publicacion.calibre.nombreCalibre}`] : []),
         `💰 Precio: ${publicacion.precio !== null ? `$${Number(publicacion.precio)}` : "Consultar"}`,

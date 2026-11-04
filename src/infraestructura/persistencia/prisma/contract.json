@@ -24,6 +24,10 @@
       "model": "Configuracion",
       "namespace": "public"
     },
+    "envase": {
+      "model": "Envase",
+      "namespace": "public"
+    },
     "especie": {
       "model": "Especie",
       "namespace": "public"
@@ -46,6 +50,10 @@
     },
     "imagen": {
       "model": "Imagen",
+      "namespace": "public"
+    },
+    "kilosEmpaquetado": {
+      "model": "KilosEmpaquetado",
       "namespace": "public"
     },
     "local": {
@@ -403,6 +411,53 @@
               },
               "namespaceId": "public",
               "table": "configuracion"
+            }
+          },
+          "Envase": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "nombreEnvase": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "publicaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "envaseId"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "nombreEnvase": {
+                  "column": "nombreEnvase"
+                }
+              },
+              "namespaceId": "public",
+              "table": "envase"
             }
           },
           "Especie": {
@@ -786,6 +841,53 @@
               },
               "namespaceId": "public",
               "table": "imagen"
+            }
+          },
+          "KilosEmpaquetado": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "valor": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "publicaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "kilosId"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "valor": {
+                  "column": "valor"
+                }
+              },
+              "namespaceId": "public",
+              "table": "kilosEmpaquetado"
             }
           },
           "Local": {
@@ -1283,21 +1385,6 @@
               }
             },
             "relations": {
-              "publicaciones": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "presentacionId"
-                  ]
-                },
-                "to": {
-                  "model": "Publicacion",
-                  "namespace": "public"
-                }
-              },
               "variedad": {
                 "cardinality": "N:1",
                 "on": {
@@ -1457,6 +1544,13 @@
                   "kind": "scalar"
                 }
               },
+              "envaseId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "especieId": {
                 "nullable": false,
                 "type": {
@@ -1485,6 +1579,13 @@
                   "kind": "scalar"
                 }
               },
+              "kilosId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "precio": {
                 "nullable": true,
                 "type": {
@@ -1494,13 +1595,6 @@
                     "precision": 12,
                     "scale": 2
                   }
-                }
-              },
-              "presentacionId": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
                 }
               },
               "publicacionActiva": {
@@ -1576,6 +1670,21 @@
                   "namespace": "public"
                 }
               },
+              "envase": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "envaseId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Envase",
+                  "namespace": "public"
+                }
+              },
               "especie": {
                 "cardinality": "N:1",
                 "on": {
@@ -1591,18 +1700,18 @@
                   "namespace": "public"
                 }
               },
-              "presentacion": {
+              "kilos": {
                 "cardinality": "N:1",
                 "on": {
                   "localFields": [
-                    "presentacionId"
+                    "kilosId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "Presentacion",
+                  "model": "KilosEmpaquetado",
                   "namespace": "public"
                 }
               },
@@ -1633,6 +1742,9 @@
                 "categoriaId": {
                   "column": "categoriaId"
                 },
+                "envaseId": {
+                  "column": "envaseId"
+                },
                 "especieId": {
                   "column": "especieId"
                 },
@@ -1645,11 +1757,11 @@
                 "id": {
                   "column": "id"
                 },
+                "kilosId": {
+                  "column": "kilosId"
+                },
                 "precio": {
                   "column": "precio"
-                },
-                "presentacionId": {
-                  "column": "presentacionId"
                 },
                 "publicacionActiva": {
                   "column": "publicacionActiva"
@@ -2474,6 +2586,38 @@
                 }
               ]
             },
+            "envase": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "nombreEnvase": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "nombreEnvase"
+                  ]
+                }
+              ]
+            },
             "especie": {
               "columns": {
                 "especieActiva": {
@@ -2741,6 +2885,38 @@
                 ]
               },
               "uniques": []
+            },
+            "kilosEmpaquetado": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "valor": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "valor"
+                  ]
+                }
+              ]
             },
             "local": {
               "columns": {
@@ -3295,6 +3471,11 @@
                   "nativeType": "int4",
                   "nullable": true
                 },
+                "envaseId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "especieId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -3319,6 +3500,11 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "kilosId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "precio": {
                   "codecId": "pg/numeric@1",
                   "nativeType": "numeric",
@@ -3327,11 +3513,6 @@
                     "precision": 12,
                     "scale": 2
                   }
-                },
-                "presentacionId": {
-                  "codecId": "pg/int4@1",
-                  "nativeType": "int4",
-                  "nullable": true
                 },
                 "publicacionActiva": {
                   "codecId": "pg/bool@1",
@@ -3413,7 +3594,7 @@
                 {
                   "source": {
                     "columns": [
-                      "presentacionId"
+                      "envaseId"
                     ],
                     "namespaceId": "public",
                     "tableName": "publicacion"
@@ -3423,7 +3604,23 @@
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "presentacion"
+                    "tableName": "envase"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "kilosId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "kilosEmpaquetado"
                   }
                 },
                 {
@@ -3478,6 +3675,14 @@
                 },
                 {
                   "columns": [
+                    "envaseId"
+                  ],
+                  "name": "publicacion_envaseId_idx_c66e7843",
+                  "prefix": "publicacion_envaseId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "especieId"
                   ],
                   "name": "publicacion_especieId_idx_23a2c94e",
@@ -3486,10 +3691,10 @@
                 },
                 {
                   "columns": [
-                    "presentacionId"
+                    "kilosId"
                   ],
-                  "name": "publicacion_presentacionId_idx_2981aeac",
-                  "prefix": "publicacion_presentacionId_idx",
+                  "name": "publicacion_kilosId_idx_9257854e",
+                  "prefix": "publicacion_kilosId_idx",
                   "unique": false
                 },
                 {
@@ -4020,7 +4225,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d5efabd362361b30e8605fcbda72e058bc06328b97ce4850c8f4656180df0075"
+    "storageHash": "2115500e4b32e27a71436ece49d2042987ee98c0967583f2b292e4c63459c748"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

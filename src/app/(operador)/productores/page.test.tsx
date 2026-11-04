@@ -47,7 +47,7 @@ const perfil: PerfilProductorPorOperador = {
             cantidadUnidades: 20,
             especie: "Naranja",
             variedad: "Valencia",
-            presentacion: "KG",
+            envase: "KG", kilos: "",
             categoria: "I",
             calibre: "M",
             pais: "Uruguay",

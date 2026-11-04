@@ -17,9 +17,13 @@ for (const pantalla of [
 
         const nombreProducto = (await tarjeta.getByRole("heading").innerText()).trim();
         const nombreOperador = (await tarjeta.locator("p[title]").first().getAttribute("title"))?.trim() ?? "";
-        const presentacion = await tarjeta.evaluate((elemento) =>
+        const empaquetado = await tarjeta.evaluate((elemento) =>
             elemento.querySelector('span[title^="por "]')?.getAttribute("title")?.slice(4).trim() || "-"
         );
+        const envaseConKilos = empaquetado.match(/^(.*?) \(([^)]+) kg\)$/);
+        const soloKilos = empaquetado.match(/^([\d-]+) kg$/);
+        const envase = envaseConKilos?.[1] ?? (soloKilos ? "-" : empaquetado);
+        const kilos = envaseConKilos?.[2] ?? soloKilos?.[1];
         const textoTarjeta = await tarjeta.textContent() ?? "";
         const consultarPrecio = textoTarjeta.includes("Consultar precio");
         let precio: number | null = null;
@@ -45,7 +49,7 @@ for (const pantalla of [
 
         await expect(detalle.getByText(consultarPrecio ? "Consultar precio" : `$${precio}`, { exact: true })).toBeVisible();
 
-        for (const campo of ["Presentación", "Calibre", "Categoría", "País"]) {
+        for (const campo of ["Envase", "Kilos", "Calibre", "Categoría", "País"]) {
             const etiqueta = detalle.getByText(campo, { exact: true });
             await expect(etiqueta).toBeVisible();
 
@@ -53,8 +57,10 @@ for (const pantalla of [
             await expect(valor).toBeVisible();
             await expect(valor).toHaveText(/\S/);
 
-            if (campo === "Presentación") {
-                await expect(valor).toHaveText(presentacion);
+            if (campo === "Envase") {
+                await expect(valor).toHaveText(envase);
+            } else if (campo === "Kilos") {
+                await expect(valor).toHaveText(kilos ? `${kilos} kg` : "-");
             } else if (campo === "Calibre" || campo === "Categoría") {
                 expect(textoTarjeta).toContain((await valor.innerText()).trim());
             }

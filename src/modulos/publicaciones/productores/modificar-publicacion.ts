@@ -64,7 +64,7 @@ async function consultarPublicacion(publicacionProductorId: number, cliente: Cli
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) => publicacion
             .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
-            .include("presentacion", (presentacion) => presentacion.include("variedad", (variedad) => variedad.include("especie")))
+            .include("envase").include("kilos")
             .include("especie").include("variedad").include("categoria").include("calibre"))
         .first();
 }
@@ -105,13 +105,13 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             }
 
             const propias = await tx.orm.public.PublicacionProductor.where({ productorId: relacion.productor.id })
-                .include("publicacion", (publicacion) => publicacion.select("especieId", "variedadId", "presentacionId", "categoriaId", "calibreId"))
+                .include("publicacion", (publicacion) => publicacion.select("especieId", "variedadId", "envaseId", "kilosId", "categoriaId", "calibreId"))
                 .all();
             if (propias.some((otra) => otra.id !== relacion.id && otra.paisId === seleccionActual.paisId &&
                 otra.publicacion.especieId === cambios.especieId && otra.publicacion.variedadId === cambios.variedadId &&
-                otra.publicacion.presentacionId === cambios.presentacionId &&
+                otra.publicacion.envaseId === cambios.envaseId && otra.publicacion.kilosId === cambios.kilosId &&
                 otra.publicacion.categoriaId === cambios.categoriaId && otra.publicacion.calibreId === cambios.calibreId)) {
-                datosInvalidos("Este Productor ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país.");
+                datosInvalidos("Este Productor ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país.");
             }
 
             let foto = cambios.foto === null ? null : publicacion.foto;
@@ -121,7 +121,8 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             }
             // temporal.updatedAt() renueva fecha en este UPDATE, también si sólo cambian ubicaciones.
             await tx.orm.public.Publicacion.where({ id: publicacion.id }).update({
-                precio: cambios.precio as PrecioDb, foto, especieId: cambios.especieId, variedadId: cambios.variedadId, presentacionId: cambios.presentacionId,
+                precio: cambios.precio as PrecioDb, foto, especieId: cambios.especieId, variedadId: cambios.variedadId, envaseId: cambios.envaseId,
+                kilosId: cambios.kilosId,
                 categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,
                 ...(cambios.cantidadUnidades !== undefined ? { cantidadUnidades: cambios.cantidadUnidades as CantidadUnidadesDb } : {}),
                 ...(cambios.disponible !== undefined ? { publicacionDisponible: cambios.disponible } : {}),
