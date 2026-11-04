@@ -129,8 +129,8 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
     useEffect(() => {
         let sinFoco = false;
         const actualizar = () => setVentanaPausada(sinFoco || document.hidden);
-        const perderFoco = () => { sinFoco = true; actualizar(); };
-        const recuperarFoco = () => { sinFoco = false; actualizar(); };
+        const perderFoco = () => { sinFoco = true; actualizar() };
+        const recuperarFoco = () => { sinFoco = false; actualizar() };
         actualizar();
         window.addEventListener("blur", perderFoco);
         window.addEventListener("focus", recuperarFoco);
@@ -168,7 +168,7 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
 
     useEffect(() => {
         const pendientes = temporizadores.current;
-        return () => { pendientes.forEach(({ referencia }) => clearTimeout(referencia)); pendientes.clear(); };
+        return () => { pendientes.forEach(({ referencia }) => clearTimeout(referencia)); pendientes.clear() };
     }, []);
 
     useEffect(() => {
@@ -214,7 +214,7 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
                                                 onMouseEnter={() => pausar(aviso.id, "puntero", true)}
                                                 onMouseLeave={() => pausar(aviso.id, "puntero", false)}
                                                 onFocus={() => pausar(aviso.id, "foco", true)}
-                                                onBlur={(evento) => { if (!evento.currentTarget.contains(evento.relatedTarget)) pausar(aviso.id, "foco", false); }}
+                                                onBlur={(evento) => { if (!evento.currentTarget.contains(evento.relatedTarget)) pausar(aviso.id, "foco", false) }}
                                             >
                                                 {aviso.mensaje}
                                             </Alert>

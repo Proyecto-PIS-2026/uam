@@ -45,6 +45,7 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
 
     // await porque la consulta a la base de datos es asincrona pero quiero esperar a la respuesta antes de seguir
     const productor  = await db.orm.public.Productor
+        .where((productor) => productor.usuario.some((usuario) => usuario.habilitado.eq(true)))
         .select("id", "nombreFantasia", "fotoPerfil", "whatsApp") // Que columnas quiero recuperar de la tabla de productor
         .first({ nombreFantasia });
 

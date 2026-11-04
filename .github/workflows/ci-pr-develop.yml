@@ -133,6 +133,7 @@ jobs:
         run: |
           node --input-type=module -e 'import pg from "pg"; const cliente = new pg.Client({ connectionString: process.env.DATABASE_URL }); await cliente.connect(); try { await cliente.query("CREATE DATABASE uam_bp25"); } finally { await cliente.end(); }'
           export SESSION_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
+          export TWO_FACTOR_ENCRYPTION_KEY="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
           npm run start &
           npx wait-on http://localhost:3000 --timeout 60000
           npx playwright test --pass-with-no-tests

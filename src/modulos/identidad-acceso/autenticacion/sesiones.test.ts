@@ -3,6 +3,7 @@
 import { createHmac as crearFirmaHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cerrarSesion, crearSesion, obtenerSesion } from "./sesiones";
+import { obtenerVersionSegundoFactor } from "./segundo-factor-criptografia";
 
 const cookiesSimuladas = vi.hoisted(() => ({
     get: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
     },
 }));
 
+const versionSegundoFactor = obtenerVersionSegundoFactor("secreto-cifrado");
 const secretoPrueba = "secreto-aleatorio-exclusivo-para-las-pruebas";
 const fechaPrueba = new Date("2030-01-01T12:00:00Z");
 const segundosActuales = Math.floor(fechaPrueba.getTime() / 1000);
@@ -59,6 +61,9 @@ function configurarCookie(datos: unknown) {
         buscarUsuario.mockResolvedValue({
             id: datos.usuarioId,
             rol: datos.rol,
+            twoFactorEnabled: true,
+            twoFactorSecret: "secreto-cifrado",
+            habilitado: true,
         });
     }
 }
@@ -69,6 +74,7 @@ beforeEach(() => {
     buscarUsuario.mockImplementation(async () => ({
         id: 4,
         rol: "OPERADOR",
+        habilitado: true,
     }));
 
     vi.stubEnv("SESSION_SECRET", secretoPrueba);
@@ -83,13 +89,17 @@ afterEach(() => {
 });
 
 describe("crearSesion", () => {
+    it("no crea una sesión administrativa sin completar el segundo factor", async () => {
+        await expect(crearSesion(4, "ADMINISTRADOR")).rejects.toThrow("Completá la verificación en dos pasos");
+        expect(cookiesSimuladas.set).not.toHaveBeenCalled();
+    });
     it.each(["ADMINISTRADOR", "OPERADOR", "PRODUCTOR"] as const)(
         "crea una cookie firmada de ocho horas para %s",
         async (rol) => {
-            await crearSesion(4, rol);
+            await crearSesion(4, rol, rol === "ADMINISTRADOR" ? versionSegundoFactor : undefined);
 
             const [nombre, valor, opciones] = cookiesSimuladas.set.mock.calls[0];
-            const datosEsperados = { usuarioId: 4, rol, expiraEn: segundosActuales + 28800 };
+            const datosEsperados = { usuarioId: 4, rol, expiraEn: segundosActuales + 28800, ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true, versionSegundoFactor } : {}) };
             const contenido = Buffer.from(JSON.stringify(datosEsperados)).toString("base64url");
 
             expect(nombre).toBe("uam_sesion");
@@ -122,10 +132,33 @@ describe("crearSesion", () => {
 });
 
 describe("obtenerSesion", () => {
+    it("invalida la sesión tras restablecer el segundo factor y no la recupera al vincular otro", async () => {
+        const datos = { usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60, segundoFactorVerificado: true, versionSegundoFactor };
+        configurarCookie(datos);
+        expect(await obtenerSesion()).toEqual(datos);
+        buscarUsuario.mockResolvedValue({ id: 4, rol: "ADMINISTRADOR", habilitado: true, twoFactorEnabled: false, twoFactorSecret: null });
+        expect(await obtenerSesion()).toBeNull();
+        buscarUsuario.mockResolvedValue({ id: 4, rol: "ADMINISTRADOR", habilitado: true, twoFactorEnabled: true, twoFactorSecret: "otra-vinculacion" });
+        expect(await obtenerSesion()).toBeNull();
+    });
+
+    it("rechaza sesiones administrativas anteriores a la implementación de 2FA", async () => {
+        configurarCookie({ usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60 });
+        expect(await obtenerSesion()).toBeNull();
+    });
+
+    it.each([
+        { twoFactorEnabled: false, twoFactorSecret: "secreto" },
+        { twoFactorEnabled: true, twoFactorSecret: null },
+    ])("rechaza una sesión administrativa sin vinculación confirmada: %j", async (campos) => {
+        configurarCookie({ usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60, segundoFactorVerificado: true, versionSegundoFactor });
+        buscarUsuario.mockResolvedValue({ id: 4, rol: "ADMINISTRADOR", habilitado: true, ...campos });
+        expect(await obtenerSesion()).toBeNull();
+    });
     it.each(["ADMINISTRADOR", "OPERADOR", "PRODUCTOR"] as const)(
         "recupera una sesion vigente de %s",
         async (rol) => {
-            const datos = { usuarioId: 4, rol, expiraEn: segundosActuales + 60 };
+            const datos = { usuarioId: 4, rol, expiraEn: segundosActuales + 60, ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true, versionSegundoFactor } : {}) };
             configurarCookie(datos);
 
             expect(await obtenerSesion()).toEqual(datos);
@@ -143,6 +176,7 @@ describe("obtenerSesion", () => {
         buscarUsuario.mockResolvedValue({
             id: 4,
             rol: "PRODUCTOR",
+            habilitado: true,
         });
 
         expect(await obtenerSesion()).toEqual({
@@ -151,6 +185,22 @@ describe("obtenerSesion", () => {
             expiraEn: segundosActuales + 28800,
         });
     });
+
+    it.each(["ADMINISTRADOR", "OPERADOR", "PRODUCTOR"] as const)(
+        "rechaza una sesión ya iniciada cuando se deshabilita al %s",
+        async (rol) => {
+            const datos = {
+                usuarioId: 4, rol, expiraEn: segundosActuales + 60,
+                ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true as const, versionSegundoFactor } : {}),
+            };
+            configurarCookie(datos);
+            await expect(obtenerSesion()).resolves.toEqual(datos);
+
+            buscarUsuario.mockResolvedValue({ id: 4, rol, habilitado: false });
+
+            await expect(obtenerSesion()).resolves.toBeNull();
+        },
+    );
 
     it("rechaza la sesión de un operador eliminado de la base de datos", async () => {
         const datos = {
@@ -182,7 +232,7 @@ describe("obtenerSesion", () => {
 
     it("sigue rechazando una sesión cuyo rol cambió en la base de datos", async () => {
         configurarCookie({ usuarioId: 4, rol: "ADMINISTRADOR", expiraEn: segundosActuales + 60 });
-        buscarUsuario.mockResolvedValue({ id: 4, rol: "OPERADOR" });
+        buscarUsuario.mockResolvedValue({ id: 4, rol: "OPERADOR", habilitado: true });
 
         await expect(obtenerSesion()).resolves.toBeNull();
     });

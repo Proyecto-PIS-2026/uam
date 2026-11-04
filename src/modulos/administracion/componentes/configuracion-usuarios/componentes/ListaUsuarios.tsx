@@ -17,6 +17,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import BlockIcon from "@mui/icons-material/Block";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 
 import type { UsuarioParaModificar } from "../Tipos";
 import styles from "./ListaUsuarios.module.css";
@@ -24,9 +26,11 @@ import styles from "./ListaUsuarios.module.css";
 interface ListaUsuariosProps {
     usuarios: UsuarioParaModificar[];
     usuarioSeleccionadoId: number | null;
+    usuarioActualId?: number;
     hayFiltrosActivos?: boolean;
     onSeleccionar?: (usuario: UsuarioParaModificar) => void;
     onEliminar?: (usuario: UsuarioParaModificar) => void | Promise<void>;
+    onCambiarHabilitacion?: (usuario: UsuarioParaModificar) => Promise<void>;
 }
 
 function subscribeMediaQuery(callback: () => void) {
@@ -63,13 +67,17 @@ function obtenerInformacion(usuario: UsuarioParaModificar) {
     return usuario.nombreFantasia;
 }
 
-export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFiltrosActivos = false, onSeleccionar, onEliminar }: ListaUsuariosProps) {
+export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuarioActualId, hayFiltrosActivos = false, onSeleccionar, onEliminar, onCambiarHabilitacion }: ListaUsuariosProps) {
     const router = useRouter();
     const [idsEliminados, setIdsEliminados] = useState<number[]>([]);
     const [pagina, setPagina] = useState(1);
     const [usuarioAEliminar, setUsuarioAEliminar] = useState<UsuarioParaModificar | null>(null);
     const { notificar } = useNotificacionToast();
     const [eliminando, setEliminando] = useState(false);
+    const [usuarioACambiar, setUsuarioACambiar] = useState<UsuarioParaModificar | null>(null);
+    const [cambiandoHabilitacion, setCambiandoHabilitacion] = useState(false);
+    const ocupado = eliminando || cambiandoHabilitacion;
+    const vaAHabilitar = usuarioACambiar?.habilitado === false;
 
     const esMobile = useEsMobileSSR();
 
@@ -101,7 +109,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
 
     // Roles que ya tienen su página de modificación
     function puedeEditar(usuario: UsuarioParaModificar) {
-        return usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR";
+        return usuario.rol === "OPERADOR" || usuario.rol === "PRODUCTOR" || usuario.rol == "ADMINISTRADOR";
     }
 
     function manejarEditar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
@@ -112,16 +120,19 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
         if (usuario.rol === "PRODUCTOR") {
             router.push(`/gestion-productores/${usuario.productorId}/editar`);
         }
+        if (usuario.rol === "ADMINISTRADOR") {
+            router.push(`/gestion-administradores/${usuario.administradorId}/editar`);
+        }
     }
 
     function manejarAbrirEliminar(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
         evento.stopPropagation();
-        if (!onEliminar || eliminando) return;
+        if (!onEliminar || ocupado) return;
         setUsuarioAEliminar(usuario);
     }
 
     async function confirmarEliminacion() {
-        if (!usuarioAEliminar || !onEliminar || eliminando) return;
+        if (!usuarioAEliminar || !onEliminar || ocupado) return;
         const idAEliminar = usuarioAEliminar.id;
         setEliminando(true);
         try {
@@ -133,6 +144,26 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
         } finally {
             setUsuarioAEliminar(null);
             setEliminando(false);
+        }
+    }
+
+    function manejarAbrirHabilitacion(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
+        evento.stopPropagation();
+        if (ocupado || !onCambiarHabilitacion || usuario.id === usuarioActualId) return;
+        setUsuarioACambiar(usuario);
+    }
+
+    async function confirmarHabilitacion() {
+        if (!usuarioACambiar || !onCambiarHabilitacion || ocupado) return;
+        setCambiandoHabilitacion(true);
+        try {
+            await onCambiarHabilitacion(usuarioACambiar);
+            notificar(`El usuario ${usuarioACambiar.username} fue ${vaAHabilitar ? "habilitado" : "deshabilitado"} correctamente.`, "success");
+            setUsuarioACambiar(null);
+        } catch (error) {
+            notificar(error instanceof Error ? error.message : "No se pudo cambiar el estado del usuario. Intentá nuevamente.", "error");
+        } finally {
+            setCambiandoHabilitacion(false);
         }
     }
 
@@ -164,10 +195,13 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
 
                     {usuariosPagina.map((usuario) => (
                         <div key={usuario.id} className={`${styles.fila} ${usuario.id === usuarioSeleccionadoId ? styles.seleccionada : ""} ${usuario.solicitoRestablecimiento ? styles.restablecimientoSolicitado : ""}`} onClick={() =>
-                            manejarSeleccionar(usuario)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") manejarSeleccionar(usuario) }}
+                            manejarSeleccionar(usuario)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) manejarSeleccionar(usuario) }}
                         >
                             <span className={styles.username}>
                                 {usuario.username}
+                                <span className={styles.estadoUsuario} data-habilitado={usuario.habilitado !== false}>
+                                    {usuario.habilitado === false ? "Deshabilitado" : "Habilitado"}
+                                </span>
                                 {usuario.solicitoRestablecimiento && (
                                     <WarningAmberIcon fontSize="small" className={styles.iconoRestablecimiento} aria-hidden="true" />
                                 )}
@@ -183,10 +217,13 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
                             <span className={styles.informacion}>{obtenerInformacion(usuario)}</span>
                             <span className={styles.rol}>{obtenerNombreRol(usuario.rol)}</span>
                             <div className={styles.acciones}>
-                                <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} disabled={eliminando || !puedeEditar(usuario)} title={puedeEditar(usuario) ? "Editar perfil" : "Edición todavía no disponible"} className={styles.botonEditar}>
+                                <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} disabled={ocupado || !puedeEditar(usuario)} title={puedeEditar(usuario) ? "Editar perfil" : "Edición todavía no disponible"} className={styles.botonEditar}>
                                     <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={eliminando  || !onEliminar} title={ onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
+                                <IconButton size="small" onClick={(e) => manejarAbrirHabilitacion(e, usuario)} disabled={ocupado || !onCambiarHabilitacion || usuario.id === usuarioActualId} title={usuario.id === usuarioActualId ? "No podés deshabilitarte a vos mismo" : usuario.habilitado === false ? "Habilitar usuario" : "Deshabilitar usuario"} aria-label={usuario.habilitado === false ? "Habilitar usuario" : "Deshabilitar usuario"} className={styles.botonHabilitacion}>
+                                    {usuario.habilitado === false ? <CheckCircleOutlinedIcon fontSize="small" /> : <BlockIcon fontSize="small" />}
+                                </IconButton>
+                                <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={ocupado || !onEliminar} title={onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>
                                     <DeleteIcon fontSize="small" />
                                 </IconButton>
                             </div>
@@ -200,6 +237,26 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, hayFilt
                     <Pagination count={cantidadPaginas} page={paginaActual} onChange={cambiarPagina} color="secondary" shape="rounded" size={esMobile ? "small" : "medium"} />
                 </div>
             )}
+
+            <Dialog open={Boolean(usuarioACambiar)} onClose={() => { if (!cambiandoHabilitacion) setUsuarioACambiar(null); }} maxWidth="xs" aria-labelledby="titulo-habilitacion-usuario" slotProps={{ paper: { className: styles.modal } }}>
+                <DialogTitle id="titulo-habilitacion-usuario" className={styles.modalTitulo}>¿{vaAHabilitar ? "Habilitar" : "Deshabilitar"} usuario?</DialogTitle>
+                <DialogContent className={styles.modalContenido}>
+                    <p className={styles.textoConfirmacion}>
+                        ¿Estás seguro de que querés {vaAHabilitar ? "habilitar" : "deshabilitar"} al usuario <strong>@{usuarioACambiar?.username}</strong>?
+                        {vaAHabilitar
+                            ? " Podrá volver a iniciar sesión y sus publicaciones volverán a mostrarse según su disponibilidad."
+                            : " Perderá el acceso a su sesión y su perfil y publicaciones quedarán ocultos en los listados."}
+                    </p>
+                </DialogContent>
+                <DialogActions className={styles.modalAcciones}>
+                    <Button type="button" variant="outlined" onClick={() => setUsuarioACambiar(null)} disabled={cambiandoHabilitacion} className={styles.botonCancelarModal}>
+                        Cancelar
+                    </Button>
+                    <Button type="button" variant="contained" color={vaAHabilitar ? "secondary" : "error"} onClick={confirmarHabilitacion} disabled={cambiandoHabilitacion} className={styles.botonEliminarModal}>
+                        {cambiandoHabilitacion ? "Guardando..." : vaAHabilitar ? "Habilitar" : "Deshabilitar"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <Dialog open={Boolean(usuarioAEliminar)} onClose={() => { if (!eliminando) setUsuarioAEliminar(null); }} maxWidth="xs" slotProps={{ paper: { className: styles.modal } }}>
                 <DialogTitle className={styles.modalTitulo}>¿Eliminar usuario?</DialogTitle>

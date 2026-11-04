@@ -1,8 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import PerfilAdministrador, { RUTA_MI_PERFIL } from "./PerfilAdministrador";
 import type { PerfilAdministrador as DatosPerfilAdministrador } from "../../acciones/consultas-perfil-administrador";
+
+const mocks = vi.hoisted(() => ({ restablecer: vi.fn(), refresh: vi.fn(), notificar: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
+vi.mock("../../restablecerSegundoFactorAdministrador", () => ({ restablecerSegundoFactorAdministrador: mocks.restablecer }));
+vi.mock("@/compartido/componentes/NotificacionToast", () => ({ useNotificacionToast: () => ({ notificar: mocks.notificar }) }));
 
 const administradorBase: DatosPerfilAdministrador = {
     id: 101,
@@ -18,6 +23,7 @@ function renderizar(cambios: Partial<DatosPerfilAdministrador> = {}, esPropiaCue
 }
 
 describe("PerfilAdministrador", () => {
+    beforeEach(() => { vi.resetAllMocks(); });
     afterEach(() => {
         cleanup();
     });
@@ -61,13 +67,36 @@ describe("PerfilAdministrador", () => {
             expect(screen.getByRole("link", { name: "Editar administrador" })).toHaveAttribute("href", "/gestion-administradores/101/editar");
         });
 
-        it("muestra restablecer el segundo factor, deshabilitado hasta integrarse", () => {
+        it("solicita confirmación y cancelar no restablece el segundo factor", async () => {
             renderizar();
 
             const restablecer = screen.getByRole("button", { name: "Restablecer segundo factor" });
-            expect(restablecer).toBeDisabled();
-            expect(restablecer).toHaveAttribute("title", "Próximamente");
+            expect(restablecer).toBeEnabled();
             expect(screen.queryByRole("link", { name: "Configurar segundo factor" })).not.toBeInTheDocument();
+            fireEvent.click(restablecer);
+            fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar" }));
+            await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+            expect(mocks.restablecer).not.toHaveBeenCalled();
+        });
+
+        it("confirma el restablecimiento de la cuenta consultada y actualiza el perfil", async () => {
+            mocks.restablecer.mockResolvedValue({ esValido: true, mensaje: "Segundo factor restablecido." });
+            renderizar();
+            fireEvent.click(screen.getByRole("button", { name: "Restablecer segundo factor" }));
+            fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Restablecer" }));
+            await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
+            expect(mocks.restablecer).toHaveBeenCalledExactlyOnceWith(101);
+            expect(mocks.notificar).toHaveBeenCalledWith("Segundo factor restablecido.", "success");
+        });
+
+        it("muestra un error y permite reintentar si el servidor rechaza el restablecimiento", async () => {
+            mocks.restablecer.mockResolvedValue({ esValido: false, errores: ["No podés restablecer tu propio segundo factor."] });
+            renderizar();
+            fireEvent.click(screen.getByRole("button", { name: "Restablecer segundo factor" }));
+            fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Restablecer" }));
+            await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("No podés restablecer tu propio segundo factor.", "error"));
+            expect(mocks.refresh).not.toHaveBeenCalled();
+            expect(within(screen.getByRole("dialog")).getByRole("button", { name: "Restablecer" })).toBeEnabled();
         });
     });
 

@@ -47,7 +47,7 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
             p.publicacionDisponible.eq(true),
         ),
     ).where((pp) =>
-        pp.productor.some(),
+        pp.productor.some((productor) => productor.usuario.some((usuario) => usuario.habilitado.eq(true))),
     ).include("publicacion", (p) =>
         p.select("id", "precio", "fecha", "foto", "cantidadUnidades", "comentario", "tipoPublicacion")
             .include("especie", (e) => e.select("nombreEspecie"))

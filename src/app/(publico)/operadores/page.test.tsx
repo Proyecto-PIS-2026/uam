@@ -13,7 +13,7 @@ const {
     obtenerOperadoresMock: vi.fn(),
     listadoOperadoresMock: vi.fn(() => null),
     obtenerSesionMock: vi.fn(),
-    redirectMock: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
+    redirectMock: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({

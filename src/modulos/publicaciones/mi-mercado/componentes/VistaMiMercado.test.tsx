@@ -31,7 +31,7 @@ vi.mock("../../operadores/consultas-edicion-publicacion", () => ({
 
 vi.mock("./MiMercado", () => ({ default: mocks.miMercado }));
 
-vi.mock("@/modulos/administracion/ConsultaConfiguracion", () => ({
+vi.mock("@/modulos/administracion/acciones/consultas-configuracion", () => ({
     obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 
@@ -99,6 +99,14 @@ describe("VistaMiMercado", () => {
         expect(vista.props.operadorId).toBe(37);
         expect(vista.props.nombreOperador).toBe("Frutas & Más");
         expect(vista.props.incrementoPrecio).toBe(25);
+    });
+
+    it("propaga el estado de licencia al mercado propio", async () => {
+        mocks.obtenerOperadorActual.mockResolvedValue({ id: 13, usuarioId: 10, nombreFantasia: "Operador 13", enLicencia: true });
+
+        const vista = await VistaMiMercado({});
+
+        expect(vista.props.enLicencia).toBe(true);
     });
 
     it("no carga publicaciones cuando el nombre corresponde a otro operador", async () => {

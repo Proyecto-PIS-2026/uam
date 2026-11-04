@@ -52,7 +52,17 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
                 coalesce(pr."nombrePresentacion", '') AS presentacion, coalesce(c."nombreCategoria", '') AS categoria,
                 coalesce(ca."nombreCalibre", '') AS calibre, coalesce(ca."codigoCalibre", '') AS "codigoCalibre", coalesce(pa."nombrePais", '') AS pais,
                 o.id AS "operadorId", o."nombreFantasia" AS "operadorNombreFantasia",
-                o."whatsApp" AS "operadorWhatsApp"
+                o."whatsApp" AS "operadorWhatsApp",
+            (
+                CASE WHEN nullif(btrim(p.foto), '') IS NOT NULL THEN 3 ELSE 0 END
+                + CASE WHEN p.precio IS NOT NULL THEN 1 ELSE 0 END
+                + CASE WHEN p."cantidadUnidades" IS NOT NULL THEN 1 ELSE 0 END
+                + CASE WHEN nullif(btrim(v."nombreVariedad"), '') IS NOT NULL THEN 1 ELSE 0 END
+                + CASE WHEN nullif(btrim(pr."nombrePresentacion"), '') IS NOT NULL THEN 1 ELSE 0 END
+                + CASE WHEN nullif(btrim(c."nombreCategoria"), '') IS NOT NULL THEN 1 ELSE 0 END
+                + CASE WHEN nullif(btrim(ca."nombreCalibre"), '') IS NOT NULL THEN 1 ELSE 0 END
+                + CASE WHEN nullif(btrim(pa."nombrePais"), '') IS NOT NULL THEN 1 ELSE 0 END
+            ) AS ponderacion
             FROM "publicacionOperador" po
             JOIN publicacion p ON p.id = po."publicacionId"
             LEFT JOIN presentacion pr ON pr.id = p."presentacionId"
@@ -62,6 +72,7 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
             LEFT JOIN calibre ca ON ca.id = p."calibreId"
             LEFT JOIN pais pa ON pa.id = po."paisId"
             JOIN operador o ON o.id = po."operadorId"
+            JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true
             WHERE p."tipoPublicacion" = 'OPERADOR' AND p."publicacionActiva" = true AND p."publicacionDisponible" = true
               AND EXISTS (
                 SELECT 1 FROM locales_vigentes l WHERE l."operadorId" = o.id
@@ -90,12 +101,13 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
             SELECT *, row_number() OVER (ORDER BY
                 CASE WHEN ${consulta.orden} = 'precioAsc' THEN precio END ASC NULLS LAST,
                 CASE WHEN ${consulta.orden} = 'precioDesc' THEN precio END DESC NULLS LAST,
+                CASE WHEN ${consulta.orden} = 'fechaDesc' THEN fecha END DESC NULLS LAST,
                 CASE WHEN ${consulta.orden} = 'prioridad' THEN coalesce(array_position(string_to_array(${prioridades}, '|'), translate(lower(especie), 'áéíóúüñ', 'aeiouun')), 100) END,
                 CASE WHEN ${consulta.orden} IN ('prioridad', 'alfabeticoAsc') THEN translate(lower(especie), 'áéíóúüñ', 'aeiouun') END ASC,
-                CASE WHEN ${consulta.orden} IN ('prioridad', 'alfabeticoAsc') THEN translate(lower(variedad), 'áéíóúüñ', 'aeiouun') END ASC,
                 CASE WHEN ${consulta.orden} = 'alfabeticoDesc' THEN translate(lower(especie), 'áéíóúüñ', 'aeiouun') END DESC,
-                CASE WHEN ${consulta.orden} = 'alfabeticoDesc' THEN translate(lower(variedad), 'áéíóúüñ', 'aeiouun') END DESC,
-                id
+                ponderacion DESC,
+                fecha DESC NULLS LAST,
+                id ASC
             ) AS posicion FROM filtradas
         )
         SELECT jsonb_build_object(

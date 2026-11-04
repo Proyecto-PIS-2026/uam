@@ -18,13 +18,13 @@ function Ejemplo() {
     );
 }
 
-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() });
 
 function Emisor({ nombre }: { nombre: string }) {
     const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [cantidad, setCantidad] = useState(0);
     return <>
-        <button onClick={() => { notificar(`${nombre} ${cantidad + 1}`, "success"); setCantidad(cantidad + 1); }}>{nombre}</button>
+        <button onClick={() => { notificar(`${nombre} ${cantidad + 1}`, "success"); setCantidad(cantidad + 1) }}>{nombre}</button>
         <button onClick={cerrarNotificacion}>Limpiar {nombre}</button>
     </>;
 }
@@ -120,7 +120,7 @@ describe("NotificacionToast", () => {
 
     it("Escape cierra primero el toast sin cerrar el panel ni mover su foco", () => {
         const cerrarPanel = vi.fn();
-        render(<div onKeyDown={(evento) => { if (evento.key === "Escape") cerrarPanel(); }}><Ejemplo /></div>);
+        render(<div onKeyDown={(evento) => { if (evento.key === "Escape") cerrarPanel() }}><Ejemplo /></div>);
         const boton = screen.getByRole("button", { name: "Fallar" });
         boton.focus();
         fireEvent.click(boton);
@@ -154,10 +154,10 @@ describe("NotificacionToast", () => {
 
     it("conserva avisos y recibe resultados pendientes después de desmontar el formulario", async () => {
         let resolver!: () => void;
-        const guardado = new Promise<void>((resolve) => { resolver = resolve; });
+        const guardado = new Promise<void>((resolve) => { resolver = resolve });
         function FormularioPendiente() {
             const { notificar } = useNotificacionToast();
-            return <button onClick={async () => { notificar("Guardando", "info"); await guardado; notificar("Guardado", "success"); }}>Enviar</button>;
+            return <button onClick={async () => { notificar("Guardando", "info"); await guardado; notificar("Guardado", "success") }}>Enviar</button>;
         }
         const vista = render(<FormularioPendiente />);
         fireEvent.click(screen.getByRole("button", { name: "Enviar" }));

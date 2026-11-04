@@ -1,11 +1,4 @@
-import {
-  render,
-  act,
-  screen,
-  fireEvent,
-  waitFor,
-  within,
-} from "@/test-utils";
+import { render, act, screen, fireEvent, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../../operadores/tipos";
@@ -168,12 +161,14 @@ function renderMiMercado(
   publicaciones: Publicacion[],
   incrementoPrecio = 5,
   nombreOperador = "",
+  enLicencia = false,
 ) {
   return render(
     <MiMercado
       puedeCrear={true} puedeModificar={true} puedeEliminar={true}
       operadorId={9}
       nombreOperador={nombreOperador}
+      enLicencia={enLicencia}
       publicaciones={publicaciones}
       incrementoPrecio={incrementoPrecio}
       opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
@@ -192,8 +187,8 @@ function idsTarjetas() {
 }
 
 function elegirOrden(nombre: "A-Z" | "Z-A" | "Menor Precio" | "Mayor Precio") {
-  fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-  fireEvent.click(screen.getByRole("menuitemradio", { name: nombre }));
+    fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: nombre }));
 }
 
 describe("MiMercado", () => {
@@ -777,6 +772,13 @@ describe("MiMercado", () => {
     fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
     expect(buscador).toHaveValue("");
     expect(idsTarjetas()).toEqual(["publicacion-1", "publicacion-2", "publicacion-3"]);
+  });
+
+  it("muestra el aviso de licencia sin ocultar las publicaciones propias", () => {
+    renderMiMercado([crearPublicacion(1, 10, "Manzana")], 5, "Mercado Pérez", true);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Estas de licencia, productos ocultos al publico");
+    expect(screen.getByTestId("publicacion-1")).toBeInTheDocument();
   });
 
   it("combina especie con precio mínimo y máximo sobre las tarjetas del operador", () => {

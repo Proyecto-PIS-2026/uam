@@ -14,20 +14,23 @@ import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productore
 import { obtenerPublicacionesMiMercadoProductor } from "./mi-mercado/consultas-mi-mercado-productor";
 import { mapearPublicacionesMiMercado } from "./mi-mercado/mapear-publicaciones";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
-import {
-    actualizarPrecioPublicacion,
-    obtenerPublicacionesDeOperador,
-    ConflictoPublicacionError,
-    incrementarPrecioPublicacion,
-} from "./mi-mercado/consultas-mi-mercado";
+import { actualizarPrecioPublicacion, obtenerPublicacionesDeOperador, ConflictoPublicacionError, incrementarPrecioPublicacion } from "./mi-mercado/consultas-mi-mercado";
 
 const sesionActual = vi.hoisted(() => vi.fn());
-vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: sesionActual }));
+
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
+    obtenerSesion: sesionActual,
+}));
 
 type Precio = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 
+function ordenarIds(ids: number[]) {
+    return [...ids].sort((a, b) => a - b);
+}
+
 async function crearFixture() {
     const prefijo = `test-publicaciones-${randomUUID()}`;
+
     return db.transaction(async (tx) => {
         const usuario = await tx.orm.public.Usuario.create({ username: prefijo, passwordHash: "fixture", rol: "OPERADOR" });
         const operador = await tx.orm.public.Operador.create({ usuarioId: usuario.id, nombreFantasia: prefijo, whatsApp: "+59899123456" });
@@ -42,15 +45,19 @@ async function crearFixture() {
         const naveVencida = await tx.orm.public.Nave.create({ nombreNave: `${prefijo} Vencida` });
         const naveHoy = await tx.orm.public.Nave.create({ nombreNave: `${prefijo} Hoy` });
         const naveSinPublicaciones = await tx.orm.public.Nave.create({ nombreNave: `${prefijo} Sin publicaciones` });
+
         await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveA.id, numeroLocal: "1", finContrato: null });
         await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveA.id, numeroLocal: "2", finContrato: null });
         await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveB.id, numeroLocal: "1", finContrato: null });
         await tx.orm.public.Local.create({ operadorId: operadorSoloB.id, naveId: naveB.id, numeroLocal: "2", finContrato: null });
+
         const vencido = Temporal.Instant.from("2000-01-01T00:00:00Z");
         await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveVencida.id, numeroLocal: "1", finContrato: vencido });
         await tx.orm.public.Local.create({ operadorId: operadorVencido.id, naveId: naveVencida.id, numeroLocal: "2", finContrato: vencido });
+
         const inicioHoy = Temporal.Now.plainDateISO("America/Montevideo").toZonedDateTime("America/Montevideo").toInstant();
         await tx.orm.public.Local.create({ operadorId: operador.id, naveId: naveHoy.id, numeroLocal: "1", finContrato: inicioHoy });
+
         const especie = await tx.orm.public.Especie.create({ nombreEspecie: `${prefijo} Limón` });
         const variedad = await tx.orm.public.Variedad.create({ especieId: especie.id, nombreVariedad: "Criollo" });
         const presentacion = await tx.orm.public.Presentacion.create({ variedadId: variedad.id, nombrePresentacion: "Caja" });
@@ -79,7 +86,9 @@ async function crearFixture() {
                 publicacionActiva: indice !== 35,
                 publicacionDisponible: indice !== 36,
             });
+
             publicacionIds.push(publicacion.id);
+
             if (esProductor) {
                 await tx.orm.public.PublicacionProductor.create({ publicacionId: publicacion.id, productorId: productor.id, paisId: pais.id });
             } else {
@@ -105,10 +114,12 @@ type Fixture = Awaited<ReturnType<typeof crearFixture>>;
 async function borrarFixture(fixture: Fixture) {
     await db.transaction(async (tx) => {
         for (const id of fixture.publicacionIds) await tx.orm.public.Publicacion.where({ id }).delete();
+
         for (const operadorId of [fixture.operadorId, fixture.operadorVencidoId, fixture.operadorSoloBId]) {
             await tx.orm.public.Local.where({ operadorId }).deleteAll();
             await tx.orm.public.Operador.where({ id: operadorId }).delete();
         }
+
         await tx.orm.public.Productor.where({ id: fixture.productorId }).delete();
         for (const id of [fixture.usuarioId, fixture.usuarioVencidoId, fixture.usuarioSoloBId, fixture.usuarioProductorId]) await tx.orm.public.Usuario.where({ id }).delete();
         await tx.orm.public.Presentacion.where({ id: fixture.presentacionId }).delete();
@@ -198,22 +209,17 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
     it("filtra por nave sin duplicar publicaciones de un operador con dos locales en A y otro en B", async () => {
         const resultadoA = await consultarPublicaciones({ nave: fixture!.naveA, orden: "ninguno" });
         const publicacionesOperador = [...fixture!.visibles, fixture!.publicacionOtraEspecieId];
-        expect(resultadoA.publicaciones.map((publicacion) => publicacion.id)).toEqual(publicacionesOperador);
+        expect(ordenarIds(resultadoA.publicaciones.map((publicacion) => publicacion.id))).toEqual(ordenarIds(publicacionesOperador));
         expect(resultadoA.total).toBe(36);
         expect(resultadoA.publicaciones.every((publicacion) => publicacion.operador.id === fixture!.operadorId)).toBe(true);
         expect(resultadoA.publicaciones.map((publicacion) => publicacion.id)).not.toContain(fixture!.publicacionSoloBId);
-
         const resultadoB = await consultarPublicaciones({ nave: fixture!.naveB, orden: "ninguno" });
-        expect(resultadoB.publicaciones.map((publicacion) => publicacion.id)).toEqual([
-            ...fixture!.visibles, fixture!.publicacionSoloBId, fixture!.publicacionOtraEspecieId,
-        ]);
+        expect(ordenarIds(resultadoB.publicaciones.map((publicacion) => publicacion.id))).toEqual(ordenarIds([...fixture!.visibles, fixture!.publicacionSoloBId, fixture!.publicacionOtraEspecieId]));
         expect(resultadoB.total).toBe(37);
     });
 
     it("combina nave, especie y rango de precios manteniendo las naves globales disponibles", async () => {
-        const resultado = await consultarPublicaciones({
-            nave: fixture!.naveA, especie: fixture!.nombreEspecie, precioMinimo: "110", precioMaximo: "112", orden: "precioDesc",
-        });
+        const resultado = await consultarPublicaciones({ nave: fixture!.naveA, especie: fixture!.nombreEspecie, precioMinimo: "110", precioMaximo: "112", orden: "precioDesc" });
         expect(resultado.publicaciones.map((publicacion) => publicacion.id)).toEqual(fixture!.visibles.slice(10, 13).reverse());
         expect(resultado.total).toBe(3);
         expect(resultado.naves.filter((nave) => nave.startsWith(fixture!.prefijo))).toEqual([fixture!.naveA, fixture!.naveB, fixture!.naveHoy]);
@@ -221,9 +227,7 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
 
     it.each([undefined, "", "Todas"])("consulta todas las naves con el filtro %j", async (nave) => {
         const resultado = await consultarPublicaciones({ busqueda: fixture!.prefijo, nave, orden: "ninguno" });
-        expect(resultado.publicaciones.map((publicacion) => publicacion.id)).toEqual([
-            ...fixture!.visibles, fixture!.publicacionSoloBId, fixture!.publicacionOtraEspecieId,
-        ]);
+        expect(ordenarIds(resultado.publicaciones.map((publicacion) => publicacion.id))).toEqual(ordenarIds([...fixture!.visibles, fixture!.publicacionSoloBId, fixture!.publicacionOtraEspecieId]));
         expect(resultado.total).toBe(37);
     });
 
@@ -234,7 +238,6 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
             expect(resultado.total).toBe(0);
             expect(resultado.naves.filter((opcion) => opcion.startsWith(fixture!.prefijo))).toEqual([fixture!.naveA, fixture!.naveB, fixture!.naveHoy]);
         }
-
         const sinCoincidencias = await consultarPublicaciones({ nave: fixture!.naveA, especie: `${fixture!.prefijo} Inexistente`, precioMinimo: "999" });
         expect(sinCoincidencias.publicaciones).toEqual([]);
         expect(sinCoincidencias.naves.filter((nave) => nave.startsWith(fixture!.prefijo))).toEqual([fixture!.naveA, fixture!.naveB, fixture!.naveHoy]);
@@ -246,9 +249,8 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
         expect(vencidas.total).toBe(0);
         expect(vencidas.naves).not.toContain(fixture!.naveVencida);
         expect(vencidas.naves).not.toContain(fixture!.naveSinPublicaciones);
-
         const venceHoy = await consultarPublicaciones({ nave: fixture!.naveHoy, orden: "ninguno" });
-        expect(venceHoy.publicaciones.map((publicacion) => publicacion.id)).toEqual([...fixture!.visibles, fixture!.publicacionOtraEspecieId]);
+        expect(ordenarIds(venceHoy.publicaciones.map((publicacion) => publicacion.id))).toEqual(ordenarIds([...fixture!.visibles, fixture!.publicacionOtraEspecieId]));
         expect(venceHoy.total).toBe(36);
         expect(venceHoy.naves).toContain(fixture!.naveHoy);
     });
@@ -265,39 +267,25 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
             await db.orm.public.PublicacionProductor.create({ productorId: fixture!.productorId, publicacionId: productor.id });
             const sesionOperador: DatosSesion = { usuarioId: fixture!.usuarioId, rol: "OPERADOR", expiraEn: 2000000000 };
             sesionActual.mockResolvedValue(sesionOperador);
-
             const mercado = await consultarPublicaciones({ especie: especie.nombreEspecie });
             expect(mercado.total).toBe(1);
-            expect(mercado.publicaciones).toEqual([expect.objectContaining({
-                id: operador.id, especie: especie.nombreEspecie, variedad: "", presentacion: "",
-                categoria: "", calibre: "", precio: null,
-            })]);
+            expect(mercado.publicaciones).toEqual([expect.objectContaining({ id: operador.id, especie: especie.nombreEspecie, variedad: "", presentacion: "", categoria: "", calibre: "", precio: null })]);
             expect(mercado.opciones).toContainEqual({ especie: especie.nombreEspecie, variedad: "", presentacion: "", categoria: "", calibre: "" });
             expect((await consultarPublicaciones({ especie: especie.nombreEspecie, variedad: "Inexistente" })).publicaciones).toEqual([]);
             const mercadoProductores = await consultarPublicacionesProductores(sesionOperador);
-            expect(mercadoProductores.publicaciones).toContainEqual(expect.objectContaining({
-                id: productor.id, especie: especie.nombreEspecie, variedad: "", presentacion: "",
-                categoria: "", calibre: "", pais: "", ubicaciones: [],
-            }));
+            expect(mercadoProductores.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, variedad: "", presentacion: "", categoria: "", calibre: "", pais: "", ubicaciones: [] }));
             const miMercado = mapearPublicacionesMiMercado(await obtenerPublicacionesDeOperador(fixture!.operadorId));
-            expect(miMercado).toContainEqual(expect.objectContaining({
-                id: operador.id, especie: expect.objectContaining({ id: especie.id }), variedad: null,
-                presentacion: null, categoria: null, calibre: null, paisId: null,
-            }));
+            expect(miMercado).toContainEqual(expect.objectContaining({ id: operador.id, especie: expect.objectContaining({ id: especie.id }), variedad: null, presentacion: null, categoria: null, calibre: null, paisId: null }));
             const perfilOperador = await obtenerPerfilPublicoOperador(fixture!.prefijo);
             expect(perfilOperador?.publicaciones).toContainEqual(expect.objectContaining({ id: operador.id, especie: especie.nombreEspecie, pais: "" }));
             const perfilProductor = await obtenerPerfilProductor(fixture!.prefijo + "-productor");
             expect(perfilProductor?.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, pais: "" }));
             const perfilProductorOperador = await obtenerPerfilProductorPorOperador(fixture!.prefijo + "-productor");
             expect(perfilProductorOperador?.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, ubicaciones: [] }));
-            expect(await obtenerEspeciesConPublicacionesActivas()).toContainEqual({ nombreEspecie: especie.nombreEspecie, cantidadOperadores: 1 });
-
+            expect(await obtenerEspeciesConPublicacionesActivas()).toContainEqual({ nombreEspecie: especie.nombreEspecie, fotoEspecie: null, cantidadOperadores: 1 });
             sesionActual.mockResolvedValue({ usuarioId: fixture!.usuarioProductorId, rol: "PRODUCTOR", expiraEn: 2000000000 });
             const miMercadoProductor = await obtenerPublicacionesMiMercadoProductor();
-            expect(miMercadoProductor.publicaciones).toContainEqual(expect.objectContaining({
-                id: productor.id, especie: expect.objectContaining({ id: especie.id }), variedad: null,
-                presentacion: null, categoria: null, calibre: null, paisId: null, ubicaciones: [],
-            }));
+            expect(miMercadoProductor.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: expect.objectContaining({ id: especie.id }), variedad: null, presentacion: null, categoria: null, calibre: null, paisId: null, ubicaciones: [] }));
         } finally {
             sesionActual.mockReset();
             for (const id of creadas) await db.orm.public.Publicacion.where({ id }).delete();

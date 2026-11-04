@@ -186,7 +186,7 @@ describe("Página de precios históricos", () => {
 
     it("devuelve la página y sus filtros antes de resolver la consulta de precios", async () => {
         let resolverConsulta!: (datos: { historico: HistoricoProducto; opcionesFiltros: typeof opcionesFiltros }) => void;
-        const consultaPendiente = new Promise<{ historico: HistoricoProducto; opcionesFiltros: typeof opcionesFiltros }>((resolve) => { resolverConsulta = resolve; });
+        const consultaPendiente = new Promise<{ historico: HistoricoProducto; opcionesFiltros: typeof opcionesFiltros }>((resolve) => { resolverConsulta = resolve });
         obtenerHistoricoPreciosMock.mockReturnValue(consultaPendiente);
         const suspense = await cargarPagina({
             species_id: "60", from: "2025-11-01", to: "2025-11-08",

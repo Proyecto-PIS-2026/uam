@@ -5,6 +5,7 @@ import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente
 import { useMemo, useRef, useState } from "react";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { useRouter } from "next/navigation";
@@ -14,7 +15,7 @@ import DrawerEditarPublicacion from "../../operadores/componentes/DrawerEditarPu
 import type { Publicacion } from "../tipos";
 import type { PublicacionParaEditar, OpcionesEdicionPublicacion, CambiosPublicacionOperador } from "../../operadores/tipos";
 import NuevaPublicacion from "../../operadores/componentes/NuevaPublicacion";
-import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
+import FiltrosPublicaciones, { compararPublicacionesOperador } from "../../filtros/FiltrosPublicaciones";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
@@ -27,6 +28,7 @@ const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.o
 type Props = {
     operadorId: number;
     nombreOperador?: string;
+    enLicencia?: boolean;
     abrirAltaInicial?: boolean;
     puedeCrear: boolean;
     puedeModificar: boolean;
@@ -36,7 +38,7 @@ type Props = {
     opcionesEdicion: OpcionesEdicionPublicacion;
 };
 
-export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaInicial = false, puedeCrear, puedeModificar, puedeEliminar, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
+export default function MiMercado({ operadorId, nombreOperador = "", enLicencia = false, abrirAltaInicial = false, puedeCrear, puedeModificar, puedeEliminar, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(abrirAltaInicial && puedeCrear);
     const [seleccion, setSeleccion] = useState<{ publicacion: Publicacion; listado: Publicacion[] } | null>(null);
@@ -63,11 +65,11 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         categoria: publicacion.categoria?.nombreCategoria ?? "",
         calibre: publicacion.calibre?.nombreCalibre ?? "",
         codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
-        pais: "",
+        pais: opcionesEdicion.paises.find((pais) => pais.id === publicacion.paisId)?.nombre ?? "",
         tipoPublicacion: "OPERADOR",
         operador: { id: operadorId, nombreFantasia: nombreOperador, whatsApp: "" },
-    })), [publicacionesVigentes, operadorId, nombreOperador]);
-    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));
+    })), [publicacionesVigentes, operadorId, nombreOperador, opcionesEdicion.paises]);
+    const [publicacionesFiltradas, setPublicacionesFiltradas] = useState<PublicacionListado[]>(() => [...publicacionesParaFiltros].sort((a, b) => compararPublicacionesOperador(a, b, "prioridad")));
     const publicacionesPorId = new Map(publicacionesVigentes.map((publicacion) => [publicacion.id, publicacion]));
     const publicacionesVisibles: Publicacion[] = [];
     for (const publicacionFiltrada of publicacionesFiltradas) {
@@ -249,6 +251,12 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
                     </div>
+                )}
+                {enLicencia && (
+                    <p className={styles.avisoLicencia} role="status">
+                        <WarningAmberOutlinedIcon aria-hidden="true" />
+                        <span>Estas de licencia, productos ocultos al publico</span>
+                    </p>
                 )}
                 <div className={`${styles.encabezadoCatalogo} flex-wrap`}>
                     <h2 className={styles.titulo}>Publicaciones</h2>
