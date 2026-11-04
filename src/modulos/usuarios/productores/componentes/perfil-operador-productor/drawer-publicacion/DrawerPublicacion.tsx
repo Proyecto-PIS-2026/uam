@@ -158,6 +158,10 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPub
                                     <span className={styles.nombreInformacion}>Actualización</span>
                                     <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
                                 </div>
+                                <div className={`${styles.informacionDetallada} ${publicacion.comentario?.trim() ? styles.filaComentario : ""}`}>
+                                    <span className={styles.nombreInformacion}>Comentario</span>
+                                    <p className={`${styles.valorInformacion} ${styles.textoComentario}`}>{publicacion.comentario?.trim() || "-"}</p>
+                                </div>
                             </div>
                             {publicacion.tipoPublicacion === "PRODUCTOR" && (
                                 <UbicacionesRetiro ubicaciones={publicacion.ubicaciones} />

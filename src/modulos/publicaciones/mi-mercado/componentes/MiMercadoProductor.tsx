@@ -41,6 +41,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
         variedad: publicacion.variedad?.nombreVariedad ?? "",
         presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
         cantidadUnidades: publicacion.cantidadUnidades,
+        comentario: publicacion.comentario,
         categoria: publicacion.categoria?.nombreCategoria ?? "",
         calibre: publicacion.calibre?.nombreCalibre ?? "",
         codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",

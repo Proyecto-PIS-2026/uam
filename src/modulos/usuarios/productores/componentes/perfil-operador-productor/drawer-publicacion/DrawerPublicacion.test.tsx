@@ -504,7 +504,7 @@ describe("DrawerPublicacion", () => {
         );
 
         expect(screen.getByText("Tomate")).toBeInTheDocument();
-        expect(screen.queryByText("-")).not.toBeInTheDocument();
+        expect(screen.queryAllByText("-")).toEqual([screen.getByText("Comentario").nextElementSibling]);
     });
 
     it("muestra la foto con la especie como texto alternativo", () => {
@@ -1268,5 +1268,18 @@ describe("DrawerPublicacion con productores", () => {
 
         expect(document.activeElement).toBe(botonAmpliar);
         expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it("muestra el comentario del publicador", () => {
+        render(<DrawerPublicacion publicacion={{ ...crearPublicacion(), comentario: "Cosecha de esta semana" }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario")).toBeInTheDocument();
+        expect(screen.getByText("Cosecha de esta semana")).toBeInTheDocument();
+    });
+
+    it.each([null, undefined, "   "])("muestra un guion cuando el comentario es %j", (comentario) => {
+        render(<DrawerPublicacion publicacion={{ ...crearPublicacion(), comentario }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario").nextElementSibling).toHaveTextContent("-");
     });
 });
