@@ -173,6 +173,8 @@ export async function modificarPublicacionOperador(
                     cantidadUnidades: cantidadUnidadesParaGuardar,
                     ...(comentarioParaGuardar !== undefined ? { comentario: comentarioParaGuardar } : {}),
                     foto: fotoActual,
+                    ...(imagenCreada || (cambios.foto === null && publicacion.foto !== null)
+                        ? { fotoEliminadaPorVencimientoEn: null } : {}),
                     especieId: cambios.especieId,
                     variedadId: cambios.variedadId,
                     categoriaId: cambios.categoriaId,

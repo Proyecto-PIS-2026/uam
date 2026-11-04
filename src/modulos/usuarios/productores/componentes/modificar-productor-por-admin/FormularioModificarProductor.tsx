@@ -106,18 +106,21 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                     onClick={cancelar}
                     disabled={guardando}
                 >
-                    Volver al perfil
+                    {perfilPropio ? "Volver a mi perfil" : "Volver al perfil"}
                 </BotonVolver>
 
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <h1 className={styles.titulo}>
-                        {perfilPropio ? "Modificar mi perfil" : "Modificar productor"}
+                        {perfilPropio ? "Editar mi perfil" : "Modificar productor"}
                     </h1>
 
                     <p className={styles.descripcion}>
-                        Actualizá la información registrada de{" "}
-                        <strong>{productor.nombre}</strong>.
+                        {perfilPropio ? (
+                            <>Actualizar información de <strong>{productor.nombreUsuario}</strong></>
+                        ) : (
+                            <>Actualizá la información registrada de <strong>{productor.nombre}</strong>.</>
+                        )}
                     </p>
                 </header>
 

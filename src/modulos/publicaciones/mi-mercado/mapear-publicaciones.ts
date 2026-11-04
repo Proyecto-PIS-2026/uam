@@ -11,6 +11,7 @@ export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion):
             publicacionOperadorId: rel.id,
             paisId: rel.paisId,
             foto: pub.foto as string | null,
+            estadoFoto: pub.estadoFoto,
             precio: pub.precio === null ? null : String(pub.precio),
             fecha: pub.fecha.toString(),
             version: pub.version,

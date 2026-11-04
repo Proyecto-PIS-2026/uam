@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import CheckIcon from "@mui/icons-material/Check";
 import DoneAllIcon from "@mui/icons-material/DoneAll";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
@@ -15,7 +16,7 @@ import { ConfirmModal } from "@/compartido/componentes/ConfirmModal";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { notificarCambioNotificaciones } from "../cliente";
 import { urlInternaNotificacion } from "../validacion-url";
-import type { NotificacionesUsuario } from "../tipos";
+import type { NotificacionUsuario, NotificacionesUsuario } from "../tipos";
 import styles from "./VistaNotificaciones.module.css";
 
 type Props = { usuarioId: number };
@@ -45,6 +46,7 @@ function leerContador(datos: unknown): number {
 }
 
 export default function VistaNotificaciones({ usuarioId }: Props) {
+    const router = useRouter();
     const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [datos, setDatos] = useState<{ usuarioId: number; listado: NotificacionesUsuario } | null>(null);
     const [cargando, setCargando] = useState(true);
@@ -109,8 +111,8 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
         };
     }, [cargar]);
 
-    async function modificar(operacion: Operacion, id?: number) {
-        if (!listado || mutacion.current) return;
+    async function modificar(operacion: Operacion, id?: number, anunciarExito = true): Promise<boolean> {
+        if (!listado || mutacion.current) return false;
         const solicitud = new AbortController();
         mutacion.current = solicitud;
         carga.current?.abort();
@@ -124,7 +126,7 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
                 method: operacion === "leer" ? "PATCH" : "DELETE", signal: solicitud.signal,
             });
             const resultado: unknown = await respuesta.json();
-            if (!montado.current || mutacion.current !== solicitud || solicitud.signal.aborted) return;
+            if (!montado.current || mutacion.current !== solicitud || solicitud.signal.aborted) return false;
             if (!respuesta.ok) throw new ErrorNotificaciones(mensajeError(resultado, alternativa));
             const noLeidas = leerContador(resultado);
             setDatos((actual) => {
@@ -135,13 +137,15 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
                 return { usuarioId, listado: { notificaciones, noLeidas } };
             });
             notificarCambioNotificaciones(usuarioId, noLeidas);
-            notificar(operacion === "leer"
+            if (anunciarExito) notificar(operacion === "leer"
                 ? id === undefined ? "Todas las notificaciones se marcaron como leídas." : "Notificación marcada como leída."
                 : id === undefined ? "Se borraron todas las notificaciones." : "Notificación borrada.", "success");
+            return true;
         } catch (razon) {
             if (montado.current && mutacion.current === solicitud && !solicitud.signal.aborted) {
                 notificar(razon instanceof ErrorNotificaciones ? razon.message : alternativa, "error");
             }
+            return false;
         } finally {
             if (mutacion.current === solicitud) {
                 mutacion.current = null;
@@ -150,6 +154,26 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
                     setConfirmarBorrado(false);
                 }
             }
+        }
+    }
+
+    async function abrirAviso(evento: MouseEvent<HTMLAnchorElement>, aviso: NotificacionUsuario) {
+        if (evento.defaultPrevented) return;
+        const href = urlInternaNotificacion(aviso.url);
+        if (!href || mutacion.current) {
+            evento.preventDefault();
+            return;
+        }
+        const aperturaAlternativa = evento.button === 1 || evento.ctrlKey || evento.metaKey || evento.shiftKey || evento.altKey
+            || (evento.currentTarget.target !== "" && evento.currentTarget.target !== "_self");
+        if (aperturaAlternativa) {
+            // El navegador conserva la apertura en otra pestaña o ventana.
+            if (!aviso.leida) void modificar("leer", aviso.id, false);
+            return;
+        }
+        evento.preventDefault();
+        if (aviso.leida || await modificar("leer", aviso.id, false)) {
+            if (montado.current) router.push(href);
         }
     }
 
@@ -196,7 +220,10 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
                         const fecha = new Date(aviso.fecha);
                         return <li key={aviso.id} className={styles.fila} data-leida={aviso.leida}>
                             <div className={styles.aviso}>
-                                {href ? <Link href={href} id={textoId} className={styles.texto}>{aviso.texto}</Link> : <p id={textoId} className={styles.texto}>{aviso.texto}</p>}
+                                {href ? <Link href={href} id={textoId} className={styles.texto} aria-disabled={ocupado} aria-busy={guardando === `leer:${aviso.id}`}
+                                    onClick={(evento) => void abrirAviso(evento, aviso)} onAuxClick={(evento) => { if (evento.button === 1) void abrirAviso(evento, aviso); }}>{aviso.texto}</Link>
+                                    : <button type="button" id={textoId} className={`${styles.texto} ${styles.textoBoton}`} disabled={aviso.leida || ocupado} aria-busy={guardando === `leer:${aviso.id}`}
+                                        onClick={() => void modificar("leer", aviso.id)}>{aviso.texto}</button>}
                                 <div className={styles.detalle}>
                                     <span className={styles.estado}>{aviso.leida ? "Leída" : "No leída"}</span>
                                     <time dateTime={aviso.fecha}>{Number.isNaN(fecha.getTime()) ? "Fecha no disponible" : formatoFecha.format(fecha)}</time>

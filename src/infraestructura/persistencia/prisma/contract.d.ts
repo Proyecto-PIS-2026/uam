@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'4ce732482677e9b8e09aceece1358f275c0f542a4c4495be4d6c174bd9cdaf81'>;
+  StorageHashBase<'d0f5e254b7d5752c9d3887e71f34ed760a79819b4f85d6f5bd83c3d2b7a021ac'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -266,6 +266,12 @@ export type FieldOutputTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['output'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['output'];
     };
+    readonly EjecucionTareaProgramada: {
+      readonly nombre: CodecTypes['pg/text@1']['output'];
+      readonly fecha: CodecTypes['pg/date-temporal@1']['output'];
+      readonly completadaEn: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly elementosProcesados: CodecTypes['pg/int4@1']['output'];
+    };
     readonly Especie: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly uamId: CodecTypes['pg/int4@1']['output'] | null;
@@ -301,6 +307,8 @@ export type FieldOutputTypes = {
     readonly Imagen: {
       readonly clave: CodecTypes['pg/text@1']['output'];
       readonly contenido: CodecTypes['pg/bytea@1']['output'];
+      readonly cargadaEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly avisoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
     };
     readonly Local: {
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -362,6 +370,8 @@ export type FieldOutputTypes = {
       readonly comentario: CodecTypes['pg/text@1']['output'] | null;
       readonly cantidadUnidades: CodecTypes['pg/int4@1']['output'] | null;
       readonly foto: CodecTypes['pg/text@1']['output'] | null;
+      readonly fotoEliminadaPorVencimientoEn:
+        CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly tipoPublicacion: 'OPERADOR' | 'PRODUCTOR';
       readonly especieId: CodecTypes['pg/int4@1']['output'];
       readonly variedadId: CodecTypes['pg/int4@1']['output'] | null;
@@ -440,6 +450,12 @@ export type FieldInputTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['input'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['input'];
     };
+    readonly EjecucionTareaProgramada: {
+      readonly nombre: CodecTypes['pg/text@1']['input'];
+      readonly fecha: CodecTypes['pg/date-temporal@1']['input'];
+      readonly completadaEn: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly elementosProcesados: CodecTypes['pg/int4@1']['input'];
+    };
     readonly Especie: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly uamId: CodecTypes['pg/int4@1']['input'] | null;
@@ -475,6 +491,8 @@ export type FieldInputTypes = {
     readonly Imagen: {
       readonly clave: CodecTypes['pg/text@1']['input'];
       readonly contenido: CodecTypes['pg/bytea@1']['input'];
+      readonly cargadaEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly avisoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
     };
     readonly Local: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -536,6 +554,8 @@ export type FieldInputTypes = {
       readonly comentario: CodecTypes['pg/text@1']['input'] | null;
       readonly cantidadUnidades: CodecTypes['pg/int4@1']['input'] | null;
       readonly foto: CodecTypes['pg/text@1']['input'] | null;
+      readonly fotoEliminadaPorVencimientoEn:
+        CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly tipoPublicacion: 'OPERADOR' | 'PRODUCTOR';
       readonly especieId: CodecTypes['pg/int4@1']['input'];
       readonly variedadId: CodecTypes['pg/int4@1']['input'] | null;
@@ -614,6 +634,12 @@ export type StorageColumnTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['output'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['output'];
     };
+    readonly ejecucionTareaProgramada: {
+      readonly completadaEn: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly elementosProcesados: CodecTypes['pg/int4@1']['output'];
+      readonly fecha: CodecTypes['pg/date-temporal@1']['output'];
+      readonly nombre: CodecTypes['pg/text@1']['output'];
+    };
     readonly especie: {
       readonly especieActiva: CodecTypes['pg/bool@1']['output'];
       readonly fotoEspecie: CodecTypes['pg/text@1']['output'] | null;
@@ -647,6 +673,8 @@ export type StorageColumnTypes = {
       readonly historico: CodecTypes['pg/jsonb@1']['output'];
     };
     readonly imagen: {
+      readonly avisoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly cargadaEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly clave: CodecTypes['pg/text@1']['output'];
       readonly contenido: CodecTypes['pg/bytea@1']['output'];
     };
@@ -708,6 +736,8 @@ export type StorageColumnTypes = {
       readonly especieId: CodecTypes['pg/int4@1']['output'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly foto: CodecTypes['pg/text@1']['output'] | null;
+      readonly fotoEliminadaPorVencimientoEn:
+        CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly precio: Numeric<12, 2> | null;
       readonly presentacionId: CodecTypes['pg/int4@1']['output'] | null;
@@ -788,6 +818,12 @@ export type StorageColumnInputTypes = {
       readonly nombreConfiguracion: CodecTypes['pg/text@1']['input'];
       readonly valorConfiguracion: CodecTypes['pg/text@1']['input'];
     };
+    readonly ejecucionTareaProgramada: {
+      readonly completadaEn: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly elementosProcesados: CodecTypes['pg/int4@1']['input'];
+      readonly fecha: CodecTypes['pg/date-temporal@1']['input'];
+      readonly nombre: CodecTypes['pg/text@1']['input'];
+    };
     readonly especie: {
       readonly especieActiva: CodecTypes['pg/bool@1']['input'];
       readonly fotoEspecie: CodecTypes['pg/text@1']['input'] | null;
@@ -821,6 +857,8 @@ export type StorageColumnInputTypes = {
       readonly historico: CodecTypes['pg/jsonb@1']['input'];
     };
     readonly imagen: {
+      readonly avisoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly cargadaEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly clave: CodecTypes['pg/text@1']['input'];
       readonly contenido: CodecTypes['pg/bytea@1']['input'];
     };
@@ -882,6 +920,8 @@ export type StorageColumnInputTypes = {
       readonly especieId: CodecTypes['pg/int4@1']['input'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly foto: CodecTypes['pg/text@1']['input'] | null;
+      readonly fotoEliminadaPorVencimientoEn:
+        CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly precio: CodecTypes['pg/numeric@1']['input'] | null;
       readonly presentacionId: CodecTypes['pg/int4@1']['input'] | null;
@@ -1124,6 +1164,34 @@ type ContractBase = Omit<
               indexes: readonly [];
               foreignKeys: readonly [];
             };
+            readonly ejecucionTareaProgramada: {
+              columns: {
+                readonly nombre: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly fecha: {
+                  readonly nativeType: 'date';
+                  readonly codecId: 'pg/date-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly completadaEn: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly elementosProcesados: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['nombre'] };
+              uniques: readonly [];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
             readonly especie: {
               columns: {
                 readonly id: {
@@ -1330,6 +1398,16 @@ type ContractBase = Omit<
                   readonly nativeType: 'bytea';
                   readonly codecId: 'pg/bytea@1';
                   readonly nullable: false;
+                };
+                readonly cargadaEn: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly avisoVencimientoEn: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
                 };
               };
               primaryKey: { readonly columns: readonly ['clave'] };
@@ -1807,6 +1885,11 @@ type ContractBase = Omit<
                 readonly foto: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly fotoEliminadaPorVencimientoEn: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
                   readonly nullable: true;
                 };
                 readonly tipoPublicacion: {
@@ -2361,6 +2444,10 @@ type ContractBase = Omit<
     readonly pais: { readonly namespace: 'public' & NamespaceId; readonly model: 'Pais' };
     readonly ubicacion: { readonly namespace: 'public' & NamespaceId; readonly model: 'Ubicacion' };
     readonly imagen: { readonly namespace: 'public' & NamespaceId; readonly model: 'Imagen' };
+    readonly ejecucionTareaProgramada: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'EjecucionTareaProgramada';
+    };
     readonly publicacion: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Publicacion';
@@ -2580,6 +2667,40 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly nombreConfiguracion: { readonly column: 'nombreConfiguracion' };
                 readonly valorConfiguracion: { readonly column: 'valorConfiguracion' };
+              };
+            };
+          };
+          readonly EjecucionTareaProgramada: {
+            readonly fields: {
+              readonly nombre: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly fecha: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/date-temporal@1' };
+              };
+              readonly completadaEn: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly elementosProcesados: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'ejecucionTareaProgramada';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly nombre: { readonly column: 'nombre' };
+                readonly fecha: { readonly column: 'fecha' };
+                readonly completadaEn: { readonly column: 'completadaEn' };
+                readonly elementosProcesados: { readonly column: 'elementosProcesados' };
               };
             };
           };
@@ -2824,6 +2945,20 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bytea@1' };
               };
+              readonly cargadaEn: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly avisoVencimientoEn: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
             };
             readonly relations: Record<string, never>;
             readonly storage: {
@@ -2832,6 +2967,8 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly clave: { readonly column: 'clave' };
                 readonly contenido: { readonly column: 'contenido' };
+                readonly cargadaEn: { readonly column: 'cargadaEn' };
+                readonly avisoVencimientoEn: { readonly column: 'avisoVencimientoEn' };
               };
             };
           };
@@ -3295,6 +3432,13 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly fotoEliminadaPorVencimientoEn: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
               readonly tipoPublicacion: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -3390,6 +3534,9 @@ type ContractBase = Omit<
                 readonly comentario: { readonly column: 'comentario' };
                 readonly cantidadUnidades: { readonly column: 'cantidadUnidades' };
                 readonly foto: { readonly column: 'foto' };
+                readonly fotoEliminadaPorVencimientoEn: {
+                  readonly column: 'fotoEliminadaPorVencimientoEn';
+                };
                 readonly tipoPublicacion: { readonly column: 'tipoPublicacion' };
                 readonly especieId: { readonly column: 'especieId' };
                 readonly variedadId: { readonly column: 'variedadId' };
