@@ -2,6 +2,7 @@ import { autorizado, } from "../../../identidad-acceso/autorizacion/permisos";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { db } from "../../../../infraestructura/persistencia/prisma/db";
 import { obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 
 export type ProductorListado = {
     id: number;
@@ -20,7 +21,7 @@ export async function obtenerProductoresPorOperador(): Promise<ProductorListado[
         .select("id", "nombreFantasia", "fotoPerfil")
         .include("publicacionesProductor", (publicaciones) =>
             publicaciones.include("ubicaciones", (ubicaciones) => ubicaciones.select("departamento")).include("publicacion", (publicacion) =>
-                publicacion.select("publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+                publicacion.select("publicacionActiva", "publicacionDisponible", "tipoPublicacion", "fechaVigencia")
             )
         );
     const productores = await consulta.all();
@@ -30,7 +31,8 @@ export async function obtenerProductoresPorOperador(): Promise<ProductorListado[
         const ubicacionesVisibles: { departamento: string | null }[] = [];
         for (const relacion of productor.publicacionesProductor) {
             const publicacion = relacion.publicacion;
-            if (publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "PRODUCTOR") {
+            const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+            if (publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "PRODUCTOR") {
                 cantidadProductos++;
                 ubicacionesVisibles.push(...relacion.ubicaciones);
             }

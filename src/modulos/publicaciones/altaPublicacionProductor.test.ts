@@ -6,11 +6,13 @@ const mocks = vi.hoisted(() => ({
     crearPublicacion: vi.fn(), crearRelacion: vi.fn(), crearUbicacion: vi.fn(),
     actualizarPublicacion: vi.fn(), eliminarPublicacion: vi.fn(), ejecutar: vi.fn(), transaccion: vi.fn(),
     guardarImagen: vi.fn(), eliminarImagen: vi.fn(), reservarId: vi.fn(), leerPublicacion: vi.fn(), productorActual: vi.fn(),
+    consultarConfig: vi.fn(),
 }));
 
 vi.mock("../../infraestructura/persistencia/prisma/db", () => ({
     db: {
         orm: { public: {
+            Configuracion: { where: () => ({ select: () => ({ first: mocks.consultarConfig }) }) },
             Productor: { where: () => ({ first: mocks.productor }) },
             Especie: { where: () => ({ first: mocks.especie }) },
             Variedad: { where: () => ({ first: mocks.variedad }) },
@@ -74,6 +76,7 @@ describe("altaPublicacionProductor", () => {
         mocks.leerPublicacion.mockResolvedValue(null);
         mocks.guardarImagen.mockResolvedValue(urlFoto);
         mocks.transaccion.mockImplementation(async (operacion: (transaccion: typeof tx) => Promise<number>) => operacion(tx));
+        mocks.consultarConfig.mockResolvedValue({ valorConfiguracion: "false" });
         vi.spyOn(console, "error").mockImplementation(() => undefined);
     });
     afterEach(() => vi.restoreAllMocks());
@@ -105,7 +108,7 @@ describe("altaPublicacionProductor", () => {
         expect(await altaPublicacionProductor(datos)).toEqual({ esValido: true, id: 42, mensaje: "Publicación creada correctamente." });
         expect(mocks.ejecutar).toHaveBeenCalledExactlyOnceWith("bloqueo del productor");
         expect(mocks.ejecutar.mock.invocationCallOrder[0]).toBeLessThan(mocks.relaciones.mock.invocationCallOrder[0]);
-        expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6 });
+        expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6, fechaVigencia: null });
         expect(mocks.crearRelacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 42, productorId: 1, paisId: 7 });
         expect(mocks.crearUbicacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 74, nombreUbicacion: "Montevideo", urlMaps: "https://www.google.com/maps?q=-34.9%2C-56.2", departamento: "Montevideo" });
         expect(mocks.guardarImagen).not.toHaveBeenCalled();

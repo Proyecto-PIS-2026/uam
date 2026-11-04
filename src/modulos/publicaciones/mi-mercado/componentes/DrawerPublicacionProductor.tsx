@@ -356,6 +356,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             paisId: borrador.paisId || null, disponible: borrador.disponible,
             foto: borrador.foto,
             ubicaciones: validacionUbicaciones.ubicaciones,
+            fechaVigencia: borrador.fechaVigencia || null,
         };
         formulario.set("cambios", JSON.stringify(cambios));
         if (borrador.archivo) formulario.set("foto", borrador.archivo);

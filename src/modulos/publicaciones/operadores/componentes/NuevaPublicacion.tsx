@@ -33,7 +33,7 @@ type Catalogos = {
     calibres: Opcion[];
     paises: Opcion[];
 };
-type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia" | "variedadId" | "presentacionId" | "categoriaId" | "calibreId" | "paisId"> & { precio: string; cantidadUnidades: string; fotografia: string; variedadId: number; presentacionId: number; categoriaId: number; calibreId: number; paisId: number };
+type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia" | "variedadId" | "presentacionId" | "categoriaId" | "calibreId" | "paisId"> & { precio: string; cantidadUnidades: string; fotografia: string; fechaVigencia: string; variedadId: number; presentacionId: number; categoriaId: number; calibreId: number; paisId: number };
 type NuevaPublicacionProps = {
     operadorId: number;
     incrementoPrecio?: number;
@@ -75,6 +75,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
         precio: "",
         cantidadUnidades: "",
         fotografia: "",
+        fechaVigencia: "",
     });
     const [errores, setErrores] = useState<string[]>([]);
     const [errorCarga, setErrorCarga] = useState("");
@@ -177,6 +178,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                 calibreId: datos.calibreId || null,
                 paisId: datos.paisId || null,
                 precio: normalizarPrecioPublicacion(datos.precio),
+                fechaVigencia: datos.fechaVigencia || null,
                 cantidadUnidades: datos.cantidadUnidades.trim() !== ""
                     ? parseInt(datos.cantidadUnidades, 10)
                     : null
@@ -277,6 +279,23 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                             </div>
                         );
                     })()}
+
+                    <div className={drawerStyles.campo}>
+                        <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-fechaVigencia">
+                            Fecha de vigencia
+                        </label>
+                        <OutlinedInput
+                            color="secondary"
+                            className={drawerStyles.entrada}
+                            size="small"
+                            id="nueva-publicacion-fechaVigencia"
+                            type="date"
+                            value={datos.fechaVigencia}
+                            onChange={(evento) => actualizar({ fechaVigencia: evento.target.value })}
+                            disabled={deshabilitado}
+                        />
+                        <small className={drawerStyles.ayuda}>Dejalo vacío si no querés ingresar una fecha de vigencia.</small>
+                    </div>
 
                     {errores.length > 0 && <div role="alert" className={drawerStyles.error}>{errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}
 

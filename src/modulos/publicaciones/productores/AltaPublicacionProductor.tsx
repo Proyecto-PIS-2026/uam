@@ -34,7 +34,7 @@ type Catalogos = {
 type Formulario = {
     productorId: number; especieId: number; variedadId: number; presentacionId: number; calibreId: number;
     categoriaId: number; paisId: number; ubicaciones: UbicacionEdicionProductor[]; disponibilidad: boolean;
-    precio: string; cantidad: string; fotografia: string;
+    precio: string; cantidad: string; fotografia: string; fechaVigencia: string;
 };
 
 type PropsDrawer = {
@@ -59,6 +59,7 @@ function formularioInicial(productorId: number, disponibilidadInicial: boolean):
         precio: "",
         cantidad: "",
         fotografia: "",
+        fechaVigencia: "",
     };
 }
 
@@ -222,6 +223,7 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
                 ubicaciones: validacionUbicaciones.ubicaciones,
                 precio: normalizarPrecioPublicacion(datos.precio),
                 cantidadUnidades: cantidad === "" ? null : Number(cantidad),
+                fechaVigencia: datos.fechaVigencia || null, 
             };
             const respuesta = await fetchConSesion("/api/publicaciones/productor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datosParaGuardar) });
             const resultado = await respuesta.json();
@@ -252,6 +254,22 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
             <div className="grid grid-cols-1 gap-[var(--espacio-controles)] sm:grid-cols-2">
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><OutlinedInput color="secondary" className={styles.entrada} size="small" id="productor-precio" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder="Ingrese precio aqui" value={datos.precio} onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small></div>
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Cantidad (kg)</label><OutlinedInput color="secondary" className={styles.entrada} size="small" id="productor-cantidad" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder="Ingrese cantidad aqui" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small></div>
+                <div className={styles.campo}>
+                            <label className={styles.etiqueta} htmlFor="productor-fechaVigencia">
+                                Fecha de vigencia
+                            </label>
+                            <OutlinedInput
+                                color="secondary"
+                                className={styles.entrada}
+                                size="small"
+                                id="productor-fechaVigencia"
+                                type="date"
+                                value={datos.fechaVigencia}
+                                onChange={(evento) => cambiar({ fechaVigencia: evento.target.value })}
+                                disabled={deshabilitado}
+                            />
+                            <small className={styles.ayuda}>Dejalo vacío si no querés ingresar una fecha de vigencia.</small>
+                </div>
             </div>
             <label className={styles.disponibilidad} htmlFor="productor-disponibilidad" data-disponible={datos.disponibilidad}><span className={styles.textoDisponibilidad}><span className={styles.etiqueta}>Disponibilidad</span><span className={styles.estadoDisponibilidad}>{datos.disponibilidad ? "Disponible" : "No disponible"}</span></span><Switch checked={datos.disponibilidad} onChange={(_, valor) => cambiar({ disponibilidad: valor })} disabled={deshabilitado} slotProps={{ input: { id: "productor-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} /></label>
             <div className={styles.seccionFoto}><div className={styles.marcoFoto}>{datos.fotografia ? <Image className={styles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill unoptimized /> : <div className={styles.sinFoto}><PhotoCameraOutlinedIcon /><span>Sin foto</span></div>}{datos.fotografia && <button type="button" className={`${styles.botonFoto} ${styles.borrarFoto}`} onClick={() => cambiar({ fotografia: "" })} disabled={deshabilitado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}

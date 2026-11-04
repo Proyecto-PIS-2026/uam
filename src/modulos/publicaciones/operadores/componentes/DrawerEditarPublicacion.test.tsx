@@ -481,6 +481,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
             presentacionId: 111,
             paisId: 44,
             disponible: false,
+            fechaVigencia: null,
             cantidadUnidades: null
         }, null));
         expect(mocks.guardar).toHaveBeenCalledOnce();

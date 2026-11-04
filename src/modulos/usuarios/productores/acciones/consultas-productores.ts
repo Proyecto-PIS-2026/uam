@@ -2,6 +2,7 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 import type { PublicacionPerfil } from "../../operadores/consultas-perfil-publico";
 import { obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 
 export type ProductorListado = {
     id: number;
@@ -21,8 +22,10 @@ function publicacionVisible(publicacion: {
     publicacionActiva: boolean;
     publicacionDisponible: boolean;
     tipoPublicacion: string;
+    fechaVigencia?: { readonly epochNanoseconds: bigint } | null;
 }) {
-    return publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "PRODUCTOR";
+    const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+    return publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "PRODUCTOR";
 }
 
 export async function obtenerProductoresDisponibles(): Promise<ProductorListado[]> {
@@ -32,7 +35,7 @@ export async function obtenerProductoresDisponibles(): Promise<ProductorListado[
         .select("id", "nombreFantasia", "fotoPerfil")
         .include("usuario", (usuario) => usuario.select("rol"))
         .include("publicacionesProductor", (publicaciones) => publicaciones
-            .include("publicacion", (publicacion) => publicacion.select("publicacionActiva", "publicacionDisponible", "tipoPublicacion"))
+            .include("publicacion", (publicacion) => publicacion.select("publicacionActiva", "publicacionDisponible", "tipoPublicacion", "fechaVigencia"))
             .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion", "departamento")))
         .all();
 
@@ -61,7 +64,7 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
             .include("pais", (pais) => pais.select("nombrePais"))
             .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion", "departamento"))
             .include("publicacion", (publicacion) => publicacion
-                .select("id", "foto", "precio", "fecha", "cantidadUnidades", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+                .select("id", "foto", "precio", "fecha", "fechaVigencia", "cantidadUnidades", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
                 .include("especie").include("variedad").include("presentacion")
                 .include("categoria")
                 .include("calibre")))

@@ -144,6 +144,7 @@ describe("obtenerPerfilAdminProductor", () => {
                 precio: "90.00",
                 cantidadUnidades: 15,
                 fecha: "2026-10-01T12:00:00Z",
+                fechaVigencia: null,
                 disponible: true,
                 especie: "Manzana",
                 variedad: "Red Delicious",

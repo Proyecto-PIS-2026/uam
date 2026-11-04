@@ -74,7 +74,7 @@ describe("obtenerOperadoresPublicos", () => {
         expect(selectMock).toHaveBeenCalledWith("id", "nombreFantasia", "fotoPerfil");
         expect(selectMock).toHaveBeenCalledWith("numeroLocal", "finContrato");
         expect(selectMock).toHaveBeenCalledWith("nombreNave");
-        expect(selectMock).toHaveBeenCalledWith("publicacionActiva", "publicacionDisponible", "tipoPublicacion");
+        expect(selectMock).toHaveBeenCalledWith("publicacionActiva", "publicacionDisponible", "tipoPublicacion", "fechaVigencia");
     });
 
     it("incluye locales sin fecha de fin, vigentes hoy y futuros", async () => {

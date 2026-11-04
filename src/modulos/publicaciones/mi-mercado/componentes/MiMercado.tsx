@@ -94,6 +94,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         precio: publicacionSeleccionada.precio,
         foto: publicacionSeleccionada.foto,
         fecha: publicacionSeleccionada.fecha,
+        fechaVigencia: publicacionSeleccionada.fechaVigencia,
         version: publicacionSeleccionada.version,
         categoriaId: publicacionSeleccionada.categoria?.id ?? null,
         calibreId: publicacionSeleccionada.calibre?.id ?? null,

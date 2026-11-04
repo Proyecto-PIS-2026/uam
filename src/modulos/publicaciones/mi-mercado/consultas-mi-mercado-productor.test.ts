@@ -87,6 +87,7 @@ describe("lectura privada de Mi Mercado del productor", () => {
             precio: "125.00",
             cantidadUnidades: 10,
             fecha: "2026-10-16T12:00:00Z",
+            fechaVigencia: null,
             publicacionActiva: true,
             publicacionDisponible: true,
             especie: relacionPublicacion(23, 31).publicacion.especie,
