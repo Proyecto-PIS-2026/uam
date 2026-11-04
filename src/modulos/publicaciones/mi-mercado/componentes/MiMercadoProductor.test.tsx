@@ -134,7 +134,7 @@ describe("MiMercadoProductor", () => {
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("100");
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveAttribute("readonly");
         expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveAttribute("readonly");
-        for (const campo of ["Especie", "Variedad", "Envase", "Kilos del empaquetado", "País de origen", "Categoría", "Calibre"]) {
+        for (const campo of ["Especie", "Variedad", "Empaquetado", "Kilos del empaquetado", "País de origen", "Categoría", "Calibre"]) {
             expect(within(detalle).getByRole("combobox", { name: new RegExp(`^${campo}`) })).toHaveAttribute("aria-disabled", "true");
         }
         expect(within(detalle).getByRole("button", { name: "Editar" })).toBeEnabled();

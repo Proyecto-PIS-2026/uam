@@ -134,7 +134,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                             </div>
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Envase</span>
+                                    <span className={styles.nombreInformacion}>Empaquetado</span>
                                     <span className={styles.valorInformacion}>{publicacion.envase?.trim() || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>

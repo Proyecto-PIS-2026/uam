@@ -48,7 +48,7 @@ function elegir(campo: string, opcion: string) {
 }
 
 function completarFormulario() {
-    elegir("Especie", "Manzana"); elegir("Variedad", "Royal"); elegir("Envase", "Cajita");
+    elegir("Especie", "Manzana"); elegir("Variedad", "Royal"); elegir("Empaquetado", "Cajita");
     elegir("Categoría", "Primera"); elegir("Calibre", "Grande"); elegir("País de origen", "Uruguay");
     seleccionarUbicacion();
 }
@@ -63,7 +63,7 @@ function enviarFormulario() {
 }
 
 function comprobarFormularioVacio() {
-    for (const campo of ["Especie", "Variedad", "Envase", "Kilos del empaquetado", "Categoría", "Calibre", "País de origen"]) {
+    for (const campo of ["Especie", "Variedad", "Empaquetado", "Kilos del empaquetado", "Categoría", "Calibre", "País de origen"]) {
         const selector = screen.getByRole("combobox", { name: new RegExp(`^${campo}`) });
         expect(selector.parentElement!.querySelector("input")).toHaveValue("");
     }
@@ -130,10 +130,10 @@ describe("AltaPublicacionProductor", () => {
     ])("permite publicar envase $envase y kilos $kilos sin variedad", async ({ envase, envaseId, kilos, kilosId }) => {
         const fetchMock = prepararFetch();
         await abrirAlta();
-        for (const campo of ["Envase", "Kilos del empaquetado"]) {
+        for (const campo of ["Empaquetado", "Kilos del empaquetado"]) {
             expect(screen.getByRole("combobox", { name: campo })).not.toHaveAttribute("aria-disabled", "true");
         }
-        if (envase) elegir("Envase", envase);
+        if (envase) elegir("Empaquetado", envase);
         if (kilos) elegir("Kilos del empaquetado", kilos);
         elegir("Especie", "Manzana");
         enviarFormulario();
@@ -360,8 +360,8 @@ describe("AltaPublicacionProductor", () => {
         elegir("Kilos del empaquetado", "20 kg");
         elegir("Especie", "Pera");
         expect(screen.getByRole("combobox", { name: /^Variedad/ })).not.toHaveTextContent("Royal");
-        expect(screen.getByRole("combobox", { name: /^Envase/ })).not.toHaveAttribute("aria-disabled", "true");
-        expect(screen.getByRole("combobox", { name: /^Envase/ })).toHaveTextContent("Cajita");
+        expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).not.toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).toHaveTextContent("Cajita");
         expect(screen.getByRole("combobox", { name: /^Kilos del empaquetado/ })).toHaveTextContent("20 kg");
         expect(screen.getByRole("combobox", { name: /^Categoría/ })).not.toHaveTextContent("Primera");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Variedad/ }));
@@ -438,7 +438,7 @@ describe("AltaPublicacionProductor", () => {
         expect(await screen.findByRole("alert")).toHaveTextContent("Revisá los datos de la publicación.");
         expect(alCrear).not.toHaveBeenCalled();
         expect(alCerrar).not.toHaveBeenCalled();
-        for (const [campo, opcion] of [["Especie", "Manzana"], ["Variedad", "Royal"], ["Envase", "Cajita"], ["Categoría", "Primera"], ["Calibre", "Grande"], ["País de origen", "Uruguay"]]) {
+        for (const [campo, opcion] of [["Especie", "Manzana"], ["Variedad", "Royal"], ["Empaquetado", "Cajita"], ["Categoría", "Primera"], ["Calibre", "Grande"], ["País de origen", "Uruguay"]]) {
             expect(screen.getByRole("combobox", { name: new RegExp(`^${campo}`) })).toHaveTextContent(opcion);
         }
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("120");

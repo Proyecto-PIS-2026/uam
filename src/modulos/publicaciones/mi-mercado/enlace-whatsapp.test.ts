@@ -28,14 +28,14 @@ describe("crearEnlaceWhatsApp", () => {
 
         expect(mensaje).toContain("🌿 Acelga\n");
         expect(mensaje).toContain("💰 Precio: Consultar\n");
-        expect(mensaje).not.toMatch(/Envase:|Kilos:|Categoría:|Calibre:|undefined|null/);
+        expect(mensaje).not.toMatch(/Empaquetado:|Kilos:|Categoría:|Calibre:|undefined|null/);
     });
 
     it("prepara el mensaje con los datos del producto y el perfil en el origen actual", () => {
         const nombreOperador = "Mercado Pérez & Hijos/Sur";
         const mensaje = [
             "🌿 Acelga",
-            "📦 Envase: Docena",
+            "📦 Empaquetado: Docena",
             "🏷️ Categoría: I",
             "📏 Calibre: 12 PLANTAS",
             "💰 Precio: $45",
@@ -68,5 +68,5 @@ it("comparte kilos sin exigir envase", () => {
     const publicacion: Publicacion = { ...crearPublicacion(), envase: null, kilos: { id: 2, valor: "18-24" } };
     const mensaje = new URL(crearEnlaceWhatsApp(publicacion, "El Mercado", "https://mercado.example")).searchParams.get("text");
     expect(mensaje).toContain("Kilos: 18-24 kg");
-    expect(mensaje).not.toContain("Envase:");
+    expect(mensaje).not.toContain("Empaquetado:");
 });

@@ -339,7 +339,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             || (borrador.categoriaId !== 0 && !categorias.some((opcion) => opcion.id === borrador.categoriaId))
             || (borrador.calibreId !== 0 && !opciones.calibres.some((opcion) => opcion.id === borrador.calibreId))
             || (borrador.paisId !== 0 && !opciones.paises.some((opcion) => opcion.id === borrador.paisId))) {
-            setEstado((actual) => ({ ...actual, errores: ["Elegí una especie, variedad, envase, kilos, categoría, calibre y país válidos."] }));
+            setEstado((actual) => ({ ...actual, errores: ["Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos."] }));
             return;
         }
         const validacionUbicaciones = validarUbicacionesProductor(borrador.ubicaciones);
@@ -463,7 +463,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                         <div className={estilosAcciones.datosProducto} data-editando={editando}>
                             <Campo nombre="Especie" valor={borrador?.especieId ?? especie.id} opciones={edicion?.opciones.especies ?? []} nombreActual={especie.nombreEspecie} cambiar={cambiarEspecie} deshabilitado={!editando || ocupado} enConsulta={!editando} priorizarEspecies />
                             <Campo nombre="Variedad" valor={borrador?.variedadId ?? variedad?.id ?? 0} opciones={variedades} nombreActual={variedad?.nombreVariedad ?? ""} cambiar={cambiarVariedad} deshabilitado={!editando || ocupado} enConsulta={!editando} />
-                            <Campo nombre="Envase" valor={borrador?.envaseId ?? publicacion.envase?.id ?? 0} opciones={envases} nombreActual={publicacion.envase?.nombreEnvase ?? ""} cambiar={(id) => cambiar({ envaseId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
+                            <Campo nombre="Empaquetado" valor={borrador?.envaseId ?? publicacion.envase?.id ?? 0} opciones={envases} nombreActual={publicacion.envase?.nombreEnvase ?? ""} cambiar={(id) => cambiar({ envaseId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
                             <Campo nombre="Kilos del empaquetado" valor={borrador?.kilosId ?? publicacion.kilos?.id ?? 0} opciones={kilos.map((opcion) => ({ ...opcion, nombre: `${opcion.nombre} kg` }))} nombreActual={publicacion.kilos?.valor ? `${publicacion.kilos.valor} kg` : ""} cambiar={(id) => cambiar({ kilosId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
                             <Campo nombre="País de origen" valor={borrador?.paisId ?? publicacion.paisId ?? 0} opciones={edicion?.opciones.paises ?? []} nombreActual={publicacion.pais || ""} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} priorizarUruguay />
                             <Campo nombre="Categoría" valor={borrador?.categoriaId ?? publicacion.categoria?.id ?? 0} opciones={categorias} nombreActual={publicacion.categoria?.nombreCategoria ?? ""} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />

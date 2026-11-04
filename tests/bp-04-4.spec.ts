@@ -176,16 +176,23 @@ test("BP-04.4 CA-2 CP-04: funcionalidades de otros roles para el Operador", asyn
   await iniciarSesionOperador(page);
   const rutaMercado = new URL(page.url()).pathname;
   await page.goto("/inicio");
+  await expect(page).toHaveURL((url) => url.pathname === rutaMercado);
   await expect(enlaceAdministracion(page)).toHaveCount(0);
 
-  for (const ruta of rutasAdministrativas(operador)) {
+  for (const ruta of [
+    "/operadores",
+    `/operadores/${encodeURIComponent(operador.nombre)}`,
+    "/mi-perfil/cambiar-contrasena",
+    "/iniciar-sesion",
+    ...rutasAdministrativas(operador),
+  ]) {
     await test.step(`Rechazar ${ruta} para el Operador`, async () => {
       await page.goto(ruta);
       await expect(page).toHaveURL((url) => url.pathname === rutaMercado);
     });
   }
   await page.goto("/mi-mercado/productor");
-  await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+  await expect(page).toHaveURL((url) => url.pathname === rutaMercado);
 });
 
 test("BP-04.4 CA-3 CP-05: funcionalidades permitidas al Productor", async ({ page }) => {
@@ -204,6 +211,7 @@ test("BP-04.4 CA-3 CP-06: funcionalidades de otros roles para el Productor", asy
 
   const rutas = [
     "/inicio",
+    "/iniciar-sesion",
     "/publicaciones",
     "/operadores",
     `/operadores/${encodeURIComponent(operador.nombre)}`,
@@ -249,8 +257,10 @@ test("BP-04.4 CA-4 CP-07: funcionalidades permitidas al Administrador", async ({
 
 test("BP-04.4 CA-4 CP-08: funcionalidades de Operador para el Administrador", async ({ page, usuariosAdministrativos }) => {
   await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
-  await page.goto("/publicaciones/nueva");
-  await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+  for (const ruta of ["/publicaciones/nueva", "/operadores/perfil-restringido", "/productores/perfil-restringido", "/iniciar-sesion"]) {
+    await page.goto(ruta);
+    await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+  }
   await expect(page.getByRole("dialog", { name: "Nueva publicación" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Aumentar precio" })).toHaveCount(0);
 });
@@ -259,6 +269,7 @@ test("BP-04.4 CA-5 CP-09: mercado de otro Operador", async ({ page, request, bro
   test.slow();
   const operadores = await obtenerOperadores(request);
   await iniciarSesionOperador(page);
+  const rutaMercado = new URL(page.url()).pathname;
   const [propio] = await obtenerOperadores(page.request);
   const ajeno = operadores.find((operador) => operador.id !== propio.id);
   expect(ajeno).toBeDefined();
@@ -274,7 +285,7 @@ test("BP-04.4 CA-5 CP-09: mercado de otro Operador", async ({ page, request, bro
 
     try {
       await page.goto(`/mi-mercado/${encodeURIComponent(ajeno!.nombre)}`);
-      await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+      await expect(page).toHaveURL((url) => url.pathname === rutaMercado);
       await expect(page.getByRole("dialog", { name: "Consulta de publicación" })).toHaveCount(0);
     } finally {
       await visitante.reload();

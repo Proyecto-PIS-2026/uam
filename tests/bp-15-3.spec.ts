@@ -7,7 +7,7 @@ const detalle = (page: Page) => page.getByRole("dialog", { name: "Consulta de pu
 const edicion = (page: Page) => page.getByRole("dialog", { name: "Editar publicación", exact: true });
 const tarjetas = (page: Page) => page.getByRole("button", { name: /^Ver detalle de / });
 const tarjeta = (page: Page, producto: string) => page.getByRole("button", { name: `Ver detalle de ${producto}`, exact: true });
-const camposProducto = ["Especie", "Variedad", "Envase", "Kilos del empaquetado", "País de origen", "Categoría", "Calibre"];
+const camposProducto = ["Especie", "Variedad", "Empaquetado", "Kilos del empaquetado", "País de origen", "Categoría", "Calibre"];
 
 async function datosConsulta(page: Page) {
     const panel = detalle(page);

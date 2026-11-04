@@ -230,7 +230,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         const calibreValido = calibreId === 0 || calibres.some((opcion) => opcion.id === calibreId);
         const paisValido = paisId === 0 || paises.some((opcion) => opcion.id === paisId);
         if (!especieSeleccionada || !variedadValida || !envaseValido || !kilosValidos || !categoriaValida || !calibreValido || !paisValido) {
-            setError("Elegí una especie, variedad, envase, kilos, categoría, calibre y país válidos.");
+            setError("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.");
             return;
         }
 
@@ -370,7 +370,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 </TextField>
             </div>
             <div className={styles.campo}>
-                <TextField select label="Envase" id={`${idBase}-envase`} value={envaseId} onChange={(evento) => { if (!bloqueado) setEnvaseId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
+                <TextField select label="Empaquetado" id={`${idBase}-envase`} value={envaseId} onChange={(evento) => { if (!bloqueado) setEnvaseId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
                     <MenuItem value={0} className={styles.opcionSelect}>{editando ? "Sin especificar" : "-"}</MenuItem>
                     {!editando && envaseId !== 0 && !envasesDisponibles.some((opcion) => opcion.id === envaseId) && <MenuItem value={envaseId} className={styles.opcionSelect}>{publicacion.envase?.trim() || "-"}</MenuItem>}
                     {envasesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}

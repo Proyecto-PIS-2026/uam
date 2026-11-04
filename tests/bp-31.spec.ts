@@ -114,7 +114,7 @@ async function editar(page: Page) {
     while (await cerrarAvisos.count()) await cerrarAvisos.first().click();
     await consulta(page).getByRole("button", { name: "Editar", exact: true }).click();
     await expect(edicion(page)).toBeVisible();
-    await expect(edicion(page).getByRole("combobox", { name: "Envase", exact: true })).toBeEnabled();
+    await expect(edicion(page).getByRole("combobox", { name: "Empaquetado", exact: true })).toBeEnabled();
     return edicion(page);
 }
 
@@ -137,7 +137,7 @@ async function relacion(datos: DatosPrueba, rol: Rol, publicacionId: number) {
 
 test.use({ viewport: { width: 1366, height: 768 }, actionTimeout: 15_000, trace: "retain-on-failure" });
 
-test.describe("BP-31: envase y kilos independientes", () => {
+test.describe("BP-31: empaquetado y kilos independientes", () => {
     test.describe.configure({ mode: "parallel" });
     test.setTimeout(180_000);
 
@@ -155,7 +155,7 @@ test.describe("BP-31: envase y kilos independientes", () => {
             expect(opciones.calibres.map((opcion) => opcion.nombre)).toEqual(expect.arrayContaining(["Primera", "Segunda", "Tercera", "Cuarta", "Quinta", "Sexta", "0", "00", "Especial"]));
             await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
             const alta = page.getByRole("dialog", { name: rol === "OPERADOR" ? "Nueva publicación" : "Nueva publicación de Productor", exact: true });
-            await expect(alta.getByRole("combobox", { name: "Envase", exact: true })).toBeEnabled();
+            await expect(alta.getByRole("combobox", { name: "Empaquetado", exact: true })).toBeEnabled();
             await expect(alta.getByRole("combobox", { name: "Kilos del empaquetado", exact: true })).toBeEnabled();
             await seleccionar(page, alta, "Especie", "Papa");
             const creadaPendiente = page.waitForResponse((respuesta) => respuesta.request().method() === "POST" && new URL(respuesta.url()).pathname === api(rol));
@@ -169,15 +169,15 @@ test.describe("BP-31: envase y kilos independientes", () => {
             expect(await datosBP31.db.orm.public.Publicacion.where({ id: publicacionId }).first()).toMatchObject({ ...soloEspecie, precio: null });
             const duplicada = await page.request.post(api(rol), { data: { ...soloEspecie, paisId: null } });
             expect(duplicada.status()).toBe(400);
-            expect((await duplicada.json()).errores.join(" ")).toMatch(/misma especie.*envase.*kilos/);
+            expect((await duplicada.json()).errores.join(" ")).toMatch(/misma especie.*empaquetado.*kilos/);
 
             await tarjetasPropias(page).first().click();
             let formulario = await editar(page);
-            await seleccionar(page, formulario, "Envase", "Cajon");
+            await seleccionar(page, formulario, "Empaquetado", "Cajon");
             await seleccionar(page, formulario, "Kilos del empaquetado", "20 kg");
             await seleccionar(page, formulario, "Calibre", "Especial");
-            await comprobarDisposicion(formulario, "Envase", "Kilos del empaquetado", viewport.width);
-            await test.info().attach("Edición con envase y kilos", { body: await page.screenshot(), contentType: "image/png" });
+            await comprobarDisposicion(formulario, "Empaquetado", "Kilos del empaquetado", viewport.width);
+            await test.info().attach("Edición con empaquetado y kilos", { body: await page.screenshot(), contentType: "image/png" });
             await formulario.getByRole("textbox", { name: "Precio en pesos", exact: true }).fill("500");
             await guardar(page, rol);
             const conAmbos = await datosBP31.db.orm.public.Publicacion.where({ id: publicacionId }).first();
@@ -185,31 +185,31 @@ test.describe("BP-31: envase y kilos independientes", () => {
             expect(Number(conAmbos!.precio)).toBe(500);
 
             formulario = await editar(page);
-            await seleccionar(page, formulario, "Envase", "Sin especificar");
+            await seleccionar(page, formulario, "Empaquetado", "Sin especificar");
             await expect(formulario.getByRole("combobox", { name: "Kilos del empaquetado", exact: true })).toHaveText("20 kg");
             await guardar(page, rol);
             expect(await datosBP31.db.orm.public.Publicacion.where({ id: publicacionId }).first()).toMatchObject({ envaseId: null, kilosId: id(opciones.kilos, "20") });
 
             formulario = await editar(page);
-            await seleccionar(page, formulario, "Envase", "Bolsa");
+            await seleccionar(page, formulario, "Empaquetado", "Bolsa");
             await seleccionar(page, formulario, "Kilos del empaquetado", "Sin especificar");
             await guardar(page, rol);
             expect(await datosBP31.db.orm.public.Publicacion.where({ id: publicacionId }).first()).toMatchObject({ envaseId: id(opciones.envases, "Bolsa"), kilosId: null });
 
             formulario = await editar(page);
-            await seleccionar(page, formulario, "Envase", "Sin especificar");
+            await seleccionar(page, formulario, "Empaquetado", "Sin especificar");
             await seleccionar(page, formulario, "Calibre", "Sin especificar");
             await formulario.getByRole("textbox", { name: "Precio en pesos", exact: true }).fill("");
             await guardar(page, rol);
             await page.reload();
             await tarjetasPropias(page).first().click();
-            for (const campo of ["Variedad", "Envase", "Kilos del empaquetado", "Calibre"]) {
+            for (const campo of ["Variedad", "Empaquetado", "Kilos del empaquetado", "Calibre"]) {
                 await expect(consulta(page).getByRole("combobox", { name: campo, exact: true })).toHaveText("-");
             }
             expect(await datosBP31.db.orm.public.Publicacion.where({ id: publicacionId }).first()).toMatchObject({ ...soloEspecie, precio: null });
         });
 
-        test(`${rol} ${dispositivo}: consulta precios, filtra por envase y kilos y rechaza combinaciones repetidas`, async ({ page, browser, datosBP31 }) => {
+        test(`${rol} ${dispositivo}: consulta precios, filtra por empaquetado y kilos y rechaza combinaciones repetidas`, async ({ page, browser, datosBP31 }) => {
             await page.setViewportSize(viewport);
             await ingresar(page, datosBP31.cuentas[rol]);
             const opciones = await catalogos(page, rol);
@@ -229,11 +229,11 @@ test.describe("BP-31: envase y kilos independientes", () => {
             }
             const repetida = await page.request.post(api(rol), { data: { ...baseProducto, envaseId: variantes[3].envaseId, kilosId: variantes[3].kilosId, precio: "999" } });
             expect(repetida.status()).toBe(400);
-            expect((await repetida.json()).errores.join(" ")).toMatch(/misma especie.*envase.*kilos/);
+            expect((await repetida.json()).errores.join(" ")).toMatch(/misma especie.*empaquetado.*kilos/);
             const publicacionRelacion = rol === "OPERADOR" ? publicaciones[1] : await relacion(datosBP31, rol, publicaciones[1]);
             const conflicto = await page.request.patch(`${api(rol)}/${publicacionRelacion}`, { multipart: { cambios: JSON.stringify({ ...baseProducto, envaseId: null, kilosId: null, precio: "502", disponible: true, version: 1, ubicaciones: [] }) } });
             expect([400, 409]).toContain(conflicto.status());
-            expect((await conflicto.json()).errores.join(" ")).toMatch(/misma especie.*envase.*kilos/);
+            expect((await conflicto.json()).errores.join(" ")).toMatch(/misma especie.*empaquetado.*kilos/);
             expect(await datosBP31.db.orm.public.Publicacion.where({ id: publicaciones[1] }).first()).toMatchObject({ envaseId: variantes[1].envaseId, kilosId: null });
 
             const contexto = await browser.newContext({ baseURL: new URL(page.url()).origin, viewport });
@@ -252,14 +252,14 @@ test.describe("BP-31: envase y kilos independientes", () => {
                 }
                 await expect(comprador.getByRole("combobox", { name: "Especie", exact: true })).toHaveText("Todas");
                 if (dispositivo === "mobile") await comprador.getByRole("button", { name: "Más filtros", exact: true }).click();
-                await seleccionar(comprador, comprador.locator("main"), "Envase", "Cajon");
-                await comprobarDisposicion(comprador.locator("main"), "Envase", "Kilos", viewport.width);
-                await test.info().attach("Filtros de envase y kilos", { body: await comprador.screenshot(), contentType: "image/png" });
+                await seleccionar(comprador, comprador.locator("main"), "Empaquetado", "Cajon");
+                await comprobarDisposicion(comprador.locator("main"), "Empaquetado", "Kilos", viewport.width);
+                await test.info().attach("Filtros de empaquetado y kilos", { body: await comprador.screenshot(), contentType: "image/png" });
                 await expect(tarjetas).toHaveCount(2);
                 await seleccionar(comprador, comprador.locator("main"), "Kilos", "20 kg");
                 await expect(tarjetas).toHaveCount(1);
                 await expect(tarjetas).toContainText("$ 504");
-                await seleccionar(comprador, comprador.locator("main"), "Envase", "Todos");
+                await seleccionar(comprador, comprador.locator("main"), "Empaquetado", "Todos");
                 await expect(tarjetas).toHaveCount(2);
                 await seleccionar(comprador, comprador.locator("main"), "Kilos", "10-12 kg");
                 await expect(tarjetas).toHaveCount(1);
@@ -267,7 +267,7 @@ test.describe("BP-31: envase y kilos independientes", () => {
                 await expect(comprador.getByRole("combobox", { name: "Kilos", exact: true })).toHaveText("10-12 kg");
                 await tarjetas.click();
                 const detalle = comprador.getByRole("dialog", { name: "Detalle de publicación", exact: true });
-                await expect(detalle.getByText("Envase", { exact: true }).locator("xpath=following-sibling::span")).toHaveText("-");
+                await expect(detalle.getByText("Empaquetado", { exact: true }).locator("xpath=following-sibling::span")).toHaveText("-");
                 await expect(detalle.getByText("Kilos", { exact: true }).locator("xpath=following-sibling::span")).toHaveText("10-12 kg");
                 await expect.poll(() => detalle.evaluate((elemento) => elemento.scrollWidth - elemento.clientWidth)).toBeLessThanOrEqual(1);
             } finally { await contexto.close(); }

@@ -210,7 +210,7 @@ describe("altaPublicacionProductor", () => {
     it("avisa sobre un duplicado del mismo Productor antes de guardar", async () => {
         mocks.relaciones.mockResolvedValue([{ publicacionId: 20, paisId: 7 }]);
         mocks.coincidencias.mockResolvedValue([{ id: 20 }]);
-        expect(await altaPublicacionProductor(datos)).toEqual({ esValido: false, errores: ["Este Productor ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] });
+        expect(await altaPublicacionProductor(datos)).toEqual({ esValido: false, errores: ["Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país."] });
         expect(mocks.crearPublicacion).not.toHaveBeenCalled();
         expect(mocks.crearUbicacion).not.toHaveBeenCalled();
     });

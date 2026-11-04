@@ -41,7 +41,7 @@ function completarFormulario(formulario: HTMLFormElement) {
     fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
     fireEvent.mouseDown(campos.getByRole("combobox", { name: /^Variedad/ }));
     fireEvent.click(screen.getByRole("option", { name: "Royal" }));
-    fireEvent.mouseDown(campos.getByRole("combobox", { name: /^Envase/ }));
+    fireEvent.mouseDown(campos.getByRole("combobox", { name: /^Empaquetado/ }));
     fireEvent.click(screen.getByRole("option", { name: "Cajita" }));
     fireEvent.mouseDown(campos.getByRole("combobox", { name: /^Categoría/ }));
     fireEvent.click(screen.getByRole("option", { name: "Primera" }));
@@ -86,7 +86,7 @@ describe("NuevaPublicacion", () => {
     ])("permite publicar envase $envase y kilos $kilos sin variedad", async ({ envase, envaseId, kilos, kilosId }) => {
         renderDrawer();
         await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
-        for (const [campo, valor] of [["Envase", envase], ["Kilos del empaquetado", kilos]]) {
+        for (const [campo, valor] of [["Empaquetado", envase], ["Kilos del empaquetado", kilos]]) {
             const selector = screen.getByRole("combobox", { name: campo! });
             expect(selector).not.toHaveAttribute("aria-disabled", "true");
             if (valor) {

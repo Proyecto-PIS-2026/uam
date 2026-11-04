@@ -49,7 +49,7 @@ for (const pantalla of [
 
         await expect(detalle.getByText(consultarPrecio ? "Consultar precio" : `$${precio}`, { exact: true })).toBeVisible();
 
-        for (const campo of ["Envase", "Kilos", "Calibre", "Categoría", "País"]) {
+        for (const campo of ["Empaquetado", "Kilos", "Calibre", "Categoría", "País"]) {
             const etiqueta = detalle.getByText(campo, { exact: true });
             await expect(etiqueta).toBeVisible();
 
@@ -57,7 +57,7 @@ for (const pantalla of [
             await expect(valor).toBeVisible();
             await expect(valor).toHaveText(/\S/);
 
-            if (campo === "Envase") {
+            if (campo === "Empaquetado") {
                 await expect(valor).toHaveText(envase);
             } else if (campo === "Kilos") {
                 await expect(valor).toHaveText(kilos ? `${kilos} kg` : "-");

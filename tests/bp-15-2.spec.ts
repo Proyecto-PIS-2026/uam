@@ -99,7 +99,7 @@ test.describe("BP-15.2: consulta de productos propios del productor", () => {
     await expect(unidades).not.toBeEditable();
     for (const [campo, valor] of [
       ["Especie", oferta.speciesName], ["Variedad", oferta.variety],
-      ["Envase", oferta.envase ?? "-"], ["Kilos del empaquetado", oferta.kilos ? `${oferta.kilos} kg` : "-"],
+      ["Empaquetado", oferta.envase ?? "-"], ["Kilos del empaquetado", oferta.kilos ? `${oferta.kilos} kg` : "-"],
       ["Categoría", oferta.category],
       ["País de origen", oferta.country],
     ]) {

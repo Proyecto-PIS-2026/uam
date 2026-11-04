@@ -245,7 +245,7 @@ describe("modificarPublicacionOperador", () => {
 
         await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({
             codigo: "DATOS_INVALIDOS",
-            message: "Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país.",
+            message: "Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.",
         });
         expect(mocks.vinculo.where).toHaveBeenCalledWith({ operadorId: 3 });
         expect(mocks.publicacion.where).toHaveBeenCalledWith({ especieId: 6, variedadId: 7, envaseId: 8, kilosId: null, categoriaId: 4, calibreId: 2 });

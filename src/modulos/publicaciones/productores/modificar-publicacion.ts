@@ -111,7 +111,7 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
                 otra.publicacion.especieId === cambios.especieId && otra.publicacion.variedadId === cambios.variedadId &&
                 otra.publicacion.envaseId === cambios.envaseId && otra.publicacion.kilosId === cambios.kilosId &&
                 otra.publicacion.categoriaId === cambios.categoriaId && otra.publicacion.calibreId === cambios.calibreId)) {
-                datosInvalidos("Este Productor ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país.");
+                datosInvalidos("Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.");
             }
 
             let foto = cambios.foto === null ? null : publicacion.foto;

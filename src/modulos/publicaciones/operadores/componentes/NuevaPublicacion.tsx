@@ -229,7 +229,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                             <CampoSelect nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(variedadId) => actualizar({ variedadId })} deshabilitado={deshabilitado || !datos.especieId} />
                         </div>
                         <div className={drawerStyles.campo}>
-                            <CampoSelect nombre="Envase" valor={datos.envaseId} opciones={catalogos?.envases ?? []} cambiar={(envaseId) => actualizar({ envaseId })} deshabilitado={deshabilitado} />
+                            <CampoSelect nombre="Empaquetado" valor={datos.envaseId} opciones={catalogos?.envases ?? []} cambiar={(envaseId) => actualizar({ envaseId })} deshabilitado={deshabilitado} />
                         </div>
                         <div className={drawerStyles.campo}>
                             <CampoSelect nombre="Kilos del empaquetado" valor={datos.kilosId} opciones={(catalogos?.kilos ?? []).map((opcion) => ({ ...opcion, nombre: `${opcion.nombre} kg` }))} cambiar={(kilosId) => actualizar({ kilosId })} deshabilitado={deshabilitado} />

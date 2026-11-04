@@ -208,9 +208,9 @@ for (const pantalla of [
             await seleccionar("Calibre", "Todos");
             await comprobarResultados(publicaciones);
 
-            await seleccionar("Envase", producto.envase);
+            await seleccionar("Empaquetado", producto.envase);
             await comprobarResultados(publicaciones.filter((publicacion) => publicacion.envase === producto.envase));
-            await seleccionar("Envase", "Todos");
+            await seleccionar("Empaquetado", "Todos");
             await seleccionar("Kilos", `${producto.kilos} kg`);
             await comprobarResultados(publicaciones.filter((publicacion) => publicacion.kilos === producto.kilos));
             await seleccionar("Kilos", "Todos");
@@ -224,7 +224,7 @@ for (const pantalla of [
             esperadas = esperadas.filter((publicacion) => publicacion.nombre === producto.nombre);
             await comprobarResultados(esperadas);
 
-            await seleccionar("Envase", producto.envase);
+            await seleccionar("Empaquetado", producto.envase);
             esperadas = esperadas.filter((publicacion) => publicacion.envase === producto.envase);
             await comprobarResultados(esperadas);
 
@@ -269,7 +269,7 @@ for (const pantalla of [
                 await expect(page.getByRole("combobox", { name: campo, exact: true })).toHaveText("Todas");
             }
 
-            for (const campo of ["Envase", "Kilos", "Calibre"]) {
+            for (const campo of ["Empaquetado", "Kilos", "Calibre"]) {
                 await expect(page.getByRole("combobox", { name: campo, exact: true })).toHaveText("Todos");
             }
             await comprobarOrdenTrasLimpiar("A-Z", publicaciones);

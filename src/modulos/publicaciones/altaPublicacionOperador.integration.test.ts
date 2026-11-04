@@ -133,7 +133,7 @@ describe.sequential("alta de publicación de operador", { timeout: 15000 }, () =
 
 		expect(resultado).toEqual({
 			esValido: false,
-			errores: ["Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."],
+			errores: ["Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país."],
 		});
 		expect(publicacionesDespues).toHaveLength(publicacionesAntes.length);
 		expect(registrosDespues).toHaveLength(registrosAntes.length);

@@ -280,7 +280,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
                         anunciar={false}
                     />
                 ) : (
-                    <div className="grid grid-cols-1 gap-[var(--espacio-controles)] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 tarjetas-compactas-mercado">
+                    <div className="grilla-tarjetas gap-[var(--espacio-controles)]">
                         {publicacionesVisibles.map((pub) => (
                             <TarjetaPublicacion
                                 key={pub.id}

@@ -589,7 +589,7 @@ describe("DrawerPublicacionPerfil con operadores", () => {
         expect(screen.queryByText("   ")).not.toBeInTheDocument();
 
         for (const etiqueta of [
-            "Envase",
+            "Empaquetado",
             "Calibre",
             "Categoría",
             "País",

@@ -302,7 +302,7 @@ describe("DrawerPublicacion con operadores", () => {
         const publicacion = { ...crearPublicacion(), variedad: " ", envase: " ", kilos: "", calibre: " ", categoria: " ", pais: " ", cantidadUnidades: null };
         render(<DrawerPublicacion publicacion={publicacion} open onOpenChange={vi.fn()} />);
         expect(screen.getByText("Tomate")).toBeInTheDocument();
-        for (const etiqueta of ["Envase", "Calibre", "Categoría", "País"]) {
+        for (const etiqueta of ["Empaquetado", "Calibre", "Categoría", "País"]) {
             expect(screen.getByText(etiqueta).nextElementSibling).toHaveTextContent("-");
         }
         expect(screen.getByText(/^Unidades/).nextElementSibling).toHaveTextContent("-");

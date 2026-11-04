@@ -57,7 +57,7 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 					calibreId: datos.calibreId,
 				}).select("id").all();
 				if (coincidencias.some((publicacion) => ids.has(publicacion.id))) {
-					return { esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] };
+					return { esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país."] };
 				}
 			}
 

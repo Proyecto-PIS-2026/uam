@@ -96,7 +96,7 @@ async function seleccionar(page: Page, formulario: Locator, campo: string, opcio
 async function completarProducto(page: Page, formulario: Locator, seleccion: Seleccion, indice = 0, precio = "1371") {
   await seleccionar(page, formulario, "Especie", seleccion.especie.nombre);
   await seleccionar(page, formulario, "Variedad", seleccion.variedad.nombre);
-  await seleccionar(page, formulario, "Envase", seleccion.envase.nombre);
+  await seleccionar(page, formulario, "Empaquetado", seleccion.envase.nombre);
   await seleccionar(page, formulario, "Kilos del empaquetado", `${seleccion.kilos.nombre} kg`);
   await seleccionar(page, formulario, "País de origen", seleccion.pais.nombre);
   await seleccionar(page, formulario, "Categoría", seleccion.categoria.nombre);
@@ -192,7 +192,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
         await completarProducto(page, formulario, seleccion, indice, precio);
         for (const [campo, valor] of [
           ["Especie", seleccion.especie.nombre], ["Variedad", seleccion.variedad.nombre],
-          ["Envase", seleccion.envase.nombre], ["Kilos del empaquetado", `${seleccion.kilos.nombre} kg`], ["Categoría", seleccion.categoria.nombre],
+          ["Empaquetado", seleccion.envase.nombre], ["Kilos del empaquetado", `${seleccion.kilos.nombre} kg`], ["Categoría", seleccion.categoria.nombre],
           ["Calibre", seleccion.calibres[indice].nombre], ["País de origen", seleccion.pais.nombre],
         ]) {
           await expect(formulario.getByRole("combobox", { name: campo, exact: true })).toContainText(valor);
@@ -421,7 +421,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
     expect(await db.orm.public.Publicacion.where({ id }).first()).not.toBeNull();
     const duplicada = await page.request.post(rutaApi, { data: datosValidos(operadorA.id, seleccion) });
     expect(duplicada.status()).toBe(400);
-    expect(await duplicada.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] });
+    expect(await duplicada.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país."] });
     expect(await db.orm.public.Publicacion.select("id").all()).toHaveLength(cantidadPublicaciones.length + 1);
     expect(await db.orm.public.PublicacionOperador.select("id").all()).toHaveLength(cantidadRelaciones.length + 1);
   });
@@ -464,12 +464,12 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
       };
       const respuesta = await page.request.post(rutaApi, { data: datosDuplicados });
       expect(respuesta.status()).toBe(400);
-      expect(await respuesta.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] });
+      expect(await respuesta.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país."] });
     }
     for (const combinacion of combinaciones) {
       const repetida = await page.request.post(rutaApi, { data: { ...minimos, ...combinacion } });
       expect(repetida.status()).toBe(400);
-      expect(await repetida.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] });
+      expect(await repetida.json()).toMatchObject({ esValido: false, errores: ["Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país."] });
     }
     expect(await db.orm.public.Publicacion.select("id").all()).toHaveLength(cantidadPublicaciones + combinaciones.length);
     expect(await db.orm.public.PublicacionOperador.select("id").all()).toHaveLength(cantidadRelaciones + combinaciones.length);

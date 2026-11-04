@@ -119,7 +119,7 @@ export default function CatalogoProductorAdmin({ publicaciones, alCambiarDeparta
             {publicacionesActuales.length === 0 ? (
                 <EstadoVacio titulo="Sin publicaciones" descripcion="El productor no tiene publicaciones." icono={<Inventory2OutlinedIcon />} anunciar={false} />
             ) : (
-                <ul className="grid grid-cols-1 gap-[var(--espacio-secciones)] md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas">
+                <ul className="grilla-tarjetas gap-[var(--espacio-secciones)]">
                     {publicacionesActuales.map((publicacion) => (
                         <li key={publicacion.id}>
                             <TarjetaPublicacionProductorAdmin

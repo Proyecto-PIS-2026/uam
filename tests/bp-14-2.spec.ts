@@ -122,7 +122,7 @@ async function completarPrecarga(page: Page, calibre: string, precio: string) {
   await expect(alta).toBeVisible();
   await seleccionar(page, alta, "Especie", "Uchuva");
   await seleccionar(page, alta, "Variedad", "-");
-  await seleccionar(page, alta, "Envase", "Cajon");
+  await seleccionar(page, alta, "Empaquetado", "Cajon");
   await seleccionar(page, alta, "Kilos del empaquetado", "20 kg");
   await seleccionar(page, alta, "Categoría", "-");
   await seleccionar(page, alta, "Calibre", calibre);
@@ -435,7 +435,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       alta.getByRole("button", { name: "Confirmar", exact: true }).click(),
     ]);
     expect(respuesta.status()).toBe(400);
-    await expect(alta.getByRole("alert")).toContainText("Este Productor ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país.");
+    await expect(alta.getByRole("alert")).toContainText("Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.");
     await expect(alta.getByLabel("Precio en pesos")).toHaveValue("9999");
     await alta.getByRole("button", { name: "Cancelar", exact: true }).click();
     await page.reload();

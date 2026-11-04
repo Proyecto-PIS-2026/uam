@@ -148,7 +148,7 @@ export async function modificarPublicacionOperador(
                     calibreId: cambios.calibreId,
                 }).select("id").all();
                 if (coincidencias.some((coincidencia) => idsDeOtrasPublicaciones.has(coincidencia.id))) {
-                    throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Este operador ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país.");
+                    throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.");
                 }
             }
 

@@ -761,7 +761,7 @@ describe("DrawerPublicacion", () => {
             />,
         );
 
-        const etiquetaEnvase = screen.getByText("Envase");
+        const etiquetaEnvase = screen.getByText("Empaquetado");
         const contenido = etiquetaEnvase.parentElement?.parentElement?.parentElement as HTMLDivElement;
         const pie = contenido.parentElement?.lastElementChild as HTMLDivElement;
 

@@ -187,7 +187,7 @@ describe("DrawerEditarPublicacion", () => {
         expect(screen.queryByRole("switch", { name: "Publicación disponible" })).not.toBeInTheDocument();
         expect(screen.getByText("Disponible")).toBeInTheDocument();
         expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", expect.stringContaining("/foto-existente.png"));
-        for (const campo of ["Especie", "Variedad", "Envase", "Kilos del empaquetado", "País", "Categoría", "Calibre"]) {
+        for (const campo of ["Especie", "Variedad", "Empaquetado", "Kilos del empaquetado", "País", "Categoría", "Calibre"]) {
             expect(screen.getByRole("combobox", { name: campo })).toHaveAttribute("aria-disabled", "true");
         }
         for (const boton of ["Disminuir precio en 10", "Aumentar precio en 10", esWeb ? "Editar foto" : "Cámara", "Galería", "Borrar foto"]) {
@@ -577,8 +577,8 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(screen.queryByRole("option", { name: "Williams" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "Golden" }));
         await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
-        expect(screen.getByRole("combobox", { name: "Envase" })).toHaveTextContent("Descartable");
-        await seleccionar("Envase", "Bolsa");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Descartable");
+        await seleccionar("Empaquetado", "Bolsa");
         guardarDesdeBoton();
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ envaseId: 121, kilosId: null }), null));
@@ -589,7 +589,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
 
         await seleccionar("Especie", "Pera");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Sin especificar");
-        expect(screen.getByRole("combobox", { name: "Envase" })).toHaveTextContent("Descartable");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Descartable");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Sin especificar");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
         expect(await screen.findByRole("option", { name: "Beurré d'Anjou" })).toBeInTheDocument();
@@ -682,15 +682,15 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         guardarDesdeBoton();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ variedadId: null, envaseId: null, kilosId: 302 }), null));
         expect(screen.getByRole("combobox", { name: "Kilos del empaquetado" })).toHaveTextContent("10-12 kg");
-        await waitFor(() => expect(screen.getByRole("combobox", { name: "Envase" })).toHaveTextContent("-"));
+        await waitFor(() => expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("-"));
         expect(screen.getByLabelText("Unidades")).toBeInTheDocument();
     });
 
-    it.each(["Envase", "Kilos del empaquetado"])("permite quitar %s sin borrar el otro atributo", async (campo) => {
+    it.each(["Empaquetado", "Kilos del empaquetado"])("permite quitar %s sin borrar el otro atributo", async (campo) => {
         render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, kilosId: 301 }} />);
         await seleccionar(campo, "Sin especificar");
         guardarDesdeBoton();
-        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ envaseId: campo === "Envase" ? null : 111, kilosId: campo === "Envase" ? 301 : null }), null));
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ envaseId: campo === "Empaquetado" ? null : 111, kilosId: campo === "Empaquetado" ? 301 : null }), null));
     });
 
     it("consulta una publicación con solo especie y conserva las opciones vacías al editar", async () => {
@@ -698,12 +698,12 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
             ...publicacionInicial, variedadId: null, envaseId: null, kilosId: null, categoriaId: null, calibreId: null,
             paisId: null, variedad: "", envase: "", kilos: "", categoria: "", calibre: "", precio: null,
         }} />);
-        for (const campo of ["Variedad", "Envase", "Kilos del empaquetado", "Categoría", "Calibre", "País"]) {
+        for (const campo of ["Variedad", "Empaquetado", "Kilos del empaquetado", "Categoría", "Calibre", "País"]) {
             expect(screen.getByRole("combobox", { name: campo })).toHaveTextContent("-");
         }
         expect(screen.getByLabelText("Unidades")).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        for (const campo of ["Variedad", "Envase", "Kilos del empaquetado", "Categoría", "Calibre", "País"]) {
+        for (const campo of ["Variedad", "Empaquetado", "Kilos del empaquetado", "Categoría", "Calibre", "País"]) {
             expect(screen.getByRole("combobox", { name: campo })).toHaveTextContent("Sin especificar");
         }
         fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "80" } });
@@ -717,12 +717,12 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
     it("permite vaciar todos los datos opcionales y conservar solo la especie", async () => {
         render(<DrawerEditarPublicacion {...props} />);
         await seleccionar("Variedad", "Sin especificar");
-        await seleccionar("Envase", "Sin especificar");
+        await seleccionar("Empaquetado", "Sin especificar");
         await seleccionar("Categoría", "Sin especificar");
         await seleccionar("Calibre", "Sin especificar");
         await seleccionar("País", "Sin especificar");
         fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "" } });
-        expect(screen.getByRole("combobox", { name: "Envase" })).toHaveTextContent("Sin especificar");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Sin especificar");
         expect(screen.getByRole("button", { name: "Guardar" }).closest("form")!.checkValidity()).toBe(true);
         guardarDesdeBoton();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
@@ -734,7 +734,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
     it("envía las opciones elegidas manualmente", async () => {
         render(<DrawerEditarPublicacion {...props} />);
 
-        await seleccionar("Envase", "Plancha");
+        await seleccionar("Empaquetado", "Plancha");
         await seleccionar("Calibre", "Mediano");
         await seleccionar("Categoría", "General");
         await seleccionar("País", "Brasil");
@@ -748,7 +748,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, categoriaId: 6 }} />);
         await seleccionar("Especie", "Pera");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("General");
-        expect(screen.getByRole("combobox", { name: "Envase" })).toHaveTextContent("Descartable");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Descartable");
         guardarDesdeBoton();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
             especieId: 2, variedadId: null, envaseId: 111, kilosId: null, categoriaId: 6,
@@ -765,7 +765,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         render(<DrawerEditarPublicacion {...props} {...opciones} />);
         solicitarGuardado();
 
-        expect(screen.getByRole("alert")).toHaveTextContent("Elegí una especie, variedad, envase, kilos, categoría, calibre y país válidos.");
+        expect(screen.getByRole("alert")).toHaveTextContent("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.");
         expect(mocks.guardar).not.toHaveBeenCalled();
     });
 
@@ -773,7 +773,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, paisId: 999 }} />);
         solicitarGuardado();
 
-        expect(screen.getByRole("alert")).toHaveTextContent("Elegí una especie, variedad, envase, kilos, categoría, calibre y país válidos.");
+        expect(screen.getByRole("alert")).toHaveTextContent("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.");
         expect(mocks.guardar).not.toHaveBeenCalled();
     });
 
@@ -977,7 +977,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
             screen.getByAltText("Foto de Manzana Red Delicious"),
             disponibilidad,
             botonCompartir,
-            ...["Especie", "Variedad", "Envase", "Kilos del empaquetado", "País", "Categoría", "Calibre"]
+            ...["Especie", "Variedad", "Empaquetado", "Kilos del empaquetado", "País", "Categoría", "Calibre"]
                 .map((nombre) => screen.getByRole("combobox", { name: nombre })),
         ];
         for (let indice = 1; indice < orden.length; indice++) {

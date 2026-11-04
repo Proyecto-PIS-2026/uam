@@ -53,7 +53,7 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
                 tipoPublicacion: "PRODUCTOR",
             }).select("id").all();
             if (coincidencias.some((publicacion) => ids.has(publicacion.id))) {
-                return { esValido: false, errores: ["Este Productor ya tiene una publicación con la misma especie, variedad, envase, kilos, categoría, calibre y país."] };
+                return { esValido: false, errores: ["Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país."] };
             }
 
             const publicacion = await tx.orm.public.Publicacion.create({

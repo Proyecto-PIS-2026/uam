@@ -487,7 +487,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                             ))}
                         </TextField>
                         {/* Envase */}
-                        <TextField select fullWidth label="Envase" value={envase} onChange={(evento) => manejarCambioEnvase(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroEnvase}`} slotProps={propiedadesMenuSelect}>
+                        <TextField select fullWidth label="Empaquetado" value={envase} onChange={(evento) => manejarCambioEnvase(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroEnvase}`} slotProps={propiedadesMenuSelect}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
                                 Todos
                             </MenuItem>
