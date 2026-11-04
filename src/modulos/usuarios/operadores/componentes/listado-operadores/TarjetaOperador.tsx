@@ -1,5 +1,6 @@
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import Link from "next/link";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import type { OperadorListado } from "../../consultas-listado-publico";
 import styles from "./TarjetaOperador.module.css";
 
@@ -27,14 +28,32 @@ export default function TarjetaOperador({ operador, puedeGestionar = false }: Ta
 
             <div className={styles.contenido}>
                 <div className={styles.encabezado}>
-                    <p className={styles.nombre} title={operador.nombreFantasia}>{operador.nombreFantasia}</p>
-                    <span className={styles.separador}>|</span>
-                    <p className={styles.locales} title={localesTexto}>{localesTexto}</p>
+                    <div className={styles.identidad}>
+                        <div className={styles.datosIdentidad}>
+                            <p className={styles.nombre} title={operador.nombreFantasia}>{operador.nombreFantasia}</p>
+                            <span className={styles.separador}>|</span>
+                            <p className={styles.locales} title={localesTexto}>{localesTexto}</p>
+                        </div>
+                        {operador.enLicencia && (
+                            <span className={`${styles.avisoLicencia} ${styles.avisoLicenciaMovil}`}>
+                                <WarningAmberOutlinedIcon aria-hidden="true" fontSize="small" />
+                                En Licencia
+                            </span>
+                        )}
+                    </div>
                 </div>
 
-                <div className={styles.pie}>
-                    <span className={styles.cantidadProductos}>{operador.cantidadProductos}</span>
-                    <span className={styles.textoProductos}>{operador.cantidadProductos === 1 ? "producto" : "productos"}</span>
+                <div className={`${styles.pie} ${!operador.enLicencia ? styles.pieSinLicencia : ""}`}>
+                    {operador.enLicencia && (
+                        <span className={styles.avisoLicencia}>
+                            <WarningAmberOutlinedIcon aria-hidden="true" fontSize="small" />
+                            En Licencia
+                        </span>
+                    )}
+                    <span className={styles.resumenProductos}>
+                        <span className={styles.cantidadProductos}>{operador.cantidadProductos}</span>
+                        <span className={styles.textoProductos}>{operador.cantidadProductos === 1 ? "producto" : "productos"}</span>
+                    </span>
                 </div>
             </div>
         </Link>

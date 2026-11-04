@@ -1,229 +1,308 @@
-
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { test } from "./usuarios-administrativos";
-import {
-  iniciarSesionAdministrador,
-  iniciarSesionOperador,
-  iniciarSesionProductor,
-} from "./autenticacion";
+import { test as testPrecarga } from "./precarga-operadores";
+import { iniciarSesionAdministrador, iniciarSesionOperador, iniciarSesionProductor } from "./autenticacion";
 
-const rutaIncremento = "/api/configuracion/incremento_precio";
-const confirmacionGuardado = "La configuración se guardó correctamente.";
+const tituloImporte = "Importe de ajuste rápido de precios";
+const confirmacionGuardado = "El importe de ajuste rápido de precios se guardó correctamente.";
+
+const secciones = (page: Page) => page.getByRole("group", { name: "Secciones de configuración" });
+const filasUsuarios = (page: Page) => page.getByRole("button").filter({ has: page.getByText(/^(Administrador|Operador|Productor)$/, { exact: true }) });
+const tarjetaImporte = (page: Page) => page.getByText(tituloImporte, { exact: true }).locator("..");
+const campoImporte = (page: Page) => tarjetaImporte(page).getByRole("textbox", { name: tituloImporte, exact: true });
+const guardarImporte = (page: Page) => tarjetaImporte(page).getByRole("button", { name: "Guardar cambios", exact: true });
 
 async function seleccionarRol(page: Page, rol: string) {
-  await page.getByRole("combobox", { name: "Rol", exact: true }).click();
-  await page.getByRole("option", { name: rol, exact: true }).click();
+    await page.getByRole("combobox", { name: "Rol", exact: true }).click();
+    await page.getByRole("option", { name: rol, exact: true }).click();
 }
 
-test("BP-18.6 y BP-18.9: panel, listado de usuarios y navegación administrativa", async ({ page, browser, usuariosAdministrativos }) => {
-  test.slow();
-  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
+async function abrirGeneral(page: Page) {
+    await secciones(page).getByRole("button", { name: "General", exact: true }).click();
+    await expect(page).toHaveURL(/\/administracion#general$/);
+    await expect(campoImporte(page)).toBeVisible();
+}
 
-  const secciones = page.getByRole("group", { name: "Secciones de configuración" });
-  // TODO: volver a 3 cuando se complete la integración final de las secciones de configuración.
-  await expect(secciones.getByRole("button")).toHaveCount(4);
-  for (const nombre of ["Estadísticas", "Publicaciones", "Usuarios", "Público"]) {
-    await expect(secciones.getByRole("button", { name: nombre, exact: true })).toBeVisible();
-  }
+async function abrirUsuarios(page: Page) {
+    await secciones(page).getByRole("button", { name: "Usuarios", exact: true }).click();
+    await expect(page).toHaveURL(/\/administracion#usuarios$/);
+    await expect(page.getByRole("heading", { name: "Gestión de Usuarios" })).toBeVisible();
+}
 
-  await secciones.getByRole("button", { name: "Publicaciones", exact: true }).click();
-  await expect(page.getByText("Importe de ajuste rápido de precios", { exact: true })).toBeVisible();
+async function restaurarImporte(page: Page, original: string) {
+    const ruta = "/api/configuracion/incremento_precio";
+    const respuesta = await page.request.patch(ruta, { data: { valor: original }, timeout: 15_000 });
+    expect(respuesta.ok(), "Debe restaurarse el importe original").toBe(true);
 
-  await secciones.getByRole("button", { name: "Público", exact: true }).click();
-  await expect(page).toHaveURL(/\/administracion#publico$/);
-  await expect(page.getByText("Lista Inteligente", { exact: true })).toBeVisible();
-  await secciones.getByRole("button", { name: "Usuarios", exact: true }).click();
-  await expect(page).toHaveURL(/\/administracion#usuarios$/);
-  await expect(page.getByRole("heading", { name: "Gestión de Usuarios" })).toBeVisible();
+    const lectura = await page.request.get(ruta, { timeout: 15_000 });
+    expect(lectura.ok()).toBe(true);
+    expect(await lectura.json()).toMatchObject({ valor: original });
+}
 
-  const filas = page.getByRole("button").filter({
-    has: page.getByText(/^(Administrador|Operador|Productor)$/, { exact: true }),
-  });
-  const busqueda = page.getByRole("searchbox", { name: "Buscar usuarios" });
-  for (const rol of ["Administrador", "Operador", "Productor"]) {
-    await seleccionarRol(page, rol);
-    await expect(filas.first()).toBeVisible();
-    await expect(filas.locator("span").filter({ hasText: new RegExp(`^${rol}$`) }))
-      .toHaveCount(await filas.count());
-    for (const otroRol of ["Administrador", "Operador", "Productor"].filter((otro) => otro !== rol)) {
-      await expect(filas.getByText(otroRol, { exact: true })).toHaveCount(0);
-    }
-  }
+function botonPrecio(tarjeta: Locator) {
+    return tarjeta.getByRole("button").and(tarjeta.getByTitle("Editar precio", { exact: true }));
+}
 
-  await seleccionarRol(page, "Administrador");
-  await expect(filas.getByText(usuariosAdministrativos.administrador.usuario, { exact: true })).toBeVisible();
-  await seleccionarRol(page, "Operador");
-  const columnasOperador = filas.first().locator(":scope > span");
-  const username = (await columnasOperador.first().evaluate((columna) =>
-    Array.from(columna.childNodes)
-      .filter((nodo) => nodo.nodeType === Node.TEXT_NODE)
-      .map((nodo) => nodo.textContent)
-      .join(""),
-  )).trim();
-  const nombreOperador = (await columnasOperador.nth(1).innerText()).trim();
-  expect(username).not.toBe("");
-  expect(nombreOperador).not.toBe("");
+async function ejecutarCambioPrecio(page: Page, tarjeta: Locator, accion: () => Promise<void>) {
+    const [respuesta] = await Promise.all([
+        page.waitForResponse((respuesta) =>
+            respuesta.request().method() === "POST" &&
+            respuesta.request().headers()["next-action"] !== undefined,
+            { timeout: 30_000 }
+        ),
+        accion(),
+    ]);
 
-  await busqueda.fill(username);
-  const filaOperador = filas.filter({
-    has: page.locator(`:scope > span:text-is(${JSON.stringify(username)})`),
-  });
-  await expect(filaOperador).toHaveCount(1);
-  await expect(filaOperador.getByText("Operador", { exact: true })).toBeVisible();
-  await expect(filaOperador.getByText(nombreOperador, { exact: true })).toBeVisible();
+    expect(respuesta.ok(), "La acción de cambio de precio debe responder correctamente").toBe(true);
+    await expect(botonPrecio(tarjeta)).toBeEnabled({ timeout: 30_000 });
+}
 
-  // La misma búsqueda no debe traer al operador cuando el rol es Productor.
-  await seleccionarRol(page, "Productor");
-  await expect(busqueda).toHaveValue("");
-  await busqueda.fill(username);
-  await expect(filas).toHaveCount(0);
-  await expect(page.getByText("No se encontraron usuarios.", { exact: true })).toBeVisible();
-  await seleccionarRol(page, "Operador");
-  await busqueda.fill(username);
+test("BP-18.6: muestra los paneles en el orden configurado y abre General", async ({ page, usuariosAdministrativos }) => {
+    test.slow();
+    await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
 
-  await filaOperador.click();
-  await expect(page).toHaveURL(/\/gestion-operadores\/\d+$/, { timeout: 30_000 });
-  const rutaPerfil = new URL(page.url()).pathname;
-  await expect(page.getByRole("heading", { name: nombreOperador, exact: true, level: 1 })).toBeVisible();
-  await page.getByRole("link", { name: /Volver al listado de operadores/ }).click();
-  await expect(page.getByRole("heading", { name: "Panel Administrativo", exact: true })).toBeVisible();
+    await expect(secciones(page).getByRole("button")).toHaveText(["Estadísticas", "Usuarios", "General"]);
+    await expect(secciones(page).getByRole("button", { name: "Estadísticas", exact: true })).toHaveAttribute("aria-pressed", "true");
 
-  await secciones.getByRole("button", { name: "Usuarios", exact: true }).click();
-  await seleccionarRol(page, "Operador");
-  await busqueda.fill(username);
+    await abrirGeneral(page);
+    await expect(page.getByText("Lista Inteligente", { exact: true })).toBeVisible();
 
-  const rutaEdicion = `${rutaPerfil}/editar`;
-  const botonEditar = filaOperador.getByTitle("Editar perfil", { exact: true });
-
-  await expect(botonEditar).toBeEnabled();
-  await botonEditar.click();
-  await expect(page).toHaveURL(rutaEdicion, { timeout: 30_000 });
-  await expect(page.getByRole("heading", { name: "Modificar operador", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: /Volver al perfil/ }).click();
-  await expect(page).toHaveURL(rutaPerfil);
-  await page.getByRole("link", { name: /Volver al listado de operadores/ }).click();
-  await expect(page).toHaveURL(/\/administracion#usuarios$/);
-
-  // Una URL directa también debe respetar los permisos, con sesiones independientes.
-  for (const perfil of [
-    { nombre: "visitante", iniciarSesion: undefined, destino: /^\/iniciar-sesion$/ },
-    { nombre: "operador", iniciarSesion: iniciarSesionOperador, destino: /^\/mi-mercado(?:\/|$)/ },
-    { nombre: "productor", iniciarSesion: (pagina: Page) => iniciarSesionProductor(pagina, usuariosAdministrativos.productor), destino: /^\/mi-mercado\/productor$/ },
-  ]) {
-    await test.step(`BP-18.9: rechazar el acceso administrativo del ${perfil.nombre}`, async () => {
-      const pagina = await browser.newPage();
-      try {
-        if (perfil.iniciarSesion) await perfil.iniciarSesion(pagina);
-        for (const ruta of ["/administracion", rutaPerfil, `${rutaPerfil}/editar`]) {
-          await pagina.goto(ruta);
-          await expect(pagina).toHaveURL((url) => perfil.destino.test(url.pathname));
-          await expect(pagina.getByRole("link", { name: "Administración", exact: true })).toHaveCount(0);
-          await expect(pagina.getByRole("heading", { name: "Panel Administrativo" })).toHaveCount(0);
-        }
-      } finally {
-        await pagina.close();
-      }
-    });
-  }
+    await abrirUsuarios(page);
 });
 
-test("BP-18.2: el importe guardado se aplica al ajuste rápido del operador", async ({ page, browser, usuariosAdministrativos }) => {
-  test.slow();
-  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
-  await page.getByRole("group", { name: "Secciones de configuración" }).getByRole("button", { name: "Publicaciones", exact: true }).click();
-  await expect(page.getByText("Importe de ajuste rápido de precios", { exact: true })).toBeVisible();
-  const campoImporte = page.getByRole("textbox");
-  const importeOriginal = await campoImporte.inputValue();
-  expect(importeOriginal).toMatch(/^[1-9]\d*$/);
-  const nuevoImporte = importeOriginal === "25" ? "37" : "25";
-  const operador = await browser.newPage();
-  let precioOriginal: number | undefined;
-  let indicePrecio = -1;
-  let precioModificado = false;
+test("BP-18.6: filtra usuarios por rol y combina el rol con la búsqueda", async ({ page, usuariosAdministrativos }) => {
+    test.slow();
+    await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
+    await abrirUsuarios(page);
 
-  try {
-    await iniciarSesionOperador(operador);
-    const precios = operador.getByTitle("Editar precio", { exact: true });
-    await expect(precios.first()).toBeVisible();
-    const preciosOriginales = await precios.allTextContents();
-    indicePrecio = preciosOriginales.findIndex((texto) => /^\$[1-9]\d*$/.test(texto.trim()));
-    expect(indicePrecio).toBeGreaterThanOrEqual(0);
-    const precio = precios.nth(indicePrecio);
-    const controles = precio.locator("..");
-    precioOriginal = Number((await precio.innerText()).replace("$", ""));
-    expect(Number.isSafeInteger(precioOriginal)).toBe(true);
-    expect(precioOriginal).toBeGreaterThan(0);
-    expect(precioOriginal + Number(nuevoImporte)).toBeLessThanOrEqual(9999999999);
+    const filas = filasUsuarios(page);
+    const busqueda = page.getByRole("searchbox", { name: "Buscar usuarios" });
 
-    // Abandonar un cambio sin guardar conserva el importe vigente.
-    await campoImporte.fill(nuevoImporte);
-    await page.reload();
-    await expect(campoImporte).toHaveValue(importeOriginal);
+    for (const rol of ["Administrador", "Operador", "Productor"]) {
+        await seleccionarRol(page, rol);
+        await expect(filas.first()).toBeVisible();
+        await expect(filas.locator("span").filter({ hasText: new RegExp(`^${rol}$`) })).toHaveCount(await filas.count());
 
-    // Un rechazo del servidor no debe reemplazar el importe guardado.
-    await campoImporte.fill("0");
-    const rechazo = page.waitForResponse((respuesta) =>
-      new URL(respuesta.url()).pathname === rutaIncremento && respuesta.request().method() === "PATCH",
-    );
-    await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-    expect((await rechazo).status()).toBe(400);
-    await expect(page.getByRole("alert").filter({ hasText: "mayor a cero" })).toBeVisible();
-    await page.reload();
-    await expect(campoImporte).toHaveValue(importeOriginal);
-
-    await campoImporte.fill(nuevoImporte);
-    await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-    await expect(page.getByRole("status").filter({ hasText: confirmacionGuardado })).toBeVisible();
-    await page.reload();
-    await expect(campoImporte).toHaveValue(nuevoImporte);
-
-    // Guardar la configuración no cambia los precios ya publicados.
-    await operador.reload();
-    await expect(precios).toHaveText(preciosOriginales);
-
-    precioModificado = true;
-    await controles.getByRole("button", { name: "Aumentar precio", exact: true }).click();
-    await expect(precio).toHaveText(`$${precioOriginal + Number(nuevoImporte)}`);
-    await expect(controles.getByRole("button", { name: "Disminuir precio", exact: true })).toBeEnabled();
-    await expect(precio).toBeEnabled();
-    await operador.reload();
-    await expect(precio).toHaveText(`$${precioOriginal + Number(nuevoImporte)}`);
-
-    await controles.getByRole("button", { name: "Disminuir precio", exact: true }).click();
-    await expect(precio).toHaveText(`$${precioOriginal}`);
-    await expect(controles.getByRole("button", { name: "Aumentar precio", exact: true })).toBeEnabled();
-    await expect(precio).toBeEnabled();
-    await operador.reload();
-    await expect(precios).toHaveText(preciosOriginales);
-  } finally {
-    try {
-      if (precioModificado && precioOriginal !== undefined) {
-        await test.step("Restaurar el precio aunque falle una comprobación", async () => {
-          await operador.goto("/mi-mercado");
-          const precio = operador.getByTitle("Editar precio", { exact: true }).nth(indicePrecio);
-          await expect(precio).toBeEnabled();
-          if ((await precio.innerText()).trim() !== `$${precioOriginal}`) {
-            await precio.click();
-            const entrada = operador.getByRole("textbox", { name: "Editar precio", exact: true });
-            await entrada.fill(String(precioOriginal));
-            await entrada.press("Enter");
-            await expect(precio).toHaveText(`$${precioOriginal}`);
-            await expect(precio).toBeEnabled();
-          }
-        });
-      }
-    } finally {
-      try {
-        await test.step("Restaurar el importe global", async () => {
-          const respuesta = await page.request.patch(rutaIncremento, { data: { valor: importeOriginal } });
-          expect(respuesta.ok()).toBe(true);
-          const lectura = await page.request.get(rutaIncremento);
-          expect(lectura.ok()).toBe(true);
-          expect(await lectura.json()).toMatchObject({ valor: importeOriginal });
-        });
-      } finally {
-        await operador.close();
-      }
+        for (const otro of ["Administrador", "Operador", "Productor"].filter((otro) => otro !== rol)) {
+            await expect(filas.getByText(otro, { exact: true })).toHaveCount(0);
+        }
     }
-  }
+
+    await seleccionarRol(page, "Administrador");
+    await expect(filas.getByText(usuariosAdministrativos.administrador.usuario, { exact: true })).toBeVisible();
+
+    await seleccionarRol(page, "Operador");
+    const columnas = filas.first().locator(":scope > span");
+    const username = (await columnas.first().evaluate((columna) =>
+        Array.from(columna.childNodes).filter((nodo) => nodo.nodeType === Node.TEXT_NODE).map((nodo) => nodo.textContent).join("")
+    )).trim();
+    const nombre = (await columnas.nth(1).innerText()).trim();
+    expect(username).not.toBe("");
+    expect(nombre).not.toBe("");
+
+    await busqueda.fill(username);
+    await expect(filas).toHaveCount(1);
+    await expect(filas.getByText("Operador", { exact: true })).toBeVisible();
+    await expect(filas.getByText(nombre, { exact: true })).toBeVisible();
+
+    await seleccionarRol(page, "Productor");
+    await expect(busqueda).toHaveValue("");
+    await busqueda.fill(username);
+    await expect(filas).toHaveCount(0);
+    await expect(page.getByText("No se encontraron usuarios.", { exact: true })).toBeVisible();
+
+    await seleccionarRol(page, "Operador");
+    await busqueda.fill(username);
+    await expect(filas).toHaveCount(1);
+});
+
+test("BP-18.6: consulta un operador, abre su edición y vuelve al listado", async ({ page, usuariosAdministrativos }) => {
+    test.slow();
+    await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
+    await abrirUsuarios(page);
+    await seleccionarRol(page, "Operador");
+
+    const filas = filasUsuarios(page);
+    await expect(filas.first()).toBeVisible();
+    const nombre = (await filas.first().locator(":scope > span").nth(1).innerText()).trim();
+
+    await filas.first().click();
+    await expect(page).toHaveURL(/\/gestion-operadores\/\d+$/, { timeout: 30_000 });
+    const rutaPerfil = new URL(page.url()).pathname;
+    await expect(page.getByRole("heading", { name: nombre, exact: true, level: 1 })).toBeVisible();
+
+    await page.getByRole("link", { name: /Volver al listado de operadores/ }).click();
+    await expect(page).toHaveURL(/\/administracion#usuarios$/);
+
+    await seleccionarRol(page, "Operador");
+    const fila = filasUsuarios(page).filter({ has: page.getByText(nombre, { exact: true }) });
+    await expect(fila).toHaveCount(1);
+    await fila.getByTitle("Editar perfil", { exact: true }).click();
+    await expect(page).toHaveURL(`${rutaPerfil}/editar`, { timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Modificar operador", exact: true })).toBeVisible();
+
+    await Promise.all([
+        page.waitForURL((url) => url.pathname === rutaPerfil, { timeout: 30_000 }),
+        page.getByRole("button", { name: "Volver al perfil", exact: true }).click(),
+    ]);
+    await expect(page.getByRole("heading", { name: nombre, exact: true, level: 1 })).toBeVisible();
+
+    await page.getByRole("link", { name: /Volver al listado de operadores/ }).click();
+    await expect(page).toHaveURL(/\/administracion#usuarios$/);
+});
+
+for (const rol of ["visitante", "operador", "productor"] as const) {
+    test(`BP-18.9: rechaza el acceso administrativo del ${rol}`, async ({ page, usuariosAdministrativos }) => {
+        test.slow();
+
+        if (rol === "operador") await iniciarSesionOperador(page);
+        if (rol === "productor") await iniciarSesionProductor(page, usuariosAdministrativos.productor);
+
+        const destino = rol === "visitante"
+            ? /^\/iniciar-sesion$/
+            : rol === "productor"
+                ? /^\/mi-mercado\/productor$/
+                : /^\/mi-mercado(?:\/|$)/;
+
+        for (const ruta of ["/administracion", "/gestion-operadores/999999", "/gestion-operadores/999999/editar"]) {
+            await test.step(`Rechazar ${ruta}`, async () => {
+                await page.goto(ruta);
+                await expect(page).toHaveURL((url) => destino.test(url.pathname));
+                await expect(page.getByRole("link", { name: "Administración", exact: true })).toHaveCount(0);
+                await expect(page.getByRole("heading", { name: "Panel Administrativo" })).toHaveCount(0);
+            });
+        }
+    });
+}
+
+test("BP-18.2: abandonar un cambio conserva el importe guardado", async ({ page, usuariosAdministrativos }) => {
+    test.slow();
+    await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
+    await abrirGeneral(page);
+
+    const original = await campoImporte(page).inputValue();
+    expect(original).toMatch(/^[1-9]\d*$/);
+    await campoImporte(page).fill(original === "25" ? "37" : "25");
+    await expect(guardarImporte(page)).toBeEnabled();
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(campoImporte(page)).toHaveValue(original);
+    await expect(guardarImporte(page)).toBeDisabled();
+});
+
+test("BP-18.2: rechaza cero sin reemplazar el importe guardado", async ({ page, usuariosAdministrativos }) => {
+    test.slow();
+    await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
+    await abrirGeneral(page);
+
+    const original = await campoImporte(page).inputValue();
+    await campoImporte(page).fill("0");
+    await guardarImporte(page).click();
+
+    const notificaciones = page.getByRole("region", { name: "Notificaciones", exact: true });
+    await expect(notificaciones.getByRole("alert")).toBeVisible();
+    await expect(campoImporte(page)).toHaveValue("0");
+    await expect(guardarImporte(page)).toBeEnabled();
+
+    const respuesta = await page.request.get("/api/configuracion/incremento_precio");
+    expect(respuesta.ok()).toBe(true);
+    expect(await respuesta.json()).toMatchObject({ valor: original });
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(campoImporte(page)).toHaveValue(original);
+});
+
+testPrecarga("BP-18.2: guarda el importe y lo aplica al ajuste rápido del operador", async ({ page, browser, precargaOperadores }) => {
+    testPrecarga.setTimeout(180_000);
+
+    const { db, operadorA } = precargaOperadores;
+    const precioInicial = 100;
+    const especie = await db.orm.public.Especie.select("id").first();
+    expect(especie).not.toBeNull();
+    if (!especie) throw new Error("No hay especies para preparar la publicación.");
+
+    type Precio = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
+
+    const publicacion = await db.transaction(async (tx) => {
+        const creada = await tx.orm.public.Publicacion.create({
+            especieId: especie.id,
+            tipoPublicacion: "OPERADOR",
+            precio: String(precioInicial) as Precio,
+            publicacionActiva: true,
+            publicacionDisponible: true,
+        });
+
+        await tx.orm.public.PublicacionOperador.create({ publicacionId: creada.id, operadorId: operadorA.id });
+        return creada;
+    });
+
+    await iniciarSesionAdministrador(page, precargaOperadores.administrador);
+    await abrirGeneral(page);
+
+    const original = await campoImporte(page).inputValue();
+    expect(original).toMatch(/^[1-9]\d*$/);
+    const nuevo = original === "25" ? "37" : "25";
+    const operador = await browser.newPage();
+
+    async function comprobarPrecioGuardado(esperado: number) {
+        await expect.poll(async () => {
+            const guardada = await db.orm.public.Publicacion.where({ id: publicacion.id }).select("precio").first();
+            return guardada?.precio == null ? null : Number(guardada.precio);
+        }, { timeout: 30_000 }).toBe(esperado);
+    }
+
+    try {
+        await operador.goto("/iniciar-sesion");
+        await operador.getByLabel("Correo electrónico o nombre de usuario").fill(operadorA.credenciales.usuario);
+        await operador.getByLabel("Contraseña", { exact: true }).fill(operadorA.credenciales.contrasena);
+        await operador.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
+        await expect(operador).toHaveURL((url) => decodeURIComponent(url.pathname) === `/mi-mercado/${operadorA.nombre}`, { timeout: 30_000 });
+        await expect(operador.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible({ timeout: 30_000 });
+
+        const tarjeta = operador.getByRole("main");
+        const precio = botonPrecio(tarjeta);
+        const aumentar = tarjeta.getByRole("button", { name: "Aumentar precio", exact: true });
+        const disminuir = tarjeta.getByRole("button", { name: "Disminuir precio", exact: true });
+
+        await expect(precio).toHaveCount(1);
+        await expect(precio).toHaveText(`$${precioInicial}`);
+
+        await testPrecarga.step("Guardar el importe y comprobar persistencia", async () => {
+            await campoImporte(page).fill(nuevo);
+            await guardarImporte(page).click();
+            await expect(page.getByRole("status").filter({ hasText: confirmacionGuardado })).toBeVisible({ timeout: 30_000 });
+            await expect(guardarImporte(page)).toBeDisabled();
+
+            await page.reload({ waitUntil: "domcontentloaded" });
+            await expect(campoImporte(page)).toHaveValue(nuevo);
+            await comprobarPrecioGuardado(precioInicial);
+
+            await operador.reload({ waitUntil: "domcontentloaded" });
+            await expect(precio).toHaveText(`$${precioInicial}`);
+        });
+
+        await testPrecarga.step("Aumentar y comprobar persistencia", async () => {
+            await ejecutarCambioPrecio(operador, tarjeta, () => aumentar.click());
+            await expect(precio).toHaveText(`$${precioInicial + Number(nuevo)}`);
+            await comprobarPrecioGuardado(precioInicial + Number(nuevo));
+
+            await operador.reload({ waitUntil: "domcontentloaded" });
+            await expect(precio).toHaveText(`$${precioInicial + Number(nuevo)}`);
+        });
+
+        await testPrecarga.step("Disminuir y comprobar persistencia", async () => {
+            await ejecutarCambioPrecio(operador, tarjeta, () => disminuir.click());
+            await expect(precio).toHaveText(`$${precioInicial}`);
+            await comprobarPrecioGuardado(precioInicial);
+
+            await operador.reload({ waitUntil: "domcontentloaded" });
+            await expect(precio).toHaveText(`$${precioInicial}`);
+        });
+    } finally {
+        try {
+            await restaurarImporte(page, original);
+        } finally {
+            await operador.close();
+        }
+    }
 });

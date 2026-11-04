@@ -360,7 +360,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 aria-label="Abrir menú de usuario"
                 aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined}
                 aria-expanded={menuUsuarioAbierto}
-                onClick={() => { if (!menuUsuarioAbierto) refrescarNotificaciones(); cambiarMenuUsuarioAbierto((abierto) => !abierto); }}
+                onClick={() => { if (!menuUsuarioAbierto) refrescarNotificaciones(); cambiarMenuUsuarioAbierto((abierto) => !abierto) }}
             >
                 {fotoPerfil && !fotoPerfilFallida ? (
                     <Image
@@ -390,6 +390,14 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                             Mi perfil
                         </Link>
                     )}
+
+                    {/* {!esProductor && (
+                        <Link
+                            href="/mi-perfil"
+                            className={estilos.opcionDesplegable}
+                            role="menuitem"
+                            onClick={cerrarMenus}
+                        ></Link> */}
                     <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
                         <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
                             Cerrar sesión
@@ -481,7 +489,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     <button
                         className={estilos.menuMobile}
                         type="button"
-                        onClick={() => { if (!menuAbierto) refrescarNotificaciones(); cambiarMenuAbierto((abierto) => !abierto); }}
+                        onClick={() => { if (!menuAbierto) refrescarNotificaciones(); cambiarMenuAbierto((abierto) => !abierto) }}
                         aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
                         aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined}
                         aria-expanded={menuAbierto}
@@ -540,6 +548,5 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
             )}
         </>
     );
-
     return contenido;
 }

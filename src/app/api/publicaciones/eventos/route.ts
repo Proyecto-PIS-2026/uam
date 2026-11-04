@@ -79,7 +79,7 @@ export async function GET(solicitud: Request) {
             });
             if (cerrado) desuscribir();
         },
-        cancel() { cerrar(true); },
+        cancel() { cerrar(true) },
     });
     return new Response(stream, {
         headers: {

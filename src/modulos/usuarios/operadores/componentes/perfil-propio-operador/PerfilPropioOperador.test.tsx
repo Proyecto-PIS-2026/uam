@@ -1,0 +1,52 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import type { PerfilPropioOperador as Perfil } from "../../consultasPerfilPropio";
+import PerfilPropioOperador from "./PerfilPropioOperador";
+
+vi.mock("next/image", () => ({ default: (props: { src: string; alt: string; onError?: () => void }) => <img {...props} /> }));
+vi.mock("./FormularioPerfilPropio", () => ({
+    default: ({ alCancelar }: { alCancelar: () => void }) => (
+        <div>
+            <span>Formulario simulado</span>
+            <button type="button" onClick={alCancelar}>Cancelar edición</button>
+        </div>
+    ),
+}));
+
+const perfil: Perfil = {
+    id: 7,
+    nombre: "Frutas del Norte",
+    nombreUsuario: "frutas",
+    contacto: "+59899123456",
+    fotoPerfil: null,
+    comentario: "Licencia: 2999-11-05 - 2999-11-12\n\nConsultar disponibilidad.",
+    enLicencia: true,
+    locales: [
+        { nave: "B", local: "20", finContrato: "2029-03-31" },
+        { nave: "A", local: "2", finContrato: null },
+    ],
+};
+
+describe("PerfilPropioOperador", () => {
+    it("muestra los datos, locales, licencia y mensaje", () => {
+        render(<PerfilPropioOperador perfil={perfil} />);
+        expect(screen.getByRole("heading", { name: "Frutas del Norte" })).toBeInTheDocument();
+        expect(screen.getByText("Usuario: frutas")).toBeInTheDocument();
+        expect(screen.getByText("WhatsApp: +59899123456")).toBeInTheDocument();
+        expect(screen.getByText("Vence: 31/03/2029")).toBeInTheDocument();
+        expect(screen.getByText("Sin fecha de fin")).toBeInTheDocument();
+        expect(screen.getByText("05/11/2999 - 12/11/2999")).toBeInTheDocument();
+        expect(screen.getByText("Consultar disponibilidad.")).toBeInTheDocument();
+    });
+
+    it("muestra el estado vacío y permite entrar y salir de edición", () => {
+        const perfilSinDatos = { ...perfil, locales: [], enLicencia: false, comentario: null, contacto: null };
+        render(<PerfilPropioOperador perfil={perfilSinDatos} />);
+        expect(screen.getByText("Sin locales registrados")).toBeInTheDocument();
+        expect(screen.getByText("No hay licencia registrada.")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        expect(screen.getByText("Formulario simulado")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar edición" }));
+        expect(screen.getByRole("heading", { name: "Frutas del Norte" })).toBeInTheDocument();
+    });
+});

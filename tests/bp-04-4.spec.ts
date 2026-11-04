@@ -1,5 +1,6 @@
-import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
-import { iniciarSesionOperador } from "./autenticacion";
+import { expect, type Page, type APIRequestContext } from "@playwright/test";
+import { test } from "./usuarios-administrativos";
+import { iniciarSesionAdministrador, iniciarSesionOperador } from "./autenticacion";
 import { conPreciosReferenciaDePrueba } from "./precios-referencia-db";
 
 const rutaHistoricos = "/precios-historicos?species_id=1&producto=Acelga&variedad=-&pais=URUGUAY&calibre=C&categoria=I";
@@ -23,7 +24,7 @@ function rutasAdministrativas(operador: Operador) {
   ];
 }
 
-async function iniciarSesion(page: Page, rol: "PRODUCTOR" | "ADMINISTRADOR") {
+async function iniciarSesion(page: Page, rol: "PRODUCTOR") {
   const usuario = process.env[`E2E_${rol}_USU`];
   const contrasena = process.env[`E2E_${rol}_PASS`];
   if (!usuario || !contrasena) {
@@ -34,7 +35,7 @@ async function iniciarSesion(page: Page, rol: "PRODUCTOR" | "ADMINISTRADOR") {
   await page.getByLabel("Correo electrónico o nombre de usuario").fill(usuario);
   await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
   await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
-  const destino = rol === "PRODUCTOR" ? "/mi-mercado/productor" : "/inicio";
+  const destino = "/mi-mercado/productor";
   await expect(page).toHaveURL((url) => url.pathname === destino);
   expect((await page.context().cookies()).some((cookie) => cookie.name === "uam_sesion")).toBe(true);
 }
@@ -221,10 +222,10 @@ test("BP-04.4 CA-3 CP-06: funcionalidades de otros roles para el Productor", asy
   }
 });
 
-test("BP-04.4 CA-4 CP-07: funcionalidades permitidas al Administrador", async ({ page, request }) => {
+test("BP-04.4 CA-4 CP-07: funcionalidades permitidas al Administrador", async ({ page, request, usuariosAdministrativos }) => {
   test.slow();
   const operador = (await obtenerOperadores(request))[0];
-  await iniciarSesion(page, "ADMINISTRADOR");
+  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
   await expect(enlaceAdministracion(page)).toBeVisible();
   await enlaceAdministracion(page).click();
   await expect(page).toHaveURL((url) => url.pathname === "/administracion");
@@ -246,8 +247,8 @@ test("BP-04.4 CA-4 CP-07: funcionalidades permitidas al Administrador", async ({
   await consultarHistoricos(page);
 });
 
-test("BP-04.4 CA-4 CP-08: funcionalidades de Operador para el Administrador", async ({ page }) => {
-  await iniciarSesion(page, "ADMINISTRADOR");
+test("BP-04.4 CA-4 CP-08: funcionalidades de Operador para el Administrador", async ({ page, usuariosAdministrativos }) => {
+  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
   await page.goto("/publicaciones/nueva");
   await expect(page).toHaveURL((url) => url.pathname === "/inicio");
   await expect(page.getByRole("dialog", { name: "Nueva publicación" })).toHaveCount(0);
@@ -259,7 +260,7 @@ test("BP-04.4 CA-5 CP-09: mercado de otro Operador", async ({ page, request, bro
   const operadores = await obtenerOperadores(request);
   await iniciarSesionOperador(page);
   const [propio] = await obtenerOperadores(page.request);
-  const ajeno = operadores.find((operador) => operador.nombre === "Jorge Ferias");
+  const ajeno = operadores.find((operador) => operador.id !== propio.id);
   expect(ajeno).toBeDefined();
   expect(ajeno!.id).not.toBe(propio.id);
 

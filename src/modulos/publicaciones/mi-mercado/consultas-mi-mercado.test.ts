@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => {
         const builder = { where: vi.fn(), include: vi.fn(), select: vi.fn(), all: vi.fn(), first: vi.fn(), update: vi.fn() };
         builder.where.mockReturnValue(builder);
         builder.select.mockReturnValue(builder);
-        builder.include.mockImplementation((_nombre, callback) => { callback?.(builder); return builder; });
+        builder.include.mockImplementation((_nombre, callback) => { callback?.(builder); return builder });
         return builder;
     };
     return { relacion: consulta(), publicacion: consulta(), imagen: consulta(), transaction: vi.fn(), execute: vi.fn(), notificar: vi.fn() };

@@ -166,7 +166,7 @@ describe("DELETE /api/publicaciones/[id]", () => {
 
 	it("confirma la eliminacion aunque falle una revalidacion posterior", async () => {
 		bajaPublicacionOperadorMock.mockResolvedValue(true);
-		vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache"); });
+		vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache") });
 		const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
 
 		try {
@@ -457,7 +457,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 	});
 
 	it("confirma la edicion aunque falle una revalidacion posterior", async () => {
-		vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache"); });
+		vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache") });
 		const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
 
 		try {

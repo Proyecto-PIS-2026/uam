@@ -7,7 +7,7 @@ vi.mock("@/infraestructura/tiempo-real/escuchar-publicaciones", () => ({ escucha
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.sesion }));
 vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({ obtenerOperadorAutorizado: mocks.operador }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/permisos", () => ({ autorizado: mocks.autorizado }));
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ ErrorAutorizacion: class extends Error { constructor(public status: number, mensaje: string) { super(mensaje); } } }));
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ ErrorAutorizacion: class extends Error { constructor(public status: number, mensaje: string) { super(mensaje) } } }));
 
 describe("eventos de publicaciones", () => {
     beforeEach(() => {
@@ -24,7 +24,7 @@ describe("eventos de publicaciones", () => {
         mocks.operador.mockResolvedValue({ id: 7, usuarioId: 10 });
         mocks.autorizado.mockReturnValue(true);
     });
-    afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+    afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() });
 
     it("publica sólo invalidaciones sin identificadores en el canal público", async () => {
         const respuesta = await GET(new Request("http://localhost/api/publicaciones/eventos"));

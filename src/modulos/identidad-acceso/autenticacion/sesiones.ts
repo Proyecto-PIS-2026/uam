@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { obtenerVersionSegundoFactor } from "./segundo-factor-criptografia";
 
 const nombreCookieSesion = "uam_sesion";
 const duracionSesionEnSegundos = 60 * 60 * 8;
@@ -11,6 +12,8 @@ export type DatosSesion = {
     usuarioId: number;
     rol: RolUsuario;
     expiraEn: number;
+    segundoFactorVerificado?: true;
+    versionSegundoFactor?: string;
 };
 
 function obtenerSecretoSesion() {
@@ -32,9 +35,12 @@ function serializar(datos: DatosSesion) {
     return `${contenido}.${firmar(contenido)}`;
 }
 
-export async function crearSesion(usuarioId: number, rol: DatosSesion["rol"]) {
+export async function crearSesion(usuarioId: number, rol: DatosSesion["rol"], versionSegundoFactor?: string) {
+    if (rol === "ADMINISTRADOR" && !/^[a-f0-9]{64}$/.test(versionSegundoFactor ?? "")) {
+        throw new Error("Completá la verificación en dos pasos para iniciar sesión.");
+    }
     const expiraEn = Math.floor(Date.now() / 1000) + duracionSesionEnSegundos;
-    const valor = serializar({ usuarioId, rol, expiraEn });
+    const valor = serializar({ usuarioId, rol, expiraEn, ...(rol === "ADMINISTRADOR" ? { segundoFactorVerificado: true as const, versionSegundoFactor } : {}) });
     const cookiesSesion = await cookies();
 
     cookiesSesion.set(nombreCookieSesion, valor, {
@@ -94,6 +100,12 @@ export async function obtenerSesion(): Promise<DatosSesion | null> {
             .first();
 
         if (!usuario || !usuario.habilitado || usuario.rol !== datos.rol) {
+            return null;
+        }
+        if (datos.rol === "ADMINISTRADOR" && (datos.segundoFactorVerificado !== true || !usuario.twoFactorEnabled || !usuario.twoFactorSecret)) {
+            return null;
+        }
+        if (datos.rol === "ADMINISTRADOR" && datos.versionSegundoFactor !== obtenerVersionSegundoFactor(usuario.twoFactorSecret!)) {
             return null;
         }
 

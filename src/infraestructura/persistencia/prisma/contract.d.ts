@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'50650e5cb247debea4ab8752f6bfb873090723ca76796b3fff32d6361a04d46f'>;
+  StorageHashBase<'b04e63ad43f1b21150b2480a803730162a5ed496146d474aeade96f7f1abe0b6'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -400,6 +400,12 @@ export type FieldOutputTypes = {
       readonly passwordHash: CodecTypes['pg/text@1']['output'];
       readonly twoFactorSecret: CodecTypes['pg/text@1']['output'] | null;
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['output'];
+      readonly twoFactorChallengeHash: CodecTypes['pg/text@1']['output'] | null;
+      readonly twoFactorPendingSecret: CodecTypes['pg/text@1']['output'] | null;
+      readonly twoFactorExpiresAt: CodecTypes['pg/int4@1']['output'] | null;
+      readonly twoFactorFailedAttempts: CodecTypes['pg/int4@1']['output'];
+      readonly twoFactorLockedUntil: CodecTypes['pg/int4@1']['output'] | null;
+      readonly twoFactorLastStep: CodecTypes['pg/int4@1']['output'] | null;
       readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['output'];
       readonly habilitado: CodecTypes['pg/bool@1']['output'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
@@ -574,6 +580,12 @@ export type FieldInputTypes = {
       readonly passwordHash: CodecTypes['pg/text@1']['input'];
       readonly twoFactorSecret: CodecTypes['pg/text@1']['input'] | null;
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['input'];
+      readonly twoFactorChallengeHash: CodecTypes['pg/text@1']['input'] | null;
+      readonly twoFactorPendingSecret: CodecTypes['pg/text@1']['input'] | null;
+      readonly twoFactorExpiresAt: CodecTypes['pg/int4@1']['input'] | null;
+      readonly twoFactorFailedAttempts: CodecTypes['pg/int4@1']['input'];
+      readonly twoFactorLockedUntil: CodecTypes['pg/int4@1']['input'] | null;
+      readonly twoFactorLastStep: CodecTypes['pg/int4@1']['input'] | null;
       readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['input'];
       readonly habilitado: CodecTypes['pg/bool@1']['input'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
@@ -748,7 +760,13 @@ export type StorageColumnTypes = {
       readonly passwordHash: CodecTypes['pg/text@1']['output'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
       readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['output'];
+      readonly twoFactorChallengeHash: CodecTypes['pg/text@1']['output'] | null;
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['output'];
+      readonly twoFactorExpiresAt: CodecTypes['pg/int4@1']['output'] | null;
+      readonly twoFactorFailedAttempts: CodecTypes['pg/int4@1']['output'];
+      readonly twoFactorLastStep: CodecTypes['pg/int4@1']['output'] | null;
+      readonly twoFactorLockedUntil: CodecTypes['pg/int4@1']['output'] | null;
+      readonly twoFactorPendingSecret: CodecTypes['pg/text@1']['output'] | null;
       readonly twoFactorSecret: CodecTypes['pg/text@1']['output'] | null;
       readonly username: CodecTypes['pg/text@1']['output'];
     };
@@ -922,7 +940,13 @@ export type StorageColumnInputTypes = {
       readonly passwordHash: CodecTypes['pg/text@1']['input'];
       readonly rol: 'ADMINISTRADOR' | 'OPERADOR' | 'PRODUCTOR';
       readonly solicitoRestablecimiento: CodecTypes['pg/bool@1']['input'];
+      readonly twoFactorChallengeHash: CodecTypes['pg/text@1']['input'] | null;
       readonly twoFactorEnabled: CodecTypes['pg/bool@1']['input'];
+      readonly twoFactorExpiresAt: CodecTypes['pg/int4@1']['input'] | null;
+      readonly twoFactorFailedAttempts: CodecTypes['pg/int4@1']['input'];
+      readonly twoFactorLastStep: CodecTypes['pg/int4@1']['input'] | null;
+      readonly twoFactorLockedUntil: CodecTypes['pg/int4@1']['input'] | null;
+      readonly twoFactorPendingSecret: CodecTypes['pg/text@1']['input'] | null;
       readonly twoFactorSecret: CodecTypes['pg/text@1']['input'] | null;
       readonly username: CodecTypes['pg/text@1']['input'];
     };
@@ -2221,6 +2245,40 @@ type ContractBase = Omit<
                     readonly value: DefaultLiteralValue<'pg/bool@1', false>;
                   };
                 };
+                readonly twoFactorChallengeHash: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly twoFactorPendingSecret: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly twoFactorExpiresAt: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
+                readonly twoFactorFailedAttempts: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                };
+                readonly twoFactorLockedUntil: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
+                readonly twoFactorLastStep: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
                 readonly solicitoRestablecimiento: {
                   readonly nativeType: 'bool';
                   readonly codecId: 'pg/bool@1';
@@ -2246,7 +2304,10 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['username'] }];
+              uniques: readonly [
+                { readonly columns: readonly ['username'] },
+                { readonly columns: readonly ['twoFactorChallengeHash'] },
+              ];
               indexes: readonly [];
               foreignKeys: readonly [];
             };
@@ -3636,6 +3697,30 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
+              readonly twoFactorChallengeHash: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly twoFactorPendingSecret: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly twoFactorExpiresAt: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly twoFactorFailedAttempts: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly twoFactorLockedUntil: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly twoFactorLastStep: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly solicitoRestablecimiento: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
@@ -3671,6 +3756,12 @@ type ContractBase = Omit<
                 readonly passwordHash: { readonly column: 'passwordHash' };
                 readonly twoFactorSecret: { readonly column: 'twoFactorSecret' };
                 readonly twoFactorEnabled: { readonly column: 'twoFactorEnabled' };
+                readonly twoFactorChallengeHash: { readonly column: 'twoFactorChallengeHash' };
+                readonly twoFactorPendingSecret: { readonly column: 'twoFactorPendingSecret' };
+                readonly twoFactorExpiresAt: { readonly column: 'twoFactorExpiresAt' };
+                readonly twoFactorFailedAttempts: { readonly column: 'twoFactorFailedAttempts' };
+                readonly twoFactorLockedUntil: { readonly column: 'twoFactorLockedUntil' };
+                readonly twoFactorLastStep: { readonly column: 'twoFactorLastStep' };
                 readonly solicitoRestablecimiento: { readonly column: 'solicitoRestablecimiento' };
                 readonly habilitado: { readonly column: 'habilitado' };
                 readonly rol: { readonly column: 'rol' };

@@ -1,5 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPerfilAdminOperador } from "./consultas-perfil-admin";
 
 // Sirve para construir una base de datos falsa, metodos falsos y simular las consultas
@@ -15,6 +15,11 @@ const mockDb = vi.hoisted(() => ({
         include: vi.fn().mockReturnThis(),
         all: vi.fn(),
     },
+    imagenes: {
+        select: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        all: vi.fn(),
+    },
 }));
 
 // En el archivo original se hace un import de db
@@ -25,6 +30,7 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
             public: {
                 Operador: mockDb.operador,
                 PublicacionOperador: mockDb.publicaciones,
+                Imagen: mockDb.imagenes,
             },
         },
     },
@@ -63,6 +69,11 @@ const publicacionBase = {
 };
 
 describe("obtenerPerfilAdminOperador", () => {
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.restoreAllMocks();
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -207,6 +218,35 @@ describe("obtenerPerfilAdminOperador", () => {
             "D-161",
             "D-180",
         ]);
+    });
+
+    it("conserva la licencia y el comentario mientras oculta solo las fotos vencidas", async () => {
+        vi.stubEnv("VIGENCIA_FOTOS_DIAS", "1");
+        vi.spyOn(Temporal.Now, "instant").mockReturnValue(Temporal.Instant.from("2026-11-04T03:00:00Z"));
+        const archivo = "12345678-1234-4123-8123-123456789abc.webp";
+        const fotoVencida = `/api/publicaciones/imagenes/101/${archivo}`;
+        const fotoVigente = `/api/publicaciones/imagenes/102/${archivo}`;
+        mockDb.operador.first.mockResolvedValue({ ...operadorBase, enLicencia: true, comentario: "Retoma la actividad la semana siguiente." });
+        mockDb.publicaciones.all.mockResolvedValue([
+            { publicacion: { ...publicacionBase, foto: fotoVencida }, pais: null },
+            { publicacion: { ...publicacionBase, id: 102, foto: fotoVigente }, pais: null },
+        ]);
+        mockDb.imagenes.all.mockResolvedValue([
+            { clave: `publicaciones/101/${archivo}`, cargadaEn: Temporal.Instant.from("2026-11-03T03:00:00Z") },
+            { clave: `publicaciones/102/${archivo}`, cargadaEn: Temporal.Instant.from("2026-11-03T03:00:01Z") },
+        ]);
+
+        const resultado = await obtenerPerfilAdminOperador(13);
+
+        expect(resultado).toMatchObject({
+            enLicencia: true,
+            comentario: "Retoma la actividad la semana siguiente.",
+            publicaciones: [
+                { id: 101, foto: null, precio: "120.00" },
+                { id: 102, foto: fotoVigente, precio: "120.00" },
+            ],
+        });
+        expect(mockDb.imagenes.all).toHaveBeenCalledOnce();
     });
 
 });
