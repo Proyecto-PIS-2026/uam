@@ -1,10 +1,12 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { obtenerProductorActual } from "../../usuarios/productores/acciones/productor-actual";
 import type { Publicacion } from "./tipos";
+import { convertirInstantAFechaVigencia } from "@/modulos/publicaciones/vigencia-publicacion";
 
 export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperadorId" | "version"> & {
     publicacionProductorId: number;
     pais: string;
+    fechaVigencia: string | null;
     ubicaciones: {
         id: number;
         nombreUbicacion: string;
@@ -20,7 +22,7 @@ async function consultarPublicacionesProductor(productorId: number) {
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) =>
             publicacion
-                .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible")
+                .select("id", "foto", "precio", "cantidadUnidades", "fecha","fechaVigencia", "publicacionActiva", "publicacionDisponible")
                 .include("especie")
                 .include("variedad")
                 .include("presentacion")
@@ -42,6 +44,7 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
             foto: publicacion.foto,
             precio: publicacion.precio === null ? null : String(publicacion.precio),
             fecha: publicacion.fecha.toString(),
+            fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
             publicacionActiva: publicacion.publicacionActiva,
             publicacionDisponible: publicacion.publicacionDisponible,
             cantidadUnidades: publicacion.cantidadUnidades,

@@ -8,6 +8,7 @@ import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarIma
 import { limpiarImagenPublicacionNoReferenciada } from "../operadores/limpiar-imagen-publicacion";
 import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
 import { validarUbicacionesProductor, type UbicacionPublicacionProductor } from "./ubicaciones-productor";
+import { validarFechaVigencia,convertirFechaVigenciaAInstant } from "../vigencia-publicacion";
 
 type Cliente = Pick<typeof db, "orm">;
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
@@ -19,6 +20,7 @@ export type CambiosPublicacionProductor = Omit<SeleccionPublicacion, "paisId"> &
     foto?: string | null;
     cantidadUnidades?: number | null;
     disponible?: boolean;
+    fechaVigencia?: string | null;
     ubicaciones: UbicacionPublicacionProductor[];
 };
 
@@ -51,7 +53,13 @@ function validarCambios(entrada: unknown): CambiosPublicacionProductor {
     if (datos.foto !== undefined && datos.foto !== null && typeof datos.foto !== "string") datosInvalidos("La fotografía no es válida.");
     const ubicaciones = validarUbicacionesProductor(datos.ubicaciones);
     if (!ubicaciones.esValido) datosInvalidos(ubicaciones.error);
-    return { ...seleccion.seleccion, paisId: datos.paisId === undefined ? undefined : seleccion.seleccion.paisId, precio: normalizarPrecioPublicacion(datos.precio as string | null | undefined), foto: datos.foto as string | null | undefined,
+
+    const vigencia = validarFechaVigencia(datos.fechaVigencia);
+
+    if (!vigencia.esValido) {
+        datosInvalidos(vigencia.error);
+    }
+    return { ...seleccion.seleccion,fechaVigencia: vigencia.fechaVigencia, paisId: datos.paisId === undefined ? undefined : seleccion.seleccion.paisId, precio: normalizarPrecioPublicacion(datos.precio as string | null | undefined), foto: datos.foto as string | null | undefined,
         cantidadUnidades: datos.cantidadUnidades as number | null | undefined,
         disponible: datos.disponible as boolean | undefined, ubicaciones: ubicaciones.ubicaciones };
 }
@@ -63,7 +71,7 @@ async function consultarPublicacion(publicacionProductorId: number, cliente: Cli
         .include("pais", (pais) => pais.select("nombrePais"))
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) => publicacion
-            .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+            .select("id", "foto", "precio", "cantidadUnidades", "fecha","fechaVigencia", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
             .include("presentacion", (presentacion) => presentacion.include("variedad", (variedad) => variedad.include("especie")))
             .include("especie").include("variedad").include("categoria").include("calibre"))
         .first();
@@ -87,6 +95,21 @@ export async function obtenerPublicacionProductorEditable(sesion: DatosSesion, p
 export async function modificarPublicacionProductor(sesion: DatosSesion, publicacionProductorId: number, entrada: unknown, fotoNueva?: File | null) {
     if (!Number.isSafeInteger(publicacionProductorId) || publicacionProductorId <= 0 || publicacionProductorId > 2147483647) datosInvalidos("La publicación no es válida.");
     const cambios = validarCambios(entrada);
+    const [configHabilitada, configDias] = await Promise.all([
+    db.orm.public.Configuracion
+        .where({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada" })
+        .select("valorConfiguracion")
+        .first(),
+
+    db.orm.public.Configuracion
+        .where({ nombreConfiguracion: "vigencia_publicaciones_productor" })
+        .select("valorConfiguracion")
+        .first(),
+    ]);
+
+    if (!configHabilitada || !configDias) {
+        throw new Error("No se pudo consultar la configuración de vigencia de publicaciones.");
+    }
     let imagenCreada: { url: string; publicacionId: number } | null = null;
     let resultado;
     try {
@@ -99,6 +122,26 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
                 .returnsRow({ id: "pg/int4@1" }).build());
             const relacion = await obtenerPublicacionProductorEditable(sesion, publicacionProductorId, tx);
             const publicacion = relacion.publicacion;
+            let fechaVigencia = cambios.fechaVigencia;
+
+            if (configHabilitada.valorConfiguracion === "true") {
+                const dias = Number(configDias.valorConfiguracion);
+
+                if (!Number.isSafeInteger(dias) || dias <= 0) {
+                    throw new Error("La configuración de vigencia de publicaciones no es válida.");
+                }
+
+                const fechaMaxima = Temporal.Now
+                    .plainDateISO("America/Montevideo")
+                    .add({ days: dias })
+                    .toString();
+
+                if (fechaVigencia === null) {
+                    fechaVigencia = fechaMaxima;
+                } else if (fechaVigencia !== undefined && fechaVigencia > fechaMaxima) {
+                    datosInvalidos(`La fecha de vigencia no puede superar el ${fechaMaxima}.`);
+                }
+            }
             const seleccionActual = { ...cambios, paisId: cambios.paisId === undefined ? relacion.paisId : cambios.paisId };
             if (!await validarCatalogosSeleccion(tx, seleccionActual)) {
                 datosInvalidos("La selección contiene datos que ya no están disponibles o no corresponden a la especie.");
@@ -122,7 +165,7 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             // temporal.updatedAt() renueva fecha en este UPDATE, también si sólo cambian ubicaciones.
             await tx.orm.public.Publicacion.where({ id: publicacion.id }).update({
                 precio: cambios.precio as PrecioDb, foto, especieId: cambios.especieId, variedadId: cambios.variedadId, presentacionId: cambios.presentacionId,
-                categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,
+                categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,...(fechaVigencia !== undefined? { fechaVigencia: convertirFechaVigenciaAInstant(fechaVigencia) }: {}),
                 ...(cambios.cantidadUnidades !== undefined ? { cantidadUnidades: cambios.cantidadUnidades as CantidadUnidadesDb } : {}),
                 ...(cambios.disponible !== undefined ? { publicacionDisponible: cambios.disponible } : {}),
             });

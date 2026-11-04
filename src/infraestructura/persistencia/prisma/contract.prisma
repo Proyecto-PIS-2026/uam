@@ -195,6 +195,7 @@ model Publicacion {
   id                    Int                  @id @default(autoincrement())
   version               Int                  @default(1)
   fecha                 temporal.updatedAt()
+  fechaVigencia         DateTime?
   publicacionDisponible Boolean              @default(true)
   publicacionActiva     Boolean              @default(true)
   precio                Numeric(12, 2)?

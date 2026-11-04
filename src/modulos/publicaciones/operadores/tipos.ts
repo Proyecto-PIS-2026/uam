@@ -6,6 +6,7 @@ export type CambiosPublicacionOperador = SeleccionPublicacion & {
     cantidadUnidades?: number | null;
     foto?: string | null;
     disponible: boolean;
+    fechaVigencia?: string | null;
 };
 
 export type OpcionEdicion = {

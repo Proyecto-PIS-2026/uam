@@ -680,14 +680,26 @@ async function main() {
       oferta.measureUnit, oferta.caliber, oferta.category, oferta.country));
     if (!foto) throw new Error(`No se encontró la foto de la publicación ${oferta.speciesId} / ${oferta.variety}.`);
 
+    let fechaVigencia: Temporal.Instant | null = null;
+    if (indice % 4 === 0) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 15 * 86_400_000);
+    } else if (indice % 4 === 1) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 2 * 86_400_000);
+    } else if (indice % 4 === 2) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() - 3 * 86_400_000);
+    }
+
     const publicacion = await prisma.orm.public.Publicacion.create({
       fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 15) * 86_400_000),
-      publicacionDisponible: oferta.available,
+      publicacionDisponible: fechaVigencia && Temporal.Instant.compare(fechaVigencia, Temporal.Now.instant()) < 0 
+        ? false 
+        : oferta.available,
       publicacionActiva: oferta.active,
       precio,
       cantidadUnidades: cantidadUnidadesDemo(indice, oferta.measureUnit),
       foto,
       tipoPublicacion: "OPERADOR",
+      fechaVigencia,
       especieId: clasificaciones.get(presentacionId)!.especieId,
       variedadId: clasificaciones.get(presentacionId)!.id,
       presentacionId,
@@ -760,15 +772,24 @@ async function main() {
     const precio = oferta.price === null
       ? null
       : oferta.price.toFixed(2) as unknown as PrecioPublicacion;
+    let fechaVigencia: Temporal.Instant | null = null;
+    if (indice % 4 === 0) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 15 * 86_400_000);
+    } else if (indice % 4 === 1) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 2 * 86_400_000);
+    } else if (indice % 4 === 2) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() - 3 * 86_400_000);
+    }
 
     const publicacion = await prisma.orm.public.Publicacion.create({
       fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 12) * 36_000_000),
-      publicacionDisponible: oferta.available,
+      publicacionDisponible: fechaVigencia && Temporal.Instant.compare(fechaVigencia, Temporal.Now.instant()) < 0 ? false : oferta.available,
       publicacionActiva: true,
       precio,
       cantidadUnidades: oferta.quantity,
       foto: fotoGenerica(oferta.speciesName, archivos),
       tipoPublicacion: "PRODUCTOR",
+      fechaVigencia,
       especieId: clasificaciones.get(presentacionId)!.especieId,
       variedadId: clasificaciones.get(presentacionId)!.id,
       presentacionId,

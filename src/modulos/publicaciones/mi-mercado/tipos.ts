@@ -5,6 +5,7 @@ export type Publicacion = {
     foto: string | null;
     precio: string | null;
     fecha: string;
+    fechaVigencia: string | null;
     version: number;
     publicacionActiva: boolean;
     publicacionDisponible: boolean;

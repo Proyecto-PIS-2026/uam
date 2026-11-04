@@ -5,6 +5,7 @@ import { normalizarPrecioPublicacion } from "./precio-publicacion";
 import { ErrorImagenPublicacion, guardarImagenPublicacion } from "./operadores/imagenes-publicacion";
 import { limpiarImagenPublicacionNoReferenciada } from "./operadores/limpiar-imagen-publicacion";
 import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
+import { convertirFechaVigenciaAInstant } from "./vigencia-publicacion";
 
 export type ResultadoAltaPublicacion =
 	| { esValido: false; errores: string[] }
@@ -72,6 +73,7 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
 				presentacionId: datos.presentacionId,
 				categoriaId: datos.categoriaId,
 				calibreId: datos.calibreId,
+				fechaVigencia: convertirFechaVigenciaAInstant(datos.fechaVigencia),
 			});
 			await tx.orm.public.PublicacionOperador.create({
 				publicacionId: publicacion.id,

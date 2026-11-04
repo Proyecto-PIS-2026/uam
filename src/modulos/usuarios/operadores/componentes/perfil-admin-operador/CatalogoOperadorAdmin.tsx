@@ -45,6 +45,7 @@ function paraDrawer(publicacion: PublicacionPerfilAdmin): PublicacionParaEditar 
         presentacionId: publicacion.presentacionId,
         paisId: publicacion.paisId,
         disponible: publicacion.disponible,
+        fechaVigencia: publicacion.fechaVigencia,
     };
 }
 

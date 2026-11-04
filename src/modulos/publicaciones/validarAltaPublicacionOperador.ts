@@ -1,5 +1,6 @@
 import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublicacion } from "./seleccion-publicacion";
 import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
+import { validarFechaVigencia } from "./vigencia-publicacion";
 
 export type DatosAltaPublicacionOperador = SeleccionPublicacion & {
 	operadorId: number;
@@ -7,6 +8,7 @@ export type DatosAltaPublicacionOperador = SeleccionPublicacion & {
 	precio?: string | null;
 	cantidadUnidades?: number | null;
 	fotografia?: string;
+	fechaVigencia?: string | null;
 };
 
 export type ResultadoValidacion =
@@ -58,7 +60,16 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 		}
 	}	
 
+	let fechaVigenciaNormalizada: string | null = null;
+	if (datos.fechaVigencia !== undefined) {
+		const resVigencia = validarFechaVigencia(datos.fechaVigencia);
+		if (!resVigencia.esValido) {
+			errores.push(resVigencia.error);
+		} else {
+			fechaVigenciaNormalizada = resVigencia.fechaVigencia;
+		}
+	}
 	if (errores.length > 0) return { esValido: false, errores };
 	if (!seleccion.esValido) return seleccion;
-	return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true } as DatosAltaPublicacionOperador };
+	return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true,fechaVigencia: fechaVigenciaNormalizada } as DatosAltaPublicacionOperador };
 }

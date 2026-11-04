@@ -42,6 +42,7 @@ type Props = {
 type Borrador = {
     precio: string;
     cantidadUnidades: string;
+    fechaVigencia: string;
     especieId: number;
     variedadId: number;
     presentacionId: number;
@@ -81,6 +82,7 @@ function crearBorrador(publicacion: PublicacionMiMercadoProductor): Borrador {
     return {
         precio: publicacion.precio === null ? "" : String(Number(publicacion.precio)),
         cantidadUnidades: publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades),
+        fechaVigencia: publicacion.fechaVigencia ?? "",
         especieId: publicacion.especie.id,
         variedadId: publicacion.variedad?.id ?? 0,
         presentacionId: publicacion.presentacion?.id ?? 0,
@@ -435,6 +437,22 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                                 value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "-"} readOnly={!editando} disabled={ocupado}
                                 onChange={(evento) => escribirCantidadUnidades(evento.target.value)} />
                             {editando && <small className={estilosAcciones.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small>}
+                        </div>
+                        <div className={estilosAcciones.campo}>
+                            <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-vigencia`}>
+                                Fecha de vigencia
+                            </label>
+                            <OutlinedInput
+                                color="secondary"
+                                className={estilosAcciones.entrada}
+                                size="small"
+                                id={`publicacion-productor-${publicacion.id}-vigencia`}
+                                type="date"
+                                value={borrador?.fechaVigencia ?? publicacion.fechaVigencia ?? ""}
+                                readOnly={!editando}
+                                disabled={ocupado}
+                                onChange={(evento) => cambiar({ fechaVigencia: evento.target.value })}
+                            />
                         </div>
                         <div className={estilosAcciones.seccionFoto}>
                             <div className={estilosAcciones.marcoFoto}>
