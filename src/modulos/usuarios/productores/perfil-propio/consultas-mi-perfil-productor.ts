@@ -6,6 +6,7 @@ export async function obtenerMiPerfilProductor(): Promise<ProductorParaModificar
     const sesion = await exigirProductor();
     const productor = await db.orm.public.Productor
         .select("id", "nombreFantasia", "whatsApp", "fotoPerfil")
+        .include("usuario", (usuario) => usuario.select("username"))
         .where({ usuarioId: sesion.usuarioId })
         .first();
 
@@ -13,6 +14,7 @@ export async function obtenerMiPerfilProductor(): Promise<ProductorParaModificar
     return {
         id: productor.id,
         nombre: productor.nombreFantasia,
+        nombreUsuario: productor.usuario.username,
         fotoPerfil: productor.fotoPerfil,
         ...separarTelefono(productor.whatsApp),
     };

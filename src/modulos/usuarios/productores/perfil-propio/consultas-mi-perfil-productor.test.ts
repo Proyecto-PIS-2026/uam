@@ -1,23 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerMiPerfilProductor } from "./consultas-mi-perfil-productor";
 
-const mocks = vi.hoisted(() => ({ exigirProductor: vi.fn(), select: vi.fn(), where: vi.fn(), first: vi.fn() }));
+const mocks = vi.hoisted(() => ({ exigirProductor: vi.fn(), select: vi.fn(), include: vi.fn(), where: vi.fn(), first: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirProductor: mocks.exigirProductor }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: { orm: { public: { Productor: mocks } } } }));
 
-const productor = { id: 5, nombreFantasia: "Granja Norte", whatsApp: "+59899123456", fotoPerfil: "/api/imagenes/foto" };
+const productor = { id: 5, nombreFantasia: "Granja Norte", whatsApp: "+59899123456", fotoPerfil: "/api/imagenes/foto", usuario: { username: "granja_norte" } };
 
 describe("obtenerMiPerfilProductor", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.exigirProductor.mockResolvedValue({ usuarioId: 42 });
         mocks.select.mockReturnValue(mocks);
+        mocks.include.mockReturnValue(mocks);
         mocks.where.mockReturnValue(mocks);
         mocks.first.mockResolvedValue(productor);
     });
 
     it("consulta los datos actuales del productor de la sesión", async () => {
-        expect(await obtenerMiPerfilProductor()).toEqual({ id: 5, nombre: "Granja Norte", codigoPais: "+598", telefono: "99123456", fotoPerfil: "/api/imagenes/foto" });
+        expect(await obtenerMiPerfilProductor()).toEqual({ id: 5, nombre: "Granja Norte", nombreUsuario: "granja_norte", codigoPais: "+598", telefono: "99123456", fotoPerfil: "/api/imagenes/foto" });
         expect(mocks.where).toHaveBeenCalledExactlyOnceWith({ usuarioId: 42 });
     });
 
