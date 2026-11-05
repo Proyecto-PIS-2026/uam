@@ -68,6 +68,7 @@ function crearPublicacion(id: number, especie: string, precio: string | null = "
         foto: null,
         precio,
         fecha: "2026-10-16T14:00:00.000Z",
+        fechaVigencia: "2026-10-28T15:00:00.000Z",
         publicacionActiva: true,
         publicacionDisponible: true,
         cantidadUnidades: 0,
