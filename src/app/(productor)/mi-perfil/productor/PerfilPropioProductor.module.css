@@ -1,0 +1,188 @@
+.pagina {
+    width: 100%;
+    max-width: var(--ancho-maximo-pagina);
+    margin: 0 auto;
+    padding: var(--padding-exterior-pagina);
+    color: var(--color-foreground);
+}
+
+.volver {
+    margin-bottom: var(--espacio-secciones);
+}
+
+.tarjeta {
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
+    box-shadow: var(--sombra-panel);
+}
+
+.encabezado {
+    display: grid;
+    position: relative;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    align-items: center;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-titulo-pagina);
+    overflow: hidden;
+    isolation: isolate;
+    background-color: var(--color-secondary);
+    color: var(--color-titulo-pagina);
+}
+
+.fotoProductor {
+    display: flex;
+    position: relative;
+    z-index: 1;
+    width: 6rem;
+    height: 6rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid rgb(255 255 255 / 65%);
+    border-radius: var(--radio-panel);
+    background-color: var(--color-secondary-soft);
+    color: var(--color-secondary);
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.foto {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.iconoSinFoto {
+    width: 4rem;
+    height: 4rem;
+}
+
+.identidad {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+}
+
+.tipo {
+    margin: 0;
+    color: var(--color-subtitulo-pagina);
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: var(--interlineado-texto);
+    text-transform: uppercase;
+}
+
+.nombre {
+    margin: var(--espacio-textos) 0 0;
+    overflow-wrap: anywhere;
+    color: var(--color-titulo-pagina);
+    font-size: var(--tamano-titulo-pagina);
+    font-weight: 700;
+    line-height: var(--interlineado-titulo-pagina);
+}
+
+.usuario {
+    margin: 0;
+    color: var(--color-subtitulo-pagina);
+    font-size: var(--tamano-texto-pequeño);
+    line-height: var(--interlineado-texto);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.descripcion,
+.contacto {
+    margin: var(--espacio-textos) 0 0;
+    color: var(--color-subtitulo-pagina);
+    font-size: var(--tamano-texto-pequeño);
+    line-height: var(--interlineado-texto);
+}
+
+.accionesEncabezado {
+    display: grid;
+    position: relative;
+    z-index: 1;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--espacio-controles);
+}
+
+.contacto {
+    min-width: 0;
+    overflow: hidden;
+    align-self: end;
+}
+
+.etiquetaContacto {
+    margin-right: 0.25rem;
+}
+
+.editar,
+.cambiarContrasena {
+    display: inline-flex;
+    min-height: var(--alto-control);
+    align-items: center;
+    justify-content: center;
+    gap: var(--espacio-inline);
+    border-radius: var(--radio-control);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.editar {
+    padding: var(--padding-control);
+    border: 1px solid var(--color-secondary);
+    background: var(--color-surface);
+    color: var(--color-secondary);
+}
+
+.editar:hover {
+    background: var(--color-secondary-soft);
+}
+
+.contenido {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-controles);
+    padding: var(--padding-panel);
+}
+
+.cambiarContrasena {
+    width: 100%;
+    padding: 0.3rem;
+    border: 1px solid var(--color-secondary);
+    background: var(--color-secondary);
+    color: var(--color-surface);
+    text-align: center;
+}
+
+.cambiarContrasena:hover {
+    background: var(--color-secondary-hover);
+}
+
+@media (min-width: 701px) {
+    .encabezado {
+        grid-template-columns: 6rem minmax(0, 1fr) auto;
+    }
+}
+
+@media (max-width: 700px) {
+    .pagina {
+        padding: var(--espacio-secciones);
+    }
+
+    .encabezado {
+        padding: var(--padding-panel);
+    }
+
+    .accionesEncabezado {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+}

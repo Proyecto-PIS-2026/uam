@@ -2,7 +2,8 @@
 import "temporal-polyfill/full/global";
 import "temporal-polyfill/types/global";
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { randomUUID } from "node:crypto";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { bajaOperador } from "./bajaOperador";
 
@@ -14,7 +15,9 @@ vi.mock("next/cache", () => ({
     revalidatePath: vi.fn(),
 }));
 
-const username = "bajaprobandotest";
+let username: string;
+let identificador: string;
+let navesCreadas: number[] = [];
 
 function obtenerFechaEstadisticaActual() {
     const fechaStr = new Date().toISOString().slice(0, 10);
@@ -30,11 +33,21 @@ async function crearOperadorDePrueba() {
 
     const operador = await db.orm.public.Operador.create({
         usuarioId: usuario.id,
-        nombreFantasia: "Operador Baja Test",
+        nombreFantasia: `Operador Baja Test ${identificador}`,
         whatsApp: "099123456",
     });
 
     return { usuario, operador };
+}
+
+async function crearNaveDePrueba() {
+    const nave = await db.orm.public.Nave.create({
+        nombreNave: `baja-test-${identificador}`,
+    });
+
+    navesCreadas.push(nave.id);
+
+    return nave;
 }
 
 async function crearPublicacionesDePrueba(
@@ -98,49 +111,60 @@ async function obtenerEstadisticasDelDia() {
 }
 
 describe("baja de operador", () => {
-    beforeEach(async () => {
-        // Limpiar registros estadísticos de ejecuciones anteriores.
-        await db.orm.public.EstadisticaCantidadPublicacion
-            .where({ username })
-            .delete();
+    beforeEach(() => {
+        identificador = randomUUID();
+        username = `baja-test-${identificador}`;
+        navesCreadas = [];
+    });
 
+    afterEach(async () => {
         const usuario = await db.orm.public.Usuario
             .where({ username })
             .first();
 
-        if (!usuario) return;
+        if (usuario) {
+            const operador = await db.orm.public.Operador
+                .where({ usuarioId: usuario.id })
+                .first();
 
-        const operador = await db.orm.public.Operador
-            .where({ usuarioId: usuario.id })
-            .first();
+            if (operador) {
+                await db.orm.public.Local
+                    .where({ operadorId: operador.id })
+                    .delete();
 
-        if (operador) {
-            await db.orm.public.Local
-                .where({ operadorId: operador.id })
-                .delete();
+                const relaciones = await db.orm.public.PublicacionOperador
+                    .where({ operadorId: operador.id })
+                    .all();
 
-            const relaciones = await db.orm.public.PublicacionOperador
-                .where({ operadorId: operador.id })
-                .all();
+                await db.orm.public.PublicacionOperador
+                    .where({ operadorId: operador.id })
+                    .delete();
 
-            await db.orm.public.PublicacionOperador
-                .where({ operadorId: operador.id })
-                .delete();
+                for (const relacion of relaciones) {
+                    await db.orm.public.Publicacion
+                        .where({ id: relacion.publicacionId })
+                        .delete();
+                }
 
-            for (const relacion of relaciones) {
-                await db.orm.public.Publicacion
-                    .where({ id: relacion.publicacionId })
+                await db.orm.public.Operador
+                    .where({ id: operador.id })
                     .delete();
             }
 
-            await db.orm.public.Operador
-                .where({ id: operador.id })
+            await db.orm.public.Usuario
+                .where({ id: usuario.id })
                 .delete();
         }
 
-        await db.orm.public.Usuario
-            .where({ id: usuario.id })
+        await db.orm.public.EstadisticaCantidadPublicacion
+            .where({ username })
             .delete();
+
+        for (const id of navesCreadas) {
+            await db.orm.public.Nave
+                .where({ id })
+                .delete();
+        }
     });
 
     it("devuelve los errores del validador cuando los datos son inválidos", async () => {
@@ -175,19 +199,12 @@ describe("baja de operador", () => {
         expect(operadorEliminado).toBeNull();
         expect(usuarioEliminado).toBeNull();
 
-        // No había publicaciones, por lo tanto no debe generarse un evento.
         expect(await obtenerEstadisticasDelDia()).toHaveLength(0);
     });
 
     it("elimina los locales del operador", async () => {
         const { operador } = await crearOperadorDePrueba();
-
-        const nave = await db.orm.public.Nave.all()
-            .then((naves) => naves[0]);
-
-        expect(nave).toBeDefined();
-
-        if (!nave) return;
+        const nave = await crearNaveDePrueba();
 
         await db.orm.public.Local.create({
             operadorId: operador.id,
@@ -229,8 +246,9 @@ describe("baja de operador", () => {
             ),
         );
 
-        expect(publicacionesRestantes.every((publicacion) => publicacion === null))
-            .toBe(true);
+        expect(
+            publicacionesRestantes.every((publicacion) => publicacion === null),
+        ).toBe(true);
 
         const relacionesRestantes = await db.orm.public.PublicacionOperador
             .where({ operadorId: operador.id })
@@ -241,6 +259,7 @@ describe("baja de operador", () => {
         const estadisticas = await obtenerEstadisticasDelDia();
 
         expect(estadisticas).toHaveLength(1);
+
         expect(estadisticas[0]).toMatchObject({
             username: usuario.username,
             cantidad: 0,
@@ -277,7 +296,6 @@ describe("baja de operador", () => {
         const estadisticas = await obtenerEstadisticasDelDia();
 
         expect(estadisticas).toHaveLength(1);
-
         expect(estadisticas[0].id).toBe(estadisticaInicial.id);
         expect(estadisticas[0].cantidad).toBe(0);
         expect(estadisticas[0].username).toBe(usuario.username);

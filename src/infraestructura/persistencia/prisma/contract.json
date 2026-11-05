@@ -24,6 +24,10 @@
       "model": "Configuracion",
       "namespace": "public"
     },
+    "ejecucionTareaProgramada": {
+      "model": "EjecucionTareaProgramada",
+      "namespace": "public"
+    },
     "especie": {
       "model": "Especie",
       "namespace": "public"
@@ -411,6 +415,57 @@
               },
               "namespaceId": "public",
               "table": "configuracion"
+            }
+          },
+          "EjecucionTareaProgramada": {
+            "fields": {
+              "completadaEn": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "elementosProcesados": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "nombre": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "completadaEn": {
+                  "column": "completadaEn"
+                },
+                "elementosProcesados": {
+                  "column": "elementosProcesados"
+                },
+                "fecha": {
+                  "column": "fecha"
+                },
+                "nombre": {
+                  "column": "nombre"
+                }
+              },
+              "namespaceId": "public",
+              "table": "ejecucionTareaProgramada"
             }
           },
           "Especie": {
@@ -879,6 +934,20 @@
           },
           "Imagen": {
             "fields": {
+              "avisoVencimientoEn": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "cargadaEn": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "clave": {
                 "nullable": false,
                 "type": {
@@ -897,6 +966,12 @@
             "relations": {},
             "storage": {
               "fields": {
+                "avisoVencimientoEn": {
+                  "column": "avisoVencimientoEn"
+                },
+                "cargadaEn": {
+                  "column": "cargadaEn"
+                },
                 "clave": {
                   "column": "clave"
                 },
@@ -1598,6 +1673,13 @@
                   "kind": "scalar"
                 }
               },
+              "fotoEliminadaPorVencimientoEn": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1761,6 +1843,9 @@
                 },
                 "foto": {
                   "column": "foto"
+                },
+                "fotoEliminadaPorVencimientoEn": {
+                  "column": "fotoEliminadaPorVencimientoEn"
                 },
                 "id": {
                   "column": "id"
@@ -2594,6 +2679,38 @@
                 }
               ]
             },
+            "ejecucionTareaProgramada": {
+              "columns": {
+                "completadaEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "elementosProcesados": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "fecha": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "nombre": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "nombre"
+                ]
+              },
+              "uniques": []
+            },
             "especie": {
               "columns": {
                 "especieActiva": {
@@ -2942,6 +3059,16 @@
             },
             "imagen": {
               "columns": {
+                "avisoVencimientoEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "cargadaEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "clave": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -3528,6 +3655,11 @@
                 "foto": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": true
+                },
+                "fotoEliminadaPorVencimientoEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "id": {
@@ -4240,7 +4372,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "f28ff2fb1e16269215d5546217031823c5ab1e5876c017cc4e73849f448af8df"
+    "storageHash": "dd2325f84e913b72a7ab0918be5325fea4a11638dff51a37d577978c8637f59c"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

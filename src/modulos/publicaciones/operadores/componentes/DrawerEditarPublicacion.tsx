@@ -17,6 +17,7 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
+import { AvisoVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
 import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionPresentacion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import styles from "./DrawerEditarPublicacion.module.css";
@@ -34,6 +35,7 @@ type DrawerEditarPublicacionProps = {
     eliminando?: boolean;
     actualizando?: boolean;
     errorConsulta?: string;
+    mostrarAvisoFoto?: boolean;
     children?: ReactNode;
     alGuardar?: (publicacionOperadorId: number, cambios: CambiosPublicacionOperador, fotoNueva: File | null) => void | Promise<void>;
     publicacion: PublicacionParaEditar | null;
@@ -54,7 +56,7 @@ function precioParaEdicion(precio: string | null) {
     return Number.isInteger(valor) ? String(valor) : precio;
 }
 
-function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta = "", esWeb, guardando, setGuardando, alErrorGuardar }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void; alErrorGuardar: (mensaje: string) => void }) {
+function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta = "", mostrarAvisoFoto = false, esWeb, guardando, setGuardando, alErrorGuardar }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void; alErrorGuardar: (mensaje: string) => void }) {
     const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
     const [baseEdicion, setBaseEdicion] = useState(recibida);
     const [guardada, setGuardada] = useState<{ origen: PublicacionParaEditar; datos: PublicacionParaEditar } | null>(null);
@@ -283,6 +285,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             await alGuardar(publicacion.publicacionOperadorId, cambios, fotoNueva);
             setGuardada({ origen: recibida, datos: {
                 ...publicacion, ...cambios, version: cambios.version + 1, foto,
+                estadoFoto: fotoNueva || (foto === null && publicacion.foto !== null) ? null : publicacion.estadoFoto,
                 especie: especieSeleccionada?.nombre ?? publicacion.especie,
                 variedad: variedadSeleccionada?.nombre ?? "",
                 presentacion: presentaciones.find((opcion) => opcion.id === presentacionId)?.nombre ?? "",
@@ -315,6 +318,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     );
     const seccionFoto = (
         <div key="foto" className={styles.seccionFoto}>
+            {mostrarAvisoFoto && <AvisoVigenciaFoto estado={publicacion.estadoFoto} />}
             <div className={styles.marcoFoto}>
                 <ImagenPublicacion className={styles.imagenFoto} src={fotoVisible} alt={`Foto de ${especieSeleccionada?.nombre ?? publicacion.especie} ${variedadSeleccionada?.nombre ?? publicacion.variedad}`} fill sizes="(min-width: 768px) 480px, 100vw" unoptimized reemplazo={<div className={styles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>} />
                 {editando && (
@@ -441,7 +445,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     );
 }
 
-export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta, children }: DrawerEditarPublicacionProps) {
+export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta, mostrarAvisoFoto = false, children }: DrawerEditarPublicacionProps) {
     const { notificar } = useNotificacionToast();
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
@@ -452,7 +456,7 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
         <>
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} arrastreDeshabilitado={guardando || eliminando || actualizando} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} alErrorGuardar={(mensaje) => notificar(mensaje, "error")} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} mostrarAvisoFoto={mostrarAvisoFoto} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} alErrorGuardar={(mensaje) => notificar(mensaje, "error")} />
             )}
             {publicacion && children}
         </DrawerDeslizable>

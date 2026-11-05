@@ -7,6 +7,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
+import { IndicadorVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
 import type { Publicacion } from "../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
@@ -181,8 +182,9 @@ export default function TarjetaPublicacion({
 
     const contenido = (
         <div className={styles.tarjeta}>
-            <button type="button" onClick={consultarPublicacion} className={styles.botonFoto} aria-label={`Ver detalle de ${nombreProducto}`}>
+            <button type="button" onClick={consultarPublicacion} className={styles.botonFoto} aria-label={`Ver detalle de ${nombreProducto}`} aria-describedby={pub.estadoFoto ? `vigencia-foto-operador-${pub.id}` : undefined}>
                 <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(max-width: 639px) 112px, (max-width: 700px) 128px, (max-width: 776px) calc(50vw - 22px), (max-width: 1028px) calc(33.333vw - 18.667px), (max-width: 1279px) calc(25vw - 17px), 320px" unoptimized className={styles.foto} reemplazo={<div className={styles.sinFoto}>Sin fotografía</div>} />
+                <IndicadorVigenciaFoto estado={pub.estadoFoto} id={`vigencia-foto-operador-${pub.id}`} />
             </button>
             <div className={styles.contenido}>
                 <button type="button" onClick={consultarPublicacion} className={styles.botonInformacion}>

@@ -11,9 +11,10 @@ import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/contro
 type VistaMiMercadoProps = {
     abrirAltaInicial?: boolean;
     operadorNombre?: string;
+    publicacionInicialId?: number | null;
 };
 
-export default async function VistaMiMercado({ abrirAltaInicial = false, operadorNombre }: VistaMiMercadoProps) {
+export default async function VistaMiMercado({ abrirAltaInicial = false, operadorNombre, publicacionInicialId = null }: VistaMiMercadoProps) {
     const sesion = await requerirOperador();
     const operador = operadorNombre === undefined
         ? await obtenerOperadorActual()
@@ -32,5 +33,5 @@ export default async function VistaMiMercado({ abrirAltaInicial = false, operado
     ]);
     const publicaciones = mapearPublicacionesMiMercado(publicacionesBD);
     const incrementoPrecio = Number(incrementoPrecioConfiguracion); 
-    return <MiMercado key={operador.id} publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} nombreOperador={operador.nombreFantasia} enLicencia={operador.enLicencia} abrirAltaInicial={abrirAltaInicial} puedeCrear={puedeCrear} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} />;
+    return <MiMercado key={operador.id} publicaciones={publicaciones} incrementoPrecio={incrementoPrecio} opcionesEdicion={opcionesEdicion} operadorId={operador.id} nombreOperador={operador.nombreFantasia} enLicencia={operador.enLicencia} abrirAltaInicial={abrirAltaInicial} puedeCrear={puedeCrear} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} publicacionInicialId={publicacionInicialId} />;
 }
