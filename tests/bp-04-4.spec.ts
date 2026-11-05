@@ -1,7 +1,9 @@
 import { expect, type Page, type APIRequestContext } from "@playwright/test";
 import { test } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador, iniciarSesionOperador } from "./autenticacion";
-import { conPreciosReferenciaDePrueba } from "./precios-referencia-db";
+import { conHistoricoAcelgaDePrueba, conPreciosReferenciaDePrueba } from "./precios-referencia-db";
+
+test.describe.configure({ mode: "default" });
 
 const rutaHistoricos = "/precios-historicos?species_id=1&producto=Acelga&variedad=-&pais=URUGUAY&calibre=C&categoria=I";
 
@@ -46,9 +48,16 @@ function enlaceAdministracion(page: Page) {
 }
 
 async function consultarHistoricos(page: Page) {
-  await page.goto(rutaHistoricos);
-  await expect(page).toHaveURL((url) => url.pathname === "/precios-historicos");
-  await expect(page.getByRole("heading", { name: "Histórico de Acelga", exact: true })).toBeVisible();
+  await conHistoricoAcelgaDePrueba(async () => {
+    const respuesta = await page.goto(rutaHistoricos);
+    expect(respuesta?.status()).toBe(200);
+    await expect(page).toHaveURL((url) => url.pathname === "/precios-historicos");
+    await expect(page.getByRole("heading", { name: "Histórico de Acelga", exact: true })).toBeVisible();
+    await expect(page.getByRole("form", { name: "Consultar período histórico" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Consultar", exact: true })).toBeEnabled({ timeout: 30_000 });
+    await expect(page.getByRole("table").getByRole("cell", { name: "URUGUAY", exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  });
 }
 
 test("BP-04.4 CA-1 CP-01: consultas públicas sin iniciar sesión", async ({ page, context }) => conPreciosReferenciaDePrueba(async () => {
@@ -83,11 +92,7 @@ test("BP-04.4 CA-1 CP-01: consultas públicas sin iniciar sesión", async ({ pag
     await consultar("/precios-referencia", "Precios de referencia");
     await expect(page.getByRole("heading", { name: "Listado de Precios de referencia" })).toBeVisible();
 
-    await consultar(
-      "/precios-historicos?species_id=1&producto=Acelga&variedad=-&pais=URUGUAY&calibre=C&categoria=I",
-      "Histórico de Acelga",
-    );
-    await expect(page.getByRole("form", { name: "Consultar período histórico" })).toBeVisible();
+    await consultarHistoricos(page);
   });
 
   await test.step("Consultar el listado y el perfil de un Operador", async () => {
@@ -167,6 +172,9 @@ test("BP-04.4 CA-2 CP-03: funcionalidades permitidas al Operador", async ({ page
   await page.goto("/publicaciones/nueva");
   await expect(page).toHaveURL((url) => url.pathname === "/publicaciones/nueva");
   await expect(page.getByRole("dialog", { name: "Nueva publicación" })).toBeVisible();
+  await page.goto("/mi-perfil/cambiar-contrasena");
+  await expect(page).toHaveURL((url) => url.pathname === "/mi-perfil/cambiar-contrasena");
+  await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
   await consultarHistoricos(page);
 });
 
@@ -182,7 +190,6 @@ test("BP-04.4 CA-2 CP-04: funcionalidades de otros roles para el Operador", asyn
   for (const ruta of [
     "/operadores",
     `/operadores/${encodeURIComponent(operador.nombre)}`,
-    "/mi-perfil/cambiar-contrasena",
     "/iniciar-sesion",
     ...rutasAdministrativas(operador),
   ]) {

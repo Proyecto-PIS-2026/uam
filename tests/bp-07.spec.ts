@@ -12,7 +12,7 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     campo: string,
     opcion: string,
   ) {
-    await formulario.getByRole("combobox", { name: campo }).click();
+    await formulario.getByRole("combobox", { name: campo, exact: true }).click();
     await page.getByRole("option", { name: opcion, exact: true }).click({
       timeout: 5_000,
     });

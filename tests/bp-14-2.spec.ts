@@ -94,7 +94,7 @@ async function continuarPrecarga(page: Page, productor: ProductorAlta) {
 }
 
 async function seleccionar(page: Page, formulario: Locator, campo: string, opcion: string) {
-  await formulario.getByRole("combobox", { name: campo }).click();
+  await formulario.getByRole("combobox", { name: campo, exact: true }).click();
   await page.getByRole("option", { name: opcion, exact: true }).click();
 }
 

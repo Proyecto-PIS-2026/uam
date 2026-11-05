@@ -14,7 +14,7 @@ describe("página de cambio de contraseña dentro del perfil", () => {
         m.habilitado.mockReturnValue(true);
         m.redirect.mockImplementation(() => { throw new Error("NEXT_REDIRECT") });
     });
-    it.each(["ADMINISTRADOR", "PRODUCTOR"])("permite el formulario para %s y vuelve a su perfil", async rol => {
+    it.each(["ADMINISTRADOR", "OPERADOR", "PRODUCTOR"])("permite el formulario para %s y vuelve a su perfil", async rol => {
         m.sesion.mockResolvedValue({ usuarioId: 7, rol });
         render(await Pagina());
         const volver = rol === "PRODUCTOR" ? "/mi-perfil/productor" : "/mi-perfil";
@@ -25,12 +25,6 @@ describe("página de cambio de contraseña dentro del perfil", () => {
         m.sesion.mockResolvedValue(null);
         await expect(Pagina()).rejects.toThrow("NEXT_REDIRECT");
         expect(m.redirect).toHaveBeenCalledWith("/sesion-finalizada");
-        expect(m.habilitado).not.toHaveBeenCalled();
-    });
-    it("redirige al operador a su mercado antes de mostrar el formulario", async () => {
-        m.sesion.mockResolvedValue({ usuarioId: 7, rol: "OPERADOR" });
-        await expect(Pagina()).rejects.toThrow("NEXT_REDIRECT");
-        expect(m.redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado");
         expect(m.habilitado).not.toHaveBeenCalled();
     });
     it("oculta el formulario aunque se acceda por URL si está deshabilitado", async () => {
