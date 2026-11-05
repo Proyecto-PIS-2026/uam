@@ -102,13 +102,8 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
                     {enLicencia && (
                         <div className={styles.avisoLicencia} role="status">
                             <div className={styles.contenidoLicencia}>
-                                <p className={styles.licenciaActiva}>Licencia: {fechasLicencia}</p>
-                                {licencia.comentario ? (
-                                    <>
-                                        <p className={styles.etiquetaMensaje}>Mensaje de recomendación</p>
-                                        <p className={styles.comentario}>{licencia.comentario}</p>
-                                    </>
-                                ) : null}
+                                <p className={styles.licenciaActiva}>Fecha: {fechasLicencia}</p>
+                                {licencia.comentario ? <p className={styles.comentario}>{licencia.comentario}</p> : null}
                             </div>
                         </div>
                     )}

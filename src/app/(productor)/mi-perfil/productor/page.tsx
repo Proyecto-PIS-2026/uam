@@ -8,6 +8,7 @@ import BotonVolver from "@/compartido/BotonVolver";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import EditIcon from "@mui/icons-material/Edit";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import styles from "./PerfilPropioProductor.module.css";
 
 export const metadata = { title: "Mi perfil de Productor | UAM" };
@@ -38,6 +39,7 @@ export default async function PaginaMiPerfilProductor() {
                 </div>
                 <div className={styles.accionesEncabezado}>
                     <p className={styles.contacto}>
+                        <WhatsAppIcon aria-hidden="true" />
                         <span className={styles.etiquetaContacto}>Whatsapp:</span>
                         <span>{productor.telefono
                             ? `${productor.codigoPais} ${productor.telefono}`

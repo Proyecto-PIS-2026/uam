@@ -149,7 +149,7 @@ describe("Página pública del operador", () => {
 
         render(await Page({ params: Promise.resolve({ nombre: encodeURIComponent("Frutas del Norte") }), searchParams: Promise.resolve({}) }));
 
-        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Licencia: 05/11/2026 - 12/11/2026");
+        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Fecha: 05/11/2026 - 12/11/2026");
         expect(screen.getByText("Consultar disponibilidad.")).toBeInTheDocument();
         expect(screen.getByText("Sin publicaciones, esta de licencia")).toBeInTheDocument();
         expect(screen.queryByText("Tomate - Perita")).not.toBeInTheDocument();

@@ -105,8 +105,8 @@ describe("CatalogoOperador", () => {
             />,
         );
 
-        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Licencia: 05/11/2026 - 12/11/2026");
-        expect(screen.getByText("Mensaje de recomendación")).toBeInTheDocument();
+        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Fecha: 05/11/2026 - 12/11/2026");
+        expect(screen.queryByText("Mensaje de recomendación")).not.toBeInTheDocument();
         expect(screen.getByText("Consultar disponibilidad antes de comprar.")).toBeInTheDocument();
         expect(screen.getByText("Sin publicaciones, esta de licencia")).toBeInTheDocument();
     });

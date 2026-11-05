@@ -11,6 +11,7 @@ import { modificarPerfilPropio } from "../../acciones/modificarPerfilPropio";
 import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 import BotonVolver from "@/compartido/BotonVolver";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import styles from "./FormularioPerfilPropio.module.css";
 
 const CODIGOS_PAIS = [
@@ -96,7 +97,6 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                 </header>
                 <form className={styles.formulario} onSubmit={guardar} noValidate>
                     <section className={styles.seccion}>
-                        <h2 className={styles.subtitulo}>Datos del operador</h2>
                         <SelectorFotoPerfil fotoActual={perfil.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => setErrores([mensaje])} deshabilitado={guardando} />
                         <TextField label="Nombre" value={nombre} onChange={(event) => setNombre(event.target.value)} disabled={guardando} fullWidth />
                         
@@ -106,6 +106,10 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                             </TextField>
                             <TextField label="WhatsApp" type="tel" value={telefono} onChange={(event) => { if (/^[0-9]*$/.test(event.target.value)) setTelefono(event.target.value); }} disabled={guardando} />
                         </div>
+                        <p className={styles.aviso}>
+                            <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
+                            <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
+                        </p>
                         <label className={styles.licencia} htmlFor="perfil-propio-licencia" data-activa={enLicencia}>
                             <span className={styles.textoLicencia}>
                                 <span className={styles.etiquetaLicencia}>En licencia</span>

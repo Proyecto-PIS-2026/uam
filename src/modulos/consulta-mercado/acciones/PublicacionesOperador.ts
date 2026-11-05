@@ -73,6 +73,7 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
             JOIN operador o ON o.id = po."operadorId"
             JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true
             WHERE p."tipoPublicacion" = 'OPERADOR' AND p."publicacionActiva" = true AND p."publicacionDisponible" = true
+              AND o."enLicencia" = false
               AND EXISTS (
                 SELECT 1 FROM locales_vigentes l WHERE l."operadorId" = o.id
               )
