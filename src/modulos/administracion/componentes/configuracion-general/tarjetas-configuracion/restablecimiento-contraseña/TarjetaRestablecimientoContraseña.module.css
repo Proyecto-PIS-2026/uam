@@ -99,3 +99,11 @@
 .botonGuardar:not(:disabled):hover {
     background-color: var(--color-secondary-soft) !important;
 }
+
+.filaSwitch {
+    cursor: pointer;
+}
+
+.filaSwitch[data-guardando="true"] {
+    cursor: default;
+}
