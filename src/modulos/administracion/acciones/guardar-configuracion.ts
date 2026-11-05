@@ -142,6 +142,9 @@ function validarVigencia(cambios: Record<string, string>, claves: readonly [stri
     const avisosActivos = habilitado && cambios[claveAvisos] === "true";
     if (habilitado) {
         validarDias(cambios[claveVigencia], "vigencia");
+        if (claveVigencia === "vigencia_fotos" && Number(cambios[claveVigencia]) > 36500) {
+            throw new Error("La vigencia de las fotos no puede superar los 36500 días.");
+        }
     }
     if (avisosActivos) {
         validarDias(cambios[claveAnticipacion], "anticipación");

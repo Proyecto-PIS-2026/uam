@@ -3,7 +3,8 @@ export type PublicacionPonderable = {
     precio: number | null;
     cantidadUnidades?: number | null;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     categoria: string;
     calibre: string;
     pais: string;
@@ -23,7 +24,7 @@ export function calcularPonderacion(publicacion: PublicacionPonderable): number 
     if (publicacion.cantidadUnidades != null) {
         puntos++;
     }
-    const campos = [publicacion.variedad, publicacion.presentacion, publicacion.categoria, publicacion.calibre, publicacion.pais];
+    const campos = [publicacion.variedad, publicacion.envase, publicacion.kilos, publicacion.categoria, publicacion.calibre, publicacion.pais];
     for (const campo of campos) {
         if (campo.trim() !== "") puntos++;
     }

@@ -98,7 +98,8 @@ type FilaMock = {
         tipoPublicacion: "PRODUCTOR",
         especie: { nombreEspecie: string } | null;
         variedad: { nombreVariedad: string } | null;
-        presentacion: { nombrePresentacion: string } | null;
+        envase: { nombreEnvase: string } | null;
+        kilos: { valor: string } | null;
         categoria: { nombreCategoria: string } | null;
         calibre: { nombreCalibre: string; codigoCalibre: string } | null;
     } | null;
@@ -123,7 +124,7 @@ function crearFilaValida(): FilaMock {
             tipoPublicacion: "PRODUCTOR",
             especie: { nombreEspecie: "Manzana" },
             variedad: { nombreVariedad: "Royal Gala" },
-            presentacion: { nombrePresentacion: "Caja de 10 kg" },
+            envase: { nombreEnvase: "Caja de 10 kg" }, kilos: null,
             categoria: { nombreCategoria: "I" },
             calibre: { nombreCalibre: "Grande", codigoCalibre: "G" },
         },
@@ -237,7 +238,7 @@ describe("consultarPublicacionesProductores", () => {
                 foto: "/publicaciones/manzana.jpg",
                 especie: "Manzana",
                 variedad: "Royal Gala",
-                presentacion: "Caja de 10 kg",
+                envase: "Caja de 10 kg", kilos: "",
                 cantidadUnidades: 24,
                 tipoPublicacion: "PRODUCTOR",
                 categoria: "I",
@@ -299,8 +300,8 @@ describe("consultarPublicacionesProductores", () => {
     });
 
     it("conserva publicaciones sin presentación o variedad y descarta las que no tienen especie", async () => {
-        const sinPresentacion = crearFilaValida();
-        sinPresentacion.publicacion!.presentacion = null;
+        const sinEnvase = crearFilaValida();
+        sinEnvase.publicacion!.envase = null;
 
         const sinVariedad = crearFilaValida();
         sinVariedad.publicacion!.variedad = null;
@@ -309,7 +310,7 @@ describe("consultarPublicacionesProductores", () => {
         sinEspecie.publicacion!.especie = null;
 
         mocks.all.mockResolvedValue([
-            sinPresentacion,
+            sinEnvase,
             sinVariedad,
             sinEspecie,
         ]);
@@ -317,7 +318,7 @@ describe("consultarPublicacionesProductores", () => {
         const resultado = await consultarPublicacionesProductores(sesionOperador);
 
         expect(resultado.publicaciones).toHaveLength(2);
-        expect(resultado.publicaciones[0].presentacion).toBe("");
+        expect(resultado.publicaciones[0].envase).toBe("");
         expect(resultado.publicaciones[1].variedad).toBe("");
     });
 
@@ -339,7 +340,7 @@ describe("consultarPublicacionesProductores", () => {
 
     it("muestra una publicación con solo especie aunque no tenga país ni ubicaciones", async () => {
         const fila = crearFilaValida();
-        Object.assign(fila.publicacion!, { variedad: null, presentacion: null, categoria: null, calibre: null, precio: null, foto: null, cantidadUnidades: null });
+        Object.assign(fila.publicacion!, { variedad: null, envase: null, kilos: null, categoria: null, calibre: null, precio: null, foto: null, cantidadUnidades: null });
         fila.pais = null;
         fila.ubicaciones = [];
         mocks.all.mockResolvedValue([fila]);
@@ -347,7 +348,7 @@ describe("consultarPublicacionesProductores", () => {
         const resultado = await consultarPublicacionesProductores(sesionOperador);
 
         expect(resultado.publicaciones).toHaveLength(1);
-        expect(resultado.publicaciones[0]).toMatchObject({ especie: "Manzana", variedad: "", presentacion: "", categoria: "", calibre: "", pais: "", ubicaciones: [] });
+        expect(resultado.publicaciones[0]).toMatchObject({ especie: "Manzana", variedad: "", envase: "", kilos: "", categoria: "", calibre: "", pais: "", ubicaciones: [] });
     });
 
     it("propaga los errores producidos por la consulta del ORM", async () => {

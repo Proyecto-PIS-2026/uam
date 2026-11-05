@@ -5,7 +5,8 @@ const mocks = vi.hoisted(() => ({
   operadorFirst: vi.fn(),
   relacionesAll: vi.fn(),
   publicacionesAll: vi.fn(),
-  presentacionesAll: vi.fn(),
+  envasesAll: vi.fn(),
+  kilosAll: vi.fn(),
   variedadesAll: vi.fn(),
   especiesAll: vi.fn(),
   categoriasAll: vi.fn(),
@@ -36,9 +37,10 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
             })),
           })),
         },
-        Presentacion: {
+        KilosEmpaquetado: { select: vi.fn(() => ({ all: mocks.kilosAll })) },
+        Envase: {
           select: vi.fn(() => ({
-            all: mocks.presentacionesAll,
+            all: mocks.envasesAll,
           })),
         },
         Variedad: {
@@ -77,6 +79,7 @@ import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/contr
 describe("GET /api/publicaciones/operador/[id]", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.kilosAll.mockResolvedValue([]);
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 15, usuarioId: 10, nombreFantasia: "Operador 15" });
     });
 
@@ -163,16 +166,16 @@ describe("GET /api/publicaciones/operador/[id]", () => {
             fecha: new Date("2026-09-20"),
             publicacionDisponible: true,
             precio: 150,
-            especieId: 500, variedadId: 400, presentacionId: 100,
+            especieId: 500, variedadId: 400, envaseId: 100, kilosId: null,
             categoriaId: 200,
             calibreId: 300,
             },
         ]);
 
-        mocks.presentacionesAll.mockResolvedValue([
+        mocks.envasesAll.mockResolvedValue([
             {
             id: 100,
-            nombrePresentacion: "Caja",
+            nombreEnvase: "Caja",
             variedadId: 400,
             },
         ]);
@@ -232,7 +235,7 @@ describe("GET /api/publicaciones/operador/[id]", () => {
                 fecha: new Date("2026-09-20").toString(),
                 especie: "Manzana",
                 variedad: "Gala",
-                presentacion: "Caja",
+                envase: "Caja", kilos: "",
                 categoria: "Primera",
                 calibre: "Grande",
                 pais: "Uruguay",

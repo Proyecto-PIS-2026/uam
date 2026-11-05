@@ -6,7 +6,8 @@ export type FiltrosConsulta = {
     busqueda?: string;
     especie?: string;
     variedad?: string;
-    presentacion?: string;
+    envase?: string;
+    kilos?: string;
     categoria?: string;
     calibre?: string;
     nave?: string;
@@ -18,7 +19,8 @@ export type FiltrosConsulta = {
 export type OpcionProducto = {
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     categoria: string;
     calibre: string;
 };
@@ -42,7 +44,7 @@ export function normalizarFiltros(valor: FiltrosConsulta = {}) {
     if (!["ninguno", "prioridad", "precioAsc", "precioDesc", "alfabeticoAsc", "alfabeticoDesc", "fechaDesc"].includes(orden)) throw new Error("El orden no es válido.");
     return {
         busqueda: texto("busqueda", 200).toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
-        especie: texto("especie"), variedad: texto("variedad"), presentacion: texto("presentacion"),
+        especie: texto("especie"), variedad: texto("variedad"), envase: texto("envase"), kilos: texto("kilos"),
         categoria: texto("categoria"), calibre: texto("calibre"), nave: texto("nave"),
         precioMinimo: precio("precioMinimo"), precioMaximo: precio("precioMaximo"), orden,
     };

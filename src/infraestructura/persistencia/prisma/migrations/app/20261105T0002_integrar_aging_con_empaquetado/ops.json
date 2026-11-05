@@ -1,0 +1,167 @@
+[
+  {
+    "id": "table.ejecucionTareaProgramada",
+    "label": "Create table \"ejecucionTareaProgramada\"",
+    "summary": "Creates table \"ejecucionTareaProgramada\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "ejecucionTareaProgramada"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ejecucionTareaProgramada\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ejecucionTareaProgramada\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ejecucionTareaProgramada\"",
+        "sql": "CREATE TABLE \"public\".\"ejecucionTareaProgramada\" (\n  \"completadaEn\" timestamptz NOT NULL,\n  \"elementosProcesados\" int4 NOT NULL,\n  \"fecha\" date NOT NULL,\n  \"nombre\" text NOT NULL,\n  PRIMARY KEY (\"nombre\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ejecucionTareaProgramada\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ejecucionTareaProgramada\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.imagen.avisoVencimientoEn",
+    "label": "Add column \"avisoVencimientoEn\" to \"imagen\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "avisoVencimientoEn",
+        "table": "imagen"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"avisoVencimientoEn\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "imagen",
+          "avisoVencimientoEn"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"avisoVencimientoEn\"",
+        "sql": "ALTER TABLE \"public\".\"imagen\" ADD COLUMN \"avisoVencimientoEn\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"avisoVencimientoEn\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "imagen",
+          "avisoVencimientoEn"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.imagen.cargadaEn",
+    "label": "Add column \"cargadaEn\" to \"imagen\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "cargadaEn",
+        "table": "imagen"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"cargadaEn\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "imagen",
+          "cargadaEn"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"cargadaEn\"",
+        "sql": "ALTER TABLE \"public\".\"imagen\" ADD COLUMN \"cargadaEn\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"cargadaEn\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "imagen",
+          "cargadaEn"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.publicacion.fotoEliminadaPorVencimientoEn",
+    "label": "Add column \"fotoEliminadaPorVencimientoEn\" to \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "fotoEliminadaPorVencimientoEn",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"fotoEliminadaPorVencimientoEn\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "fotoEliminadaPorVencimientoEn"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"fotoEliminadaPorVencimientoEn\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ADD COLUMN \"fotoEliminadaPorVencimientoEn\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"fotoEliminadaPorVencimientoEn\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "fotoEliminadaPorVencimientoEn"
+        ]
+      }
+    ]
+  }
+]

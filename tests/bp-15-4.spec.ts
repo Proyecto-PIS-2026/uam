@@ -28,8 +28,8 @@ async function confirmarBaja(page: Page) {
   return respuesta.url();
 }
 
-type Opcion = { id: number; nombre: string; especieId?: number | null; variedadId?: number };
-type Catalogos = Record<"especies" | "variedades" | "presentaciones" | "categorias" | "calibres" | "paises", Opcion[]>;
+type Opcion = { id: number; nombre: string; especieId?: number | null };
+type Catalogos = Record<"especies" | "variedades" | "envases" | "kilos" | "categorias" | "calibres" | "paises", Opcion[]>;
 
 // La API prepara una publicación temporal; las acciones de baja se prueban por la interfaz.
 // Se usa otro productor para no alterar los nueve productos requeridos por BP-15.2/15.3.
@@ -46,14 +46,16 @@ const test = base.extend<{ publicacionPrueba: { precio: string; cantidadInicial:
     expect(especie, "La seed debe incluir Uchuva").toBeDefined();
     const variedad = catalogos.variedades.find((opcion) => opcion.especieId === especie.id && opcion.nombre === "-")!;
     expect(variedad).toBeDefined();
-    const presentacion = catalogos.presentaciones.find((opcion) => opcion.variedadId === variedad.id)!;
+    const envase = catalogos.envases.find((opcion) => opcion.nombre === "Cajon")!;
+    const kilos = catalogos.kilos.find((opcion) => opcion.nombre === "20")!;
     const categoria = catalogos.categorias.find((opcion) => opcion.nombre === "-"
       && (opcion.especieId === especie.id || opcion.especieId === null))!;
-    expect(presentacion).toBeDefined();
+    expect(envase).toBeDefined();
+    expect(kilos).toBeDefined();
     expect(categoria).toBeDefined();
     const precio = String(100000 + Math.floor(Math.random() * 900000));
     const creada = await page.request.post("/api/publicaciones/productor", { data: {
-      especieId: especie.id, variedadId: variedad.id, presentacionId: presentacion.id,
+      especieId: especie.id, variedadId: variedad.id, envaseId: envase.id, kilosId: kilos.id,
       categoriaId: categoria.id,
       calibreId: catalogos.calibres.find((opcion) => opcion.nombre === "GRANDE")!.id,
       paisId: catalogos.paises.find((opcion) => opcion.nombre === "URUGUAY")!.id,

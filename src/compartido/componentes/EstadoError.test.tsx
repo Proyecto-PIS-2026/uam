@@ -17,7 +17,7 @@ describe("pantallas de error", () => {
         expect(screen.getByRole("heading", { level: 1, name: "Error" })).toBeInTheDocument();
         expect(screen.getByText("404: Página no encontrada. La dirección no existe o el contenido ya no está disponible.")).toBeInTheDocument();
         expect(screen.getAllByRole("link")).toHaveLength(1);
-        expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
+        expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/");
         expect(screen.queryByRole("button")).not.toBeInTheDocument();
     });
 
@@ -29,7 +29,7 @@ describe("pantallas de error", () => {
         expect(screen.getByRole("heading", { level: 1, name: "Error" })).toBeInTheDocument();
         expect(screen.getByText("No pudimos cargar esta página. Ocurrió un problema inesperado.")).toBeInTheDocument();
         expect(screen.getAllByRole("link")).toHaveLength(1);
-        expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
+        expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/");
         expect(screen.queryByRole("button")).not.toBeInTheDocument();
         expect(screen.queryByText(errorInterno.message)).not.toBeInTheDocument();
         expect(screen.queryByText(errorInterno.digest)).not.toBeInTheDocument();
@@ -37,7 +37,7 @@ describe("pantallas de error", () => {
         expect(retry).not.toHaveBeenCalled();
     });
 
-    it("permite salir de Mi Mercado sin volver a la ruta que falló", () => {
+    it("ofrece la entrada general desde un error de Mi Mercado", () => {
         const reset = vi.fn();
         const retry = vi.fn();
         render(<ErrorMiMercado reset={reset} retry={retry} />);
@@ -45,7 +45,7 @@ describe("pantallas de error", () => {
         expect(screen.getByRole("heading", { level: 1, name: "Error" })).toBeInTheDocument();
         expect(screen.getByText("No se pudieron cargar tus publicaciones.")).toBeInTheDocument();
         expect(screen.getAllByRole("link")).toHaveLength(1);
-        expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");
+        expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/");
         expect(screen.queryByRole("button")).not.toBeInTheDocument();
         expect(reset).not.toHaveBeenCalled();
         expect(retry).not.toHaveBeenCalled();
@@ -63,7 +63,7 @@ describe("pantallas de error", () => {
         expect(documento.querySelector("h1")?.textContent).toBe("Error");
         expect(documento.body.textContent).toContain("No pudimos cargar UAM. Ocurrió un problema al abrir la aplicación.");
         expect(documento.querySelectorAll("a")).toHaveLength(1);
-        expect(documento.querySelector("a")?.getAttribute("href")).toBe("/inicio");
+        expect(documento.querySelector("a")?.getAttribute("href")).toBe("/");
         expect(documento.querySelector("a")?.textContent).toBe("Ir al inicio");
         expect(documento.querySelector("button")).toBeNull();
         expect(html).not.toContain(errorInterno.message);
