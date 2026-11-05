@@ -439,7 +439,7 @@ nuevos.describe(() => {
         });
     }
 
-    nuevos("@new CP-29-06: aging sólo genera el aviso cuando está habilitado", async ({ page, precargaOperadores: datos, fotoPropia, backendNotificaciones }) => {
+    nuevos("CP-29-06: aging sólo genera el aviso cuando está habilitado", async ({ page, precargaOperadores: datos, fotoPropia, backendNotificaciones }) => {
         const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/procesar-vencimientos-fotos");
         const { db } = backendNotificaciones;
         async function procesar(habilitado: boolean) {
@@ -471,10 +471,45 @@ nuevos.describe(() => {
         expect(await datos.db.orm.public.Publicacion.where({ id: fotoPropia.id }).select("foto").first()).toEqual({ foto: fotoPropia.url });
     });
 
-    nuevos.fixme("@new CP-29-09: contrato próximo a vencer notifica a administradores", async () => {
-        //
-    });
-    nuevos.fixme("@new CP-29-10: contrato vencido notifica a administradores", async () => {
-        //
-    });
+    for (const escenario of [
+        { caso: "09", dias: 7, estado: "próximo a vencer" },
+        { caso: "10", dias: -1, estado: "vencido" },
+    ] as const) {
+        nuevos(`CP-29-${escenario.caso}: el administrador recibe el aviso preparado de contrato ${escenario.estado}`, async ({ page, precargaOperadores: datos, backendNotificaciones }) => {
+            nuevos.info().annotations.push({
+                type: "alcance",
+                description: "Contrato y aviso preparados por el test. No verifica el proceso automático ni define su umbral de anticipación.",
+            });
+            const local = await datos.db.orm.public.Local.where({ operadorId: datos.operadorA.id }).first();
+            if (!local) throw new Error("Falta el local propio para preparar el contrato ficticio.");
+            const finContrato = Temporal.Now.zonedDateTimeISO("America/Montevideo").add({ days: escenario.dias }).toInstant().round({ smallestUnit: "millisecond", roundingMode: "trunc" });
+            const fecha = finContrato.toZonedDateTimeISO("America/Montevideo").toPlainDate();
+            const fechaTexto = `${String(fecha.day).padStart(2, "0")}/${String(fecha.month).padStart(2, "0")}/${fecha.year}`;
+            const texto = `El contrato del operador ${datos.operadorA.nombre}, local ${local.numeroLocal}, está ${escenario.estado}. Fecha de vencimiento: ${fechaTexto}. ${randomUUID()}`;
+            try {
+                await datos.db.orm.public.Local.where({ id: local.id }).update({ finContrato });
+                const contratoGuardado = await datos.db.orm.public.Local.where({ id: local.id }).first();
+                expect(contratoGuardado?.finContrato?.toString()).toBe(finContrato.toString());
+
+                const envio = await backendNotificaciones.enviarNotificacion({ texto, roles: ["ADMINISTRADOR"] });
+                expect(envio.enviadas).toBeGreaterThanOrEqual(1);
+                const admin = await datos.db.orm.public.Administrador.where({ email: datos.administrador.usuario }).first();
+                if (!admin) throw new Error("Falta el administrador propio destinatario del aviso.");
+                const copia = await datos.db.orm.public.Notificacion.where({ usuarioId: admin.usuarioId, descripcion: texto }).all();
+                expect(copia).toHaveLength(1);
+                expect(copia[0].vista).toBe(false);
+
+                await iniciarSesionAdministrador(page, datos.administrador);
+                await cargarBP29(page);
+                await expect(fila(page, texto)).toBeVisible();
+                await expect(fila(page, texto)).toHaveAttribute("data-leida", "false");
+                const recibidas = await consultar(page);
+                expect(recibidas.notificaciones.find(({ id }) => id === copia[0].id)).toMatchObject({ texto, leida: false });
+                expect(recibidas.noLeidas).toBeGreaterThanOrEqual(1);
+            } finally {
+                await datos.db.orm.public.Notificacion.where({ descripcion: texto }).deleteAndCount();
+                await datos.db.orm.public.Local.where({ id: local.id }).update({ finContrato: local.finContrato });
+            }
+        });
+    }
 });
