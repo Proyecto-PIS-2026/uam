@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPublicacionesMiMercadoProductor } from "./consultas-mi-mercado-productor";
 
 vi.mock("../configuracion-aging-fotos", () => ({
-    CONFIGURACION_AGING_FOTOS: { habilitado: true, diasVigencia: 3, diasAnticipacionAviso: 1 },
+    obtenerConfiguracionAgingFotos: async () => ({ habilitado: true, diasVigencia: 3, avisosHabilitados: true, diasAnticipacionAviso: 1 }),
 }));
 
 const mocks = vi.hoisted(() => ({

@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { agregarEstadoFotosPropias } from "./estado-fotos-propias";
 
-const configuracion = vi.hoisted(() => ({ habilitado: true, diasVigencia: 3, diasAnticipacionAviso: 1 }));
-vi.mock("./configuracion-aging-fotos", () => ({ CONFIGURACION_AGING_FOTOS: configuracion }));
+const configuracion = vi.hoisted(() => ({ habilitado: true, diasVigencia: 3, avisosHabilitados: true, diasAnticipacionAviso: 1 }));
+const mocksConfiguracion = vi.hoisted(() => ({ obtener: vi.fn() }));
+vi.mock("./configuracion-aging-fotos", () => ({ obtenerConfiguracionAgingFotos: mocksConfiguracion.obtener }));
 
 const mocks = vi.hoisted(() => ({ seleccionar: vi.fn(), filtrar: vi.fn(), listar: vi.fn() }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
@@ -15,7 +16,8 @@ const clave = (id: number) => `publicaciones/${id}/${archivo}`;
 
 beforeEach(() => {
     vi.resetAllMocks();
-    Object.assign(configuracion, { habilitado: true, diasVigencia: 3, diasAnticipacionAviso: 1 });
+    Object.assign(configuracion, { habilitado: true, diasVigencia: 3, avisosHabilitados: true, diasAnticipacionAviso: 1 });
+    mocksConfiguracion.obtener.mockImplementation(async () => configuracion);
     mocks.seleccionar.mockReturnValue({ where: mocks.filtrar });
     mocks.filtrar.mockReturnValue({ all: mocks.listar });
     mocks.listar.mockResolvedValue([]);
@@ -99,13 +101,26 @@ describe("estado privado de la foto de una publicación", () => {
         expect(mocks.seleccionar).not.toHaveBeenCalled();
     });
 
-    it("conserva las fotos si la configuración es inválida y registra el error", async () => {
-        configuracion.diasAnticipacionAviso = 3;
+    it.each(["La configuración es inválida", "No se pudo leer la configuración"])("conserva las fotos y registra el error: %s", async (mensaje) => {
+        mocksConfiguracion.obtener.mockRejectedValue(new Error(mensaje));
         const registrar = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
         expect(await agregarEstadoFotosPropias([{ foto: url(1) }])).toEqual([{ foto: url(1), estadoFoto: null }]);
         expect(mocks.seleccionar).not.toHaveBeenCalled();
         expect(registrar).toHaveBeenCalledOnce();
+    });
+
+    it("no muestra el aviso previo si está deshabilitado y mantiene la marca de una foto eliminada", async () => {
+        Object.assign(configuracion, { avisosHabilitados: false, diasAnticipacionAviso: 0 });
+
+        expect(await agregarEstadoFotosPropias([
+            { foto: url(1), estadoFoto: "por-vencer" },
+            { foto: null, fotoEliminadaPorVencimientoEn: "2026-11-01T03:00:00Z" },
+        ])).toEqual([
+            { foto: url(1), estadoFoto: null },
+            { foto: null, fotoEliminadaPorVencimientoEn: "2026-11-01T03:00:00Z", estadoFoto: "eliminada" },
+        ]);
+        expect(mocks.seleccionar).not.toHaveBeenCalled();
     });
 
     it("agrupa las claves sin repetirlas y valida sus rutas antes de consultar", async () => {

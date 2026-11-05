@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { actualizarPrecioPublicacion, ConflictoPublicacionError, incrementarPrecioPublicacion, obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
 import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
 
-const configuracion = vi.hoisted(() => ({ habilitado: false, diasVigencia: 30, diasAnticipacionAviso: 3 }));
-vi.mock("../configuracion-aging-fotos", () => ({ CONFIGURACION_AGING_FOTOS: configuracion }));
+const configuracion = vi.hoisted(() => ({ habilitado: false, diasVigencia: 30, avisosHabilitados: true, diasAnticipacionAviso: 3 }));
+vi.mock("../configuracion-aging-fotos", () => ({ obtenerConfiguracionAgingFotos: async () => configuracion }));
 
 const mocks = vi.hoisted(() => {
     const consulta = () => {

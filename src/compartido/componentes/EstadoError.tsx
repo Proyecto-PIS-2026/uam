@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import styles from "./EstadoError.module.css";
 
 type EstadoErrorProps = {
@@ -12,7 +13,7 @@ export default function EstadoError({ mensaje }: EstadoErrorProps) {
             <section className={styles.contenedor} aria-labelledby="titulo-error">
                 <h1 id="titulo-error" className={styles.titulo}>Error</h1>
                 <p className={styles.mensaje}>{mensaje}</p>
-                <a href="/" className={styles.boton}>Ir al inicio</a>
+                <Link href="/" className={styles.boton}>Ir al inicio</Link>
             </section>
         </main>
     );

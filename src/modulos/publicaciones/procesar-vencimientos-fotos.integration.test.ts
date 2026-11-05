@@ -22,7 +22,7 @@ type Foto = { publicacionId: number; clave: string; url: string; propietario: Pr
 let db: BaseDatos;
 let procesar: Procesar;
 let AlmacenamientoImagenesPostgres: Almacenamiento;
-const configuracion = { habilitado: true, diasVigencia: 30, diasAnticipacionAviso: 7 } as const;
+const configuracion = { habilitado: true, diasVigencia: 30, avisosHabilitados: true, diasAnticipacionAviso: 7 } as const;
 const limite = "2026-11-04T15:00:00Z";
 const fecha = "2026-11-04";
 const inicioAviso = "2026-10-12T15:00:00Z";
@@ -152,6 +152,42 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
 
             expect(await Promise.all(fotos.map((foto) => leerFoto(tx, foto)))).toEqual(antes);
             expect(await avisosPropios(tx, entorno)).toEqual([]);
+        });
+    });
+
+    it.each(roles)("%s sin avisos previos conserva la foto próxima y notifica únicamente la eliminación de la vencida", async (rol) => {
+        await conRollback(async (tx) => {
+            const entorno = await crearEntorno(tx);
+            const vencida = await crearFoto(tx, entorno, rol, inicioVencimiento);
+            const proxima = await crearFoto(tx, entorno, rol, inicioAviso);
+            const antesVencida = await leerFoto(tx, vencida);
+            const antesProxima = await leerFoto(tx, proxima);
+            const sinAvisos = { ...configuracion, avisosHabilitados: false, diasAnticipacionAviso: 0 };
+
+            expect(await procesar(contexto(tx), sinAvisos)).toBeGreaterThanOrEqual(1);
+
+            const despuesVencida = await leerFoto(tx, vencida);
+            expect(despuesVencida.imagen).toBeNull();
+            expect(despuesVencida.publicacion).toEqual({
+                ...antesVencida.publicacion,
+                foto: null,
+                fotoEliminadaPorVencimientoEn: limite,
+                version: antesVencida.publicacion.version + 1,
+                fecha: expect.any(String),
+            });
+            expect(await leerFoto(tx, proxima)).toEqual(antesProxima);
+            const avisos = await avisosPropios(tx, entorno);
+            expect(avisos).toHaveLength(1);
+            expect(avisos[0]).toMatchObject({
+                usuarioId: vencida.propietario.usuarioId,
+                vista: false,
+                url: `${rol === "OPERADOR" ? "/mi-mercado" : "/mi-mercado/productor"}?publicacion=${vencida.publicacionId}`,
+            });
+            expect(avisos[0].descripcion).toMatch(/venció.*eliminada/);
+
+            expect(await procesar(contexto(tx), sinAvisos)).toBe(0);
+            expect(await leerFoto(tx, proxima)).toEqual(antesProxima);
+            expect(await avisosPropios(tx, entorno)).toEqual(avisos);
         });
     });
 
