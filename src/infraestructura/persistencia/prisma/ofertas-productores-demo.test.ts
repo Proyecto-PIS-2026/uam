@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { cargarConsultaUam } from "./catalogo-consulta";
 import { crearOfertasProductoresDemo, type OfertaProductorDemo } from "./ofertas-productores-demo";
+import { atributosPublicacionDemo } from "./atributos-publicacion-demo";
 
 function claveBanda(oferta: Pick<OfertaProductorDemo,
   "speciesId" | "variety" | "measureUnit" | "caliber" | "country" | "category">): string {
@@ -23,6 +24,18 @@ describe("ofertas de demostración de productores", () => {
     productor_maldonado_organico: 8,
     bananera_ecuatoriana_sa: 2,
   };
+
+  it("mantiene únicas las publicaciones con envase y kilos independientes", () => {
+    const combinaciones = ofertas.map((oferta, indice) => {
+      const atributos = atributosPublicacionDemo(indice);
+      return JSON.stringify([
+        oferta.producerUsername, oferta.speciesId, oferta.variety,
+        atributos.envase, atributos.kilos, oferta.category,
+        atributos.calibre ?? oferta.caliber, oferta.country,
+      ]);
+    });
+    expect(new Set(combinaciones).size).toBe(ofertas.length);
+  });
 
   it("usa bandas reales, precios por la unidad publicada y el país del productor, sin duplicados", () => {
     const bandas = new Map<string, { nombre: string; minimo: number; maximo: number }>();

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPublicacionesMiMercadoProductor } from "./consultas-mi-mercado-productor";
 
 vi.mock("../configuracion-aging-fotos", () => ({
-    CONFIGURACION_AGING_FOTOS: { habilitado: true, diasVigencia: 3, diasAnticipacionAviso: 1 },
+    obtenerConfiguracionAgingFotos: async () => ({ habilitado: true, diasVigencia: 3, avisosHabilitados: true, diasAnticipacionAviso: 1 }),
 }));
 
 const mocks = vi.hoisted(() => ({
@@ -47,7 +47,8 @@ function relacionPublicacion(productorId: number, id: number) {
             publicacionDisponible: true,
             especie: { id: 9, nombreEspecie: "Lechuga", fotoEspecie: null },
             variedad: { id: 8, nombreVariedad: "Crespa" },
-            presentacion: { id: 7, nombrePresentacion: "Cajón" },
+            envase: { id: 7, nombreEnvase: "Cajón" },
+            kilos: null,
             categoria: { id: 4, nombreCategoria: "Primera" },
             calibre: { id: 5, nombreCalibre: "Mediano", codigoCalibre: "M" },
         },
@@ -132,7 +133,8 @@ describe("lectura privada de Mi Mercado del productor", () => {
             publicacionDisponible: true,
             especie: relacionPublicacion(23, 31).publicacion.especie,
             variedad: relacionPublicacion(23, 31).publicacion.variedad,
-            presentacion: relacionPublicacion(23, 31).publicacion.presentacion,
+            envase: relacionPublicacion(23, 31).publicacion.envase,
+            kilos: null,
             categoria: { id: 4, nombreCategoria: "Primera" },
             calibre: { id: 5, nombreCalibre: "Mediano", codigoCalibre: "M" },
             ubicaciones: [{ id: 231, nombreUbicacion: "Canelones", urlMaps: "https://maps.example/quinta", departamento: "Canelones" }],

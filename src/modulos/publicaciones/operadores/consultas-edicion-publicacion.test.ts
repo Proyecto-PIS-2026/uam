@@ -11,7 +11,8 @@ const mocks = vi.hoisted(() => {
     return {
         especies: consulta(),
         variedades: consulta(),
-        presentaciones: consulta(),
+        envases: consulta(),
+        kilos: consulta(),
         categorias: consulta(),
         calibres: consulta(),
         paises: consulta(),
@@ -22,7 +23,8 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
     db: { orm: { public: {
         Especie: mocks.especies,
         Variedad: mocks.variedades,
-        Presentacion: mocks.presentaciones,
+        Envase: mocks.envases,
+        KilosEmpaquetado: mocks.kilos,
         Categoria: mocks.categorias,
         Calibre: mocks.calibres,
         Pais: mocks.paises,
@@ -46,12 +48,8 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
             { id: 22, nombreVariedad: "Gala", especieId: 909 },
             { id: 8, nombreVariedad: "Variedad de especie inactiva", especieId: 777 },
         ]);
-        mocks.presentaciones.all.mockResolvedValue([
-            { id: 424, nombrePresentacion: "Cajon", variedadId: 22 },
-            { id: 321, nombrePresentacion: "Docena", variedadId: 7 },
-            { id: 322, nombrePresentacion: "Presentación de especie inactiva", variedadId: 8 },
-            { id: 323, nombrePresentacion: "Presentación de variedad inactiva", variedadId: 999 },
-        ]);
+        mocks.envases.all.mockResolvedValue([{ id: 424, nombreEnvase: "Cajon" }, { id: 321, nombreEnvase: "Bolsa" }]);
+        mocks.kilos.all.mockResolvedValue([{ id: 1, valor: "2" }, { id: 11, valor: "10-12" }]);
         mocks.categorias.all.mockResolvedValue([
             { id: 3, nombreCategoria: "I", especieId: null },
             { id: 4, nombreCategoria: "Primera", especieId: 909 },
@@ -74,10 +72,8 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
                 { id: 7, nombre: "Crespa", especieId: 401 },
                 { id: 22, nombre: "Gala", especieId: 909 },
             ],
-            presentaciones: [
-                { id: 424, nombre: "Cajon", variedadId: 22 },
-                { id: 321, nombre: "Docena", variedadId: 7 },
-            ],
+            envases: [{ id: 424, nombre: "Cajon" }, { id: 321, nombre: "Bolsa" }],
+            kilos: [{ id: 1, nombre: "2" }, { id: 11, nombre: "10-12" }],
             categorias: [
                 { id: 3, nombre: "I", especieId: null },
                 { id: 4, nombre: "Primera", especieId: 909 },
@@ -90,20 +86,22 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         });
         expect(mocks.especies.where).toHaveBeenCalledWith({ especieActiva: true });
         expect(mocks.variedades.where).toHaveBeenCalledWith({ variedadActiva: true });
-        expect(mocks.presentaciones.where).toHaveBeenCalledWith({ presentacionActiva: true });
+        expect(mocks.envases.where).not.toHaveBeenCalled();
+        expect(mocks.kilos.where).not.toHaveBeenCalled();
         expect(mocks.categorias.where).not.toHaveBeenCalled();
         expect(mocks.calibres.where).not.toHaveBeenCalled();
         expect(mocks.paises.where).not.toHaveBeenCalled();
         expect(mocks.paises.select).toHaveBeenCalledWith("id", "nombrePais");
     });
 
-    it("consulta los seis catálogos ordenados por nombre", async () => {
+    it("consulta los siete catálogos con el orden adecuado", async () => {
         await obtenerOpcionesEdicionPublicacion();
 
         const ordenamientos = [
             { consulta: mocks.especies, campo: "nombreEspecie" },
             { consulta: mocks.variedades, campo: "nombreVariedad" },
-            { consulta: mocks.presentaciones, campo: "nombrePresentacion" },
+            { consulta: mocks.envases, campo: "id" },
+            { consulta: mocks.kilos, campo: "id" },
             { consulta: mocks.categorias, campo: "nombreCategoria" },
             { consulta: mocks.calibres, campo: "nombreCalibre" },
             { consulta: mocks.paises, campo: "nombrePais" },
@@ -117,7 +115,7 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         }
     });
 
-    it("ordena los nombres visibles sin perder las relaciones entre especies, variedades y presentaciones", async () => {
+    it("ordena los nombres visibles sin perder relaciones ni el orden de los nuevos catálogos", async () => {
         mocks.especies.all.mockResolvedValue([
             { id: 909, nombreEspecie: "Ñame" },
             { id: 401, nombreEspecie: "Ácelga" },
@@ -126,9 +124,9 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
             { id: 22, nombreVariedad: "Zeta", especieId: 401 },
             { id: 7, nombreVariedad: "Ámbar", especieId: 401 },
         ]);
-        mocks.presentaciones.all.mockResolvedValue([
-            { id: 424, nombrePresentacion: "Saco", variedadId: 7 },
-            { id: 321, nombrePresentacion: "Caja", variedadId: 7 },
+        mocks.envases.all.mockResolvedValue([
+            { id: 424, nombreEnvase: "Cajon" },
+            { id: 321, nombreEnvase: "Bolsa" },
         ]);
         mocks.categorias.all.mockResolvedValue([
             { id: 4, nombreCategoria: "Zeta", especieId: 401 },
@@ -148,8 +146,8 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         expect(opciones.especies.map((opcion) => opcion.id)).toEqual([401, 909]);
         expect(opciones.variedades.map((opcion) => opcion.id)).toEqual([7, 22]);
         expect(opciones.variedades[0].especieId).toBe(401);
-        expect(opciones.presentaciones.map((opcion) => opcion.id)).toEqual([321, 424]);
-        expect(opciones.presentaciones[0].variedadId).toBe(7);
+        expect(opciones.envases.map((opcion) => opcion.id)).toEqual([424, 321]);
+        expect(opciones.kilos.map((opcion) => opcion.nombre)).toEqual(["2", "10-12"]);
         expect(opciones.categorias.map((opcion) => opcion.id)).toEqual([3, 4]);
         expect(opciones.calibres.map((opcion) => opcion.nombre)).toEqual(["A - BAJO", "Z - ALTO"]);
         expect(opciones.paises.map((opcion) => opcion.id)).toEqual([117, 218]);
@@ -159,7 +157,9 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         mocks.especies.all.mockResolvedValue([]);
 
         await expect(obtenerOpcionesEdicionPublicacion()).resolves.toEqual({
-            especies: [], variedades: [], presentaciones: [],
+            especies: [], variedades: [],
+            envases: [{ id: 424, nombre: "Cajon" }, { id: 321, nombre: "Bolsa" }],
+            kilos: [{ id: 1, nombre: "2" }, { id: 11, nombre: "10-12" }],
             categorias: [{ id: 3, nombre: "I", especieId: null }],
             calibres: [
                 { id: 501, nombre: "EX - EXTRA" },
@@ -169,9 +169,21 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         });
     });
 
+    it("preserva calibres generales, incluidos cero y doble cero, sin repetir el nombre", async () => {
+        mocks.calibres.all.mockResolvedValue([
+            { id: 601, codigoCalibre: "0", nombreCalibre: "0" },
+            { id: 602, codigoCalibre: "00", nombreCalibre: "00" },
+            { id: 603, codigoCalibre: "Primera", nombreCalibre: "Primera" },
+        ]);
+        const opciones = await obtenerOpcionesEdicionPublicacion();
+        expect(opciones.calibres).toEqual([
+            { id: 601, nombre: "0" }, { id: 602, nombre: "00" }, { id: 603, nombre: "Primera" },
+        ]);
+    });
+
     it("propaga el error de una consulta sin devolver un catálogo parcial", async () => {
-        const error = new Error("No se pudo consultar las presentaciones.");
-        mocks.presentaciones.all.mockRejectedValue(error);
+        const error = new Error("No se pudieron consultar los envases.");
+        mocks.envases.all.mockRejectedValue(error);
 
         await expect(obtenerOpcionesEdicionPublicacion()).rejects.toBe(error);
     });

@@ -1,14 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { iniciarSesionProductor } from "./autenticacion";
 import { crearOfertasProductoresDemo } from "../src/infraestructura/persistencia/prisma/ofertas-productores-demo";
+import { atributosPublicacionDemo } from "../src/infraestructura/persistencia/prisma/atributos-publicacion-demo";
 import { cargarConsultaUam } from "../src/infraestructura/persistencia/prisma/catalogo-consulta";
 
 const usuario = "productor_norte_salto";
-const propias = crearOfertasProductoresDemo(cargarConsultaUam()).filter((oferta) => oferta.producerUsername === usuario);
+const propias = crearOfertasProductoresDemo(cargarConsultaUam()).map((oferta, indice) => ({ ...oferta, ...atributosPublicacionDemo(indice) })).filter((oferta) => oferta.producerUsername === usuario);
 const ruta = "/mi-mercado/productor";
-const presentaciones: Record<string, string> = {
-  KG: "Kilogramo", DOC: "Docena", CAB: "Cabeza", Unidad: "Unidad",
-};
 const tarjetas = (page: Page) => page.getByRole("button", { name: /^Ver detalle de / });
 const nombre = (oferta: typeof propias[number]) => oferta.variety === "-"
   ? oferta.speciesName : `${oferta.speciesName} · ${oferta.variety}`;
@@ -87,7 +85,6 @@ test.describe("BP-15.2: consulta de productos propios del productor", () => {
   test("CP-15.2-08: consulta el detalle de Limón con sus datos y acciones", async ({ page }) => {
     const oferta = propias.find((oferta) => oferta.speciesName === "Limón")!;
     expect(oferta).toBeDefined();
-    const presentacion = presentaciones[oferta.measureUnit];
     const tarjeta = tarjetas(page).filter({ has: page.getByText(nombre(oferta), { exact: true }) });
     const textoTarjeta = await tarjeta.innerText();
     await tarjeta.click();
@@ -97,12 +94,13 @@ test.describe("BP-15.2: consulta de productos propios del productor", () => {
     await expect(precio).toHaveValue(oferta.price === null ? "" : String(oferta.price));
     await expect(precio).not.toBeEditable();
     if (oferta.price === null) await expect(precio).toHaveAttribute("placeholder", "Consultar precio");
-    const unidades = detalle.getByRole("textbox", { name: `Unidades (${presentacion})`, exact: true });
+    const unidades = detalle.getByRole("textbox", { name: oferta.envase ? `Unidades (${oferta.envase})` : "Unidades", exact: true });
     await expect(unidades).toHaveValue(String(oferta.quantity));
     await expect(unidades).not.toBeEditable();
     for (const [campo, valor] of [
       ["Especie", oferta.speciesName], ["Variedad", oferta.variety],
-      ["Presentación", presentacion], ["Categoría", oferta.category],
+      ["Empaquetado", oferta.envase ?? "-"], ["Kilos del empaquetado", oferta.kilos ? `${oferta.kilos} kg` : "-"],
+      ["Categoría", oferta.category],
       ["País de origen", oferta.country],
     ]) {
       const selector = detalle.getByRole("combobox", { name: campo, exact: true });
