@@ -14,7 +14,8 @@ import NuevaPublicacion from "./NuevaPublicacion";
 const catalogos = {
     especies: [{ id: 2, nombre: "Manzana" }],
     variedades: [{ id: 3, nombre: "Royal", especieId: 2 }],
-    presentaciones: [{ id: 4, nombre: "Caja", variedadId: 3 }],
+    envases: [{ id: 4, nombre: "Cajita" }],
+    kilos: [{ id: 301, nombre: "20" }, { id: 302, nombre: "10-12" }],
     categorias: [{ id: 5, nombre: "Primera", especieId: 2 }],
     calibres: [{ id: 6, nombre: "Grande" }],
     paises: [{ id: 7, nombre: "Uruguay" }],
@@ -40,8 +41,8 @@ function completarFormulario(formulario: HTMLFormElement) {
     fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
     fireEvent.mouseDown(campos.getByRole("combobox", { name: /^Variedad/ }));
     fireEvent.click(screen.getByRole("option", { name: "Royal" }));
-    fireEvent.mouseDown(campos.getByRole("combobox", { name: /^Presentación/ }));
-    fireEvent.click(screen.getByRole("option", { name: "Caja" }));
+    fireEvent.mouseDown(campos.getByRole("combobox", { name: /^Empaquetado/ }));
+    fireEvent.click(screen.getByRole("option", { name: "Cajita" }));
     fireEvent.mouseDown(campos.getByRole("combobox", { name: /^Categoría/ }));
     fireEvent.click(screen.getByRole("option", { name: "Primera" }));
     fireEvent.mouseDown(campos.getByRole("combobox", { name: /^Calibre/ }));
@@ -72,10 +73,33 @@ describe("NuevaPublicacion", () => {
         await waitFor(() => expect(mocks.alCrear).toHaveBeenCalledOnce());
         const envio = vi.mocked(fetch).mock.calls.find(([, config]) => config?.method === "POST")!;
         expect(JSON.parse(envio[1]!.body as string)).toMatchObject({
-            especieId: 2, variedadId: null, presentacionId: null, categoriaId: null,
+            especieId: 2, variedadId: null, envaseId: null, kilosId: null, categoriaId: null,
             calibreId: null, paisId: null, precio: null, cantidadUnidades: null,
             disponibilidad: disponibilidadInicial ?? true,
         });
+    });
+
+    it.each([
+        { envase: "Cajita", envaseId: 4, kilos: null, kilosId: null },
+        { envase: null, envaseId: null, kilos: "10-12 kg", kilosId: 302 },
+        { envase: "Cajita", envaseId: 4, kilos: "20 kg", kilosId: 301 },
+    ])("permite publicar envase $envase y kilos $kilos sin variedad", async ({ envase, envaseId, kilos, kilosId }) => {
+        renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
+        for (const [campo, valor] of [["Empaquetado", envase], ["Kilos del empaquetado", kilos]]) {
+            const selector = screen.getByRole("combobox", { name: campo! });
+            expect(selector).not.toHaveAttribute("aria-disabled", "true");
+            if (valor) {
+                fireEvent.mouseDown(selector);
+                fireEvent.click(screen.getByRole("option", { name: valor }));
+            }
+        }
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Especie/ }));
+        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
+        fireEvent.submit(screen.getByRole("button", { name: "Confirmar" }).closest("form")!);
+        await waitFor(() => expect(mocks.alCrear).toHaveBeenCalledOnce());
+        const envio = vi.mocked(fetch).mock.calls.find(([, config]) => config?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({ especieId: 2, variedadId: null, envaseId, kilosId });
     });
 
     it("muestra el formulario del operador actual", async () => {

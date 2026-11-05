@@ -169,6 +169,7 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
                 ayudaVencimiento="Aplicar un período de vigencia a las fotos."
                 ayudaAvisos="Notificar a operadores y productores."
                 configuracion={configuracionVigenciaFotos}
+                maximoDiasVigencia={36500}
                 onGuardar={guardarVigenciaFotos}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>

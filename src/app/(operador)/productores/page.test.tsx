@@ -47,7 +47,7 @@ const perfil: PerfilProductorPorOperador = {
             cantidadUnidades: 20,
             especie: "Naranja",
             variedad: "Valencia",
-            presentacion: "KG",
+            envase: "KG", kilos: "",
             categoria: "I",
             calibre: "M",
             pais: "Uruguay",
@@ -79,7 +79,7 @@ describe("Listado y navegación de productores", () => {
         expect(mocks.perfil).not.toHaveBeenCalled();
     });
 
-    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite acceder al listado y al perfil al rol %s", async (rol) => {
+    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("muestra el listado y aplica el acceso al perfil correspondiente a %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 5, rol, expiraEn: 2000000000 });
         render(await Page());
         expect(screen.getByRole("link", { name: /Álamo & Sur/ })).toHaveAttribute(
@@ -88,10 +88,17 @@ describe("Listado y navegación de productores", () => {
                 ? "/gestion-productores/2"
                 : "/productores/%C3%81lamo%20%26%20Sur?origen=productores",
         );
-        expect(await PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(perfil.nombreFantasia) }), searchParams: Promise.resolve({}) })).toBeTruthy();
         expect(mocks.listado).toHaveBeenCalledTimes(1);
-        expect(mocks.perfil).toHaveBeenCalledExactlyOnceWith(perfil.nombreFantasia);
-        expect(mocks.redirect).not.toHaveBeenCalled();
+        const abrirPerfil = () => PaginaPerfil({ params: Promise.resolve({ nombre: encodeURIComponent(perfil.nombreFantasia) }), searchParams: Promise.resolve({}) });
+        if (rol === "ADMINISTRADOR") {
+            await expect(abrirPerfil()).rejects.toThrow("NEXT_REDIRECT");
+            expect(mocks.perfil).not.toHaveBeenCalled();
+            expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/inicio");
+        } else {
+            expect(await abrirPerfil()).toBeTruthy();
+            expect(mocks.perfil).toHaveBeenCalledExactlyOnceWith(perfil.nombreFantasia);
+            expect(mocks.redirect).not.toHaveBeenCalled();
+        }
         expect(mocks.notFound).not.toHaveBeenCalled();
     });
 

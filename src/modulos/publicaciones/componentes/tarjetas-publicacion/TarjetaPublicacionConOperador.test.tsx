@@ -24,7 +24,7 @@ function crearPublicacion(): PublicacionListado {
         precio: 150,
         fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
-        presentacion: "Cajón",
+        envase: "Cajón", kilos: "",
         categoria: "Primera",
         calibre: "Mediano",
         codigoCalibre: "M",
@@ -99,4 +99,21 @@ describe("TarjetaPublicacionConOperador", () => {
 		render(<TarjetaPublicacionConOperador publicacion={{ ...crearPublicacion(), precio: null }} onClick={vi.fn()}/>);
 		expect(screen.getByText("Consultar precio")).toBeInTheDocument();
 	});
+});
+
+
+describe("precio y empaquetado opcional", () => {
+    it.each([
+        ["Cajon", "20", "por Cajon (20 kg)"],
+        ["Cajon", "", "por Cajon"],
+        ["", "10-12", "por 10-12 kg"],
+    ])("muestra envase %s y kilos %s", (envase, kilos, texto) => {
+        render(<TarjetaPublicacionConOperador publicacion={{ ...crearPublicacion(), envase, kilos }} onClick={vi.fn()} />);
+        expect(screen.getByText(texto)).toBeInTheDocument();
+    });
+
+    it("omite la unidad del precio cuando no hay envase ni kilos", () => {
+        render(<TarjetaPublicacionConOperador publicacion={{ ...crearPublicacion(), envase: "", kilos: "" }} onClick={vi.fn()} />);
+        expect(screen.queryByText(/^por /)).not.toBeInTheDocument();
+    });
 });

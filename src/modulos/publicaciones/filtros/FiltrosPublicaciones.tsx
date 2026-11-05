@@ -16,7 +16,8 @@ import type { FiltrosConsulta, OpcionProducto, OrdenConsulta } from "../../consu
 type PublicacionFiltrable = {
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -107,7 +108,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         const variedadesIniciales = new Set(opciones.filter((publicacion) => publicacion.especie === especieFiltro).map((publicacion) => publicacion.variedad));
         return especieFiltro !== "" && variedadesIniciales.size === 1 && variedadesIniciales.has("-") ? "-" : "Todas";
     });                                                                                     // Filtro Variedad
-    const [presentacion, setPresentacion] = useState("Todas");                              // Filtro Presentacion
+    const [envase, setEnvase] = useState("Todas");
+    const [kilos, setKilos] = useState("Todas");
     const [categoria, setCategoria] = useState("Todas");                                    // Filtro Categoria
     const [calibre, setCalibre] = useState("Todas");                                        // Filtro Calibre
     const [nave, setNave] = useState("Todas");
@@ -135,8 +137,10 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (nuevaEspecie !== "Todas" && variedadesDisponibles.size === 1 && variedadesDisponibles.has("-")) nuevaVariedad = "-";
         if (nuevaVariedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.variedad === nuevaVariedad);
 
-        const nuevaPresentacion = nuevaVariedad !== "Todas" && publicacionesBase.some((publicacion) => publicacion.presentacion === presentacion) ? presentacion : "Todas";
-        if (nuevaPresentacion !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.presentacion === nuevaPresentacion);
+        const nuevoEnvase = opciones.some((publicacion) => publicacion.envase === envase) ? envase : "Todas";
+        const nuevosKilos = opciones.some((publicacion) => publicacion.kilos === kilos) ? kilos : "Todas";
+        if (nuevoEnvase !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.envase === nuevoEnvase);
+        if (nuevosKilos !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.kilos === nuevosKilos);
 
         let nuevaCategoria = publicacionesBase.some((publicacion) => publicacion.categoria === categoria) ? categoria : "Todas";
         let nuevoCalibre = publicacionesBase.some((publicacion) => publicacion.calibre === calibre) ? calibre : "Todas";
@@ -148,7 +152,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
 
         if (nuevaEspecie !== especie) setEspecie(nuevaEspecie);
         if (nuevaVariedad !== variedad) setVariedad(nuevaVariedad);
-        if (nuevaPresentacion !== presentacion) setPresentacion(nuevaPresentacion);
+        if (nuevoEnvase !== envase) setEnvase(nuevoEnvase);
+        if (nuevosKilos !== kilos) setKilos(nuevosKilos);
         if (nuevaCategoria !== categoria) setCategoria(nuevaCategoria);
         if (nuevoCalibre !== calibre) setCalibre(nuevoCalibre);
     }
@@ -181,29 +186,24 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad).filter(Boolean))].sort(compararOpciones);
     }, [opciones, especie]);
 
-    // Publicaciones segun Especie, Variedad y Presentacion
+    // Publicaciones segun Especie, Variedad y Envase
     const publicacionesSegunJerarquia = useMemo(() => {
         let publicacionesBase = opciones;
         if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === especie);
         if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.variedad === variedad);
-        if (presentacion !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) =>
-            publicacion.presentacion === presentacion);
+        if (envase !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) =>
+            publicacion.envase === envase);
+        if (kilos !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.kilos === kilos);
 
         return publicacionesBase;
-    }, [opciones, especie, variedad, presentacion]);
+    }, [opciones, especie, variedad, envase, kilos]);
 
-    // Opciones de Presentacion disponibles segun Especie y Variedad
-    const presentaciones = useMemo(() => {
-        let publicacionesBase = opciones;
-        if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
-            publicacion.especie === especie);
-        if (variedad !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
-            publicacion.variedad === variedad);
-
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.presentacion).filter(Boolean))].sort(compararOpciones);
-    }, [opciones, especie, variedad]);
+    // Envase y kilos se pueden consultar sin seleccionar especie ni variedad.
+    const envases = useMemo(() => [...new Set(opciones.map((publicacion) => publicacion.envase).filter(Boolean))].sort(compararOpciones), [opciones]);
+    const opcionesKilos = useMemo(() => [...new Set(opciones.map((publicacion) => publicacion.kilos).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "es", { numeric: true })), [opciones]);
 
     // Opciones de Categoria disponibles segun Calibre
     const categorias = useMemo(() => {
@@ -225,14 +225,15 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     }, [publicacionesSegunJerarquia, categoria]);
 
     // Obtener Publicaciones segun la jerarquia de filtros
-    const obtenerPublicacionesJerarquia = (nuevaEspecie: string, nuevaVariedad: string, nuevaPresentacion: string) => {
+    const obtenerPublicacionesJerarquia = (nuevaEspecie: string, nuevaVariedad: string, nuevoEnvase: string, nuevosKilos: string) => {
         let publicacionesBase = opciones;
         if (nuevaEspecie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === nuevaEspecie);
         if (nuevaVariedad !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.variedad === nuevaVariedad);
-        if (nuevaPresentacion !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
-            publicacion.presentacion === nuevaPresentacion);
+        if (nuevoEnvase !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
+            publicacion.envase === nuevoEnvase);
+        if (nuevosKilos !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.kilos === nuevosKilos);
 
         return publicacionesBase;
     };
@@ -267,7 +268,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         const filtradas = publicaciones.filter((publicacion) => {
             if (especie !== "Todas" && publicacion.especie !== especie) return false;
             if (variedad !== "Todas" && publicacion.variedad !== variedad) return false;
-            if (presentacion !== "Todas" && publicacion.presentacion !== presentacion) return false;
+            if (envase !== "Todas" && publicacion.envase !== envase) return false;
+            if (kilos !== "Todas" && publicacion.kilos !== kilos) return false;
             if (categoria !== "Todas" && publicacion.categoria !== categoria) return false;
             if (calibre !== "Todas" && publicacion.calibre !== calibre) return false;
 
@@ -277,7 +279,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                 const camposBusqueda = [
                     publicacion.especie,
                     publicacion.variedad,
-                    publicacion.presentacion,
+                    publicacion.envase,
+                    publicacion.kilos,
                     publicacion.categoria,
                     publicacion.calibre,
                     publicacion.codigoCalibre,
@@ -303,11 +306,11 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (orden === "alfabeticoDesc") return [...filtradas].sort((a, b) => compararPublicacionesAlfabeticamente(b, a));
         if (orden === "fechaDesc") {return [...filtradas].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())}
         return filtradas;
-    }, [publicaciones, opcionesRemotas, especie, variedad, presentacion, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden, obtenerNombreFantasia]);
+    }, [publicaciones, opcionesRemotas, especie, variedad, envase, kilos, categoria, calibre, busqueda, precioMinimo, precioMaximo, orden, obtenerNombreFantasia]);
 
     useEffect(() => {
-        alConsultar?.({ busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden, ...(mostrarNave ? { nave } : {}) });
-    }, [alConsultar, busqueda, especie, variedad, presentacion, categoria, calibre, precioMinimo, precioMaximo, orden, mostrarNave, nave]);
+        alConsultar?.({ busqueda, especie, variedad, envase, kilos, categoria, calibre, precioMinimo, precioMaximo, orden, ...(mostrarNave ? { nave } : {}) });
+    }, [alConsultar, busqueda, especie, variedad, envase, kilos, categoria, calibre, precioMinimo, precioMaximo, orden, mostrarNave, nave]);
 
     const cantidadResultados = totalRemoto ?? publicacionesFiltradas.length;
 
@@ -331,7 +334,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         setEspecie("Todas");
         especieNotificada.current = "Todas";
         setVariedad("Todas");
-        setPresentacion("Todas");
+        setEnvase("Todas");
+        setKilos("Todas");
         setCategoria("Todas");
         setCalibre("Todas");
         setNave("Todas");
@@ -352,30 +356,36 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (nuevaEspecie !== "Todas")  publicacionesBase = publicacionesBase.filter((publicacion) => publicacion.especie === nuevaEspecie);
         const variedadesNuevas = [...new Set(publicacionesBase.map((p) => p.variedad))].sort(compararOpciones);
         const nuevaVariedad =  nuevaEspecie !== "Todas" && variedadesNuevas.length === 1 && variedadesNuevas[0] === "-" ? "-" : "Todas";
-        const nuevaPresentacion = "Todas";
-        const publicacionesNuevas = obtenerPublicacionesJerarquia(nuevaEspecie, nuevaVariedad, nuevaPresentacion);
+        const nuevoEnvase = envase;
+        const publicacionesNuevas = obtenerPublicacionesJerarquia(nuevaEspecie, nuevaVariedad, nuevoEnvase, kilos);
         ajustarFiltrosCategoriaCalibre(publicacionesNuevas);
         setEspecie(nuevaEspecie);
         setVariedad(nuevaVariedad);
-        setPresentacion(nuevaPresentacion);
+        setEnvase(nuevoEnvase);
         especieNotificada.current = nuevaEspecie;
         alCambiarEspecie?.(nuevaEspecie);
     };
 
     // Manejador para el cambio de Variedad
     const manejarCambioVariedad = (nuevaVariedad: string) => {
-        const nuevaPresentacion = "Todas";
-        const publicacionesNuevas = obtenerPublicacionesJerarquia(especie, nuevaVariedad, nuevaPresentacion);
+        const nuevoEnvase = envase;
+        const publicacionesNuevas = obtenerPublicacionesJerarquia(especie, nuevaVariedad, nuevoEnvase, kilos);
         ajustarFiltrosCategoriaCalibre(publicacionesNuevas);
         setVariedad(nuevaVariedad);
-        setPresentacion(nuevaPresentacion);
+        setEnvase(nuevoEnvase);
     };
 
-    // Manejador para el cambio de Presentacion
-    const manejarCambioPresentacion = (nuevaPresentacion: string) => {
-        const publicacionesNuevas = obtenerPublicacionesJerarquia(especie, variedad, nuevaPresentacion);
+    // Manejador para el cambio de Envase
+    const manejarCambioEnvase = (nuevoEnvase: string) => {
+        const publicacionesNuevas = obtenerPublicacionesJerarquia(especie, variedad, nuevoEnvase, kilos);
         ajustarFiltrosCategoriaCalibre(publicacionesNuevas);
-        setPresentacion(nuevaPresentacion);
+        setEnvase(nuevoEnvase);
+    };
+
+    const manejarCambioKilos = (nuevosKilos: string) => {
+        const publicacionesNuevas = obtenerPublicacionesJerarquia(especie, variedad, envase, nuevosKilos);
+        ajustarFiltrosCategoriaCalibre(publicacionesNuevas);
+        setKilos(nuevosKilos);
     };
 
     // Manejador para el cambio de Categoria
@@ -462,7 +472,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                     </span>
                 )}
                 <div id={idFiltrosExtendidos} className={styles.filtrosExtendidos}>
-                    <div className={styles.filtrosVariedadPresentacion}>
+                    <div className={styles.filtrosVariedadEnvase}>
                         {/* Variedad */}
                         <TextField select fullWidth label="Variedad" value={variedadUnica ? "-" : variedad} onChange={(e) => manejarCambioVariedad(e.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroVariedad}`} disabled={especie === "Todas" || variedadUnica} slotProps={propiedadesMenuSelect}>
                             {!variedadUnica && (
@@ -476,16 +486,20 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                                 </MenuItem>
                             ))}
                         </TextField>
-                        {/* Presentacion */}
-                        <TextField select fullWidth label="Presentación" value={presentacion} onChange={(evento) => manejarCambioPresentacion(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroPresentacion}`} disabled={variedad === "Todas"} slotProps={propiedadesMenuSelect}>
+                        {/* Envase */}
+                        <TextField select fullWidth label="Empaquetado" value={envase} onChange={(evento) => manejarCambioEnvase(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroEnvase}`} slotProps={propiedadesMenuSelect}>
                             <MenuItem value="Todas" className={styles.opcionSelect}>
-                                Todas
+                                Todos
                             </MenuItem>
-                            {presentaciones.map((opcion) => (
+                            {envases.map((opcion) => (
                                 <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}>
                                     {opcion}
                                 </MenuItem>
                             ))}
+                        </TextField>
+                        <TextField select fullWidth label="Kilos" value={kilos} onChange={(evento) => manejarCambioKilos(evento.target.value)} size="small" className={`${styles.selectMui} ${styles.filtroKilos}`} slotProps={propiedadesMenuSelect}>
+                            <MenuItem value="Todas" className={styles.opcionSelect}>Todos</MenuItem>
+                            {opcionesKilos.map((opcion) => <MenuItem key={opcion} value={opcion} className={styles.opcionSelect}>{opcion === "-" ? "-" : `${opcion} kg`}</MenuItem>)}
                         </TextField>
                     </div>
                     <div className={styles.filtrosCategoriaCalibre}>

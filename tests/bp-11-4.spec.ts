@@ -95,7 +95,7 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
 
     // CA-9: cambio de contraseña pidiendo la actual.
     await perfil.getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
-    await expect(page).toHaveURL(/\/cambiar-contrasena$/);
+    await expect(page).toHaveURL("/mi-perfil/cambiar-contrasena");
     await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
 
     // CA-1: el perfil de otro operador no es accesible.

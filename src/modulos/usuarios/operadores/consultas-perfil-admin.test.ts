@@ -63,7 +63,8 @@ const publicacionBase = {
     tipoPublicacion: "OPERADOR",
     especie: { nombreEspecie: "Tomate" },
             variedad: { nombreVariedad: "Perita" },
-            presentacion: { nombrePresentacion: "Cajón" },
+            envase: { nombreEnvase: "Cajón" },
+            kilos: null,
     categoria: { nombreCategoria: "Extra" },
     calibre: { codigoCalibre: "A" },
 };
