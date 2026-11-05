@@ -18,6 +18,7 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
+import { AvisoVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
@@ -37,6 +38,7 @@ type Props = {
     alCerrar: () => void;
     alEliminada?: (mensaje: string) => void;
     alGuardar?: (publicacion: PublicacionMiMercadoProductor) => void;
+    mostrarAvisoFoto?: boolean;
 };
 
 type Borrador = {
@@ -165,7 +167,7 @@ function UbicacionesConsulta({ publicacion }: { publicacion: PublicacionMiMercad
     </section>;
 }
 
-export default function DrawerPublicacionProductor({ publicacion: recibida, alCerrar, alGuardar, alEliminada }: Props) {
+export default function DrawerPublicacionProductor({ publicacion: recibida, alCerrar, alGuardar, alEliminada, mostrarAvisoFoto = false }: Props) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [estado, setEstado] = useState(() => estadoInicial(recibida));
     const { notificar } = useNotificacionToast();
@@ -354,7 +356,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             especieId: borrador.especieId, variedadId: borrador.variedadId || null,
             presentacionId: borrador.presentacionId || null, categoriaId: borrador.categoriaId || null, calibreId: borrador.calibreId || null,
             paisId: borrador.paisId || null, disponible: borrador.disponible,
-            foto: borrador.foto,
+            foto: borrador.foto === edicion.base.foto ? undefined : borrador.foto,
             ubicaciones: validacionUbicaciones.ubicaciones,
             fechaVigencia: borrador.fechaVigencia || null,
         };
@@ -456,6 +458,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                             />
                         </div>
                         <div className={estilosAcciones.seccionFoto}>
+                            {mostrarAvisoFoto && <AvisoVigenciaFoto estado={publicacion.estadoFoto} />}
                             <div className={estilosAcciones.marcoFoto}>
                                 <ImagenPublicacion key={publicacion.id} src={fotoVisible} alt={editando ? "Vista previa de la fotografía" : `Foto de ${especie.nombreEspecie}`} fill sizes="(min-width: 768px) 480px, 100vw" loading="eager" unoptimized className={estilosAcciones.imagenFoto} reemplazo={reemplazoFoto}
                                     onLoad={() => setEstado((actual) => ({ ...actual, fotoPreparada: true }))} onError={() => setEstado((actual) => ({ ...actual, fotoPreparada: true }))} />

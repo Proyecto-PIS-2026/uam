@@ -74,7 +74,7 @@ describe("obtenerOperadoresPublicos", () => {
         allMock.mockResolvedValue([]);
         expect(await obtenerOperadoresPublicos()).toEqual([]);
         expect(allMock).toHaveBeenCalledOnce();
-        expect(selectMock).toHaveBeenCalledWith("id", "nombreFantasia", "fotoPerfil");
+        expect(selectMock).toHaveBeenCalledWith("id", "nombreFantasia", "fotoPerfil", "enLicencia");
         expect(selectMock).toHaveBeenCalledWith("numeroLocal", "finContrato");
         expect(selectMock).toHaveBeenCalledWith("nombreNave");
         expect(selectMock).toHaveBeenCalledWith("publicacionActiva", "publicacionDisponible", "tipoPublicacion", "fechaVigencia");

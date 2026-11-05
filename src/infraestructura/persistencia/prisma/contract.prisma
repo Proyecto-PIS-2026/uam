@@ -22,6 +22,12 @@ model Usuario {
   passwordHash     String
   twoFactorSecret  String?
   twoFactorEnabled Boolean        @default(false)
+  twoFactorChallengeHash String?   @unique
+  twoFactorPendingSecret String?
+  twoFactorExpiresAt Int?
+  twoFactorFailedAttempts Int      @default(0)
+  twoFactorLockedUntil Int?
+  twoFactorLastStep Int?
   solicitoRestablecimiento Boolean        @default(false)
   habilitado       Boolean        @default(true)
   rol              RolUsuario
@@ -186,8 +192,19 @@ model Ubicacion {
 model Imagen {
   clave     String @id
   contenido Bytes
+  cargadaEn DateTime?
+  avisoVencimientoEn DateTime?
 
   @@map("imagen")
+}
+
+model EjecucionTareaProgramada {
+  nombre              String   @id
+  fecha               Date
+  completadaEn        DateTime
+  elementosProcesados Int
+
+  @@map("ejecucionTareaProgramada")
 }
 
 // PUBLICACIONES ABSTRACTAS
@@ -201,6 +218,7 @@ model Publicacion {
   precio                Numeric(12, 2)?
   cantidadUnidades      Int?
   foto                  String?
+  fotoEliminadaPorVencimientoEn DateTime?
   tipoPublicacion       TipoPublicacion
   especieId             Int
   especie               Especie              @relation(fields:[especieId], references:[id])

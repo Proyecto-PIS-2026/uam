@@ -182,6 +182,28 @@ describe("obtenerPerfilPublicoOperador", () => {
         ]);
     });
 
+    it("devuelve el perfil sin consultar publicaciones cuando el operador está de licencia", async () => {
+        mockDb.operador.first.mockResolvedValue({
+            ...operadorConLocal,
+            enLicencia: true,
+            comentario: "Licencia: 2026-11-05 - 2026-11-12",
+        });
+
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
+
+        expect(resultado).toEqual({
+            id: 13,
+            nombreFantasia: "Frutas del Norte",
+            fotoPerfil: "/operadores/frutas-del-norte.jpg",
+            whatsApp: "+59899100001",
+            enLicencia: true,
+            comentario: "Licencia: 2026-11-05 - 2026-11-12",
+            locales: [{ numeroLocal: "18", nombreNave: "B" }],
+            publicaciones: [],
+        });
+        expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
+    });
+
     // Verifica que solo se devuelvan publicaciones activas, disponibles y de tipo OPERADOR
     it("devuelve solo las publicaciones visibles con sus datos", async () => {
         const fechaPublicacion = new Date("2026-10-03T15:00:00.000Z");

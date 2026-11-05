@@ -2,6 +2,7 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { obtenerProductorActual } from "../../usuarios/productores/acciones/productor-actual";
 import type { Publicacion } from "./tipos";
 import { convertirInstantAFechaVigencia } from "@/modulos/publicaciones/vigencia-publicacion";
+import { agregarEstadoFotosPropias } from "../estado-fotos-propias";
 
 export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperadorId" | "version"> & {
     publicacionProductorId: number;
@@ -22,7 +23,7 @@ async function consultarPublicacionesProductor(productorId: number) {
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) =>
             publicacion
-                .select("id", "foto", "precio", "cantidadUnidades", "fecha","fechaVigencia", "publicacionActiva", "publicacionDisponible")
+                .select("id", "foto", "fotoEliminadaPorVencimientoEn", "precio", "cantidadUnidades", "fecha","fechaVigencia", "publicacionActiva", "publicacionDisponible")
                 .include("especie")
                 .include("variedad")
                 .include("presentacion")
@@ -42,6 +43,7 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
             paisId: relacion.paisId,
             pais: relacion.pais?.nombrePais ?? "",
             foto: publicacion.foto,
+            estadoFoto: !publicacion.foto && publicacion.fotoEliminadaPorVencimientoEn ? "eliminada" : null,
             precio: publicacion.precio === null ? null : String(publicacion.precio),
             fecha: publicacion.fecha.toString(),
             fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
@@ -68,7 +70,7 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
 export async function obtenerPublicacionesMiMercadoProductor() {
     const productor = await obtenerProductorActual();
     const relaciones = await consultarPublicacionesProductor(productor.id);
-    const publicaciones = relaciones.map(mapearPublicacionMiMercadoProductor);
+    const publicaciones = await agregarEstadoFotosPropias(relaciones.map(mapearPublicacionMiMercadoProductor));
 
     return { productor, publicaciones };
 }

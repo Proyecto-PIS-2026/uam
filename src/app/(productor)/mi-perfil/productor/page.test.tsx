@@ -7,7 +7,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ requerirPr
 vi.mock("@/modulos/usuarios/productores/perfil-propio/consultas-mi-perfil-productor", () => ({ obtenerMiPerfilProductor: mocks.consultar }));
 vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ get habilitarCambioContrasena() { return mocks.habilitado() } }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
-const productor = { id: 5, nombre: "Granja Norte", codigoPais: "+598", telefono: "99123456", fotoPerfil: null };
+const productor = { id: 5, nombre: "Granja Norte", nombreUsuario: "granja_norte", codigoPais: "+598", telefono: "99123456", fotoPerfil: null };
 
 describe("consulta de mi perfil como Productor", () => {
     beforeEach(() => {
@@ -20,10 +20,11 @@ describe("consulta de mi perfil como Productor", () => {
 
     it("muestra los datos persistidos y el enlace de edición", async () => {
         render(await Pagina());
-        expect(screen.getByRole("heading", { name: "Mi perfil" })).toBeInTheDocument();
+        expect(screen.getByText("Mi perfil")).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: productor.nombre })).toBeInTheDocument();
+        expect(screen.getByText("Usuario: granja_norte")).toBeInTheDocument();
         expect(screen.getByText("+598 99123456")).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Modificar mi perfil" })).toHaveAttribute("href", "/mi-perfil/productor/editar");
+        expect(screen.getByRole("link", { name: "Editar" })).toHaveAttribute("href", "/mi-perfil/productor/editar");
         expect(screen.queryByRole("link", { name: "Cambiar contraseña" })).not.toBeInTheDocument();
     });
 

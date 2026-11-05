@@ -147,9 +147,15 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
         }
     }
 
-    function manejarAbrirHabilitacion(evento: React.MouseEvent, usuario: UsuarioParaModificar) {
+    function manejarAbrirHabilitacion(evento: React.MouseEvent, usuario: UsuarioParaModificar,) {
         evento.stopPropagation();
-        if (ocupado || !onCambiarHabilitacion || usuario.id === usuarioActualId) return;
+        if (ocupado || !onCambiarHabilitacion) {
+            return;
+        }
+        if (usuario.id === usuarioActualId) {
+            notificar("No podés deshabilitarte a vos mismo.", "error");
+            return;
+        }
         setUsuarioACambiar(usuario);
     }
 
@@ -220,7 +226,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
                                 <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} disabled={ocupado || !puedeEditar(usuario)} title={puedeEditar(usuario) ? "Editar perfil" : "Edición todavía no disponible"} className={styles.botonEditar}>
                                     <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" onClick={(e) => manejarAbrirHabilitacion(e, usuario)} disabled={ocupado || !onCambiarHabilitacion || usuario.id === usuarioActualId} title={usuario.id === usuarioActualId ? "No podés deshabilitarte a vos mismo" : usuario.habilitado === false ? "Habilitar usuario" : "Deshabilitar usuario"} aria-label={usuario.habilitado === false ? "Habilitar usuario" : "Deshabilitar usuario"} className={styles.botonHabilitacion}>
+                                <IconButton size="small" onClick={(e) => manejarAbrirHabilitacion(e, usuario)} disabled={ocupado || !onCambiarHabilitacion} title={usuario.id === usuarioActualId ? "No podés deshabilitarte a vos mismo" : usuario.habilitado === false ? "Habilitar usuario" : "Deshabilitar usuario"} aria-label={usuario.habilitado === false ? "Habilitar usuario" : "Deshabilitar usuario"} className={styles.botonHabilitacion}>
                                     {usuario.habilitado === false ? <CheckCircleOutlinedIcon fontSize="small" /> : <BlockIcon fontSize="small" />}
                                 </IconButton>
                                 <IconButton size="small" onClick={(e) => manejarAbrirEliminar(e, usuario)} disabled={ocupado || !onEliminar} title={onEliminar ? "Eliminar usuario" : "Baja todavía no disponible"} className={styles.botonEliminar}>

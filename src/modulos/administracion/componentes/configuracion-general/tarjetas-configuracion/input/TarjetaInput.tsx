@@ -38,6 +38,19 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
         if (guardando || !huboCambios) {
             return;
         }
+        if (tipo === "url" && valor !== "") {
+            let url: URL;
+            try {
+                url = new URL(valor);
+            } catch {
+                notificar("La URL de la Lista Inteligente no es válida.", "error");
+                return;
+            }
+            if (valor !== valor.trim() || !["http:", "https:"].includes(url.protocol) || !url.hostname || !url.pathname.toLowerCase().endsWith(".pdf")) {
+                notificar("La URL de la Lista Inteligente no es válida.", "error"); 
+                return;
+            }
+        }
         setGuardando(true);
         try {
             await onGuardarValor?.(valor);

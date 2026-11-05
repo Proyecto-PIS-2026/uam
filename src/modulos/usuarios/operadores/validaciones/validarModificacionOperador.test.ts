@@ -43,11 +43,49 @@ describe("validarModificacionOperador", () => {
                 operadorId: 7,
                 nombre: "Caporale",
                 telefono: "+59899123456",
+                enLicencia: false,
+                inicioLicencia: null,
+                finLicencia: null,
+                comentario: null,
                 contraseña: null,
                 locales: [{ nombre: "022", naveId: 2, contrato: "2026-12-31" }],
             });
         });
- 
+
+        it("normaliza los datos de licencia y el mensaje de recomendación", () => {
+            expect(datosDe({
+                enLicencia: true,
+                inicioLicencia: "2999-11-05",
+                finLicencia: "2999-11-12",
+                comentario: " Consultar disponibilidad. ",
+            })).toMatchObject({
+                enLicencia: true,
+                inicioLicencia: "2999-11-05",
+                finLicencia: "2999-11-12",
+                comentario: "Licencia: 2999-11-05 - 2999-11-12\n\nConsultar disponibilidad.",
+            });
+        });
+
+        it("exige ambas fechas cuando el operador está de licencia", () => {
+            expect(erroresDe({ enLicencia: true })).toEqual([
+                "Ingresá las fechas de inicio y fin de la licencia.",
+            ]);
+        });
+
+        it("rechaza una licencia que empieza antes de hoy o termina antes de empezar", () => {
+            expect(erroresDe({
+                enLicencia: true,
+                inicioLicencia: "2000-11-02",
+                finLicencia: "2999-11-12",
+            })).toContain("La fecha de inicio no puede ser anterior a hoy.");
+
+            expect(erroresDe({
+                enLicencia: true,
+                inicioLicencia: "2999-11-12",
+                finLicencia: "2999-11-05",
+            })).toContain("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        });
+
         it("quita los espacios sobrantes del nombre", () => {
             expect(datosDe({ nombre: "  Caporale  " }).nombre).toBe("Caporale");
         });

@@ -71,7 +71,7 @@ async function consultarPublicacion(publicacionProductorId: number, cliente: Cli
         .include("pais", (pais) => pais.select("nombrePais"))
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) => publicacion
-            .select("id", "foto", "precio", "cantidadUnidades", "fecha","fechaVigencia", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+            .select("id", "foto", "fotoEliminadaPorVencimientoEn", "precio", "cantidadUnidades", "fecha", "fechaVigencia", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
             .include("presentacion", (presentacion) => presentacion.include("variedad", (variedad) => variedad.include("especie")))
             .include("especie").include("variedad").include("categoria").include("calibre"))
         .first();
@@ -165,7 +165,10 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             // temporal.updatedAt() renueva fecha en este UPDATE, también si sólo cambian ubicaciones.
             await tx.orm.public.Publicacion.where({ id: publicacion.id }).update({
                 precio: cambios.precio as PrecioDb, foto, especieId: cambios.especieId, variedadId: cambios.variedadId, presentacionId: cambios.presentacionId,
-                categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,...(fechaVigencia !== undefined? { fechaVigencia: convertirFechaVigenciaAInstant(fechaVigencia) }: {}),
+                categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,
+                ...(fechaVigencia !== undefined ? { fechaVigencia: convertirFechaVigenciaAInstant(fechaVigencia) } : {}),
+                ...(fotoNueva || (cambios.foto === null && publicacion.foto !== null)
+                    ? { fotoEliminadaPorVencimientoEn: null } : {}),
                 ...(cambios.cantidadUnidades !== undefined ? { cantidadUnidades: cambios.cantidadUnidades as CantidadUnidadesDb } : {}),
                 ...(cambios.disponible !== undefined ? { publicacionDisponible: cambios.disponible } : {}),
             });

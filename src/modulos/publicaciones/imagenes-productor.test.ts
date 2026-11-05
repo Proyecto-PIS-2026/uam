@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import sharp from "sharp";
+import { Temporal } from "temporal-polyfill";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ crear: vi.fn(), leer: vi.fn(), eliminar: vi.fn() }));
@@ -30,9 +31,11 @@ describe("imágenes de publicaciones de Productor", () => {
     afterEach(() => vi.restoreAllMocks());
 
     it.each(["png", "jpeg", "webp"] as const)("normaliza %s a WebP con el almacenamiento común", async (formato) => {
+        const cargadaEn = Temporal.Instant.from("2026-11-04T15:00:00Z");
+        vi.spyOn(Temporal.Now, "instant").mockReturnValue(cargadaEn);
         const url = await guardarImagenProductor(42, await imagen(formato));
         expect(url).toBe(`/api/publicaciones/imagenes/42/${nombre}.webp`);
-        expect(mocks.crear).toHaveBeenCalledExactlyOnceWith({ clave, contenido: expect.any(Buffer) });
+        expect(mocks.crear).toHaveBeenCalledExactlyOnceWith({ clave, contenido: expect.any(Buffer), cargadaEn });
         expect((await sharp(mocks.crear.mock.calls[0][0].contenido).metadata()).format).toBe("webp");
     });
 

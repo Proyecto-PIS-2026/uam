@@ -325,6 +325,35 @@ describe("edición de publicaciones de productores", () => {
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
 
+    it.each([null, undefined, "foto-anterior.jpg"])("conserva la marca del aging al editar sin cargar otra foto: %s", async (foto) => {
+        const anterior = relacion();
+        mocks.vinculo.first.mockResolvedValue({
+            ...anterior, publicacion: {
+                ...anterior.publicacion, foto: null,
+                fotoEliminadaPorVencimientoEn: "2026-11-04T03:00:00Z",
+            },
+        });
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, foto });
+        const escritura = mocks.publicacion.update.mock.calls[0][0];
+        expect(escritura).toMatchObject({ foto: null });
+        expect(escritura).not.toHaveProperty("fotoEliminadaPorVencimientoEn");
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+    });
+
+    it("quita la marca de eliminación por aging al cargar una foto de reemplazo", async () => {
+        const anterior = relacion();
+        mocks.vinculo.first.mockResolvedValue({
+            ...anterior, publicacion: {
+                ...anterior.publicacion, foto: null,
+                fotoEliminadaPorVencimientoEn: "2026-11-04T03:00:00Z",
+            },
+        });
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, foto: null }, new File(["imagen"], "foto.png", { type: "image/png" }));
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({
+            foto: fotoNueva, fotoEliminadaPorVencimientoEn: null,
+        }));
+    });
+
     it("rechaza convertir la publicación en un duplicado de otra del mismo productor incluso al cambiar de especie", async () => {
         mocks.presentacion.first.mockResolvedValue({ id: 80, variedadId: 70, presentacionActiva: true,
             variedad: { especieId: 9, variedadActiva: true, especie: { especieActiva: true } } });
@@ -351,7 +380,7 @@ describe("edición de publicaciones de productores", () => {
 
     it("quita la fotografía sólo con null y limpia la anterior tras guardar", async () => {
         await modificarPublicacionProductor(sesion, 12, { ...cambios, foto: null });
-        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: null }));
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: null, fotoEliminadaPorVencimientoEn: null }));
         expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith("foto-anterior.jpg", 20);
     });
 
