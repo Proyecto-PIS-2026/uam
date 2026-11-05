@@ -3,6 +3,7 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
+
 const clavesOrdenamiento = [
     "ordenamiento_habilitado",
     "orden_landing_page_default",
