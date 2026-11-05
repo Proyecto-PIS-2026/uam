@@ -5,6 +5,7 @@ import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente
 import { useMemo, useRef, useState } from "react";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { useRouter } from "next/navigation";
@@ -21,13 +22,16 @@ import { cargarPublicacionesMiMercado } from "../acciones";
 import { useActualizacionesPublicaciones } from "../../tiempo-real/use-actualizaciones-publicaciones";
 import styles from "./MiMercado.module.css";
 import { useCompartirPublicacion } from "../use-compartir-publicacion";
+import { useSeleccionPublicacion } from "../use-seleccion-publicacion";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
 type Props = {
     operadorId: number;
     nombreOperador?: string;
+    enLicencia?: boolean;
     abrirAltaInicial?: boolean;
+    publicacionInicialId?: number | null;
     puedeCrear: boolean;
     puedeModificar: boolean;
     puedeEliminar: boolean;
@@ -36,10 +40,9 @@ type Props = {
     opcionesEdicion: OpcionesEdicionPublicacion;
 };
 
-export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaInicial = false, puedeCrear, puedeModificar, puedeEliminar, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
+export default function MiMercado({ operadorId, nombreOperador = "", enLicencia = false, abrirAltaInicial = false, publicacionInicialId = null, puedeCrear, puedeModificar, puedeEliminar, publicaciones, incrementoPrecio, opcionesEdicion }: Props) {
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(abrirAltaInicial && puedeCrear);
-    const [seleccion, setSeleccion] = useState<{ publicacion: Publicacion; listado: Publicacion[] } | null>(null);
     const [listadoRecargado, setListadoRecargado] = useState<{ origen: Publicacion[]; datos: Publicacion[] } | null>(null);
     const [sincronizando, setSincronizando] = useState(false);
     const ultimaRecarga = useRef(0);
@@ -50,6 +53,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
     const [idsEliminados, setIdsEliminados] = useState<number[]>([]);
     const publicacionesActuales = listadoRecargado?.origen === publicaciones ? listadoRecargado.datos : publicaciones;
     const publicacionesVigentes = useMemo(() => publicacionesActuales.filter((publicacion) => !idsEliminados.includes(publicacion.id)), [publicacionesActuales, idsEliminados]);
+    const { seleccionId, setSeleccionId, avisoPublicacion } = useSeleccionPublicacion(publicacionInicialId, publicacionesVigentes);
     const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicacionesVigentes.map((publicacion) => ({
         id: publicacion.id,
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
@@ -74,10 +78,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         if (publicacion) publicacionesVisibles.push(publicacion);
     }
 
-    let publicacionSeleccionada = seleccion?.publicacion ?? null;
-    if (seleccion && seleccion.listado !== publicacionesActuales) {
-        publicacionSeleccionada = publicacionesActuales.find((publicacion) => publicacion.id === seleccion.publicacion.id) ?? null;
-    }
+    const publicacionSeleccionada = publicacionesPorId.get(seleccionId ?? -1) ?? null;
     const { compartir, preparandoFoto, compartiendo } = useCompartirPublicacion(publicacionSeleccionada, nombreOperador, notificar);
 
     const publicacionParaEditar: PublicacionParaEditar | null = publicacionSeleccionada ? {
@@ -93,6 +94,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
         calibre: publicacionSeleccionada.calibre?.nombreCalibre ?? "",
         precio: publicacionSeleccionada.precio,
         foto: publicacionSeleccionada.foto,
+        estadoFoto: publicacionSeleccionada.estadoFoto,
         fecha: publicacionSeleccionada.fecha,
         version: publicacionSeleccionada.version,
         categoriaId: publicacionSeleccionada.categoria?.id ?? null,
@@ -130,7 +132,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                 }) };
             });
             setIdsEliminados((actuales) => actuales.filter((id) => datos.some((publicacion) => publicacion.id === id)));
-            setSeleccion((actual) => actual && datos.some((publicacion) => publicacion.id === actual.publicacion.id) ? actual : null);
+            setSeleccionId((actual) => actual !== null && datos.some((publicacion) => publicacion.id === actual) ? actual : null);
             setPublicacionPendiente((actual) => actual && datos.some((publicacion) => publicacion.id === actual.id) ? actual : null);
             return datos;
         } catch {
@@ -150,7 +152,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
 
     function consultarPublicacion(publicacion: Publicacion) {
         setError("");
-        setSeleccion({ publicacion, listado: publicacionesActuales });
+        setSeleccionId(publicacion.id);
     }
 
     function solicitarBaja(publicacion: Publicacion) {
@@ -200,7 +202,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                     const datos = await sincronizarPublicaciones();
                     if (datos && !datos.some((actual) => actual.id === publicacion.id)) {
                         setPublicacionPendiente(null);
-                        setSeleccion((actual) => actual?.publicacion.id === publicacion.id ? null : actual);
+                        setSeleccionId((actual) => actual === publicacion.id ? null : actual);
                         notificar("La publicación ya había sido eliminada. Se actualizó el listado.", "info");
                         return;
                     }
@@ -210,7 +212,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
 
             setIdsEliminados((actuales) => [...actuales, publicacion.id]);
             setPublicacionPendiente(null);
-            setSeleccion((actual) => actual?.publicacion.id === publicacion.id ? null : actual);
+            setSeleccionId((actual) => actual === publicacion.id ? null : actual);
             await sincronizarPublicaciones();
             notificar(resultado.mensaje ?? "Publicación eliminada.", "success");
         } catch (error) {
@@ -242,11 +244,18 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                 />
 
                 {error && <p className={styles.mensajeError} role="alert">{error}</p>}
+                {avisoPublicacion && <p className={styles.mensajeError} role="status">{avisoPublicacion}</p>}
 
                 {publicacionesVigentes.length > 0 && (
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
                     </div>
+                )}
+                {enLicencia && (
+                    <p className={styles.avisoLicencia} role="status">
+                        <WarningAmberOutlinedIcon aria-hidden="true" />
+                        <span>Estas de licencia, productos ocultos al publico</span>
+                    </p>
                 )}
                 <div className={`${styles.encabezadoCatalogo} flex-wrap`}>
                     <h2 className={styles.titulo}>Publicaciones</h2>
@@ -286,7 +295,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", abrirAltaIn
                 )}
             </div>
             {puedeCrear && altaAbierta && <NuevaPublicacion operadorId={operadorId} incrementoPrecio={incrementoPrecio} abierto={altaAbierta} alCerrar={cerrarAlta} alCrear={publicacionCreada} />}
-            <DrawerEditarPublicacion incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccion(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }}
+            <DrawerEditarPublicacion mostrarAvisoFoto incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccionId(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }}
             alCompartir={() => { void compartir(); }}
             compartiendo={compartiendo || preparandoFoto}
             eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>

@@ -28,6 +28,23 @@
     line-height: var(--interlineado-texto);
 }
 
+.avisoLicencia {
+    display: flex;
+    margin: var(--espacio-secciones) 0;
+    padding: var(--padding-panel);
+    align-items: center;
+    gap: var(--espacio-inline);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 35%, var(--color-border));
+    border-radius: var(--radio-panel);
+    background: var(--color-warning-soft);
+    color: var(--color-foreground);
+}
+
+.avisoLicencia svg {
+    flex-shrink: 0;
+    color: var(--color-warning);
+}
+
 .mensajeError {
     color: var(--color-danger);
     background: var(--color-danger-soft);

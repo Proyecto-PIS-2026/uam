@@ -6,7 +6,9 @@ import { obtenerMiPerfilProductor } from "@/modulos/usuarios/productores/perfil-
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import BotonVolver from "@/compartido/BotonVolver";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
-import styles from "@/modulos/usuarios/productores/componentes/modificar-productor-por-admin/FormularioModificarProductor.module.css";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import EditIcon from "@mui/icons-material/Edit";
+import styles from "./PerfilPropioProductor.module.css";
 
 export const metadata = { title: "Mi perfil de Productor | UAM" };
 
@@ -15,22 +17,45 @@ export default async function PaginaMiPerfilProductor() {
     const productor = await obtenerMiPerfilProductor();
     if (!productor) notFound();
     return <main className={styles.pagina}>
-        <div className={styles.contenedor}>
-            <BotonVolver href="/mi-mercado/productor" className={styles.volver}>Volver a Mi mercado</BotonVolver>
+        <BotonVolver href="/mi-mercado/productor" className={styles.volver}>Volver a Mi mercado</BotonVolver>
+        <section className={styles.tarjeta} aria-labelledby="perfil-propio-titulo">
             <header className={styles.encabezado}>
                 <HojasDecorativas />
-                <h1 className={styles.titulo}>Mi perfil</h1>
-                <p className={styles.descripcion}>Consultá y actualizá los datos de tu perfil de Productor.</p>
-            </header>
-            <section className={styles.seccion} aria-label="Datos de mi perfil">
-                <ImagenPerfil src={productor.fotoPerfil} alt={`Foto de ${productor.nombre}`} width={112} height={112} reemplazo={<span>Sin foto de perfil</span>} />
-                <h2 className={styles.subtitulo}>{productor.nombre}</h2>
-                <p><strong>Número de contacto:</strong> {productor.telefono ? `${productor.codigoPais} ${productor.telefono}` : "Sin número de contacto"}</p>
-                <div className={styles.acciones}>
-                    <Link href="/mi-perfil/productor/editar" className="boton-primario">Modificar mi perfil</Link>
-                    {habilitarCambioContrasena && <Link href="/mi-perfil/cambiar-contrasena" className="boton-secundario">Cambiar contraseña</Link>}
+                <div className={styles.fotoProductor}>
+                    <ImagenPerfil
+                        src={productor.fotoPerfil}
+                        alt={`Foto de ${productor.nombre}`}
+                        width={96}
+                        height={96}
+                        className={styles.foto}
+                        reemplazo={<AccountCircleIcon className={styles.iconoSinFoto} aria-hidden="true" />}
+                    />
                 </div>
-            </section>
-        </div>
+                <div className={styles.identidad}>
+                    <p className={styles.tipo}>Mi perfil</p>
+                    <h1 id="perfil-propio-titulo" className={styles.nombre}>{productor.nombre}</h1>
+                    <p className={styles.usuario}>Usuario: {productor.nombreUsuario}</p>
+                </div>
+                <div className={styles.accionesEncabezado}>
+                    <p className={styles.contacto}>
+                        <span className={styles.etiquetaContacto}>Whatsapp:</span>
+                        <span>{productor.telefono
+                            ? `${productor.codigoPais} ${productor.telefono}`
+                            : "Sin número de contacto"}</span>
+                    </p>
+                    <Link href="/mi-perfil/productor/editar" className={styles.editar}>
+                        <EditIcon aria-hidden="true" />
+                        Editar
+                    </Link>
+                </div>
+            </header>
+            <div className={styles.contenido}>
+                {habilitarCambioContrasena && (
+                    <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
+                        Cambiar contraseña
+                    </Link>
+                )}
+            </div>
+        </section>
     </main>;
 }

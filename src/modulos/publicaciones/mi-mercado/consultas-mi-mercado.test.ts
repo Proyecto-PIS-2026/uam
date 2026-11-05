@@ -1,5 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { actualizarPrecioPublicacion, ConflictoPublicacionError, incrementarPrecioPublicacion, obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
+import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
+
+const configuracion = vi.hoisted(() => ({ habilitado: false, diasVigencia: 30, diasAnticipacionAviso: 3 }));
+vi.mock("../configuracion-aging-fotos", () => ({ CONFIGURACION_AGING_FOTOS: configuracion }));
 
 const mocks = vi.hoisted(() => {
     const consulta = () => {
@@ -9,11 +13,11 @@ const mocks = vi.hoisted(() => {
         builder.include.mockImplementation((_nombre, callback) => { callback?.(builder); return builder });
         return builder;
     };
-    return { relacion: consulta(), publicacion: consulta(), transaction: vi.fn(), execute: vi.fn(), notificar: vi.fn() };
+    return { relacion: consulta(), publicacion: consulta(), imagen: consulta(), transaction: vi.fn(), execute: vi.fn(), notificar: vi.fn() };
 });
 
 vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({ db: {
-    orm: { public: { PublicacionOperador: mocks.relacion, Publicacion: mocks.publicacion } },
+    orm: { public: { PublicacionOperador: mocks.relacion, Publicacion: mocks.publicacion, Imagen: mocks.imagen } },
     transaction: mocks.transaction,
     raw: { sql: () => ({ returnsRow: () => ({ build: () => ({}) }) }) },
 } }));
@@ -23,6 +27,7 @@ describe("precios de Mi Mercado", () => {
     let fila: { id: number; precio: string | null; version: number; fecha: string };
     beforeEach(() => {
         vi.clearAllMocks();
+        Object.assign(configuracion, { habilitado: false, diasVigencia: 30, diasAnticipacionAviso: 3 });
         fila = { id: 20, precio: "100.00", version: 1, fecha: "2026-10-10T16:30:00Z" };
         let turno = Promise.resolve();
         mocks.transaction.mockImplementation((callback) => {
@@ -30,14 +35,54 @@ describe("precios de Mi Mercado", () => {
             turno = resultado.then(() => {}, () => {});
             return resultado;
         });
-        mocks.relacion.all.mockResolvedValue([{ id: 1, publicacionId: 20 }]);
+        mocks.relacion.all.mockResolvedValue([{ id: 1, publicacionId: 20, publicacion: { ...fila, foto: null } }]);
         mocks.publicacion.first.mockImplementation(async () => ({ ...fila }));
         mocks.publicacion.update.mockImplementation(async (cambios) => { fila = { ...fila, ...cambios }; return { ...fila }; });
     });
 
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     it("consulta solamente las publicaciones del operador", async () => {
-        expect(await obtenerPublicacionesDeOperador(10)).toEqual([{ id: 1, publicacionId: 20 }]);
+        expect(await obtenerPublicacionesDeOperador(10)).toEqual([{ id: 1, publicacionId: 20, publicacion: { ...fila, foto: null, estadoFoto: null } }]);
         expect(mocks.relacion.where).toHaveBeenCalledWith({ operadorId: 10 });
+    });
+
+    it("conserva el estado de eliminación para el dueño sin serializar la marca interna de la base", async () => {
+        mocks.relacion.all.mockResolvedValue([{ id: 1, publicacionId: 20, paisId: null, publicacion: {
+            ...fila, foto: null, fotoEliminadaPorVencimientoEn: "2026-11-04T03:00:00Z",
+            publicacionActiva: true, publicacionDisponible: true, cantidadUnidades: null,
+            especie: { id: 3, nombreEspecie: "Papa", fotoEspecie: null },
+            variedad: null, presentacion: null, categoria: null, calibre: null,
+        } }]);
+
+        const [publicacion] = mapearPublicacionesMiMercado(await obtenerPublicacionesDeOperador(10));
+
+        expect(publicacion).toMatchObject({ id: 20, publicacionOperadorId: 1, foto: null, estadoFoto: "eliminada" });
+        expect(publicacion).not.toHaveProperty("fotoEliminadaPorVencimientoEn");
+    });
+
+    it("mantiene visible la foto con aviso amarillo hasta que la tarea la borre, sin perder precios ni versiones", async () => {
+        configuracion.habilitado = true;
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-02T12:00:00Z"));
+        const archivo = "12345678-1234-4234-8234-123456789abc.webp";
+        const relaciones = [
+            { id: 1, publicacionId: 20, publicacion: { ...fila, foto: `/api/publicaciones/imagenes/20/${archivo}` } },
+            { id: 2, publicacionId: 21, publicacion: { ...fila, id: 21, foto: `/api/publicaciones/imagenes/21/${archivo}` } },
+        ];
+        mocks.relacion.all.mockResolvedValue(relaciones);
+        mocks.imagen.all.mockResolvedValue([
+            { clave: `publicaciones/20/${archivo}`, cargadaEn: "2026-09-01T12:00:00Z" },
+            { clave: `publicaciones/21/${archivo}`, cargadaEn: "2026-11-01T12:00:00Z" },
+        ]);
+
+        expect(await obtenerPublicacionesDeOperador(10)).toEqual([
+            { ...relaciones[0], publicacion: { ...relaciones[0].publicacion, estadoFoto: "por-vencer" } },
+            { ...relaciones[1], publicacion: { ...relaciones[1].publicacion, estadoFoto: null } },
+        ]);
+        expect(relaciones[0].publicacion.foto).toBe(`/api/publicaciones/imagenes/20/${archivo}`);
     });
 
     it("guarda el precio con la revisión esperada y notifica dentro de la transacción", async () => {

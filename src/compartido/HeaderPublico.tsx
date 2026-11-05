@@ -390,6 +390,14 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                             Mi perfil
                         </Link>
                     )}
+
+                    {/* {!esProductor && (
+                        <Link
+                            href="/mi-perfil"
+                            className={estilos.opcionDesplegable}
+                            role="menuitem"
+                            onClick={cerrarMenus}
+                        ></Link> */}
                     <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
                         <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
                             Cerrar sesión
@@ -540,6 +548,5 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
             )}
         </>
     );
-
     return contenido;
 }

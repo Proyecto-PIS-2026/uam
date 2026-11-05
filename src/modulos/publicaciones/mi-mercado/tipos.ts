@@ -1,8 +1,11 @@
+import type { EstadoFotoPublicacion } from "../estado-foto-publicacion";
+
 export type Publicacion = {
     id: number;
     publicacionOperadorId: number;
     paisId: number | null;
     foto: string | null;
+    estadoFoto?: EstadoFotoPublicacion;
     precio: string | null;
     fecha: string;
     version: number;

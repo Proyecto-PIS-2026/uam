@@ -22,6 +22,8 @@ export type PerfilPublicoOperador = {
     nombreFantasia: string;
     fotoPerfil: string | null;
     whatsApp: string;
+    enLicencia?: boolean;
+    comentario?: string | null;
     locales: {
         numeroLocal: string;
         nombreNave: string;
@@ -45,7 +47,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
     // await porque la consulta a la base de datos es asincrona pero quiero esperar a la respuesta antes de seguir
     const operador = await db.orm.public.Operador
         .where((operador) => operador.usuario.some((usuario) => usuario.habilitado.eq(true)))
-        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp") // Que columnas quiero recuperar de la tabla de operador
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp", "enLicencia", "comentario") // Que columnas quiero recuperar de la tabla de operador
         .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
             .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
             .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
@@ -78,6 +80,19 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
 
     if (locales.length === 0) {
         return null; // Si no tengo locales activos, deberia poder ver el perfil?
+    }
+
+    if (operador.enLicencia) {
+        return {
+            id: operador.id,
+            nombreFantasia: operador.nombreFantasia,
+            fotoPerfil: operador.fotoPerfil,
+            whatsApp: operador.whatsApp,
+            enLicencia: true,
+            comentario: operador.comentario,
+            locales,
+            publicaciones: [],
+        };
     }
 
     // Obtener las publicaciones
