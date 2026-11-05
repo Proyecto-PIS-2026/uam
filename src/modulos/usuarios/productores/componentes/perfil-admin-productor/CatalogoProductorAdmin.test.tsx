@@ -52,6 +52,7 @@ const publicacionBase: PublicacionPerfilAdminProductor = {
     precio: "90.00",
     cantidadUnidades: 15,
     fecha: "2026-10-01T12:00:00Z",
+    fechaVigencia: "2026-10-10T15:00:00.000Z",
     disponible: true,
     especie: "Manzana",
     variedad: "Red Delicious",

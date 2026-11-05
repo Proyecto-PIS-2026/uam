@@ -5,7 +5,8 @@ import type { Publicacion } from "./tipos";
 
 const publicacion: Publicacion = {
     id: 52, publicacionOperadorId: 13, paisId: null, version: 1,
-    foto: "/api/publicaciones/imagenes/52/foto.webp", precio: "45", fecha: "2026-10-25T15:00:00Z",
+    foto: "/api/publicaciones/imagenes/52/foto.webp", precio: "45", fecha: "2026-10-25T15:00:00Z",fechaVigencia: "2026-11-01T15:00:00.000Z",
+
     publicacionActiva: true, publicacionDisponible: true,
     especie: { id: 7, nombreEspecie: "Papa", fotoEspecie: null },
     variedad: null, presentacion: null, categoria: null, calibre: null,
