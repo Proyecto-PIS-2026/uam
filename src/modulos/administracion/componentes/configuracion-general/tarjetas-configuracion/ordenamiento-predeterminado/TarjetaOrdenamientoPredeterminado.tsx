@@ -80,15 +80,15 @@ export default function TarjetaConfiguracionOrdenamiento({ configuracion, onGuar
         <div className={styles.tarjeta}>
             <div className={styles.titulo}>Orden de las publicaciones</div>
             <span className={styles.descripcion}>Configurá el orden predeterminado de cada sección y si los usuarios pueden cambiarlo.</span>
-            <div className={styles.filaSwitch} data-habilitado={valores.habilitado} data-guardando={guardando}>
-                <div className={styles.textoSwitch}>
+            <label className={styles.filaSwitch} data-habilitado={valores.habilitado} data-guardando={guardando}>
+                <span className={styles.textoSwitch}>
                     <span className={styles.etiquetaSwitch}>Permitir cambiar el orden</span>
-                    <div className={styles.estadoSwitch}>
+                    <span className={styles.estadoSwitch}>
                         {valores.habilitado ? "Los usuarios pueden elegir cómo ordenar los resultados." : "Se utiliza únicamente el orden predeterminado."}
-                    </div>
-                </div>
-                <Switch checked={valores.habilitado} disabled={guardando} className={styles.switch} onChange={(_, checked) => {setValores((actual) => ({...actual, habilitado: checked}))}} slotProps={{input: {role: "switch", "aria-label": "Permitir cambiar el orden"}}}/>
-            </div>
+                    </span>
+                </span>
+                <Switch checked={valores.habilitado} disabled={guardando} className={styles.switch} onChange={(_, checked) => {setValores((actual) => ({ ...actual, habilitado: checked }))}} slotProps={{input: { role: "switch", "aria-label": "Permitir cambiar el orden"}}}/>
+            </label>
             <div className={styles.filaEdicion}>
                 <div className={styles.selectores}>
                     <TextField select fullWidth size="small" label="Orden predeterminado de Inicio" value={valores.ordenLanding} disabled={guardando} onChange={(evento) => cambiarOrden("ordenLanding", evento.target.value)} className={styles.selectMui}>

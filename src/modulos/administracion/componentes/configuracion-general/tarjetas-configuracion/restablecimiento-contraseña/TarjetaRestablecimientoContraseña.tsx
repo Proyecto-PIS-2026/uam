@@ -51,10 +51,10 @@ export default function TarjetaConfiguracionSwitch({titulo, descripcion, etiquet
             <span className={styles.titulo}>{titulo}</span>
             <span className={styles.descripcion}>{descripcion}</span>
             <div className={styles.filaEdicion}>
-                <div className={styles.filaSwitch} data-habilitado={valor} data-guardando={guardando}>
+                <label className={styles.filaSwitch} data-habilitado={valor} data-guardando={guardando}>
                     <span className={styles.etiqueta}>{etiqueta}</span>
                     <Switch checked={valor} disabled={guardando} onChange={(_, checked) => setValor(checked)} className={styles.switch} slotProps={{input: {role: "switch", "aria-label": etiqueta}}}/>
-                </div>
+                </label>
                 <IconButton aria-label={`Guardar configuración: ${titulo}`} disabled={guardando || !huboCambios} onClick={guardar} className={styles.botonGuardar}>
                     <CheckOutlinedIcon/>
                 </IconButton>

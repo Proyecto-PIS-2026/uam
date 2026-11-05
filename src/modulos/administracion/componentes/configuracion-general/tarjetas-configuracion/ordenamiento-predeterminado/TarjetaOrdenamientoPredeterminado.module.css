@@ -184,3 +184,11 @@
         gap: 1.5rem;
     }
 }
+
+.filaSwitch {
+    cursor: pointer;
+}
+
+.filaSwitch[data-guardando="true"] {
+    cursor: default;
+}
