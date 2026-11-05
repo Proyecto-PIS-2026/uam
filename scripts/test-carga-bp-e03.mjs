@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
 import { crearComprador, identificarConsultaPublica } from "./carga-e03/compradores.mjs";
-import { cambiarPrecio, cambiarPrecioDesdePantalla, crearPublicacion, crearPublicacionDesdePantalla, enviarPrecio, identificarOperador, iniciarSesion, leerPropias, prepararInterfazOperador, verificarConflictoEnPantalla, verificarVistas } from "./carga-e03/operadores.mjs";
+import { cambiarPrecioDesdePantalla, crearPublicacion, crearPublicacionDesdePantalla, enviarPrecio, identificarOperador, iniciarSesion, leerPropias, prepararInterfazOperador, verificarConflictoEnPantalla, verificarVistas } from "./carga-e03/operadores.mjs";
 
 const BASE_URL = (process.env.E03_BASE_URL ?? "https://uam-testing.bravesea-7e3d1ed9.brazilsouth.azurecontainerapps.io").replace(/\/$/, "");
 const PASSWORD = process.env.E03_TEST_PASSWORD;

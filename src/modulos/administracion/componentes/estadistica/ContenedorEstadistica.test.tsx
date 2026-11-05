@@ -185,8 +185,8 @@ describe("ContenedorEstadistica", () => {
         renderizarContenedor();
 
         verificarBloque("visitas", "Visitas", 2);
-        verificarBloque("contactos", "Contactos por perfil", 2);
-        verificarBloque("contactosPorPublicacion", "Contactos por publicación", 2);
+        verificarBloque("contactos", "Contactos por el perfil", 2);
+        verificarBloque("contactosPorPublicacion", "Contactos por las publicaciones", 2);
         verificarBloque("publicaciones", "Publicaciones modificadas", 2);
         verificarBloque("cantidadPublicaciones", "Cantidad de publicaciones", 2);
     });
@@ -376,8 +376,8 @@ describe("ContenedorEstadistica", () => {
         });
 
         verificarBloque("visitas", "Visitas", 0);
-        verificarBloque("contactos", "Contactos por perfil", 0);
-        verificarBloque("contactosPorPublicacion", "Contactos por publicación", 0);
+        verificarBloque("contactos", "Contactos por el perfil", 0);
+        verificarBloque("contactosPorPublicacion", "Contactos por las publicaciones", 0);
         verificarBloque("publicaciones", "Publicaciones modificadas", 0);
         verificarBloque("cantidadPublicaciones", "Cantidad de publicaciones", 0);
     });

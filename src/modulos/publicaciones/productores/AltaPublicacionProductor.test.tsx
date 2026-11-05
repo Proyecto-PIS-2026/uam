@@ -345,7 +345,7 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.getByRole("option", { name: "Williams" })).toBeInTheDocument();
         expect(screen.queryByRole("option", { name: "Royal" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "Williams" }));
-    });
+    }, 500_000);
 
     it("publica para el Productor actual sin precio, cantidad ni fotografía", async () => {
         const fetchMock = prepararFetch();

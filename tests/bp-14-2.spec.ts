@@ -323,7 +323,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
         await expect(paginaProductor.getByRole("button", { name: "Ver detalle de Uchuva", exact: true })).toHaveCount(2);
         await expect(tarjetaProductor(paginaProductor, "1371")).toHaveCount(0);
         await expect(tarjetaProductor(paginaProductor, "2637")).toBeVisible();
-        const consulta = await abrirConsulta(paginaProductor, "1482");
+        await abrirConsulta(paginaProductor, "1482");
         const relaciones = await leerPrecargas(precarga.productorId);
         expect(relaciones).toHaveLength(2);
         expect(relaciones.find((relacion) => relacion.publicacionId === precarga.publicacionId)).toMatchObject({

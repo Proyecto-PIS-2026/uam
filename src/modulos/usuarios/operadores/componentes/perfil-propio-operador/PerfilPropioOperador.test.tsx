@@ -1,9 +1,20 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
 import type { PerfilPropioOperador as Perfil } from "../../consultasPerfilPropio";
 import PerfilPropioOperador from "./PerfilPropioOperador";
 
-vi.mock("next/image", () => ({ default: (props: { src: string; alt: string; onError?: () => void }) => <img {...props} /> }));
+vi.mock("next/image", () => ({
+    default: ({ src, alt, onError }: {
+        src: string;
+        alt?: string;
+        onError?: () => void;
+    }) => createElement("img", {
+        src,
+        alt: alt ?? "",
+        onError,
+    }),
+}));
 vi.mock("./FormularioPerfilPropio", () => ({
     default: ({ alCancelar }: { alCancelar: () => void }) => (
         <div>
