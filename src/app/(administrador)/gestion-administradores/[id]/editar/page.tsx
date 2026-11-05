@@ -20,9 +20,8 @@ export default async function Page({ params }: PageProps) {
         notFound();
     }
 
-    // Criterio 1: desde acá se modifica otro administrador; la propia cuenta, desde Mi perfil (BP-11.1, ruta provisoria)
     if (administrador.usuarioId === sesion.usuarioId) {
-        redirect("/mi-perfil");
+        redirect("/mi-perfil/administrador/editar");
     }
 
     return (
