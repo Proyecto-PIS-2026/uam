@@ -752,21 +752,18 @@ describe("BloqueEstadistica", () => {
                 "Hasta",
             ) as HTMLInputElement;
 
-            // Intentar establecer Desde igual a Hasta.
             fireEvent.change(campoDesde, {
                 target: { value: "2026-10-20" },
             });
 
             expect(campoDesde).toHaveValue("2026-09-20");
 
-            // Intentar establecer Hasta igual a Desde.
             fireEvent.change(campoHasta, {
                 target: { value: "2026-09-20" },
             });
 
             expect(campoHasta).toHaveValue("2026-10-20");
 
-            // El rango original sigue vigente.
             expect(obtenerDatosGrafica()).toHaveLength(31);
         });
 
@@ -835,7 +832,6 @@ describe("BloqueEstadistica", () => {
             expect(campoDesde).toHaveAttribute("max", "2026-10-19");
             expect(campoHasta).toHaveAttribute("min", "2026-09-21");
 
-            // Cambiar Desde actualiza el mínimo permitido de Hasta.
             fireEvent.change(campoDesde, {
                 target: { value: "2026-10-10" },
             });
@@ -844,7 +840,6 @@ describe("BloqueEstadistica", () => {
             expect(campoDesde).toHaveAttribute("max", "2026-10-19");
             expect(campoHasta).toHaveAttribute("min", "2026-10-11");
 
-            // Cambiar Hasta actualiza el máximo permitido de Desde.
             fireEvent.change(campoHasta, {
                 target: { value: "2026-10-15" },
             });
@@ -880,14 +875,12 @@ describe("BloqueEstadistica", () => {
                 target: { value: "2026-10-15" },
             });
 
-            // Desde no puede alcanzar ni superar Hasta.
             fireEvent.change(campoDesde, {
                 target: { value: "2026-10-15" },
             });
 
             expect(campoDesde).toHaveValue("2026-10-10");
 
-            // Hasta no puede alcanzar ni retroceder hasta Desde.
             fireEvent.change(campoHasta, {
                 target: { value: "2026-10-10" },
             });
@@ -1292,6 +1285,136 @@ describe("BloqueEstadistica", () => {
                     obtenerTarjeta("Total del Rango Seleccionado"),
                 ).getByText("11"),
             ).toBeInTheDocument();
+        });
+
+        it.each([
+            {
+                tipo: "contactos" as const,
+                titulo: "Contactos por perfil",
+            },
+            {
+                tipo: "publicaciones" as const,
+                titulo: "Publicaciones modificadas",
+            },
+        ])("actualiza las opciones de usuarios según el período en $tipo", ({ tipo, titulo }) => {
+            const datosPorPeriodo: DatoEstadistica[] = [
+                {
+                    fecha: fechaLocal(2026, 8, 1),
+                    cantidad: 10,
+                    username: "usuario1",
+                },
+                {
+                    fecha: fechaLocal(2026, 9, 19),
+                    cantidad: 5,
+                    username: "usuario2",
+                },
+                {
+                    fecha: fechaLocal(2026, 9, 25),
+                    cantidad: 3,
+                    username: "usuario3",
+                },
+                {
+                    fecha: fechaLocal(2026, 10, 15),
+                    cantidad: 7,
+                    username: "usuario4",
+                },
+                {
+                    fecha: fechaLocal(2026, 10, 20),
+                    cantidad: 9,
+                    username: "usuario5",
+                },
+            ];
+
+            renderizarBloque({ tipo, titulo, datos: datosPorPeriodo });
+
+            expect(obtenerOpciones("Usuario")).toEqual([
+                "todos",
+                "usuario3",
+                "usuario4",
+                "usuario5",
+            ]);
+
+            fireEvent.change(screen.getByLabelText("Período"), {
+                target: { value: "1s" },
+            });
+
+            expect(obtenerOpciones("Usuario")).toEqual([
+                "todos",
+                "usuario4",
+                "usuario5",
+            ]);
+
+            fireEvent.change(screen.getByLabelText("Período"), {
+                target: { value: "3m" },
+            });
+
+            expect(obtenerOpciones("Usuario")).toEqual([
+                "todos",
+                "usuario1",
+                "usuario2",
+                "usuario3",
+                "usuario4",
+                "usuario5",
+            ]);
+        });
+
+        it.each([
+            {
+                tipo: "contactos" as const,
+                titulo: "Contactos por perfil",
+            },
+            {
+                tipo: "publicaciones" as const,
+                titulo: "Publicaciones modificadas",
+            },
+        ])("restablece temporalmente el filtro cuando el usuario no tiene registros en el período de $tipo", ({ tipo, titulo }) => {
+            const datosPorPeriodo: DatoEstadistica[] = [
+                {
+                    fecha: fechaLocal(2026, 9, 25),
+                    cantidad: 2,
+                    username: "usuario3",
+                },
+                {
+                    fecha: fechaLocal(2026, 10, 20),
+                    cantidad: 7,
+                    username: "usuario4",
+                },
+                {
+                    fecha: fechaLocal(2026, 10, 20),
+                    cantidad: 9,
+                    username: "usuario5",
+                },
+            ];
+
+            renderizarBloque({ tipo, titulo, datos: datosPorPeriodo });
+
+            fireEvent.change(screen.getByLabelText("Usuario"), {
+                target: { value: "usuario3" },
+            });
+
+            expect(screen.getByLabelText("Usuario")).toHaveValue("usuario3");
+
+            fireEvent.change(screen.getByLabelText("Período"), {
+                target: { value: "1s" },
+            });
+
+            expect(obtenerOpciones("Usuario")).toEqual([
+                "todos",
+                "usuario4",
+                "usuario5",
+            ]);
+
+            expect(screen.getByLabelText("Usuario")).toHaveValue("todos");
+
+            expect(
+                within(obtenerTarjeta("Total de Hoy")).getByText("16"),
+            ).toBeInTheDocument();
+
+            fireEvent.change(screen.getByLabelText("Período"), {
+                target: { value: "3m" },
+            });
+
+            expect(screen.getByLabelText("Usuario")).toHaveValue("usuario3");
         });
     });
 
@@ -1876,8 +1999,6 @@ describe("BloqueEstadistica", () => {
             expect(grafica[2].cantidad).toBe(19);
             expect(grafica.at(-1)?.cantidad).toBe(19);
 
-            // El cambio del 05/10 está incorporado al punto de partida.
-            // El cambio del 12/10 produce una variación de +2.
             expect(
                 within(
                     obtenerTarjeta("Variación en el rango"),
@@ -2131,6 +2252,72 @@ describe("BloqueEstadistica", () => {
                     obtenerTarjeta("Variación en el rango"),
                 ).getByText("+4"),
             ).toBeInTheDocument();
+        });
+
+        it("actualiza las opciones de usuarios según el período seleccionado", () => {
+            const datosPorPeriodo: DatoEstadistica[] = [
+                {
+                    fecha: "2026-08-01",
+                    cantidad: 10,
+                    username: "usuario1",
+                },
+                {
+                    fecha: "2026-09-19",
+                    cantidad: 5,
+                    username: "usuario2",
+                },
+                {
+                    fecha: "2026-09-25",
+                    cantidad: 8,
+                    username: "usuario3",
+                },
+                {
+                    fecha: "2026-10-15",
+                    cantidad: 12,
+                    username: "usuario4",
+                },
+                {
+                    fecha: "2026-10-20",
+                    cantidad: 15,
+                    username: "usuario5",
+                },
+            ];
+
+            renderizarBloque({
+                tipo: "cantidadPublicaciones",
+                titulo: "Cantidad de publicaciones",
+                datos: datosPorPeriodo,
+            });
+
+            expect(obtenerOpciones("Usuario")).toEqual([
+                "todos",
+                "usuario3",
+                "usuario4",
+                "usuario5",
+            ]);
+
+            fireEvent.change(screen.getByLabelText("Período"), {
+                target: { value: "1s" },
+            });
+
+            expect(obtenerOpciones("Usuario")).toEqual([
+                "todos",
+                "usuario4",
+                "usuario5",
+            ]);
+
+            fireEvent.change(screen.getByLabelText("Período"), {
+                target: { value: "3m" },
+            });
+
+            expect(obtenerOpciones("Usuario")).toEqual([
+                "todos",
+                "usuario1",
+                "usuario2",
+                "usuario3",
+                "usuario4",
+                "usuario5",
+            ]);
         });
     });
 

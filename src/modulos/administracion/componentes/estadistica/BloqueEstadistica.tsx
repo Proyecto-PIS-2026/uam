@@ -40,7 +40,7 @@ const modificarFecha = (fecha: string, dias: number): string => {
     return obtenerFechaLocalStr(resultado);
 };
 const obtenerFechaRegistroStr = (fecha: Date | string): string | null => {
-    if (typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fecha))  return fecha;
+    if (typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
     const fechaDate = new Date(fecha);
     if (Number.isNaN(fechaDate.getTime())) return null;
     return obtenerFechaLocalStr(fechaDate);
@@ -56,7 +56,7 @@ const calcularCantidadPublicacionesHasta = (datos: DatoEstadistica[], fechaLimit
         const fecha = obtenerFechaRegistroStr(item.fecha);
         if (fecha === null || fecha > fechaLimite) return;
         const anterior = ultimosRegistros.get(item.username);
-        if (!anterior || fecha > anterior.fecha) ultimosRegistros.set(item.username, {fecha, cantidad: item.cantidad});   
+        if (!anterior || fecha > anterior.fecha) ultimosRegistros.set(item.username, {fecha, cantidad: item.cantidad});
     });
     return Array.from(ultimosRegistros.values()).reduce((total, registro) => total + registro.cantidad, 0);
 };
@@ -129,25 +129,32 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
         });
     }, [datos, desdeCalculado, hastaCalculado]);
 
-    const filtroUsuarioActivo = tipo !== "contactosPorPublicacion" || filtroEspecifico === "todos" || datosDelRango.some((item) => item.username === filtroEspecifico) ? filtroEspecifico : "todos";
+    const filtroUsuarioActivo =
+        tipo === "visitas" ||
+        filtroEspecifico === "todos" ||
+        datosDelRango.some((item) => item.username === filtroEspecifico)
+            ? filtroEspecifico
+            : "todos";
+
     const especieDisponible = tipo !== "contactosPorPublicacion" || filtroEspecie === "todos" || datosDelRango.some((item) => item.especie === filtroEspecie);
     const combinacionDisponible = tipo !== "contactosPorPublicacion" || filtroUsuarioActivo === "todos" || filtroEspecie === "todos" || datosDelRango.some((item) => item.username === filtroUsuarioActivo && item.especie === filtroEspecie);
     const filtroEspecieActivo = especieDisponible && combinacionDisponible ? filtroEspecie : "todos";
+
     const opcionesUsuarios = useMemo(() => {
-        const datosOpciones = tipo === "contactosPorPublicacion" ? datosDelRango : datos;
-        const usuarios = datosOpciones.filter((item) => {
+        const usuarios = datosDelRango.filter((item) => {
             if (!item.username) return false;
-            if (tipo === "contactosPorPublicacion" && filtroEspecieActivo !== "todos") return item.especie === filtroEspecieActivo;      
+            if (tipo === "contactosPorPublicacion" && filtroEspecieActivo !== "todos") return item.especie === filtroEspecieActivo;
             return true;
         }).map((item) => item.username!);
+
         return obtenerOpciones(usuarios);
-    }, [datos, datosDelRango, tipo, filtroEspecieActivo]);
+    }, [datosDelRango, tipo, filtroEspecieActivo]);
 
     const opcionesEspecies = useMemo(() => {
         if (tipo !== "contactosPorPublicacion") return [];
         const especies = datosDelRango.filter((item) => {
             if (!item.especie) return false;
-            return (filtroUsuarioActivo === "todos" || item.username === filtroUsuarioActivo)
+            return (filtroUsuarioActivo === "todos" || item.username === filtroUsuarioActivo);
         }).map((item) => item.especie!);
         return obtenerOpciones(especies);
     }, [datosDelRango, tipo, filtroUsuarioActivo]);
@@ -155,7 +162,7 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
     const cambiarUsuario = (_: unknown, nuevaOpcion: OpcionFiltro | null) => {
         const nuevoUsername = nuevaOpcion?.valor ?? "todos";
         setFiltroEspecifico(nuevoUsername);
-        if (filtroEspecieActivo !== "todos" && nuevoUsername !== "todos" && !datosDelRango.some((item) => item.username === nuevoUsername && item.especie === filtroEspecieActivo)) setFiltroEspecie("todos");  
+        if (filtroEspecieActivo !== "todos" && nuevoUsername !== "todos" && !datosDelRango.some((item) => item.username === nuevoUsername && item.especie === filtroEspecieActivo)) setFiltroEspecie("todos");
     };
 
     const cambiarEspecie = (_: unknown, nuevaOpcion: OpcionFiltro | null) => {
@@ -183,13 +190,13 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
                 registros.push({fecha, cantidad: item.cantidad});
                 registrosPorUsuario.set(item.username, registros);
             });
-           
-            registrosPorUsuario.forEach((registros) => { registros.sort((a, b) => a.fecha.localeCompare(b.fecha)) });
+
+            registrosPorUsuario.forEach((registros) => { registros.sort((a, b) => a.fecha.localeCompare(b.fecha)); });
             const usuarios = Array.from(registrosPorUsuario.keys());
             const posiciones = new Map<string, number>();
             const ultimasCantidades = new Map<string, number>();
-            
-            usuarios.forEach((username) => { posiciones.set(username, 0) });
+
+            usuarios.forEach((username) => { posiciones.set(username, 0); });
             while (current <= end) {
                 const fechaStr = obtenerFechaLocalStr(current);
                 let cantidadTotal = 0;
@@ -212,8 +219,8 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
         const mapaCantidades = new Map<string, number>();
         datos.forEach((item) => {
             const fechaItem = obtenerFechaRegistroStr(item.fecha);
-            if (fechaItem === null || fechaItem < desdeCalculado || fechaItem > hastaCalculado) return;         
-            if (tipo === "visitas" && filtroUsuarioActivo !== "todos" && item.tipoVisitante?.toLowerCase() !== filtroUsuarioActivo.toLowerCase()) return;           
+            if (fechaItem === null || fechaItem < desdeCalculado || fechaItem > hastaCalculado) return;
+            if (tipo === "visitas" && filtroUsuarioActivo !== "todos" && item.tipoVisitante?.toLowerCase() !== filtroUsuarioActivo.toLowerCase()) return;
             if (tipo !== "visitas" && filtroUsuarioActivo !== "todos" && item.username !== filtroUsuarioActivo) return;
             if (tipo === "contactosPorPublicacion" && filtroEspecieActivo !== "todos" && item.especie !== filtroEspecieActivo) return;
             mapaCantidades.set(fechaItem, (mapaCantidades.get(fechaItem) ?? 0) + item.cantidad);
@@ -234,11 +241,11 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
         const fechaInicial = datosFiltrados[0].fecha;
         const fechaFinal = datosFiltrados[datosFiltrados.length - 1].fecha;
         if (cantidadTicks === 1) return [fechaInicial];
-        return Array.from({ length: cantidadTicks }, (_, i) => { return (fechaInicial + ((fechaFinal - fechaInicial) * i) / (cantidadTicks - 1)) });
+        return Array.from({ length: cantidadTicks }, (_, i) => { return (fechaInicial + ((fechaFinal - fechaInicial) * i) / (cantidadTicks - 1)); });
     }, [datosFiltrados]);
 
     const totalHoy = useMemo(() => {
-        if (tipo === "cantidadPublicaciones") return calcularCantidadPublicacionesHasta(datos, hoyStr, filtroUsuarioActivo);      
+        if (tipo === "cantidadPublicaciones") return calcularCantidadPublicacionesHasta(datos, hoyStr, filtroUsuarioActivo);
         return datos.filter((item) => {
             const fechaItem = obtenerFechaRegistroStr(item.fecha);
             if (fechaItem !== hoyStr) return false;
@@ -288,13 +295,13 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
                     />
                 )}
                 {tipo === "contactosPorPublicacion" && (
-                    <Autocomplete 
-                        className={styles.filtroEspecie} 
-                        options={opcionesEspecies} 
-                        getOptionLabel={(op) => op.etiqueta} 
-                        value={opcionesEspecies.find((op) => op.valor === filtroEspecieActivo) ?? null} 
+                    <Autocomplete
+                        className={styles.filtroEspecie}
+                        options={opcionesEspecies}
+                        getOptionLabel={(op) => op.etiqueta}
+                        value={opcionesEspecies.find((op) => op.valor === filtroEspecieActivo) ?? null}
                         onChange={cambiarEspecie}
-                        renderInput={(params) => (<TextField {...params} fullWidth label="Especie" size="small" placeholder="Escribí para buscar..."/>)} 
+                        renderInput={(params) => (<TextField {...params} fullWidth label="Especie" size="small" placeholder="Escribí para buscar..."/> )}
                         noOptionsText="No se encontraron especies"
                     />
                 )}
@@ -336,7 +343,7 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis type="number" dataKey="fecha" domain={["dataMin", "dataMax"]} ticks={ticksEjeX} interval={0} minTickGap={0} tick={{ className: styles.etiquetaEje }} padding={{ left: 0, right: 0 }}
                             tickFormatter={(val: unknown) => {
-                                if (typeof val === "number") return new Date(val).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit", year: "2-digit" });                               
+                                if (typeof val === "number") return new Date(val).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit", year: "2-digit" });
                                 return "";
                             }}
                         />
