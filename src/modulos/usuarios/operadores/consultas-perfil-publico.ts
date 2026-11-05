@@ -10,7 +10,8 @@ export type PublicacionPerfil = {
     fecha: string;
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     cantidadUnidades?: number | null;
     categoria: string;
     calibre: string;
@@ -110,8 +111,8 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 "publicacionDisponible",
                 "tipoPublicacion"
             );
-            const conPresentacion = camposPublicacion.include("especie").include("variedad").include("presentacion");
-            const conCategoria = conPresentacion.include("categoria");
+            const conEnvase = camposPublicacion.include("especie").include("variedad").include("envase").include("kilos");
+            const conCategoria = conEnvase.include("categoria");
             const completo = conCategoria.include("calibre");
 
             return completo;
@@ -131,7 +132,8 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 fecha: publicacion.fecha.toString(),
                 especie: publicacion.especie.nombreEspecie,
                 variedad: publicacion.variedad?.nombreVariedad ?? "",
-                presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
+                envase: publicacion.envase?.nombreEnvase ?? "",
+                kilos: publicacion.kilos?.valor ?? "",
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
