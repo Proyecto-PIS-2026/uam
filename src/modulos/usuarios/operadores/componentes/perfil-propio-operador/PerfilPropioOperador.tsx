@@ -107,7 +107,7 @@ export default function PerfilPropioOperador({ perfil }: { perfil: PerfilPropioO
                         <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
                         <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
                     </p>
-                     <Link href="/cambiar-contrasena" className={styles.cambiarContrasena}>
+                     <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
                          Cambiar contraseña
                      </Link>
                 </div>

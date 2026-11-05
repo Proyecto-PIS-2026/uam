@@ -128,6 +128,51 @@ describe("DrawerEditarPublicacion", () => {
         vi.restoreAllMocks();
     });
 
+    it.each([
+        { estadoFoto: "por-vencer", mensaje: "La foto está por vencer." },
+        { estadoFoto: "eliminada", mensaje: "La foto venció y fue eliminada." },
+    ] as const)("explica el estado $estadoFoto al consultar la publicación", ({ estadoFoto, mensaje }) => {
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" mostrarAvisoFoto publicacion={{ ...publicacionInicial, estadoFoto }} />);
+        expect(screen.getByRole("status")).toHaveTextContent(mensaje);
+    });
+
+    it("no muestra aviso de vencimiento para una publicación que nunca tuvo foto", () => {
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" mostrarAvisoFoto />);
+        expect(screen.queryByText(/La foto (está por vencer|venció)/)).not.toBeInTheDocument();
+    });
+
+    it("omite el aviso fuera de Mi Mercado aunque el dato privado esté presente", () => {
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" publicacion={{ ...publicacionInicial, estadoFoto: "eliminada" }} />);
+        expect(screen.queryByText(/La foto (está por vencer|venció)/)).not.toBeInTheDocument();
+    });
+
+    it("conserva el aviso al cancelar el reemplazo y sólo lo retira tras guardar la nueva foto", async () => {
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" mostrarAvisoFoto publicacion={{ ...publicacionInicial, estadoFoto: "eliminada" }} />);
+        const aviso = "La foto venció y fue eliminada. Podés cargar una nueva foto.";
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        seleccionarFoto(new File(["foto"], "nueva.webp", { type: "image/webp" }));
+        expect(screen.getByText(aviso)).toBeVisible();
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+        expect(screen.getByText(aviso)).toBeVisible();
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        seleccionarFoto(new File(["foto"], "nueva.webp", { type: "image/webp" }));
+        guardarDesdeBoton();
+        await waitFor(() => expect(screen.getByText("Consulta de publicación")).toBeInTheDocument());
+        expect(mocks.guardar).toHaveBeenCalledOnce();
+        expect(screen.queryByText(aviso)).not.toBeInTheDocument();
+    });
+
+    it("conserva el aviso de foto eliminada al guardar únicamente el precio", async () => {
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" mostrarAvisoFoto publicacion={{ ...publicacionInicial, estadoFoto: "eliminada" }} />);
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "200" } });
+        guardarDesdeBoton();
+        await waitFor(() => expect(screen.getByText("Consulta de publicación")).toBeInTheDocument());
+        expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ foto: undefined }), null);
+        expect(screen.getByRole("status")).toHaveTextContent("La foto venció y fue eliminada.");
+    });
+
     it("prioriza las especies UAM presentes sin modificar props ni la especie seleccionada", () => {
         const especies = [
             props.especies[1], { id: 20, nombre: "Tomate" }, { id: 21, nombre: "Ajo" },

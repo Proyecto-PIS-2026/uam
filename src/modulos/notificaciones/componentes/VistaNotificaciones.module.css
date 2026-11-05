@@ -90,7 +90,22 @@ a.texto:hover {
     color: var(--color-primary-hover);
 }
 
+.textoBoton {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.textoBoton:disabled,
+a.texto[aria-disabled="true"] {
+    cursor: default;
+}
+
 a.texto:focus-visible,
+.textoBoton:focus-visible,
 .accion:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 3px;

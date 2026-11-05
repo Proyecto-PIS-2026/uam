@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import TarjetaPublicacion from "./TarjetaPublicacion";
+import TarjetaPublicacionProductor from "./TarjetaPublicacionProductor";
 import type { Publicacion } from "../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
 
@@ -60,6 +61,42 @@ describe("TarjetaPublicacion", () => {
           publicacionEliminada: false, precio, version: 2,
           fecha: "2026-10-10T16:30:00Z",
       }));
+  });
+
+  describe.each(["operador", "productor"] as const)("aviso de vigencia para %s", (tipo) => {
+    function tarjeta(publicacion: Publicacion, consultar = vi.fn()) {
+      return tipo === "operador"
+        ? <TarjetaPublicacion pub={publicacion} operadorId={37} incrementoPrecio={10} puedeModificar alConsultar={consultar} />
+        : <TarjetaPublicacionProductor publicacion={{ ...publicacion, publicacionProductorId: 51, pais: "Uruguay", ubicaciones: [] }} alConsultar={consultar} />;
+    }
+
+    it.each([
+      { estadoFoto: "por-vencer", etiqueta: "Foto por vencer" },
+      { estadoFoto: "eliminada", etiqueta: "Foto eliminada por vencimiento" },
+    ] as const)("informa $estadoFoto y permite consultar desde el indicador", ({ estadoFoto, etiqueta }) => {
+      const consultar = vi.fn();
+      render(tarjeta({ ...crearPublicacion(), estadoFoto }, consultar));
+      const indicador = screen.getByRole("img", { name: etiqueta });
+      expect(indicador).toBeVisible();
+      expect(indicador.closest("button")).toHaveAccessibleDescription(etiqueta);
+      fireEvent.click(indicador);
+      expect(consultar).toHaveBeenCalledOnce();
+    });
+
+    it("no atribuye vencimiento a una publicación sin foto ni a una imagen que no carga", () => {
+      const { rerender } = render(tarjeta(crearPublicacion()));
+      expect(screen.queryByRole("img", { name: /Foto (por vencer|eliminada)/ })).not.toBeInTheDocument();
+      rerender(tarjeta({ ...crearPublicacion(), foto: "/foto-rota.png", estadoFoto: null }));
+      fireEvent.error(screen.getByAltText("Manzana · Red Delicious"));
+      expect(screen.queryByRole("img", { name: /Foto (por vencer|eliminada)/ })).not.toBeInTheDocument();
+    });
+
+    it("actualiza el indicador al recibir el estado vigente de una foto reemplazada", () => {
+      const { rerender } = render(tarjeta({ ...crearPublicacion(), estadoFoto: "eliminada" }));
+      expect(screen.getByRole("img", { name: "Foto eliminada por vencimiento" })).toBeVisible();
+      rerender(tarjeta({ ...crearPublicacion(), foto: "/foto-nueva.png", estadoFoto: null }));
+      expect(screen.queryByRole("img", { name: /Foto (por vencer|eliminada)/ })).not.toBeInTheDocument();
+    });
   });
 
   it("muestra los datos principales de la publicación", () => {

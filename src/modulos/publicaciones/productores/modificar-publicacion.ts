@@ -63,7 +63,7 @@ async function consultarPublicacion(publicacionProductorId: number, cliente: Cli
         .include("pais", (pais) => pais.select("nombrePais"))
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) => publicacion
-            .select("id", "foto", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+            .select("id", "foto", "fotoEliminadaPorVencimientoEn", "precio", "cantidadUnidades", "fecha", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
             .include("envase").include("kilos")
             .include("especie").include("variedad").include("categoria").include("calibre"))
         .first();
@@ -124,6 +124,8 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
                 precio: cambios.precio as PrecioDb, foto, especieId: cambios.especieId, variedadId: cambios.variedadId, envaseId: cambios.envaseId,
                 kilosId: cambios.kilosId,
                 categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,
+                ...(fotoNueva || (cambios.foto === null && publicacion.foto !== null)
+                    ? { fotoEliminadaPorVencimientoEn: null } : {}),
                 ...(cambios.cantidadUnidades !== undefined ? { cantidadUnidades: cambios.cantidadUnidades as CantidadUnidadesDb } : {}),
                 ...(cambios.disponible !== undefined ? { publicacionDisponible: cambios.disponible } : {}),
             });

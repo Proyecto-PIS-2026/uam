@@ -14,6 +14,7 @@ import DrawerPublicacionProductor from "./DrawerPublicacionProductor";
 import { DrawerAltaPublicacionProductor } from "../../productores/AltaPublicacionProductor";
 import TarjetaPublicacionProductor from "./TarjetaPublicacionProductor";
 import styles from "./MiMercado.module.css";
+import { useSeleccionPublicacion } from "../use-seleccion-publicacion";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
@@ -21,17 +22,18 @@ type Props = {
     publicaciones: PublicacionMiMercadoProductor[];
     nombreProductor?: string;
     productorId?: number;
+    publicacionInicialId?: number | null;
 };
 
-export default function MiMercadoProductor({ publicaciones, nombreProductor = "", productorId = 0 }: Props) {
+export default function MiMercadoProductor({ publicaciones, nombreProductor = "", productorId = 0, publicacionInicialId = null }: Props) {
     const router = useRouter();
     const { notificar } = useNotificacionToast();
-    const [seleccionId, setSeleccionId] = useState<number | null>(null);
     const [altaAbierta, setAltaAbierta] = useState(false);
     const [cambiosGuardados, setCambiosGuardados] = useState<{ origen: PublicacionMiMercadoProductor[]; porId: Map<number, PublicacionMiMercadoProductor> } | null>(null);
     const publicacionesActuales = useMemo(() => publicaciones.map((publicacion) =>
         cambiosGuardados?.origen === publicaciones ? cambiosGuardados.porId.get(publicacion.id) ?? publicacion : publicacion,
     ), [publicaciones, cambiosGuardados]);
+    const { seleccionId, setSeleccionId, avisoPublicacion } = useSeleccionPublicacion(publicacionInicialId, publicacionesActuales);
     const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicacionesActuales.map((publicacion) => ({
         id: publicacion.id,
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
@@ -71,6 +73,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                     titulo="Mi Mercado"
                     subtitulo={`${publicaciones.length} ${publicaciones.length === 1 ? "publicación" : "publicaciones"}`}
                 />
+                {avisoPublicacion && <p className={styles.mensajeError} role="status">{avisoPublicacion}</p>}
                 {publicaciones.length > 0 && (
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
@@ -103,7 +106,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                     </div>
                 )}
             </div>
-            <DrawerPublicacionProductor publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} alGuardar={guardarPublicacion} alEliminada={(mensaje) => { notificar(mensaje, "success"); router.refresh(); }} />
+            <DrawerPublicacionProductor mostrarAvisoFoto publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} alGuardar={guardarPublicacion} alEliminada={(mensaje) => { notificar(mensaje, "success"); router.refresh(); }} />
             {productorId > 0 && <DrawerAltaPublicacionProductor productorId={productorId} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={(mensaje) => { setAltaAbierta(false); notificar(mensaje, "success"); router.refresh(); }} />}
         </main>
     );

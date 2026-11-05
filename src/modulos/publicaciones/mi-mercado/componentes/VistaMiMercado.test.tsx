@@ -78,6 +78,14 @@ describe("VistaMiMercado", () => {
         expect(mocks.obtenerPublicaciones).not.toHaveBeenCalled();
     });
 
+    it("entrega el identificador del aviso sin consultar publicaciones fuera del operador propio", async () => {
+        const vista = await VistaMiMercado({ publicacionInicialId: 123 });
+
+        expect(vista.props.publicacionInicialId).toBe(123);
+        expect(vista.props.publicaciones).toEqual([]);
+        expect(mocks.obtenerPublicaciones).toHaveBeenCalledExactlyOnceWith(13);
+    });
+
     it("permite consultar sin permiso de alta, pero rechaza abrir el formulario", async () => {
         vi.spyOn(autorizacion, "autorizado").mockImplementation((...argumentos) => argumentos[0] !== "operador.publicacion.crear");
 

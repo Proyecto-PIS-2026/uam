@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => {
             Productor: consulta(),
             Usuario: consulta(),
             EstadisticaPublicacion: consulta(),
+            Imagen: consulta(),
         },
     };
 });
@@ -89,6 +90,8 @@ const publicacion = {
     publicacionProductorId: 12,
     precio: "125",
     fecha: "2026-10-21T12:00:00Z",
+    foto: null,
+    estadoFoto: null,
 };
 
 function configurarMocksBase() {
@@ -169,6 +172,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
@@ -321,6 +325,29 @@ describe("GET /api/publicaciones/productor/[id]", () => {
 });
 
 describe("PATCH /api/publicaciones/productor/[id]", () => {
+    it("devuelve el estado actualizado de la nueva foto sin conservar el aviso de eliminación anterior", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-04T03:00:00Z"));
+        const archivo = "12345678-1234-4234-8234-123456789abc.webp";
+        const foto = `/api/publicaciones/imagenes/20/${archivo}`;
+        mocks.modificar.mockResolvedValue({ publicacion: { ...publicacion, foto, estadoFoto: "eliminada" }, productorId: 3 });
+        mocks.modelos.Imagen.all.mockResolvedValue([{ clave: `publicaciones/20/${archivo}`, cargadaEn: "2026-11-04T02:59:59Z" }]);
+
+        const respuesta = await PATCH(solicitud(), contexto);
+
+        expect(respuesta.status).toBe(200);
+        expect(await respuesta.json()).toEqual({ publicacion: { ...publicacion, foto, estadoFoto: null } });
+    });
+
+    it("conserva el aviso de una foto eliminada por aging cuando se guardan otros datos", async () => {
+        mocks.modificar.mockResolvedValue({ publicacion: { ...publicacion, estadoFoto: "eliminada" }, productorId: 3 });
+
+        const respuesta = await PATCH(solicitud(), contexto);
+
+        expect(respuesta.status).toBe(200);
+        expect(await respuesta.json()).toEqual({ publicacion: { ...publicacion, estadoFoto: "eliminada" } });
+    });
+
     it("exige una sesión validada", async () => {
         mocks.sesion.mockResolvedValue(null);
 

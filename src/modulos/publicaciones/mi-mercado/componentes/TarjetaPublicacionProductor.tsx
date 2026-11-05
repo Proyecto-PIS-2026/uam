@@ -3,6 +3,7 @@
 import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-publicacion";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
+import { IndicadorVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
 import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
 import styles from "./TarjetaPublicacion.module.css";
 
@@ -17,9 +18,10 @@ export default function TarjetaPublicacionProductor({ publicacion, alConsultar }
     const nombreProducto = variedad && variedad.trim() !== "" && variedad.trim() !== "-" ? `${especie} · ${variedad}` : especie;
 
     return (
-        <button type="button" onClick={alConsultar} className={`${styles.tarjeta} ${styles.tarjetaConsulta}`} aria-label={`Ver detalle de ${nombreProducto}`}>
+        <button type="button" onClick={alConsultar} className={`${styles.tarjeta} ${styles.tarjetaConsulta}`} aria-label={`Ver detalle de ${nombreProducto}`} aria-describedby={publicacion.estadoFoto ? `vigencia-foto-productor-${publicacion.id}` : undefined}>
             <span className={styles.botonFoto}>
                 <ImagenPublicacion src={publicacion.foto} alt={nombreProducto} fill sizes="(min-width: 768px) 320px, 128px" unoptimized className={styles.foto} reemplazo={<span className={styles.sinFoto}>Sin fotografía</span>} />
+                <IndicadorVigenciaFoto estado={publicacion.estadoFoto} id={`vigencia-foto-productor-${publicacion.id}`} />
             </span>
             <span className={styles.contenido}>
                 <span className={styles.botonInformacion}>

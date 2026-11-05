@@ -5,6 +5,7 @@ const CODIGOS_PAIS = ["+598", "+595", "+56", "+55", "+54"];
 export type ProductorParaModificar = {
     id: number;
     nombre: string;
+    nombreUsuario?: string;
     fotoPerfil?: string | null;
     codigoPais: string;
     telefono: string;

@@ -6,15 +6,16 @@ const RUTA_PERFIL = "/mi-perfil/productor";
 const RUTA_EDITAR = `${RUTA_PERFIL}/editar`;
 const CONTACTO_INICIAL = "90000000";
 
-const datosPerfil = (page: Page) => page.getByRole("region", { name: "Datos de mi perfil" });
-const lineaContacto = (page: Page) => datosPerfil(page).locator("p").filter({ hasText: /^Número de contacto:/ });
+// La tarjeta del perfil se identifica por el nombre del productor (h1).
+const datosPerfil = (page: Page) => page.getByRole("region", { name: /^Productor de prueba \d+$/ });
+const lineaContacto = (page: Page) => datosPerfil(page).locator("p").filter({ hasText: /^Whatsapp:/ });
 const campoContacto = (page: Page) => page.getByLabel("Número de contacto (opcional)");
 
 async function abrirModificacion(page: Page) {
   await page.goto(RUTA_PERFIL);
-  await page.getByRole("link", { name: "Modificar mi perfil", exact: true }).click();
+  await page.getByRole("link", { name: "Editar", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${RUTA_EDITAR}$`));
-  await expect(page.getByRole("heading", { level: 1, name: "Modificar mi perfil", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Editar mi perfil", exact: true })).toBeVisible();
 }
 
 async function guardar(page: Page) {
@@ -39,7 +40,7 @@ test.describe("BP-11.3 - Modificación de mi perfil como Productor", () => {
 
   test("CP-01: la modificación muestra los datos actuales del perfil", async ({ page }) => {
     await page.goto(RUTA_PERFIL);
-    const nombre = (await datosPerfil(page).getByRole("heading", { level: 2 }).textContent())?.trim() ?? "";
+    const nombre = (await datosPerfil(page).getByRole("heading", { level: 1 }).textContent())?.trim() ?? "";
     expect(nombre).not.toBe("");
     await expect(lineaContacto(page)).toContainText(`+598 ${CONTACTO_INICIAL}`);
 
