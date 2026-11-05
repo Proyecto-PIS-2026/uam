@@ -33,3 +33,13 @@ export async function obtenerPerfilAdministrador(id: number): Promise<PerfilAdmi
         solicitoRestablecimiento: administrador.usuario.solicitoRestablecimiento,
     };
 }
+
+
+export async function obtenerPerfilAdministradorPorUsuario(usuarioId: number): Promise<PerfilAdministrador | null> {
+    const administrador = await db.orm.public.Administrador
+        .select("id")
+        .where({ usuarioId })
+        .first();
+
+    return administrador ? obtenerPerfilAdministrador(administrador.id) : null;
+}

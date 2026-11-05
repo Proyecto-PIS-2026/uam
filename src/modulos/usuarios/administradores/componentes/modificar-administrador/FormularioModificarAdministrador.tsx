@@ -9,16 +9,21 @@ import { useRouter } from "next/navigation";
 import BotonVolver from "@/compartido/BotonVolver";
 
 import { modificarAdministrador } from "./modificarAdministrador";
+import { modificarMiPerfilAdministrador } from "../../perfil-propio/modificarMiPerfilAdministrador";
 import type { AdministradorParaModificar } from "./obtenerAdministradorParaModificar";
 
 import styles from "./FormularioModificarAdministrador.module.css";
 
+const RUTA_MI_PERFIL = "/mi-perfil";
+
 type Props = {
     administrador: AdministradorParaModificar;
+    perfilPropio?: boolean;
 };
 
-export default function FormularioModificarAdministrador({ administrador }: Props) {
+export default function FormularioModificarAdministrador({ administrador, perfilPropio = false }: Props) {
     const router = useRouter();
+    const rutaPerfil = perfilPropio ? RUTA_MI_PERFIL : `/gestion-administradores/${administrador.id}`;
 
     const [nombreUsuario, setNombreUsuario] = useState(administrador.nombreUsuario);
     const [email, setEmail] = useState(administrador.email);
@@ -32,7 +37,7 @@ export default function FormularioModificarAdministrador({ administrador }: Prop
     const guardadoEnCurso = useRef(false);
 
     function cancelar() {
-        router.push(`/gestion-administradores/${administrador.id}`);
+        router.push(rutaPerfil);
     }
 
     async function guardar(evento: FormEvent<HTMLFormElement>) {
@@ -45,20 +50,22 @@ export default function FormularioModificarAdministrador({ administrador }: Prop
         setGuardando(true);
 
         try {
-            const resultado = await modificarAdministrador({
-                administradorId: administrador.id,
-                nombreUsuario,
-                email,
-                contraseña,
-                confirmacionContraseña,
-            });
+            const resultado = perfilPropio
+                ? await modificarMiPerfilAdministrador({ nombreUsuario, email })
+                : await modificarAdministrador({
+                    administradorId: administrador.id,
+                    nombreUsuario,
+                    email,
+                    contraseña,
+                    confirmacionContraseña,
+                });
 
             if (!resultado.esValido) {
                 setErrores(resultado.errores);
                 return;
             }
 
-            router.push(`/gestion-administradores/${resultado.id}`);
+            router.push(rutaPerfil);
         } catch (error) {
             console.error("Error al modificar administrador:", error);
 
@@ -73,22 +80,23 @@ export default function FormularioModificarAdministrador({ administrador }: Prop
         <div className={styles.pagina}>
             <div className={styles.contenedor}>
                 <BotonVolver className={styles.volver} onClick={cancelar} disabled={guardando}>
-                    Volver al perfil
+                    {perfilPropio ? "Volver a mi perfil" : "Volver al perfil"}
                 </BotonVolver>
 
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
-                    <h1 className={styles.titulo}>Modificar administrador</h1>
+                    <h1 className={styles.titulo}>{perfilPropio ? "Editar mi perfil" : "Modificar administrador"}</h1>
 
                     <p className={styles.descripcion}>
-                        Actualizá la información registrada de{" "}
-                        <strong>{administrador.nombreUsuario}</strong>.
+                        {perfilPropio ? "Actualizar información de " : "Actualizá la información registrada de "}
+                        <strong>{administrador.nombreUsuario}</strong>
+                        {!perfilPropio && "."}
                     </p>
                 </header>
 
                 <form className={styles.formulario} onSubmit={guardar} noValidate>
                     <section className={styles.seccion}>
-                        <h2 className={styles.subtitulo}>Datos del administrador</h2>
+                        <h2 className={styles.subtitulo}>{perfilPropio ? "Datos de mi perfil" : "Datos del administrador"}</h2>
 
                         <TextField
                             fullWidth
@@ -112,43 +120,47 @@ export default function FormularioModificarAdministrador({ administrador }: Prop
                         />
 
                         <p className={styles.ayuda}>
-                            El correo electrónico se usa para iniciar sesión: si lo cambiás, el administrador va a tener que ingresar con el nuevo.
+                            {perfilPropio
+                                ? "El correo electrónico se usa para iniciar sesión: si lo cambiás, vas a tener que ingresar con el nuevo."
+                                : "El correo electrónico se usa para iniciar sesión: si lo cambiás, el administrador va a tener que ingresar con el nuevo."}
                         </p>
                     </section>
 
-                    <section className={styles.seccion}>
-                        <h2 className={styles.subtitulo}>Cambiar contraseña</h2>
+                    {!perfilPropio && (
+                        <section className={styles.seccion}>
+                            <h2 className={styles.subtitulo}>Cambiar contraseña</h2>
 
-                        <p className={styles.ayuda}>
-                            Dejá los campos vacíos si no querés modificar la contraseña actual.
-                        </p>
+                            <p className={styles.ayuda}>
+                                Dejá los campos vacíos si no querés modificar la contraseña actual.
+                            </p>
 
-                        <div className={styles.grillaContraseña}>
-                            <TextField
-                                fullWidth
-                                size="small"
-                                className={styles.control}
-                                label="Nueva contraseña"
-                                type="password"
-                                value={contraseña}
-                                onChange={(evento) => setContraseña(evento.target.value)}
-                                autoComplete="new-password"
-                                disabled={guardando}
-                            />
+                            <div className={styles.grillaContraseña}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    className={styles.control}
+                                    label="Nueva contraseña"
+                                    type="password"
+                                    value={contraseña}
+                                    onChange={(evento) => setContraseña(evento.target.value)}
+                                    autoComplete="new-password"
+                                    disabled={guardando}
+                                />
 
-                            <TextField
-                                fullWidth
-                                size="small"
-                                className={styles.control}
-                                label="Confirmar contraseña"
-                                type="password"
-                                value={confirmacionContraseña}
-                                onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
-                                autoComplete="new-password"
-                                disabled={guardando}
-                            />
-                        </div>
-                    </section>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    className={styles.control}
+                                    label="Confirmar contraseña"
+                                    type="password"
+                                    value={confirmacionContraseña}
+                                    onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
+                                    autoComplete="new-password"
+                                    disabled={guardando}
+                                />
+                            </div>
+                        </section>
+                    )}
 
                     {errores.length > 0 && (
                         <div className={styles.error} role="alert">
