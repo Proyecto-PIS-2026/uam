@@ -61,7 +61,7 @@ function resultado(precio = 100, cantidad = 1): ResultadoPublicaciones {
             fecha: "2026-10-16T10:00:00Z",
             foto: null,
             variedad: "Perita",
-            presentacion: "KG",
+            envase: "KG", kilos: "",
             categoria: "I",
             calibre: "M",
             codigoCalibre: "M",

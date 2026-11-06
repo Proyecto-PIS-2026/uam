@@ -38,7 +38,7 @@ vi.mock("@/modulos/publicaciones/operadores/componentes/NuevaPublicacion", () =>
 const opciones: OpcionesEdicionPublicacion = {
     especies: [],
     variedades: [],
-    presentaciones: [],
+    envases: [], kilos: [],
     categorias: [],
     calibres: [],
     paises: [],

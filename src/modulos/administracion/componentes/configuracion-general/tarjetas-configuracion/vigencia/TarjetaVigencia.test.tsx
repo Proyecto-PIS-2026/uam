@@ -26,7 +26,7 @@ function crearConfiguracion(cambios: Partial<ConfiguracionVigenciaFotos> = {}): 
     };
 }
 
-function preparar(configuracion = crearConfiguracion(), onGuardar = vi.fn().mockResolvedValue(undefined)) {
+function preparar(configuracion = crearConfiguracion(), onGuardar = vi.fn().mockResolvedValue(undefined), maximoDiasVigencia?: number) {
     const props = {
         titulo: "Vigencia de las fotos",
         descripcion: "Configurá la vigencia de las fotos.",
@@ -35,6 +35,7 @@ function preparar(configuracion = crearConfiguracion(), onGuardar = vi.fn().mock
         ayudaAvisos: "Notificar a operadores y productores.",
         configuracion,
         onGuardar,
+        maximoDiasVigencia,
     };
 
     return { ...render(<TarjetaVigencia {...props} />), props, onGuardar };
@@ -164,6 +165,28 @@ describe("TarjetaVigencia", () => {
         fireEvent.change(screen.getByLabelText("Días de vigencia"), { target: { value: "1" } });
         fireEvent.click(botonGuardar());
         await waitFor(() => expect(onGuardar).toHaveBeenCalledWith({ habilitado: true, diasVigencia: "1", avisosHabilitados: false, diasAnticipacion: "" }));
+    });
+
+    it("rechaza una vigencia mayor al máximo configurado sin enviar cambios", async () => {
+        const { onGuardar } = preparar(crearConfiguracion(), undefined, 36500);
+        fireEvent.change(screen.getByLabelText("Días de vigencia"), { target: { value: "36501" } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La vigencia no puede superar los 36500 días.", "error"));
+        expect(onGuardar).not.toHaveBeenCalled();
+    });
+
+    it("permite guardar el máximo de días configurado", async () => {
+        const { onGuardar } = preparar(crearConfiguracion(), undefined, 36500);
+        fireEvent.change(screen.getByLabelText("Días de vigencia"), { target: { value: "36500" } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(onGuardar).toHaveBeenCalledWith(crearConfiguracion({ diasVigencia: "36500" })));
+    });
+
+    it("mantiene la validación de otras vigencias cuando no se configura un máximo", async () => {
+        const { onGuardar } = preparar();
+        fireEvent.change(screen.getByLabelText("Días de vigencia"), { target: { value: "36501" } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(onGuardar).toHaveBeenCalledWith(crearConfiguracion({ diasVigencia: "36501" })));
     });
 
     it("normaliza los días y muestra confirmación al guardar", async () => {
