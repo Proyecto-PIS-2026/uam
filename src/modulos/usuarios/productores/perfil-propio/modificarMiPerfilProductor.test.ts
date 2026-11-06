@@ -55,9 +55,9 @@ describe("modificarMiPerfilProductor", () => {
         expect(mocks.usuario.update).not.toHaveBeenCalled();
     });
 
-    it.each(["", "   "])("permite eliminar el contacto con %j", async (telefono) => {
-        await modificarMiPerfilProductor({ ...datos, telefono });
-        expect(mocks.productor.update).toHaveBeenCalledWith(expect.objectContaining({ whatsApp: "" }));
+    it.each(["", "   "])("impide eliminar el WhatsApp obligatorio con %j", async (telefono) => {
+        expect(await modificarMiPerfilProductor({ ...datos, telefono })).toMatchObject({ esValido: false });
+        expect(mocks.productor.update).not.toHaveBeenCalled();
     });
 
     it.each(["99abc456", "123", "000", "---", null, 99123456])("rechaza un contacto inválido %j sin guardar", async (telefono) => {

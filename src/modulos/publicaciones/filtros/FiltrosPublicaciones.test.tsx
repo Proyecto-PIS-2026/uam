@@ -630,7 +630,7 @@ describe("FiltrosPublicaciones", () => {
         const selectorOrden = screen.getByRole("button", { name: "Ordenar por" });
 
         fireEvent.click(selectorOrden);
-        expect(screen.getByRole("menuitemradio", { name: "A-Z" })).toHaveAttribute("aria-checked", "true");
+        expect(screen.getByRole("menuitemradio", { name: "Por defecto" })).toHaveAttribute("aria-checked", "true");
         fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
 
         comprobarOrdenActivo("Menor Precio");
@@ -944,7 +944,7 @@ describe("FiltrosPublicaciones", () => {
         const alFiltrar = vi.fn();
         const alCambiarOrden = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden} />);
-        comprobarOrdenActivo("A-Z");
+        comprobarOrdenActivo("Por defecto");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => publicacion.id)).toEqual([1, 2, 3, 4]);
         expect(alCambiarOrden).not.toHaveBeenCalled();
@@ -958,13 +958,13 @@ describe("FiltrosPublicaciones", () => {
         expect(alCambiarOrden).toHaveBeenLastCalledWith("precioDesc");
         expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([4, 3, 2, 1]);
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-        comprobarOrdenActivo("A-Z");
+        comprobarOrdenActivo("Por defecto");
         expect(alCambiarOrden).toHaveBeenCalledTimes(2);
         expect(alCambiarOrden).toHaveBeenLastCalledWith("alfabeticoAsc");
         expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([1, 2, 3, 4]);
     });
 
-    it("aplica la prioridad solo como orden inicial y no permite seleccionarla en el menú público", () => {
+    it("aplica la prioridad configurada mediante Por defecto", () => {
         const alFiltrar = vi.fn();
         const datos = [
             { ...publicaciones[0], id: 1, especie: "Pera", variedad: "Williams" },
@@ -979,7 +979,7 @@ describe("FiltrosPublicaciones", () => {
         expect(ids()).toEqual([3, 6, 2, 4, 5, 1]);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         expect(screen.queryByRole("menuitemradio", { name: "Sin ordenar" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("menuitemradio", { name: "Orden predeterminado" })).not.toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Por defecto" })).toHaveAttribute("aria-checked", "true");
         fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "manzana" } });
         expect(ids()).toEqual([2, 4]);
@@ -987,28 +987,25 @@ describe("FiltrosPublicaciones", () => {
         expect(ids()).toEqual([3, 6, 2, 4, 5, 1]);
     });
 
-    it("conserva A-Z después de limpiar filtros y solo vuelve a prioridad al montar de nuevo", () => {
+    it("recupera la prioridad al limpiar filtros o elegir Por defecto sin volver a montar", () => {
         const alFiltrar = vi.fn();
         const datos = [
             { ...publicaciones[0], id: 1, especie: "Pera" },
             { ...publicaciones[0], id: 2, especie: "Papa" },
             { ...publicaciones[0], id: 3, especie: "Acelga" },
         ];
-        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
         const ids = () => (alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id);
 
         expect(ids()).toEqual([2, 3, 1]);
         seleccionarOrden("A-Z");
         expect(ids()).toEqual([3, 2, 1]);
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        expect(ids()).toEqual([2, 3, 1]);
+        comprobarOrdenActivo("Por defecto");
+        seleccionarOrden("A-Z");
         expect(ids()).toEqual([3, 2, 1]);
-        comprobarOrdenActivo("A-Z");
-        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-        expect(screen.queryByRole("menuitemradio", { name: "Orden predeterminado" })).not.toBeInTheDocument();
-        fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
-
-        vista.unmount();
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={datos} especieFiltro="" ordenInicial="prioridad" alFiltrar={alFiltrar}/>);
+        seleccionarOrden("Por defecto");
         expect(ids()).toEqual([2, 3, 1]);
     });
 
@@ -1037,7 +1034,7 @@ describe("FiltrosPublicaciones", () => {
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         expect(screen.queryByRole("menuitemradio", { name: "Sin ordenar" })).not.toBeInTheDocument();
         expect(screen.getByRole("menuitemradio", { name: "Más actualizadas" })).toBeInTheDocument();
-        expect(screen.getAllByRole("menuitemradio")).toHaveLength(5);
+        expect(screen.getAllByRole("menuitemradio")).toHaveLength(6);
     });
 
     it("coloca las publicaciones sin precio al final al ordenar por precio", () => {
@@ -1358,7 +1355,7 @@ describe("ordenamiento configurado por el administrador", () => {
         expect(screen.getByRole("menuitemradio", { name: "Más actualizadas" })).toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Más vendidas" })).not.toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Sin ordenar" })).not.toBeInTheDocument();
-        expect(screen.getAllByRole("menuitemradio")).toHaveLength(5);
+        expect(screen.getAllByRole("menuitemradio")).toHaveLength(6);
     });
 
     it.each([
@@ -1380,6 +1377,17 @@ describe("ordenamiento configurado por el administrador", () => {
         expect(props.alCambiarOrden).toHaveBeenCalledExactlyOnceWith("precioDesc");
         expect(nombresFiltrados(props.alFiltrar)).toEqual(["Acelga", "Tomate", "Papa"]);
         expect(props.alConsultar.mock.calls.at(-1)![0]).toMatchObject({ orden: "precioDesc" });
+    });
+
+    it.each(["prioridad", "precioAsc", "alfabeticoDesc"] as const)("Por defecto comunica el orden administrativo %s a la consulta", async (ordenInicial) => {
+        const { props } = prepararOrdenamiento(ordenInicial);
+        const iniciales = nombresFiltrados(props.alFiltrar);
+        await elegirOrdenConfigurado("Mayor Precio");
+        await elegirOrdenConfigurado("Por defecto");
+
+        expect(nombresFiltrados(props.alFiltrar)).toEqual(iniciales);
+        expect(props.alCambiarOrden).toHaveBeenLastCalledWith(ordenInicial);
+        expect(props.alConsultar.mock.calls.at(-1)![0]).toMatchObject({ orden: ordenInicial });
     });
 
     it("ignora la selección local al deshabilitar el ordenamiento", async () => {

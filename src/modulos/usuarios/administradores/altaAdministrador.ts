@@ -5,13 +5,14 @@ import { validarAltaAdministrador } from "./validarAltaAdministrador";
 import argon2 from "argon2";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 
 export type ResultadoAltaAdministrador =
 	| { esValido: false; errores: string[] }
 	| { esValido: true; id: number; mensaje: string };
 
 export async function altaAdministrador(valor: unknown): Promise<ResultadoAltaAdministrador> {
-	await exigirAdministrador();
+	await controlarSesionEnAccion(exigirAdministrador);
 
 	const validacion = validarAltaAdministrador(valor);
 	if (!validacion.esValido) return validacion;

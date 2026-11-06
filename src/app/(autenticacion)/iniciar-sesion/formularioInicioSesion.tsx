@@ -13,7 +13,7 @@ import {
 
 const estadoInicial: EstadoInicioSesion = {};
 
-export default function FormularioInicioSesion() {
+export default function FormularioInicioSesion({ recuperacionHabilitada = true }: { recuperacionHabilitada?: boolean }) {
     const [estado, accion, pendiente] = useActionState(iniciarSesion, estadoInicial);
     const [identificador, cambiarIdentificador] = useState("");
     const [mostrarContrasena, cambiarMostrarContrasena] = useState(false);
@@ -115,13 +115,13 @@ export default function FormularioInicioSesion() {
                 >
                     {pendiente ? "Ingresando..." : "Iniciar sesión"}
                 </button>
-                <button
+                {recuperacionHabilitada && <button
                     type="button"
                     onClick={abrirModalRecuperacion}
                     className="w-full text-center text-sm text-[var(--color-secondary)] underline underline-offset-2 hover:opacity-80"
                 >
                     Solicitar recuperación de contraseña
-                </button>
+                </button>}
             </form>
             <Dialog
                 open={modalRecuperacionAbierto}

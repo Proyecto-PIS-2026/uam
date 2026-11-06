@@ -1,3 +1,4 @@
+import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
 import { expect, type Page, type APIRequestContext } from "@playwright/test";
 import { test } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador, iniciarSesionOperador } from "./autenticacion";
@@ -146,7 +147,7 @@ test("BP-04.4 CA-1 CP-02: funcionalidades protegidas sin sesión", async ({ page
   }
 });
 
-test("BP-04.4 CA-2 CP-03: funcionalidades permitidas al Operador", async ({ page }) => {
+test("BP-04.4 CA-2 CP-03: funcionalidades permitidas al Operador", async ({ page }) => conRestablecimientoHabilitado(async () => {
   test.slow();
   await iniciarSesionOperador(page);
   const operadores = await obtenerOperadores(page.request);
@@ -176,7 +177,7 @@ test("BP-04.4 CA-2 CP-03: funcionalidades permitidas al Operador", async ({ page
   await expect(page).toHaveURL((url) => url.pathname === "/mi-perfil/cambiar-contrasena");
   await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
   await consultarHistoricos(page);
-});
+}));
 
 test("BP-04.4 CA-2 CP-04: funcionalidades de otros roles para el Operador", async ({ page, request }) => {
   test.slow();

@@ -38,7 +38,7 @@ export async function modificarMiPerfilProductor(valor: unknown, foto?: FormData
             codigoPais: entrada.codigoPais,
             telefono: entrada.telefono,
             productorId: productor.id,
-        }, { contactoOpcional: true });
+        });
         if (!validacion.esValido) return validacion.errores.join(" ");
         const datos = validacion.datos;
         const repetido = await tx.orm.public.Productor.where({ nombreFantasia: datos.nombre }).first();

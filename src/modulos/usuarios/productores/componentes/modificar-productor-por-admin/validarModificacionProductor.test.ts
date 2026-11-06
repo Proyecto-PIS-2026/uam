@@ -186,19 +186,19 @@ describe("validarModificacionProductor", () => {
     });
 });
 
-describe("contacto opcional en la modificación del perfil propio", () => {
-    it.each(["", "   "])("permite eliminar el contacto con %j", (telefono) => {
-        expect(validarModificacionProductor({ ...datosValidos, telefono }, { contactoOpcional: true }))
-            .toMatchObject({ esValido: true, datos: { telefono: "" } });
+describe("WhatsApp obligatorio en todas las modificaciones", () => {
+    it.each(["", "   "])("rechaza un contacto vacío con %j", (telefono) => {
+        expect(validarModificacionProductor({ ...datosValidos, telefono }))
+            .toMatchObject({ esValido: false, errores: ["El teléfono no es válido."] });
     });
 
-    it.each(["123", "---", null, 99123456])("rechaza un contacto inválido %j aunque sea opcional", (telefono) => {
-        expect(validarModificacionProductor({ ...datosValidos, telefono }, { contactoOpcional: true }))
+    it.each(["123", "---", null, 99123456])("rechaza un contacto inválido %j", (telefono) => {
+        expect(validarModificacionProductor({ ...datosValidos, telefono }))
             .toMatchObject({ esValido: false, errores: ["El teléfono no es válido."] });
     });
 
     it("conserva la validación del país al eliminar el contacto", () => {
-        expect(validarModificacionProductor({ ...datosValidos, telefono: "", codigoPais: "+1" }, { contactoOpcional: true }))
+        expect(validarModificacionProductor({ ...datosValidos, telefono: "", codigoPais: "+1" }))
             .toMatchObject({ esValido: false, errores: ["El código de país no es válido."] });
     });
 });

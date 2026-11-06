@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { exigirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { guardarOperadorAtomico } from "../guardar-operador-atomico";
 import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "../../fotos-perfil";
 
@@ -35,13 +36,14 @@ function validarDatos(valor: unknown): { datos: { nombre: string; telefono: stri
     const entrada = valor as DatosPerfil;
     const nombre = typeof entrada.nombre === "string" ? entrada.nombre.trim() : "";
     if (!nombre) errores.push("El nombre es obligatorio.");
+    if (nombre === "." || nombre === "..") errores.push('El nombre no puede ser "." ni "..".');
     if (nombre.length > 100) errores.push("El nombre no puede superar los 100 caracteres.");
     const codigoPais = typeof entrada.codigoPais === "string" ? entrada.codigoPais.trim() : "";
     const numero = typeof entrada.telefono === "string"
         ? entrada.telefono.trim().replace(/[\s().-]/g, "").replace(/^0+/, "")
         : "";
     const telefono = numero ? `${codigoPais}${numero}` : "";
-    if (numero && (!REGLAS_TELEFONO[codigoPais] || !REGLAS_TELEFONO[codigoPais].test(numero))) {
+    if (!numero || !Object.hasOwn(REGLAS_TELEFONO, codigoPais) || !REGLAS_TELEFONO[codigoPais].test(numero)) {
         errores.push("El número de contacto no es válido.");
     }
     const enLicencia = entrada.enLicencia === true;
@@ -85,7 +87,7 @@ function validarDatos(valor: unknown): { datos: { nombre: string; telefono: stri
 }
 
 export async function modificarPerfilPropio(valor: unknown, foto?: FormData): Promise<ResultadoPerfilPropio> {
-    const sesion = await exigirOperador();
+    const sesion = await controlarSesionEnAccion(exigirOperador);
     const validacion = validarDatos(valor);
     if (validacion.errores.length) return { esValido: false, errores: validacion.errores };
     const validacionFoto = validarCambioFotoPerfil(foto);

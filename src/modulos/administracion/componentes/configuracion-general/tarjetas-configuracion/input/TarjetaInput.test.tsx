@@ -93,6 +93,15 @@ describe("TarjetaInput", () => {
         expect(botonGuardar()).toBeEnabled();
     });
 
+    it.each(["0", "00", "", "9007199254740992"])("no guarda el importe inválido %j", (valor) => {
+        const onGuardarValor = vi.fn();
+        render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
+        fireEvent.change(campo(), { target: { value: valor } });
+        fireEvent.click(botonGuardar());
+        expect(onGuardarValor).not.toHaveBeenCalled();
+        expect(mocks.notificar).toHaveBeenCalledWith("El importe debe ser un número entero positivo.", "error");
+    });
+
     it("configura el campo para URL y permite escribir una dirección", () => {
         render(<ComponentePrueba tipo="url" valorInicial="" />);
         expect(campo()).toHaveAttribute("type", "url");

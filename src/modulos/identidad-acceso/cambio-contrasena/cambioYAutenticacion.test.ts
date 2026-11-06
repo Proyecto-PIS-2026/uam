@@ -6,7 +6,7 @@ import { autenticarUsuario } from "../autenticacion/autenticarUsuario";
 
 const m = vi.hoisted(() => ({ hash: "", where: vi.fn(), first: vi.fn(), update: vi.fn() }));
 vi.mock("../autorizacion/control-acciones", () => ({ exigirSesionEnAccion: async () => ({ usuarioId: 7, rol: "PRODUCTOR" }) }));
-vi.mock("./configuracion", () => ({ habilitarCambioContrasena: true }));
+vi.mock("./configuracion", () => ({ estaHabilitadoCambioContrasena: async () => true }));
 vi.mock("@/compartido/vigenciaContrato", () => ({ operadorTieneContratoVigente: vi.fn() }));
 vi.mock("../autenticacion/consultasAutenticacion", () => ({
     obtenerUsuarioAdministradorPorCorreo: async () => null,

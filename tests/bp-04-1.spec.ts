@@ -1,3 +1,4 @@
+import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
 import { test, expect } from "@playwright/test";
 import {
   iniciarSesionOperador,
@@ -7,7 +8,7 @@ import {
 
 const rutaInicioSesion = "/iniciar-sesion";
 
-test("BP-04.1: inicio de sesión de Operador y Productor", async ({ page }) => {
+test("BP-04.1: inicio de sesión de Operador y Productor", async ({ page }) => conRestablecimientoHabilitado(async () => {
   const operador = {
     usuario: process.env.E2E_OPERADOR_USU ?? "",
     contrasena: process.env.E2E_OPERADOR_PASS ?? "",
@@ -72,4 +73,4 @@ test("BP-04.1: inicio de sesión de Operador y Productor", async ({ page }) => {
       await expect(modal).toHaveCount(0);
     }
   });
-});
+}));

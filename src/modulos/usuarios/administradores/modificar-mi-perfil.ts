@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 
 type DatosMiPerfil = { nombre: string; correo: string };
 type Resultado = { esValido: true; mensaje: string } | { esValido: false; errores: string[] };
@@ -22,7 +23,7 @@ function validarDatos(valor: unknown): { esValido: true; datos: DatosMiPerfil } 
 
 /** Edición propia: no se acepta usuarioId/administradorId/rol del cliente. */
 export async function modificarMiPerfilAdministrador(valor: unknown): Promise<Resultado> {
-    const sesion = await exigirAdministrador();
+    const sesion = await controlarSesionEnAccion(exigirAdministrador);
     const validacion = validarDatos(valor);
     if (!validacion.esValido) return validacion;
 

@@ -9,7 +9,8 @@ import { existeUsuarioPorNombre } from "@/modulos/identidad-acceso/autenticacion
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { enviarNotificacion } from "@/modulos/notificaciones/notificaciones";
-import { Temporal } from "temporal-polyfill";
+import { registrarVisita } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
+import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 
 export type EstadoInicioSesion = {
     error?: string;
@@ -23,28 +24,7 @@ export type EstadoRecuperacion = {
 
 async function registrarVisitaLogin(tipoVisitante: "OPERADOR" | "PRODUCTOR") {
     try {
-        const ahora = new Date();
-        const anio = ahora.getFullYear();
-        const mes = String(ahora.getMonth() + 1).padStart(2, "0");
-        const dia = String(ahora.getDate()).padStart(2, "0");
-        const fechaStr = `${anio}-${mes}-${dia}`;
-        const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
-
-        const existente = await db.orm.public.EstadisticaVisita
-            .where({ fecha: fechaInstant, tipoVisitante })
-            .first();
-
-        if (existente) {
-            await db.orm.public.EstadisticaVisita
-                .where({ id: existente.id })
-                .update({ cantidad: existente.cantidad + 1 });
-        } else {
-            await db.orm.public.EstadisticaVisita.create({
-                fecha: fechaInstant,
-                tipoVisitante,
-                cantidad: 1,
-            });
-        }
+        await registrarVisita(tipoVisitante);
     } catch (error) {
         console.error("Error al registrar estadística de visita:", error);
     }
@@ -62,6 +42,9 @@ export async function solicitarRecuperacion(
     }
 
     try {
+        if (!await estaHabilitadoCambioContrasena()) {
+            return { error: "La recuperación de contraseña no está habilitada por el administrador." };
+        }
         const usuarioExiste = await existeUsuarioPorNombre(nombreNormalizado);
 
         if (!usuarioExiste) {

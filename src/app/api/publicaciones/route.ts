@@ -7,7 +7,7 @@ import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operado
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { revalidatePath } from "next/cache";
 import { ErrorCuerpoDemasiadoGrande, leerJsonLimitado } from "@/infraestructura/http/cuerpo-limitado";
-import { Temporal } from "temporal-polyfill";
+import { registrarPublicacion } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
 
 export async function GET() {
 	if (!autorizado("operador.catalogo.consultar")) {
@@ -105,27 +105,7 @@ export async function POST(request: Request) {
 			try {
 				const usuarioVinculado = await db.orm.public.Usuario.select("username").where({ id: operador.usuarioId }).first();
 				if (usuarioVinculado?.username) {
-					const ahora = new Date();
-					const anio = ahora.getFullYear();
-					const mes = String(ahora.getMonth() + 1).padStart(2, "0");
-					const dia = String(ahora.getDate()).padStart(2, "0");
-					const fechaStr = `${anio}-${mes}-${dia}`;
-					const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
-					const username = usuarioVinculado.username;
-					const existente = await db.orm.public.EstadisticaPublicacion
-						.where({ fecha: fechaInstant, username })
-						.first();
-					if (existente) {
-						await db.orm.public.EstadisticaPublicacion
-							.where({ id: existente.id })
-							.update({ cantidad: existente.cantidad + 1 });
-					} else {
-						await db.orm.public.EstadisticaPublicacion.create({
-							fecha: fechaInstant,
-							username: username,
-							cantidad: 1,
-						});
-					}
+					await registrarPublicacion(usuarioVinculado.username);
 				}
 			} catch (errEst) {
 				console.error("Error al registrar estadística de publicación:", errEst);

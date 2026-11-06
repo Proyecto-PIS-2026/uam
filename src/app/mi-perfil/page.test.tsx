@@ -12,7 +12,7 @@ const m = vi.hoisted(() => ({
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: m.sesion }));
-vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ get habilitarCambioContrasena() { return m.habilitado(); } }));
+vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ estaHabilitadoCambioContrasena: m.habilitado }));
 vi.mock("next/navigation", () => ({ redirect: m.redirect }));
 vi.mock("@/modulos/usuarios/administradores/consultar-mi-perfil", () => ({ consultarMiPerfilAdministrador: m.obtenerPerfilAdmin }));
 vi.mock("@/modulos/usuarios/operadores/consultasPerfilPropio", () => ({ obtenerPerfilPropioOperador: m.obtenerPerfilOperador }));
@@ -71,7 +71,7 @@ describe("BP-11.1: página de consulta de mi perfil", () => {
         m.sesion.mockResolvedValue({ usuarioId: 7, rol: "OPERADOR" });
         render(await Pagina());
         expect(m.obtenerPerfilOperador).toHaveBeenCalledOnce();
-        expect(m.perfilOperador).toHaveBeenCalledWith({ perfil: { id: 13, nombre: "Operador" } }, undefined);
+        expect(m.perfilOperador).toHaveBeenCalledWith({ perfil: { id: 13, nombre: "Operador" }, cambioContrasenaHabilitado: true }, undefined);
         expect(m.obtenerPerfilAdmin).not.toHaveBeenCalled();
     });
 

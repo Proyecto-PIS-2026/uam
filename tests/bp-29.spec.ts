@@ -1,3 +1,4 @@
+import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
 
 import { randomUUID } from "node:crypto";
 import { expect, mergeTests, type Locator, type Page } from "@playwright/test";
@@ -415,12 +416,14 @@ nuevos.describe(() => {
             const texto = `Solicitud de recuperación de contraseña de ${datos.operadorA.credenciales.usuario}. ${randomUUID()}`;
             try {
                 await datos.db.orm.public.Administrador.create({ usuarioId: segundo.id, email: `bp29_${randomUUID()}@example.com` });
-                await page.goto("/iniciar-sesion");
-                await page.getByRole("button", { name: "Solicitar recuperación de contraseña", exact: true }).click();
-                const dialogo = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "Solicitar recuperación de contraseña", exact: true }) });
-                await dialogo.getByLabel("Nombre de usuario", { exact: true }).fill(datos.operadorA.credenciales.usuario);
-                await dialogo.getByRole("button", { name: "Aceptar", exact: true }).click();
-                await expect(page.getByText("La solicitud de recuperación fue realizada correctamente.", { exact: true })).toBeVisible({ timeout: 30_000 });
+                await conRestablecimientoHabilitado(async () => {
+                    await page.goto("/iniciar-sesion");
+                    await page.getByRole("button", { name: "Solicitar recuperación de contraseña", exact: true }).click();
+                    const dialogo = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "Solicitar recuperación de contraseña", exact: true }) });
+                    await dialogo.getByLabel("Nombre de usuario", { exact: true }).fill(datos.operadorA.credenciales.usuario);
+                    await dialogo.getByRole("button", { name: "Aceptar", exact: true }).click();
+                    await expect(page.getByText("La solicitud de recuperación fue realizada correctamente.", { exact: true })).toBeVisible({ timeout: 30_000 });
+                });
                 expect(await datos.db.orm.public.Usuario.where({ id: datos.operadorA.usuarioId }).select("solicitoRestablecimiento").first()).toEqual({ solicitoRestablecimiento: true });
                 await backendNotificaciones.enviarNotificacion({ texto, roles: ["ADMINISTRADOR"] });
                 for (const usuarioId of [admin.usuarioId, segundo.id]) {

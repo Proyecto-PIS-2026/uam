@@ -2,6 +2,14 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const habilitadoMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ estaHabilitadoCambioContrasena: habilitadoMock }));
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarVisita: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
+
 const funcionesSimuladas = vi.hoisted(() => ({
     autenticarUsuario: vi.fn(),
     crearSesion: vi.fn(),
@@ -87,6 +95,8 @@ function crearFormulario(
 
 function configurarMocksBase() {
     vi.resetAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
+    habilitadoMock.mockResolvedValue(true);
 
     funcionesSimuladas.autenticarUsuario.mockResolvedValue(null);
     funcionesSimuladas.crearSesion.mockResolvedValue(undefined);
@@ -171,7 +181,7 @@ describe("iniciarSesion", () => {
 
         expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
         expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -245,27 +255,10 @@ describe("iniciarSesion", () => {
             await expect(iniciarSesion({}, crearFormulario()))
                 .rejects.toBe(funcionesSimuladas.redireccion);
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.where)
-                .toHaveBeenCalledExactlyOnceWith(
-                    expect.objectContaining({
-                        tipoVisitante: rol,
-                    }),
-                );
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith(rol);
 
-            const filtro = funcionesSimuladas.modelos.EstadisticaVisita.where.mock.calls[0][0];
 
-            expect(filtro.fecha.toString()).toBe("2026-10-20T00:00:00Z");
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.create)
-                .toHaveBeenCalledExactlyOnceWith({
-                    fecha: expect.objectContaining({
-                        toString: expect.any(Function),
-                    }),
-                    tipoVisitante: rol,
-                    cantidad: 1,
-                });
-
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.update).not.toHaveBeenCalled();
 
             expect(funcionesSimuladas.crearSesion).toHaveBeenCalledExactlyOnceWith(
                 4,
@@ -284,32 +277,13 @@ describe("iniciarSesion", () => {
                 rol,
             });
 
-            funcionesSimuladas.modelos.EstadisticaVisita.first.mockResolvedValue({
-                id: 25,
-                cantidad: 6,
-            });
-
             await expect(iniciarSesion({}, crearFormulario()))
                 .rejects.toBe(funcionesSimuladas.redireccion);
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.where).toHaveBeenNthCalledWith(
-                1,
-                expect.objectContaining({
-                    tipoVisitante: rol,
-                }),
-            );
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith(rol);
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.where).toHaveBeenNthCalledWith(
-                2,
-                { id: 25 },
-            );
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.update)
-                .toHaveBeenCalledExactlyOnceWith({
-                    cantidad: 7,
-                });
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
             expect(funcionesSimuladas.crearSesion).toHaveBeenCalledOnce();
             expect(funcionesSimuladas.redirect).toHaveBeenCalledOnce();
         },
@@ -324,9 +298,8 @@ describe("iniciarSesion", () => {
         await expect(iniciarSesion({}, crearFormulario()))
             .rejects.toBe(funcionesSimuladas.redireccion);
 
-        expect(funcionesSimuladas.modelos.EstadisticaVisita.where).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.EstadisticaVisita.update).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+
 
         expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
         expect(funcionesSimuladas.iniciarSegundoFactor).toHaveBeenCalledWith(4);
@@ -339,7 +312,7 @@ describe("iniciarSesion", () => {
             rol: "PRODUCTOR",
         });
 
-        funcionesSimuladas.modelos.EstadisticaVisita.first.mockRejectedValue(
+        registrarEstadisticaMock.mockRejectedValue(
             new Error("Base no disponible"),
         );
 
@@ -369,7 +342,7 @@ describe("iniciarSesion", () => {
             rol: "OPERADOR",
         });
 
-        funcionesSimuladas.modelos.EstadisticaVisita.create.mockRejectedValue(
+        registrarEstadisticaMock.mockRejectedValue(
             new Error("No se pudo crear la estadística"),
         );
 
@@ -458,6 +431,23 @@ describe("solicitarRecuperacion", () => {
 
         expect(funcionesSimuladas.modelos.Usuario.where).not.toHaveBeenCalled();
         expect(funcionesSimuladas.modelos.Usuario.updateAndCount).not.toHaveBeenCalled();
+    });
+
+    it("no registra ni notifica una recuperación cuando está deshabilitada", async () => {
+        habilitadoMock.mockResolvedValue(false);
+        expect(await solicitarRecuperacion("usuario_existente")).toEqual({
+            error: "La recuperación de contraseña no está habilitada por el administrador.",
+        });
+        expect(funcionesSimuladas.existeUsuarioPorNombre).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.transaction).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.enviarNotificacion).not.toHaveBeenCalled();
+    });
+
+    it("no registra una recuperación si falla la lectura de su configuración", async () => {
+        habilitadoMock.mockRejectedValue(new Error("No se pudo consultar la configuración"));
+        expect(await solicitarRecuperacion("usuario_existente")).toMatchObject({ tipoError: "operacion" });
+        expect(funcionesSimuladas.transaction).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.enviarNotificacion).not.toHaveBeenCalled();
     });
 
     it("registra correctamente una solicitud de recuperación", async () => {

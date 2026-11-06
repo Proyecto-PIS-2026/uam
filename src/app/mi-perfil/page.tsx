@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { RUTA_SESION_FINALIZADA } from "@/modulos/identidad-acceso/autenticacion/rutas-sesion";
-import { habilitarCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
+import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import { obtenerPerfilPropioOperador } from "@/modulos/usuarios/operadores/consultasPerfilPropio";
 import PerfilPropioOperador from "@/modulos/usuarios/operadores/componentes/perfil-propio-operador/PerfilPropioOperador";
 import { consultarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/consultar-mi-perfil";
@@ -17,9 +17,10 @@ export default async function PaginaMiPerfil() {
 
     // Mantener intactas las funcionalidades de otros roles ya fusionadas en develop.
     if (sesion.rol === "PRODUCTOR") redirect("/mi-perfil/productor");
+    const habilitarCambioContrasena = await estaHabilitadoCambioContrasena();
     if (sesion.rol === "OPERADOR") {
         const perfil = await obtenerPerfilPropioOperador();
-        return <PerfilPropioOperador perfil={perfil} />;
+        return <PerfilPropioOperador perfil={perfil} cambioContrasenaHabilitado={habilitarCambioContrasena} />;
     }
 
     const perfil = await consultarMiPerfilAdministrador(sesion.usuarioId);

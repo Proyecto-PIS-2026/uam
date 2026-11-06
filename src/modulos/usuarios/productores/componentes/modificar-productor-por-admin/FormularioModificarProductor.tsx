@@ -167,7 +167,8 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                                 fullWidth
                                 size="small"
                                 className={styles.control}
-                                label={perfilPropio ? "Número de contacto (opcional)" : "WhatsApp"}
+                                label="WhatsApp"
+                                required
                                 type="tel"
                                 value={telefono}
                                 slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}

@@ -5,11 +5,14 @@ import { solicitarRecuperacion } from "./acciones";
 
 const mocks = vi.hoisted(() => ({
     existeUsuario: vi.fn(),
+    habilitado: vi.fn(),
     where: vi.fn(),
     updateAndCount: vi.fn(),
     enviarNotificacion: vi.fn(),
     transaction: vi.fn(),
 }));
+
+vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ estaHabilitadoCambioContrasena: mocks.habilitado }));
 
 vi.mock(
     "@/modulos/identidad-acceso/autenticacion/consultasAutenticacion",
@@ -38,6 +41,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 describe("BP-16.1 - Solicitar restablecimiento", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        mocks.habilitado.mockResolvedValue(true);
         mocks.where.mockReturnValue({ updateAndCount: mocks.updateAndCount });
         mocks.updateAndCount.mockResolvedValue(1);
         mocks.enviarNotificacion.mockResolvedValue({ enviadas: 2 });

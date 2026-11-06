@@ -1,3 +1,4 @@
+import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
 import "temporal-polyfill/full/global";
 import "temporal-polyfill/types/global";
 import { randomBytes, randomInt, randomUUID } from "node:crypto";
@@ -59,7 +60,7 @@ async function iniciarSesion(page: Page, operador: Operador) {
 test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
   test.beforeEach(() => test.slow());
 
-  test("CA-1 a CA-9: el operador consulta su perfil con todos sus datos", async ({ page, db, operador }) => {
+  test("CA-1 a CA-9: el operador consulta su perfil con todos sus datos", async ({ page, db, operador }) => conRestablecimientoHabilitado(async () => {
     // CA-1: sin sesión no se muestra ningún perfil, se pide iniciar sesión.
     await page.goto("/mi-perfil");
     await expect(page).toHaveURL("/iniciar-sesion");
@@ -104,7 +105,7 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
       await page.goto(`/operadores/${encodeURIComponent(otro.nombreFantasia)}`);
       await expect(page).toHaveURL(/\/mi-mercado(\/|$)/);
     }
-  });
+  }));
 
   test("CA-3, CA-5 y CA-6: se indica cuando no hay contacto, foto ni licencia", async ({ page, db, operador }) => {
     await db.orm.public.Operador.where({ id: operador.id }).update({ whatsApp: "", fotoPerfil: null, enLicencia: false, comentario: null });

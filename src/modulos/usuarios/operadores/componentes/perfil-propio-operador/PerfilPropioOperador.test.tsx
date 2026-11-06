@@ -34,7 +34,7 @@ const perfil: Perfil = {
 
 describe("PerfilPropioOperador", () => {
     it("muestra los datos, locales, licencia y mensaje", () => {
-        render(<PerfilPropioOperador perfil={perfil} />);
+        render(<PerfilPropioOperador perfil={perfil} cambioContrasenaHabilitado />);
         expect(screen.getByRole("heading", { name: "Frutas del Norte" })).toBeInTheDocument();
         expect(screen.getByText("Usuario: frutas")).toBeInTheDocument();
         expect(screen.getByText("WhatsApp: +59899123456")).toBeInTheDocument();
@@ -43,6 +43,11 @@ describe("PerfilPropioOperador", () => {
         expect(screen.getByText("05/11/2999 - 12/11/2999")).toBeInTheDocument();
         expect(screen.getByText("Consultar disponibilidad.")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Cambiar contraseña" })).toHaveAttribute("href", "/mi-perfil/cambiar-contrasena");
+    });
+
+    it("oculta el acceso al cambio de contraseña cuando está deshabilitado", () => {
+        render(<PerfilPropioOperador perfil={perfil} cambioContrasenaHabilitado={false} />);
+        expect(screen.queryByRole("link", { name: "Cambiar contraseña" })).not.toBeInTheDocument();
     });
 
     it("muestra el estado vacío y permite entrar y salir de edición", () => {

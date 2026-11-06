@@ -102,12 +102,10 @@ for (const pantalla of [
         await page.goto(rutaListado);
         await expect(tarjetas.first()).toBeVisible();
 
-        // Más vendidas no tiene una opción propia en este menú.
+        // Por defecto representa el orden configurado por el administrador.
         await page.getByRole("button", { name: "Ordenar por" }).click();
         await expect(page.getByRole("menu")).toBeVisible();
-        const seleccionInicial = page.getByRole("menuitemradio", { checked: true });
-        const restauraOrdenPredeterminado = await seleccionInicial.count() > 0;
-        const nombreOrdenInicial = restauraOrdenPredeterminado ? (await seleccionInicial.innerText()).trim() : null;
+        await expect(page.getByRole("menuitemradio", { name: "Por defecto", exact: true })).toHaveAttribute("aria-checked", "true");
         await page.keyboard.press("Escape");
         await expect(page.getByRole("menu")).not.toBeVisible();
 
@@ -120,15 +118,12 @@ for (const pantalla of [
 
         const publicaciones = await leerPublicaciones();
 
-        async function comprobarOrdenTrasLimpiar(ordenConservado: string, publicacionesConservadas: Publicacion[]) {
-            const ordenEsperado = nombreOrdenInicial ?? ordenConservado;
-            const esperadas = restauraOrdenPredeterminado ? publicacionesIniciales : publicacionesConservadas;
-
+        async function comprobarOrdenTrasLimpiar() {
             await page.getByRole("button", { name: "Ordenar por" }).click();
-            await expect(page.getByRole("menuitemradio", { name: ordenEsperado, exact: true })).toHaveAttribute("aria-checked", "true");
+            await expect(page.getByRole("menuitemradio", { name: "Por defecto", exact: true })).toHaveAttribute("aria-checked", "true");
             await page.keyboard.press("Escape");
             await expect(page.getByRole("menu")).not.toBeVisible();
-            await comprobarResultados(esperadas);
+            await comprobarResultados(publicacionesIniciales);
         }
 
         const producto = publicaciones.find((publicacion) =>
@@ -272,7 +267,7 @@ for (const pantalla of [
             for (const campo of ["Empaquetado", "Kilos", "Calibre"]) {
                 await expect(page.getByRole("combobox", { name: campo, exact: true })).toHaveText("Todos");
             }
-            await comprobarOrdenTrasLimpiar("A-Z", publicaciones);
+            await comprobarOrdenTrasLimpiar();
 
             await ordenar("A-Z");
             await comprobarResultados(publicaciones);
@@ -290,6 +285,9 @@ for (const pantalla of [
                 await expect.poll(async () => (await leerPublicaciones()).map((publicacion) => publicacion.precio)).toEqual([...esperados, ...Array<null>(sinPrecio).fill(null)]);
             }
 
+            await ordenar("Por defecto");
+            await comprobarResultados(publicacionesIniciales);
+
             await ordenar("A-Z");
             await comprobarResultados(publicaciones);
 
@@ -298,7 +296,7 @@ for (const pantalla of [
             await comprobarResultados(publicacionesDescendentes);
 
             await page.getByRole("button", { name: "Limpiar filtros" }).click();
-            await comprobarOrdenTrasLimpiar("Z-A", publicacionesDescendentes);
+            await comprobarOrdenTrasLimpiar();
 
             await busqueda.fill("producto-inexistente-bp-05");
             await ordenar("Mayor Precio");
@@ -306,7 +304,7 @@ for (const pantalla of [
 
             await ordenar("A-Z");
             await page.getByRole("button", { name: "Limpiar filtros" }).click();
-            await comprobarOrdenTrasLimpiar("A-Z", publicaciones);
+            await comprobarOrdenTrasLimpiar();
         });
     });
 }

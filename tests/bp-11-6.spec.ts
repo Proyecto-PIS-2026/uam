@@ -1,8 +1,9 @@
+import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
 import { expect } from "@playwright/test";
 import { test } from "./usuarios-administrativos";
 import { iniciarSesionProductor } from "./autenticacion";
 
-test("BP-11.6 CP-01, CP-02, CP-04, CP-05, CP-06: el perfil muestra los datos de la cuenta y los accesos", async ({ page, usuariosAdministrativos }) => {
+test("BP-11.6 CP-01, CP-02, CP-04, CP-05, CP-06: el perfil muestra los datos de la cuenta y los accesos", async ({ page, usuariosAdministrativos }) => conRestablecimientoHabilitado(async () => {
   test.slow();
   const { productor } = usuariosAdministrativos;
   await iniciarSesionProductor(page, productor);
@@ -29,4 +30,4 @@ test("BP-11.6 CP-01, CP-02, CP-04, CP-05, CP-06: el perfil muestra los datos de 
   await datos.getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
   await expect(page).toHaveURL(/\/mi-perfil\/cambiar-contrasena$/);
   await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
-});
+}));

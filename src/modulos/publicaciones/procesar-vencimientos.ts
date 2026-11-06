@@ -28,6 +28,7 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
     ]);
 
     if (!operador && !productor) return;
+    const rutaMercado = operador ? "/mi-mercado" : "/mi-mercado/productor";
 
     let publicaciones: {
         id: number;
@@ -103,7 +104,7 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
                 await enviarNotificacion({
                     texto: textoVencida,
                     usuarios: [usuarioId],
-                    url: "/mi-mercado",
+                    url: `${rutaMercado}?publicacion=${pub.id}`,
                 });
                 descripcionesSet.add(textoVencida);
             }
@@ -113,7 +114,7 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
                 await enviarNotificacion({
                     texto: textoAviso,
                     usuarios: [usuarioId],
-                    url: "/mi-mercado",
+                    url: `${rutaMercado}?publicacion=${pub.id}`,
                 });
                 descripcionesSet.add(textoAviso);
             }

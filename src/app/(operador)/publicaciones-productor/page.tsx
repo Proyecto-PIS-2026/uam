@@ -7,8 +7,14 @@ import { convertirOrdenMercados } from "@/modulos/consulta-mercado/acciones/orde
 
 export const dynamic = "force-dynamic";
 
-export default async function Page() {
+type Props = {
+    searchParams?: Promise<{ especie?: string | string[] }>;
+};
+
+export default async function Page({ searchParams }: Props = {}) {
     const sesion = await requerirConsultaProductores();
+    const parametros = await searchParams;
+    const especie = typeof parametros?.especie === "string" ? parametros.especie : "";
     const [resultado, configuracion] = await Promise.all([
         consultarPublicacionesProductores(sesion),
         obtenerConfiguracionOrdenamiento(),
@@ -26,8 +32,9 @@ export default async function Page() {
                         subtitulo="publicaciones en la plataforma"
                     />
                     <ContenedorPublicaciones
-                        key={`${ordenInicial}-${configuracion.habilitado}`}
+                        key={`${especie}-${ordenInicial}-${configuracion.habilitado}`}
                         publicaciones={publicaciones}
+                        especie={especie}
                         esAdmin={sesion.rol === "ADMINISTRADOR"}
                         ordenInicial={ordenInicial}
                         ordenamientoHabilitado={configuracion.habilitado}

@@ -5,7 +5,7 @@ import { cambiarMiContrasena } from "./cambiarMiContrasena";
 
 const m = vi.hoisted(() => ({ sesion: vi.fn(), habilitado: vi.fn(), where: vi.fn(), select: vi.fn(), first: vi.fn(), update: vi.fn() }));
 vi.mock("../autorizacion/control-acciones", () => ({ exigirSesionEnAccion: m.sesion }));
-vi.mock("./configuracion", () => ({ get habilitarCambioContrasena() { return m.habilitado(); } }));
+vi.mock("./configuracion", () => ({ estaHabilitadoCambioContrasena: m.habilitado }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: { orm: { public: { Usuario: { where: m.where } } } } }));
 vi.mock("argon2", () => ({ default: { verify: vi.fn(), hash: vi.fn(), argon2id: 2 } }));
 const datos = { actual: "Anterior123", nueva: "Nueva1234", confirmacion: "Nueva1234" };

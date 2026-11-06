@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import obtenerConfiguraciones, { actualizarConfiguracion, obtenerConfiguracion } from "./consultas-configuracion";
+import obtenerConfiguraciones, { actualizarConfiguracion, obtenerConfiguracion, obtenerEstadisticas } from "./consultas-configuracion";
 
 const mocks = vi.hoisted(() => ({
     where: vi.fn(),
@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
     all: vi.fn(),
     first: vi.fn(),
     update: vi.fn(),
+    visitas: vi.fn(),
+    contactos: vi.fn(),
+    publicaciones: vi.fn(),
 }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
@@ -16,6 +19,9 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
                 Configuracion: {
                     where: mocks.where,
                 },
+                EstadisticaVisita: { all: mocks.visitas },
+                EstadisticaContacto: { all: mocks.contactos },
+                EstadisticaPublicacion: { all: mocks.publicaciones },
             },
         },
     },
@@ -34,6 +40,19 @@ beforeEach(() => {
 
     mocks.where.mockReturnValue(consulta);
     mocks.select.mockReturnValue(consulta);
+});
+
+it("envía días calendario sin convertirlos a la zona horaria del navegador", async () => {
+    const fecha = { toString: () => "2026-11-06T00:00:00Z" };
+    mocks.visitas.mockResolvedValue([{ id: 1, fecha, tipoVisitante: "comprador", cantidad: 2 }]);
+    mocks.contactos.mockResolvedValue([{ id: 2, fecha, username: "operador", cantidad: 3 }]);
+    mocks.publicaciones.mockResolvedValue([{ id: 3, fecha, username: "productor", cantidad: 4 }]);
+
+    const resultado = await obtenerEstadisticas();
+
+    expect(resultado.visitas[0]).toMatchObject({ fecha: "2026-11-06", cantidad: 2 });
+    expect(resultado.contactos[0]).toMatchObject({ fecha: "2026-11-06", cantidad: 3 });
+    expect(resultado.publicaciones[0]).toMatchObject({ fecha: "2026-11-06", cantidad: 4 });
 });
 
 describe("obtenerConfiguraciones", () => {

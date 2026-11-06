@@ -195,7 +195,7 @@ describe("procesarVencimientosUsuario", () => {
                 expect(mocks.enviarNotificacion).toHaveBeenCalledWith({
                     texto: textoVencida(1, "2026-11-02"),
                     usuarios: [USUARIO],
-                    url: "/mi-mercado",
+                    url: rol === "operador" ? "/mi-mercado?publicacion=1" : "/mi-mercado/productor?publicacion=1",
                 });
             }
         );
@@ -242,7 +242,7 @@ describe("procesarVencimientosUsuario", () => {
                 expect(mocks.enviarNotificacion).toHaveBeenCalledWith({
                     texto: textoAviso(1, "2026-11-06"),
                     usuarios: [USUARIO],
-                    url: "/mi-mercado",
+                    url: rol === "operador" ? "/mi-mercado?publicacion=1" : "/mi-mercado/productor?publicacion=1",
                 });
             }
         );

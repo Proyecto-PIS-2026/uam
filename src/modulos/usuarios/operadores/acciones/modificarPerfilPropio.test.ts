@@ -17,6 +17,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirOperador: mocks.exigirOperador }));
+vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({
+    controlarSesionEnAccion: (exigir: () => Promise<unknown>) => exigir(),
+}));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: { orm: { public: { Operador: mocks.operador } } } }));
 vi.mock("../guardar-operador-atomico", () => ({ guardarOperadorAtomico: mocks.guardarOperadorAtomico }));
 vi.mock("../../fotos-perfil", () => ({
@@ -49,9 +52,23 @@ describe("modificarPerfilPropio", () => {
     });
 
     it("devuelve errores de entrada antes de tocar la persistencia", async () => {
-        await expect(modificarPerfilPropio({ nombre: "" })).resolves.toEqual({
+        await expect(modificarPerfilPropio({ ...datos, nombre: "" })).resolves.toEqual({
             esValido: false,
             errores: ["El nombre es obligatorio."],
+        });
+        expect(mocks.guardarOperadorAtomico).not.toHaveBeenCalled();
+    });
+
+    it.each(["", "   ", "---", null, undefined])("rechaza WhatsApp vacío o inválido: %j", async (telefono) => {
+        await expect(modificarPerfilPropio({ ...datos, telefono })).resolves.toEqual({
+            esValido: false, errores: ["El número de contacto no es válido."],
+        });
+        expect(mocks.guardarOperadorAtomico).not.toHaveBeenCalled();
+    });
+
+    it.each([".", ".."])("rechaza el nombre %s que cambiaría el destino del enlace", async (nombre) => {
+        await expect(modificarPerfilPropio({ ...datos, nombre })).resolves.toEqual({
+            esValido: false, errores: ['El nombre no puede ser "." ni "..".'],
         });
         expect(mocks.guardarOperadorAtomico).not.toHaveBeenCalled();
     });

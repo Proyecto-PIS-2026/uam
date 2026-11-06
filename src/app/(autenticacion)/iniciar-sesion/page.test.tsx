@@ -2,8 +2,10 @@ import { cleanup, render, screen } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { redirect } from "next/navigation";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import PaginaInicioSesion, { metadata as metadatos } from "./page";
 
+vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ estaHabilitadoCambioContrasena: vi.fn(async () => true) }));
 vi.mock("./acciones", () => ({ iniciarSesion: vi.fn(async () => ({})) }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -28,6 +30,13 @@ describe("PaginaInicioSesion", () => {
         expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
         expect(metadatos.title).toBe("Iniciar sesión | UAM");
         expect(redirect).not.toHaveBeenCalled();
+    });
+
+    it("oculta la solicitud de recuperación cuando el administrador la deshabilita", async () => {
+        vi.mocked(estaHabilitadoCambioContrasena).mockResolvedValueOnce(false);
+        render(await PaginaInicioSesion({ searchParams: Promise.resolve({}) }));
+        expect(screen.queryByRole("button", { name: "Solicitar recuperación de contraseña" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Iniciar sesión" })).toBeInTheDocument();
     });
 
     it.each([

@@ -3,13 +3,13 @@
 import argon2 from "argon2";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirSesionEnAccion } from "../autorizacion/control-acciones";
-import { habilitarCambioContrasena } from "./configuracion";
+import { estaHabilitadoCambioContrasena } from "./configuracion";
 import { validarCambioContrasena } from "./validarCambioContrasena";
 
 export async function cambiarMiContrasena(valor: unknown) {
     const sesion = await exigirSesionEnAccion();
     const deshabilitado = { esValido: false, errores: ["El cambio de contraseña no está habilitado por el administrador."] } as const;
-    if (!habilitarCambioContrasena) return deshabilitado;
+    if (!await estaHabilitadoCambioContrasena()) return deshabilitado;
     const validacion = validarCambioContrasena(valor);
     if (!validacion.esValido) return validacion;
 
@@ -21,7 +21,7 @@ export async function cambiarMiContrasena(valor: unknown) {
         return { esValido: false as const, errores: ["La contraseña actual no es válida."] };
     }
     const passwordHash = await argon2.hash(validacion.datos.nueva, { type: argon2.argon2id });
-    if (!habilitarCambioContrasena) return deshabilitado;
+    if (!await estaHabilitadoCambioContrasena()) return deshabilitado;
     // La comparación del hash evita sobrescribir un cambio concurrente con credenciales anteriores.
     const actualizado = await db.orm.public.Usuario
         .where({ id: sesion.usuarioId, rol: sesion.rol, passwordHash: usuario.passwordHash })

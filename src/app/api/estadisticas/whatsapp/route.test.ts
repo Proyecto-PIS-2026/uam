@@ -3,6 +3,12 @@ import { POST } from "./route";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarContacto: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
+
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     obtenerSesion: vi.fn(),
 }));
@@ -23,6 +29,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 describe("POST /api/estadisticas/whatsapp", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
     });
 
     it("debería omitir el registro si el usuario es administrador", async () => {
@@ -121,7 +128,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
         const data = await res.json();
         expect(res.status).toBe(200);
         expect(data).toEqual({ ok: true });
-        expect(mockEstadisticaWhere.update).toHaveBeenCalledWith({ cantidad: 6 });
+        expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1");
     });
 
     it("debería crear la estadística de contacto si no existe para hoy (Productor)", async () => {
@@ -156,7 +163,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
         const data = await res.json();
         expect(res.status).toBe(200);
         expect(data).toEqual({ ok: true });
-        expect(db.orm.public.EstadisticaContacto.create).toHaveBeenCalled();
+        expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
     });
 
     it("debería retornar 500 si ocurre un error interno", async () => {

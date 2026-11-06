@@ -1,7 +1,7 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { obtenerProductorActual } from "../../usuarios/productores/acciones/productor-actual";
 import type { Publicacion } from "./tipos";
-import { convertirInstantAFechaVigencia } from "@/modulos/publicaciones/vigencia-publicacion";
+import { convertirInstantAFechaVigencia, esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 import { agregarEstadoFotosPropias } from "../estado-fotos-propias";
 
 export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperadorId" | "version"> & {
@@ -48,7 +48,7 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
             fecha: publicacion.fecha.toString(),
             fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
             publicacionActiva: publicacion.publicacionActiva,
-            publicacionDisponible: publicacion.publicacionDisponible,
+            publicacionDisponible: publicacion.publicacionDisponible && !esPublicacionVencida(publicacion.fechaVigencia),
             cantidadUnidades: publicacion.cantidadUnidades,
             comentario: publicacion.comentario,
             especie: {

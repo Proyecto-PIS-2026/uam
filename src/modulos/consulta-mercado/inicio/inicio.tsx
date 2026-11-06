@@ -41,10 +41,10 @@ function normalizarTexto(texto: string) {
 
 export default function Inicio({ especies, urlListaInteligente, ordenamientoHabilitado, ordenPredeterminado }: Props) {
     const [busqueda, setBusqueda] = useState("");
-    const [ordenElegido, setOrdenElegido] = useState<OrdenLanding>(ordenPredeterminado);
+    const [ordenElegido, setOrdenElegido] = useState<OrdenLanding | "predeterminado">("predeterminado");
     const [paginaActual, setPaginaActual] = useState(1);
 
-    const orden = ordenamientoHabilitado ? ordenElegido : ordenPredeterminado;
+    const orden = ordenamientoHabilitado && ordenElegido !== "predeterminado" ? ordenElegido : ordenPredeterminado;
 
     const { notificar } = useNotificacionToast();
     
@@ -101,7 +101,7 @@ export default function Inicio({ especies, urlListaInteligente, ordenamientoHabi
                             slotProps={{input: {startAdornment: <SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }} />}}}
                         />
                         {ordenamientoHabilitado && (
-                            <BotonOrdenar<OrdenLanding> valor={orden} opciones={[{ valor: "nombre_asc", etiqueta: "A-Z" }, { valor: "nombre_desc", etiqueta: "Z-A" }]} alCambiar={(nuevoOrden) => {setOrdenElegido(nuevoOrden); setPaginaActual(1)}} className={styles.filtroOrden}/>
+                            <BotonOrdenar<OrdenLanding | "predeterminado"> valor={ordenElegido} opciones={[{ valor: "predeterminado", etiqueta: "Por defecto" }, { valor: "nombre_asc", etiqueta: "A-Z" }, { valor: "nombre_desc", etiqueta: "Z-A" }]} alCambiar={(nuevoOrden) => {setOrdenElegido(nuevoOrden); setPaginaActual(1)}} className={styles.filtroOrden}/>
                         )}
                     </div>
                     {especiesPagina.length === 0 ? (
