@@ -13,7 +13,7 @@ export type ContextoTareaDiaria = {
 export type TareaDiaria = {
     nombre: string;
     habilitada?: () => boolean | Promise<boolean>;
-    ejecutar: (contexto: ContextoTareaDiaria) => Promise<number>;
+    ejecutar: (contexto: ContextoTareaDiaria) => Promise<number | "deshabilitada">;
 };
 
 export type ResultadoTareaDiaria =

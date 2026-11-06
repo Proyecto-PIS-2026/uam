@@ -28,6 +28,7 @@ async function ejecutarTarea(tarea: TareaDiaria): Promise<ResultadoTareaDiaria> 
         if (anterior) return { nombre: tarea.nombre, estado: "ya-completada", fecha: dia.fecha };
 
         const elementosProcesados = await tarea.ejecutar({ tx, fecha: dia.fecha, limite: dia.limite.toString() });
+        if (elementosProcesados === "deshabilitada") return { nombre: tarea.nombre, estado: "deshabilitada" };
         if (!Number.isSafeInteger(elementosProcesados) || elementosProcesados < 0 || elementosProcesados > 2147483647) {
             throw new Error("La tarea devolvió una cantidad de elementos inválida.");
         }

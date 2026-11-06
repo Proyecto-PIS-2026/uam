@@ -374,7 +374,7 @@
     gap: var(--espacio-controles);
 }
 
-.datosProducto > :nth-child(-n + 4) {
+.datosProducto > :nth-child(-n + 5) {
     grid-column: 1 / -1;
 }
 

@@ -41,7 +41,8 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSes
 const opcionesEdicion = {
     especies: [],
     variedades: [],
-    presentaciones: [],
+    envases: [],
+    kilos: [],
     categorias: [],
     calibres: [],
     paises: [],

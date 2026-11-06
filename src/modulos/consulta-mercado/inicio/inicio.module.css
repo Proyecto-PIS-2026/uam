@@ -344,7 +344,7 @@
     }
 
     .lista {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: var(--columnas-tarjetas);
         gap: var(--espacio-secciones);
     }
 }
@@ -399,15 +399,5 @@
 
     .heroFoto {
         object-position: center 20%;
-    }
-
-    .lista {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 1280px) {
-    .lista {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 }

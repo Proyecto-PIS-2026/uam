@@ -7,16 +7,18 @@ import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/accio
 type PropsInicio = ComponentProps<typeof import("@/modulos/consulta-mercado/inicio/inicio").default>;
 
 const mocks = vi.hoisted(() => ({
-    redirigirProductor: vi.fn(),
+    sesion: vi.fn(),
+    redirect: vi.fn(),
     obtenerEspecies: vi.fn(),
     obtenerUrlLista: vi.fn(),
     obtenerConfiguracion: vi.fn(),
     inicio: vi.fn<(props: PropsInicio) => null>(() => null),
 }));
 
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
-    redirigirProductorAMiMercado: mocks.redirigirProductor,
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
+    obtenerSesion: mocks.sesion,
 }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 
 vi.mock("@/modulos/consulta-mercado/inicio/consultas-inicio", () => ({
     obtenerEspeciesInicio: mocks.obtenerEspecies,
@@ -53,7 +55,8 @@ function propsInicio(): PropsInicio {
 
 beforeEach(() => {
     vi.resetAllMocks();
-    mocks.redirigirProductor.mockResolvedValue(null);
+    mocks.sesion.mockResolvedValue(null);
+    mocks.redirect.mockImplementation(() => { throw new Error("NEXT_REDIRECT") });
     mocks.obtenerEspecies.mockResolvedValue(especies);
     mocks.obtenerUrlLista.mockResolvedValue("https://uam.com.uy/lista.pdf");
     mocks.inicio.mockImplementation(() => null);
@@ -74,6 +77,26 @@ describe("PaginaInicio", () => {
         expect(propsInicio().urlListaInteligente).toBe("https://uam.com.uy/lista.pdf");
         expect(mocks.obtenerEspecies).toHaveBeenCalledExactlyOnceWith();
         expect(mocks.obtenerUrlLista).toHaveBeenCalledExactlyOnceWith();
+    });
+
+    it("permite al administrador consultar Inicio", async () => {
+        mocks.sesion.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
+        render(await PaginaInicio());
+        expect(propsInicio().especies).toEqual(especies);
+        expect(mocks.redirect).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { rol: "OPERADOR", destino: "/mi-mercado" },
+        { rol: "PRODUCTOR", destino: "/mi-mercado/productor" },
+    ])("rechaza el acceso por URL de $rol sin consultar datos públicos", async ({ rol, destino }) => {
+        mocks.sesion.mockResolvedValue({ usuarioId: 1, rol, expiraEn: 2000000000 });
+        await expect(PaginaInicio()).rejects.toThrow("NEXT_REDIRECT");
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith(destino);
+        expect(mocks.obtenerEspecies).not.toHaveBeenCalled();
+        expect(mocks.obtenerUrlLista).not.toHaveBeenCalled();
+        expect(mocks.obtenerConfiguracion).not.toHaveBeenCalled();
+        expect(mocks.inicio).not.toHaveBeenCalled();
     });
 
     it("utiliza el orden de Inicio y no los configurados para los mercados", async () => {
@@ -127,7 +150,7 @@ describe("PaginaInicio", () => {
 
     it("comprueba la redirección antes de consultar datos", async () => {
         mocks.obtenerEspecies.mockImplementation(async () => {
-            expect(mocks.redirigirProductor).toHaveBeenCalledOnce();
+            expect(mocks.sesion).toHaveBeenCalledOnce();
             return especies;
         });
         await PaginaInicio();
@@ -136,7 +159,7 @@ describe("PaginaInicio", () => {
 
     it("no consulta datos cuando el control de acceso redirige", async () => {
         const error = new Error("NEXT_REDIRECT");
-        mocks.redirigirProductor.mockRejectedValue(error);
+        mocks.sesion.mockRejectedValue(error);
         await expect(PaginaInicio()).rejects.toBe(error);
         expect(mocks.obtenerEspecies).not.toHaveBeenCalled();
         expect(mocks.obtenerUrlLista).not.toHaveBeenCalled();
@@ -144,13 +167,13 @@ describe("PaginaInicio", () => {
     });
 
     it("espera la comprobación de acceso antes de iniciar las consultas", async () => {
-        let finalizar!: () => void;
-        mocks.redirigirProductor.mockImplementation(() => new Promise<void>((resolve) => { finalizar = resolve }));
+        let finalizar!: (sesion: null) => void;
+        mocks.sesion.mockImplementation(() => new Promise<null>((resolve) => { finalizar = resolve }));
         const pendiente = PaginaInicio();
         expect(mocks.obtenerEspecies).not.toHaveBeenCalled();
         expect(mocks.obtenerUrlLista).not.toHaveBeenCalled();
         expect(mocks.obtenerConfiguracion).not.toHaveBeenCalled();
-        finalizar();
+        finalizar(null);
         await pendiente;
         expect(mocks.obtenerEspecies).toHaveBeenCalledOnce();
         expect(mocks.obtenerUrlLista).toHaveBeenCalledOnce();

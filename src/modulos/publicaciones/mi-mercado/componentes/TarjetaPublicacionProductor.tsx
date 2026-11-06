@@ -1,5 +1,6 @@
 "use client";
 
+import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-publicacion";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { IndicadorVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
@@ -32,7 +33,7 @@ export default function TarjetaPublicacionProductor({ publicacion, alConsultar }
                             </span>
                         </span>
                         <span className={styles.datos}>
-                            {publicacion.calibre?.nombreCalibre || "-"} · Cat. {publicacion.categoria?.nombreCategoria || "-"} · {publicacion.presentacion?.nombrePresentacion || "-"}
+                            {publicacion.calibre?.nombreCalibre || "-"} · Cat. {publicacion.categoria?.nombreCategoria || "-"} · {formatearEmpaquetado(publicacion.envase?.nombreEnvase, publicacion.kilos?.valor) || "-"}
                         </span>
                     </span>
                 </span>

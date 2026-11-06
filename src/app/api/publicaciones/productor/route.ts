@@ -54,10 +54,11 @@ async function registrarEstadisticaPublicacion(usuarioId: number) {
 export async function GET() {
     try {
         await exigirProductorOAdministrador();
-        const [especies, variedades, presentaciones, categorias, calibres, paises] = await Promise.all([
+        const [especies, variedades, envases, kilos, categorias, calibres, paises] = await Promise.all([
             db.orm.public.Especie.select("id", "nombreEspecie").where({ especieActiva: true }).all(),
             db.orm.public.Variedad.select("id", "especieId", "nombreVariedad").where({ variedadActiva: true }).all(),
-            db.orm.public.Presentacion.select("id", "variedadId", "nombrePresentacion").where({ presentacionActiva: true }).all(),
+            db.orm.public.Envase.select("id", "nombreEnvase").orderBy((envase) => envase.id.asc()).all(),
+            db.orm.public.KilosEmpaquetado.select("id", "valor").orderBy((peso) => peso.id.asc()).all(),
             db.orm.public.Categoria.select("id", "especieId", "nombreCategoria").all(),
             db.orm.public.Calibre.select("id", "nombreCalibre").all(),
             db.orm.public.Pais.select("id", "codigoPais", "nombrePais").all(),
@@ -65,7 +66,8 @@ export async function GET() {
         return NextResponse.json({
             especies: especies.map(({ id, nombreEspecie }) => ({ id, nombre: nombreEspecie })),
             variedades: variedades.map(({ id, especieId, nombreVariedad }) => ({ id, especieId, nombre: nombreVariedad })),
-            presentaciones: presentaciones.map(({ id, variedadId, nombrePresentacion }) => ({ id, variedadId, nombre: nombrePresentacion })),
+            envases: envases.map(({ id, nombreEnvase }) => ({ id, nombre: nombreEnvase })),
+            kilos: kilos.map(({ id, valor }) => ({ id, nombre: valor })),
             categorias: categorias.map(({ id, especieId, nombreCategoria }) => ({ id, especieId, nombre: nombreCategoria })),
             calibres: calibres.map(({ id, nombreCalibre }) => ({ id, nombre: nombreCalibre })),
             paises: paises.map(({ id, codigoPais, nombrePais }) => ({ id, codigo: codigoPais, nombre: nombrePais })),
