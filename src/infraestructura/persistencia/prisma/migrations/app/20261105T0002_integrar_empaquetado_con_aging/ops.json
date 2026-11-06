@@ -1,0 +1,557 @@
+[
+  {
+    "id": "dropConstraint.publicacion.publicacion_presentacionId_fkey",
+    "label": "Drop constraint \"publicacion_presentacionId_fkey\" on \"publicacion\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacion_presentacionId_fkey",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"publicacion_presentacionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_presentacionId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"publicacion_presentacionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" DROP CONSTRAINT \"publicacion_presentacionId_fkey\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"publicacion_presentacionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_presentacionId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropIndex.publicacion.publicacion_presentacionId_idx_2981aeac",
+    "label": "Drop index \"publicacion_presentacionId_idx_2981aeac\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacion_presentacionId_idx_2981aeac",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacion_presentacionId_idx_2981aeac\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_presentacionId_idx_2981aeac\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop index \"publicacion_presentacionId_idx_2981aeac\"",
+        "sql": "DROP INDEX \"public\".\"publicacion_presentacionId_idx_2981aeac\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacion_presentacionId_idx_2981aeac\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_presentacionId_idx_2981aeac\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.publicacion.presentacionId",
+    "label": "Drop column \"presentacionId\" from \"publicacion\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "presentacionId",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"presentacionId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "presentacionId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"presentacionId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" DROP COLUMN \"presentacionId\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"presentacionId\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "presentacionId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.envase",
+    "label": "Create table \"envase\"",
+    "summary": "Creates table \"envase\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "envase"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"envase\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"envase\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"envase\"",
+        "sql": "CREATE TABLE \"public\".\"envase\" (\n  \"id\" SERIAL NOT NULL,\n  \"nombreEnvase\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"envase\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"envase\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.kilosEmpaquetado",
+    "label": "Create table \"kilosEmpaquetado\"",
+    "summary": "Creates table \"kilosEmpaquetado\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "kilosEmpaquetado"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"kilosEmpaquetado\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"kilosEmpaquetado\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"kilosEmpaquetado\"",
+        "sql": "CREATE TABLE \"public\".\"kilosEmpaquetado\" (\n  \"id\" SERIAL NOT NULL,\n  \"valor\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"kilosEmpaquetado\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"kilosEmpaquetado\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.publicacion.envaseId",
+    "label": "Add column \"envaseId\" to \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "envaseId",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"envaseId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "envaseId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"envaseId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ADD COLUMN \"envaseId\" int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"envaseId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "envaseId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.publicacion.kilosId",
+    "label": "Add column \"kilosId\" to \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "kilosId",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"kilosId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "kilosId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"kilosId\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ADD COLUMN \"kilosId\" int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"kilosId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "kilosId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.envase.envase_nombreEnvase_key",
+    "label": "Add unique constraint on \"envase\" (nombreEnvase)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "envase_nombreEnvase_key",
+        "table": "envase"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"envase_nombreEnvase_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "envase_nombreEnvase_key",
+          "public",
+          "\"public\".\"envase\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"envase_nombreEnvase_key\"",
+        "sql": "ALTER TABLE \"public\".\"envase\" ADD CONSTRAINT \"envase_nombreEnvase_key\" UNIQUE (\"nombreEnvase\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"envase_nombreEnvase_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "envase_nombreEnvase_key",
+          "public",
+          "\"public\".\"envase\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.kilosEmpaquetado.kilosEmpaquetado_valor_key",
+    "label": "Add unique constraint on \"kilosEmpaquetado\" (valor)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "kilosEmpaquetado_valor_key",
+        "table": "kilosEmpaquetado"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"kilosEmpaquetado_valor_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "kilosEmpaquetado_valor_key",
+          "public",
+          "\"public\".\"kilosEmpaquetado\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"kilosEmpaquetado_valor_key\"",
+        "sql": "ALTER TABLE \"public\".\"kilosEmpaquetado\" ADD CONSTRAINT \"kilosEmpaquetado_valor_key\" UNIQUE (\"valor\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"kilosEmpaquetado_valor_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "kilosEmpaquetado_valor_key",
+          "public",
+          "\"public\".\"kilosEmpaquetado\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacion.publicacion_envaseId_idx_c66e7843",
+    "label": "Create index \"publicacion_envaseId_idx_c66e7843\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacion_envaseId_idx_c66e7843",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacion_envaseId_idx_c66e7843\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_envaseId_idx_c66e7843\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacion_envaseId_idx_c66e7843\"",
+        "sql": "CREATE INDEX \"publicacion_envaseId_idx_c66e7843\" ON \"public\".\"publicacion\" (\"envaseId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacion_envaseId_idx_c66e7843\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_envaseId_idx_c66e7843\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.publicacion.publicacion_kilosId_idx_9257854e",
+    "label": "Create index \"publicacion_kilosId_idx_9257854e\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "publicacion_kilosId_idx_9257854e",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"publicacion_kilosId_idx_9257854e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_kilosId_idx_9257854e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"publicacion_kilosId_idx_9257854e\"",
+        "sql": "CREATE INDEX \"publicacion_kilosId_idx_9257854e\" ON \"public\".\"publicacion\" (\"kilosId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"publicacion_kilosId_idx_9257854e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"publicacion_kilosId_idx_9257854e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacion.publicacion_envaseId_fkey",
+    "label": "Add foreign key \"publicacion_envaseId_fkey\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacion_envaseId_fkey",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacion_envaseId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_envaseId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacion_envaseId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\"\nADD CONSTRAINT \"publicacion_envaseId_fkey\"\nFOREIGN KEY (\"envaseId\")\nREFERENCES \"public\".\"envase\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacion_envaseId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_envaseId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.publicacion.publicacion_kilosId_fkey",
+    "label": "Add foreign key \"publicacion_kilosId_fkey\" on \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "publicacion_kilosId_fkey",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"publicacion_kilosId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_kilosId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"publicacion_kilosId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\"\nADD CONSTRAINT \"publicacion_kilosId_fkey\"\nFOREIGN KEY (\"kilosId\")\nREFERENCES \"public\".\"kilosEmpaquetado\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"publicacion_kilosId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "publicacion_kilosId_fkey",
+          "public",
+          "\"public\".\"publicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data.catalogos_envases_kilos_calibres",
+    "label": "Cargar envases, kilos del empaquetado y calibres generales",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Cargar envases independientes de la especie y la variedad",
+        "sql": "INSERT INTO \"public\".\"envase\" (\"nombreEnvase\")\nVALUES ('Plancha'), ('Cajon'), ('Cajita'), ('Bolsa'), ('Descartable'), ('Bing'), ('Bins')\nON CONFLICT (\"nombreEnvase\") DO NOTHING;"
+      },
+      {
+        "description": "Cargar cantidades y rangos de kilos preestablecidos",
+        "sql": "INSERT INTO \"public\".\"kilosEmpaquetado\" (\"valor\")\nVALUES ('2'), ('4'), ('8'), ('10'), ('18'), ('20'), ('22'), ('25'), ('250'), ('400'), ('10-12'), ('18-24')\nON CONFLICT (\"valor\") DO NOTHING;"
+      },
+      {
+        "description": "Agregar calibres disponibles para todas las publicaciones",
+        "sql": "INSERT INTO \"public\".\"calibre\" (\"codigoCalibre\", \"nombreCalibre\")\nVALUES ('Primera', 'Primera'), ('Segunda', 'Segunda'), ('Tercera', 'Tercera'),\n('Cuarta', 'Cuarta'), ('Quinta', 'Quinta'), ('Sexta', 'Sexta'),\n('0', '0'), ('00', '00'), ('Especial', 'Especial')\nON CONFLICT (\"codigoCalibre\") DO UPDATE SET \"nombreCalibre\" = EXCLUDED.\"nombreCalibre\";"
+      }
+    ],
+    "postcheck": []
+  }
+]

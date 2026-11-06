@@ -7,7 +7,8 @@ export type PublicacionPerfilAdmin = {
     publicacionOperadorId: number;
     especieId: number;
     variedadId: number | null;
-    presentacionId: number | null;
+    envaseId: number | null;
+    kilosId: number | null;
     categoriaId: number | null;
     calibreId: number | null;
     paisId: number | null;
@@ -19,7 +20,8 @@ export type PublicacionPerfilAdmin = {
     disponible: boolean; // El admin ve también las publicaciones no disponibles
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -99,12 +101,12 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion",
-                "presentacionId",
+                "envaseId", "kilosId",
                 "categoriaId",
                 "calibreId"
             );
-            const conPresentacion = camposPublicacion.include("especie").include("variedad").include("presentacion");
-            const conCategoria = conPresentacion.include("categoria");
+            const conEnvase = camposPublicacion.include("especie").include("variedad").include("envase").include("kilos");
+            const conCategoria = conEnvase.include("categoria");
             const completo = conCategoria.include("calibre");
 
             return completo;
@@ -123,7 +125,8 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 publicacionOperadorId: completa.id,
                 especieId: publicacion.especie.id,
                 variedadId: publicacion.variedad?.id ?? null,
-                presentacionId: publicacion.presentacionId,
+                envaseId: publicacion.envaseId,
+                kilosId: publicacion.kilosId,
                 categoriaId: publicacion.categoriaId,
                 calibreId: publicacion.calibreId,
                 paisId: completa.paisId,
@@ -135,7 +138,8 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 disponible: publicacion.publicacionDisponible,
                 especie: publicacion.especie.nombreEspecie,
                 variedad: publicacion.variedad?.nombreVariedad ?? "",
-                presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
+                envase: publicacion.envase?.nombreEnvase ?? "",
+                kilos: publicacion.kilos?.valor ?? "",
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
                 codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",

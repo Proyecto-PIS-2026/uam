@@ -27,7 +27,8 @@ function relacion(publicacionActiva = true, publicacionDisponible = true, tipoPu
             publicacionActiva, publicacionDisponible, tipoPublicacion,
             especie: { nombreEspecie: "Naranja" },
             variedad: { nombreVariedad: "Valencia" },
-            presentacion: { nombrePresentacion: "KG" },
+            envase: { nombreEnvase: "KG" },
+            kilos: null,
             categoria: { nombreCategoria: "I" }, calibre: { codigoCalibre: "M" },
         },
     };

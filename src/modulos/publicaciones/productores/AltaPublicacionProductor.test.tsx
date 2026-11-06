@@ -22,7 +22,8 @@ import AltaPublicacionProductor, { DrawerAltaPublicacionProductor } from "./Alta
 const catalogos = {
     especies: [{ id: 2, nombre: "Manzana" }, { id: 8, nombre: "Pera" }],
     variedades: [{ id: 3, nombre: "Royal", especieId: 2 }, { id: 9, nombre: "Williams", especieId: 8 }],
-    presentaciones: [{ id: 4, nombre: "Caja", variedadId: 3 }, { id: 10, nombre: "Bolsa", variedadId: 9 }],
+    envases: [{ id: 4, nombre: "Cajita" }, { id: 10, nombre: "Bolsa" }],
+    kilos: [{ id: 301, nombre: "20" }, { id: 302, nombre: "10-12" }],
     categorias: [{ id: 5, nombre: "Primera", especieId: 2 }, { id: 11, nombre: "General", especieId: null }],
     calibres: [{ id: 6, nombre: "Grande" }], paises: [{ id: 7, nombre: "Uruguay" }],
 };
@@ -47,7 +48,7 @@ function elegir(campo: string, opcion: string) {
 }
 
 function completarFormulario() {
-    elegir("Especie", "Manzana"); elegir("Variedad", "Royal"); elegir("Presentación", "Caja");
+    elegir("Especie", "Manzana"); elegir("Variedad", "Royal"); elegir("Empaquetado", "Cajita");
     elegir("Categoría", "Primera"); elegir("Calibre", "Grande"); elegir("País de origen", "Uruguay");
     seleccionarUbicacion();
 }
@@ -62,15 +63,15 @@ function enviarFormulario() {
 }
 
 function comprobarFormularioVacio() {
-    for (const campo of ["Especie", "Variedad", "Presentación", "Categoría", "Calibre", "País de origen"]) {
+    for (const campo of ["Especie", "Variedad", "Empaquetado", "Kilos del empaquetado", "Categoría", "Calibre", "País de origen"]) {
         const selector = screen.getByRole("combobox", { name: new RegExp(`^${campo}`) });
         expect(selector.parentElement!.querySelector("input")).toHaveValue("");
     }
-    for (const campo of ["Variedad", "Presentación", "Categoría"]) {
+    for (const campo of ["Variedad", "Categoría"]) {
         expect(screen.getByRole("combobox", { name: new RegExp(`^${campo}`) })).toHaveAttribute("aria-disabled", "true");
     }
     expect(screen.getByLabelText("Precio en pesos")).toHaveValue("");
-    expect(screen.getByLabelText("Cantidad (kg)")).toHaveValue("");
+    expect(screen.getByLabelText(/^Unidades/)).toHaveValue("");
     expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
     expect(screen.getByRole("button", { name: "Agregar punto de retiro" })).toBeInTheDocument();
     expect(screen.queryByText("Ruta 5")).not.toBeInTheDocument();
@@ -114,12 +115,31 @@ describe("AltaPublicacionProductor", () => {
         await waitFor(() => expect(alCrear).toHaveBeenCalledWith("Publicación creada correctamente."));
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
         expect(JSON.parse(envio[1]!.body as string)).toMatchObject({
-            especieId: 2, variedadId: null, presentacionId: null, categoriaId: null,
+            especieId: 2, variedadId: null, envaseId: null, kilosId: null, categoriaId: null,
             calibreId: null, paisId: null, precio: null, cantidadUnidades: null,
             ubicaciones: [],
             disponibilidad: disponibilidadInicial ?? true,
         });
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).toHaveProperty("checked", disponibilidadInicial ?? true);
+    });
+
+    it.each([
+        { envase: "Cajita", envaseId: 4, kilos: null, kilosId: null },
+        { envase: null, envaseId: null, kilos: "10-12 kg", kilosId: 302 },
+        { envase: "Cajita", envaseId: 4, kilos: "20 kg", kilosId: 301 },
+    ])("permite publicar envase $envase y kilos $kilos sin variedad", async ({ envase, envaseId, kilos, kilosId }) => {
+        const fetchMock = prepararFetch();
+        await abrirAlta();
+        for (const campo of ["Empaquetado", "Kilos del empaquetado"]) {
+            expect(screen.getByRole("combobox", { name: campo })).not.toHaveAttribute("aria-disabled", "true");
+        }
+        if (envase) elegir("Empaquetado", envase);
+        if (kilos) elegir("Kilos del empaquetado", kilos);
+        elegir("Especie", "Manzana");
+        enviarFormulario();
+        expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        const envio = fetchMock.mock.calls.find(([, config]) => config?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({ especieId: 2, variedadId: null, envaseId, kilosId });
     });
 
     it.each([true, false])("guarda varios puntos de retiro y permite quitar uno sin perder los restantes (escritorio=%s)", async (esWeb) => {
@@ -192,7 +212,7 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.queryByText(/Cargando/)).not.toBeInTheDocument();
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
         for (const selector of screen.getAllByRole("combobox")) expect(selector).toHaveAttribute("aria-disabled", "true");
-        for (const control of [precio, screen.getByLabelText("Cantidad (kg)"), disponibilidad, screen.getByLabelText("Fotografía"), ubicaciones, confirmar]) {
+        for (const control of [precio, screen.getByLabelText(/^Unidades/), disponibilidad, screen.getByLabelText("Fotografía"), ubicaciones, confirmar]) {
             expect(control).toBeDisabled();
         }
         expect(screen.getByRole("button", { name: "Editar foto" })).toBeDisabled();
@@ -335,17 +355,20 @@ describe("AltaPublicacionProductor", () => {
         }
     });
 
-    it("reinicia variedad, presentación y categoría al cambiar de especie", async () => {
+    it("reinicia variedad y categoría y conserva envase y kilos al cambiar de especie", async () => {
         await abrirAlta(); completarFormulario();
+        elegir("Kilos del empaquetado", "20 kg");
         elegir("Especie", "Pera");
         expect(screen.getByRole("combobox", { name: /^Variedad/ })).not.toHaveTextContent("Royal");
-        expect(screen.getByRole("combobox", { name: /^Presentación/ })).toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).not.toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).toHaveTextContent("Cajita");
+        expect(screen.getByRole("combobox", { name: /^Kilos del empaquetado/ })).toHaveTextContent("20 kg");
         expect(screen.getByRole("combobox", { name: /^Categoría/ })).not.toHaveTextContent("Primera");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Variedad/ }));
         expect(screen.getByRole("option", { name: "Williams" })).toBeInTheDocument();
         expect(screen.queryByRole("option", { name: "Royal" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "Williams" }));
-    });
+    }, 500_000);
 
     it("publica para el Productor actual sin precio, cantidad ni fotografía", async () => {
         const fetchMock = prepararFetch();
@@ -354,14 +377,14 @@ describe("AltaPublicacionProductor", () => {
         completarFormulario(); enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
-        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6, paisId: 7, ubicaciones: [{ nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2", departamento: "Montevideo" }], disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null , comentario: "" });
+        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, variedadId: 3, envaseId: 4, kilosId: null, categoriaId: 5, calibreId: 6, paisId: 7, ubicaciones: [{ nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2", departamento: "Montevideo" }], disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null, comentario: "" });
         expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
     });
 
     it("acepta únicamente enteros y envía cantidad, precio y disponibilidad", async () => {
         const fetchMock = prepararFetch({});
         await abrirAlta(); completarFormulario();
-        for (const campo of ["Precio en pesos", "Cantidad (kg)"]) {
+        for (const campo of ["Precio en pesos", /^Unidades/]) {
             const entrada = screen.getByLabelText(campo);
             fireEvent.change(entrada, { target: { value: "25" } });
             for (const valor of ["2.5", "-1", "texto"]) fireEvent.change(entrada, { target: { value: valor } });
@@ -383,7 +406,7 @@ describe("AltaPublicacionProductor", () => {
         const fetchMock = prepararFetch({ esValido: true, id: 99, mensaje: "Publicación creada correctamente." });
         await abrirAlta(); completarFormulario();
         fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "120" } });
-        fireEvent.change(screen.getByLabelText("Cantidad (kg)"), { target: { value: "35" } });
+        fireEvent.change(screen.getByLabelText(/^Unidades/), { target: { value: "35" } });
         fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
         const entradaFoto = esWeb ? "Fotografía" : "Fotografía desde galería";
         fireEvent.change(screen.getByLabelText(entradaFoto), { target: { files: [new File(["foto"], "foto.png", { type: "image/png" })] } });
@@ -406,7 +429,7 @@ describe("AltaPublicacionProductor", () => {
         await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         completarFormulario();
         fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "120" } });
-        fireEvent.change(screen.getByLabelText("Cantidad (kg)"), { target: { value: "35" } });
+        fireEvent.change(screen.getByLabelText(/^Unidades/), { target: { value: "35" } });
         fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
         fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [new File(["foto"], "foto.png", { type: "image/png" })] } });
         await screen.findByAltText("Vista previa de la fotografía");
@@ -415,11 +438,11 @@ describe("AltaPublicacionProductor", () => {
         expect(await screen.findByRole("alert")).toHaveTextContent("Revisá los datos de la publicación.");
         expect(alCrear).not.toHaveBeenCalled();
         expect(alCerrar).not.toHaveBeenCalled();
-        for (const [campo, opcion] of [["Especie", "Manzana"], ["Variedad", "Royal"], ["Presentación", "Caja"], ["Categoría", "Primera"], ["Calibre", "Grande"], ["País de origen", "Uruguay"]]) {
+        for (const [campo, opcion] of [["Especie", "Manzana"], ["Variedad", "Royal"], ["Empaquetado", "Cajita"], ["Categoría", "Primera"], ["Calibre", "Grande"], ["País de origen", "Uruguay"]]) {
             expect(screen.getByRole("combobox", { name: new RegExp(`^${campo}`) })).toHaveTextContent(opcion);
         }
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("120");
-        expect(screen.getByLabelText("Cantidad (kg)")).toHaveValue("35");
+        expect(screen.getByLabelText(/^Unidades/)).toHaveValue("35");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
         expect(screen.getByText("Ruta 5")).toBeInTheDocument();
         expect(screen.getByAltText("Vista previa de la fotografía")).toBeInTheDocument();

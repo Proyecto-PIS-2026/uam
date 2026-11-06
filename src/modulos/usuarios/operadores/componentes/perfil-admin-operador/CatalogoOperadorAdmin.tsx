@@ -33,7 +33,8 @@ function paraDrawer(publicacion: PublicacionPerfilAdmin): PublicacionParaEditar 
         variedadId: publicacion.variedadId,
         especie: publicacion.especie,
         variedad: publicacion.variedad,
-        presentacion: publicacion.presentacion,
+        envase: publicacion.envase,
+        kilos: publicacion.kilos,
         categoria: publicacion.categoria,
         calibre: publicacion.calibre,
         precio: publicacion.precio,
@@ -43,7 +44,8 @@ function paraDrawer(publicacion: PublicacionPerfilAdmin): PublicacionParaEditar 
         foto: publicacion.foto,
         categoriaId: publicacion.categoriaId,
         calibreId: publicacion.calibreId,
-        presentacionId: publicacion.presentacionId,
+        envaseId: publicacion.envaseId,
+        kilosId: publicacion.kilosId,
         paisId: publicacion.paisId,
         disponible: publicacion.disponible,
     };
@@ -116,7 +118,7 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
             {publicaciones.length == 0 ? (
                 <EstadoVacio titulo="Sin publicaciones" descripcion="El operador no tiene publicaciones." icono={<Inventory2OutlinedIcon />} anunciar={false} />
             ) : (
-                <ul className="grid grid-cols-1 gap-[var(--espacio-secciones)] md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas">
+                <ul className="grilla-tarjetas gap-[var(--espacio-secciones)]">
                     {publicaciones.map((publicacion) => (
                         <li key={publicacion.id}>
                             <TarjetaPublicacionAdmin publicacion={publicacion} onSeleccionar={abrirDrawer} />

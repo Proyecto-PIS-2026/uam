@@ -3,7 +3,7 @@ import { altaPublicacionOperador } from "./altaPublicacionOperador";
 import { ErrorImagenPublicacion } from "./operadores/imagenes-publicacion";
 
 const mocks = vi.hoisted(() => ({
-    validar: vi.fn(), operador: vi.fn(), variedad: vi.fn(), presentacion: vi.fn(), categoria: vi.fn(),
+    validar: vi.fn(), operador: vi.fn(), variedad: vi.fn(), envase: vi.fn(), categoria: vi.fn(),
     calibre: vi.fn(), pais: vi.fn(), especie: vi.fn(), relaciones: vi.fn(), coincidencias: vi.fn(),
     crear: vi.fn(), crearRelacion: vi.fn(), actualizar: vi.fn(), guardar: vi.fn(), eliminar: vi.fn(),
     transaccion: vi.fn(), notificar: vi.fn(), bloquear: vi.fn(), operadorActual: vi.fn(), reservar: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock("../../infraestructura/persistencia/prisma/db", () => {
         transaction: (callback: (tx: unknown) => Promise<unknown>) => mocks.transaccion(() => callback(tx)),
         runtime: () => ({ query: mocks.reservar }),
         orm: { public: {
-            Operador: entidad(mocks.operador), Variedad: entidad(mocks.variedad), Presentacion: entidad(mocks.presentacion),
+            Operador: entidad(mocks.operador), Variedad: entidad(mocks.variedad), Envase: entidad(mocks.envase),
             Categoria: entidad(mocks.categoria), Calibre: entidad(mocks.calibre), Pais: entidad(mocks.pais), Especie: entidad(mocks.especie),
         } },
         raw: { sql: (partes: TemplateStringsArray, ...valores: unknown[]) => ({
@@ -41,7 +41,7 @@ vi.mock("../../infraestructura/persistencia/prisma/db", () => {
 });
 
 const DATOS = {
-    operadorId: 1, especieId: 10, variedadId: 20, presentacionId: 30, categoriaId: 40, calibreId: 50,
+    operadorId: 1, especieId: 10, variedadId: 20, envaseId: 30, kilosId: null, categoriaId: 40, calibreId: 50,
     paisId: 60, disponibilidad: true, precio: "1500", cantidadUnidades: 5, fotografia: "data:image/png;base64,YWJj",
 };
 const URL = "/api/publicaciones/imagenes/777/12345678-1234-4234-8234-123456789abc.webp";
@@ -52,7 +52,7 @@ beforeEach(() => {
     mocks.operador.mockResolvedValue({ id: 1 });
     mocks.operadorActual.mockResolvedValue({ id: 1 });
     mocks.variedad.mockResolvedValue({ id: 20, especieId: 10, variedadActiva: true });
-    mocks.presentacion.mockResolvedValue({ id: 30, variedadId: 20, presentacionActiva: true });
+    mocks.envase.mockResolvedValue({ id: 30, nombreEnvase: "Cajon" });
     mocks.categoria.mockResolvedValue({ id: 40, especieId: 10 });
     mocks.calibre.mockResolvedValue({ id: 50 });
     mocks.pais.mockResolvedValue({ id: 60 });

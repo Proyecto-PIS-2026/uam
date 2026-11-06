@@ -61,8 +61,9 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
         foto: publicacion.foto,
         especie: publicacion.especie.nombreEspecie,
         variedad: publicacion.variedad?.nombreVariedad ?? "",
-        presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
-        cantidadUnidades: publicacion.cantidadUnidades === null ? null : Number(publicacion.cantidadUnidades),
+        envase: publicacion.envase?.nombreEnvase ?? "",
+        kilos: publicacion.kilos?.valor ?? "",
+        cantidadUnidades: publicacion.cantidadUnidades == null ? null : Number(publicacion.cantidadUnidades),
         comentario: publicacion.comentario,
         categoria: publicacion.categoria?.nombreCategoria ?? "",
         calibre: publicacion.calibre?.nombreCalibre ?? "",
@@ -89,7 +90,8 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
         variedadId: publicacionSeleccionada.variedad?.id ?? null,
         especie: publicacionSeleccionada.especie.nombreEspecie,
         variedad: publicacionSeleccionada.variedad?.nombreVariedad ?? "",
-        presentacion: publicacionSeleccionada.presentacion?.nombrePresentacion ?? "",
+        envase: publicacionSeleccionada.envase?.nombreEnvase ?? "",
+        kilos: publicacionSeleccionada.kilos?.valor ?? "",
         cantidadUnidades: publicacionSeleccionada.cantidadUnidades,
         comentario: publicacionSeleccionada.comentario,
         categoria: publicacionSeleccionada.categoria?.nombreCategoria ?? "",
@@ -101,7 +103,8 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
         version: publicacionSeleccionada.version,
         categoriaId: publicacionSeleccionada.categoria?.id ?? null,
         calibreId: publicacionSeleccionada.calibre?.id ?? null,
-        presentacionId: publicacionSeleccionada.presentacion?.id ?? null,
+        envaseId: publicacionSeleccionada.envase?.id ?? null,
+        kilosId: publicacionSeleccionada.kilos?.id ?? null,
         paisId: publicacionSeleccionada.paisId,
         disponible: publicacionSeleccionada.publicacionDisponible,
     } : null;
@@ -280,7 +283,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
                         anunciar={false}
                     />
                 ) : (
-                    <div className="grid grid-cols-1 gap-[var(--espacio-controles)] md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 tarjetas-compactas-mercado">
+                    <div className="grilla-tarjetas gap-[var(--espacio-controles)]">
                         {publicacionesVisibles.map((pub) => (
                             <TarjetaPublicacion
                                 key={pub.id}

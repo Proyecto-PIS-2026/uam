@@ -1,28 +1,33 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { ZONA_HORARIA_TAREAS } from "../../infraestructura/tareas-programadas/tipos";
-import { CONFIGURACION_AGING_FOTOS } from "./configuracion-aging-fotos";
 
 export type ConfiguracionAgingFotosActiva = {
     habilitado: true;
     diasVigencia: number;
+    avisosHabilitados: boolean;
     diasAnticipacionAviso: number;
 };
 
 export type ConfiguracionAgingFotos = { habilitado: false } | ConfiguracionAgingFotosActiva;
 
-export function obtenerConfiguracionAgingFotos(): ConfiguracionAgingFotos {
-    const { habilitado, diasVigencia, diasAnticipacionAviso } = CONFIGURACION_AGING_FOTOS;
+export function validarConfiguracionAgingFotos(configuracion: ConfiguracionAgingFotos): ConfiguracionAgingFotos {
+    const { habilitado } = configuracion;
     if (typeof habilitado !== "boolean") {
         throw new Error("La habilitación del aging de fotos debe ser verdadera o falsa.");
     }
     if (!habilitado) return { habilitado: false };
 
+    const { diasVigencia, avisosHabilitados, diasAnticipacionAviso } = configuracion;
     validarVigenciaFotosDias(diasVigencia);
+    if (typeof avisosHabilitados !== "boolean") {
+        throw new Error("La habilitación de los avisos de fotos debe ser verdadera o falsa.");
+    }
+    if (!avisosHabilitados) return { habilitado: true, diasVigencia, avisosHabilitados: false, diasAnticipacionAviso: 0 };
     if (!Number.isSafeInteger(diasAnticipacionAviso) || diasAnticipacionAviso <= 0 || diasAnticipacionAviso >= diasVigencia) {
         throw new Error("La anticipación del aviso debe ser un número entero de días mayor que cero y menor que la vigencia.");
     }
 
-    return { habilitado: true, diasVigencia, diasAnticipacionAviso };
+    return { habilitado: true, diasVigencia, avisosHabilitados, diasAnticipacionAviso };
 }
 
 export function validarVigenciaFotosDias(dias: number): number {

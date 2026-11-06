@@ -3,7 +3,7 @@ import { validarAltaPublicacionProductor } from "./validarAltaPublicacionProduct
 import { validarAltaPublicacionOperador } from "./validarAltaPublicacionOperador";
 
 const datosValidos = {
-    productorId: 1, especieId: 2, variedadId: 3, presentacionId: 4,
+    productorId: 1, especieId: 2, variedadId: 3, envaseId: 4, kilosId: null,
     calibreId: 5, categoriaId: 6, paisId: 7,
     latitud: -34.9, longitud: -56.2, departamento: "Montevideo",
     nombreLugar: null, disponibilidad: true,
@@ -83,16 +83,16 @@ describe("validarAltaPublicacionProductor", () => {
         }
     });
 
-    it.each(["variedadId", "presentacionId", "calibreId", "categoriaId", "paisId"])("valida el identificador opcional %s si se informa", (campo) => {
+    it.each(["variedadId", "envaseId", "kilosId", "calibreId", "categoriaId", "paisId"])("valida el identificador opcional %s si se informa", (campo) => {
         for (const valor of ["1", -1, 1.5, 2147483648, true]) {
             expect(validarAltaPublicacionProductor({ ...datosValidos, [campo]: valor }).esValido).toBe(false);
         }
     });
 
     it.each([undefined, null, "", 0])("acepta solo especie con el resto vacío: %j", (vacio) => {
-        expect(validarAltaPublicacionProductor({ productorId: 1, especieId: 2, variedadId: vacio, presentacionId: vacio,
+        expect(validarAltaPublicacionProductor({ productorId: 1, especieId: 2, variedadId: vacio, envaseId: vacio, kilosId: vacio,
             categoriaId: vacio, calibreId: vacio, paisId: vacio })).toMatchObject({ esValido: true, datos: {
-            especieId: 2, variedadId: null, presentacionId: null, categoriaId: null, calibreId: null, paisId: null, disponibilidad: true,
+            especieId: 2, variedadId: null, envaseId: null, kilosId: null, categoriaId: null, calibreId: null, paisId: null, disponibilidad: true,
         } });
     });
 

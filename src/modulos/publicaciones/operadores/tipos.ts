@@ -19,10 +19,6 @@ export type OpcionVariedad = OpcionEdicion & {
     especieId: number;
 };
 
-export type OpcionPresentacion = OpcionEdicion & {
-    variedadId: number;
-};
-
 export type OpcionCategoria = OpcionEdicion & {
     especieId: number | null;
 };
@@ -38,7 +34,8 @@ export type PublicacionParaEditar = Omit<CambiosPublicacionOperador, "version"> 
     variedadId: number | null;
     especie: string;
     variedad: string;
-    presentacion?: string;
+    envase?: string;
+    kilos?: string;
     cantidadUnidades?: number | null;
     categoria?: string;
     calibre?: string;
@@ -47,7 +44,8 @@ export type PublicacionParaEditar = Omit<CambiosPublicacionOperador, "version"> 
 export type OpcionesEdicionPublicacion = {
     especies: OpcionEdicion[];
     variedades: OpcionVariedad[];
-    presentaciones: OpcionPresentacion[];
+    envases: OpcionEdicion[];
+    kilos: OpcionEdicion[];
     categorias: OpcionCategoria[];
     calibres: OpcionEdicion[];
     paises: OpcionEdicion[];

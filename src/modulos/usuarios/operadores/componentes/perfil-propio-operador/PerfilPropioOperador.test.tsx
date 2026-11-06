@@ -1,9 +1,14 @@
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { PerfilPropioOperador as Perfil } from "../../consultasPerfilPropio";
 import PerfilPropioOperador from "./PerfilPropioOperador";
 
-vi.mock("next/image", () => ({ default: (props: { src: string; alt: string; onError?: () => void }) => <img {...props} /> }));
+vi.mock("next/image", () => ({
+    default: (props: { src: string; alt: string; onError?: () => void }) => (
+        <span role="img" aria-label={props.alt} data-src={props.src} />
+    ),
+}));
 vi.mock("./FormularioPerfilPropio", () => ({
     default: ({ alCancelar }: { alCancelar: () => void }) => (
         <div>
@@ -37,6 +42,7 @@ describe("PerfilPropioOperador", () => {
         expect(screen.getByText("Sin fecha de fin")).toBeInTheDocument();
         expect(screen.getByText("05/11/2999 - 12/11/2999")).toBeInTheDocument();
         expect(screen.getByText("Consultar disponibilidad.")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Cambiar contraseña" })).toHaveAttribute("href", "/mi-perfil/cambiar-contrasena");
     });
 
     it("muestra el estado vacío y permite entrar y salir de edición", () => {

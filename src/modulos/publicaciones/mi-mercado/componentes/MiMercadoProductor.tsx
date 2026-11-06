@@ -41,7 +41,8 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
         foto: publicacion.foto,
         especie: publicacion.especie.nombreEspecie,
         variedad: publicacion.variedad?.nombreVariedad ?? "",
-        presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
+        envase: publicacion.envase?.nombreEnvase ?? "",
+        kilos: publicacion.kilos?.valor ?? "",
         cantidadUnidades: publicacion.cantidadUnidades,
         comentario: publicacion.comentario,
         categoria: publicacion.categoria?.nombreCategoria ?? "",
@@ -99,7 +100,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                         anunciar={false}
                     />
                 ) : (
-                    <div className="grid grid-cols-1 gap-[var(--espacio-controles)] min-[701px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    <div className="grilla-tarjetas gap-[var(--espacio-controles)]">
                         {publicacionesVisibles.map((publicacion) => (
                             <TarjetaPublicacionProductor key={publicacion.id} publicacion={publicacion} alConsultar={() => setSeleccionId(publicacion.id)} />
                         ))}

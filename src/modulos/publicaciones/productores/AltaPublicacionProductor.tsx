@@ -27,13 +27,14 @@ type Opcion = { id: number; nombre: string };
 type Catalogos = {
     especies: Opcion[];
     variedades: (Opcion & { especieId: number })[];
-    presentaciones: (Opcion & { variedadId: number })[];
+    envases: Opcion[];
+    kilos: Opcion[];
     categorias: (Opcion & { especieId: number | null })[];
     calibres: Opcion[];
     paises: Opcion[];
 };
 type Formulario = {
-    productorId: number; especieId: number; variedadId: number; presentacionId: number; calibreId: number;
+    productorId: number; especieId: number; variedadId: number; envaseId: number; kilosId: number; calibreId: number;
     categoriaId: number; paisId: number; ubicaciones: UbicacionEdicionProductor[]; disponibilidad: boolean;
     precio: string; cantidad: string; comentario: string; fotografia: string;
 };
@@ -51,7 +52,8 @@ function formularioInicial(productorId: number, disponibilidadInicial: boolean):
         productorId,
         especieId: 0,
         variedadId: 0,
-        presentacionId: 0,
+        envaseId: 0,
+        kilosId: 0,
         calibreId: 0,
         categoriaId: 0,
         paisId: 0,
@@ -76,7 +78,8 @@ async function cargarCatalogos() {
         ...datos,
         especies: [...datos.especies].sort((primera, segunda) => compararEspeciesPorPrioridad(primera.nombre, segunda.nombre)),
         variedades: opciones(datos.variedades),
-        presentaciones: opciones(datos.presentaciones),
+        envases: opciones(datos.envases),
+        kilos: opciones(datos.kilos),
         categorias: opciones(datos.categorias),
         calibres: opciones(datos.calibres),
         paises: opciones(datos.paises),
@@ -170,7 +173,6 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
     const galeriaInput = useRef<HTMLInputElement>(null);
     const [reinicioUbicaciones, setReinicioUbicaciones] = useState(0);
     const variedades = catalogos?.variedades.filter((item) => item.especieId === datos.especieId) ?? [];
-    const presentaciones = catalogos?.presentaciones.filter((item) => item.variedadId === datos.variedadId) ?? [];
     const categorias = catalogos?.categorias.filter((item) => item.especieId === null || item.especieId === datos.especieId) ?? [];
     const deshabilitado = cargando || guardando || !catalogos;
 
@@ -217,7 +219,8 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
             const datosParaGuardar = {
                 ...datosSinCantidad,
                 variedadId: datos.variedadId || null,
-                presentacionId: datos.presentacionId || null,
+                envaseId: datos.envaseId || null,
+                kilosId: datos.kilosId || null,
                 categoriaId: datos.categoriaId || null,
                 calibreId: datos.calibreId || null,
                 paisId: datos.paisId || null,
@@ -243,17 +246,18 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
         <form className={styles.formulario} onSubmit={enviar} aria-busy={cargando}><div className={styles.cuerpo}>
             {errorCarga && alReintentarCarga && <button type="button" className={styles.cancelar} style={{ flex: "0 0 auto", gap: "var(--espacio-inline)" }} onClick={() => { alReintentarCarga(); }} disabled={cargando} aria-busy={cargando}><RefreshIcon fontSize="small" />Reintentar carga</button>}
             <div className={styles.datosProducto}>
-                <Campo nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(id) => cambiar({ especieId: id, variedadId: 0, presentacionId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
-                <Campo nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(id) => cambiar({ variedadId: id, presentacionId: 0 })} deshabilitado={deshabilitado || !datos.especieId} />
-                <Campo nombre="Presentación" valor={datos.presentacionId} opciones={presentaciones} cambiar={(id) => cambiar({ presentacionId: id })} deshabilitado={deshabilitado || !datos.variedadId} />
+                <Campo nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(id) => cambiar({ especieId: id, variedadId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
+                <Campo nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(id) => cambiar({ variedadId: id })} deshabilitado={deshabilitado || !datos.especieId} />
+                <Campo nombre="Empaquetado" valor={datos.envaseId} opciones={catalogos?.envases ?? []} cambiar={(id) => cambiar({ envaseId: id })} deshabilitado={deshabilitado} />
+                <Campo nombre="Kilos del empaquetado" valor={datos.kilosId} opciones={(catalogos?.kilos ?? []).map((opcion) => ({ ...opcion, nombre: `${opcion.nombre} kg` }))} cambiar={(id) => cambiar({ kilosId: id })} deshabilitado={deshabilitado} />
+                <Campo nombre="País de origen" valor={datos.paisId} opciones={catalogos?.paises ?? []} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={deshabilitado} />
                 <Campo nombre="Categoría" valor={datos.categoriaId} opciones={categorias} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={deshabilitado || !datos.especieId} />
                 <Campo nombre="Calibre" valor={datos.calibreId} opciones={catalogos?.calibres ?? []} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={deshabilitado} />
-                <Campo nombre="País de origen" valor={datos.paisId} opciones={catalogos?.paises ?? []} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={deshabilitado} />
             </div>
             {abierto && <UbicacionesEdicionProductor key={reinicioUbicaciones} ubicaciones={datos.ubicaciones} deshabilitado={deshabilitado} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} />}
             <div className="grid grid-cols-1 gap-[var(--espacio-controles)] sm:grid-cols-2">
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><OutlinedInput color="secondary" className={styles.entrada} size="small" id="productor-precio" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder="Ingrese precio aqui" value={datos.precio} onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small></div>
-                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Cantidad (kg)</label><OutlinedInput color="secondary" className={styles.entrada} size="small" id="productor-cantidad" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder="Ingrese cantidad aqui" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small></div>
+                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Unidades{datos.envaseId ? ` (${catalogos?.envases.find((opcion) => opcion.id === datos.envaseId)?.nombre ?? "-"})` : ""}</label><OutlinedInput color="secondary" className={styles.entrada} size="small" id="productor-cantidad" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder="Ingrese cantidad aqui" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small></div>
                 <CampoComentario
                     id="productor-comentario"
                     valor={datos.comentario}

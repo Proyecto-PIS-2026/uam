@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-    productor: vi.fn(), especie: vi.fn(), variedad: vi.fn(), presentacion: vi.fn(),
+    productor: vi.fn(), especie: vi.fn(), variedad: vi.fn(), envase: vi.fn(), kilos: vi.fn(),
     categoria: vi.fn(), calibre: vi.fn(), pais: vi.fn(), relaciones: vi.fn(), coincidencias: vi.fn(),
     crearPublicacion: vi.fn(), crearRelacion: vi.fn(), crearUbicacion: vi.fn(),
     actualizarPublicacion: vi.fn(), eliminarPublicacion: vi.fn(), ejecutar: vi.fn(), transaccion: vi.fn(),
@@ -14,7 +14,8 @@ vi.mock("../../infraestructura/persistencia/prisma/db", () => ({
             Productor: { where: () => ({ first: mocks.productor }) },
             Especie: { where: () => ({ first: mocks.especie }) },
             Variedad: { where: () => ({ first: mocks.variedad }) },
-            Presentacion: { where: () => ({ first: mocks.presentacion }) },
+            Envase: { where: () => ({ first: mocks.envase }) },
+            KilosEmpaquetado: { where: () => ({ first: mocks.kilos }) },
             Categoria: { where: () => ({ first: mocks.categoria }) },
             Calibre: { where: () => ({ first: mocks.calibre }) },
             Pais: { where: () => ({ first: mocks.pais }) },
@@ -38,7 +39,7 @@ import { altaPublicacionProductor } from "./altaPublicacionProductor";
 import { ErrorImagenProductor } from "./imagenes-productor";
 
 const datos = {
-    productorId: 1, especieId: 2, variedadId: 3, presentacionId: 4,
+    productorId: 1, especieId: 2, variedadId: 3, envaseId: 4, kilosId: null,
     categoriaId: 5, calibreId: 6, paisId: 7,
     latitud: -34.9, longitud: -56.2, departamento: " Montevideo ", nombreLugar: null,
     disponibilidad: true,
@@ -62,7 +63,8 @@ describe("altaPublicacionProductor", () => {
         mocks.productorActual.mockResolvedValue({ id: 1 });
         mocks.especie.mockResolvedValue({ id: 2, especieActiva: true });
         mocks.variedad.mockResolvedValue({ id: 3, especieId: 2, variedadActiva: true });
-        mocks.presentacion.mockResolvedValue({ id: 4, variedadId: 3, presentacionActiva: true });
+        mocks.envase.mockResolvedValue({ id: 4, nombreEnvase: "Cajon" });
+        mocks.kilos.mockResolvedValue({ id: 8, valor: "20" });
         mocks.categoria.mockResolvedValue({ id: 5, especieId: 2 });
         mocks.calibre.mockResolvedValue({ id: 6 });
         mocks.pais.mockResolvedValue({ id: 7 });
@@ -89,23 +91,32 @@ describe("altaPublicacionProductor", () => {
         { consulta: "especie", valor: { id: 2, especieActiva: false } },
         { consulta: "variedad", valor: { id: 3, especieId: 9, variedadActiva: true } },
         { consulta: "variedad", valor: { id: 3, especieId: 2, variedadActiva: false } },
-        { consulta: "presentacion", valor: { id: 4, variedadId: 9, presentacionActiva: true } },
-        { consulta: "presentacion", valor: { id: 4, variedadId: 3, presentacionActiva: false } },
+        { consulta: "envase", valor: null },
+        { consulta: "kilos", valor: null },
         { consulta: "categoria", valor: { id: 5, especieId: 9 } },
         { consulta: "categoria", valor: null },
         { consulta: "calibre", valor: null },
         { consulta: "pais", valor: null },
     ] as const)("rechaza una selección no disponible o incoherente: $consulta", async ({ consulta, valor }) => {
         mocks[consulta].mockResolvedValue(valor);
-        expect(await altaPublicacionProductor(datos)).toEqual({ esValido: false, errores: ["La selección contiene datos que ya no están disponibles. Actualizá el formulario."] });
+        expect(await altaPublicacionProductor({ ...datos, kilosId: 8 })).toEqual({ esValido: false, errores: ["La selección contiene datos que ya no están disponibles. Actualizá el formulario."] });
         expect(mocks.transaccion).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { envaseId: 4, kilosId: null }, { envaseId: null, kilosId: 8 },
+        { envaseId: 4, kilosId: 8 }, { envaseId: null, kilosId: null },
+    ])("permite envase y kilos independientes sin variedad: %j", async (empaquetado) => {
+        expect(await altaPublicacionProductor({ ...datos, variedadId: null, ...empaquetado })).toMatchObject({ esValido: true });
+        expect(mocks.crearPublicacion).toHaveBeenCalledWith(expect.objectContaining({ variedadId: null, ...empaquetado }));
+        expect(mocks.variedad).not.toHaveBeenCalled();
     });
 
     it("guarda la publicación y su ubicación sin exigir precio ni fotografía", async () => {
         expect(await altaPublicacionProductor(datos)).toEqual({ esValido: true, id: 42, mensaje: "Publicación creada correctamente." });
         expect(mocks.ejecutar).toHaveBeenCalledExactlyOnceWith("bloqueo del productor");
         expect(mocks.ejecutar.mock.invocationCallOrder[0]).toBeLessThan(mocks.relaciones.mock.invocationCallOrder[0]);
-        expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, comentario: null, especieId: 2, variedadId: 3, presentacionId: 4, categoriaId: 5, calibreId: 6 });
+        expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, comentario: null, especieId: 2, variedadId: 3, envaseId: 4, kilosId: null, categoriaId: 5, calibreId: 6 });
         expect(mocks.crearRelacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 42, productorId: 1, paisId: 7 });
         expect(mocks.crearUbicacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 74, nombreUbicacion: "Montevideo", urlMaps: "https://www.google.com/maps?q=-34.9%2C-56.2", departamento: "Montevideo" });
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
@@ -205,7 +216,7 @@ describe("altaPublicacionProductor", () => {
     it("avisa sobre un duplicado del mismo Productor antes de guardar", async () => {
         mocks.relaciones.mockResolvedValue([{ publicacionId: 20, paisId: 7 }]);
         mocks.coincidencias.mockResolvedValue([{ id: 20 }]);
-        expect(await altaPublicacionProductor(datos)).toEqual({ esValido: false, errores: ["Este Productor ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país."] });
+        expect(await altaPublicacionProductor(datos)).toEqual({ esValido: false, errores: ["Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país."] });
         expect(mocks.crearPublicacion).not.toHaveBeenCalled();
         expect(mocks.crearUbicacion).not.toHaveBeenCalled();
     });

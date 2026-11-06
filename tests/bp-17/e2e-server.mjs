@@ -25,6 +25,8 @@ const cssCopia = path.join(app, "src/estilos/globals.css");
 const consultasCopia = path.join(app, "src/modulos/informacion-uam/precios-historicos/consultas-precios-historicos.ts");
 const mockConsultas = path.relative(path.dirname(consultasCopia), path.join(carpeta, "consultas-precios-historicos.mock.ts")).replaceAll(path.sep, "/");
 writeFileSync(consultasCopia, `export { obtenerHistoricoPrecios, obtenerHistoricoPreciosConFiltros } from ${JSON.stringify(mockConsultas)};\n`);
+writeFileSync(path.join(app, "src/infraestructura/tareas-programadas/iniciar-en-servidor.ts"),
+    "export async function iniciarTareasEnServidor() {}\n");
 writeFileSync(cssCopia, readFileSync(cssCopia, "utf8").replace(
     '@import "tailwindcss";', '@import "tailwindcss" source("../");',
 ));

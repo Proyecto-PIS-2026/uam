@@ -5,7 +5,7 @@ const datosValidos = {
 	operadorId: 1,
 	especieId: 1,
 	variedadId: 1,
-	presentacionId: 1,
+	envaseId: 1, kilosId: null,
 	calibreId: 1,
 	categoriaId: 1,
 	paisId: 1,

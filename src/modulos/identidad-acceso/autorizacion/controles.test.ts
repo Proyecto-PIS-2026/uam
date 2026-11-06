@@ -7,7 +7,7 @@ import {
     exigirProductor,
     exigirConsultaMercadoPublico,
     redirigirAMercadoPropio,
-    redirigirProductorAMiMercado,
+    requerirSinSesion,
     requerirAdministrador,
     requerirOperador,
     exigirConsultaProductores,
@@ -113,23 +113,24 @@ describe("acceso al mercado público", () => {
 
         await expect(exigirConsultaMercadoPublico()).rejects.toThrow("Sesión no disponible");
         await expect(redirigirAMercadoPropio()).rejects.toThrow("Sesión no disponible");
-        await expect(redirigirProductorAMiMercado()).rejects.toThrow("Sesión no disponible");
+        await expect(requerirSinSesion()).rejects.toThrow("Sesión no disponible");
         expect(redirect).not.toHaveBeenCalled();
     });
 
-    it("redirige al productor desde las páginas que conservan el acceso del operador", async () => {
-        sesionMock.mockResolvedValue({ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 });
+    it.each([
+        { rol: "OPERADOR", destino: "/mi-mercado" },
+        { rol: "PRODUCTOR", destino: "/mi-mercado/productor" },
+        { rol: "ADMINISTRADOR", destino: "/inicio" },
+    ] as const)("redirige a $rol desde las páginas exclusivas para visitantes", async ({ rol, destino }) => {
+        sesionMock.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
 
-        await expect(redirigirProductorAMiMercado()).rejects.toThrow("NEXT_REDIRECT");
-        expect(redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado/productor");
+        await expect(requerirSinSesion()).rejects.toThrow("NEXT_REDIRECT");
+        expect(redirect).toHaveBeenCalledExactlyOnceWith(destino);
         expect(sesionMock).toHaveBeenCalledOnce();
     });
 
-    it.each([null, "ADMINISTRADOR", "OPERADOR"] as const)("la guarda exclusiva de productor conserva la sesión %s", async (rol) => {
-        const sesion = rol === null ? null : { usuarioId: 10, rol, expiraEn: 2000000000 };
-        sesionMock.mockResolvedValue(sesion);
-
-        await expect(redirigirProductorAMiMercado()).resolves.toBe(sesion);
+    it("permite las páginas exclusivas para visitantes sin una sesión válida", async () => {
+        await expect(requerirSinSesion()).resolves.toBeNull();
         expect(redirect).not.toHaveBeenCalled();
         expect(sesionMock).toHaveBeenCalledOnce();
     });
