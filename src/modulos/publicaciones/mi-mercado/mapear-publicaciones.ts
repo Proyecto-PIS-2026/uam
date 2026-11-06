@@ -1,11 +1,14 @@
 import type { Publicacion } from "./tipos";
 import type { obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
+import  { convertirInstantAFechaVigencia, esPublicacionVencida  } from "../vigencia-publicacion";
 
 type RelacionesPublicacion = Awaited<ReturnType<typeof obtenerPublicacionesDeOperador>>;
 
 export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion): Publicacion[] {
+    
     return relaciones.map((rel) => {
         const pub = rel.publicacion;
+        const estaVencida = esPublicacionVencida(pub.fechaVigencia);
         return {
             id: pub.id as number,
             publicacionOperadorId: rel.id,
@@ -14,9 +17,10 @@ export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion):
             estadoFoto: pub.estadoFoto,
             precio: pub.precio === null ? null : String(pub.precio),
             fecha: pub.fecha.toString(),
+            fechaVigencia: convertirInstantAFechaVigencia(pub.fechaVigencia),
             version: pub.version,
             publicacionActiva: pub.publicacionActiva as boolean,
-            publicacionDisponible: pub.publicacionDisponible as boolean,
+            publicacionDisponible: estaVencida ? false : (pub.publicacionDisponible as boolean),
             cantidadUnidades: pub.cantidadUnidades as number | null,
             comentario: pub.comentario as string | null,
             especie: { id: pub.especie.id, nombreEspecie: pub.especie.nombreEspecie, fotoEspecie: pub.especie.fotoEspecie },

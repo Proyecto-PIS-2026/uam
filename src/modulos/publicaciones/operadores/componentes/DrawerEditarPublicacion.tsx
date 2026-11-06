@@ -105,6 +105,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const categoriasDisponibles = categorias.filter((opcion) => opcion.especieId === null || opcion.especieId === especieId);
     const paisesOrdenados = [...paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre));
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
+    const [fechaVigenciaEditada, setFechaVigencia] = useState(publicacion.fechaVigencia ?? "");
     useEffect(() => {
         return () => {
             if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
@@ -206,6 +207,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         setPaisId(vigente.paisId ?? 0);
         setDisponible(vigente.disponible);
         setError("");
+        setFechaVigencia(vigente.fechaVigencia ?? "");
     }
 
     function cancelarEdicion() {
@@ -266,7 +268,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             envaseId === (publicacion.envaseId ?? 0) &&
             kilosId === (publicacion.kilosId ?? 0) &&
             paisId === (publicacion.paisId ?? 0) &&
-            disponible === publicacion.disponible
+            disponible === publicacion.disponible &&
+            fechaVigenciaEditada === (publicacion.fechaVigencia ?? "");
 
         if(sinCambios) {
             if(modoInicial === "consulta") {
@@ -292,6 +295,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             kilosId: kilosId || null,
             paisId: paisId || null,
             disponible,
+            fechaVigencia: fechaVigenciaEditada || null,
         };
         setGuardando(true);
         try {
@@ -429,6 +433,23 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             {editando && <small className={styles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>}
         </div>
     );
+    const campoFechaVigencia = (
+        <div key="fechaVigencia" className={styles.campo}>
+            <label className={styles.etiqueta} htmlFor={`${idBase}-fechaVigencia`}>
+                Fecha de vigencia
+            </label>
+            <OutlinedInput
+                className={styles.entrada}
+                size="small"
+                id={`${idBase}-fechaVigencia`}
+                type="date"
+                value={editando ? fechaVigenciaEditada : (publicacion.fechaVigencia ?? "")}
+                onChange={(evento) => setFechaVigencia(evento.target.value)}
+                readOnly={!editando}
+                disabled={ocupado}
+            />
+        </div>
+    );
     const campoComentario = (
         <CampoComentario
             key="comentario"
@@ -457,7 +478,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             </div>
             <form className={styles.formulario} onSubmit={solicitarGuardado} aria-busy={ocupado}>
                 <div className={styles.cuerpo}>
-                    {[campoPrecio, campoUnidades, campoComentario, seccionFoto, accionesPublicacion, datosProducto, errorFormulario]}
+                    {[campoPrecio, campoUnidades, campoFechaVigencia, campoComentario, seccionFoto, accionesPublicacion, datosProducto, errorFormulario]}
                 </div>
                 <div className={styles.pie}>
                     {editando ? (

@@ -793,14 +793,26 @@ async function main() {
       oferta.measureUnit, oferta.caliber, oferta.category, oferta.country));
     if (!foto) throw new Error(`No se encontró la foto de la publicación ${oferta.speciesId} / ${oferta.variety}.`);
 
+    let fechaVigencia: Temporal.Instant | null = null;
+    if (indice % 4 === 0) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 15 * 86_400_000);
+    } else if (indice % 4 === 1) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 2 * 86_400_000);
+    } else if (indice % 4 === 2) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() - 3 * 86_400_000);
+    }
+
     await prisma.transaction(async (tx) => {
       const publicacion = await tx.orm.public.Publicacion.create({
         fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 15) * 86_400_000),
-        publicacionDisponible: oferta.available,
+        publicacionDisponible: fechaVigencia && Temporal.Instant.compare(fechaVigencia, Temporal.Now.instant()) < 0
+          ? false
+          : oferta.available,
         publicacionActiva: oferta.active,
         precio,
         cantidadUnidades: cantidadUnidadesDemo(indice, oferta.measureUnit),
         tipoPublicacion: "OPERADOR",
+        fechaVigencia,
         especieId: clasificaciones.get(presentacionId)!.especieId,
         variedadId: clasificaciones.get(presentacionId)!.id,
         envaseId: atributos.envase === null ? null : idRequerido(envaseIds, atributos.envase, "envase"),
@@ -882,17 +894,29 @@ async function main() {
     const precio = oferta.price === null
       ? null
       : oferta.price.toFixed(2) as unknown as PrecioPublicacion;
+    let fechaVigencia: Temporal.Instant | null = null;
+    if (!oferta.available) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() - 3 * 86_400_000);
+    } else if (indice % 3 === 0) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 15 * 86_400_000);
+    } else if (indice % 3 === 1) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 2 * 86_400_000);
+    }
+
     const foto = fotoGenerica(oferta.speciesName, archivos);
     if (!foto) throw new Error(`No se encontró la foto de ${oferta.speciesName} para la publicación de productor.`);
 
     await prisma.transaction(async (tx) => {
       const publicacion = await tx.orm.public.Publicacion.create({
         fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 12) * 36_000_000),
-        publicacionDisponible: oferta.available,
+        publicacionDisponible: fechaVigencia && Temporal.Instant.compare(fechaVigencia, Temporal.Now.instant()) < 0
+          ? false
+          : oferta.available,
         publicacionActiva: true,
         precio,
         cantidadUnidades: oferta.quantity,
         tipoPublicacion: "PRODUCTOR",
+        fechaVigencia,
         especieId: clasificaciones.get(presentacionId)!.especieId,
         variedadId: clasificaciones.get(presentacionId)!.id,
         envaseId: atributos.envase === null ? null : idRequerido(envaseIds, atributos.envase, "envase de productor"),
@@ -929,9 +953,9 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "3"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "true"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "1"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada", valorConfiguracion: "false" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor", valorConfiguracion: "30" });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado", valorConfiguracion: "false" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_publicaciones_productor", valorConfiguracion: "7" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "restablecimiento_contrasena_habilitado", valorConfiguracion: "true" });
   

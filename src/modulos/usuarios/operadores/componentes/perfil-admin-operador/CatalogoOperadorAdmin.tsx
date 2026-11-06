@@ -48,6 +48,7 @@ function paraDrawer(publicacion: PublicacionPerfilAdmin): PublicacionParaEditar 
         kilosId: publicacion.kilosId,
         paisId: publicacion.paisId,
         disponible: publicacion.disponible,
+        fechaVigencia: publicacion.fechaVigencia,
     };
 }
 

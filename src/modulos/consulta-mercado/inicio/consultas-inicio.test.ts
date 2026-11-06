@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerEspeciesConPublicacionesActivas, obtenerEspeciesInicio, obtenerUrlListaInteligente } from "./consultas-inicio";
-
+import { Temporal } from "@js-temporal/polyfill";
 const mocks = vi.hoisted(() => ({
     query: vi.fn(),
     autorizado: vi.fn(),
@@ -164,5 +164,26 @@ describe("obtenerUrlListaInteligente", () => {
     it("propaga los errores de la base", async () => {
         mocks.query.mockRejectedValue(new Error("Sin conexión"));
         await expect(obtenerUrlListaInteligente()).rejects.toThrow("Sin conexión");
+    });
+
+    it("excluye publicaciones con fechaVigencia vencida comparando contra la fecha de hoy en Montevideo", async () => {
+        await obtenerEspeciesConPublicacionesActivas();
+        const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
+        const sql = mocks.sql.mock.calls[0][0].join("?");
+        expect(sql).toContain('(p."fechaVigencia" AT TIME ZONE \'America/Montevideo\')::date >= ?::date');
+        expect(mocks.sql.mock.calls[0].slice(1)).toEqual([hoy, hoy]);
+    });
+
+    it("incluye publicaciones con fechaVigencia futura o que vence hoy", async () => {
+        await obtenerEspeciesConPublicacionesActivas();
+        const sql = mocks.sql.mock.calls[0][0].join("?");
+        expect(sql).toMatch(/p\."fechaVigencia" AT TIME ZONE 'America\/Montevideo'\)::date >= \?::date/);
+        expect(sql).not.toMatch(/p\."fechaVigencia" AT TIME ZONE 'America\/Montevideo'\)::date > \?::date/);
+    });
+
+    it("incluye publicaciones sin fechaVigencia (null) en el conteo", async () => {
+        await obtenerEspeciesConPublicacionesActivas();
+        const sql = mocks.sql.mock.calls[0][0].join("?");
+        expect(sql).toContain('(p."fechaVigencia" IS NULL OR');
     });
 });

@@ -1,5 +1,6 @@
 import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublicacion } from "./seleccion-publicacion";
 import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
+import { validarFechaVigencia } from "./vigencia-publicacion";
 import { validarComentario } from "./validarComentario";
 
 export type DatosAltaPublicacionOperador = SeleccionPublicacion & {
@@ -9,6 +10,7 @@ export type DatosAltaPublicacionOperador = SeleccionPublicacion & {
 	cantidadUnidades?: number | null;
 	comentario?: string | null;
 	fotografia?: string;
+	fechaVigencia?: string | null;
 };
 
 export type ResultadoValidacion =
@@ -60,8 +62,20 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 		}
 	}
 	const resultadoComentario = validarComentario(datos.comentario);
-    if (!resultadoComentario.esValido) errores.push(resultadoComentario.error);
+	if (!resultadoComentario.esValido) errores.push(resultadoComentario.error);
 
+	let fechaVigenciaNormalizada: string | null = null;
+	if (datos.fechaVigencia !== undefined) {
+		const resVigencia = validarFechaVigencia(datos.fechaVigencia);
+		if (!resVigencia.esValido) {
+			errores.push(resVigencia.error);
+		} else {
+			fechaVigenciaNormalizada = resVigencia.fechaVigencia;
+		}
+	}
 	if (errores.length > 0) return { esValido: false, errores };
 	if (!seleccion.esValido) return seleccion;
-	return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true, comentario: resultadoComentario.esValido ? resultadoComentario.comentario : null } as DatosAltaPublicacionOperador };}
+	return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true,
+		fechaVigencia: fechaVigenciaNormalizada,
+		comentario: resultadoComentario.esValido ? resultadoComentario.comentario : null } as DatosAltaPublicacionOperador };
+}

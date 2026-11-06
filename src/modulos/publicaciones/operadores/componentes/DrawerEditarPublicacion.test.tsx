@@ -527,6 +527,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
             envaseId: 111, kilosId: null,
             paisId: 44,
             disponible: false,
+            fechaVigencia: null,
             cantidadUnidades: null,
             comentario: null,
         }, null));

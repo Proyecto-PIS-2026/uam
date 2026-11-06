@@ -2,6 +2,7 @@ import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { normalizarDepartamento, obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 
 export type PublicacionPerfilProductor = {
     id: number;
@@ -65,6 +66,7 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
                 "foto",
                 "precio",
                 "fecha",
+                "fechaVigencia",
                 "cantidadUnidades",
                 "comentario",
                 "publicacionActiva",
@@ -82,7 +84,8 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
     
     for (const completa of completas) {
         const publicacion = completa.publicacion;
-        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "PRODUCTOR";
+        const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "PRODUCTOR";
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,

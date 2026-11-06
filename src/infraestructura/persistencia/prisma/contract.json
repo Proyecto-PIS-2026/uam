@@ -1647,6 +1647,13 @@
                   "kind": "scalar"
                 }
               },
+              "fechaVigencia": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "foto": {
                 "nullable": true,
                 "type": {
@@ -1842,6 +1849,9 @@
                 },
                 "fecha": {
                   "column": "fecha"
+                },
+                "fechaVigencia": {
+                  "column": "fechaVigencia"
                 },
                 "foto": {
                   "column": "foto"
@@ -3628,6 +3638,11 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "fechaVigencia": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "foto": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -4372,7 +4387,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e95cc4c5f46822260ee5773661dc18477d7156192c267076edfc55b3e2131525"
+    "storageHash": "a09547d007bfed4af7744500b7a0a0b9de16165c312f05643f0666456fe50abb"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

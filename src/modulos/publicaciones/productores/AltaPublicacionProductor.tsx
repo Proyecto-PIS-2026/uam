@@ -36,7 +36,7 @@ type Catalogos = {
 type Formulario = {
     productorId: number; especieId: number; variedadId: number; envaseId: number; kilosId: number; calibreId: number;
     categoriaId: number; paisId: number; ubicaciones: UbicacionEdicionProductor[]; disponibilidad: boolean;
-    precio: string; cantidad: string; comentario: string; fotografia: string;
+    precio: string; cantidad: string; comentario: string; fotografia: string; fechaVigencia: string;
 };
 
 type PropsDrawer = {
@@ -63,6 +63,7 @@ function formularioInicial(productorId: number, disponibilidadInicial: boolean):
         cantidad: "",
         comentario: "",
         fotografia: "",
+        fechaVigencia: "",
     };
 }
 
@@ -227,6 +228,7 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
                 ubicaciones: validacionUbicaciones.ubicaciones,
                 precio: normalizarPrecioPublicacion(datos.precio),
                 cantidadUnidades: cantidad === "" ? null : Number(cantidad),
+                fechaVigencia: datos.fechaVigencia || null, 
             };
             const respuesta = await fetchConSesion("/api/publicaciones/productor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datosParaGuardar) });
             const resultado = await respuesta.json();
@@ -258,6 +260,22 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
             <div className="grid grid-cols-1 gap-[var(--espacio-controles)] sm:grid-cols-2">
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><OutlinedInput color="secondary" className={styles.entrada} size="small" id="productor-precio" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder="Ingrese precio aqui" value={datos.precio} onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small></div>
                 <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Unidades{datos.envaseId ? ` (${catalogos?.envases.find((opcion) => opcion.id === datos.envaseId)?.nombre ?? "-"})` : ""}</label><OutlinedInput color="secondary" className={styles.entrada} size="small" id="productor-cantidad" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder="Ingrese cantidad aqui" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small></div>
+                <div className={styles.campo}>
+                    <label className={styles.etiqueta} htmlFor="productor-fechaVigencia">
+                        Fecha de vigencia
+                    </label>
+                    <OutlinedInput
+                        color="secondary"
+                        className={styles.entrada}
+                        size="small"
+                        id="productor-fechaVigencia"
+                        type="date"
+                        value={datos.fechaVigencia}
+                        onChange={(evento) => cambiar({ fechaVigencia: evento.target.value })}
+                        disabled={deshabilitado}
+                    />
+                    <small className={styles.ayuda}>Dejalo vacío si no querés ingresar una fecha de vigencia.</small>
+                </div>
                 <CampoComentario
                     id="productor-comentario"
                     valor={datos.comentario}

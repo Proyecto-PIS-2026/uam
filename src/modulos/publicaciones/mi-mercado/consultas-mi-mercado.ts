@@ -23,6 +23,7 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
                     "cantidadUnidades",
                     "comentario",
                     "fecha",
+                    "fechaVigencia",
                     "version",
                     "publicacionActiva",
                     "publicacionDisponible",

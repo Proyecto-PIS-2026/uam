@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'e95cc4c5f46822260ee5773661dc18477d7156192c267076edfc55b3e2131525'>;
+  StorageHashBase<'a09547d007bfed4af7744500b7a0a0b9de16165c312f05643f0666456fe50abb'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -372,6 +372,7 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly version: CodecTypes['pg/int4@1']['output'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly fechaVigencia: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['output'];
       readonly publicacionActiva: CodecTypes['pg/bool@1']['output'];
       readonly precio: Numeric<12, 2> | null;
@@ -565,6 +566,7 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly version: CodecTypes['pg/int4@1']['input'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly fechaVigencia: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['input'];
       readonly publicacionActiva: CodecTypes['pg/bool@1']['input'];
       readonly precio: CodecTypes['pg/numeric@1']['input'] | null;
@@ -762,6 +764,7 @@ export type StorageColumnTypes = {
       readonly envaseId: CodecTypes['pg/int4@1']['output'] | null;
       readonly especieId: CodecTypes['pg/int4@1']['output'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly fechaVigencia: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly foto: CodecTypes['pg/text@1']['output'] | null;
       readonly fotoEliminadaPorVencimientoEn:
         CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
@@ -955,6 +958,7 @@ export type StorageColumnInputTypes = {
       readonly envaseId: CodecTypes['pg/int4@1']['input'] | null;
       readonly especieId: CodecTypes['pg/int4@1']['input'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly fechaVigencia: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly foto: CodecTypes['pg/text@1']['input'] | null;
       readonly fotoEliminadaPorVencimientoEn:
         CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
@@ -1927,6 +1931,11 @@ type ContractBase = Omit<
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-temporal@1';
                   readonly nullable: false;
+                };
+                readonly fechaVigencia: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
                 };
                 readonly publicacionDisponible: {
                   readonly nativeType: 'bool';
@@ -3567,6 +3576,13 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-temporal@1';
                 };
               };
+              readonly fechaVigencia: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
               readonly publicacionDisponible: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
@@ -3706,6 +3722,7 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly version: { readonly column: 'version' };
                 readonly fecha: { readonly column: 'fecha' };
+                readonly fechaVigencia: { readonly column: 'fechaVigencia' };
                 readonly publicacionDisponible: { readonly column: 'publicacionDisponible' };
                 readonly publicacionActiva: { readonly column: 'publicacionActiva' };
                 readonly precio: { readonly column: 'precio' };

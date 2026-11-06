@@ -8,6 +8,7 @@ export type CambiosPublicacionOperador = SeleccionPublicacion & {
     comentario?: string | null;
     foto?: string | null;
     disponible: boolean;
+    fechaVigencia?: string | null;
 };
 
 export type OpcionEdicion = {

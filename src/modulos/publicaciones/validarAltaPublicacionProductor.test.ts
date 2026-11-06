@@ -141,6 +141,29 @@ describe("validarAltaPublicacionProductor", () => {
         expect(resultado).toEqual({ esValido: false, errores: ["La latitud no es válida.", "La disponibilidad no es válida.", "El precio debe ser un número entero positivo de hasta 10 dígitos, sin decimales."] });
     });
 
+    it("rechaza una fecha de vigencia inválida aunque los demás campos sean válidos", () => {
+        const resultado = validarAltaPublicacionProductor({ ...datosValidos, fechaVigencia: "2026-13-01" });
+
+        expect(resultado).toEqual({
+            esValido: false,
+            errores: ["La fecha de vigencia no es una fecha válida."],
+        });
+    });
+
+    it("informa los errores de comentario y fecha de vigencia en la misma validación", () => {
+        const resultado = validarAltaPublicacionProductor({
+            ...datosValidos, comentario: "a".repeat(501), fechaVigencia: "2026-13-01",
+        });
+
+        expect(resultado).toEqual({
+            esValido: false,
+            errores: [
+                "El comentario no puede superar los 500 caracteres.",
+                "La fecha de vigencia no es una fecha válida.",
+            ],
+        });
+    });
+
     it("acepta un comentario y le quita los espacios de los costados", () => {
         const resultado = validarAltaPublicacionProductor({ ...datosValidos, comentario: "  Cosecha de esta semana  " });
 

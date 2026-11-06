@@ -1,11 +1,13 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { obtenerProductorActual } from "../../usuarios/productores/acciones/productor-actual";
 import type { Publicacion } from "./tipos";
+import { convertirInstantAFechaVigencia } from "@/modulos/publicaciones/vigencia-publicacion";
 import { agregarEstadoFotosPropias } from "../estado-fotos-propias";
 
 export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperadorId" | "version"> & {
     publicacionProductorId: number;
     pais: string;
+    fechaVigencia: string | null;
     ubicaciones: {
         id: number;
         nombreUbicacion: string;
@@ -21,7 +23,7 @@ async function consultarPublicacionesProductor(productorId: number) {
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
         .include("publicacion", (publicacion) =>
             publicacion
-                .select("id", "foto", "fotoEliminadaPorVencimientoEn", "precio", "cantidadUnidades", "comentario", "fecha", "publicacionActiva", "publicacionDisponible")
+                .select("id", "foto", "fotoEliminadaPorVencimientoEn", "precio", "cantidadUnidades", "comentario", "fecha", "fechaVigencia", "publicacionActiva", "publicacionDisponible")
                 .include("especie")
                 .include("variedad")
                 .include("envase").include("kilos")
@@ -44,6 +46,7 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
             estadoFoto: !publicacion.foto && publicacion.fotoEliminadaPorVencimientoEn ? "eliminada" : null,
             precio: publicacion.precio === null ? null : String(publicacion.precio),
             fecha: publicacion.fecha.toString(),
+            fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
             publicacionActiva: publicacion.publicacionActiva,
             publicacionDisponible: publicacion.publicacionDisponible,
             cantidadUnidades: publicacion.cantidadUnidades,

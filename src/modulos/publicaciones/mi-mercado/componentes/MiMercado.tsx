@@ -100,6 +100,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
         foto: publicacionSeleccionada.foto,
         estadoFoto: publicacionSeleccionada.estadoFoto,
         fecha: publicacionSeleccionada.fecha,
+        fechaVigencia: publicacionSeleccionada.fechaVigencia,
         version: publicacionSeleccionada.version,
         categoriaId: publicacionSeleccionada.categoria?.id ?? null,
         calibreId: publicacionSeleccionada.calibre?.id ?? null,

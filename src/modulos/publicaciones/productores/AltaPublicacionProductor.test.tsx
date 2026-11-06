@@ -377,7 +377,7 @@ describe("AltaPublicacionProductor", () => {
         completarFormulario(); enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
-        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, variedadId: 3, envaseId: 4, kilosId: null, categoriaId: 5, calibreId: 6, paisId: 7, ubicaciones: [{ nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2", departamento: "Montevideo" }], disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null, comentario: "" });
+        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, fechaVigencia: null, variedadId: 3, envaseId: 4, kilosId: null, categoriaId: 5, calibreId: 6, paisId: 7, ubicaciones: [{ nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2", departamento: "Montevideo" }], disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null, comentario: "" });
         expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
     });
 

@@ -1,5 +1,6 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -107,6 +108,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 "foto",
                 "precio",
                 "fecha",
+                "fechaVigencia", 
                 "cantidadUnidades",
                 "comentario",
                 "publicacionActiva",
@@ -125,7 +127,8 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
     
     for (const completa of completas) {
         const publicacion = completa.publicacion;
-        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "OPERADOR";
+        const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "OPERADOR";
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,

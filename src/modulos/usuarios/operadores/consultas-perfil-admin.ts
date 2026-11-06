@@ -1,5 +1,5 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-
+import { convertirInstantAFechaVigencia } from "../../publicaciones/vigencia-publicacion";
 // Datos de una publicación tal como los ve el administrador
 export type PublicacionPerfilAdmin = {
     id: number;
@@ -17,6 +17,7 @@ export type PublicacionPerfilAdmin = {
     cantidadUnidades?: number | null;
     comentario?: string | null;
     fecha: string;
+    fechaVigencia: string | null;
     disponible: boolean; // El admin ve también las publicaciones no disponibles
     especie: string;
     variedad: string;
@@ -98,6 +99,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 "cantidadUnidades",
                 "comentario",
                 "fecha",
+                "fechaVigencia",
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion",
@@ -135,6 +137,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 cantidadUnidades: publicacion.cantidadUnidades,
                 comentario: publicacion.comentario,
                 fecha: publicacion.fecha.toString(),
+                fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
                 disponible: publicacion.publicacionDisponible,
                 especie: publicacion.especie.nombreEspecie,
                 variedad: publicacion.variedad?.nombreVariedad ?? "",
@@ -144,6 +147,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
                 codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",
+                
             });
         }
     }

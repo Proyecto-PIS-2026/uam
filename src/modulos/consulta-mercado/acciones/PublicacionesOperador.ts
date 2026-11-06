@@ -76,7 +76,7 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
             LEFT JOIN pais pa ON pa.id = po."paisId"
             JOIN operador o ON o.id = po."operadorId"
             JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true
-            WHERE p."tipoPublicacion" = 'OPERADOR' AND p."publicacionActiva" = true AND p."publicacionDisponible" = true
+            WHERE p."tipoPublicacion" = 'OPERADOR' AND p."publicacionActiva" = true AND p."publicacionDisponible" = true AND (p."fechaVigencia" IS NULL OR (p."fechaVigencia" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date)
               AND EXISTS (
                 SELECT 1 FROM locales_vigentes l WHERE l."operadorId" = o.id
               )

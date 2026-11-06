@@ -2,10 +2,12 @@ import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublica
 import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
 import { validarUbicacionesProductor, type UbicacionPublicacionProductor } from "./productores/ubicaciones-productor";
 import { normalizarDepartamento } from "@/compartido/departamentos-uruguay";
+import { validarFechaVigencia } from "./vigencia-publicacion";
 import { validarComentario } from "./validarComentario";
 
 export type DatosAltaPublicacionProductor = SeleccionPublicacion & {
     productorId: number;
+    fechaVigencia?: string | null;
     latitud?: number | null;
     longitud?: number | null;
     departamento?: string | null;
@@ -77,9 +79,19 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
     }
     const resultadoComentario = validarComentario(datos.comentario);
     if (!resultadoComentario.esValido) errores.push(resultadoComentario.error);
+    let fechaVigenciaNormalizada: string | null | undefined;
+    if (datos.fechaVigencia !== undefined) {
+        const vigencia = validarFechaVigencia(datos.fechaVigencia);
+        if (!vigencia.esValido) {
+            errores.push(vigencia.error);
+        } else {
+            fechaVigenciaNormalizada = vigencia.fechaVigencia;
+        }
+    }
     if (errores.length > 0) return { esValido: false, errores };
     if (!seleccion.esValido) return seleccion;
-        return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true,
+    return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true,
+        ...(fechaVigenciaNormalizada !== undefined ? { fechaVigencia: fechaVigenciaNormalizada } : {}),
         comentario: resultadoComentario.esValido ? resultadoComentario.comentario : null,
         ...(hayUbicacion ? { departamento: normalizarDepartamento(datos.departamento) } : {}),
         ...(ubicaciones?.esValido ? { ubicaciones: ubicaciones.ubicaciones } : {}) } as DatosAltaPublicacionProductor };

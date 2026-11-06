@@ -71,7 +71,7 @@ describe("validarAltaPublicacionOperador", () => {
 
 		expect(resultado).toEqual({
 			esValido: true,
-			datos: { ...datosValidos, precio: "1250", comentario: null },
+			datos: { ...datosValidos, precio: "1250", comentario: null, fechaVigencia: null },
 		});
 	});
 

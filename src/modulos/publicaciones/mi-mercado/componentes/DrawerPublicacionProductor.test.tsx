@@ -77,6 +77,7 @@ const publicacion: PublicacionMiMercadoProductor = {
     foto: null,
     precio: "100.00",
     fecha: "2026-10-16T14:00:00.000Z",
+    fechaVigencia: "2026-10-23T14:00:00.000Z",
     publicacionActiva: true,
     publicacionDisponible: true,
     cantidadUnidades: 12,
@@ -324,7 +325,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(url).toBe("/api/publicaciones/productor/1042");
         expect(cambios).toEqual({
             especieId: 1, variedadId: 12, precio: "250", envaseId: 121, kilosId: null, categoriaId: 5, calibreId: 8,
-            paisId: 2, cantidadUnidades: 25, disponible: false, comentario: null,
+            paisId: 2, cantidadUnidades: 25, disponible: false, fechaVigencia: "2026-10-23T14:00:00.000Z", comentario: null,
             ubicaciones: [{ nombreUbicacion: "Nuevo retiro", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" }],
         });
         expect(datos.has("foto")).toBe(false);
@@ -461,7 +462,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         expect(solicitudGuardado().cambios).toEqual({
             especieId: 2, variedadId: 21, precio: "100", envaseId: 211, kilosId: null, categoriaId: 6, calibreId: 4,
-            paisId: 1, cantidadUnidades: 12, disponible: true, comentario: null,
+            paisId: 1, cantidadUnidades: 12, disponible: true, fechaVigencia: "2026-10-23T14:00:00.000Z", comentario: null,
             ubicaciones: [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=Salto" }],
         });
         expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Manzana");
@@ -598,7 +599,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         expect(solicitudGuardado().cambios).toEqual({
             especieId: 1, variedadId: 11, precio: null, envaseId: 111, kilosId: null, categoriaId: 3, calibreId: 4,
-            paisId: 1, cantidadUnidades: null, disponible: false, comentario: null,
+            paisId: 1, cantidadUnidades: null, disponible: false, fechaVigencia: "2026-10-23T14:00:00.000Z", comentario: null,
             ubicaciones: [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=Salto" }],
         });
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("");
