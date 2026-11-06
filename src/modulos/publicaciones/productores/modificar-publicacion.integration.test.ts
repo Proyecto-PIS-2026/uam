@@ -20,7 +20,7 @@ let sesionPropietario: DatosSesion;
 let sesionAdministrador: DatosSesion;
 let paisId: number | null;
 let cambiosIniciales: CambiosPublicacionProductor;
-let catalogoAlternativo: { especieId: number; variedadId: number; presentacionId: number; categoriaId: number; paisId: number };
+let catalogoAlternativo: { especieId: number; variedadId: number; envaseId: number; kilosId: number; categoriaId: number; paisId: number };
 let elegida: PublicacionCreada;
 let otraPropia: PublicacionCreada;
 let ajena: PublicacionCreada;
@@ -32,7 +32,7 @@ async function leer(publicacion: PublicacionCreada) {
     const relacion = await db.orm.public.PublicacionProductor.where({ id: publicacion.publicacionProductorId })
         .include("publicacion", (publicacion) => publicacion.select(
             "id", "fecha", "precio", "foto", "tipoPublicacion", "cantidadUnidades", "publicacionActiva", "publicacionDisponible",
-            "especieId", "variedadId", "presentacionId", "categoriaId", "calibreId",
+            "especieId", "variedadId", "envaseId", "kilosId", "categoriaId", "calibreId",
         ))
         .include("ubicaciones", (ubicaciones) => ubicaciones.select("id", "publicacionId", "nombreUbicacion", "urlMaps", "departamento")).first();
     if (!relacion) throw new Error("No se encontró la publicación creada para la prueba.");
@@ -65,18 +65,17 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         const [productores, relaciones, administrador] = await Promise.all([
             db.orm.public.Productor.select("id", "usuarioId").all(),
             db.orm.public.PublicacionProductor.include("publicacion", (publicacion) => publicacion
-                .select("tipoPublicacion", "especieId", "variedadId", "presentacionId", "categoriaId", "calibreId")
-                .include("presentacion", (presentacion) => presentacion.select("presentacionActiva")
-                    .include("variedad", (variedad) => variedad.select("variedadActiva", "especieId")
-                        .include("especie", (especie) => especie.select("especieActiva"))))
+                .select("tipoPublicacion", "especieId", "variedadId", "envaseId", "kilosId", "categoriaId", "calibreId")
+                .include("variedad", (variedad) => variedad.select("variedadActiva", "especieId")
+                    .include("especie", (especie) => especie.select("especieActiva")))
                 .include("categoria", (categoria) => categoria.select("especieId"))).all(),
             db.orm.public.Usuario.where({ rol: "ADMINISTRADOR" }).select("id").first(),
         ]);
         const semilla = relaciones.find((relacion) => {
             const publicacion = relacion.publicacion;
-            if (!publicacion.presentacion || !publicacion.categoria) return false;
-            const variedad = publicacion.presentacion.variedad;
-            return publicacion.tipoPublicacion === "PRODUCTOR" && publicacion.presentacion.presentacionActiva
+            if (!publicacion.variedad || !publicacion.categoria) return false;
+            const variedad = publicacion.variedad;
+            return publicacion.tipoPublicacion === "PRODUCTOR"
                 && variedad.variedadActiva && variedad.especie.especieActiva
                 && (publicacion.categoria.especieId === null || publicacion.categoria.especieId === variedad.especieId);
         });
@@ -97,7 +96,8 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
             precio: "100", foto: null,
             especieId: semilla.publicacion.especieId,
             variedadId: semilla.publicacion.variedadId,
-            presentacionId: semilla.publicacion.presentacionId,
+            envaseId: semilla.publicacion.envaseId,
+            kilosId: semilla.publicacion.kilosId,
             categoriaId: semilla.publicacion.categoriaId,
             calibreId: calibresCreados[0],
             ubicaciones: [{ nombreUbicacion: "Retiro de prueba", urlMaps: "https://maps.google.com/?q=Salto" }],
@@ -106,10 +106,12 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
             const identificador = randomUUID();
             const especie = await tx.orm.public.Especie.create({ nombreEspecie: `Especie de edición ${identificador}` });
             const variedad = await tx.orm.public.Variedad.create({ nombreVariedad: "Variedad de edición", especieId: especie.id });
-            const presentacion = await tx.orm.public.Presentacion.create({ nombrePresentacion: "Cajón de edición", variedadId: variedad.id });
+            const envase = await tx.orm.public.Envase.where({ nombreEnvase: "Cajon" }).first();
+            const kilos = await tx.orm.public.KilosEmpaquetado.where({ valor: "20" }).first();
+            if (!envase || !kilos) throw new Error("Faltan los catálogos de empaquetado del seed.");
             const categoria = await tx.orm.public.Categoria.create({ nombreCategoria: "Categoría de edición", especieId: especie.id });
             const pais = await tx.orm.public.Pais.create({ codigoPais: `edicion-${identificador}`, nombrePais: `País de edición ${identificador}` });
-            return { especieId: especie.id, variedadId: variedad.id, presentacionId: presentacion.id, categoriaId: categoria.id, paisId: pais.id };
+            return { especieId: especie.id, variedadId: variedad.id, envaseId: envase.id, kilosId: kilos.id, categoriaId: categoria.id, paisId: pais.id };
         });
     });
 
@@ -128,7 +130,8 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
                     publicacionDisponible: true,
                     especieId: cambiosIniciales.especieId,
                     variedadId: cambiosIniciales.variedadId,
-                    presentacionId: cambiosIniciales.presentacionId,
+                    envaseId: cambiosIniciales.envaseId,
+                    kilosId: cambiosIniciales.kilosId,
                     categoriaId: cambiosIniciales.categoriaId,
                     calibreId: indice === 1 ? calibresCreados[1] : cambiosIniciales.calibreId,
                 });
@@ -154,7 +157,6 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
     afterAll(async () => {
         for (const id of calibresCreados) await db.orm.public.Calibre.where({ id }).delete();
         if (catalogoAlternativo) {
-            await db.orm.public.Presentacion.where({ id: catalogoAlternativo.presentacionId }).delete();
             await db.orm.public.Categoria.where({ id: catalogoAlternativo.categoriaId }).delete();
             await db.orm.public.Variedad.where({ id: catalogoAlternativo.variedadId }).delete();
             await db.orm.public.Especie.where({ id: catalogoAlternativo.especieId }).delete();
@@ -277,7 +279,8 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
             ...cambiosIniciales,
             especieId: catalogoAlternativo.especieId,
             variedadId: catalogoAlternativo.variedadId,
-            presentacionId: catalogoAlternativo.presentacionId,
+            envaseId: catalogoAlternativo.envaseId,
+            kilosId: catalogoAlternativo.kilosId,
             categoriaId: catalogoAlternativo.categoriaId,
             paisId: catalogoAlternativo.paisId,
             cantidadUnidades: 0,
@@ -292,7 +295,7 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
             publicacion: {
                 especieId: catalogoAlternativo.especieId,
                 variedadId: catalogoAlternativo.variedadId,
-                presentacionId: catalogoAlternativo.presentacionId, categoriaId: catalogoAlternativo.categoriaId,
+                envaseId: catalogoAlternativo.envaseId, kilosId: catalogoAlternativo.kilosId, categoriaId: catalogoAlternativo.categoriaId,
                 cantidadUnidades: 0, publicacionDisponible: false, publicacionActiva: true,
             },
         });
@@ -300,7 +303,8 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
             paisId: catalogoAlternativo.paisId, cantidadUnidades: 0, publicacionDisponible: false,
             especie: { id: catalogoAlternativo.especieId },
             variedad: { id: catalogoAlternativo.variedadId },
-            presentacion: { id: catalogoAlternativo.presentacionId },
+            envase: { id: catalogoAlternativo.envaseId },
+            kilos: { id: catalogoAlternativo.kilosId },
         });
         expect(await leer(otraPropia)).toEqual(otraAntes);
         expect(await leer(ajena)).toEqual(ajenaAntes);
@@ -348,7 +352,7 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
             ...cambiosIniciales,
             especieId: catalogoAlternativo.especieId,
             variedadId: catalogoAlternativo.variedadId,
-            presentacionId: catalogoAlternativo.presentacionId, categoriaId: catalogoAlternativo.categoriaId,
+            envaseId: catalogoAlternativo.envaseId, kilosId: catalogoAlternativo.kilosId, categoriaId: catalogoAlternativo.categoriaId,
             paisId: catalogoAlternativo.paisId, cantidadUnidades: 0, disponible: false,
             calibreId: calibresCreados[2],
         };

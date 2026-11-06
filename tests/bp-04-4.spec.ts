@@ -1,7 +1,9 @@
 import { expect, type Page, type APIRequestContext } from "@playwright/test";
 import { test } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador, iniciarSesionOperador } from "./autenticacion";
-import { conPreciosReferenciaDePrueba } from "./precios-referencia-db";
+import { conHistoricoAcelgaDePrueba, conPreciosReferenciaDePrueba } from "./precios-referencia-db";
+
+test.describe.configure({ mode: "default" });
 
 const rutaHistoricos = "/precios-historicos?species_id=1&producto=Acelga&variedad=-&pais=URUGUAY&calibre=C&categoria=I";
 
@@ -46,9 +48,16 @@ function enlaceAdministracion(page: Page) {
 }
 
 async function consultarHistoricos(page: Page) {
-  await page.goto(rutaHistoricos);
-  await expect(page).toHaveURL((url) => url.pathname === "/precios-historicos");
-  await expect(page.getByRole("heading", { name: "Histórico de Acelga", exact: true })).toBeVisible();
+  await conHistoricoAcelgaDePrueba(async () => {
+    const respuesta = await page.goto(rutaHistoricos);
+    expect(respuesta?.status()).toBe(200);
+    await expect(page).toHaveURL((url) => url.pathname === "/precios-historicos");
+    await expect(page.getByRole("heading", { name: "Histórico de Acelga", exact: true })).toBeVisible();
+    await expect(page.getByRole("form", { name: "Consultar período histórico" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Consultar", exact: true })).toBeEnabled({ timeout: 30_000 });
+    await expect(page.getByRole("table").getByRole("cell", { name: "URUGUAY", exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  });
 }
 
 test("BP-04.4 CA-1 CP-01: consultas públicas sin iniciar sesión", async ({ page, context }) => conPreciosReferenciaDePrueba(async () => {
@@ -83,11 +92,7 @@ test("BP-04.4 CA-1 CP-01: consultas públicas sin iniciar sesión", async ({ pag
     await consultar("/precios-referencia", "Precios de referencia");
     await expect(page.getByRole("heading", { name: "Listado de Precios de referencia" })).toBeVisible();
 
-    await consultar(
-      "/precios-historicos?species_id=1&producto=Acelga&variedad=-&pais=URUGUAY&calibre=C&categoria=I",
-      "Histórico de Acelga",
-    );
-    await expect(page.getByRole("form", { name: "Consultar período histórico" })).toBeVisible();
+    await consultarHistoricos(page);
   });
 
   await test.step("Consultar el listado y el perfil de un Operador", async () => {
@@ -167,6 +172,9 @@ test("BP-04.4 CA-2 CP-03: funcionalidades permitidas al Operador", async ({ page
   await page.goto("/publicaciones/nueva");
   await expect(page).toHaveURL((url) => url.pathname === "/publicaciones/nueva");
   await expect(page.getByRole("dialog", { name: "Nueva publicación" })).toBeVisible();
+  await page.goto("/mi-perfil/cambiar-contrasena");
+  await expect(page).toHaveURL((url) => url.pathname === "/mi-perfil/cambiar-contrasena");
+  await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
   await consultarHistoricos(page);
 });
 
@@ -176,16 +184,22 @@ test("BP-04.4 CA-2 CP-04: funcionalidades de otros roles para el Operador", asyn
   await iniciarSesionOperador(page);
   const rutaMercado = new URL(page.url()).pathname;
   await page.goto("/inicio");
+  await expect(page).toHaveURL((url) => url.pathname === rutaMercado);
   await expect(enlaceAdministracion(page)).toHaveCount(0);
 
-  for (const ruta of rutasAdministrativas(operador)) {
+  for (const ruta of [
+    "/operadores",
+    `/operadores/${encodeURIComponent(operador.nombre)}`,
+    "/iniciar-sesion",
+    ...rutasAdministrativas(operador),
+  ]) {
     await test.step(`Rechazar ${ruta} para el Operador`, async () => {
       await page.goto(ruta);
       await expect(page).toHaveURL((url) => url.pathname === rutaMercado);
     });
   }
   await page.goto("/mi-mercado/productor");
-  await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+  await expect(page).toHaveURL((url) => url.pathname === rutaMercado);
 });
 
 test("BP-04.4 CA-3 CP-05: funcionalidades permitidas al Productor", async ({ page }) => {
@@ -204,6 +218,7 @@ test("BP-04.4 CA-3 CP-06: funcionalidades de otros roles para el Productor", asy
 
   const rutas = [
     "/inicio",
+    "/iniciar-sesion",
     "/publicaciones",
     "/operadores",
     `/operadores/${encodeURIComponent(operador.nombre)}`,
@@ -249,8 +264,10 @@ test("BP-04.4 CA-4 CP-07: funcionalidades permitidas al Administrador", async ({
 
 test("BP-04.4 CA-4 CP-08: funcionalidades de Operador para el Administrador", async ({ page, usuariosAdministrativos }) => {
   await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
-  await page.goto("/publicaciones/nueva");
-  await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+  for (const ruta of ["/publicaciones/nueva", "/operadores/perfil-restringido", "/productores/perfil-restringido", "/iniciar-sesion"]) {
+    await page.goto(ruta);
+    await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+  }
   await expect(page.getByRole("dialog", { name: "Nueva publicación" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Aumentar precio" })).toHaveCount(0);
 });
@@ -259,6 +276,7 @@ test("BP-04.4 CA-5 CP-09: mercado de otro Operador", async ({ page, request, bro
   test.slow();
   const operadores = await obtenerOperadores(request);
   await iniciarSesionOperador(page);
+  const rutaMercado = new URL(page.url()).pathname;
   const [propio] = await obtenerOperadores(page.request);
   const ajeno = operadores.find((operador) => operador.id !== propio.id);
   expect(ajeno).toBeDefined();
@@ -274,7 +292,7 @@ test("BP-04.4 CA-5 CP-09: mercado de otro Operador", async ({ page, request, bro
 
     try {
       await page.goto(`/mi-mercado/${encodeURIComponent(ajeno!.nombre)}`);
-      await expect(page).toHaveURL((url) => url.pathname === "/inicio");
+      await expect(page).toHaveURL((url) => url.pathname === rutaMercado);
       await expect(page.getByRole("dialog", { name: "Consulta de publicación" })).toHaveCount(0);
     } finally {
       await visitante.reload();

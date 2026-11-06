@@ -170,18 +170,6 @@
 
 @media (min-width: 701px) {
     .lista {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 64rem) {
-    .lista {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 80rem) {
-    .lista {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: var(--columnas-tarjetas);
     }
 }

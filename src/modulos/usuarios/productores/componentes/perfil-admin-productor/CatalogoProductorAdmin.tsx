@@ -30,7 +30,8 @@ function paraConsulta(publicacion: PublicacionPerfilAdminProductor): Publicacion
         publicacionDisponible: publicacion.disponible,
         especie: { id: publicacion.especieId, nombreEspecie: publicacion.especie, fotoEspecie: null },
         variedad: publicacion.variedadId === null ? null : { id: publicacion.variedadId, nombreVariedad: publicacion.variedad },
-        presentacion: publicacion.presentacionId === null ? null : { id: publicacion.presentacionId, nombrePresentacion: publicacion.presentacion },
+        envase: publicacion.envaseId === null ? null : { id: publicacion.envaseId, nombreEnvase: publicacion.envase },
+        kilos: publicacion.kilosId === null ? null : { id: publicacion.kilosId, valor: publicacion.kilos },
         categoria: publicacion.categoriaId === null ? null : { id: publicacion.categoriaId, nombreCategoria: publicacion.categoria },
         calibre: publicacion.calibreId === null ? null : { id: publicacion.calibreId, codigoCalibre: publicacion.codigoCalibre, nombreCalibre: publicacion.calibre },
         ubicaciones: publicacion.ubicaciones.map((ubicacion, indice) => ({
@@ -48,7 +49,8 @@ function paraTarjeta(publicacion: PublicacionMiMercadoProductor): PublicacionPer
         publicacionProductorId: publicacion.publicacionProductorId,
         especieId: publicacion.especie.id,
         variedadId: publicacion.variedad?.id ?? null,
-        presentacionId: publicacion.presentacion?.id ?? null,
+        envaseId: publicacion.envase?.id ?? null,
+        kilosId: publicacion.kilos?.id ?? null,
         categoriaId: publicacion.categoria?.id ?? null,
         calibreId: publicacion.calibre?.id ?? null,
         paisId: publicacion.paisId,
@@ -60,7 +62,8 @@ function paraTarjeta(publicacion: PublicacionMiMercadoProductor): PublicacionPer
         disponible: publicacion.publicacionDisponible,
         especie: publicacion.especie.nombreEspecie,
         variedad: publicacion.variedad?.nombreVariedad ?? "",
-        presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
+        envase: publicacion.envase?.nombreEnvase ?? "",
+        kilos: publicacion.kilos?.valor ?? "",
         categoria: publicacion.categoria?.nombreCategoria ?? "",
         calibre: publicacion.calibre?.nombreCalibre ?? "",
         codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
@@ -116,7 +119,7 @@ export default function CatalogoProductorAdmin({ publicaciones, alCambiarDeparta
             {publicacionesActuales.length === 0 ? (
                 <EstadoVacio titulo="Sin publicaciones" descripcion="El productor no tiene publicaciones." icono={<Inventory2OutlinedIcon />} anunciar={false} />
             ) : (
-                <ul className="grid grid-cols-1 gap-[var(--espacio-secciones)] md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 tarjetas-compactas">
+                <ul className="grilla-tarjetas gap-[var(--espacio-secciones)]">
                     {publicacionesActuales.map((publicacion) => (
                         <li key={publicacion.id}>
                             <TarjetaPublicacionProductorAdmin

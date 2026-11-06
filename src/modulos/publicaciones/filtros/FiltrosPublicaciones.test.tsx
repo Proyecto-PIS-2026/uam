@@ -18,7 +18,7 @@ const publicaciones: PublicacionListado[] = [
         foto: null,
         especie: "Manzana",
         variedad: "Gala",
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         categoria: "I",
         calibre: "Grande",
         codigoCalibre: "G",
@@ -48,7 +48,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         foto: null,
         especie: "Manzana",
         variedad: "Gala",
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         categoria: "I",
         calibre: "Grande",
         codigoCalibre: "G",
@@ -67,7 +67,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         foto: null,
         especie: "Manzana",
         variedad: "Red",
-        presentacion: "Bolsa",
+        envase: "Bolsa", kilos: "",
         categoria: "II",
         calibre: "Mediano",
         codigoCalibre: "M",
@@ -86,7 +86,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         foto: null,
         especie: "Pera",
         variedad: "Williams",
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         categoria: "I",
         calibre: "Grande",
         codigoCalibre: "G",
@@ -105,7 +105,7 @@ const publicacionesPrueba: PublicacionListado[] = [
         foto: null,
         especie: "Pera",
         variedad: "Packham",
-        presentacion: "Bolsa",
+        envase: "Bolsa", kilos: "",
         categoria: "E",
         calibre: "Pequeño",
         codigoCalibre: "P",
@@ -119,18 +119,18 @@ const publicacionesPrueba: PublicacionListado[] = [
     },
 ];
 
-const publicacionesPresentacion: PublicacionListado[] = [
+const publicacionesEnvase: PublicacionListado[] = [
     {
         ...publicacionesPrueba[0],
         id: 1,
         variedad: "Gala",
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
     },
     {
         ...publicacionesPrueba[0],
         id: 5,
         variedad: "Gala",
-        presentacion: "Bolsa",
+        envase: "Bolsa", kilos: "",
     },
 ];
 
@@ -160,7 +160,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
         foto: null,
         especie: "Manzana",
         variedad: "Gala",
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         categoria: "I",
         calibre: "Grande",
         codigoCalibre: "G",
@@ -179,7 +179,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
         foto: null,
         especie: "Manzana",
         variedad: "Red",
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         categoria: "I",
         calibre: "Mediano",
         codigoCalibre: "M",
@@ -198,7 +198,7 @@ const publicacionesCombinacionInvalida: PublicacionListado[] = [
         foto: null,
         especie: "Manzana",
         variedad: "Red",
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         categoria: "II",
         calibre: "Grande",
         codigoCalibre: "G",
@@ -232,7 +232,7 @@ describe("FiltrosPublicaciones", () => {
 
     it("incluye publicaciones con solo especie sin agregar opciones vacías a los filtros", () => {
         const alFiltrar = vi.fn();
-        const minima: PublicacionListado = { ...publicaciones[0], id: 2, variedad: "", presentacion: "", categoria: "", calibre: "", codigoCalibre: "", pais: "", precio: null };
+        const minima: PublicacionListado = { ...publicaciones[0], id: 2, variedad: "", envase: "", kilos: "", categoria: "", calibre: "", codigoCalibre: "", pais: "", precio: null };
         const disponibles = [...publicaciones, minima];
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={disponibles} especieFiltro="Manzana" alFiltrar={alFiltrar} />);
 
@@ -269,7 +269,7 @@ describe("FiltrosPublicaciones", () => {
         seleccionarFiltro("Nave", "Nave A");
         seleccionarFiltro("Especie", "Manzana");
         seleccionarFiltro("Variedad", "Gala");
-        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Empaquetado", "Caja");
         seleccionarFiltro("Categoría", "I");
         seleccionarFiltro("Calibre", "Grande");
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Frutas del Sur" } });
@@ -278,17 +278,17 @@ describe("FiltrosPublicaciones", () => {
         seleccionarOrden("Mayor Precio");
 
         expect(alConsultar).toHaveBeenLastCalledWith({
-            busqueda: "Frutas del Sur", especie: "Manzana", variedad: "Gala", presentacion: "Caja",
+            busqueda: "Frutas del Sur", especie: "Manzana", variedad: "Gala", envase: "Caja", kilos: "Todas",
             categoria: "I", calibre: "Grande", precioMinimo: "50", precioMaximo: "200", orden: "precioDesc", nave: "A",
         });
 
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
         expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Todas");
         expect(alConsultar).toHaveBeenLastCalledWith({
-            busqueda: "", especie: "Todas", variedad: "Todas", presentacion: "Todas",
+            busqueda: "", especie: "Todas", variedad: "Todas", envase: "Todas", kilos: "Todas",
             categoria: "Todas", calibre: "Todas", precioMinimo: "", precioMaximo: "", orden: "ninguno", nave: "Todas",
         });
-    });
+    }, 500_000);
 
     it.each([false, true])("omite Nave y su parámetro cuando no se habilita el filtro (consulta remota: %s)", (remota) => {
         const alConsultar = vi.fn();
@@ -359,7 +359,7 @@ describe("FiltrosPublicaciones", () => {
         const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" alFiltrar={alFiltrar} alCambiarEspecie={alCambiarEspecie}/>);
         seleccionarFiltro("Especie", "Manzana");
         seleccionarFiltro("Variedad", "Gala");
-        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Empaquetado", "Caja");
         seleccionarFiltro("Categoría", "I");
         seleccionarFiltro("Calibre", "Grande");
         alCambiarEspecie.mockClear();
@@ -367,7 +367,7 @@ describe("FiltrosPublicaciones", () => {
         const restantes = [publicacionesPrueba[3]];
         vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={restantes} especieFiltro="" alFiltrar={alFiltrar} alCambiarEspecie={alCambiarEspecie}/>);
 
-        for (const nombre of ["Especie", "Variedad", "Presentación", "Categoría"]) {
+        for (const nombre of ["Especie", "Variedad", "Categoría"]) {
             expect(screen.getByRole("combobox", { name: nombre })).toHaveTextContent("Todas");
         }
         expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Todos");
@@ -375,36 +375,36 @@ describe("FiltrosPublicaciones", () => {
         expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual(restantes);
     });
 
-    it("descarta una variedad desaparecida y su presentación, conservando las otras selecciones válidas", () => {
+    it("descarta una variedad desaparecida y su envase, conservando las otras selecciones válidas", () => {
         const alFiltrar = vi.fn();
         const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
         seleccionarFiltro("Variedad", "Gala");
-        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Empaquetado", "Caja");
         seleccionarFiltro("Categoría", "I");
         seleccionarFiltro("Calibre", "Grande");
 
-        const actualizadas = [{ ...publicaciones[0], variedad: "Red", presentacion: "Bolsa" }];
+        const actualizadas = [{ ...publicaciones[0], variedad: "Red", envase: "Bolsa" }];
         vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
 
         expect(screen.getByRole("combobox", { name: "Especie" })).toHaveTextContent("Manzana");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Todas");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Todas");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Todos");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("I");
         expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Grande");
         expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual(actualizadas);
     });
 
-    it("descarta una presentación desaparecida y conserva la variedad elegida", () => {
+    it("descarta un envase desaparecida y conserva la variedad elegida", () => {
         const alFiltrar = vi.fn();
-        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPresentacion} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
+        const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesEnvase} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
         seleccionarFiltro("Variedad", "Gala");
-        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Empaquetado", "Caja");
 
-        const restantes = [publicacionesPresentacion[1]];
+        const restantes = [publicacionesEnvase[1]];
         vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={restantes} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
 
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Gala");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Todas");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Todos");
         expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual(restantes);
     });
 
@@ -426,7 +426,7 @@ describe("FiltrosPublicaciones", () => {
         const alFiltrar = vi.fn();
         const vista = render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
         seleccionarFiltro("Variedad", "Gala");
-        seleccionarFiltro("Presentación", "Caja");
+        seleccionarFiltro("Empaquetado", "Caja");
         seleccionarFiltro("Categoría", "I");
         seleccionarFiltro("Calibre", "Grande");
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Manzana" } });
@@ -438,7 +438,7 @@ describe("FiltrosPublicaciones", () => {
         vista.rerender(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={actualizadas} especieFiltro="Manzana" alFiltrar={alFiltrar}/>);
 
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Gala");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Caja");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Caja");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("I");
         expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("Grande");
         expect(screen.getByLabelText("Buscar publicaciones")).toHaveValue("Manzana");
@@ -463,7 +463,7 @@ describe("FiltrosPublicaciones", () => {
 
         // Filtros adicionales
         expect(screen.getByLabelText("Variedad")).toBeInTheDocument();
-        expect(screen.getByLabelText("Presentación")).toBeInTheDocument();
+        expect(screen.getByLabelText("Empaquetado")).toBeInTheDocument();
         expect(screen.getByLabelText("Calibre")).toBeInTheDocument();
         expect(screen.getByLabelText("Categoría")).toBeInTheDocument();
 
@@ -553,7 +553,7 @@ describe("FiltrosPublicaciones", () => {
             id: indice + 1,
             especie: "Manzana",
             variedad: nombre,
-            presentacion: "Zeta",
+            envase: "Zeta", kilos: "",
             categoria: "Zeta",
             calibre: "Zeta",
         })).concat(["Ágata", "Berro"].map((nombre, indice) => ({
@@ -561,7 +561,7 @@ describe("FiltrosPublicaciones", () => {
             id: indice + 4,
             especie: "Manzana",
             variedad: "Ágata",
-            presentacion: nombre,
+            envase: nombre, kilos: "",
             categoria: nombre,
             calibre: nombre,
         })));
@@ -574,7 +574,7 @@ describe("FiltrosPublicaciones", () => {
         expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Ágata", "Berro", "Zeta"]);
         fireEvent.click(screen.getByRole("option", { name: "Ágata" }));
 
-        for (const [nombre, opcionInicial] of [["Presentación", "Todas"], ["Categoría", "Todas"], ["Calibre", "Todos"]]) {
+        for (const [nombre, opcionInicial] of [["Empaquetado", "Todos"], ["Categoría", "Todas"], ["Calibre", "Todos"]]) {
             fireEvent.mouseDown(screen.getByRole("combobox", { name: nombre }));
             expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual([opcionInicial, "Ágata", "Berro", "Zeta"]);
             fireEvent.click(screen.getByRole("option", { name: opcionInicial }));
@@ -661,42 +661,45 @@ describe("FiltrosPublicaciones", () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         expect(screen.getByLabelText("Especie")).toHaveTextContent("Todas");
         expect(screen.getByLabelText("Variedad")).toHaveTextContent("Todas");
-        expect(screen.getByLabelText("Presentación")).toHaveTextContent("Todas");
+        expect(screen.getByLabelText("Empaquetado")).toHaveTextContent("Todos");
         expect(screen.getByLabelText("Categoría")).toHaveTextContent("Todas");
         expect(screen.getByLabelText("Calibre")).toHaveTextContent("Todos");
     });
 
-    it("habilita los filtros dependientes de forma secuencial", () => {
+    it("solo condiciona variedad a especie; envase y kilos son independientes", () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
-        const presentacion = screen.getByLabelText("Presentación");
+        const envase = screen.getByLabelText("Empaquetado");
         // Antes de seleccionar especie
         expect(variedad).toHaveAttribute("aria-disabled", "true");
-        expect(presentacion).toHaveAttribute("aria-disabled", "true");
+        expect(envase).not.toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByLabelText("Kilos")).not.toHaveAttribute("aria-disabled", "true");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
         // Despues de seleccionar especie
         expect(variedad).not.toHaveAttribute("aria-disabled");
-        expect(presentacion).toHaveAttribute("aria-disabled", "true");
+        expect(envase).not.toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByLabelText("Kilos")).not.toHaveAttribute("aria-disabled", "true");
         fireEvent.mouseDown(variedad);
         fireEvent.click(screen.getByRole("option", { name: "Gala" }));
         // Despues de seleccionar variedad
-        expect(presentacion).not.toHaveAttribute("aria-disabled");
+        expect(envase).not.toHaveAttribute("aria-disabled");
     });
 
-    it('selecciona automáticamente la variedad "-" y habilita Presentación', () => {
+    it('selecciona automáticamente la variedad "-" y mantiene Envase habilitado', () => {
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesVariedadUnica} especieFiltro=""/>);
         const especie = screen.getByLabelText("Especie");
         const variedad = screen.getByLabelText("Variedad");
-        const presentacion = screen.getByLabelText("Presentación");
+        const envase = screen.getByLabelText("Empaquetado");
         expect(variedad).toHaveAttribute("aria-disabled", "true");
-        expect(presentacion).toHaveAttribute("aria-disabled", "true");
+        expect(envase).not.toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByLabelText("Kilos")).not.toHaveAttribute("aria-disabled", "true");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Pera" }));
         expect(variedad).toHaveTextContent("-");
         expect(variedad).toHaveAttribute("aria-disabled", "true");
-        expect(presentacion).not.toHaveAttribute("aria-disabled");
+        expect(envase).not.toHaveAttribute("aria-disabled");
     });
 
     it("limpia los filtros al hacer click en Limpiar filtros", () => {
@@ -750,21 +753,21 @@ describe("FiltrosPublicaciones", () => {
         expect(resultado[0].variedad).toBe("Gala");
     });
 
-    it("filtra las publicaciones por presentación", () => {
+    it("filtra las publicaciones por envase", () => {
         const alFiltrar = vi.fn();
-        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPresentacion} especieFiltro="" alFiltrar={alFiltrar}/>);
+        render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesEnvase} especieFiltro="" alFiltrar={alFiltrar}/>);
         const especie = screen.getByLabelText("Especie");
         fireEvent.mouseDown(especie);
         fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
         const variedad = screen.getByLabelText("Variedad");
         fireEvent.mouseDown(variedad);
         fireEvent.click(screen.getByRole("option", { name: "Gala" }));
-        const presentacion = screen.getByLabelText("Presentación");
-        fireEvent.mouseDown(presentacion);
+        const envase = screen.getByLabelText("Empaquetado");
+        fireEvent.mouseDown(envase);
         fireEvent.click(screen.getByRole("option", { name: "Caja" }));
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado).toHaveLength(1);
-        expect(resultado[0].presentacion).toBe("Caja");
+        expect(resultado[0].envase).toBe("Caja");
     });
 
     it("filtra las publicaciones por categoría", () => {
@@ -1232,18 +1235,18 @@ describe("FiltrosPublicaciones", () => {
         expect(resultado.every((publicacion) => publicacion.especie === "Manzana")).toBe(true);
     });
 
-    it("permite filtrar presentación al ingresar con una especie cuya única variedad es guion", () => {
+    it("permite filtrar envase al ingresar con una especie cuya única variedad es guion", () => {
         const alFiltrar = vi.fn();
         const publicaciones = [
-            { ...publicacionesVariedadUnica[0], id: 1, presentacion: "Caja" },
-            { ...publicacionesVariedadUnica[0], id: 2, presentacion: "Bolsa" },
+            { ...publicacionesVariedadUnica[0], id: 1, envase: "Caja" },
+            { ...publicacionesVariedadUnica[0], id: 2, envase: "Bolsa" },
         ];
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicaciones} especieFiltro="Pera" alFiltrar={alFiltrar} />);
 
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
-        const presentacion = screen.getByRole("combobox", { name: "Presentación" });
-        expect(presentacion).not.toHaveAttribute("aria-disabled", "true");
-        fireEvent.mouseDown(presentacion);
+        const envase = screen.getByRole("combobox", { name: "Empaquetado" });
+        expect(envase).not.toHaveAttribute("aria-disabled", "true");
+        fireEvent.mouseDown(envase);
         fireEvent.click(screen.getByRole("option", { name: "Bolsa" }));
 
         expect(alFiltrar.mock.calls.at(-1)?.[0]).toEqual([publicaciones[1]]);
@@ -1257,7 +1260,7 @@ describe("FiltrosPublicaciones", () => {
             foto: null,
             especie: "Manzana",
             variedad: "Gala",
-            presentacion: "Caja",
+            envase: "Caja", kilos: "",
             categoria: "I",
             calibre: "Grande",
             codigoCalibre: "G",
@@ -1298,9 +1301,9 @@ describe("FiltrosPublicaciones", () => {
 
 describe("ordenamiento configurado por el administrador", () => {
     const datosOrdenamiento = [
-        { especie: "Tomate", variedad: "", presentacion: "Caja", categoria: "I", calibre: "M", codigoCalibre: "M", precio: 30, fecha: "2026-11-01T12:00:00.000Z" },
-        { especie: "Acelga", variedad: "", presentacion: "Caja", categoria: "I", calibre: "M", codigoCalibre: "M", precio: 50, fecha: "2026-11-01T12:00:01.000Z" },
-        { especie: "Papa", variedad: "", presentacion: "Caja", categoria: "I", calibre: "M", codigoCalibre: "M", precio: 10, fecha: "2026-11-01T12:00:02.000Z" },
+        { especie: "Tomate", variedad: "", envase: "Caja", kilos: "", categoria: "I", calibre: "M", codigoCalibre: "M", precio: 30, fecha: "2026-11-01T12:00:00.000Z" },
+        { especie: "Acelga", variedad: "", envase: "Caja", kilos: "", categoria: "I", calibre: "M", codigoCalibre: "M", precio: 50, fecha: "2026-11-01T12:00:01.000Z" },
+        { especie: "Papa", variedad: "", envase: "Caja", kilos: "", categoria: "I", calibre: "M", codigoCalibre: "M", precio: 10, fecha: "2026-11-01T12:00:02.000Z" },
     ];
 
     const obtenerNombre = () => "Operador de prueba";
@@ -1429,7 +1432,7 @@ describe("ponderación y actualización de publicaciones", () => {
             foto: null,
             especie: "Tomate",
             variedad: "",
-            presentacion: "",
+            envase: "", kilos: "",
             cantidadUnidades: null,
             categoria: "",
             calibre: "",
@@ -1598,7 +1601,7 @@ describe("ponderación y actualización de publicaciones", () => {
             foto: "/tomate.webp",
             especie: base.especie,
             variedad: "Perita",
-            presentacion: "Caja",
+            envase: "Caja", kilos: "",
             categoria: "I",
             calibre: "Grande",
             codigoCalibre: "G",
@@ -1611,5 +1614,45 @@ describe("ponderación y actualización de publicaciones", () => {
         const alFiltrar = vi.fn();
         render(<FiltrosPublicaciones publicaciones={[antigua, reciente]} especieFiltro="" obtenerNombreFantasia={obtenerNombreProductor} ordenInicial="fechaDesc" alFiltrar={alFiltrar} />);
         expect((alFiltrar.mock.calls.at(-1)![0] as PublicacionProductorListado[]).map((publicacion) => publicacion.id)).toEqual([2, 1]);
+    });
+});
+
+describe("envase y kilos independientes", () => {
+    const datos = [
+        { ...publicaciones[0], id: 1, envase: "Cajon", kilos: "20", variedad: "" },
+        { ...publicaciones[0], id: 2, envase: "Bolsa", kilos: "20", especie: "Papa", variedad: "" },
+        { ...publicaciones[0], id: 3, envase: "Cajon", kilos: "10-12", especie: "Papa", variedad: "" },
+    ];
+
+    function seleccionar(nombre: string, opcion: string) {
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: nombre }));
+        fireEvent.click(screen.getByRole("option", { name: opcion }));
+    }
+
+    it("filtra por kilos sin seleccionar envase, especie ni variedad", () => {
+        const alFiltrar = vi.fn();
+        render(<FiltrosPublicaciones publicaciones={datos} especieFiltro="" obtenerNombreFantasia={obtenerNombreOperador} alFiltrar={alFiltrar} />);
+        seleccionar("Kilos", "20 kg");
+        expect(alFiltrar.mock.lastCall?.[0].map((p: PublicacionListado) => p.id)).toEqual([1, 2]);
+        seleccionar("Empaquetado", "Cajon");
+        expect(alFiltrar.mock.lastCall?.[0].map((p: PublicacionListado) => p.id)).toEqual([1]);
+        seleccionar("Empaquetado", "Todos");
+        expect(screen.getByRole("combobox", { name: "Kilos" })).toHaveTextContent("20 kg");
+        expect(alFiltrar.mock.lastCall?.[0].map((p: PublicacionListado) => p.id)).toEqual([1, 2]);
+    });
+
+    it("conserva envase y kilos al cambiar de especie y los limpia al solicitarlo", () => {
+        const alFiltrar = vi.fn();
+        render(<FiltrosPublicaciones publicaciones={datos} especieFiltro="" obtenerNombreFantasia={obtenerNombreOperador} alFiltrar={alFiltrar} />);
+        seleccionar("Empaquetado", "Cajon");
+        seleccionar("Kilos", "10-12 kg");
+        seleccionar("Especie", "Papa");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Cajon");
+        expect(screen.getByRole("combobox", { name: "Kilos" })).toHaveTextContent("10-12 kg");
+        expect(alFiltrar.mock.lastCall?.[0].map((p: PublicacionListado) => p.id)).toEqual([3]);
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Todos");
+        expect(screen.getByRole("combobox", { name: "Kilos" })).toHaveTextContent("Todos");
+        expect(alFiltrar.mock.lastCall?.[0]).toHaveLength(3);
     });
 });

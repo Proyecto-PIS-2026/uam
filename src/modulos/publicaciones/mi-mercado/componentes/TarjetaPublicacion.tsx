@@ -1,5 +1,6 @@
 "use client";
 
+import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-publicacion";
 import { useRef, useState } from "react";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import AddIcon from "@mui/icons-material/Add";
@@ -174,7 +175,7 @@ export default function TarjetaPublicacion({
 
     const variedad = pub.variedad?.nombreVariedad;
     const especie = pub.especie.nombreEspecie;
-    const presentacion = pub.presentacion?.nombrePresentacion;
+    const empaquetado = formatearEmpaquetado(pub.envase?.nombreEnvase, pub.kilos?.valor);
     const categoria = pub.categoria?.nombreCategoria;
     const calibre = pub.calibre?.nombreCalibre;
     const tieneVariedad = variedad && variedad.trim() !== "" && variedad.trim() !== "-";
@@ -202,7 +203,7 @@ export default function TarjetaPublicacion({
                             {" · "}
                             Cat. {categoria || "-"}
                             {" · "}
-                            {presentacion || "-"}
+                            {empaquetado || "-"}
                         </div>
                     </div>
                 </button>

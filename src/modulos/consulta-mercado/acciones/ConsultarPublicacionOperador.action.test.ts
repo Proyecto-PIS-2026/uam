@@ -115,7 +115,7 @@ describe("obtenerPublicaciones de operadores", () => {
             busqueda: "tomate",
             especie: "Tomate",
             variedad: "Perita",
-            presentacion: "Cajón",
+            envase: "Cajón", kilos: "",
             categoria: "I",
             calibre: "M",
             nave: "A",

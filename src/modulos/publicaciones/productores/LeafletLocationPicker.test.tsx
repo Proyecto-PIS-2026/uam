@@ -69,6 +69,21 @@ describe("LeafletLocationPicker", () => {
         expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
     });
 
+    it("habilita el nombre cuando termina de cargar el mapa y conserva la edición al confirmar", async () => {
+        render(<LeafletLocationPicker abierto modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
+        const nombre = screen.getByLabelText(/^Nombre del punto de retiro/);
+        const guardar = screen.getByRole("button", { name: "Guardar cambios" });
+        expect(nombre).toBeDisabled();
+        expect(guardar).toBeDisabled();
+        await waitFor(() => expect(nombre).toBeEnabled());
+        fireEvent.change(nombre, { target: { value: "Quinta actualizada" } });
+        expect(nombre).toHaveValue("Quinta actualizada");
+        expect(guardar).toBeEnabled();
+        fireEvent.click(guardar);
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ ...ubicacion, nombreLugar: "Quinta actualizada" });
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
     it("permite cambiar solamente el nombre sin volver a buscar el punto y lo recorta al confirmar", async () => {
         await abrirMapa(ubicacion);
         fireEvent.change(screen.getByLabelText(/^Nombre del punto de retiro/), { target: { value: " Entrada de la quinta " } });

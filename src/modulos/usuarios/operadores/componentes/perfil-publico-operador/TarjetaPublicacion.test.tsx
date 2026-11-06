@@ -24,7 +24,7 @@ const publicacion: PublicacionPerfil = {
     fecha: "2026-10-03T15:00:00.000Z",
     especie: "Tomate",
     variedad: "Perita",
-    presentacion: "Cajón",
+    envase: "Cajón", kilos: "",
     categoria: "Extra",
     calibre: "A",
     pais: "URUGUAY",
