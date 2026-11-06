@@ -565,6 +565,31 @@ async function crearOperadores(archivos: Map<string, string>) {
   });
   await prisma.orm.public.Administrador.create({ usuarioId: usuarioAdmin.id, email: "admin@uam.com.uy" });
 
+  const administradoresEquipo = [
+    "victoria",
+    "camila",
+    "lucia",
+    "martin_anido",
+    "luciano",
+    "mauricio",
+    "santiago",
+    "matias",
+    "paula",
+    "diego",
+    "maximo",
+    "juan",
+    "martin_bula",
+    "alexis",
+    "ignacio",
+    "valentin",
+  ];
+  const passwordHashEquipo = "$argon2id$v=19$m=65536,p=4,t=3$Rh1ZJyJaZEXoelNDSVFYGA$dNUPJ66lOOG79ojT1uad8gJOIDw5NZZNET6tYRQlNns";
+
+  for (const username of administradoresEquipo) {
+    const usuario = await prisma.orm.public.Usuario.create({username, passwordHash: passwordHashEquipo, rol: "ADMINISTRADOR", twoFactorEnabled: false});
+    await prisma.orm.public.Administrador.create({usuarioId: usuario.id, email: `${username}@uam.com.uy`});
+  }
+
   for (const datos of productores) {
     const usuario = await prisma.orm.public.Usuario.create({
       username: datos.username,
