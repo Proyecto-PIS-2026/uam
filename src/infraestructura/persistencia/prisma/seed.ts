@@ -858,12 +858,12 @@ async function main() {
       ? null
       : oferta.price.toFixed(2) as unknown as PrecioPublicacion;
     let fechaVigencia: Temporal.Instant | null = null;
-    if (indice % 4 === 0) {
-      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 15 * 86_400_000);
-    } else if (indice % 4 === 1) {
-      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 2 * 86_400_000);
-    } else if (indice % 4 === 2) {
+    if (!oferta.available) {
       fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() - 3 * 86_400_000);
+    } else if (indice % 3 === 0) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 15 * 86_400_000);
+    } else if (indice % 3 === 1) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 2 * 86_400_000);
     }
 
     const publicacion = await prisma.orm.public.Publicacion.create({
