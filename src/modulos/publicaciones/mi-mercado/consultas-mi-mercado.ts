@@ -21,6 +21,7 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
                     "fotoEliminadaPorVencimientoEn",
                     "precio",
                     "cantidadUnidades",
+                    "comentario",
                     "fecha",
                     "version",
                     "publicacionActiva",

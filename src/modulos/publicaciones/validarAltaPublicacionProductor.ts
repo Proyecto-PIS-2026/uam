@@ -2,6 +2,7 @@ import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublica
 import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
 import { validarUbicacionesProductor, type UbicacionPublicacionProductor } from "./productores/ubicaciones-productor";
 import { normalizarDepartamento } from "@/compartido/departamentos-uruguay";
+import { validarComentario } from "./validarComentario";
 
 export type DatosAltaPublicacionProductor = SeleccionPublicacion & {
     productorId: number;
@@ -13,6 +14,7 @@ export type DatosAltaPublicacionProductor = SeleccionPublicacion & {
     disponibilidad: boolean;
     precio?: string | null;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     fotografia?: string;
 };
 
@@ -73,9 +75,12 @@ export function validarAltaPublicacionProductor(valor: unknown): ResultadoValida
         (typeof datos.cantidadUnidades !== "number" || !Number.isSafeInteger(datos.cantidadUnidades) || datos.cantidadUnidades < 0 || datos.cantidadUnidades > 2147483647)) {
         errores.push("La cantidad de unidades debe ser un número entero entre 0 y 2147483647.");
     }
+    const resultadoComentario = validarComentario(datos.comentario);
+    if (!resultadoComentario.esValido) errores.push(resultadoComentario.error);
     if (errores.length > 0) return { esValido: false, errores };
     if (!seleccion.esValido) return seleccion;
-    return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true,
+        return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true,
+        comentario: resultadoComentario.esValido ? resultadoComentario.comentario : null,
         ...(hayUbicacion ? { departamento: normalizarDepartamento(datos.departamento) } : {}),
         ...(ubicaciones?.esValido ? { ubicaciones: ubicaciones.ubicaciones } : {}) } as DatosAltaPublicacionProductor };
 }

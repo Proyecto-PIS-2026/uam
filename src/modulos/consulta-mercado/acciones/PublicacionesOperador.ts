@@ -14,6 +14,7 @@ export type PublicacionListado = {
     envase: string;
     kilos: string;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -116,7 +117,7 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
         SELECT jsonb_build_object(
             'publicaciones', coalesce((SELECT jsonb_agg(jsonb_build_object(
                 'tipoPublicacion', 'OPERADOR', 'id', ordenadas.id, 'precio', ordenadas.precio, 'fecha', ordenadas.fecha, 'foto', p.foto,
-                'cantidadUnidades', ordenadas."cantidadUnidades", 'especie', ordenadas.especie, 'variedad', ordenadas.variedad,
+                'cantidadUnidades', ordenadas."cantidadUnidades", 'comentario', p.comentario, 'especie', ordenadas.especie, 'variedad', ordenadas.variedad,
                 'envase', ordenadas.envase, 'kilos', ordenadas.kilos, 'categoria', ordenadas.categoria, 'calibre', ordenadas.calibre,
                 'codigoCalibre', ordenadas."codigoCalibre", 'pais', ordenadas.pais,
                 'operador', jsonb_build_object('id', ordenadas."operadorId", 'nombreFantasia', ordenadas."operadorNombreFantasia", 'whatsApp', ordenadas."operadorWhatsApp")

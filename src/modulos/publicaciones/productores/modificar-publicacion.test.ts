@@ -404,4 +404,28 @@ describe("edición de publicaciones de productores", () => {
         expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: fotoNueva }));
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
     });
+
+    it("guarda el comentario sin los espacios de los costados", async () => {
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, comentario: "  Cosecha de esta semana  " });
+
+        expect(mocks.publicacion.update.mock.calls[0][0]).toEqual(expect.objectContaining({ comentario: "Cosecha de esta semana" }));
+    });
+
+    it("borra el comentario cuando llega vacío", async () => {
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, comentario: "" });
+
+        expect(mocks.publicacion.update.mock.calls[0][0]).toEqual(expect.objectContaining({ comentario: null }));
+    });
+
+    it("no modifica el comentario guardado si no se envía", async () => {
+        await modificarPublicacionProductor(sesion, 12, cambios);
+
+        expect(mocks.publicacion.update.mock.calls[0][0]).not.toHaveProperty("comentario");
+    });
+
+    it("rechaza un comentario de más de 500 caracteres sin guardar", async () => {
+        await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, comentario: "a".repeat(501) }))
+            .rejects.toThrow("El comentario no puede superar los 500 caracteres.");
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+    });
 });
