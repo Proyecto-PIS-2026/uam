@@ -31,7 +31,6 @@ function extraerLicencia(comentario: string | null | undefined) {
 export default function PerfilPropioOperador({ perfil }: { perfil: PerfilPropioOperador }) {
     const [editando, setEditando] = useState(false);
     const [fotoPerfilFallida, setFotoPerfilFallida] = useState(false);
-    const inicial = perfil.nombre.trim()[0]?.toUpperCase() ?? "?";
     const licencia = extraerLicencia(perfil.comentario);
     const fechasLicencia = licencia.inicio && licencia.fin
         ? `${formatearFecha(licencia.inicio)} - ${formatearFecha(licencia.fin)}`
