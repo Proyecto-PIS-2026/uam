@@ -40,7 +40,7 @@ describe("PerfilPropioOperador", () => {
         expect(screen.getByText("WhatsApp: +59899123456")).toBeInTheDocument();
         expect(screen.getByText("Vence: 31/03/2029")).toBeInTheDocument();
         expect(screen.getByText("Sin fecha de fin")).toBeInTheDocument();
-        expect(screen.getByText("05/11/2999 - 12/11/2999")).toBeInTheDocument();
+        expect(screen.getByText("Fecha: 05/11/2999 - 12/11/2999")).toBeInTheDocument();
         expect(screen.getByText("Consultar disponibilidad.")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Cambiar contraseña" })).toHaveAttribute("href", "/mi-perfil/cambiar-contrasena");
     });

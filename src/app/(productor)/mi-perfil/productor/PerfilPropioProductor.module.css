@@ -88,7 +88,7 @@
 
 .usuario {
     margin: 0;
-    color: var(--color-subtitulo-pagina);
+    color: var(--color-surface);
     font-size: var(--tamano-texto-pequeño);
     line-height: var(--interlineado-texto);
     text-overflow: ellipsis;
@@ -98,7 +98,10 @@
 .descripcion,
 .contacto {
     margin: var(--espacio-textos) 0 0;
-    color: var(--color-subtitulo-pagina);
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-inline);
+    color: var(--color-surface);
     font-size: var(--tamano-texto-pequeño);
     line-height: var(--interlineado-texto);
 }
@@ -147,15 +150,16 @@
     background: var(--color-secondary-soft);
 }
 
-.contenido {
+.acciones {
     display: flex;
     flex-direction: column;
     gap: var(--espacio-controles);
-    padding: var(--padding-panel);
+    margin-top: var(--espacio-secciones);
 }
 
 .cambiarContrasena {
-    width: 100%;
+    width: fit-content;
+    align-self: flex-end;
     padding: 0.3rem;
     border: 1px solid var(--color-secondary);
     background: var(--color-secondary);

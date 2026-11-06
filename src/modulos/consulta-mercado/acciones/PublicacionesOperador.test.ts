@@ -35,6 +35,7 @@ describe("consultarPublicaciones", () => {
         expect(plan.texto).toContain('p."publicacionActiva" = true');
         expect(plan.texto).toContain('p."tipoPublicacion" = \'OPERADOR\'');
         expect(plan.texto).toContain('p."publicacionDisponible" = true');
+        expect(plan.texto).toContain('o."enLicencia" = false');
         expect(plan.texto).toContain("America/Montevideo");
         expect(plan.texto).toContain('FROM "publicacionOperador"');
         expect(plan.texto).not.toContain('FROM "publicacionProductor"');
@@ -124,6 +125,7 @@ describe("normalizarFiltros", () => {
 
         expect(plan.texto).toContain('JOIN usuario u ON u.id = o."usuarioId" AND u.habilitado = true');
         expect(plan.texto).toContain('JOIN operador o ON o.id = po."operadorId"');
+        expect(plan.texto).toContain('o."enLicencia" = false');
         expect(plan.texto).toContain("FROM visibles");
     });
 

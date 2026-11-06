@@ -172,7 +172,7 @@ describe("iniciarSesion", () => {
 
     it("devuelve un error cuando el usuario no tiene un contrato vigente", async () => {
         funcionesSimuladas.autenticarUsuario.mockResolvedValue({
-            error: "CONTRATO_NO_VIGENTE",
+            error: "SIN_CONTRATO_VIGENTE",
         });
 
         expect(await iniciarSesion({}, crearFormulario())).toEqual({
@@ -180,6 +180,19 @@ describe("iniciarSesion", () => {
         });
 
         expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+    });
+
+    it("informa que la cuenta está deshabilitada sin iniciar sesión ni segundo factor", async () => {
+        funcionesSimuladas.autenticarUsuario.mockResolvedValue({ error: "CUENTA_DESHABILITADA" });
+
+        expect(await iniciarSesion({}, crearFormulario())).toEqual({
+            error: "La cuenta está deshabilitada. Comunicate con un administrador.",
+        });
+        expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.iniciarSegundoFactor).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.guardarCookieSegundoFactor).not.toHaveBeenCalled();
         expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
         expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });

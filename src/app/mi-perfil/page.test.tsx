@@ -42,13 +42,6 @@ describe("BP-11.1: página de consulta de mi perfil", () => {
         expect(screen.getByRole("link", { name: "Cambiar contraseña" })).toHaveAttribute("href", "/mi-perfil/cambiar-contrasena");
     });
 
-    it("CA-7: muestra el botón de configurar 2FA sin habilitar una acción", async () => {
-        render(await Pagina());
-        const boton = screen.getByRole("button", { name: "Configurar segundo factor" });
-        expect(boton).toBeVisible();
-        expect(boton).toBeDisabled();
-    });
-
     it("no ofrece el cambio de contraseña si no está habilitado", async () => {
         m.habilitado.mockReturnValue(false);
         render(await Pagina());

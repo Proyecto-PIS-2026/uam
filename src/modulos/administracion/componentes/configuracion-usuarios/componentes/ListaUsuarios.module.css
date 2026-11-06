@@ -153,6 +153,10 @@
     color: var(--color-secondary) !important;
 }
 
+.botonHabilitacion:disabled {
+    opacity: 0.4;
+}
+
 .botonEliminar {
     color: var(--color-danger) !important;
 }

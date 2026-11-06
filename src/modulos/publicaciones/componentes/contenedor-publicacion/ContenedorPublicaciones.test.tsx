@@ -90,16 +90,23 @@ describe("ContenedorPublicaciones remoto", () => {
         expect(screen.queryByRole("navigation", { name: "Páginas de publicaciones" })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Anterior" })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Siguiente" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(cargar).not.toHaveBeenCalled();
     });
 
     it("consulta los filtros y muestra todos los resultados coincidentes", async () => {
-        cargar.mockResolvedValue(resultado(200, 36));
+        let resolver!: (dato: ResultadoPublicaciones) => void;
+        cargar.mockImplementationOnce(() => new Promise<ResultadoPublicaciones>((resolve) => { resolver = resolve }));
         render(<ContenedorPublicaciones resultado={resultado(100, 40)} />);
         fireEvent.click(screen.getByText("Filtrar limón"));
+        expect(screen.getByRole("status")).toHaveTextContent("Cargando publicaciones...");
+        expect(screen.getByTestId("listado").children).toHaveLength(40);
         await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc" }));
+        expect(screen.getByRole("status")).toBeVisible();
+        await act(async () => { resolver(resultado(200, 36)) });
         await waitFor(() => expect(screen.getByTestId("listado").children).toHaveLength(36));
         expect(screen.getByTestId("listado")).toHaveTextContent("200");
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
     it("agrupa las notificaciones de tiempo real en una sola recarga", async () => {
@@ -159,9 +166,13 @@ describe("ContenedorPublicaciones remoto", () => {
         render(<ContenedorPublicaciones resultado={resultado()} />);
         act(() => { void escuchar.mock.calls.at(-1)![0]() });
         expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron actualizar");
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(screen.getByTestId("listado")).toHaveTextContent("100");
         fireEvent.click(screen.getByText("Reintentar"));
+        expect(screen.getByRole("status")).toHaveTextContent("Cargando publicaciones...");
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("300"));
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
     it("cancela la recarga pendiente al desmontarse", async () => {
@@ -224,6 +235,8 @@ describe("ContenedorPublicaciones remoto", () => {
         fireEvent.click(screen.getByText("Filtrar nave A"));
         await act(async () => { resolverAntigua(resultado(99)) });
         expect(confirmado).not.toHaveBeenCalled();
+        expect(screen.getByRole("status")).toHaveTextContent("Cargando publicaciones...");
+        expect(screen.getByTestId("listado")).toHaveTextContent("100");
         await waitFor(() => expect(cargar).toHaveBeenCalledTimes(2));
         expect(cargar).toHaveBeenLastCalledWith({ especie: "Limón", nave: "A", orden: "precioAsc" });
 
@@ -234,6 +247,7 @@ describe("ContenedorPublicaciones remoto", () => {
 
         expect(confirmado).toHaveBeenCalledExactlyOnceWith(true);
         expect(screen.getByTestId("listado")).toHaveTextContent("600");
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
     it.each(["alfabeticoDesc", "fechaDesc"] as const)("entrega el orden configurado %s a los filtros sin consultar nuevamente al montar", (ordenInicial) => {

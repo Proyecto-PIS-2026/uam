@@ -175,7 +175,9 @@ test("BP-04.4 CA-2 CP-03: funcionalidades permitidas al Operador", async ({ page
   await expect(page.getByRole("dialog", { name: "Nueva publicación" })).toBeVisible();
   await page.goto("/mi-perfil/cambiar-contrasena");
   await expect(page).toHaveURL((url) => url.pathname === "/mi-perfil/cambiar-contrasena");
-  await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
+  const contrasenaActual = page.getByRole("form", { name: "Cambio de contraseña" }).getByLabel("Contraseña", { exact: true });
+  await expect(contrasenaActual).toBeVisible();
+  await expect(contrasenaActual).toHaveAttribute("autocomplete", "current-password");
   await consultarHistoricos(page);
 }));
 

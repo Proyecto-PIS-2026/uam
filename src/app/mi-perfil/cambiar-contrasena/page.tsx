@@ -15,7 +15,7 @@ export default async function PaginaCambioContrasena() {
     const volver = sesion.rol === "PRODUCTOR" ? "/mi-perfil/productor" : "/mi-perfil";
     return <main className={styles.pagina}><div className={styles.contenedor}>
         <BotonVolver href={volver} className={styles.volver}>Volver a mi perfil</BotonVolver>
-        <header className={styles.encabezado}><h1 className={styles.titulo}>Cambiar contraseña</h1></header>
+        <header className={styles.encabezado}><h1 className="titulo-pagina-plano">Cambiar contraseña</h1></header>
         {habilitarCambioContrasena ? <FormularioCambioContrasena volver={volver} /> : <p role="status">El cambio de contraseña no está habilitado por el administrador.</p>}
     </div></main>;
 }

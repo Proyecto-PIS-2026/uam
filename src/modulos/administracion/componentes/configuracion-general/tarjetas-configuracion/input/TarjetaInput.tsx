@@ -42,7 +42,11 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
             notificar("El importe debe ser un número entero positivo.", "error");
             return;
         }
-        if (tipo === "url" && valor !== "") {
+        if (tipo === "url") {
+            if (!valor.trim()) {
+                notificar("La URL de la Lista Inteligente no puede estar vacía.", "error");
+                return;
+            }
             let url: URL;
             try {
                 url = new URL(valor);

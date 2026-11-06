@@ -9,7 +9,7 @@ const CONTACTO_INICIAL = "90000000";
 // La tarjeta del perfil se identifica por el nombre del productor (h1).
 const datosPerfil = (page: Page) => page.getByRole("region", { name: /^Productor de prueba \d+$/ });
 const lineaContacto = (page: Page) => datosPerfil(page).locator("p").filter({ hasText: /^Whatsapp:/ });
-const campoContacto = (page: Page) => page.getByLabel("Número de contacto (opcional)");
+const campoContacto = (page: Page) => page.getByRole("textbox", { name: /WhatsApp/ });
 
 async function abrirModificacion(page: Page) {
   await page.goto(RUTA_PERFIL);
@@ -26,8 +26,7 @@ async function guardar(page: Page) {
 
 async function guardarContacto(page: Page, numero: string) {
   await abrirModificacion(page);
-  if (numero) await campoContacto(page).fill(numero);
-  else await campoContacto(page).clear();
+  await campoContacto(page).fill(numero);
   await guardar(page);
   await page.reload();
 }
@@ -60,13 +59,20 @@ test.describe("BP-11.3 - Modificación de mi perfil como Productor", () => {
     await expect(campoContacto(page)).toHaveValue("99123456");
   });
 
-  test("CP-04: eliminar el número de contacto deja el perfil sin contacto", async ({ page }) => {
-    await guardarContacto(page, "");
-
-    await expect(lineaContacto(page)).toContainText("Sin número de contacto");
-
+  test("CP-04: el contacto obligatorio no se puede borrar y conserva el número guardado", async ({ page }) => {
     await abrirModificacion(page);
-    await expect(campoContacto(page)).toHaveValue("");
+    await expect(campoContacto(page)).toHaveAttribute("required", "");
+    await campoContacto(page).clear();
+    await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+
+    await expect(page.getByRole("alert").filter({ hasText: "El teléfono no es válido." })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_EDITAR}$`));
+
+    await page.goto(RUTA_PERFIL);
+    await page.reload();
+    await expect(lineaContacto(page)).toContainText(`+598 ${CONTACTO_INICIAL}`);
+    await abrirModificacion(page);
+    await expect(campoContacto(page)).toHaveValue(CONTACTO_INICIAL);
   });
 
   test("CP-05: un número con formato inválido se rechaza y no se guarda", async ({ page }) => {
@@ -83,12 +89,16 @@ test.describe("BP-11.3 - Modificación de mi perfil como Productor", () => {
     await expect(lineaContacto(page)).toContainText(`+598 ${CONTACTO_INICIAL}`);
   });
 
-  test("CP-06: cargar un número cuando no había contacto lo guarda", async ({ page }) => {
-    // Precondición: el productor queda sin contacto.
-    await guardarContacto(page, "");
-    await expect(lineaContacto(page)).toContainText("Sin número de contacto");
+  test("CP-06: permite corregir el contacto vacío y guardar un número válido", async ({ page }) => {
+    await abrirModificacion(page);
+    await campoContacto(page).clear();
+    await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "El teléfono no es válido." })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${RUTA_EDITAR}$`));
 
-    await guardarContacto(page, "98765432");
+    await campoContacto(page).fill("98765432");
+    await guardar(page);
+    await page.reload();
 
     await expect(lineaContacto(page)).toContainText("+598 98765432");
     await abrirModificacion(page);

@@ -84,7 +84,7 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
     await expect(perfil.getByRole("img", { name: `Foto de ${operador.nombre}`, exact: true })).toBeVisible();
 
     // CA-6: período de licencia y mensaje de recomendación.
-    await expect(perfil.getByText("01/12/2026 - 15/12/2026", { exact: true })).toBeVisible();
+    await expect(perfil.getByText("Fecha: 01/12/2026 - 15/12/2026", { exact: true })).toBeVisible();
     await expect(perfil.getByText("Compren en el puesto de al lado.", { exact: true })).toBeVisible();
 
     // CA-7: la contraseña no aparece.
@@ -95,9 +95,11 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
     await expect(perfil.getByRole("button", { name: "Editar", exact: true })).toBeVisible();
 
     // CA-9: cambio de contraseña pidiendo la actual.
-    await perfil.getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
+    await page.getByRole("main").getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
     await expect(page).toHaveURL("/mi-perfil/cambiar-contrasena");
-    await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
+    const contrasenaActual = page.getByRole("form", { name: "Cambio de contraseña" }).getByLabel("Contraseña", { exact: true });
+    await expect(contrasenaActual).toBeVisible();
+    await expect(contrasenaActual).toHaveAttribute("autocomplete", "current-password");
 
     // CA-1: el perfil de otro operador no es accesible.
     const otro = await db.orm.public.Operador.select("nombreFantasia").where({ enLicencia: false }).first();

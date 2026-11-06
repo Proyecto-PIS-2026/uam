@@ -146,12 +146,20 @@ describe("configuración general por API", () => {
         expect(actualizarMock).not.toHaveBeenCalled();
     });
 
-    it.each(["https://uam.com.uy/lista.pdf", "http://uam.com.uy/lista.pdf", ""])("permite guardar la URL %j", async (valor) => {
+    it.each(["https://uam.com.uy/lista.pdf", "http://uam.com.uy/lista.pdf"])("permite guardar la URL %j", async (valor) => {
         sesionMock.mockResolvedValue({ usuarioId: 5, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
         const respuesta = await PATCH(solicitud(valor), { params: Promise.resolve({ nombre: "url_lista_inteligente" }) });
         expect(respuesta.status).toBe(200);
         expect(actualizarMock).toHaveBeenCalledWith("url_lista_inteligente", valor);
         expect(await respuesta.json()).toMatchObject({ nombre: "url_lista_inteligente", valor });
+    });
+
+    it.each(["", "   ", "\t\r\n"])("rechaza una URL vacía %j sin reemplazar la configuración guardada", async (valor) => {
+        sesionMock.mockResolvedValue({ usuarioId: 5, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
+        const respuesta = await PATCH(solicitud(valor), { params: Promise.resolve({ nombre: "url_lista_inteligente" }) });
+        expect(respuesta.status).toBe(400);
+        expect(await respuesta.json()).toEqual({ errores: ["La URL de la Lista Inteligente no puede estar vacía."] });
+        expect(actualizarMock).not.toHaveBeenCalled();
     });
 
     it.each(["no-es-una-url", "ftp://uam.com.uy/lista.pdf", "javascript:alert(1)", " https://uam.com.uy", "https://uam.com.uy "])("rechaza la URL inválida %j", async (valor) => {

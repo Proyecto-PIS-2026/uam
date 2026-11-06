@@ -81,6 +81,25 @@
     gap: var(--espacio-controles);
 }
 
+.aviso {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    margin: 0;
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radio-control);
+    background: var(--color-warning-soft);
+    color: var(--color-muted);
+    font-size: .8rem;
+    line-height: 1.1;
+}
+
+.iconoAviso {
+    flex-shrink: 0;
+    color: var(--color-warning);
+    font-size: .9rem;
+}
+
 .licencia {
     display: flex;
     box-sizing: border-box;

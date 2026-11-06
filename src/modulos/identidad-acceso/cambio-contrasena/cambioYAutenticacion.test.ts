@@ -11,7 +11,7 @@ vi.mock("@/compartido/vigenciaContrato", () => ({ operadorTieneContratoVigente: 
 vi.mock("../autenticacion/consultasAutenticacion", () => ({
     obtenerUsuarioAdministradorPorCorreo: async () => null,
     obtenerUsuarioOperadorPorNombre: async () => null,
-    obtenerUsuarioProductorPorNombre: async () => ({ id: 7, rol: "PRODUCTOR", passwordHash: m.hash }),
+    obtenerUsuarioProductorPorNombre: async () => ({ id: 7, rol: "PRODUCTOR", passwordHash: m.hash, habilitado: true }),
 }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: { orm: { public: { Usuario: { where: m.where } } } } }));
 

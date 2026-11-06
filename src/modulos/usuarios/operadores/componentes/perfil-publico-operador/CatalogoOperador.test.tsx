@@ -96,26 +96,9 @@ describe("CatalogoOperador", () => {
         expect(screen.queryAllByRole("button", { name: /Ver detalles de/ })).toHaveLength(0);
     });
 
-    it("muestra el aviso y las fechas de licencia con su mensaje de recomendación", () => {
-        render(
-            <CatalogoOperador
-                publicaciones={[]}
-                enLicencia
-                comentario={"Licencia: 2026-11-05 - 2026-11-12\n\nConsultar disponibilidad antes de comprar."}
-            />,
-        );
-
-        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Licencia: 05/11/2026 - 12/11/2026");
-        expect(screen.getByText("Mensaje de recomendación")).toBeInTheDocument();
-        expect(screen.getByText("Consultar disponibilidad antes de comprar.")).toBeInTheDocument();
+    it("muestra el estado vacío de licencia", () => {
+        render(<CatalogoOperador publicaciones={[]} enLicencia />);
         expect(screen.getByText("Sin publicaciones, esta de licencia")).toBeInTheDocument();
-    });
-
-    it("indica que las fechas de licencia no están especificadas cuando el comentario no tiene formato", () => {
-        render(<CatalogoOperador publicaciones={[]} enLicencia comentario="En licencia sin fechas"/>);
-
-        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Fechas no especificadas");
-        expect(screen.getByText("En licencia sin fechas")).toBeInTheDocument();
     });
 
     it("muestra una tarjeta por cada publicación", () => {

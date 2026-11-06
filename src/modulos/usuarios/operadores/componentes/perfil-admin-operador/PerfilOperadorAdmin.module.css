@@ -77,6 +77,9 @@
 }
 
 .tarjetaInformacion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-controles);
     width: 100%;
     padding: var(--padding-panel);
     background-color: var(--color-surface);
@@ -89,17 +92,21 @@
 
 .comentario {
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
+    gap: var(--espacio-inline);
     margin: 0;
     padding: var(--padding-panel);
     border: 1px solid color-mix(in srgb, var(--color-secondary) 35%, var(--color-border));
     border-radius: var(--radio-control);
-    background: var(--color-surface);
-    white-space: pre-wrap;
+    background: var(--color-secondary-soft);
+    color: var(--color-foreground);
+    line-height: var(--interlineado-texto);
 }
 
 .comentario p {
     margin: 0;
+    white-space: pre-wrap;
 }
 
 .licenciaActiva,
@@ -122,7 +129,10 @@
 }
 
 .subtitulo {
-    margin: var(--espacio-secciones) 0 var(--espacio-controles);
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-inline);
+    margin: 0 0 0;
     color: var(--color-secondary);
     font-size: var(--tamano-titulo-panel);
     font-weight: 700;
@@ -207,15 +217,14 @@
     display: inline-flex;
     position: relative;
     z-index: 1;
-    grid-column: 1 / -1;
     justify-self: end;
-    min-height: 3rem;
+    min-height: var(--alto-control);
     align-items: center;
     justify-content: center;
     gap: var(--espacio-inline);
-    padding: 0.625rem var(--padding-panel);
+    padding: var(--padding-control);
     border: 1px solid var(--color-secondary);
-    border-radius: var(--radio-panel);
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     color: var(--color-secondary);
     font: inherit;
@@ -281,4 +290,42 @@
         width: auto;
         height: var(--alto-control) !important;
     }
+}
+
+.accionesEncabezado {
+    display: grid;
+    position: relative;
+    z-index: 1;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--espacio-controles);
+}
+
+.contacto {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espacio-inline);
+    margin: 0;
+    color: var(--color-surface);
+    font-size: var(--tamano-texto-secundario);
+    overflow-wrap: anywhere;
+}
+
+.contacto svg {
+    flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+    .encabezado {
+        padding: var(--padding-panel);
+    }
+}
+
+.fechasLicencia {
+    color: var(--color-secondary-hover);
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
 }

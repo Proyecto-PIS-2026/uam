@@ -48,10 +48,6 @@ export default async function PaginaMiPerfil() {
                             {habilitarCambioContrasena && (
                                 <Link href="/mi-perfil/cambiar-contrasena" className="boton-secundario">Cambiar contraseña</Link>
                             )}
-                            {/* CA-7: botón visible; la configuración propia de 2FA no está habilitada aquí. */}
-                            <button type="button" className="boton-secundario" disabled>
-                                Configurar segundo factor
-                            </button>
                         </div>
                     </section>
                 )}

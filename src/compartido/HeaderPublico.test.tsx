@@ -87,6 +87,23 @@ describe("HeaderPublico", () => {
         },
     );
 
+    it.each([
+        { rol: "OPERADOR", ruta: "/mi-perfil" },
+        { rol: "PRODUCTOR", ruta: "/mi-perfil/productor" },
+    ] as const)("muestra la foto del $rol en los menús de escritorio y móvil", ({ rol, ruta }) => {
+        const fotoPerfil = "/api/imagenes/foto-perfil";
+        render(<HeaderPublico sesion={{ usuarioId: 10, rol, expiraEn: 2000000000 }} fotoPerfil={fotoPerfil} />);
+
+        expect(within(screen.getByRole("button", { name: "Abrir menú de usuario" }))
+            .getByRole("img", { name: "Foto de perfil" })).toHaveAttribute("data-src", fotoPerfil);
+
+        fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
+        const enlacePerfil = within(screen.getByRole("navigation", { name: "Navegación móvil" }))
+            .getByRole("link", { name: "Mi perfil" });
+        expect(enlacePerfil).toHaveAttribute("href", ruta);
+        expect(within(enlacePerfil).getByRole("img", { name: "" })).toHaveAttribute("data-src", fotoPerfil);
+    });
+
     it("ofrece la ruta real de Administración al administrador en ambos menús", () => {
         render(<HeaderPublico sesion={{ usuarioId: 10, rol: "ADMINISTRADOR", expiraEn: 2000000000 }} />);
         const enlaces = screen.getAllByRole("link", { name: "Administración" });

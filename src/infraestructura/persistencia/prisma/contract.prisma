@@ -37,6 +37,15 @@ model Usuario {
   @@map("usuario")
 }
 
+// Tokens cerrados: la revocación se comparte entre instancias hasta su vencimiento.
+model SesionRevocada {
+  tokenHash String @id
+  expiraEn  Timestamptz(3)
+
+  @@index([expiraEn])
+  @@map("sesionRevocada")
+}
+
 // ADMINISTRADORES
 model Administrador {
   id        Int     @id @default(autoincrement())

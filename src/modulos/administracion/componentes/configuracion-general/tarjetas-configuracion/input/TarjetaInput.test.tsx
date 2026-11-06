@@ -112,6 +112,18 @@ describe("TarjetaInput", () => {
         expect(botonGuardar()).toBeEnabled();
     });
 
+    it.each(["", "   ", "\t"])("no guarda una URL vacía %j y conserva la referencia guardada", (valor) => {
+        const onGuardarValor = vi.fn();
+        const urlGuardada = "https://uam.com.uy/lista.pdf";
+        render(<ComponentePrueba tipo="url" valorInicial={urlGuardada} onGuardarValor={onGuardarValor} />);
+        fireEvent.change(campo(), { target: { value: valor } });
+        fireEvent.click(botonGuardar());
+        expect(onGuardarValor).not.toHaveBeenCalled();
+        expect(mocks.notificar).toHaveBeenCalledWith("La URL de la Lista Inteligente no puede estar vacía.", "error");
+        fireEvent.change(campo(), { target: { value: urlGuardada } });
+        expect(botonGuardar()).toBeDisabled();
+    });
+
     it("guarda el valor editado y notifica el resultado", async () => {
         const onGuardarValor = vi.fn().mockResolvedValue(undefined);
         render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
