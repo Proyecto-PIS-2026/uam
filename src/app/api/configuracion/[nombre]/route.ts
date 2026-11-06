@@ -16,8 +16,8 @@ function validarConfiguracion(nombre: string, valor: string): string | null {
         return "La configuración indicada no es válida.";
     }
     if (nombre === "url_lista_inteligente") {
-        if (valor === "") {
-            return null;
+        if (!valor.trim()) {
+            return "La URL de la Lista Inteligente no puede estar vacía.";
         }
         if (valor !== valor.trim()) {
             return "La URL no puede contener espacios al principio o al final.";

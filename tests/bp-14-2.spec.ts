@@ -231,15 +231,18 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
 
   test("CP-14.2-02: continuar abre el perfil del productor recién creado", async ({ page, usuariosAdministrativos, productorAlta }) => {
     await registrarProductor(page, usuariosAdministrativos.administrador, productorAlta);
+    const perfil = page.getByRole("region", { name: productorAlta.nombre, exact: true });
     await test.step("Continuar a la precarga y comprobar la identidad del productor", async () => {
       await continuarPrecarga(page, productorAlta);
-      await expect(page.getByText("Whatsapp: +59899123456", { exact: true })).toBeVisible();
+      await expect(perfil.getByText("WhatsApp:", { exact: true })).toBeVisible();
+      await expect(perfil.getByText("+59899123456", { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Publicaciones (0)", exact: true })).toBeVisible();
       await expect(page.getByRole("button", { name: "Agregar Producto", exact: true })).toBeVisible();
     });
     await test.step("Recargar y comprobar que el perfil quedó registrado", async () => {
       await page.reload();
       await expect(page.getByRole("heading", { level: 1, name: productorAlta.nombre, exact: true })).toBeVisible();
+      await expect(perfil.getByText("+59899123456", { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Publicaciones (0)", exact: true })).toBeVisible();
     });
   });

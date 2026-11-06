@@ -71,8 +71,8 @@ const clavesDias = new Set<string>([
 
 function validarValor(nombre: string, valor: string): void {
     if (nombre === "url_lista_inteligente") {
-        if (valor === "") {
-            return;
+        if (!valor.trim()) {
+            throw new Error("La URL de la Lista Inteligente no puede estar vacía.");
         }
         if (valor !== valor.trim()) {
             throw new Error("La URL no puede contener espacios al principio o al final.");

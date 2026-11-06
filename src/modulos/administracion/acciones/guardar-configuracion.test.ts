@@ -89,7 +89,6 @@ describe("guardarConfiguraciones", () => {
     });
 
     it.each([
-        "",
         "https://uam.com.uy/lista.pdf",
         "http://uam.com.uy/lista.pdf",
         "https://uam.com.uy/lista.PDF",
@@ -100,6 +99,12 @@ describe("guardarConfiguraciones", () => {
         expect(mocks.exigirAdministrador).toHaveBeenCalledOnce();
         expect(mocks.where).toHaveBeenCalledWith({ nombreConfiguracion: "url_lista_inteligente" });
         expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: valor });
+    });
+
+    it.each(["", "   ", "\t\r\n"])("rechaza una URL vacía %j sin reemplazar la configuración guardada", async (valor) => {
+        await expect(guardarConfiguraciones({ url_lista_inteligente: valor })).rejects.toThrow("La URL de la Lista Inteligente no puede estar vacía.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
     });
 
     it.each([

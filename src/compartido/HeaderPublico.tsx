@@ -468,15 +468,8 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
         </div>
     );
 
-    const menuPerfilMobile = rolUsuario && (esProductor ? (
-        <Link href="/mi-perfil/productor" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
-            <span className={estilos.etiquetaMenuMobile}>
-                <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
-                Mi perfil
-            </span>
-        </Link>
-    ) : (
-        <Link href="/mi-perfil" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
+    const menuPerfilMobile = rolUsuario && (
+        <Link href={esProductor ? "/mi-perfil/productor" : "/mi-perfil"} className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
             <span className={estilos.etiquetaMenuMobile}>
                 <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
                 Mi perfil
@@ -493,7 +486,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 />
             )}
         </Link>
-    ));
+    );
 
     const menuCerrarSesionMobile = rolUsuario && (
         <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>

@@ -104,6 +104,10 @@
       "model": "PublicacionProductor",
       "namespace": "public"
     },
+    "sesionRevocada": {
+      "model": "SesionRevocada",
+      "namespace": "public"
+    },
     "ubicacion": {
       "model": "Ubicacion",
       "namespace": "public"
@@ -2216,6 +2220,40 @@
               "table": "publicacionProductor"
             }
           },
+          "SesionRevocada": {
+            "fields": {
+              "expiraEn": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "expiraEn": {
+                  "column": "expiraEn"
+                },
+                "tokenHash": {
+                  "column": "tokenHash"
+                }
+              },
+              "namespaceId": "public",
+              "table": "sesionRevocada"
+            }
+          },
           "Ubicacion": {
             "fields": {
               "departamento": {
@@ -4308,6 +4346,40 @@
                 }
               ]
             },
+            "sesionRevocada": {
+              "columns": {
+                "expiraEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "tokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "expiraEn"
+                  ],
+                  "name": "sesionRevocada_expiraEn_idx_68039536",
+                  "prefix": "sesionRevocada_expiraEn_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "tokenHash"
+                ]
+              },
+              "uniques": []
+            },
             "ubicacion": {
               "columns": {
                 "departamento": {
@@ -4602,7 +4674,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "8ca6395c9b4912fea56216d23ddb5e1c92416c1a91f2fe1738adf6abc7656ef3"
+    "storageHash": "cf0698ef656932cbdd7397e9ee81f637a75be4f27bfb8e3334c09d18476ea6de"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

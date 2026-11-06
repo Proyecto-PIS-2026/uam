@@ -9,6 +9,7 @@ import type { ResultadoPublicaciones } from "../../../consulta-mercado/acciones/
 import type { FiltrosConsulta } from "../../../consulta-mercado/acciones/filtros-consulta";
 import obtenerPublicaciones from "../../../consulta-mercado/acciones/ConsultarPublicacionOperador.action";
 import ListadoPublicaciones from "../listado-publicaciones/ListadoPublicaciones";
+import IndicadorCargaPublicaciones from "../IndicadorCargaPublicaciones";
 import { useActualizacionesPublicaciones } from "../../tiempo-real/use-actualizaciones-publicaciones";
 import type { OrdenConsulta } from "@/modulos/consulta-mercado/acciones/filtros-consulta";
 import { compararPublicacionesAlfabeticamente } from "../../filtros/FiltrosPublicaciones";
@@ -170,6 +171,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
         }
         ultimoPedido.current++;
         setCargando(true);
+        setError("");
         programarCarga();
     }, [programarCarga]);
 
@@ -183,6 +185,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
     return (
         <div className="secciones-pagina" aria-busy={cargando}>
             <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} navesDisponibles={datos.naves} totalRemoto={datos.total} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
+            {cargando && <IndicadorCargaPublicaciones />}
             {error && <p role="alert">{error} <button type="button" onClick={() => void cargar()}>Reintentar</button></p>}
             <ListadoPublicaciones
                 publicaciones={datos.publicaciones}

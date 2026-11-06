@@ -13,7 +13,7 @@ export type Credenciales = {
 
 export type ResultadoAutenticacion =
     | { usuarioId: number; rol: "ADMINISTRADOR" | "OPERADOR" | "PRODUCTOR" }
-    | { error: "SIN_CONTRATO_VIGENTE" }
+    | { error: "SIN_CONTRATO_VIGENTE" | "CUENTA_DESHABILITADA" }
     | null;
 
 export async function autenticarUsuario(
@@ -38,6 +38,7 @@ export async function autenticarUsuario(
         credenciales.contrasena,
     );
     if (!contrasenaValida) return null;
+    if (!usuario.habilitado) return { error: "CUENTA_DESHABILITADA" };
 
     if (usuario.rol === "OPERADOR" && !(await operadorTieneContratoVigente(usuario.id))) {
         return { error: "SIN_CONTRATO_VIGENTE" };

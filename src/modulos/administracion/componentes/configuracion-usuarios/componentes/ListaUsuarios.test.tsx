@@ -254,13 +254,14 @@ describe("ListaUsuarios", () => {
 
         expect(within(obtenerFila("ana.admin")).getByText("Habilitado")).toBeInTheDocument();
         const botonDeshabilitarPropio = within(obtenerFila("ana.admin")).getByRole("button", { name: "Deshabilitar usuario" });
-        expect(botonDeshabilitarPropio).toBeEnabled();
+        expect(botonDeshabilitarPropio).toBeDisabled();
         expect(within(obtenerFila("beto.operador")).getByText("Deshabilitado")).toBeInTheDocument();
         expect(within(obtenerFila("beto.operador")).getByRole("button", { name: "Habilitar usuario" })).toBeEnabled();
 
         fireEvent.click(botonDeshabilitarPropio);
+        // MUI deja pasar el clic al contenedor cuando el botón está deshabilitado.
+        fireEvent.click(botonDeshabilitarPropio.parentElement!);
 
-        expect(screen.getByRole("alert")).toHaveTextContent("No podés deshabilitarte a vos mismo.");
         expect(screen.queryByTestId("dialog-habilitacion")).not.toBeInTheDocument();
         expect(onCambiarHabilitacion).not.toHaveBeenCalled();
         expect(onSeleccionar).not.toHaveBeenCalled();

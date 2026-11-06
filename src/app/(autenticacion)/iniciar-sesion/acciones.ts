@@ -108,7 +108,9 @@ export async function iniciarSesion(
     }
     if ("error" in usuario) {
         return {
-            error: "No tenés ningún contrato vigente para iniciar sesión. Comunicate con los administradores de la UAM.",
+            error: usuario.error === "CUENTA_DESHABILITADA"
+                ? "La cuenta está deshabilitada. Comunicate con un administrador."
+                : "No tenés ningún contrato vigente para iniciar sesión. Comunicate con los administradores de la UAM.",
         };
     }
 

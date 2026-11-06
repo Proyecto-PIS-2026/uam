@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'8ca6395c9b4912fea56216d23ddb5e1c92416c1a91f2fe1738adf6abc7656ef3'>;
+  StorageHashBase<'cf0698ef656932cbdd7397e9ee81f637a75be4f27bfb8e3334c09d18476ea6de'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -410,6 +410,10 @@ export type FieldOutputTypes = {
       readonly productorId: CodecTypes['pg/int4@1']['output'];
       readonly paisId: CodecTypes['pg/int4@1']['output'] | null;
     };
+    readonly SesionRevocada: {
+      readonly tokenHash: CodecTypes['pg/text@1']['output'];
+      readonly expiraEn: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    };
     readonly Ubicacion: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly nombreUbicacion: CodecTypes['pg/text@1']['output'];
@@ -612,6 +616,10 @@ export type FieldInputTypes = {
       readonly publicacionId: CodecTypes['pg/int4@1']['input'];
       readonly productorId: CodecTypes['pg/int4@1']['input'];
       readonly paisId: CodecTypes['pg/int4@1']['input'] | null;
+    };
+    readonly SesionRevocada: {
+      readonly tokenHash: CodecTypes['pg/text@1']['input'];
+      readonly expiraEn: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
     readonly Ubicacion: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -816,6 +824,10 @@ export type StorageColumnTypes = {
       readonly productorId: CodecTypes['pg/int4@1']['output'];
       readonly publicacionId: CodecTypes['pg/int4@1']['output'];
     };
+    readonly sesionRevocada: {
+      readonly expiraEn: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly tokenHash: CodecTypes['pg/text@1']['output'];
+    };
     readonly ubicacion: {
       readonly departamento: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -1018,6 +1030,10 @@ export type StorageColumnInputTypes = {
       readonly paisId: CodecTypes['pg/int4@1']['input'] | null;
       readonly productorId: CodecTypes['pg/int4@1']['input'];
       readonly publicacionId: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly sesionRevocada: {
+      readonly expiraEn: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly tokenHash: CodecTypes['pg/text@1']['input'];
     };
     readonly ubicacion: {
       readonly departamento: CodecTypes['pg/text@1']['input'] | null;
@@ -2412,6 +2428,32 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly sesionRevocada: {
+              columns: {
+                readonly tokenHash: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly expiraEn: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['tokenHash'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'sesionRevocada_expiraEn_idx_68039536';
+                  readonly prefix: 'sesionRevocada_expiraEn_idx';
+                  readonly columns: readonly ['expiraEn'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [];
+            };
             readonly ubicacion: {
               columns: {
                 readonly id: {
@@ -2653,6 +2695,10 @@ type ContractBase = Omit<
   readonly targetFamily: 'sql';
   readonly roots: {
     readonly usuario: { readonly namespace: 'public' & NamespaceId; readonly model: 'Usuario' };
+    readonly sesionRevocada: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'SesionRevocada';
+    };
     readonly administrador: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Administrador';
@@ -4067,6 +4113,31 @@ type ContractBase = Omit<
                 readonly publicacionId: { readonly column: 'publicacionId' };
                 readonly productorId: { readonly column: 'productorId' };
                 readonly paisId: { readonly column: 'paisId' };
+              };
+            };
+          };
+          readonly SesionRevocada: {
+            readonly fields: {
+              readonly tokenHash: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly expiraEn: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'sesionRevocada';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly tokenHash: { readonly column: 'tokenHash' };
+                readonly expiraEn: { readonly column: 'expiraEn' };
               };
             };
           };
