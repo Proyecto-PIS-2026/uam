@@ -94,7 +94,7 @@ async function continuarPrecarga(page: Page, productor: ProductorAlta) {
 }
 
 async function seleccionar(page: Page, formulario: Locator, campo: string, opcion: string) {
-  await formulario.getByRole("combobox", { name: campo }).click();
+  await formulario.getByRole("combobox", { name: campo, exact: true }).click();
   await page.getByRole("option", { name: opcion, exact: true }).click();
 }
 
@@ -122,12 +122,13 @@ async function completarPrecarga(page: Page, calibre: string, precio: string) {
   await expect(alta).toBeVisible();
   await seleccionar(page, alta, "Especie", "Uchuva");
   await seleccionar(page, alta, "Variedad", "-");
-  await seleccionar(page, alta, "Presentación", "Unidad");
+  await seleccionar(page, alta, "Empaquetado", "Cajon");
+  await seleccionar(page, alta, "Kilos del empaquetado", "20 kg");
   await seleccionar(page, alta, "Categoría", "-");
   await seleccionar(page, alta, "Calibre", calibre);
   await seleccionar(page, alta, "País de origen", "URUGUAY");
   await alta.getByLabel("Precio en pesos").fill(precio);
-  await alta.getByLabel("Cantidad (kg)").fill("25");
+  await alta.getByLabel("Unidades (Cajon)").fill("25");
 
   await alta.getByRole("button", { name: "Agregar punto de retiro" }).click();
   const mapa = page.getByRole("dialog", { name: "Agregar punto de retiro", exact: true });
@@ -434,7 +435,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       alta.getByRole("button", { name: "Confirmar", exact: true }).click(),
     ]);
     expect(respuesta.status()).toBe(400);
-    await expect(alta.getByRole("alert")).toContainText("Este Productor ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país.");
+    await expect(alta.getByRole("alert")).toContainText("Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.");
     await expect(alta.getByLabel("Precio en pesos")).toHaveValue("9999");
     await alta.getByRole("button", { name: "Cancelar", exact: true }).click();
     await page.reload();
@@ -450,7 +451,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
     const endpoint = `/api/publicaciones/productor/${precarga.publicacionProductorId}`;
     const cambios = { precio: "9999", especieId: relacion.publicacion.especieId,
       variedadId: relacion.publicacion.variedadId, paisId: relacion.paisId,
-      presentacionId: relacion.publicacion.presentacionId,
+      envaseId: relacion.publicacion.envaseId, kilosId: relacion.publicacion.kilosId,
       categoriaId: relacion.publicacion.categoriaId, calibreId: relacion.publicacion.calibreId,
       ubicaciones: relacion.ubicaciones.map(({ nombreUbicacion, urlMaps }) => ({ nombreUbicacion, urlMaps })) };
     await test.step("Rechazar solicitudes sin iniciar sesión", async () => {

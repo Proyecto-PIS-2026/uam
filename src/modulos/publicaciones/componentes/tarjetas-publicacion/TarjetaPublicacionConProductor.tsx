@@ -1,3 +1,4 @@
+import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-publicacion";
 import { formatearPrecio } from "@/compartido/formatear-precio";
 import ImagenPublicacion from "../ImagenPublicacion";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
@@ -10,6 +11,7 @@ type TarjetaPublicacionProductorProps = {
 };
 
 export default function TarjetaPublicacionConProductor({ publicacion, onClick }: TarjetaPublicacionProductorProps) {
+    const empaquetado = formatearEmpaquetado(publicacion.envase, publicacion.kilos);
     const nombreProducto = publicacion.variedad && publicacion.variedad !== "-" ? `${publicacion.especie} - ${publicacion.variedad}` : publicacion.especie;
     const nombreProductor = publicacion.productor.nombreFantasia;
     return (
@@ -62,8 +64,8 @@ export default function TarjetaPublicacionConProductor({ publicacion, onClick }:
                             ) : (
                                 <span className={styles.precio}> {formatearPrecio(publicacion.precio)} </span>
                             )}
-                            {publicacion.presentacion?.trim() && publicacion.presentacion.trim() !== "-" && (
-                                <span className={styles.presentacionPrecio} title={`por ${publicacion.presentacion.trim()}`}> por {publicacion.presentacion.trim()} </span>
+                            {empaquetado && (
+                                <span className={styles.presentacionPrecio} title={`por ${empaquetado}`}> por {empaquetado} </span>
                             )}
                         </div>
                     </div>

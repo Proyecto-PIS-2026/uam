@@ -19,6 +19,7 @@ interface Props {
     etiquetaVencimiento?: string;
     ayudaVencimiento?: string;
     ayudaAvisos?: string;
+    maximoDiasVigencia?: number;
     configuracion: ConfiguracionVigenciaFotos;
     onGuardar: (configuracion: ConfiguracionVigenciaFotos) => Promise<void>;
 }
@@ -27,17 +28,20 @@ function sonIguales(primera: ConfiguracionVigenciaFotos, segunda: ConfiguracionV
     return (primera.habilitado === segunda.habilitado && primera.diasVigencia === segunda.diasVigencia && primera.avisosHabilitados === segunda.avisosHabilitados && primera.diasAnticipacion === segunda.diasAnticipacion);
 }
 
-function validarDias(valor: string, campo: "vigencia" | "anticipación"): string | null {
+function validarDias(valor: string, campo: "vigencia" | "anticipación", maximo?: number): string | null {
     if (!/^[0-9]+$/.test(valor) || Number(valor) <= 0) {
         return `La ${campo} debe ser un número entero mayor que cero.`;
     }
     if (!Number.isSafeInteger(Number(valor))) {
         return `La ${campo} ingresada es demasiado grande.`;
     }
+    if (maximo !== undefined && Number(valor) > maximo) {
+        return `La ${campo} no puede superar los ${maximo} días.`;
+    }
     return null;
 }
 
-export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descripcion = "", etiquetaVencimiento = "", ayudaVencimiento = "", ayudaAvisos = "", configuracion, onGuardar }: Props) {
+export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descripcion = "", etiquetaVencimiento = "", ayudaVencimiento = "", ayudaAvisos = "", maximoDiasVigencia, configuracion, onGuardar }: Props) {
     const [valores, setValores] = useState(configuracion);
     const [guardado, setGuardado] = useState(configuracion);
     const [configuracionAnterior, setConfiguracionAnterior] = useState(configuracion);
@@ -64,7 +68,7 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
         if (guardando || !huboCambios) {
             return;
         }
-        const errorVigencia = valores.habilitado ? validarDias(valores.diasVigencia, "vigencia") : null;
+        const errorVigencia = valores.habilitado ? validarDias(valores.diasVigencia, "vigencia", maximoDiasVigencia) : null;
         if (errorVigencia) {
             notificar(errorVigencia, "error");
             return;

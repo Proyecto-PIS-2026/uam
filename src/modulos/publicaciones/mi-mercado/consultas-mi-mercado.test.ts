@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { actualizarPrecioPublicacion, ConflictoPublicacionError, incrementarPrecioPublicacion, obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
 import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
 
-const configuracion = vi.hoisted(() => ({ habilitado: false, diasVigencia: 30, diasAnticipacionAviso: 3 }));
-vi.mock("../configuracion-aging-fotos", () => ({ CONFIGURACION_AGING_FOTOS: configuracion }));
+const configuracion = vi.hoisted(() => ({ habilitado: false, diasVigencia: 30, avisosHabilitados: true, diasAnticipacionAviso: 3 }));
+vi.mock("../configuracion-aging-fotos", () => ({ obtenerConfiguracionAgingFotos: async () => configuracion }));
 
 const mocks = vi.hoisted(() => {
     const consulta = () => {
@@ -54,7 +54,7 @@ describe("precios de Mi Mercado", () => {
             ...fila, foto: null, fotoEliminadaPorVencimientoEn: "2026-11-04T03:00:00Z",
             publicacionActiva: true, publicacionDisponible: true, cantidadUnidades: null,
             especie: { id: 3, nombreEspecie: "Papa", fotoEspecie: null },
-            variedad: null, presentacion: null, categoria: null, calibre: null,
+            variedad: null, envase: null, kilos: null, categoria: null, calibre: null,
         } }]);
 
         const [publicacion] = mapearPublicacionesMiMercado(await obtenerPublicacionesDeOperador(10));

@@ -19,7 +19,8 @@ type Opcion = { id: number; nombre: string };
 type Catalogos = {
   especies: Opcion[];
   variedades: (Opcion & { especieId: number })[];
-  presentaciones: (Opcion & { variedadId: number })[];
+  envases: Opcion[];
+  kilos: Opcion[];
   categorias: (Opcion & { especieId: number | null })[];
   calibres: Opcion[];
   paises: Opcion[];
@@ -64,18 +65,19 @@ async function crearPublicacionDePrueba(page: Page, productorId: number) {
   const c = (await respuestaCatalogos.json()) as Catalogos;
 
   let ids: {
-    especieId: number; variedadId: number; presentacionId: number; categoriaId: number;
+    especieId: number; variedadId: number; envaseId: number; kilosId: number; categoriaId: number;
   } | null = null;
 
   for (const especie of c.especies) {
     const variedad = c.variedades.find((v) => v.especieId === especie.id);
     if (!variedad) continue;
-    const presentacion = c.presentaciones.find((p) => p.variedadId === variedad.id);
+    const envase = c.envases[0];
+    const kilos = c.kilos[0];
     const categoria = c.categorias.find((a) => a.especieId === especie.id || a.especieId === null);
-    if (!presentacion || !categoria) continue;
+    if (!envase || !kilos || !categoria) continue;
     ids = {
       especieId: especie.id, variedadId: variedad.id,
-      presentacionId: presentacion.id, categoriaId: categoria.id,
+      envaseId: envase.id, kilosId: kilos.id, categoriaId: categoria.id,
     };
     break;
   }

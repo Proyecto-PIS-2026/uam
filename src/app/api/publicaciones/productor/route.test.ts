@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
         first: vi.fn(),
         where: vi.fn(),
         select: vi.fn(),
+        orderBy: vi.fn(),
         update: vi.fn(),
         create: vi.fn(),
     });
@@ -21,7 +22,8 @@ const mocks = vi.hoisted(() => {
             Productor: consulta(),
             Especie: consulta(),
             Variedad: consulta(),
-            Presentacion: consulta(),
+            Envase: consulta(),
+            KilosEmpaquetado: consulta(),
             Categoria: consulta(),
             Calibre: consulta(),
             Pais: consulta(),
@@ -77,6 +79,7 @@ describe("/api/publicaciones/productor", () => {
         for (const modelo of Object.values(mocks.modelos)) {
             modelo.where.mockReturnThis();
             modelo.select.mockReturnThis();
+            modelo.orderBy.mockReturnThis();
             modelo.all.mockResolvedValue([]);
             modelo.first.mockResolvedValue(null);
             modelo.update.mockResolvedValue(1);
@@ -154,10 +157,11 @@ describe("/api/publicaciones/productor", () => {
                 { id: 2, especieId: 1, nombreVariedad: "Royal" },
             ]);
 
-            mocks.modelos.Presentacion.all.mockResolvedValue([
-                { id: 3, variedadId: 2, nombrePresentacion: "Caja" },
+            mocks.modelos.Envase.all.mockResolvedValue([
+                { id: 3, nombreEnvase: "Cajon" },
             ]);
 
+            mocks.modelos.KilosEmpaquetado.all.mockResolvedValue([{ id: 1, valor: "10-12" }]);
             mocks.modelos.Categoria.all.mockResolvedValue([
                 { id: 4, especieId: 1, nombreCategoria: "Primera" },
             ]);
@@ -176,7 +180,8 @@ describe("/api/publicaciones/productor", () => {
             expect(await respuesta.json()).toEqual({
                 especies: [{ id: 1, nombre: "Manzana" }],
                 variedades: [{ id: 2, especieId: 1, nombre: "Royal" }],
-                presentaciones: [{ id: 3, variedadId: 2, nombre: "Caja" }],
+                envases: [{ id: 3, nombre: "Cajon" }],
+                kilos: [{ id: 1, nombre: "10-12" }],
                 categorias: [{ id: 4, especieId: 1, nombre: "Primera" }],
                 calibres: [{ id: 5, nombre: "Grande" }],
                 paises: [{ id: 6, codigo: "UY", nombre: "Uruguay" }],
@@ -190,9 +195,8 @@ describe("/api/publicaciones/productor", () => {
                 variedadActiva: true,
             });
 
-            expect(mocks.modelos.Presentacion.where).toHaveBeenCalledWith({
-                presentacionActiva: true,
-            });
+            expect(mocks.modelos.Envase.where).not.toHaveBeenCalled();
+            expect(mocks.modelos.KilosEmpaquetado.where).not.toHaveBeenCalled();
 
             expect(mocks.modelos.Categoria.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Calibre.all).toHaveBeenCalledOnce();
@@ -217,7 +221,7 @@ describe("/api/publicaciones/productor", () => {
             expect(respuesta.status).toBe(200);
             expect(mocks.modelos.Especie.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Variedad.all).toHaveBeenCalledOnce();
-            expect(mocks.modelos.Presentacion.all).toHaveBeenCalledOnce();
+            expect(mocks.modelos.Envase.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Categoria.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Calibre.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Pais.all).toHaveBeenCalledOnce();

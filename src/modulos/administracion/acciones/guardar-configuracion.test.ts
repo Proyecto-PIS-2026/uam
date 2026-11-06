@@ -287,6 +287,24 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "1", [grupo.avisos]: "false", [grupo.anticipacion]: "" }))).resolves.toBeUndefined();
     });
 
+    it("permite una vigencia de 36500 días", async () => {
+        await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "36500" }))).resolves.toBeUndefined();
+        expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: "36500" });
+    });
+
+    if (grupo.nombre === "fotos") {
+        it("rechaza una vigencia de fotos mayor a 36500 días antes de guardar", async () => {
+            await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "36501" }))).rejects.toThrow("La vigencia de las fotos no puede superar los 36500 días.");
+            expect(mocks.transaction).not.toHaveBeenCalled();
+            expect(mocks.update).not.toHaveBeenCalled();
+        });
+    } else {
+        it("conserva la validación de publicaciones sin el límite exclusivo de las fotos", async () => {
+            await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "36501" }))).resolves.toBeUndefined();
+            expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: "36501" });
+        });
+    }
+
     it("permite guardar todo desactivado con campos vacíos", async () => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.habilitado]: "false", [grupo.vigencia]: "", [grupo.avisos]: "false", [grupo.anticipacion]: "" }))).resolves.toBeUndefined();
     });

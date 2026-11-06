@@ -56,6 +56,23 @@ describe("registro de ejecución de tareas diarias", () => {
         expect(mocks.execute).toHaveBeenCalledTimes(1);
     });
 
+    it("no marca el día como completado si se deshabilita antes de procesar y permite ejecutarlo más tarde", async () => {
+        const ejecutar = vi.fn().mockResolvedValueOnce("deshabilitada").mockResolvedValueOnce(2);
+        const tarea = { nombre: "fotos", habilitada: async () => true, ejecutar };
+
+        expect(await ejecutarTareasDiarias([tarea])).toEqual([{ nombre: "fotos", estado: "deshabilitada" }]);
+        expect(mocks.execute.mock.calls.some(([consulta]) => consulta.sql.includes("INSERT"))).toBe(false);
+
+        mocks.query.mockResolvedValueOnce([{ adquirida: true }])
+            .mockResolvedValueOnce([{ fecha: "2026-11-04", limite: Temporal.Instant.from("2026-11-04T12:00:00Z") }])
+            .mockResolvedValueOnce([]);
+
+        expect(await ejecutarTareasDiarias([tarea])).toEqual([
+            { nombre: "fotos", estado: "completada", fecha: "2026-11-04", elementosProcesados: 2 },
+        ]);
+        expect(mocks.execute.mock.calls.at(-1)?.[0].sql).toContain('INSERT INTO "ejecucionTareaProgramada"');
+    });
+
     it("respeta el bloqueo de otra réplica", async () => {
         mocks.query.mockReset().mockResolvedValueOnce([{ adquirida: false }]);
         const ejecutar = vi.fn();

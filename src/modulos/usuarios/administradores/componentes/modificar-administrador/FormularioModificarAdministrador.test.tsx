@@ -4,9 +4,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import FormularioModificarAdministrador from "./FormularioModificarAdministrador";
 import type { AdministradorParaModificar } from "./obtenerAdministradorParaModificar";
 
-const { push, modificarMock, notificarMock } = vi.hoisted(() => ({
+const { push, modificarMock, modificarMiPerfilMock, notificarMock } = vi.hoisted(() => ({
     push: vi.fn(),
     modificarMock: vi.fn(),
+    modificarMiPerfilMock: vi.fn(),
     notificarMock: vi.fn(),
 }));
 
@@ -16,6 +17,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("./modificarAdministrador", () => ({
     modificarAdministrador: modificarMock,
+}));
+
+vi.mock("../../perfil-propio/modificarMiPerfilAdministrador", () => ({
+    modificarMiPerfilAdministrador: modificarMiPerfilMock,
 }));
 
 vi.mock("@/compartido/componentes/NotificacionToast", () => ({
@@ -45,6 +50,7 @@ afterEach(() => {
     cleanup();
     push.mockReset();
     modificarMock.mockReset();
+    modificarMiPerfilMock.mockReset();
     notificarMock.mockReset();
     vi.restoreAllMocks();
 });
@@ -140,5 +146,52 @@ describe("FormularioModificarAdministrador", () => {
 
         expect(push).toHaveBeenCalledWith("/gestion-administradores/102");
         expect(modificarMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("FormularioModificarAdministrador en Mi perfil", () => {
+    function renderizarPerfilPropio() {
+        render(<FormularioModificarAdministrador administrador={administradorBase} perfilPropio />);
+    }
+
+    it("muestra el nombre y el correo actuales, sin los campos de contraseña", () => {
+        renderizarPerfilPropio();
+
+        expect(screen.getByRole("heading", { name: "Editar mi perfil" })).toBeInTheDocument();
+        expect(valorDe(screen.getByLabelText("Nombre de usuario"))).toBe("beto.admin");
+        expect(valorDe(screen.getByLabelText("Correo electrónico"))).toBe("beto@ejemplo.com");
+        expect(screen.queryByLabelText("Nueva contraseña")).not.toBeInTheDocument();
+    });
+
+    it("guarda con la acción de Mi perfil y vuelve a la consulta", async () => {
+        modificarMiPerfilMock.mockResolvedValue({ esValido: true, id: 102, mensaje: "Tu perfil se actualizó correctamente." });
+        renderizarPerfilPropio();
+
+        fireEvent.change(screen.getByLabelText("Nombre de usuario"), { target: { value: "beto.nuevo" } });
+        fireEvent.change(screen.getByLabelText("Correo electrónico"), { target: { value: "nuevo@ejemplo.com" } });
+        apretarGuardar();
+
+        await waitFor(() => expect(push).toHaveBeenCalledWith("/mi-perfil"));
+        expect(modificarMiPerfilMock).toHaveBeenCalledWith({ nombreUsuario: "beto.nuevo", email: "nuevo@ejemplo.com" });
+        expect(modificarMock).not.toHaveBeenCalled();
+    });
+
+    it("muestra el error del servidor y no navega", async () => {
+        modificarMiPerfilMock.mockResolvedValue({ esValido: false, errores: ["Ya existe un administrador con ese correo electrónico."] });
+        renderizarPerfilPropio();
+
+        apretarGuardar();
+
+        expect((await screen.findByRole("alert")).textContent).toContain("Ya existe un administrador con ese correo electrónico.");
+        expect(push).not.toHaveBeenCalled();
+    });
+
+    it.each([/^Cancelar$/, /Volver a mi perfil/])("vuelve a Mi perfil sin guardar al apretar %s", (nombreDelBoton) => {
+        renderizarPerfilPropio();
+
+        fireEvent.click(screen.getByRole("button", { name: nombreDelBoton }));
+
+        expect(push).toHaveBeenCalledWith("/mi-perfil");
+        expect(modificarMiPerfilMock).not.toHaveBeenCalled();
     });
 });

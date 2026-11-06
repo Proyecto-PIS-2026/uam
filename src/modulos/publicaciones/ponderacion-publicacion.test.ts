@@ -9,7 +9,7 @@ function crearPublicacion(cambios: Partial<PublicacionPonderable & { id: number;
         precio: null,
         cantidadUnidades: null,
         variedad: "",
-        presentacion: "",
+        envase: "", kilos: "",
         categoria: "",
         calibre: "",
         pais: "",
@@ -26,7 +26,7 @@ describe("calcularPonderacion", () => {
         expect(calcularPonderacion(crearPublicacion({ foto: "/tomate.jpg" }))).toBe(3);
     });
 
-    it.each(["variedad", "presentacion", "categoria", "calibre", "pais"] as const)("asigna un punto al campo %s", (campo) => {
+    it.each(["variedad", "envase", "kilos", "categoria", "calibre", "pais"] as const)("asigna un punto al campo %s", (campo) => {
         expect(calcularPonderacion(crearPublicacion({ [campo]: "Completado" }))).toBe(1);
     });
 
@@ -43,7 +43,7 @@ describe("calcularPonderacion", () => {
     });
 
     it("no suma puntos por campos que solo contienen espacios", () => {
-        const publicacion = crearPublicacion({ foto: "   ", variedad: " ", presentacion: " ", categoria: " ", calibre: " ", pais: " " });
+        const publicacion = crearPublicacion({ foto: "   ", variedad: " ", envase: " ", kilos: "", categoria: " ", calibre: " ", pais: " " });
         expect(calcularPonderacion(publicacion)).toBe(0);
     });
 
@@ -57,7 +57,7 @@ describe("calcularPonderacion", () => {
             precio: 150,
             cantidadUnidades: 20,
             variedad: "Perita",
-            presentacion: "Cajón",
+            envase: "Cajón", kilos: "",
             categoria: "Primera",
             calibre: "Mediano",
             pais: "Uruguay",
