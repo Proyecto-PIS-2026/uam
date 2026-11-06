@@ -442,13 +442,19 @@ nuevos.describe(() => {
     nuevos("CP-29-06: aging sólo genera el aviso cuando está habilitado", async ({ page, precargaOperadores: datos, fotoPropia, backendNotificaciones }) => {
         const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/procesar-vencimientos-fotos");
         const { db } = backendNotificaciones;
+        const configuracionActiva = {
+            habilitado: true,
+            avisosHabilitados: true,
+            diasVigencia: 3,
+            diasAnticipacionAviso: 1,
+        } as const;
         async function procesar(habilitado: boolean) {
             return db.transaction(async (tx) => {
                 await tx.execute(db.raw.sql`LOCK TABLE imagen, publicacion IN SHARE ROW EXCLUSIVE MODE`.affectedCount().build());
                 const ajenas = await tx.query(db.raw.sql`SELECT clave FROM imagen WHERE clave <> ${fotoPropia.clave} AND "cargadaEn" <= '1900-02-01T15:00:00Z'::timestamptz`.returnsRow({ clave: "pg/text@1" }).build());
                 if (ajenas.length) throw new Error("Hay fotos históricas ajenas al test; se revierte el aging.");
                 const anteriores = await tx.orm.public.Imagen.where({ cargadaEn: null }).select("clave").all();
-                const resultado = await procesarVencimientosFotos({ tx, limite: "1900-02-01T15:00:00Z", fecha: "1900-02-01" }, habilitado ? { habilitado: true, diasVigencia: 3, diasAnticipacionAviso: 1 } : { habilitado: false });
+                const resultado = await procesarVencimientosFotos({ tx, limite: "1900-02-01T15:00:00Z", fecha: "1900-02-01" }, habilitado ? configuracionActiva : { habilitado: false });
                 for (const { clave } of anteriores) await tx.orm.public.Imagen.where({ clave }).update({ cargadaEn: null });
                 return resultado;
             });
