@@ -9,7 +9,7 @@ const publicacion: Publicacion = {
 
     publicacionActiva: true, publicacionDisponible: true,
     especie: { id: 7, nombreEspecie: "Papa", fotoEspecie: null },
-    variedad: null, presentacion: null, categoria: null, calibre: null,
+    variedad: null, envase: null, kilos: null, categoria: null, calibre: null,
 };
 
 function respuestaFoto(tipo = "image/webp") {

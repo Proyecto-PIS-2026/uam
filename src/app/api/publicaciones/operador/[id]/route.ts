@@ -22,12 +22,13 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 		if (relaciones.length === 0) return NextResponse.json({ publicaciones: [] });
 
 		const ids = relaciones.map((relacion) => relacion.publicacionId);
-		const [publicaciones, presentaciones, variedades, especies, categorias, calibres, paises] = await Promise.all([
+		const [publicaciones, envases, kilos, variedades, especies, categorias, calibres, paises] = await Promise.all([
 			db.orm.public.Publicacion
 				.where((publicacion) => publicacion.id.in(ids))
-				.select("id", "fecha", "publicacionDisponible", "precio", "especieId", "variedadId", "presentacionId", "categoriaId", "calibreId")
+				.select("id", "fecha", "publicacionDisponible", "precio", "especieId", "variedadId", "envaseId", "kilosId", "categoriaId", "calibreId")
 				.all(),
-			db.orm.public.Presentacion.select("id", "nombrePresentacion", "variedadId").all(),
+			db.orm.public.Envase.select("id", "nombreEnvase").all(),
+			db.orm.public.KilosEmpaquetado.select("id", "valor").all(),
 			db.orm.public.Variedad.select("id", "nombreVariedad", "especieId").all(),
 			db.orm.public.Especie.select("id", "nombreEspecie").all(),
 			db.orm.public.Categoria.select("id", "nombreCategoria").all(),
@@ -35,7 +36,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 			db.orm.public.Pais.select("id", "nombrePais").all(),
 		]);
 
-		const presentacionPorId = new Map(presentaciones.map((item) => [item.id, item]));
+		const envasePorId = new Map(envases.map((item) => [item.id, item.nombreEnvase]));
+		const kilosPorId = new Map(kilos.map((item) => [item.id, item.valor]));
 		const variedadPorId = new Map(variedades.map((item) => [item.id, item]));
 		const especiePorId = new Map(especies.map((item) => [item.id, item]));
 		const categoriaPorId = new Map(categorias.map((item) => [item.id, item.nombreCategoria]));
@@ -44,7 +46,6 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 		const relacionPorPublicacion = new Map(relaciones.map((item) => [item.publicacionId, item]));
 
 		const resultado = publicaciones.map((publicacion) => {
-			const presentacion = publicacion.presentacionId === null ? undefined : presentacionPorId.get(publicacion.presentacionId);
 			const variedad = publicacion.variedadId === null ? undefined : variedadPorId.get(publicacion.variedadId);
 			const especie = especiePorId.get(publicacion.especieId);
 			const relacion = relacionPorPublicacion.get(publicacion.id);
@@ -53,7 +54,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 				fecha: publicacion.fecha.toString(),
 				especie: especie?.nombreEspecie ?? "Sin especie",
 				variedad: variedad?.nombreVariedad ?? "Sin variedad",
-				presentacion: presentacion?.nombrePresentacion ?? "Sin presentación",
+				envase: publicacion.envaseId === null ? "" : envasePorId.get(publicacion.envaseId) ?? "",
+				kilos: publicacion.kilosId === null ? "" : kilosPorId.get(publicacion.kilosId) ?? "",
 				categoria: (publicacion.categoriaId === null ? undefined : categoriaPorId.get(publicacion.categoriaId)) ?? "Sin categoría",
 				calibre: (publicacion.calibreId === null ? undefined : calibrePorId.get(publicacion.calibreId)) ?? "Sin calibre",
 				pais: relacion?.paisId ? paisPorId.get(relacion.paisId) ?? "Sin país" : "Sin país",

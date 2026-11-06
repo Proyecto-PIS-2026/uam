@@ -29,7 +29,7 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
                 )
                 .include("especie")
                 .include("variedad")
-                .include("presentacion")
+                .include("envase").include("kilos")
                 .include("categoria")
                 .include("calibre")
         );

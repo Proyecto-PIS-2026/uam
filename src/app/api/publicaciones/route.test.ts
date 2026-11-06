@@ -5,7 +5,8 @@ const mocks = vi.hoisted(() => ({
     operadores: vi.fn(),
     especies: vi.fn(),
     variedades: vi.fn(),
-    presentaciones: vi.fn(),
+    envases: vi.fn(),
+    kilos: vi.fn(),
     categorias: vi.fn(),
     calibres: vi.fn(),
     paises: vi.fn(),
@@ -32,7 +33,8 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
                 Operador: { all: mocks.operadores },
                 Especie: { all: mocks.especies },
                 Variedad: { all: mocks.variedades },
-                Presentacion: { all: mocks.presentaciones },
+                Envase: { orderBy: vi.fn(() => ({ all: mocks.envases })) },
+                KilosEmpaquetado: { orderBy: vi.fn(() => ({ all: mocks.kilos })) },
                 Categoria: { all: mocks.categorias },
                 Calibre: { all: mocks.calibres },
                 Pais: { all: mocks.paises },
@@ -59,7 +61,8 @@ describe("GET /api/publicaciones", () => {
         mocks.operadores.mockResolvedValue([]);
         mocks.especies.mockResolvedValue([]);
         mocks.variedades.mockResolvedValue([]);
-        mocks.presentaciones.mockResolvedValue([]);
+        mocks.envases.mockResolvedValue([]);
+        mocks.kilos.mockResolvedValue([]);
         mocks.categorias.mockResolvedValue([]);
         mocks.calibres.mockResolvedValue([]);
         mocks.paises.mockResolvedValue([]);
@@ -76,7 +79,8 @@ describe("GET /api/publicaciones", () => {
         ]);
 
         mocks.variedades.mockResolvedValue([]);
-        mocks.presentaciones.mockResolvedValue([]);
+        mocks.envases.mockResolvedValue([]);
+        mocks.kilos.mockResolvedValue([]);
         mocks.categorias.mockResolvedValue([]);
         mocks.calibres.mockResolvedValue([]);
         mocks.paises.mockResolvedValue([]);
@@ -104,7 +108,7 @@ describe("GET /api/publicaciones", () => {
 
         expect(respuesta.status).toBe(403);
         expect(await respuesta.json()).toEqual({ errores: ["No tiene permisos para consultar el catálogo de Operadores."] });
-        for (const consulta of [mocks.operadores, mocks.especies, mocks.variedades, mocks.presentaciones, mocks.categorias, mocks.calibres, mocks.paises, mocks.obtenerOperadorAutorizado]) {
+        for (const consulta of [mocks.operadores, mocks.especies, mocks.variedades, mocks.envases, mocks.categorias, mocks.calibres, mocks.paises, mocks.obtenerOperadorAutorizado]) {
             expect(consulta).not.toHaveBeenCalled();
         }
     });
@@ -117,7 +121,8 @@ describe("GET /api/publicaciones", () => {
             { id: 2, nombreEspecie: "Pera", especieActiva: false },
         ]);
         mocks.variedades.mockResolvedValue([{ id: 3, especieId: 1, nombreVariedad: "Roja", variedadActiva: true }]);
-        mocks.presentaciones.mockResolvedValue([{ id: 4, variedadId: 3, nombrePresentacion: "Caja", presentacionActiva: true }]);
+        mocks.envases.mockResolvedValue([{ id: 4, nombreEnvase: "Cajon" }]);
+        mocks.kilos.mockResolvedValue([{ id: 1, valor: "20" }]);
         mocks.categorias.mockResolvedValue([{ id: 5, especieId: 1, nombreCategoria: "Primera" }]);
         mocks.calibres.mockResolvedValue([{ id: 6, nombreCalibre: "Mediano" }]);
         mocks.paises.mockResolvedValue([{ id: 7, nombrePais: "Uruguay" }]);
@@ -129,7 +134,8 @@ describe("GET /api/publicaciones", () => {
             operadores: [{ id: 1, nombre: "Operador propio" }],
             especies: [{ id: 1, nombre: "Manzana" }],
             variedades: [{ id: 3, especieId: 1, nombre: "Roja" }],
-            presentaciones: [{ id: 4, variedadId: 3, nombre: "Caja" }],
+            envases: [{ id: 4, nombre: "Cajon" }],
+            kilos: [{ id: 1, nombre: "20" }],
             categorias: [{ id: 5, especieId: 1, nombre: "Primera" }],
             calibres: [{ id: 6, nombre: "Mediano" }],
             paises: [{ id: 7, nombre: "Uruguay" }],

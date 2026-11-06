@@ -28,18 +28,20 @@ type OpcionRelacionada = Opcion & { especieId?: number | null; variedadId?: numb
 type Catalogos = {
     especies: Opcion[];
     variedades: OpcionRelacionada[];
-    presentaciones: OpcionRelacionada[];
+    envases: Opcion[];
+    kilos: Opcion[];
     categorias: OpcionRelacionada[];
     calibres: Opcion[];
     paises: Opcion[];
 };
-type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia" | "variedadId" | "presentacionId" | "categoriaId" | "calibreId" | "paisId"> & {
+type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia" | "variedadId" | "envaseId" | "kilosId" | "categoriaId" | "calibreId" | "paisId"> & {
     precio: string;
     cantidadUnidades: string;
     fotografia: string;
     fechaVigencia: string;
     variedadId: number;
-    presentacionId: number;
+    envaseId: number;
+    kilosId: number;
     categoriaId: number;
     calibreId: number;
     paisId: number;
@@ -77,7 +79,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
         operadorId,
         especieId: 0,
         variedadId: 0,
-        presentacionId: 0,
+        envaseId: 0,
+        kilosId: 0,
         calibreId: 0,
         categoriaId: 0,
         paisId: 0,
@@ -108,7 +111,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                 setCatalogos({
                     especies: [...resultado.especies].sort((primera, segunda) => compararEspeciesPorPrioridad(primera.nombre, segunda.nombre)),
                     variedades: ordenarOpcionesPorNombre(resultado.variedades),
-                    presentaciones: ordenarOpcionesPorNombre(resultado.presentaciones),
+                    envases: ordenarOpcionesPorNombre(resultado.envases),
+                    kilos: ordenarOpcionesPorNombre(resultado.kilos),
                     categorias: ordenarOpcionesPorNombre(resultado.categorias),
                     calibres: ordenarOpcionesPorNombre(resultado.calibres),
                     paises: [...resultado.paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre)),
@@ -183,7 +187,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
             const datosProcesados = {
                 ...datos,
                 variedadId: datos.variedadId || null,
-                presentacionId: datos.presentacionId || null,
+                envaseId: datos.envaseId || null,
+                kilosId: datos.kilosId || null,
                 categoriaId: datos.categoriaId || null,
                 calibreId: datos.calibreId || null,
                 paisId: datos.paisId || null,
@@ -214,7 +219,6 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
     }
 
     const variedades = catalogos?.variedades.filter((item) => item.especieId === datos.especieId) ?? [];
-    const presentaciones = catalogos?.presentaciones.filter((item) => item.variedadId === datos.variedadId) ?? [];
     const categorias = catalogos?.categorias.filter((item) => item.especieId === null || item.especieId === datos.especieId) ?? [];
     const deshabilitado = cargando || guardando || !catalogos;
 
@@ -232,13 +236,16 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                 <div className={drawerStyles.cuerpo}>
                     <div className={drawerStyles.datosProducto}>
                         <div className={drawerStyles.campo}>
-                            <CampoSelect nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(especieId) => actualizar({ especieId, variedadId: 0, presentacionId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
+                            <CampoSelect nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(especieId) => actualizar({ especieId, variedadId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
                         </div>
                         <div className={drawerStyles.campo}>
-                            <CampoSelect nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(variedadId) => actualizar({ variedadId, presentacionId: 0 })} deshabilitado={deshabilitado || !datos.especieId} />
+                            <CampoSelect nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(variedadId) => actualizar({ variedadId })} deshabilitado={deshabilitado || !datos.especieId} />
                         </div>
                         <div className={drawerStyles.campo}>
-                            <CampoSelect nombre="Presentación" valor={datos.presentacionId} opciones={presentaciones} cambiar={(presentacionId) => actualizar({ presentacionId })} deshabilitado={deshabilitado || !datos.variedadId} />
+                            <CampoSelect nombre="Empaquetado" valor={datos.envaseId} opciones={catalogos?.envases ?? []} cambiar={(envaseId) => actualizar({ envaseId })} deshabilitado={deshabilitado} />
+                        </div>
+                        <div className={drawerStyles.campo}>
+                            <CampoSelect nombre="Kilos del empaquetado" valor={datos.kilosId} opciones={(catalogos?.kilos ?? []).map((opcion) => ({ ...opcion, nombre: `${opcion.nombre} kg` }))} cambiar={(kilosId) => actualizar({ kilosId })} deshabilitado={deshabilitado} />
                         </div>
                         <div className={drawerStyles.campo}>
                             <CampoSelect nombre="País de origen" valor={datos.paisId} opciones={catalogos?.paises ?? []} cambiar={(paisId) => actualizar({ paisId })} deshabilitado={deshabilitado} />
@@ -262,13 +269,13 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                     </div>
 
                     {(() => {
-                        const presentacionSeleccionada = catalogos?.presentaciones.find(p => p.id === datos.presentacionId);
-                        const textoPresentacion = presentacionSeleccionada ? ` (${presentacionSeleccionada.nombre})` : "";
+                        const envaseSeleccionado = catalogos?.envases.find(p => p.id === datos.envaseId);
+                        const textoEnvase = envaseSeleccionado ? ` (${envaseSeleccionado.nombre})` : "";
 
                         return (
                             <div className={drawerStyles.campo}>
                                 <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-cantidadUnidades">
-                                    Unidades {textoPresentacion}
+                                    Unidades {textoEnvase}
                                 </label>
                                 <div className={drawerStyles.controlesPrecio} data-editando={false}>
                                     <OutlinedInput color="secondary" className={drawerStyles.entrada} size="small" id="nueva-publicacion-cantidadUnidades" type="text" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder="Ingresar cantidad aquí" value={datos.cantidadUnidades}

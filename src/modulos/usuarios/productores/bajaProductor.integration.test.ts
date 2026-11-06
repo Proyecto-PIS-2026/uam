@@ -112,10 +112,12 @@ describe("baja de productor", () => {
 
 		const calibre = (await db.orm.public.Calibre.all())[0];
 		const categoria = (await db.orm.public.Categoria.all())[0];
-		const presentacion = (await db.orm.public.Presentacion.include("variedad", (variedad) => variedad.select("id", "especieId")).all())[0];
+		const variedad = (await db.orm.public.Variedad.all())[0];
+		const envase = (await db.orm.public.Envase.all())[0];
+		const kilos = (await db.orm.public.KilosEmpaquetado.all())[0];
 		const pais = (await db.orm.public.Pais.all())[0];
 
-		if (!calibre || !categoria || !presentacion || !pais) {
+		if (!calibre || !categoria || !variedad || !envase || !kilos || !pais) {
 			throw new Error(
 				"Faltan datos de referencia para crear la publicación de prueba."
 			);
@@ -131,9 +133,10 @@ describe("baja de productor", () => {
             ),
             foto: null,
             precio,
-            especieId: presentacion.variedad.especieId,
-            variedadId: presentacion.variedad.id,
-            presentacionId: presentacion.id,
+            especieId: variedad.especieId,
+            variedadId: variedad.id,
+            envaseId: envase.id,
+            kilosId: kilos.id,
             publicacionActiva: true,
             publicacionDisponible: true,
             tipoPublicacion: "PRODUCTOR",

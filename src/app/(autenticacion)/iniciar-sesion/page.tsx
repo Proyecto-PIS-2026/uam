@@ -1,4 +1,5 @@
 import FormularioInicioSesion from "./formularioInicioSesion";
+import { requerirSinSesion } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export const metadata = {
     title: "Iniciar sesión | UAM",
@@ -11,6 +12,7 @@ const mensajesSegundoFactor: Record<string, string> = {
 };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ segundoFactor?: string }> }) {
+    await requerirSinSesion();
     const { segundoFactor } = await searchParams;
     const mensaje = segundoFactor ? mensajesSegundoFactor[segundoFactor] : undefined;
     return (

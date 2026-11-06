@@ -100,7 +100,7 @@ test.describe("BP-15: ABM de Productos de un Productor", () => {
           await alta(page).getByRole("combobox", { name: "Especie", exact: true }).click();
           await page.getByRole("option", { name: "Uchuva", exact: true }).click();
           await alta(page).getByRole("textbox", { name: "Precio en pesos", exact: true }).fill(precio);
-          await alta(page).getByRole("textbox", { name: "Cantidad (kg)", exact: true }).fill("2147483648");
+          await alta(page).getByRole("textbox", { name: "Unidades", exact: true }).fill("2147483648");
           const respuesta = await respuestaOperacion(page, "POST", () => alta(page).getByRole("button", { name: "Confirmar", exact: true }).click());
           expect(respuesta.status()).toBe(400);
           await expect(alta(page).getByRole("alert")).toContainText("La cantidad de unidades debe ser un número entero entre 0 y 2147483647.");
@@ -110,7 +110,7 @@ test.describe("BP-15: ABM de Productos de un Productor", () => {
             await consulta.goto(ruta);
             await expect.poll(() => catalogo(consulta)).toEqual(iniciales);
           } finally { await consulta.close(); }
-          await alta(page).getByRole("textbox", { name: "Cantidad (kg)", exact: true }).fill("12");
+          await alta(page).getByRole("textbox", { name: "Unidades", exact: true }).fill("12");
           const creada = await respuestaOperacion(page, "POST", () => alta(page).getByRole("button", { name: "Confirmar", exact: true }).click());
           expect(creada.status(), await creada.text()).toBe(201);
           requiereLimpieza = true;
@@ -150,7 +150,7 @@ test.describe("BP-15: ABM de Productos de un Productor", () => {
             const catalogos = await (await page.request.get(api)).json() as { especies: { id: number; nombre: string }[] };
             const cambios = {
               especieId: catalogos.especies.find((e) => e.nombre === "Uchuva")!.id,
-              variedadId: null, presentacionId: null, categoriaId: null,
+              variedadId: null, envaseId: null, kilosId: null, categoriaId: null,
               calibreId: null, paisId: null, precio: "999", ubicaciones: [],
             };
             expect((await ajeno.request.patch(urlPublicacion, { multipart: { cambios: JSON.stringify(cambios) } })).status()).toBe(403);

@@ -26,7 +26,7 @@ async function consultarPublicacionesProductor(productorId: number) {
                 .select("id", "foto", "fotoEliminadaPorVencimientoEn", "precio", "cantidadUnidades", "fecha","fechaVigencia", "publicacionActiva", "publicacionDisponible")
                 .include("especie")
                 .include("variedad")
-                .include("presentacion")
+                .include("envase").include("kilos")
                 .include("categoria")
                 .include("calibre"))
         .all();
@@ -56,7 +56,8 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
                 fotoEspecie: publicacion.especie.fotoEspecie,
             },
             variedad: publicacion.variedad ? { id: publicacion.variedad.id, nombreVariedad: publicacion.variedad.nombreVariedad } : null,
-            presentacion: publicacion.presentacion ? { id: publicacion.presentacion.id, nombrePresentacion: publicacion.presentacion.nombrePresentacion } : null,
+            envase: publicacion.envase ? { id: publicacion.envase.id, nombreEnvase: publicacion.envase.nombreEnvase } : null,
+            kilos: publicacion.kilos ? { id: publicacion.kilos.id, valor: publicacion.kilos.valor } : null,
             categoria: publicacion.categoria ? { id: publicacion.categoria.id, nombreCategoria: publicacion.categoria.nombreCategoria } : null,
             calibre: publicacion.calibre ? {
                 id: publicacion.calibre.id,

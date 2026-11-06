@@ -323,7 +323,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
                 </div>
             </div>
             {errorSeleccion && <p className={styles.error} role="alert">{errorSeleccion}</p>}
-            <TextField id={`${id}-nombre`} label="Nombre del punto de retiro" value={nombre} required fullWidth size="small"
+            <TextField id={`${id}-nombre`} label="Nombre del punto de retiro" value={nombre} required fullWidth size="small" disabled={!mapaListo}
                 onChange={(evento) => { nombreEditadoRef.current = true; setNombre(evento.target.value); }} onBlur={() => setNombreRevisado(true)}
                 error={nombreRevisado && !nombreValido} helperText={nombreRevisado && !nombreValido ? "Escribí un nombre de hasta 200 caracteres." : undefined}
                 slotProps={{ htmlInput: { maxLength: 200 } }} />

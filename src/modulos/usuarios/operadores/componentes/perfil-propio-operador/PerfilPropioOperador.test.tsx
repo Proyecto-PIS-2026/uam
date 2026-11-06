@@ -37,6 +37,7 @@ describe("PerfilPropioOperador", () => {
         expect(screen.getByText("Sin fecha de fin")).toBeInTheDocument();
         expect(screen.getByText("05/11/2999 - 12/11/2999")).toBeInTheDocument();
         expect(screen.getByText("Consultar disponibilidad.")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Cambiar contraseña" })).toHaveAttribute("href", "/mi-perfil/cambiar-contrasena");
     });
 
     it("muestra el estado vacío y permite entrar y salir de edición", () => {

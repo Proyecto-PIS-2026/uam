@@ -261,7 +261,7 @@ const cambiosEdicion = {
 	foto: null,
 	categoriaId: 4,
 	calibreId: 2,
-	presentacionId: 8,
+	envaseId: 8, kilosId: null,
 	paisId: 218,
 	disponible: true,
 };
@@ -479,7 +479,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 	});
 
 	it("acepta la edición sin campo foto para conservar la imagen actual", async () => {
-		const cambiosSinFoto = { especieId: 6, variedadId: 7, precio: "125", categoriaId: 4, calibreId: 2, presentacionId: 8, paisId: 218, disponible: true };
+		const cambiosSinFoto = { especieId: 6, variedadId: 7, precio: "125", categoriaId: 4, calibreId: 2, envaseId: 8, kilosId: null, paisId: 218, disponible: true };
 		const respuesta = await PATCH(solicitudEdicion(cambiosSinFoto), contextoEdicion);
 		expect(respuesta.status).toBe(200);
 		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosSinFoto, null);
@@ -545,7 +545,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 	);
 
 	it.each([undefined, null, 0, ""])("permite vaciar todos los datos opcionales: %j", async (vacio) => {
-		const cambios = { ...cambiosEdicion, variedadId: vacio, presentacionId: vacio, categoriaId: vacio, calibreId: vacio, paisId: vacio };
+		const cambios = { ...cambiosEdicion, variedadId: vacio, envaseId: vacio, kilosId: null, categoriaId: vacio, calibreId: vacio, paisId: vacio };
 		const respuesta = await PATCH(solicitudEdicion(cambios), contextoEdicion);
 		expect(respuesta.status).toBe(200);
 		expect(modificarPublicacionOperador).toHaveBeenCalledWith(10, 12, expect.objectContaining({ especieId: 6 }), null);
@@ -648,7 +648,7 @@ describe("autorización de cambios de publicaciones", () => {
 		obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
 		obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Otro" });
 		const formulario = new FormData();
-		formulario.set("cambios", JSON.stringify({ especieId: 1, variedadId: 1, presentacionId: 1, categoriaId: 1, calibreId: 1, paisId: 1 }));
+		formulario.set("cambios", JSON.stringify({ especieId: 1, variedadId: 1, envaseId: 1, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 1 }));
 		const handler = metodo === "DELETE" ? DELETE : PATCH;
 		const respuesta = await handler(new Request("http://localhost/api/publicaciones/15?operadorId=7", {
 			method: metodo, ...(metodo === "PATCH" ? { body: formulario } : {}),

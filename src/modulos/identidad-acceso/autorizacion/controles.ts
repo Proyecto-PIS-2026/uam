@@ -43,9 +43,9 @@ export async function redirigirAMercadoPropio() {
     return sesion;
 }
 
-export async function redirigirProductorAMiMercado() {
+export async function requerirSinSesion() {
     const sesion = await obtenerSesion();
-    if (sesion?.rol === "PRODUCTOR") {
+    if (sesion) {
         redirect(obtenerRutaPrincipal(sesion.rol));
     }
     return sesion;
