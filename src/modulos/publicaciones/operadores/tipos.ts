@@ -5,8 +5,10 @@ export type CambiosPublicacionOperador = SeleccionPublicacion & {
     version: number;
     precio: string | null;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     foto?: string | null;
     disponible: boolean;
+    fechaVigencia?: string | null;
 };
 
 export type OpcionEdicion = {

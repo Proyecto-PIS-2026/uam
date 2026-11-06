@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { habilitarCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
+import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import { notFound } from "next/navigation";
 import { requerirProductor } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerMiPerfilProductor } from "@/modulos/usuarios/productores/perfil-propio/consultas-mi-perfil-productor";
@@ -17,6 +17,7 @@ export default async function PaginaMiPerfilProductor() {
     await requerirProductor();
     const productor = await obtenerMiPerfilProductor();
     if (!productor) notFound();
+    const habilitarCambioContrasena = await estaHabilitadoCambioContrasena();
     return <main className={styles.pagina}>
         <BotonVolver href="/mi-mercado/productor" className={styles.volver}>Volver a Mi mercado</BotonVolver>
         <section className={styles.tarjeta} aria-labelledby="perfil-propio-titulo">

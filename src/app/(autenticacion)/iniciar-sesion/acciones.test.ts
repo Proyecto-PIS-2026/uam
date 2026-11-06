@@ -2,6 +2,14 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const habilitadoMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ estaHabilitadoCambioContrasena: habilitadoMock }));
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarVisita: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
+
 const funcionesSimuladas = vi.hoisted(() => ({
     autenticarUsuario: vi.fn(),
     crearSesion: vi.fn(),
@@ -9,6 +17,8 @@ const funcionesSimuladas = vi.hoisted(() => ({
     iniciarSegundoFactor: vi.fn(),
     guardarCookieSegundoFactor: vi.fn(),
     existeUsuarioPorNombre: vi.fn(),
+    enviarNotificacion: vi.fn(),
+    transaction: vi.fn(),
     obtenerRutaPrincipal: vi.fn(),
     redirect: vi.fn(),
     redireccion: new Error("REDIRECCION"),
@@ -21,7 +31,7 @@ const funcionesSimuladas = vi.hoisted(() => ({
         },
         Usuario: {
             where: vi.fn(),
-            update: vi.fn(),
+            updateAndCount: vi.fn(),
         },
     },
 }));
@@ -52,8 +62,13 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/rutas", () => ({
     obtenerRutaPrincipal: funcionesSimuladas.obtenerRutaPrincipal,
 }));
 
+vi.mock("@/modulos/notificaciones/notificaciones", () => ({
+    enviarNotificacion: funcionesSimuladas.enviarNotificacion,
+}));
+
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
     db: {
+        transaction: funcionesSimuladas.transaction,
         orm: {
             public: funcionesSimuladas.modelos,
         },
@@ -80,11 +95,16 @@ function crearFormulario(
 
 function configurarMocksBase() {
     vi.resetAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
+    habilitadoMock.mockResolvedValue(true);
 
     funcionesSimuladas.autenticarUsuario.mockResolvedValue(null);
     funcionesSimuladas.crearSesion.mockResolvedValue(undefined);
     funcionesSimuladas.iniciarSegundoFactor.mockResolvedValue({ token: "token-pendiente" });
     funcionesSimuladas.existeUsuarioPorNombre.mockResolvedValue(true);
+    funcionesSimuladas.enviarNotificacion.mockResolvedValue({ enviadas: 2 });
+    funcionesSimuladas.transaction.mockImplementation(async (operacion) =>
+        operacion({ orm: { public: funcionesSimuladas.modelos } }));
 
     funcionesSimuladas.obtenerRutaPrincipal.mockImplementation((rol: string) => {
         const rutas: Record<string, string> = {
@@ -106,7 +126,7 @@ function configurarMocksBase() {
     funcionesSimuladas.modelos.EstadisticaVisita.create.mockResolvedValue({ id: 1 });
 
     funcionesSimuladas.modelos.Usuario.where.mockReturnThis();
-    funcionesSimuladas.modelos.Usuario.update.mockResolvedValue(1);
+    funcionesSimuladas.modelos.Usuario.updateAndCount.mockResolvedValue(1);
 }
 
 describe("iniciarSesion", () => {
@@ -161,7 +181,7 @@ describe("iniciarSesion", () => {
 
         expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
         expect(funcionesSimuladas.redirect).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -235,27 +255,10 @@ describe("iniciarSesion", () => {
             await expect(iniciarSesion({}, crearFormulario()))
                 .rejects.toBe(funcionesSimuladas.redireccion);
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.where)
-                .toHaveBeenCalledExactlyOnceWith(
-                    expect.objectContaining({
-                        tipoVisitante: rol,
-                    }),
-                );
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith(rol);
 
-            const filtro = funcionesSimuladas.modelos.EstadisticaVisita.where.mock.calls[0][0];
 
-            expect(filtro.fecha.toString()).toBe("2026-10-20T00:00:00Z");
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.create)
-                .toHaveBeenCalledExactlyOnceWith({
-                    fecha: expect.objectContaining({
-                        toString: expect.any(Function),
-                    }),
-                    tipoVisitante: rol,
-                    cantidad: 1,
-                });
-
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.update).not.toHaveBeenCalled();
 
             expect(funcionesSimuladas.crearSesion).toHaveBeenCalledExactlyOnceWith(
                 4,
@@ -274,32 +277,13 @@ describe("iniciarSesion", () => {
                 rol,
             });
 
-            funcionesSimuladas.modelos.EstadisticaVisita.first.mockResolvedValue({
-                id: 25,
-                cantidad: 6,
-            });
-
             await expect(iniciarSesion({}, crearFormulario()))
                 .rejects.toBe(funcionesSimuladas.redireccion);
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.where).toHaveBeenNthCalledWith(
-                1,
-                expect.objectContaining({
-                    tipoVisitante: rol,
-                }),
-            );
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith(rol);
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.where).toHaveBeenNthCalledWith(
-                2,
-                { id: 25 },
-            );
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.update)
-                .toHaveBeenCalledExactlyOnceWith({
-                    cantidad: 7,
-                });
 
-            expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
             expect(funcionesSimuladas.crearSesion).toHaveBeenCalledOnce();
             expect(funcionesSimuladas.redirect).toHaveBeenCalledOnce();
         },
@@ -314,9 +298,8 @@ describe("iniciarSesion", () => {
         await expect(iniciarSesion({}, crearFormulario()))
             .rejects.toBe(funcionesSimuladas.redireccion);
 
-        expect(funcionesSimuladas.modelos.EstadisticaVisita.where).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.EstadisticaVisita.create).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.EstadisticaVisita.update).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+
 
         expect(funcionesSimuladas.crearSesion).not.toHaveBeenCalled();
         expect(funcionesSimuladas.iniciarSegundoFactor).toHaveBeenCalledWith(4);
@@ -329,7 +312,7 @@ describe("iniciarSesion", () => {
             rol: "PRODUCTOR",
         });
 
-        funcionesSimuladas.modelos.EstadisticaVisita.first.mockRejectedValue(
+        registrarEstadisticaMock.mockRejectedValue(
             new Error("Base no disponible"),
         );
 
@@ -359,7 +342,7 @@ describe("iniciarSesion", () => {
             rol: "OPERADOR",
         });
 
-        funcionesSimuladas.modelos.EstadisticaVisita.create.mockRejectedValue(
+        registrarEstadisticaMock.mockRejectedValue(
             new Error("No se pudo crear la estadística"),
         );
 
@@ -420,7 +403,7 @@ describe("solicitarRecuperacion", () => {
 
         expect(funcionesSimuladas.existeUsuarioPorNombre).not.toHaveBeenCalled();
         expect(funcionesSimuladas.modelos.Usuario.where).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.Usuario.update).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.Usuario.updateAndCount).not.toHaveBeenCalled();
     });
 
     it("rechaza un nombre de usuario compuesto solamente por espacios", async () => {
@@ -431,7 +414,7 @@ describe("solicitarRecuperacion", () => {
         });
 
         expect(funcionesSimuladas.existeUsuarioPorNombre).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.Usuario.update).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.Usuario.updateAndCount).not.toHaveBeenCalled();
     });
 
     it("informa cuando el usuario no existe", async () => {
@@ -447,7 +430,24 @@ describe("solicitarRecuperacion", () => {
             .toHaveBeenCalledExactlyOnceWith("usuario_inexistente");
 
         expect(funcionesSimuladas.modelos.Usuario.where).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.Usuario.update).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.Usuario.updateAndCount).not.toHaveBeenCalled();
+    });
+
+    it("no registra ni notifica una recuperación cuando está deshabilitada", async () => {
+        habilitadoMock.mockResolvedValue(false);
+        expect(await solicitarRecuperacion("usuario_existente")).toEqual({
+            error: "La recuperación de contraseña no está habilitada por el administrador.",
+        });
+        expect(funcionesSimuladas.existeUsuarioPorNombre).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.transaction).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.enviarNotificacion).not.toHaveBeenCalled();
+    });
+
+    it("no registra una recuperación si falla la lectura de su configuración", async () => {
+        habilitadoMock.mockRejectedValue(new Error("No se pudo consultar la configuración"));
+        expect(await solicitarRecuperacion("usuario_existente")).toMatchObject({ tipoError: "operacion" });
+        expect(funcionesSimuladas.transaction).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.enviarNotificacion).not.toHaveBeenCalled();
     });
 
     it("registra correctamente una solicitud de recuperación", async () => {
@@ -463,12 +463,83 @@ describe("solicitarRecuperacion", () => {
         expect(funcionesSimuladas.modelos.Usuario.where)
             .toHaveBeenCalledExactlyOnceWith({
                 username: "usuario_existente",
+                solicitoRestablecimiento: false,
             });
 
-        expect(funcionesSimuladas.modelos.Usuario.update)
+        expect(funcionesSimuladas.modelos.Usuario.updateAndCount)
             .toHaveBeenCalledExactlyOnceWith({
                 solicitoRestablecimiento: true,
             });
+        expect(funcionesSimuladas.transaction).toHaveBeenCalledOnce();
+        expect(funcionesSimuladas.enviarNotificacion).toHaveBeenCalledExactlyOnceWith({
+            texto: "El usuario usuario_existente solicitó restablecer su contraseña.",
+            url: "/administracion#usuarios",
+            roles: ["ADMINISTRADOR"],
+        }, { orm: { public: funcionesSimuladas.modelos } });
+    });
+
+    it("no repite los avisos de una solicitud que sigue pendiente", async () => {
+        funcionesSimuladas.modelos.Usuario.updateAndCount.mockResolvedValue(0);
+
+        expect(await solicitarRecuperacion("usuario_existente")).toEqual({
+            exito: "La solicitud de recuperación fue realizada correctamente.",
+        });
+
+        expect(funcionesSimuladas.enviarNotificacion).not.toHaveBeenCalled();
+    });
+
+    it("sólo avisa por la solicitud que consigue marcar al usuario como pendiente", async () => {
+        funcionesSimuladas.modelos.Usuario.updateAndCount.mockResolvedValueOnce(1).mockResolvedValueOnce(0);
+
+        const resultados = await Promise.all([
+            solicitarRecuperacion("usuario_existente"),
+            solicitarRecuperacion("usuario_existente"),
+        ]);
+
+        expect(resultados.every((resultado) => resultado.exito)).toBe(true);
+        expect(funcionesSimuladas.enviarNotificacion).toHaveBeenCalledOnce();
+    });
+
+    it("propaga el fallo del aviso a la transacción y permite informar el error", async () => {
+        const error = new Error("No se pudo notificar a los administradores");
+        funcionesSimuladas.enviarNotificacion.mockRejectedValue(error);
+
+        expect(await solicitarRecuperacion("usuario_existente")).toEqual({
+            error: "No se pudo registrar la solicitud. Intentá nuevamente.",
+            tipoError: "operacion",
+        });
+
+        await expect(funcionesSimuladas.transaction.mock.results[0].value).rejects.toBe(error);
+    });
+
+    it("rechaza la transacción si no hay administradores para recibir la solicitud", async () => {
+        funcionesSimuladas.enviarNotificacion.mockResolvedValue({ enviadas: 0 });
+
+        expect(await solicitarRecuperacion("usuario_existente")).toEqual({
+            error: "No se pudo registrar la solicitud. Intentá nuevamente.",
+            tipoError: "operacion",
+        });
+
+        await expect(funcionesSimuladas.transaction.mock.results[0].value)
+            .rejects.toThrow("No hay administradores para recibir la solicitud de recuperación.");
+    });
+
+    it("acota el nombre mostrado en el aviso sin modificar el usuario solicitado", async () => {
+        const nombreLargo = "usuario_" + "a".repeat(2000);
+
+        expect(await solicitarRecuperacion(nombreLargo)).toEqual({
+            exito: "La solicitud de recuperación fue realizada correctamente.",
+        });
+
+        expect(funcionesSimuladas.existeUsuarioPorNombre).toHaveBeenCalledExactlyOnceWith(nombreLargo);
+        expect(funcionesSimuladas.modelos.Usuario.where).toHaveBeenCalledExactlyOnceWith({
+            username: nombreLargo,
+            solicitoRestablecimiento: false,
+        });
+        const aviso = funcionesSimuladas.enviarNotificacion.mock.calls[0][0];
+        expect(aviso.texto).toContain(`${nombreLargo.slice(0, 160)}…`);
+        expect(aviso.texto.length).toBeLessThanOrEqual(2000);
+        expect(aviso.url).toBe("/administracion#usuarios");
     });
 
     it("normaliza el nombre de usuario antes de consultar y registrar la solicitud", async () => {
@@ -484,9 +555,10 @@ describe("solicitarRecuperacion", () => {
         expect(funcionesSimuladas.modelos.Usuario.where)
             .toHaveBeenCalledExactlyOnceWith({
                 username: "usuario_existente",
+                solicitoRestablecimiento: false,
             });
 
-        expect(funcionesSimuladas.modelos.Usuario.update)
+        expect(funcionesSimuladas.modelos.Usuario.updateAndCount)
             .toHaveBeenCalledExactlyOnceWith({
                 solicitoRestablecimiento: true,
             });
@@ -505,11 +577,11 @@ describe("solicitarRecuperacion", () => {
         });
 
         expect(funcionesSimuladas.modelos.Usuario.where).not.toHaveBeenCalled();
-        expect(funcionesSimuladas.modelos.Usuario.update).not.toHaveBeenCalled();
+        expect(funcionesSimuladas.modelos.Usuario.updateAndCount).not.toHaveBeenCalled();
     });
 
     it("devuelve un error operacional si falla el registro de la solicitud", async () => {
-        funcionesSimuladas.modelos.Usuario.update.mockRejectedValue(
+        funcionesSimuladas.modelos.Usuario.updateAndCount.mockRejectedValue(
             new Error("No se pudo actualizar el usuario"),
         );
 
@@ -526,9 +598,10 @@ describe("solicitarRecuperacion", () => {
         expect(funcionesSimuladas.modelos.Usuario.where)
             .toHaveBeenCalledExactlyOnceWith({
                 username: "usuario_existente",
+                solicitoRestablecimiento: false,
             });
 
-        expect(funcionesSimuladas.modelos.Usuario.update)
+        expect(funcionesSimuladas.modelos.Usuario.updateAndCount)
             .toHaveBeenCalledExactlyOnceWith({
                 solicitoRestablecimiento: true,
             });

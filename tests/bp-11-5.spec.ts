@@ -56,7 +56,7 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
     await editar(page);
     await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue(operador.nombre);
     await expect(page.getByRole("combobox", { name: "Código de país" })).toContainText("+598 (Uruguay)");
-    await expect(page.getByLabel("WhatsApp", { exact: true })).toHaveValue("99123456");
+    await expect(page.getByLabel(/^WhatsApp(?:\s*\*)?$/)).toHaveValue("99123456");
     await expect(page.getByRole("img", { name: "Vista previa de la foto de perfil" })).toHaveAttribute("src", /\/Logo\.PNG$/);
     await expect(page.getByRole("switch", { name: "En licencia", exact: true })).toBeChecked();
     await expect(page.getByLabel("Inicio de licencia", { exact: true })).toHaveValue(inicio);
@@ -67,35 +67,50 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
   for (const caso of [
     { id: "CP-02", titulo: "cargar contacto", inicial: "", nuevo: "099999999", guardado: "99999999" },
     { id: "CP-03", titulo: "modificar contacto", inicial: "+59899123456", nuevo: "099999999", guardado: "99999999" },
-    { id: "CP-04", titulo: "eliminar contacto", inicial: "+59899999999", nuevo: "", guardado: "" },
   ]) {
     test(`${caso.id} CA-2, CA-11: ${caso.titulo} y verificar persistencia`, async ({ page, operador, precargaOperadores: { db } }) => {
       await db.orm.public.Operador.where({ id: operador.id }).update({ whatsApp: caso.inicial });
       await page.reload();
       await editar(page);
-      await expect(page.getByLabel("WhatsApp", { exact: true })).toHaveValue(caso.inicial.replace("+598", ""));
-      await page.getByLabel("WhatsApp", { exact: true }).fill(caso.nuevo);
+      await expect(page.getByLabel(/^WhatsApp(?:\s*\*)?$/)).toHaveValue(caso.inicial.replace("+598", ""));
+      await page.getByLabel(/^WhatsApp(?:\s*\*)?$/).fill(caso.nuevo);
       await guardar(page);
       await page.reload();
-      await expect(page.getByText(`WhatsApp: ${caso.guardado ? `+598${caso.guardado}` : "No hay un número de contacto registrado."}`, { exact: true })).toBeVisible();
+      await expect(page.getByText(`WhatsApp: +598${caso.guardado}`, { exact: true })).toBeVisible();
       await editar(page);
-      await expect(page.getByLabel("WhatsApp", { exact: true })).toHaveValue(caso.guardado);
+      await expect(page.getByLabel(/^WhatsApp(?:\s*\*)?$/)).toHaveValue(caso.guardado);
     });
   }
+
+  test("CP-04 CA-2, CA-11: rechazar contacto vacío y conservar el registrado", async ({ page, operador, precargaOperadores: { db } }) => {
+    await db.orm.public.Operador.where({ id: operador.id }).update({ whatsApp: "+59899999999" });
+    await page.reload();
+    await editar(page);
+    const contacto = page.getByLabel(/^WhatsApp(?:\s*\*)?$/);
+    await expect(contacto).toHaveAttribute("required", "");
+    await contacto.fill("");
+    await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+    await expect(page.getByRole("main").getByRole("alert")).toContainText("El número de contacto no es válido.");
+    expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.whatsApp).toBe("+59899999999");
+    await page.reload();
+    await expect(page.getByText("WhatsApp: +59899999999", { exact: true })).toBeVisible();
+    await editar(page);
+    await expect(page.getByLabel(/^WhatsApp(?:\s*\*)?$/)).toHaveValue("99999999");
+  });
 
   for (const numero of ["0999", "777777777"]) {
     test(`CP-06 CA-4, CA-12: rechazar contacto inválido ${numero}`, async ({ page, operador, precargaOperadores: { db } }) => {
       await db.orm.public.Operador.where({ id: operador.id }).update({ whatsApp: "+59899999999" });
       await page.reload();
       await editar(page);
-      await page.getByLabel("WhatsApp", { exact: true }).fill(numero);
+      await page.getByLabel(/^WhatsApp(?:\s*\*)?$/).fill(numero);
       await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
       await expect(page.getByRole("main").getByRole("alert")).toContainText("El número de contacto no es válido.");
       await page.goto("/mi-perfil");
       await page.reload();
       await expect(page.getByText("WhatsApp: +59899999999", { exact: true })).toBeVisible();
       await editar(page);
-      await expect(page.getByLabel("WhatsApp", { exact: true })).toHaveValue("99999999");
+      await expect(page.getByLabel(/^WhatsApp(?:\s*\*)?$/)).toHaveValue("99999999");
     });
   }
 
@@ -152,7 +167,7 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
         await expect(foto).toHaveAttribute("src", new RegExp(`/api/imagenes/operadores/${operador.id}/.+\\.webp$`));
         const url = await foto.getAttribute("src");
         await page.reload();
-        await expect(foto).toHaveAttribute("src", url!);
+        await expect.poll(async () => new URL((await foto.getAttribute("src"))!, page.url()).href).toBe(new URL(url!, page.url()).href);
         await expect.poll(() => foto.evaluate((imagen: HTMLImageElement) => imagen.complete && imagen.naturalWidth > 0)).toBe(true);
         await editar(page);
         const vistaPrevia = page.getByRole("img", { name: "Vista previa de la foto de perfil" });
@@ -205,7 +220,7 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
       await guardar(page);
       await page.reload();
       const formatear = (fecha: string) => fecha.split("-").reverse().join("/");
-      await expect(page.getByText(`${formatear(inicio)} - ${formatear(fin)}`, { exact: true })).toBeVisible();
+      await expect(page.getByText(`Fecha: ${formatear(inicio)} - ${formatear(fin)}`, { exact: true })).toBeVisible();
       if (mensaje) await expect(page.getByText(mensaje, { exact: true })).toBeVisible();
       else await expect(page.getByRole("heading", { name: "Mensaje de recomendación", exact: true })).toHaveCount(0);
       await editar(page);

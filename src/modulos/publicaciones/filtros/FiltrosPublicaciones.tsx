@@ -121,8 +121,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     const idFiltrosExtendidos = useId();
 
     // Filtros de Ordenamiento
-    const [ordenElegido, setOrden] = useState<OrdenPublicaciones>(ordenInicial);
-    const orden = ordenamientoHabilitado ? ordenElegido : ordenInicial;
+    const [ordenElegido, setOrden] = useState<OrdenPublicaciones | "predeterminado">("predeterminado");
+    const orden = ordenamientoHabilitado && ordenElegido !== "predeterminado" ? ordenElegido : ordenInicial;
 
     const [publicacionesAnteriores, setPublicacionesAnteriores] = useState(opciones);
     const especieNotificada = useRef(especie);
@@ -317,9 +317,9 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     // Devolver al Componente Padre
     useEffect(() => { alFiltrar?.(publicacionesFiltradas) }, [publicacionesFiltradas, alFiltrar]);
 
-    const cambiarOrden = (nuevoOrden: OrdenPublicaciones) => {
+    const cambiarOrden = (nuevoOrden: OrdenPublicaciones | "predeterminado") => {
         setOrden(nuevoOrden);
-        alCambiarOrden?.(nuevoOrden);
+        alCambiarOrden?.(nuevoOrden === "predeterminado" ? ordenInicial : nuevoOrden);
     };
 
     // Variedad Unica
@@ -340,10 +340,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         setCalibre("Todas");
         setNave("Todas");
 
-        if (ordenInicial !== "prioridad") {
-            setOrden(ordenInicial);
-            alCambiarOrden?.(ordenInicial);
-        }
+        setOrden("predeterminado");
+        alCambiarOrden?.(ordenInicial);
         alLimpiar?.();
     };
 
@@ -538,11 +536,12 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                         Más filtros
                     </BotonDesplegable>
                     {ordenamientoHabilitado && (
-                        <BotonOrdenar<OrdenPublicaciones>
-                            valor={orden}
+                        <BotonOrdenar<OrdenPublicaciones | "predeterminado">
+                            valor={ordenElegido}
                             alCambiar={cambiarOrden}
                             className={styles.botonOrdenar}
                             opciones={[
+                                { valor: "predeterminado", etiqueta: "Por defecto" },
                                 { valor: "precioAsc", etiqueta: "Menor Precio" },
                                 { valor: "precioDesc", etiqueta: "Mayor Precio" },
                                 { valor: "alfabeticoAsc", etiqueta: "A-Z" },

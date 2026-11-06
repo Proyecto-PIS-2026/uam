@@ -161,6 +161,10 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                                     <span className={styles.nombreInformacion}>Actualización</span>
                                     <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
                                 </div>
+                                <div className={`${styles.informacionDetallada} ${publicacion.comentario?.trim() ? styles.filaComentario : ""}`}>
+                                    <span className={styles.nombreInformacion}>Comentario</span>
+                                    <p className={`${styles.valorInformacion} ${styles.textoComentario}`}>{publicacion.comentario?.trim() || "-"}</p>
+                                </div>
                             </div>
                         </div>
                         <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>

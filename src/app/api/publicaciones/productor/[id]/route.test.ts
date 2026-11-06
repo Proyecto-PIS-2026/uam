@@ -6,6 +6,12 @@ import { ErrorEdicionPublicacionProductor } from "@/modulos/publicaciones/produc
 import { ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada";
 import { LIMITE_FORMULARIO_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarPublicacion: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
+
 const mocks = vi.hoisted(() => {
     const consulta = () => ({
         all: vi.fn(),
@@ -97,6 +103,7 @@ const publicacion = {
 
 function configurarMocksBase() {
     vi.resetAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
 
     mocks.sesion.mockResolvedValue(sesion);
     mocks.editable.mockResolvedValue({ id: 12 });
@@ -157,13 +164,6 @@ function solicitud(cambios: unknown = {
         method: "PATCH",
         body: formulario,
     });
-}
-
-function obtenerFiltroEstadistica() {
-    return mocks.modelos.EstadisticaPublicacion.where.mock.calls[0]?.[0] as {
-        fecha: { toString: () => string };
-        username: string;
-    };
 }
 
 function llamarEliminar(id: string) {
@@ -657,50 +657,24 @@ describe("PATCH /api/publicaciones/productor/[id]", () => {
             id: 30,
         });
 
-        const filtro = obtenerFiltroEstadistica();
 
-        expect(filtro.username).toBe("productor3");
-        expect(filtro.fecha.toString()).toMatch(/^\d{4}-\d{2}-\d{2}T00:00:00Z$/);
 
-        expect(mocks.modelos.EstadisticaPublicacion.create).toHaveBeenCalledExactlyOnceWith(
-            expect.objectContaining({
-                fecha: expect.any(Object),
-                username: "productor3",
-                cantidad: 1,
-            }),
-        );
 
-        expect(mocks.modelos.EstadisticaPublicacion.update).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor3");
+
     });
 
     it("incrementa la estadística existente del productor", async () => {
-        mocks.modelos.EstadisticaPublicacion.first.mockResolvedValue({
-            id: 45,
-            cantidad: 6,
-        });
 
         const respuesta = await PATCH(solicitud(), contexto);
 
         expect(respuesta.status).toBe(200);
 
-        expect(mocks.modelos.EstadisticaPublicacion.where).toHaveBeenNthCalledWith(
-            1,
-            expect.objectContaining({
-                fecha: expect.any(Object),
-                username: "productor3",
-            }),
-        );
+        expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor3");
 
-        expect(mocks.modelos.EstadisticaPublicacion.where).toHaveBeenNthCalledWith(
-            2,
-            { id: 45 },
-        );
 
-        expect(mocks.modelos.EstadisticaPublicacion.update).toHaveBeenCalledExactlyOnceWith({
-            cantidad: 7,
-        });
 
-        expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+
     });
 
     it("no registra estadísticas si no encuentra al productor", async () => {
@@ -710,9 +684,8 @@ describe("PATCH /api/publicaciones/productor/[id]", () => {
 
         expect(respuesta.status).toBe(200);
         expect(mocks.modelos.Usuario.select).not.toHaveBeenCalled();
-        expect(mocks.modelos.EstadisticaPublicacion.where).not.toHaveBeenCalled();
-        expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
-        expect(mocks.modelos.EstadisticaPublicacion.update).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+
     });
 
     it("no registra estadísticas si el productor no tiene un username vinculado", async () => {
@@ -721,9 +694,8 @@ describe("PATCH /api/publicaciones/productor/[id]", () => {
         const respuesta = await PATCH(solicitud(), contexto);
 
         expect(respuesta.status).toBe(200);
-        expect(mocks.modelos.EstadisticaPublicacion.where).not.toHaveBeenCalled();
-        expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
-        expect(mocks.modelos.EstadisticaPublicacion.update).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+
     });
 
     it("confirma la modificación aunque falle la consulta del productor para registrar estadísticas", async () => {
@@ -746,7 +718,7 @@ describe("PATCH /api/publicaciones/productor/[id]", () => {
     });
 
     it("confirma la modificación aunque falle la creación de la estadística", async () => {
-        mocks.modelos.EstadisticaPublicacion.create.mockRejectedValue(
+        registrarEstadisticaMock.mockRejectedValue(
             new Error("No se pudo crear la estadística"),
         );
 
@@ -760,12 +732,8 @@ describe("PATCH /api/publicaciones/productor/[id]", () => {
     });
 
     it("confirma la modificación aunque falle la actualización de la estadística", async () => {
-        mocks.modelos.EstadisticaPublicacion.first.mockResolvedValue({
-            id: 45,
-            cantidad: 6,
-        });
 
-        mocks.modelos.EstadisticaPublicacion.update.mockRejectedValue(
+        registrarEstadisticaMock.mockRejectedValue(
             new Error("No se pudo actualizar la estadística"),
         );
 

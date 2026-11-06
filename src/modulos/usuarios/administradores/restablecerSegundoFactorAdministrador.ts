@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 
 export type ResultadoRestablecimientoSegundoFactor =
     | { esValido: false; errores: string[] }
     | { esValido: true; mensaje: string };
 
 export async function restablecerSegundoFactorAdministrador(administradorId: number): Promise<ResultadoRestablecimientoSegundoFactor> {
-    const sesion = await exigirAdministrador();
+    const sesion = await controlarSesionEnAccion(exigirAdministrador);
     if (!Number.isSafeInteger(administradorId) || administradorId <= 0 || administradorId > 2147483647) {
         return { esValido: false, errores: ["El administrador seleccionado no es válido."] };
     }

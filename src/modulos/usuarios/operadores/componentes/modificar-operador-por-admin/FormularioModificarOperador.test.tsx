@@ -77,7 +77,7 @@ describe("FormularioModificarOperador", () => {
 
         expect(valorDe(screen.getByLabelText("Nombre"))).toBe("Caporale");
         expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598");
-        expect(valorDe(screen.getByLabelText("WhatsApp"))).toBe("99123456");
+        expect(valorDe(screen.getByLabelText(/WhatsApp/))).toBe("99123456");
         expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
         expect(valorDe(screen.getByLabelText(/^Número de local/))).toBe("022");
         expect(valorDe(screen.getByLabelText("Fin de contrato"))).toBe("2026-12-31");
@@ -184,7 +184,7 @@ describe("FormularioModificarOperador", () => {
         fireEvent.change(screen.getByLabelText("Nombre"), {
             target: { value: "Caporale Hermanos" },
         });
-        fireEvent.change(screen.getByLabelText("WhatsApp"), {
+        fireEvent.change(screen.getByLabelText(/WhatsApp/), {
             target: { value: "1123456789" },
         });
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Código de país" }));

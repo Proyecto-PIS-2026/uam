@@ -1,3 +1,4 @@
+import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
 
 import { expect, type Page } from "@playwright/test";
 import { test } from "./usuarios-administrativos";
@@ -10,30 +11,32 @@ test.use({
 });
 
 async function solicitarRestablecimiento(page: Page, username: string) {
-  await page.goto("/iniciar-sesion");
+  return conRestablecimientoHabilitado(async () => {
+    await page.goto("/iniciar-sesion");
 
-  await page.getByRole("button", {
-    name: "Solicitar recuperación de contraseña",
-  }).click();
+    await page.getByRole("button", {
+      name: "Solicitar recuperación de contraseña",
+    }).click();
 
-  const dialogo = page.getByRole("dialog", {
-    name: "Solicitar recuperación de contraseña",
+    const dialogo = page.getByRole("dialog", {
+      name: "Solicitar recuperación de contraseña",
+    });
+
+    await dialogo.getByRole("textbox", {
+      name: "Nombre de usuario",
+    }).fill(username);
+
+    await dialogo.getByRole("button", {
+      name: "Aceptar",
+      exact: true,
+    }).click();
+
+    await expect(
+      page.getByRole("status").filter({
+        hasText: "La solicitud de recuperación fue realizada correctamente.",
+      }),
+    ).toBeVisible();
   });
-
-  await dialogo.getByRole("textbox", {
-    name: "Nombre de usuario",
-  }).fill(username);
-
-  await dialogo.getByRole("button", {
-    name: "Aceptar",
-    exact: true,
-  }).click();
-
-  await expect(
-    page.getByRole("status").filter({
-      hasText: "La solicitud de recuperación fue realizada correctamente.",
-    }),
-  ).toBeVisible();
 }
 
 async function seleccionarFiltro(
@@ -53,10 +56,13 @@ async function seleccionarFiltro(
 }
 
 async function abrirGestionUsuarios(page: Page) {
-  await page.getByRole("button", {
-    name: "Usuarios",
-    exact: true,
-  }).click();
+  await page
+    .getByRole("group", { name: "Secciones de configuración" })
+    .getByRole("button", {
+      name: "Usuarios",
+      exact: true,
+    })
+    .click();
 
   await expect(
     page.getByRole("heading", {

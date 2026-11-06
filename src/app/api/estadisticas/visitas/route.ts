@@ -1,8 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { db } from "@/infraestructura/persistencia/prisma/db";
-import { Temporal } from "temporal-polyfill";
+import { obtenerFechaEstadistica, registrarVisita } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 
 export const runtime = "nodejs";
@@ -17,11 +16,7 @@ export async function GET() {
 
         if (sesion) return NextResponse.json({ ok: true, omitido: true });
 
-        const ahora = new Date();
-        const anio = ahora.getFullYear();
-        const mes = String(ahora.getMonth() + 1).padStart(2, "0");
-        const dia = String(ahora.getDate()).padStart(2, "0");
-        const fechaStr = `${anio}-${mes}-${dia}`;
+        const fechaStr = obtenerFechaEstadistica();
         const nombreCookie = `uam_visita_${fechaStr}`;
 
         const cookieStore = await cookies();
@@ -29,20 +24,7 @@ export async function GET() {
 
         if (visitaRegistrada) return NextResponse.json({ ok: true, registrado: false });
 
-        const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
-        const tipoVisitante = "comprador";
-
-        const existente = await db.orm.public.EstadisticaVisita.where({ fecha: fechaInstant, tipoVisitante }).first();
-
-        if (existente) {
-            await db.orm.public.EstadisticaVisita.where({ id: existente.id }).update({ cantidad: existente.cantidad + 1 });
-        } else {
-            await db.orm.public.EstadisticaVisita.create({
-                fecha: fechaInstant,
-                tipoVisitante,
-                cantidad: 1,
-            });
-        }
+        await registrarVisita("comprador", fechaStr);
 
         const response = NextResponse.json({ ok: true, registrado: true });
 

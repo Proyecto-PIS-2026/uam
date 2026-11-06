@@ -32,6 +32,7 @@ function crearPublicacion(): Publicacion {
     foto: null,
     precio: "100",
     fecha: "2026-10-03T15:00:00.000Z",
+    fechaVigencia: "2026-10-10T15:00:00.000Z",
     publicacionActiva: true,
     publicacionDisponible: true,
     especie: {

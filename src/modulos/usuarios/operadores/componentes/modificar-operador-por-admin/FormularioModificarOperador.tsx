@@ -244,6 +244,7 @@ export default function FormularioModificarOperador({
                                 size="small"
                                 className={styles.control}
                                 label="WhatsApp"
+                                required
                                 type="tel"
                                 value={telefono}
                                 slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}

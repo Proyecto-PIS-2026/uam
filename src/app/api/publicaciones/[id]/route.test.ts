@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { LIMITE_FORMULARIO_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarPublicacion: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
+
 const bajaPublicacionOperadorMock = vi.hoisted(() => vi.fn());
 const obtenerSesionMock = vi.hoisted(() => vi.fn<() => Promise<DatosSesion | null>>(() => Promise.resolve({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 })));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: obtenerSesionMock }));
@@ -63,6 +69,7 @@ import { DELETE, PATCH } from "./route";
 
 function configurarMocksBase() {
 	vi.resetAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
 	obtenerSesionMock.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
 	obtenerOperadorAutorizadoMock.mockResolvedValue({ id: 3, usuarioId: 10, nombreFantasia: "Operador 3" });
 	obtenerOperadorPorIdMock.mockResolvedValue({ id: 7, usuarioId: 70, nombreFantasia: "Operador 7" });
@@ -399,28 +406,18 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		expect(respuesta.status).toBe(200);
 		expect(usuarioEstadisticaMock.select).toHaveBeenCalledExactlyOnceWith("username");
 		expect(usuarioEstadisticaMock.where).toHaveBeenCalledExactlyOnceWith({ id: 10 });
-		expect(estadisticaPublicacionMock.where).toHaveBeenCalledExactlyOnceWith(
-			expect.objectContaining({ fecha: expect.any(Object), username: "operador3" }),
-		);
-		expect(estadisticaPublicacionMock.create).toHaveBeenCalledExactlyOnceWith(
-			expect.objectContaining({ fecha: expect.any(Object), username: "operador3", cantidad: 1 }),
-		);
-		expect(estadisticaPublicacionMock.update).not.toHaveBeenCalled();
+		expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador3");
+
 	});
 
 	it("incrementa la estadística existente del usuario para hoy", async () => {
-		estadisticaPublicacionMock.first.mockResolvedValue({ id: 45, cantidad: 6 });
 
 		const respuesta = await PATCH(solicitudEdicion(), contextoEdicion);
 
 		expect(respuesta.status).toBe(200);
-		expect(estadisticaPublicacionMock.where).toHaveBeenNthCalledWith(
-			1,
-			expect.objectContaining({ fecha: expect.any(Object), username: "operador3" }),
-		);
-		expect(estadisticaPublicacionMock.where).toHaveBeenNthCalledWith(2, { id: 45 });
-		expect(estadisticaPublicacionMock.update).toHaveBeenCalledExactlyOnceWith({ cantidad: 7 });
-		expect(estadisticaPublicacionMock.create).not.toHaveBeenCalled();
+		expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador3");
+
+
 	});
 
 	it("no registra la estadística si el operador no tiene un usuario vinculado", async () => {
@@ -430,13 +427,12 @@ describe("PATCH /api/publicaciones/[id]", () => {
 
 		expect(respuesta.status).toBe(200);
 		expect(usuarioEstadisticaMock.where).toHaveBeenCalledExactlyOnceWith({ id: 10 });
-		expect(estadisticaPublicacionMock.where).not.toHaveBeenCalled();
-		expect(estadisticaPublicacionMock.create).not.toHaveBeenCalled();
-		expect(estadisticaPublicacionMock.update).not.toHaveBeenCalled();
+		expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+
 	});
 
 	it("confirma la modificación aunque falle el registro de la estadística", async () => {
-		estadisticaPublicacionMock.first.mockRejectedValue(new Error("Error de base de datos"));
+		registrarEstadisticaMock.mockRejectedValue(new Error("Error de base de datos"));
 		const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
 
 		try {

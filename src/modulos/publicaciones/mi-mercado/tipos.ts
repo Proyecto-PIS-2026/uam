@@ -8,6 +8,7 @@ export type Publicacion = {
     estadoFoto?: EstadoFotoPublicacion;
     precio: string | null;
     fecha: string;
+    fechaVigencia: string | null;
     version: number;
     publicacionActiva: boolean;
     publicacionDisponible: boolean;
@@ -20,6 +21,7 @@ export type Publicacion = {
     envase: { id: number; nombreEnvase: string } | null;
     kilos: { id: number; valor: string } | null;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     categoria: { id: number; nombreCategoria: string } | null;
     calibre: { id: number; codigoCalibre: string; nombreCalibre: string } | null;
 };

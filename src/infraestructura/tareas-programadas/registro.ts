@@ -2,6 +2,8 @@ import { procesarVencimientosFotos } from "../../modulos/publicaciones/procesar-
 import { obtenerConfiguracionAgingFotos } from "../../modulos/publicaciones/configuracion-aging-fotos";
 import type { ConfiguracionAgingFotos } from "../../modulos/publicaciones/vigencia-fotos";
 import type { TareaDiaria } from "./tipos";
+import { obtenerConfiguracionAvisosLocales } from "../../modulos/usuarios/operadores/configuracion-avisos-locales";
+import { procesarVencimientosLocales } from "../../modulos/usuarios/operadores/procesar-vencimientos-locales";
 
 export function obtenerTareasDiarias(): readonly TareaDiaria[] {
     return [{
@@ -17,6 +19,14 @@ export function obtenerTareasDiarias(): readonly TareaDiaria[] {
             }
             if (!configuracion.habilitado) return "deshabilitada";
             return procesarVencimientosFotos(contexto, configuracion);
+        },
+    }, {
+        nombre: "operadores.avisar-vencimientos-locales",
+        habilitada: () => obtenerConfiguracionAvisosLocales().habilitado,
+        ejecutar: async (contexto) => {
+            const configuracion = obtenerConfiguracionAvisosLocales();
+            if (!configuracion.habilitado) return "deshabilitada";
+            return procesarVencimientosLocales(contexto, configuracion);
         },
     }];
 }

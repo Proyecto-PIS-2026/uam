@@ -1,5 +1,6 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -13,6 +14,7 @@ export type PublicacionPerfil = {
     envase: string;
     kilos: string;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     categoria: string;
     calibre: string;
     pais: string;
@@ -106,7 +108,9 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 "foto",
                 "precio",
                 "fecha",
+                "fechaVigencia", 
                 "cantidadUnidades",
+                "comentario",
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion"
@@ -123,7 +127,8 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
     
     for (const completa of completas) {
         const publicacion = completa.publicacion;
-        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "OPERADOR";
+        const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "OPERADOR";
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,
@@ -135,6 +140,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 envase: publicacion.envase?.nombreEnvase ?? "",
                 kilos: publicacion.kilos?.valor ?? "",
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
+                comentario: publicacion.comentario,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",

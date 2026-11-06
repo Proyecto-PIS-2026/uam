@@ -13,6 +13,7 @@ function mensajeConflicto(error: unknown, perfil: TipoPerfil): string | null {
             if (dato.constraint === "usuario_username_key") return "Ya existe un usuario con ese nombre de usuario.";
             if (dato.constraint === "operador_nombreFantasia_key") return "Ya existe un operador con ese nombre.";
             if (dato.constraint === "productor_nombreFantasia_key") return "Ya existe un productor con ese nombre.";
+            if (dato.constraint === "administrador_email_key") return "Ya existe un administrador con ese email.";
             if (dato.constraint === "local_numeroLocal_naveId_key") return "Alguno de los locales seleccionados ya pertenece a otro operador. Actualizá el formulario.";
             return "Otro cambio utilizó alguno de los datos seleccionados. Actualizá el formulario.";
         }

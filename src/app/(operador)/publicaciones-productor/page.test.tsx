@@ -172,6 +172,16 @@ describe("PaginaPublicacionesProductor", () => {
         expect(propsContenedor()).not.toHaveProperty("resultado");
     });
 
+    it("restaura la especie de una URL compartida o recargada", async () => {
+        render(await PaginaPublicacionesProductor({ searchParams: Promise.resolve({ especie: "Tomate" }) }));
+        expect(propsContenedor()).toHaveProperty("especie", "Tomate");
+    });
+
+    it("ignora parámetros de especie repetidos", async () => {
+        render(await PaginaPublicacionesProductor({ searchParams: Promise.resolve({ especie: ["Tomate", "Acelga"] }) }));
+        expect(propsContenedor()).toHaveProperty("especie", "");
+    });
+
     it("muestra cantidad cero cuando no hay publicaciones", async () => {
         mocks.consultarPublicacionesProductores.mockResolvedValue({ publicaciones: [] });
         render(await PaginaPublicacionesProductor());

@@ -89,6 +89,7 @@ test("BP-18.6: filtra usuarios por rol y combina el rol con la búsqueda", async
     }
 
     await seleccionarRol(page, "Administrador");
+    await busqueda.fill(usuariosAdministrativos.administrador.usuario);
     await expect(filas.getByText(usuariosAdministrativos.administrador.usuario, { exact: true })).toBeVisible();
 
     await seleccionarRol(page, "Operador");

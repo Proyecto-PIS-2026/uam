@@ -10,7 +10,11 @@ const mocks = vi.hoisted(() => {
 const orm = { public: { Especie: mocks.especie, Variedad: mocks.variedad, PublicacionProductor: mocks.vinculo, Publicacion: mocks.publicacion, Envase: mocks.envase, KilosEmpaquetado: mocks.kilos,
     Categoria: mocks.categoria, Calibre: mocks.calibre, Pais: mocks.pais, Ubicacion: mocks.ubicacion } };
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: {
-    transaction: mocks.transaction, raw: { sql: mocks.rawSql }, orm: { public: { Publicacion: mocks.publicacion } },
+    transaction: mocks.transaction, raw: { sql: mocks.rawSql },
+    orm: { public: {
+        Publicacion: mocks.publicacion,
+        Configuracion: { where: () => ({ select: () => ({ first: vi.fn().mockResolvedValue({ valorConfiguracion: "false" }) }) }) },
+    } },
 } }));
 vi.mock("../operadores/imagenes-publicacion", () => ({
     ErrorImagenPublicacion: class extends Error {}, guardarImagenPublicacion: mocks.guardarImagen, eliminarImagenPublicacionGestionada: mocks.eliminarImagen,
@@ -65,7 +69,7 @@ describe("edición de publicaciones de productores", () => {
         const resultado = await modificarPublicacionProductor(sesion, 12, cambios);
         expect(mocks.vinculo.where).toHaveBeenCalledWith({ id: 12 });
         expect(mocks.publicacion.where).toHaveBeenCalledExactlyOnceWith({ id: 20 });
-        expect(mocks.publicacion.update).toHaveBeenCalledExactlyOnceWith({ precio: "125", foto: "foto-anterior.jpg", especieId: 6, variedadId: 7, envaseId: 8, kilosId: null, categoriaId: 4, calibreId: 2 });
+        expect(mocks.publicacion.update).toHaveBeenCalledExactlyOnceWith({ precio: "125", foto: "foto-anterior.jpg", especieId: 6, variedadId: 7, envaseId: 8, kilosId: null, categoriaId: 4, calibreId: 2, fechaVigencia: null });
         expect(mocks.ubicacion.where).toHaveBeenCalledExactlyOnceWith({ publicacionId: 12 });
         expect(mocks.ubicacion.create).toHaveBeenCalledExactlyOnceWith({ ...cambios.ubicaciones[0], publicacionId: 12 });
         expect(resultado.publicacion).toMatchObject({ id: 20, publicacionProductorId: 12, paisId: 1, cantidadUnidades: 10, publicacionDisponible: true, fecha: "2026-10-21T12:00:00Z" });
@@ -92,7 +96,7 @@ describe("edición de publicaciones de productores", () => {
         expect(mocks.vinculo.where.mock.calls.at(-2)?.[0]).toEqual({ id: 12 });
         expect(mocks.publicacion.update).toHaveBeenCalledExactlyOnceWith({
             precio: "125", foto: "foto-anterior.jpg", especieId: 6, variedadId: 7, envaseId: 8, kilosId: null, categoriaId: 4, calibreId: 2,
-            cantidadUnidades: 0, publicacionDisponible: false,
+            cantidadUnidades: 0, publicacionDisponible: false, fechaVigencia: null,
         });
         expect(resultado.publicacion).toMatchObject({ paisId: 2, pais: "Argentina", cantidadUnidades: 0, publicacionDisponible: false });
     });
@@ -403,5 +407,29 @@ describe("edición de publicaciones de productores", () => {
 
         expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ foto: fotoNueva }));
         expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+    });
+
+    it("guarda el comentario sin los espacios de los costados", async () => {
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, comentario: "  Cosecha de esta semana  " });
+
+        expect(mocks.publicacion.update.mock.calls[0][0]).toEqual(expect.objectContaining({ comentario: "Cosecha de esta semana" }));
+    });
+
+    it("borra el comentario cuando llega vacío", async () => {
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, comentario: "" });
+
+        expect(mocks.publicacion.update.mock.calls[0][0]).toEqual(expect.objectContaining({ comentario: null }));
+    });
+
+    it("no modifica el comentario guardado si no se envía", async () => {
+        await modificarPublicacionProductor(sesion, 12, cambios);
+
+        expect(mocks.publicacion.update.mock.calls[0][0]).not.toHaveProperty("comentario");
+    });
+
+    it("rechaza un comentario de más de 500 caracteres sin guardar", async () => {
+        await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, comentario: "a".repeat(501) }))
+            .rejects.toThrow("El comentario no puede superar los 500 caracteres.");
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
 });

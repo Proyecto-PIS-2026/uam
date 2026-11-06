@@ -5,7 +5,7 @@ import Pagina from "./page";
 const mocks = vi.hoisted(() => ({ requerirProductor: vi.fn(), consultar: vi.fn(), habilitado: vi.fn(), notFound: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ requerirProductor: mocks.requerirProductor }));
 vi.mock("@/modulos/usuarios/productores/perfil-propio/consultas-mi-perfil-productor", () => ({ obtenerMiPerfilProductor: mocks.consultar }));
-vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ get habilitarCambioContrasena() { return mocks.habilitado() } }));
+vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ estaHabilitadoCambioContrasena: mocks.habilitado }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 const productor = { id: 5, nombre: "Granja Norte", nombreUsuario: "granja_norte", codigoPais: "+598", telefono: "99123456", fotoPerfil: null };
 

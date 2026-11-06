@@ -1,0 +1,164 @@
+[
+  {
+    "id": "table.avisoVencimientoLocal",
+    "label": "Create table \"avisoVencimientoLocal\"",
+    "summary": "Creates table \"avisoVencimientoLocal\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "avisoVencimientoLocal"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"avisoVencimientoLocal\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"avisoVencimientoLocal\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"avisoVencimientoLocal\"",
+        "sql": "CREATE TABLE \"public\".\"avisoVencimientoLocal\" (\n  \"fecha\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"finContrato\" date NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"naveId\" int4 NOT NULL,\n  \"numeroLocal\" text NOT NULL,\n  \"operadorId\" int4 NOT NULL,\n  \"tipo\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"avisoVencimientoLocal\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"avisoVencimientoLocal\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.avisoVencimientoLocal.avisoVencimientoLocal_contrato_tipo_key",
+    "label": "Add unique constraint on \"avisoVencimientoLocal\" (operadorId, naveId, numeroLocal, finContrato, tipo)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "avisoVencimientoLocal_contrato_tipo_key",
+        "table": "avisoVencimientoLocal"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"avisoVencimientoLocal_contrato_tipo_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "avisoVencimientoLocal_contrato_tipo_key",
+          "public",
+          "\"public\".\"avisoVencimientoLocal\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"avisoVencimientoLocal_contrato_tipo_key\"",
+        "sql": "ALTER TABLE \"public\".\"avisoVencimientoLocal\" ADD CONSTRAINT \"avisoVencimientoLocal_contrato_tipo_key\" UNIQUE (\"operadorId\", \"naveId\", \"numeroLocal\", \"finContrato\", \"tipo\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"avisoVencimientoLocal_contrato_tipo_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "avisoVencimientoLocal_contrato_tipo_key",
+          "public",
+          "\"public\".\"avisoVencimientoLocal\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.avisoVencimientoLocal.avisoVencimientoLocal_operadorId_idx_b7d31568",
+    "label": "Create index \"avisoVencimientoLocal_operadorId_idx_b7d31568\" on \"avisoVencimientoLocal\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "avisoVencimientoLocal_operadorId_idx_b7d31568",
+        "table": "avisoVencimientoLocal"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"avisoVencimientoLocal_operadorId_idx_b7d31568\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"avisoVencimientoLocal_operadorId_idx_b7d31568\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"avisoVencimientoLocal_operadorId_idx_b7d31568\"",
+        "sql": "CREATE INDEX \"avisoVencimientoLocal_operadorId_idx_b7d31568\" ON \"public\".\"avisoVencimientoLocal\" (\"operadorId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"avisoVencimientoLocal_operadorId_idx_b7d31568\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"avisoVencimientoLocal_operadorId_idx_b7d31568\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.avisoVencimientoLocal.avisoVencimientoLocal_operadorId_fkey",
+    "label": "Add foreign key \"avisoVencimientoLocal_operadorId_fkey\" on \"avisoVencimientoLocal\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "avisoVencimientoLocal_operadorId_fkey",
+        "table": "avisoVencimientoLocal"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"avisoVencimientoLocal_operadorId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "avisoVencimientoLocal_operadorId_fkey",
+          "public",
+          "\"public\".\"avisoVencimientoLocal\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"avisoVencimientoLocal_operadorId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"avisoVencimientoLocal\"\nADD CONSTRAINT \"avisoVencimientoLocal_operadorId_fkey\"\nFOREIGN KEY (\"operadorId\")\nREFERENCES \"public\".\"operador\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"avisoVencimientoLocal_operadorId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "avisoVencimientoLocal_operadorId_fkey",
+          "public",
+          "\"public\".\"avisoVencimientoLocal\""
+        ]
+      }
+    ]
+  }
+]

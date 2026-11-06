@@ -36,23 +36,20 @@ export async function obtenerEstadisticas() {
         db.orm.public.EstadisticaContacto.all(),
         db.orm.public.EstadisticaPublicacion.all(),
     ]);
-    const corregirFechaLocal = (fechaDb: { toString(): string }) => {
-        const isoString = new Date(fechaDb.toString()).toISOString();
-        const [anio, mes, dia] = isoString.split("T")[0].split("-").map(Number);
-        return new Date(anio, mes - 1, dia);
-    };
+    const fechaCalendario = (fechaDb: { toString(): string }) =>
+        new Date(fechaDb.toString()).toISOString().slice(0, 10);
     return {
         visitas: visitas.map((v) => ({
             ...v,
-            fecha: corregirFechaLocal(v.fecha),
+            fecha: fechaCalendario(v.fecha),
         })),
         contactos: contactos.map((c) => ({
             ...c,
-            fecha: corregirFechaLocal(c.fecha),
+            fecha: fechaCalendario(c.fecha),
         })),
         publicaciones: publicaciones.map((p) => ({
             ...p,
-            fecha: corregirFechaLocal(p.fecha),
+            fecha: fechaCalendario(p.fecha),
         })),
     };
 }

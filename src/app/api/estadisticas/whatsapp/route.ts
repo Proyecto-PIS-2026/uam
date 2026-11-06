@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { Temporal } from "temporal-polyfill";
+import { registrarContacto } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
 
 export const runtime = "nodejs";
 
@@ -36,29 +36,7 @@ export async function POST(request: Request) {
 
         const usuarioVinculado = await db.orm.public.Usuario.select("username").where({ id: usuarioId }).first();
         if (usuarioVinculado?.username) {
-            const ahora = new Date();
-            const anio = ahora.getFullYear();
-            const mes = String(ahora.getMonth() + 1).padStart(2, "0");
-            const dia = String(ahora.getDate()).padStart(2, "0");
-            const fechaStr = `${anio}-${mes}-${dia}`;
-            const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
-            const username = usuarioVinculado.username;
-
-            const existente = await db.orm.public.EstadisticaContacto
-                .where({ fecha: fechaInstant, username })
-                .first();
-
-            if (existente) {
-                await db.orm.public.EstadisticaContacto
-                    .where({ id: existente.id })
-                    .update({ cantidad: existente.cantidad + 1 });
-            } else {
-                await db.orm.public.EstadisticaContacto.create({
-                    fecha: fechaInstant,
-                    username: username,
-                    cantidad: 1,
-                });
-            }
+            await registrarContacto(usuarioVinculado.username);
         }
 
         return NextResponse.json({ ok: true });

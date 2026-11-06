@@ -104,7 +104,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                             <TextField select label="Código de país" value={codigoPais} onChange={(event) => setCodigoPais(event.target.value)} disabled={guardando}>
                                 {CODIGOS_PAIS.map(({ codigo, pais }) => <MenuItem key={codigo} value={codigo}>{codigo} ({pais})</MenuItem>)}
                             </TextField>
-                            <TextField label="WhatsApp" type="tel" value={telefono} onChange={(event) => { if (/^[0-9]*$/.test(event.target.value)) setTelefono(event.target.value); }} disabled={guardando} />
+                            <TextField label="WhatsApp" required type="tel" value={telefono} onChange={(event) => { if (/^[0-9]*$/.test(event.target.value)) setTelefono(event.target.value); }} disabled={guardando} />
                         </div>
                         <p className={styles.aviso}>
                             <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />

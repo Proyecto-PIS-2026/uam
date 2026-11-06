@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LIMITE_JSON_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarPublicacion: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
+
 const mocks = vi.hoisted(() => ({
     operadores: vi.fn(),
     especies: vi.fn(),
@@ -56,6 +62,7 @@ import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/contr
 describe("GET /api/publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerSesion.mockResolvedValue(null);
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador propio" });
         mocks.operadores.mockResolvedValue([]);
@@ -174,6 +181,7 @@ describe("GET /api/publicaciones", () => {
 describe("POST /api/publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" });
         mocks.usuarioSelect.mockReturnValue({
@@ -421,6 +429,7 @@ describe("POST /api/publicaciones", () => {
 describe("autorización de alta de publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Propio" });
         mocks.usuarioSelect.mockReturnValue({
             where: vi.fn().mockReturnValue({
@@ -463,6 +472,7 @@ describe("autorización de alta de publicaciones", () => {
 describe("alta de publicaciones como administrador", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
         mocks.operadores.mockResolvedValue([
             { id: 7, usuarioId: 70, nombreFantasia: "Operador 7" },

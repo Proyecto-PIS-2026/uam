@@ -8,6 +8,10 @@
       "model": "Administrador",
       "namespace": "public"
     },
+    "avisoVencimientoLocal": {
+      "model": "AvisoVencimientoLocal",
+      "namespace": "public"
+    },
     "cachePreciosReferencia": {
       "model": "CachePreciosReferencia",
       "namespace": "public"
@@ -204,6 +208,106 @@
               },
               "namespaceId": "public",
               "table": "administrador"
+            }
+          },
+          "AvisoVencimientoLocal": {
+            "fields": {
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "finContrato": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "naveId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "numeroLocal": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "operadorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "tipo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "operador": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "operadorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Operador",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "fecha": {
+                  "column": "fecha"
+                },
+                "finContrato": {
+                  "column": "finContrato"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "naveId": {
+                  "column": "naveId"
+                },
+                "numeroLocal": {
+                  "column": "numeroLocal"
+                },
+                "operadorId": {
+                  "column": "operadorId"
+                },
+                "tipo": {
+                  "column": "tipo"
+                }
+              },
+              "namespaceId": "public",
+              "table": "avisoVencimientoLocal"
             }
           },
           "CachePreciosReferencia": {
@@ -1257,6 +1361,21 @@
               }
             },
             "relations": {
+              "avisosVencimientoLocales": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "operadorId"
+                  ]
+                },
+                "to": {
+                  "model": "AvisoVencimientoLocal",
+                  "namespace": "public"
+                }
+              },
               "locales": {
                 "cardinality": "1:N",
                 "on": {
@@ -1619,6 +1738,13 @@
                   "kind": "scalar"
                 }
               },
+              "comentario": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "envaseId": {
                 "nullable": true,
                 "type": {
@@ -1635,6 +1761,13 @@
               },
               "fecha": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "fechaVigencia": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "kind": "scalar"
@@ -1824,6 +1957,9 @@
                 "categoriaId": {
                   "column": "categoriaId"
                 },
+                "comentario": {
+                  "column": "comentario"
+                },
                 "envaseId": {
                   "column": "envaseId"
                 },
@@ -1832,6 +1968,9 @@
                 },
                 "fecha": {
                   "column": "fecha"
+                },
+                "fechaVigencia": {
+                  "column": "fechaVigencia"
                 },
                 "foto": {
                   "column": "foto"
@@ -2500,6 +2639,102 @@
                   "columns": [
                     "email"
                   ]
+                }
+              ]
+            },
+            "avisoVencimientoLocal": {
+              "columns": {
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "finContrato": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "naveId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "numeroLocal": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "operadorId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "tipo": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "operadorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "avisoVencimientoLocal"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "operador"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "operadorId"
+                  ],
+                  "name": "avisoVencimientoLocal_operadorId_idx_b7d31568",
+                  "prefix": "avisoVencimientoLocal_operadorId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "operadorId",
+                    "naveId",
+                    "numeroLocal",
+                    "finContrato",
+                    "tipo"
+                  ],
+                  "name": "avisoVencimientoLocal_contrato_tipo_key"
                 }
               ]
             },
@@ -3598,6 +3833,11 @@
                   "nativeType": "int4",
                   "nullable": true
                 },
+                "comentario": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "envaseId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -3612,6 +3852,11 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
                   "nullable": false
+                },
+                "fechaVigencia": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
                 },
                 "foto": {
                   "codecId": "pg/text@1",
@@ -4357,7 +4602,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e60976eb547f555dbdc6b91f6ab500618ce7118f4e8195169ecbbdda2781f73a"
+    "storageHash": "8ca6395c9b4912fea56216d23ddb5e1c92416c1a91f2fe1738adf6abc7656ef3"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

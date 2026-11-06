@@ -7,6 +7,9 @@ vi.mock("../../modulos/publicaciones/configuracion-aging-fotos", () => ({ obtene
 
 const mocks = vi.hoisted(() => ({ procesar: vi.fn() }));
 vi.mock("../../modulos/publicaciones/procesar-vencimientos-fotos", () => ({ procesarVencimientosFotos: mocks.procesar }));
+const locales = vi.hoisted(() => ({ configurar: vi.fn(), procesar: vi.fn() }));
+vi.mock("../../modulos/usuarios/operadores/configuracion-avisos-locales", () => ({ obtenerConfiguracionAvisosLocales: locales.configurar }));
+vi.mock("../../modulos/usuarios/operadores/procesar-vencimientos-locales", () => ({ procesarVencimientosLocales: locales.procesar }));
 
 const contexto = {
     tx: {} as ContextoTareaDiaria["tx"],
@@ -18,6 +21,8 @@ beforeEach(() => {
     vi.resetAllMocks();
     mocks.procesar.mockResolvedValue(0);
     mocksConfiguracion.obtener.mockResolvedValue({ habilitado: false });
+    locales.configurar.mockReturnValue({ habilitado: true, diasAnticipacionAviso: 3 });
+    locales.procesar.mockResolvedValue(2);
 });
 
 afterEach(() => {
@@ -25,6 +30,34 @@ afterEach(() => {
 });
 
 describe("registro de tareas con aging opcional", () => {
+    it("revisa los locales aunque el aging de fotos esté deshabilitado", async () => {
+        const tareas = obtenerTareasDiarias();
+        expect(new Set(tareas.map((tarea) => tarea.nombre)).size).toBe(tareas.length);
+        const tarea = tareas.find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
+
+        expect(await tarea.habilitada?.()).toBe(true);
+        await expect(tarea.ejecutar(contexto)).resolves.toBe(2);
+        expect(locales.procesar).toHaveBeenCalledExactlyOnceWith(contexto, { habilitado: true, diasAnticipacionAviso: 3 });
+        expect(mocksConfiguracion.obtener).not.toHaveBeenCalled();
+    });
+
+    it("permite apagar los avisos de locales sin ejecutar su procesador", async () => {
+        locales.configurar.mockReturnValue({ habilitado: false, diasAnticipacionAviso: 3 });
+        const tarea = obtenerTareasDiarias().find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
+
+        expect(await tarea.habilitada?.()).toBe(false);
+        await expect(tarea.ejecutar(contexto)).resolves.toBe("deshabilitada");
+        expect(locales.procesar).not.toHaveBeenCalled();
+    });
+
+    it("toma la anticipación configurada al ejecutar la revisión de locales", async () => {
+        const tarea = obtenerTareasDiarias().find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
+        locales.configurar.mockReturnValue({ habilitado: true, diasAnticipacionAviso: 7 });
+
+        await tarea.ejecutar(contexto);
+        expect(locales.procesar).toHaveBeenCalledWith(contexto, { habilitado: true, diasAnticipacionAviso: 7 });
+    });
+
     it("registra las tareas aunque el aging esté deshabilitado", async () => {
         const [tarea] = obtenerTareasDiarias();
 

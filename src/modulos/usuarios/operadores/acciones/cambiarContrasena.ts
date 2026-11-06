@@ -3,6 +3,8 @@
 import argon2 from "argon2";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
+import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import {
     validarCambioContrasena,
     type ResultadoValidacionCambioContrasena,
@@ -17,6 +19,10 @@ export async function cambiarContrasena(
     _estadoAnterior: EstadoCambioContrasena,
     formulario: FormData,
 ): Promise<EstadoCambioContrasena> {
+    const sesion = await controlarSesionEnAccion(exigirOperador);
+    if (!await estaHabilitadoCambioContrasena()) {
+        return { error: "El cambio de contraseña no está habilitado por el administrador." };
+    }
     const validacion: ResultadoValidacionCambioContrasena =
         validarCambioContrasena({
             contrasenaActual: formulario.get("contrasenaActual"),
@@ -28,7 +34,6 @@ export async function cambiarContrasena(
         return { error: validacion.errores.join(" ") };
     }
 
-    const sesion = await exigirOperador();
     const usuario = await db.orm.public.Usuario
         .select("id", "passwordHash")
         .where({ id: sesion.usuarioId, rol: "OPERADOR" })

@@ -38,6 +38,10 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
         if (guardando || !huboCambios) {
             return;
         }
+        if (tipo === "numero" && (!/^[0-9]+$/.test(valor) || !Number.isSafeInteger(Number(valor)) || Number(valor) <= 0)) {
+            notificar("El importe debe ser un número entero positivo.", "error");
+            return;
+        }
         if (tipo === "url" && valor !== "") {
             let url: URL;
             try {

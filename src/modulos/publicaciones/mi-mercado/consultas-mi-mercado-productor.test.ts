@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
+import "temporal-polyfill/global";
 import { obtenerPublicacionesMiMercadoProductor } from "./consultas-mi-mercado-productor";
 
 vi.mock("../configuracion-aging-fotos", () => ({
@@ -83,6 +85,18 @@ describe("lectura privada de Mi Mercado del productor", () => {
         vi.useRealTimers();
     });
 
+    it("muestra no disponible una publicación vencida sin depender del refresco de notificaciones", async () => {
+        const relacion = relacionPublicacion(23, 31);
+        mocks.todasPublicaciones.mockResolvedValue([{
+            ...relacion,
+            publicacion: { ...relacion.publicacion, fechaVigencia: Temporal.Now.instant().subtract({ hours: 24 }) },
+        }]);
+
+        const resultado = await obtenerPublicacionesMiMercadoProductor();
+
+        expect(resultado.publicaciones[0].publicacionDisponible).toBe(false);
+    });
+
     it("mantiene la foto visible hasta el borrado y solo entonces muestra el estado de eliminada", async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-11-04T03:00:00Z"));
@@ -129,6 +143,7 @@ describe("lectura privada de Mi Mercado del productor", () => {
             precio: "125.00",
             cantidadUnidades: 10,
             fecha: "2026-10-16T12:00:00Z",
+            fechaVigencia: null,
             publicacionActiva: true,
             publicacionDisponible: true,
             especie: relacionPublicacion(23, 31).publicacion.especie,

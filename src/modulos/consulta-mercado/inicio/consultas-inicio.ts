@@ -25,6 +25,7 @@ export async function obtenerEspeciesConPublicacionesActivas() {
         WHERE p."publicacionDisponible" = true
             AND p."publicacionActiva" = true
             AND p."tipoPublicacion" = 'OPERADOR'
+            AND (p."fechaVigencia" IS NULL OR (p."fechaVigencia" AT TIME ZONE 'America/Montevideo')::date >= ${hoy}::date)
             AND EXISTS (
                 SELECT 1
                 FROM local l

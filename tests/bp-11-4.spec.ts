@@ -1,3 +1,4 @@
+import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
 import "temporal-polyfill/full/global";
 import "temporal-polyfill/types/global";
 import { randomBytes, randomInt, randomUUID } from "node:crypto";
@@ -59,7 +60,7 @@ async function iniciarSesion(page: Page, operador: Operador) {
 test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
   test.beforeEach(() => test.slow());
 
-  test("CA-1 a CA-9: el operador consulta su perfil con todos sus datos", async ({ page, db, operador }) => {
+  test("CA-1 a CA-9: el operador consulta su perfil con todos sus datos", async ({ page, db, operador }) => conRestablecimientoHabilitado(async () => {
     // CA-1: sin sesión no se muestra ningún perfil, se pide iniciar sesión.
     await page.goto("/mi-perfil");
     await expect(page).toHaveURL("/iniciar-sesion");
@@ -83,7 +84,7 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
     await expect(perfil.getByRole("img", { name: `Foto de ${operador.nombre}`, exact: true })).toBeVisible();
 
     // CA-6: período de licencia y mensaje de recomendación.
-    await expect(perfil.getByText("01/12/2026 - 15/12/2026", { exact: true })).toBeVisible();
+    await expect(perfil.getByText("Fecha: 01/12/2026 - 15/12/2026", { exact: true })).toBeVisible();
     await expect(perfil.getByText("Compren en el puesto de al lado.", { exact: true })).toBeVisible();
 
     // CA-7: la contraseña no aparece.
@@ -94,9 +95,11 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
     await expect(perfil.getByRole("button", { name: "Editar", exact: true })).toBeVisible();
 
     // CA-9: cambio de contraseña pidiendo la actual.
-    await perfil.getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
+    await page.getByRole("main").getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
     await expect(page).toHaveURL("/mi-perfil/cambiar-contrasena");
-    await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
+    const contrasenaActual = page.getByRole("form", { name: "Cambio de contraseña" }).getByLabel("Contraseña", { exact: true });
+    await expect(contrasenaActual).toBeVisible();
+    await expect(contrasenaActual).toHaveAttribute("autocomplete", "current-password");
 
     // CA-1: el perfil de otro operador no es accesible.
     const otro = await db.orm.public.Operador.select("nombreFantasia").where({ enLicencia: false }).first();
@@ -104,7 +107,7 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
       await page.goto(`/operadores/${encodeURIComponent(otro.nombreFantasia)}`);
       await expect(page).toHaveURL(/\/mi-mercado(\/|$)/);
     }
-  });
+  }));
 
   test("CA-3, CA-5 y CA-6: se indica cuando no hay contacto, foto ni licencia", async ({ page, db, operador }) => {
     await db.orm.public.Operador.where({ id: operador.id }).update({ whatsApp: "", fotoPerfil: null, enLicencia: false, comentario: null });

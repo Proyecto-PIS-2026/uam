@@ -1,6 +1,7 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import type { DatosSesion } from "../../identidad-acceso/autenticacion/sesiones";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { esPublicacionVencida } from "../../publicaciones/vigencia-publicacion";
 
 export type UbicacionPublicacionProductorListado = {
     id: number;
@@ -18,6 +19,7 @@ export type PublicacionProductorListado = {
     envase: string;
     kilos: string;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -49,7 +51,7 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
     ).where((pp) =>
         pp.productor.some((productor) => productor.usuario.some((usuario) => usuario.habilitado.eq(true))),
     ).include("publicacion", (p) =>
-        p.select("id", "precio", "fecha", "foto", "cantidadUnidades", "tipoPublicacion")
+        p.select("id", "precio", "fecha", "fechaVigencia", "foto", "cantidadUnidades", "comentario", "tipoPublicacion")
             .include("especie", (e) => e.select("nombreEspecie"))
             .include("variedad", (v) => v.select("nombreVariedad"))
             .include("envase", (e) => e.select("nombreEnvase"))
@@ -74,7 +76,7 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
         const categoria = p?.categoria;
         const calibre = p?.calibre;
         const tipoPublicacion = p?.tipoPublicacion;
-        if (!p || !productor || !especie || tipoPublicacion !== "PRODUCTOR") return [];
+        if (!p || !productor || !especie || tipoPublicacion !== "PRODUCTOR" || esPublicacionVencida(p.fechaVigencia)) return [];
         return [{
             id: Number(p.id),
             precio: p.precio === null ? null : Number(p.precio),
@@ -85,6 +87,7 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
             envase: envase?.nombreEnvase ?? "",
             kilos: kilos?.valor ?? "",
             cantidadUnidades: p.cantidadUnidades === null ? null : Number(p.cantidadUnidades),
+            comentario: p.comentario,
             categoria: categoria?.nombreCategoria ?? "",
             calibre: calibre?.nombreCalibre ?? "",
             codigoCalibre: calibre?.codigoCalibre ?? "",

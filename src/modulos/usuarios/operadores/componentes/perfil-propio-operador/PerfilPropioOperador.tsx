@@ -5,7 +5,6 @@ import Image from "next/image";
 import EditIcon from "@mui/icons-material/Edit";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
-import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import Link from "next/link";
@@ -15,7 +14,7 @@ import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
 import FormularioPerfilPropio from "./FormularioPerfilPropio";
 import styles from "./PerfilPropioOperador.module.css";
-import { AssignmentLateOutlined, DescriptionOutlined } from "@mui/icons-material";
+import { DescriptionOutlined } from "@mui/icons-material";
 
 function formatearFecha(fecha: string): string {
     const [anio, mes, dia] = fecha.split("-");
@@ -31,10 +30,9 @@ function extraerLicencia(comentario: string | null | undefined) {
     };
 }
 
-export default function PerfilPropioOperador({ perfil }: { perfil: PerfilPropioOperador }) {
+export default function PerfilPropioOperador({ perfil, cambioContrasenaHabilitado = false }: { perfil: PerfilPropioOperador; cambioContrasenaHabilitado?: boolean }) {
     const [editando, setEditando] = useState(false);
     const [fotoPerfilFallida, setFotoPerfilFallida] = useState(false);
-    const inicial = perfil.nombre.trim()[0]?.toUpperCase() ?? "?";
     const licencia = extraerLicencia(perfil.comentario);
     const fechasLicencia = licencia.inicio && licencia.fin
         ? `${formatearFecha(licencia.inicio)} - ${formatearFecha(licencia.fin)}`
@@ -120,9 +118,9 @@ export default function PerfilPropioOperador({ perfil }: { perfil: PerfilPropioO
                     </div>
                 </div>
             </section>
-            <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
+            {cambioContrasenaHabilitado && <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
                 Cambiar contraseña
-            </Link>
+            </Link>}
         </main>
     );
 }

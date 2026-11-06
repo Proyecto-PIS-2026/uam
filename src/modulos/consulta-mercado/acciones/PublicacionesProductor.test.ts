@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
+import "temporal-polyfill/global";
 import type { DatosSesion } from "../../identidad-acceso/autenticacion/sesiones";
 import { consultarPublicacionesProductores } from "./PublicacionesProductor";
 
@@ -93,6 +95,7 @@ type FilaMock = {
         id: string;
         precio: string | null;
         fecha: Date;
+        fechaVigencia?: Temporal.Instant | null;
         foto: string | null;
         cantidadUnidades: string | null;
         tipoPublicacion: "PRODUCTOR",
@@ -222,6 +225,23 @@ describe("consultarPublicacionesProductores", () => {
         mocks.all.mockResolvedValue([]);
 
         await expect(consultarPublicacionesProductores(sesionOperador)).resolves.toEqual({ publicaciones: [] });
+    });
+
+    it("oculta las publicaciones vencidas aunque sigan disponibles, igual que el perfil", async () => {
+        const ahora = Temporal.Now.instant();
+        const vencida = crearFilaValida();
+        vencida.publicacion!.fechaVigencia = ahora.subtract({ hours: 24 });
+        const vigente = crearFilaValida();
+        vigente.publicacion!.id = "102";
+        vigente.publicacion!.fechaVigencia = ahora.add({ hours: 24 });
+        const sinVencimiento = crearFilaValida();
+        sinVencimiento.publicacion!.id = "103";
+        sinVencimiento.publicacion!.fechaVigencia = null;
+        mocks.all.mockResolvedValue([vencida, vigente, sinVencimiento]);
+
+        const resultado = await consultarPublicacionesProductores(sesionOperador);
+
+        expect(resultado.publicaciones.map(({ id }) => id)).toEqual([102, 103]);
     });
 
     it("transforma los tipos y mapea todos los datos de la publicación, productor, país y ubicaciones", async () => {

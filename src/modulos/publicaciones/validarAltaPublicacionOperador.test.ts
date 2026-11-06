@@ -71,7 +71,7 @@ describe("validarAltaPublicacionOperador", () => {
 
 		expect(resultado).toEqual({
 			esValido: true,
-			datos: { ...datosValidos, precio: "1250" },
+			datos: { ...datosValidos, precio: "1250", comentario: null, fechaVigencia: null },
 		});
 	});
 
@@ -99,4 +99,16 @@ describe("validarAltaPublicacionOperador", () => {
 			errores: ["La disponibilidad no es válida."],
 		});
 	});
+
+    it("acepta un comentario y le quita los espacios de los costados", () => {
+        const resultado = validarAltaPublicacionOperador({ ...datosValidos, comentario: "  Cosecha de esta semana  " });
+
+        expect(resultado.esValido && resultado.datos.comentario).toBe("Cosecha de esta semana");
+    });
+
+    it("rechaza un comentario de más de 500 caracteres", () => {
+        const resultado = validarAltaPublicacionOperador({ ...datosValidos, comentario: "a".repeat(501) });
+
+        expect(resultado.esValido ? [] : resultado.errores).toContain("El comentario no puede superar los 500 caracteres.");
+    });
 });

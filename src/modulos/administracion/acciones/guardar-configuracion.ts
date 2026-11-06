@@ -2,6 +2,7 @@
 
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 
 
 const clavesOrdenamiento = [
@@ -155,7 +156,7 @@ function validarVigencia(cambios: Record<string, string>, claves: readonly [stri
 }
 
 export async function guardarConfiguraciones(cambios: Record<string, string>): Promise<void> {
-    await exigirAdministrador();
+    await controlarSesionEnAccion(exigirAdministrador);
     if (!cambios || typeof cambios !== "object" || Array.isArray(cambios)) {
         throw new Error("Las configuraciones no son válidas.");
     }

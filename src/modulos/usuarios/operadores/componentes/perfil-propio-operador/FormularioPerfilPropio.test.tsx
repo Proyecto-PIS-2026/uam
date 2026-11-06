@@ -40,7 +40,7 @@ describe("FormularioPerfilPropio", () => {
         render(<FormularioPerfilPropio perfil={perfil} alCancelar={cancelar} />);
 
         expect(screen.getByLabelText("Código de país")).toHaveTextContent("+598");
-        expect(screen.getByLabelText("WhatsApp")).toHaveValue("99123456");
+        expect(screen.getByLabelText(/WhatsApp/)).toHaveValue("99123456");
         expect(screen.getByRole("switch", { name: "En licencia" })).toBeChecked();
         expect(screen.getByLabelText("Inicio de licencia")).toHaveValue("2999-11-05");
         expect(screen.getByLabelText("Mensaje de recomendación (opcional)")).toHaveValue("Consultar disponibilidad.");

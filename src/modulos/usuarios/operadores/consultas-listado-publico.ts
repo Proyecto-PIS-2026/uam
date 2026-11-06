@@ -1,5 +1,6 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -33,7 +34,7 @@ export async function obtenerOperadoresPublicos(): Promise<OperadorListado[]> {
         )
         .include("publicacionesOperador", (publicaciones) =>
             publicaciones.include("publicacion", (publicacion) =>
-                publicacion.select("publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+                publicacion.select("publicacionActiva", "publicacionDisponible", "tipoPublicacion", "fechaVigencia")
             )
         );
 
@@ -63,7 +64,8 @@ export async function obtenerOperadoresPublicos(): Promise<OperadorListado[]> {
         let cantidadProductos = 0;
         for (const relacion of operador.publicacionesOperador) {
             const publicacion = relacion.publicacion;
-            if (publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "OPERADOR") {
+            const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+            if (publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "OPERADOR") {
                 cantidadProductos++;
             }
         }
