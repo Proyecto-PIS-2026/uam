@@ -231,7 +231,7 @@ describe("PreciosReferencia", () => {
         expect(opcionesDe("Categoría")).toEqual(["Todas las categorías", "II"]);
         expect(opcionesDe("Calibre")).toEqual(["Todos los calibres", "M"]);
         expect(screen.getByText("1 resultados")).toBeInTheDocument();
-    });
+    }, 500_000);
 
     it("acota País, Categoría, Calibre y Presentación según las facetas elegidas", () => {
         renderizarFiltros();

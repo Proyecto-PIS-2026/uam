@@ -62,7 +62,7 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
   test("CA-1 a CA-9: el operador consulta su perfil con todos sus datos", async ({ page, db, operador }) => {
     // CA-1: sin sesión no se muestra ningún perfil, se pide iniciar sesión.
     await page.goto("/mi-perfil");
-    await expect(page).toHaveURL(/\/(iniciar-sesion|sesion-finalizada)/);
+    await expect(page).toHaveURL("/iniciar-sesion");
 
     await iniciarSesion(page, operador);
     await page.goto("/mi-perfil");
@@ -95,7 +95,7 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
 
     // CA-9: cambio de contraseña pidiendo la actual.
     await perfil.getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
-    await expect(page).toHaveURL(/\/cambiar-contrasena$/);
+    await expect(page).toHaveURL("/mi-perfil/cambiar-contrasena");
     await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
 
     // CA-1: el perfil de otro operador no es accesible.

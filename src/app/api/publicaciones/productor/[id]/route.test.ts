@@ -28,6 +28,7 @@ const mocks = vi.hoisted(() => {
             Usuario: consulta(),
             EstadisticaPublicacion: consulta(),
             Imagen: consulta(),
+            Configuracion: consulta(),
         },
     };
 });
@@ -101,7 +102,7 @@ function configurarMocksBase() {
     mocks.editable.mockResolvedValue({ id: 12 });
     mocks.opciones.mockResolvedValue({
         categorias: [],
-        presentaciones: [],
+        envases: [], kilos: [],
         calibres: [],
     });
 
@@ -130,11 +131,17 @@ function configurarMocksBase() {
     });
 
     mocks.modelos.EstadisticaPublicacion.first.mockResolvedValue(null);
+    mocks.modelos.Configuracion.all.mockResolvedValue([
+        { nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "true" },
+        { nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "3" },
+        { nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "true" },
+        { nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "1" },
+    ]);
 }
 
 function solicitud(cambios: unknown = {
     precio: "125",
-    presentacionId: 8,
+    envaseId: 8, kilosId: null,
     categoriaId: 4,
     calibreId: 2,
     ubicaciones: [],
@@ -235,7 +242,7 @@ describe("GET /api/publicaciones/productor/[id]", () => {
             variedades: [
                 { id: 21, nombre: "Williams", especieId: 2 },
             ],
-            presentaciones: [
+            envases: [
                 { id: 31, nombre: "Cajón", variedadId: 21 },
             ],
             categorias: [
@@ -337,6 +344,26 @@ describe("PATCH /api/publicaciones/productor/[id]", () => {
 
         expect(respuesta.status).toBe(200);
         expect(await respuesta.json()).toEqual({ publicacion: { ...publicacion, foto, estadoFoto: null } });
+        expect(mocks.modelos.Configuracion.all).toHaveBeenCalledOnce();
+        expect(mocks.modelos.Imagen.all).toHaveBeenCalledOnce();
+        expect(console.error).not.toHaveBeenCalled();
+    });
+
+    it("devuelve el aviso de próximo vencimiento al alcanzar el plazo configurado", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-04T03:00:00Z"));
+        const archivo = "12345678-1234-4234-8234-123456789abc.webp";
+        const foto = `/api/publicaciones/imagenes/20/${archivo}`;
+        mocks.modificar.mockResolvedValue({ publicacion: { ...publicacion, foto }, productorId: 3 });
+        mocks.modelos.Imagen.all.mockResolvedValue([{ clave: `publicaciones/20/${archivo}`, cargadaEn: "2026-11-02T03:00:00Z" }]);
+
+        const respuesta = await PATCH(solicitud(), contexto);
+
+        expect(respuesta.status).toBe(200);
+        expect(await respuesta.json()).toEqual({ publicacion: { ...publicacion, foto, estadoFoto: "por-vencer" } });
+        expect(mocks.modelos.Configuracion.all).toHaveBeenCalledOnce();
+        expect(mocks.modelos.Imagen.all).toHaveBeenCalledOnce();
+        expect(console.error).not.toHaveBeenCalled();
     });
 
     it("conserva el aviso de una foto eliminada por aging cuando se guardan otros datos", async () => {
@@ -420,7 +447,7 @@ describe("PATCH /api/publicaciones/productor/[id]", () => {
         async (cantidadUnidades) => {
             const cambios = {
                 precio: null,
-                presentacionId: 31,
+                envaseId: 31, kilosId: null,
                 categoriaId: 41,
                 calibreId: 51,
                 paisId: 62,

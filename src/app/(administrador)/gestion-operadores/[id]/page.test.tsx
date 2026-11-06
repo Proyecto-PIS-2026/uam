@@ -46,7 +46,7 @@ function props(id: string) {
 }
 
 const perfil = { id: 12, nombreFantasia: "Operador de Prueba" };
-const opciones = { especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] };
+const opciones = { especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] };
 
 describe("Página de perfil del operador para el administrador", () => {
     beforeEach(() => {

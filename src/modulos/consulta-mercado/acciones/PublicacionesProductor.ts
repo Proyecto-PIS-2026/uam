@@ -15,7 +15,8 @@ export type PublicacionProductorListado = {
     foto: string | null;
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     cantidadUnidades?: number | null;
     categoria: string;
     calibre: string;
@@ -51,7 +52,8 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
         p.select("id", "precio", "fecha", "foto", "cantidadUnidades", "tipoPublicacion")
             .include("especie", (e) => e.select("nombreEspecie"))
             .include("variedad", (v) => v.select("nombreVariedad"))
-            .include("presentacion", (pr) => pr.select("nombrePresentacion"))
+            .include("envase", (e) => e.select("nombreEnvase"))
+            .include("kilos", (k) => k.select("valor"))
             .include("categoria", (c) => c.select("nombreCategoria"))
             .include("calibre", (c) => c.select("nombreCalibre", "codigoCalibre"))
     ).include("productor", (p) =>
@@ -65,7 +67,8 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
         const p = fila.publicacion;
         const productor = fila.productor;
         const pais = fila.pais;
-        const presentacion = p?.presentacion;
+        const envase = p?.envase;
+        const kilos = p?.kilos;
         const variedad = p?.variedad;
         const especie = p?.especie;
         const categoria = p?.categoria;
@@ -79,7 +82,8 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
             foto: p.foto,
             especie: especie.nombreEspecie,
             variedad: variedad?.nombreVariedad ?? "",
-            presentacion: presentacion?.nombrePresentacion ?? "",
+            envase: envase?.nombreEnvase ?? "",
+            kilos: kilos?.valor ?? "",
             cantidadUnidades: p.cantidadUnidades === null ? null : Number(p.cantidadUnidades),
             categoria: categoria?.nombreCategoria ?? "",
             calibre: calibre?.nombreCalibre ?? "",

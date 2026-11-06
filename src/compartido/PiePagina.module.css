@@ -1,3 +1,4 @@
+
 .pie {
     flex-shrink: 0;
     width: 100%;
@@ -18,10 +19,10 @@
 }
 
 .contacto {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
-    justify-content: space-between;
+    justify-items: center;
     gap: var(--espacio-inline) var(--espacio-amplio);
     font-size: var(--tamano-texto-secundario);
     font-style: normal;
@@ -30,12 +31,15 @@
 
 .dato {
     display: inline-flex;
+    width: 100%;
     min-width: 0;
     min-height: var(--alto-control);
     margin: 0;
     align-items: center;
+    justify-content: center;
     gap: var(--espacio-inline);
     color: inherit;
+    text-align: center;
     text-decoration: none;
     overflow-wrap: anywhere;
 }
@@ -57,6 +61,19 @@
     flex-shrink: 0;
 }
 
+.avisosLegales {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-inline);
+}
+
+.avisoLegal {
+    margin: 0;
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+    text-align: left;
+}
+
 .derechos {
     margin: 0;
     padding-top: var(--espacio-secciones);
@@ -68,8 +85,7 @@
 
 @media (max-width: 767px) {
     .contacto {
-        flex-direction: column;
-        align-items: flex-start;
+        grid-template-columns: 1fr;
     }
 
     .derechos {
