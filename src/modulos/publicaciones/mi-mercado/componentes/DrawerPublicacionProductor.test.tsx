@@ -324,7 +324,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(url).toBe("/api/publicaciones/productor/1042");
         expect(cambios).toEqual({
             especieId: 1, variedadId: 12, precio: "250", envaseId: 121, kilosId: null, categoriaId: 5, calibreId: 8,
-            paisId: 2, cantidadUnidades: 25, disponible: false,
+            paisId: 2, cantidadUnidades: 25, disponible: false, comentario: null,
             ubicaciones: [{ nombreUbicacion: "Nuevo retiro", urlMaps: "https://www.google.com/maps?q=-34.5,-56.1", departamento: "Canelones" }],
         });
         expect(datos.has("foto")).toBe(false);
@@ -461,7 +461,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         expect(solicitudGuardado().cambios).toEqual({
             especieId: 2, variedadId: 21, precio: "100", envaseId: 211, kilosId: null, categoriaId: 6, calibreId: 4,
-            paisId: 1, cantidadUnidades: 12, disponible: true,
+            paisId: 1, cantidadUnidades: 12, disponible: true, comentario: null,
             ubicaciones: [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=Salto" }],
         });
         expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Manzana");
@@ -598,11 +598,25 @@ describe("DrawerPublicacionProductor: edición", () => {
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         expect(solicitudGuardado().cambios).toEqual({
             especieId: 1, variedadId: 11, precio: null, envaseId: 111, kilosId: null, categoriaId: 3, calibreId: 4,
-            paisId: 1, cantidadUnidades: null, disponible: false,
+            paisId: 1, cantidadUnidades: null, disponible: false, comentario: null,
             ubicaciones: [{ nombreUbicacion: "Quinta", urlMaps: "https://maps.google.com/?q=Salto" }],
         });
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("");
         expect(screen.getByLabelText("Unidades (Cajon)")).toHaveValue("");
+    });
+
+    it("guarda el comentario sin los espacios de los costados y lo muestra en consulta", async () => {
+        const actualizada = { ...publicacion, comentario: "Cosecha de esta semana" };
+        mocks.fetch.mockResolvedValueOnce(respuesta({ opciones })).mockResolvedValueOnce(respuesta({ publicacion: actualizada }));
+        mostrar();
+        await editar();
+        fireEvent.change(screen.getByLabelText("Comentario"), { target: { value: "  Cosecha de esta semana  " } });
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
+        expect(solicitudGuardado().cambios).toMatchObject({ comentario: "Cosecha de esta semana" });
+        expect(screen.getByLabelText("Comentario")).toHaveValue("Cosecha de esta semana");
+        expect(screen.getByLabelText("Comentario")).toHaveAttribute("readonly");
     });
 
     it("exige corregir un precio cero existente antes de guardar", async () => {

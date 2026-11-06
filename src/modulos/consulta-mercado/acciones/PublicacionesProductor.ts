@@ -18,6 +18,7 @@ export type PublicacionProductorListado = {
     envase: string;
     kilos: string;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -49,7 +50,7 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
     ).where((pp) =>
         pp.productor.some((productor) => productor.usuario.some((usuario) => usuario.habilitado.eq(true))),
     ).include("publicacion", (p) =>
-        p.select("id", "precio", "fecha", "foto", "cantidadUnidades", "tipoPublicacion")
+        p.select("id", "precio", "fecha", "foto", "cantidadUnidades", "comentario", "tipoPublicacion")
             .include("especie", (e) => e.select("nombreEspecie"))
             .include("variedad", (v) => v.select("nombreVariedad"))
             .include("envase", (e) => e.select("nombreEnvase"))
@@ -85,6 +86,7 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
             envase: envase?.nombreEnvase ?? "",
             kilos: kilos?.valor ?? "",
             cantidadUnidades: p.cantidadUnidades === null ? null : Number(p.cantidadUnidades),
+            comentario: p.comentario,
             categoria: categoria?.nombreCategoria ?? "",
             calibre: calibre?.nombreCalibre ?? "",
             codigoCalibre: calibre?.codigoCalibre ?? "",

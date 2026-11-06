@@ -39,6 +39,7 @@ function paraDrawer(publicacion: PublicacionPerfilAdmin): PublicacionParaEditar 
         calibre: publicacion.calibre,
         precio: publicacion.precio,
         cantidadUnidades: publicacion.cantidadUnidades,
+        comentario: publicacion.comentario,
         fecha: publicacion.fecha,
         foto: publicacion.foto,
         categoriaId: publicacion.categoriaId,

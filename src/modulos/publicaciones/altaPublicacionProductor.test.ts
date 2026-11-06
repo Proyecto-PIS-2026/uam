@@ -116,10 +116,16 @@ describe("altaPublicacionProductor", () => {
         expect(await altaPublicacionProductor(datos)).toEqual({ esValido: true, id: 42, mensaje: "Publicación creada correctamente." });
         expect(mocks.ejecutar).toHaveBeenCalledExactlyOnceWith("bloqueo del productor");
         expect(mocks.ejecutar.mock.invocationCallOrder[0]).toBeLessThan(mocks.relaciones.mock.invocationCallOrder[0]);
-        expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, especieId: 2, variedadId: 3, envaseId: 4, kilosId: null, categoriaId: 5, calibreId: 6 });
+        expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, comentario: null, especieId: 2, variedadId: 3, envaseId: 4, kilosId: null, categoriaId: 5, calibreId: 6 });
         expect(mocks.crearRelacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 42, productorId: 1, paisId: 7 });
         expect(mocks.crearUbicacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 74, nombreUbicacion: "Montevideo", urlMaps: "https://www.google.com/maps?q=-34.9%2C-56.2", departamento: "Montevideo" });
         expect(mocks.guardarImagen).not.toHaveBeenCalled();
+    });
+
+    it("guarda el comentario del publicador sin los espacios de los costados", async () => {
+        await altaPublicacionProductor({ ...datos, comentario: "  Cosecha de esta semana  " });
+
+        expect(mocks.crearPublicacion).toHaveBeenCalledWith(expect.objectContaining({ comentario: "Cosecha de esta semana" }));
     });
 
     it("guarda los departamentos normalizados y permite puntos anteriores sin departamento en la misma transacción", async () => {

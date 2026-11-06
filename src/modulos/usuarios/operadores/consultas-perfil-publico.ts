@@ -13,6 +13,7 @@ export type PublicacionPerfil = {
     envase: string;
     kilos: string;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     categoria: string;
     calibre: string;
     pais: string;
@@ -107,6 +108,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 "precio",
                 "fecha",
                 "cantidadUnidades",
+                "comentario",
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion"
@@ -135,6 +137,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 envase: publicacion.envase?.nombreEnvase ?? "",
                 kilos: publicacion.kilos?.valor ?? "",
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
+                comentario: publicacion.comentario,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",
