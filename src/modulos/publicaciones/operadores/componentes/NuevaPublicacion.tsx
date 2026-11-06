@@ -33,7 +33,17 @@ type Catalogos = {
     calibres: Opcion[];
     paises: Opcion[];
 };
-type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia" | "variedadId" | "presentacionId" | "categoriaId" | "calibreId" | "paisId"> & { precio: string; cantidadUnidades: string; fotografia: string; fechaVigencia: string; variedadId: number; presentacionId: number; categoriaId: number; calibreId: number; paisId: number };
+type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia" | "variedadId" | "presentacionId" | "categoriaId" | "calibreId" | "paisId"> & {
+    precio: string;
+    cantidadUnidades: string;
+    fotografia: string;
+    fechaVigencia: string;
+    variedadId: number;
+    presentacionId: number;
+    categoriaId: number;
+    calibreId: number;
+    paisId: number;
+};
 type NuevaPublicacionProps = {
     operadorId: number;
     incrementoPrecio?: number;

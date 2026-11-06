@@ -20,7 +20,6 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
     const diasAnticipacion = Math.max(1, Number(configDiasAnticipacion?.valorConfiguracion ?? 7) || 7);
 
     const ahora = Temporal.Now.instant();
-    const hoyPlain = ahora.toZonedDateTimeISO("America/Montevideo").toPlainDate();
     const limiteAviso = ahora.add({ hours: diasAnticipacion * 24 });
 
     const [operador, productor] = await Promise.all([
