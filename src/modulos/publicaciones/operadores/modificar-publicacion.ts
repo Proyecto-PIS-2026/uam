@@ -152,12 +152,13 @@ let fechaVigenciaParaGuardar: FechaVigenciaDb = undefined;
                 const coincidencias = await tx.orm.public.Publicacion.where({
                     especieId: cambios.especieId,
                     variedadId: cambios.variedadId,
-                    presentacionId: cambios.presentacionId,
+                    envaseId: cambios.envaseId,
+                    kilosId: cambios.kilosId,
                     categoriaId: cambios.categoriaId,
                     calibreId: cambios.calibreId,
                 }).select("id").all();
                 if (coincidencias.some((coincidencia) => idsDeOtrasPublicaciones.has(coincidencia.id))) {
-                    throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país.");
+                    throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.");
                 }
             }
 
@@ -178,7 +179,8 @@ let fechaVigenciaParaGuardar: FechaVigenciaDb = undefined;
                     variedadId: cambios.variedadId,
                     categoriaId: cambios.categoriaId,
                     calibreId: cambios.calibreId,
-                    presentacionId: cambios.presentacionId,
+                    envaseId: cambios.envaseId,
+                    kilosId: cambios.kilosId,
                     publicacionDisponible: cambios.disponible,
                     ...(fechaVigenciaParaGuardar !== undefined ? { fechaVigencia: fechaVigenciaParaGuardar } : {}),
                 });

@@ -2,7 +2,8 @@ import { Temporal } from "@js-temporal/polyfill";
 import { claveDesdeUrlImagen } from "../../infraestructura/imagenes/almacenamiento-imagenes";
 import { db } from "../../infraestructura/persistencia/prisma/db";
 import type { EstadoFotoPublicacion } from "./estado-foto-publicacion";
-import { obtenerConfiguracionAgingFotos, obtenerLimiteAntiguedadFotos, type ConfiguracionAgingFotos } from "./vigencia-fotos";
+import { obtenerConfiguracionAgingFotos } from "./configuracion-aging-fotos";
+import { obtenerLimiteAntiguedadFotos, type ConfiguracionAgingFotos } from "./vigencia-fotos";
 
 type FotoPropia = {
     foto: string | null;
@@ -18,12 +19,12 @@ export async function agregarEstadoFotosPropias<T extends FotoPropia>(items: rea
     }));
     let configuracion: ConfiguracionAgingFotos;
     try {
-        configuracion = obtenerConfiguracionAgingFotos();
+        configuracion = await obtenerConfiguracionAgingFotos();
     } catch (error) {
-        console.error("No se pudo consultar la vigencia de las fotos: la configuración del aging es inválida.", error);
+        console.error("No se pudo consultar la vigencia de las fotos: no se pudo obtener una configuración válida.", error);
         return publicaciones;
     }
-    if (!configuracion.habilitado) return publicaciones;
+    if (!configuracion.habilitado || !configuracion.avisosHabilitados) return publicaciones;
 
     const clavesPorUrl = new Map<string, string>();
     for (const { foto } of publicaciones) {

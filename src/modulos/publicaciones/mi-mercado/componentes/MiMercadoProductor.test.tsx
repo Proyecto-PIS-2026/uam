@@ -74,7 +74,8 @@ function crearPublicacion(id: number, especie: string, precio: string | null = "
         cantidadUnidades: 0,
         especie: { id, nombreEspecie: especie, fotoEspecie: null },
         variedad: { id, nombreVariedad: "-" },
-        presentacion: { id, nombrePresentacion: "Cajón" },
+        envase: { id, nombreEnvase: "Cajon" },
+        kilos: null,
         categoria: { id: 1, nombreCategoria: "Primera" },
         calibre: { id: 1, codigoCalibre: "G", nombreCalibre: "Grande" },
         ubicaciones: [{ id: 1, nombreUbicacion: "Quinta del productor", urlMaps: "https://maps.google.com/?q=Montevideo" }],
@@ -179,12 +180,12 @@ describe("MiMercadoProductor", () => {
         const detalle = screen.getByRole("dialog", { name: "Consulta de publicación" });
         expect(detalle).toHaveAttribute("data-anchor", anchor);
         expect(within(detalle).getByRole("combobox", { name: /^País de origen/ })).toHaveTextContent("Uruguay");
-        expect(within(detalle).getByLabelText("Unidades (Cajón)")).toHaveValue("0");
+        expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveValue("0");
         expect(within(detalle).getByRole("link", { name: "Quinta del productor" })).toHaveAttribute("href", "https://maps.google.com/?q=Montevideo");
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("100");
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveAttribute("readonly");
-        expect(within(detalle).getByLabelText("Unidades (Cajón)")).toHaveAttribute("readonly");
-        for (const campo of ["Especie", "Variedad", "Presentación", "País de origen", "Categoría", "Calibre"]) {
+        expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveAttribute("readonly");
+        for (const campo of ["Especie", "Variedad", "Empaquetado", "Kilos del empaquetado", "País de origen", "Categoría", "Calibre"]) {
             expect(within(detalle).getByRole("combobox", { name: new RegExp(`^${campo}`) })).toHaveAttribute("aria-disabled", "true");
         }
         expect(within(detalle).getByRole("button", { name: "Editar" })).toBeEnabled();
@@ -246,7 +247,8 @@ describe("MiMercadoProductor", () => {
         const opciones = {
             especies: [{ id: 1, nombre: "Pera" }],
             variedades: [{ id: 1, nombre: "-", especieId: 1 }],
-            presentaciones: [{ id: 1, nombre: "Cajón", variedadId: 1 }],
+            envases: [{ id: 1, nombre: "Cajon" }],
+            kilos: [],
             categorias: [{ id: 1, nombre: "Primera", especieId: null }],
             calibres: [{ id: 1, nombre: "G - Grande" }],
             paises: [{ id: 1, nombre: "Uruguay" }, { id: 2, nombre: "Argentina" }],
@@ -268,7 +270,7 @@ describe("MiMercadoProductor", () => {
         expect(within(edicion).getByLabelText("Precio en pesos")).toBe(precio);
         within(edicion).getAllByRole("combobox").forEach((selector, indice) => expect(selector).toBe(selectores[indice]));
         fireEvent.change(within(edicion).getByLabelText("Precio en pesos"), { target: { value: "220" } });
-        fireEvent.change(within(edicion).getByLabelText("Unidades (Cajón)"), { target: { value: "25" } });
+        fireEvent.change(within(edicion).getByLabelText("Unidades (Cajon)"), { target: { value: "25" } });
         fireEvent.click(within(edicion).getByRole("switch", { name: "Publicación disponible" }));
         fireEvent.mouseDown(within(edicion).getByRole("combobox", { name: /^País de origen/ }));
         fireEvent.click(await screen.findByRole("option", { name: "Argentina" }));
@@ -280,7 +282,7 @@ describe("MiMercadoProductor", () => {
         expect(screen.getByRole("dialog", { name: "Editar publicación" })).toBe(papel);
         expect(precio).toHaveValue("220");
         expect(precio).toBeDisabled();
-        expect(within(edicion).getByLabelText("Unidades (Cajón)")).toHaveValue("25");
+        expect(within(edicion).getByLabelText("Unidades (Cajon)")).toHaveValue("25");
         expect(within(edicion).getByRole("switch", { name: "Publicación disponible" })).not.toBeChecked();
         expect(within(edicion).getByRole("combobox", { name: /^País de origen/ })).toHaveTextContent("Argentina");
         expect(screen.getByRole("button", { name: "Guardando..." })).toBeDisabled();
@@ -300,7 +302,7 @@ describe("MiMercadoProductor", () => {
         fireEvent.click(screen.getByRole("button", { name: "Ver detalle de Pera" }));
         const detalle = screen.getByRole("dialog", { name: "Consulta de publicación" });
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("220");
-        expect(within(detalle).getByLabelText("Unidades (Cajón)")).toHaveValue("25");
+        expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveValue("25");
         expect(within(detalle).getByRole("combobox", { name: /^País de origen/ })).toHaveTextContent("Argentina");
         expect(within(detalle).getByText("No disponible", { exact: true })).toBeInTheDocument();
         expect(within(detalle).getByText("21/10/2026")).toHaveAttribute("dateTime", actualizada.fecha);
@@ -369,8 +371,8 @@ describe("MiMercadoProductor", () => {
         const detalle = screen.getByRole("dialog", { name: "Consulta de publicación" });
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("");
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveAttribute("placeholder", "Consultar precio");
-        expect(within(detalle).getByLabelText("Unidades (Cajón)")).toHaveValue("");
-        expect(within(detalle).getByLabelText("Unidades (Cajón)")).toHaveAttribute("placeholder", "-");
+        expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveValue("");
+        expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveAttribute("placeholder", "-");
         expect(within(detalle).getByText("Quinta sin mapa")).toBeInTheDocument();
         expect(within(detalle).queryByRole("link")).not.toBeInTheDocument();
     });
@@ -383,7 +385,7 @@ describe("MiMercadoProductor", () => {
 
         const detalle = screen.getByRole("dialog", { name: "Consulta de publicación" });
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("0");
-        expect(within(detalle).getByLabelText("Unidades (Cajón)")).toHaveValue("0");
+        expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveValue("0");
         expect(within(detalle).getByText("Sin foto")).toBeInTheDocument();
         expect(within(detalle).getByText("No hay puntos de retiro informados.")).toBeInTheDocument();
         expect(within(detalle).queryByRole("button", { name: /Ampliar foto/ })).not.toBeInTheDocument();
@@ -487,7 +489,8 @@ describe("MiMercadoProductor", () => {
             const opciones = {
                 especies: [{ id: 1, nombre: "Pera" }],
                 variedades: [{ id: 1, nombre: "-", especieId: 1 }],
-                presentaciones: [{ id: 1, nombre: "Cajón", variedadId: 1 }],
+                envases: [{ id: 1, nombre: "Cajon" }],
+            kilos: [],
                 categorias: [{ id: 1, nombre: "Primera", especieId: null }],
                 calibres: [{ id: 1, nombre: "G - Grande" }],
                 paises: [{ id: 1, nombre: "Uruguay" }],

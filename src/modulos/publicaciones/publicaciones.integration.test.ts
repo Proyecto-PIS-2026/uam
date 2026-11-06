@@ -60,11 +60,12 @@ async function crearFixture() {
 
         const especie = await tx.orm.public.Especie.create({ nombreEspecie: `${prefijo} Limón` });
         const variedad = await tx.orm.public.Variedad.create({ especieId: especie.id, nombreVariedad: "Criollo" });
-        const presentacion = await tx.orm.public.Presentacion.create({ variedadId: variedad.id, nombrePresentacion: "Caja" });
+        const envase = await tx.orm.public.Envase.where({ nombreEnvase: "Cajon" }).first();
+        const kilos = await tx.orm.public.KilosEmpaquetado.where({ valor: "20" }).first();
+        if (!envase || !kilos) throw new Error("Faltan los catálogos de empaquetado del seed.");
         const categoria = await tx.orm.public.Categoria.create({ especieId: especie.id, nombreCategoria: "Primera" });
         const otraEspecie = await tx.orm.public.Especie.create({ nombreEspecie: `${prefijo} Pera` });
         const otraVariedad = await tx.orm.public.Variedad.create({ especieId: otraEspecie.id, nombreVariedad: "Williams" });
-        const otraPresentacion = await tx.orm.public.Presentacion.create({ variedadId: otraVariedad.id, nombrePresentacion: "Caja" });
         const otraCategoria = await tx.orm.public.Categoria.create({ especieId: otraEspecie.id, nombreCategoria: "Primera" });
         const calibre = await tx.orm.public.Calibre.create({ codigoCalibre: prefijo, nombreCalibre: "Mediano" });
         const pais = await tx.orm.public.Pais.create({ codigoPais: prefijo, nombrePais: prefijo });
@@ -80,7 +81,8 @@ async function crearFixture() {
                 precio: String(esSoloB ? 210 : esOtraEspecie ? 111 : 100 + indice) as Precio,
                 especieId: esOtraEspecie ? otraEspecie.id : especie.id,
                 variedadId: esOtraEspecie ? otraVariedad.id : variedad.id,
-                presentacionId: esOtraEspecie ? otraPresentacion.id : presentacion.id,
+                envaseId: envase.id,
+                kilosId: kilos.id,
                 categoriaId: esOtraEspecie ? otraCategoria.id : categoria.id,
                 calibreId: calibre.id,
                 publicacionActiva: indice !== 35,
@@ -102,8 +104,8 @@ async function crearFixture() {
             usuarioSoloBId: usuarioSoloB.id, operadorSoloBId: operadorSoloB.id, usuarioProductorId: usuarioProductor.id, productorId: productor.id,
             naveIds: [naveA.id, naveB.id, naveVencida.id, naveHoy.id, naveSinPublicaciones.id],
             naveA: naveA.nombreNave, naveB: naveB.nombreNave, naveVencida: naveVencida.nombreNave, naveHoy: naveHoy.nombreNave, naveSinPublicaciones: naveSinPublicaciones.nombreNave,
-            especieId: especie.id, nombreEspecie: especie.nombreEspecie, variedadId: variedad.id, presentacionId: presentacion.id, categoriaId: categoria.id,
-            otraEspecieId: otraEspecie.id, otraVariedadId: otraVariedad.id, otraPresentacionId: otraPresentacion.id, otraCategoriaId: otraCategoria.id,
+            especieId: especie.id, nombreEspecie: especie.nombreEspecie, variedadId: variedad.id, envaseId: envase.id, kilosId: kilos.id, categoriaId: categoria.id,
+            otraEspecieId: otraEspecie.id, otraVariedadId: otraVariedad.id, otraCategoriaId: otraCategoria.id,
             calibreId: calibre.id, paisId: pais.id, publicacionIds, visibles, publicacionSoloBId: publicacionIds[39], publicacionOtraEspecieId: publicacionIds[40],
         };
     });
@@ -122,11 +124,9 @@ async function borrarFixture(fixture: Fixture) {
 
         await tx.orm.public.Productor.where({ id: fixture.productorId }).delete();
         for (const id of [fixture.usuarioId, fixture.usuarioVencidoId, fixture.usuarioSoloBId, fixture.usuarioProductorId]) await tx.orm.public.Usuario.where({ id }).delete();
-        await tx.orm.public.Presentacion.where({ id: fixture.presentacionId }).delete();
         await tx.orm.public.Variedad.where({ id: fixture.variedadId }).delete();
         await tx.orm.public.Categoria.where({ id: fixture.categoriaId }).delete();
         await tx.orm.public.Especie.where({ id: fixture.especieId }).delete();
-        await tx.orm.public.Presentacion.where({ id: fixture.otraPresentacionId }).delete();
         await tx.orm.public.Variedad.where({ id: fixture.otraVariedadId }).delete();
         await tx.orm.public.Categoria.where({ id: fixture.otraCategoriaId }).delete();
         await tx.orm.public.Especie.where({ id: fixture.otraEspecieId }).delete();
@@ -196,7 +196,7 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
         expect(resultado).not.toHaveProperty("tamanoPagina");
         expect(resultado.totalCatalogo).toBeGreaterThanOrEqual(37);
         expect(resultado.publicaciones.every((publicacion) => publicacion.tipoPublicacion === "OPERADOR")).toBe(true);
-        expect(resultado.opciones).toContainEqual({ especie: fixture!.nombreEspecie, variedad: "Criollo", presentacion: "Caja", categoria: "Primera", calibre: "Mediano" });
+        expect(resultado.opciones).toContainEqual({ especie: fixture!.nombreEspecie, variedad: "Criollo", envase: "Cajon", kilos: "20", categoria: "Primera", calibre: "Mediano" });
     });
 
     it("ejecuta búsqueda sin tildes, filtros numéricos y orden descendente en SQL real", async () => {
@@ -269,13 +269,13 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
             sesionActual.mockResolvedValue(sesionOperador);
             const mercado = await consultarPublicaciones({ especie: especie.nombreEspecie });
             expect(mercado.total).toBe(1);
-            expect(mercado.publicaciones).toEqual([expect.objectContaining({ id: operador.id, especie: especie.nombreEspecie, variedad: "", presentacion: "", categoria: "", calibre: "", precio: null })]);
-            expect(mercado.opciones).toContainEqual({ especie: especie.nombreEspecie, variedad: "", presentacion: "", categoria: "", calibre: "" });
+            expect(mercado.publicaciones).toEqual([expect.objectContaining({ id: operador.id, especie: especie.nombreEspecie, variedad: "", envase: "", kilos: "", categoria: "", calibre: "", precio: null })]);
+            expect(mercado.opciones).toContainEqual({ especie: especie.nombreEspecie, variedad: "", envase: "", kilos: "", categoria: "", calibre: "" });
             expect((await consultarPublicaciones({ especie: especie.nombreEspecie, variedad: "Inexistente" })).publicaciones).toEqual([]);
             const mercadoProductores = await consultarPublicacionesProductores(sesionOperador);
-            expect(mercadoProductores.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, variedad: "", presentacion: "", categoria: "", calibre: "", pais: "", ubicaciones: [] }));
+            expect(mercadoProductores.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, variedad: "", envase: "", kilos: "", categoria: "", calibre: "", pais: "", ubicaciones: [] }));
             const miMercado = mapearPublicacionesMiMercado(await obtenerPublicacionesDeOperador(fixture!.operadorId));
-            expect(miMercado).toContainEqual(expect.objectContaining({ id: operador.id, especie: expect.objectContaining({ id: especie.id }), variedad: null, presentacion: null, categoria: null, calibre: null, paisId: null }));
+            expect(miMercado).toContainEqual(expect.objectContaining({ id: operador.id, especie: expect.objectContaining({ id: especie.id }), variedad: null, envase: null, kilos: null, categoria: null, calibre: null, paisId: null }));
             const perfilOperador = await obtenerPerfilPublicoOperador(fixture!.prefijo);
             expect(perfilOperador?.publicaciones).toContainEqual(expect.objectContaining({ id: operador.id, especie: especie.nombreEspecie, pais: "" }));
             const perfilProductor = await obtenerPerfilProductor(fixture!.prefijo + "-productor");
@@ -285,7 +285,7 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
             expect(await obtenerEspeciesConPublicacionesActivas()).toContainEqual({ nombreEspecie: especie.nombreEspecie, fotoEspecie: null, cantidadOperadores: 1 });
             sesionActual.mockResolvedValue({ usuarioId: fixture!.usuarioProductorId, rol: "PRODUCTOR", expiraEn: 2000000000 });
             const miMercadoProductor = await obtenerPublicacionesMiMercadoProductor();
-            expect(miMercadoProductor.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: expect.objectContaining({ id: especie.id }), variedad: null, presentacion: null, categoria: null, calibre: null, paisId: null, ubicaciones: [] }));
+            expect(miMercadoProductor.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: expect.objectContaining({ id: especie.id }), variedad: null, envase: null, kilos: null, categoria: null, calibre: null, paisId: null, ubicaciones: [] }));
         } finally {
             sesionActual.mockReset();
             for (const id of creadas) await db.orm.public.Publicacion.where({ id }).delete();

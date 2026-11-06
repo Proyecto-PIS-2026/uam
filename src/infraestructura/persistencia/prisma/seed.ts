@@ -13,6 +13,8 @@ import contractJson from "./contract.json" with { type: "json" };
 import { cargarConsultaUam, type ConsultaUam } from "./catalogo-consulta";
 import { crearOfertasDemo, type OfertaDemo } from "./ofertas-demo";
 import { crearOfertasProductoresDemo } from "./ofertas-productores-demo";
+import { CALIBRES_GENERALES_ADICIONALES, ENVASES_PUBLICACION, KILOS_EMPAQUETADO } from "./catalogos-publicacion";
+import { atributosPublicacionDemo } from "./atributos-publicacion-demo";
 import { especiesPrioritarias } from "../../../compartido/prioridad-especies";
 import { claveImagen, urlImagen } from "../../imagenes/almacenamiento-imagenes";
 
@@ -428,6 +430,8 @@ async function limpiarBase() {
   await prisma.orm.public.PublicacionProductor.where(() => all()).deleteAll();
   await prisma.orm.public.Ubicacion.where(() => all()).deleteAll();
   await prisma.orm.public.Publicacion.where(() => all()).deleteAll();
+  await prisma.orm.public.Envase.where(() => all()).deleteAll();
+  await prisma.orm.public.KilosEmpaquetado.where(() => all()).deleteAll();
   await prisma.orm.public.Local.where(() => all()).deleteAll();
   await prisma.orm.public.Nave.where(() => all()).deleteAll();
   await prisma.orm.public.Operador.where(() => all()).deleteAll();
@@ -471,7 +475,22 @@ async function crearDatosBase(consulta: ConsultaUam) {
     calibreIds.set(codigoCalibre, calibre.id);
   }
 
-  return { paisIds, calibreIds };
+  for (const nombreCalibre of CALIBRES_GENERALES_ADICIONALES) {
+    const calibre = await prisma.orm.public.Calibre.create({ codigoCalibre: nombreCalibre, nombreCalibre });
+    calibreIds.set(nombreCalibre, calibre.id);
+  }
+  const envaseIds = new Map<string, number>();
+  for (const nombreEnvase of ENVASES_PUBLICACION) {
+    const envase = await prisma.orm.public.Envase.create({ nombreEnvase });
+    envaseIds.set(nombreEnvase, envase.id);
+  }
+  const kilosIds = new Map<string, number>();
+  for (const valor of KILOS_EMPAQUETADO) {
+    const kilos = await prisma.orm.public.KilosEmpaquetado.create({ valor });
+    kilosIds.set(valor, kilos.id);
+  }
+
+  return { paisIds, calibreIds, envaseIds, kilosIds };
 }
 
 async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, number>, archivos: Set<string>) {
@@ -709,7 +728,7 @@ async function main() {
   console.log(`Cargando catálogo de la consulta UAM del ${consulta.survey_date}...`);
   await limpiarBase();
 
-  const { paisIds, calibreIds } = await crearDatosBase(consulta);
+  const { paisIds, calibreIds, envaseIds, kilosIds } = await crearDatosBase(consulta);
   const { presentacionIds, categoriaIds, cantidadVariedades } =
     await crearCatalogo(consulta, conversiones, archivos);
   const operadorIds = await crearOperadores(fotosOperadores);
@@ -724,12 +743,13 @@ async function main() {
 
   // Insertar publicaciones de operadores existentes
   for (const [indice, oferta] of ofertas.entries()) {
+    const atributos = atributosPublicacionDemo(indice);
     const operadorId = idRequerido(operadorIds, oferta.operatorUsername, `operador ${oferta.operatorUsername}`);
     const presentacionId = idRequerido(presentacionIds,
       clave(oferta.speciesId, oferta.variety, oferta.measureUnit), "presentación");
     const categoriaId = idRequerido(categoriaIds,
       clave(oferta.speciesId, oferta.category), "categoría");
-    const calibreId = idRequerido(calibreIds, oferta.caliber, `calibre ${oferta.caliber}`);
+    const calibreId = idRequerido(calibreIds, atributos.calibre ?? oferta.caliber, `calibre ${atributos.calibre ?? oferta.caliber}`);
     const paisId = idRequerido(paisIds, oferta.country, `país ${oferta.country}`);
     const precio = oferta.price === null
       ? null
@@ -760,7 +780,8 @@ async function main() {
       fechaVigencia,
       especieId: clasificaciones.get(presentacionId)!.especieId,
       variedadId: clasificaciones.get(presentacionId)!.id,
-      presentacionId,
+      envaseId: atributos.envase === null ? null : idRequerido(envaseIds, atributos.envase, "envase"),
+      kilosId: atributos.kilos === null ? null : idRequerido(kilosIds, atributos.kilos, "kilos del empaquetado"),
       categoriaId,
       calibreId,
     });
@@ -823,6 +844,7 @@ async function main() {
   ];
 
   for (const [indice, oferta] of ofertasProductores.entries()) {
+    const atributos = atributosPublicacionDemo(indice);
     const prodDemo = productoresPorUsername.get(oferta.producerUsername);
     if (!prodDemo) throw new Error(`Productor de demostración inexistente: ${oferta.producerUsername}`);
     const productorId = idRequerido(productorIdsMap, oferta.producerUsername, `productor ${oferta.producerUsername}`);
@@ -830,7 +852,7 @@ async function main() {
       clave(oferta.speciesId, oferta.variety, oferta.measureUnit), "presentación de productor");
     const categoriaId = idRequerido(categoriaIds,
       clave(oferta.speciesId, oferta.category), "categoría de productor");
-    const calibreId = idRequerido(calibreIds, oferta.caliber, `calibre ${oferta.caliber}`);
+    const calibreId = idRequerido(calibreIds, atributos.calibre ?? oferta.caliber, `calibre ${atributos.calibre ?? oferta.caliber}`);
     const paisId = idRequerido(paisIds, oferta.country, `país ${oferta.country}`);
     const precio = oferta.price === null
       ? null
@@ -855,7 +877,8 @@ async function main() {
       fechaVigencia,
       especieId: clasificaciones.get(presentacionId)!.especieId,
       variedadId: clasificaciones.get(presentacionId)!.id,
-      presentacionId,
+      envaseId: atributos.envase === null ? null : idRequerido(envaseIds, atributos.envase, "envase de productor"),
+      kilosId: atributos.kilos === null ? null : idRequerido(kilosIds, atributos.kilos, "kilos del empaquetado de productor"),
       categoriaId,
       calibreId,
     });
@@ -882,10 +905,10 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_landing_page_default", valorConfiguracion: "mas_vendidas"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_virtual_default", valorConfiguracion: "mas_vendidas"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_produccion_default", valorConfiguracion: "mas_vendidas"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "false"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "30"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "false"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "7"});
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "true"});
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "3"});
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "true"});
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "1"});
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor", valorConfiguracion: "30" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado", valorConfiguracion: "true" });
@@ -1039,6 +1062,8 @@ async function main() {
     especies: consulta.types.reduce((total, tipo) => total + tipo.products.length, 0),
     variedades: cantidadVariedades,
     presentaciones: presentacionIds.size,
+    envases: envaseIds.size,
+    kilos: kilosIds.size,
     paises: paisIds.size,
     calibres: calibreIds.size,
     operadores: operadorIds.size,

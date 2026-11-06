@@ -135,7 +135,7 @@ function crearPublicacion(
           fotoEspecie: null,
         },
         variedad: { id, nombreVariedad: `Variedad ${id}` },
-        presentacion: { id, nombrePresentacion: "Cajón" },
+        envase: { id, nombreEnvase: "Cajon" }, kilos: null,
     categoria: {
       id: 1,
       nombreCategoria: "Primera",
@@ -173,7 +173,7 @@ function renderMiMercado(
       enLicencia={enLicencia}
       publicaciones={publicaciones}
       incrementoPrecio={incrementoPrecio}
-      opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
+      opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }}
     />,
   );
 }
@@ -187,7 +187,7 @@ function obtenerPropsDrawer(): DrawerMockProps {
 function mercadoDesdeAviso(publicaciones: Publicacion[], publicacionInicialId: number) {
   return <MiMercado operadorId={9} publicaciones={publicaciones} publicacionInicialId={publicacionInicialId}
     puedeCrear={true} puedeModificar={true} puedeEliminar={true} incrementoPrecio={5}
-    opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }} />;
+    opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }} />;
 }
 
 function idsTarjetas() {
@@ -342,7 +342,7 @@ describe("MiMercado", () => {
         abrirAltaInicial={true}
         publicaciones={[]}
         incrementoPrecio={5}
-        opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
+        opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }}
       />,
     );
 
@@ -370,7 +370,7 @@ describe("MiMercado", () => {
         publicacionOperadorId: 13,
         especieId: 10,
         variedadId: 52,
-        presentacionId: 52,
+        envaseId: 52, kilosId: null,
         categoriaId: 1,
         calibreId: 1,
         paisId: 44,
@@ -422,7 +422,7 @@ describe("MiMercado", () => {
       especieId: 20, variedadId: 23,
       precio: "150",
       foto: null,
-      presentacionId: 22,
+      envaseId: 22, kilosId: null,
       categoriaId: 2,
       calibreId: 2,
       paisId: 55,
@@ -437,7 +437,7 @@ describe("MiMercado", () => {
     actualizada.foto = "/api/publicaciones/imagenes/52/pera.webp";
     actualizada.paisId = 55;
     actualizada.publicacionDisponible = false;
-    actualizada.presentacion = { id: 22, nombrePresentacion: "Cajón" };
+    actualizada.envase = { id: 22, nombreEnvase: "Cajon" };
     actualizada.variedad = { id: 23, nombreVariedad: "Williams" };
     actualizada.categoria = { id: 2, nombreCategoria: "II" };
     actualizada.calibre = { id: 2, codigoCalibre: "G", nombreCalibre: "Grande" };
@@ -460,7 +460,7 @@ describe("MiMercado", () => {
     expect(screen.getByTestId("publicacion-52")).toHaveTextContent("Williams");
     expect(obtenerPropsDrawer().publicacion).toEqual(expect.objectContaining({ especie: "Pera", precio: "150.00", paisId: 55 }));
 
-    rerender(<MiMercado puedeCrear={true} puedeModificar={true} puedeEliminar={true} operadorId={9} publicaciones={[actualizada]} incrementoPrecio={5} opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }} />);
+    rerender(<MiMercado puedeCrear={true} puedeModificar={true} puedeEliminar={true} operadorId={9} publicaciones={[actualizada]} incrementoPrecio={5} opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }} />);
 
     const consultaActualizada = screen.getByRole("dialog", { name: "Publicación seleccionada" });
     expect(consultaActualizada).toHaveAttribute("data-actualizando", "false");
@@ -474,7 +474,7 @@ describe("MiMercado", () => {
       variedad: "Williams",
       precio: "150.00",
       foto: "/api/publicaciones/imagenes/52/pera.webp",
-      presentacionId: 22,
+      envaseId: 22, kilosId: null,
       categoriaId: 2,
       calibreId: 2,
       paisId: 55,
@@ -494,7 +494,7 @@ describe("MiMercado", () => {
     });
     const cambios: CambiosPublicacionOperador = {
       version: 1,
-      especieId: 10, variedadId: 52, precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+      especieId: 10, variedadId: 52, precio: "150", foto: null, envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
     };
     const propsIniciales = obtenerPropsDrawer();
 
@@ -520,7 +520,7 @@ describe("MiMercado", () => {
 
     await act(async () => {
       await obtenerPropsDrawer().alGuardar(52, { version: 1,
-        especieId: 10, variedadId: 52, precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+        especieId: 10, variedadId: 52, precio: "150", foto: null, envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 
@@ -538,7 +538,7 @@ describe("MiMercado", () => {
 
     await act(async () => {
       await obtenerPropsDrawer().alGuardar(52, { version: 1,
-        especieId: 10, variedadId: 52, precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+        especieId: 10, variedadId: 52, precio: "150", foto: null, envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 
@@ -556,7 +556,7 @@ describe("MiMercado", () => {
 
     await act(async () => {
       await obtenerPropsDrawer().alGuardar(52, { version: 1,
-        especieId: 10, variedadId: 52, precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+        especieId: 10, variedadId: 52, precio: "150", foto: null, envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 
@@ -710,7 +710,7 @@ describe("MiMercado", () => {
         act(() => {
           guardado = obtenerPropsDrawer().alGuardar(52, {
             version: 1, especieId: 10, variedadId: 52, precio: "150", foto: null,
-            presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+            envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
           }, null);
         });
       } else {
@@ -744,7 +744,7 @@ describe("MiMercado", () => {
     const { rerender } = render(
       <MiMercado puedeCrear={true} puedeModificar={true} puedeEliminar={true} operadorId={9}
         abrirAltaInicial publicaciones={[]} incrementoPrecio={5}
-        opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }} />,
+        opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }} />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
@@ -1027,7 +1027,7 @@ describe("MiMercado", () => {
           crearPublicacion(1, 10, "Manzana"),
         ]}
         incrementoPrecio={5}
-        opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
+        opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }}
       />,
     );
 
@@ -1043,7 +1043,7 @@ describe("MiMercado", () => {
           crearPublicacion(2, 20, "Pera"),
         ]}
         incrementoPrecio={5}
-        opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
+        opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }}
       />,
     );
 

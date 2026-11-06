@@ -140,9 +140,24 @@ model Presentacion {
   presentacionDefault Boolean         @default(false)
   variedadId          Int
   variedad            Variedad        @relation(fields:[variedadId], references:[id])
-  publicaciones       Publicacion[]
 
   @@map("presentacion")
+}
+
+model Envase {
+  id           Int           @id @default(autoincrement())
+  nombreEnvase String        @unique
+  publicaciones Publicacion[]
+
+  @@map("envase")
+}
+
+model KilosEmpaquetado {
+  id           Int           @id @default(autoincrement())
+  valor        String        @unique
+  publicaciones Publicacion[]
+
+  @@map("kilosEmpaquetado")
 }
 
 // CATEGORIAS
@@ -224,8 +239,10 @@ model Publicacion {
   especie               Especie              @relation(fields:[especieId], references:[id])
   variedadId            Int?
   variedad              Variedad?            @relation(fields:[variedadId], references:[id])
-  presentacionId        Int?
-  presentacion          Presentacion?        @relation(fields:[presentacionId], references:[id])
+  envaseId              Int?
+  envase                Envase?              @relation(fields:[envaseId], references:[id])
+  kilosId               Int?
+  kilos                 KilosEmpaquetado?     @relation(fields:[kilosId], references:[id])
   categoriaId           Int?
   categoria             Categoria?           @relation(fields:[categoriaId], references:[id])
   calibreId             Int?

@@ -38,7 +38,7 @@ const publicacionInicial: NonNullable<PropsDrawer["publicacion"]> = {
     foto: null,
     categoriaId: 3,
     calibreId: 4,
-    presentacionId: 111,
+    envaseId: 111, kilosId: null,
     paisId: 44,
     disponible: true,
 };
@@ -54,12 +54,13 @@ const props: PropsDrawer = {
         { id: 12, nombre: "Golden", especieId: 1 },
         { id: 21, nombre: "Williams", especieId: 2 },
     ],
-    presentaciones: [
-        { id: 111, nombre: "Bandeja", variedadId: 11 },
-        { id: 112, nombre: "Plancha", variedadId: 11 },
-        { id: 121, nombre: "Bolsa", variedadId: 12 },
-        { id: 211, nombre: "Cajón", variedadId: 21 },
+    envases: [
+        { id: 111, nombre: "Descartable" },
+        { id: 112, nombre: "Plancha" },
+        { id: 121, nombre: "Bolsa" },
+        { id: 211, nombre: "Cajon" },
     ],
+    kilos: [{ id: 301, nombre: "20" }, { id: 302, nombre: "10-12" }],
     categorias: [
         { id: 3, nombre: "Primera", especieId: 1 },
         { id: 5, nombre: "Segunda", especieId: 2 },
@@ -231,7 +232,7 @@ describe("DrawerEditarPublicacion", () => {
         expect(screen.queryByRole("switch", { name: "Publicación disponible" })).not.toBeInTheDocument();
         expect(screen.getByText("Disponible")).toBeInTheDocument();
         expect(screen.getByAltText("Foto de Manzana Red Delicious")).toHaveAttribute("src", expect.stringContaining("/foto-existente.png"));
-        for (const campo of ["Especie", "Variedad", "Presentación", "País", "Categoría", "Calibre"]) {
+        for (const campo of ["Especie", "Variedad", "Empaquetado", "Kilos del empaquetado", "País", "Categoría", "Calibre"]) {
             expect(screen.getByRole("combobox", { name: campo })).toHaveAttribute("aria-disabled", "true");
         }
         for (const boton of ["Disminuir precio en 10", "Aumentar precio en 10", esWeb ? "Editar foto" : "Cámara", "Galería", "Borrar foto"]) {
@@ -523,7 +524,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
             foto: undefined,
             categoriaId: 3,
             calibreId: 4,
-            presentacionId: 111,
+            envaseId: 111, kilosId: null,
             paisId: 44,
             disponible: false,
             fechaVigencia: null,
@@ -614,7 +615,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ precio: null }), null));
     });
 
-    it("filtra las variedades por especie y limpia la presentación al cambiar variedad", async () => {
+    it("filtra las variedades por especie y conserva el envase al cambiar variedad", async () => {
         render(<DrawerEditarPublicacion {...props} />);
 
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
@@ -622,19 +623,19 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(screen.queryByRole("option", { name: "Williams" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "Golden" }));
         await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Sin especificar");
-        await seleccionar("Presentación", "Bolsa");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Descartable");
+        await seleccionar("Empaquetado", "Bolsa");
         guardarDesdeBoton();
 
-        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ presentacionId: 121 }), null));
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ envaseId: 121, kilosId: null }), null));
     });
 
-    it("limpia variedad, presentación y categoría incompatible al cambiar especie", async () => {
+    it("limpia variedad y categoría incompatible, conservando el empaquetado al cambiar especie", async () => {
         render(<DrawerEditarPublicacion {...props} variedades={[{ id: 20, nombre: "Beurré d'Anjou", especieId: 2 }, ...props.variedades]} />);
 
         await seleccionar("Especie", "Pera");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Sin especificar");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Sin especificar");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Descartable");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Sin especificar");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
         expect(await screen.findByRole("option", { name: "Beurré d'Anjou" })).toBeInTheDocument();
@@ -643,7 +644,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         guardarDesdeBoton();
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
-            especieId: 2, variedadId: 21, presentacionId: null, categoriaId: null,
+            especieId: 2, variedadId: 21, envaseId: 111, kilosId: null, categoriaId: null,
         }), null));
     });
 
@@ -720,23 +721,41 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(entradaPrecio).toHaveValue(esperado);
     });
 
+    it("guarda un cambio de kilos sin envase ni variedad y conserva el rango al consultar", async () => {
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" publicacion={{ ...publicacionInicial, variedadId: null, envaseId: null }} />);
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        await seleccionar("Kilos del empaquetado", "10-12 kg");
+        guardarDesdeBoton();
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ variedadId: null, envaseId: null, kilosId: 302 }), null));
+        expect(screen.getByRole("combobox", { name: "Kilos del empaquetado" })).toHaveTextContent("10-12 kg");
+        await waitFor(() => expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("-"));
+        expect(screen.getByLabelText("Unidades")).toBeInTheDocument();
+    });
+
+    it.each(["Empaquetado", "Kilos del empaquetado"])("permite quitar %s sin borrar el otro atributo", async (campo) => {
+        render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, kilosId: 301 }} />);
+        await seleccionar(campo, "Sin especificar");
+        guardarDesdeBoton();
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ envaseId: campo === "Empaquetado" ? null : 111, kilosId: campo === "Empaquetado" ? 301 : null }), null));
+    });
+
     it("consulta una publicación con solo especie y conserva las opciones vacías al editar", async () => {
         render(<DrawerEditarPublicacion {...props} modoInicial="consulta" publicacion={{
-            ...publicacionInicial, variedadId: null, presentacionId: null, categoriaId: null, calibreId: null,
-            paisId: null, variedad: "", presentacion: "", categoria: "", calibre: "", precio: null,
+            ...publicacionInicial, variedadId: null, envaseId: null, kilosId: null, categoriaId: null, calibreId: null,
+            paisId: null, variedad: "", envase: "", kilos: "", categoria: "", calibre: "", precio: null,
         }} />);
-        for (const campo of ["Variedad", "Presentación", "Categoría", "Calibre", "País"]) {
+        for (const campo of ["Variedad", "Empaquetado", "Kilos del empaquetado", "Categoría", "Calibre", "País"]) {
             expect(screen.getByRole("combobox", { name: campo })).toHaveTextContent("-");
         }
         expect(screen.getByLabelText("Unidades")).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        for (const campo of ["Variedad", "Presentación", "Categoría", "Calibre", "País"]) {
+        for (const campo of ["Variedad", "Empaquetado", "Kilos del empaquetado", "Categoría", "Calibre", "País"]) {
             expect(screen.getByRole("combobox", { name: campo })).toHaveTextContent("Sin especificar");
         }
         fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "80" } });
         guardarDesdeBoton();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
-            especieId: 1, variedadId: null, presentacionId: null, categoriaId: null,
+            especieId: 1, variedadId: null, envaseId: null, kilosId: null, categoriaId: null,
             calibreId: null, paisId: null, precio: "80",
         }), null));
     });
@@ -744,15 +763,16 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
     it("permite vaciar todos los datos opcionales y conservar solo la especie", async () => {
         render(<DrawerEditarPublicacion {...props} />);
         await seleccionar("Variedad", "Sin especificar");
+        await seleccionar("Empaquetado", "Sin especificar");
         await seleccionar("Categoría", "Sin especificar");
         await seleccionar("Calibre", "Sin especificar");
         await seleccionar("País", "Sin especificar");
         fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "" } });
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Sin especificar");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Sin especificar");
         expect(screen.getByRole("button", { name: "Guardar" }).closest("form")!.checkValidity()).toBe(true);
         guardarDesdeBoton();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
-            especieId: 1, variedadId: null, presentacionId: null, categoriaId: null,
+            especieId: 1, variedadId: null, envaseId: null, kilosId: null, categoriaId: null,
             calibreId: null, paisId: null, precio: null,
         }), null));
     });
@@ -760,13 +780,13 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
     it("envía las opciones elegidas manualmente", async () => {
         render(<DrawerEditarPublicacion {...props} />);
 
-        await seleccionar("Presentación", "Plancha");
+        await seleccionar("Empaquetado", "Plancha");
         await seleccionar("Calibre", "Mediano");
         await seleccionar("Categoría", "General");
         await seleccionar("País", "Brasil");
         guardarDesdeBoton();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
-            presentacionId: 112, calibreId: 7, categoriaId: 6, paisId: 55,
+            envaseId: 112, kilosId: null, calibreId: 7, categoriaId: 6, paisId: 55,
         }), null));
     });
 
@@ -774,16 +794,16 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, categoriaId: 6 }} />);
         await seleccionar("Especie", "Pera");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("General");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Sin especificar");
+        expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Descartable");
         guardarDesdeBoton();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
-            especieId: 2, variedadId: null, presentacionId: null, categoriaId: 6,
+            especieId: 2, variedadId: null, envaseId: 111, kilosId: null, categoriaId: 6,
         }), null));
     });
 
     it.each([
         { nombre: "sin variedades", opciones: { variedades: [] } },
-        { nombre: "sin presentaciones", opciones: { presentaciones: [] } },
+        { nombre: "sin envases", opciones: { envases: [] } },
         { nombre: "sin categorías", opciones: { categorias: [] } },
         { nombre: "sin calibres", opciones: { calibres: [] } },
         { nombre: "sin países", opciones: { paises: [] } },
@@ -791,7 +811,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         render(<DrawerEditarPublicacion {...props} {...opciones} />);
         solicitarGuardado();
 
-        expect(screen.getByRole("alert")).toHaveTextContent("Elegí una especie, variedad, presentación, categoría, calibre y país válidos.");
+        expect(screen.getByRole("alert")).toHaveTextContent("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.");
         expect(mocks.guardar).not.toHaveBeenCalled();
     });
 
@@ -799,7 +819,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         render(<DrawerEditarPublicacion {...props} publicacion={{ ...publicacionInicial, paisId: 999 }} />);
         solicitarGuardado();
 
-        expect(screen.getByRole("alert")).toHaveTextContent("Elegí una especie, variedad, presentación, categoría, calibre y país válidos.");
+        expect(screen.getByRole("alert")).toHaveTextContent("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.");
         expect(mocks.guardar).not.toHaveBeenCalled();
     });
 
@@ -999,11 +1019,11 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(disponibilidad.closest("label")?.parentElement).toBe(botonCompartir.parentElement);
         const orden = [
             screen.getByLabelText("Precio en pesos"),
-            screen.getByLabelText("Unidades (Bandeja)"),
+            screen.getByLabelText("Unidades (Descartable)"),
             screen.getByAltText("Foto de Manzana Red Delicious"),
             disponibilidad,
             botonCompartir,
-            ...["Especie", "Variedad", "Presentación", "País", "Categoría", "Calibre"]
+            ...["Especie", "Variedad", "Empaquetado", "Kilos del empaquetado", "País", "Categoría", "Calibre"]
                 .map((nombre) => screen.getByRole("combobox", { name: nombre })),
         ];
         for (let indice = 1; indice < orden.length; indice++) {
