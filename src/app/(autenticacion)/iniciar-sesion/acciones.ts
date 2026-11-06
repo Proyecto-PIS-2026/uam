@@ -8,6 +8,7 @@ import { autenticarUsuario } from "@/modulos/identidad-acceso/autenticacion/aute
 import { existeUsuarioPorNombre } from "@/modulos/identidad-acceso/autenticacion/consultasAutenticacion";
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { enviarNotificacion } from "@/modulos/notificaciones/notificaciones";
 import { Temporal } from "temporal-polyfill";
 
 export type EstadoInicioSesion = {
@@ -69,10 +70,23 @@ export async function solicitarRecuperacion(
             };
         }
 
-        // Registrar la solicitud en la base de datos.
-        await db.orm.public.Usuario
-            .where({ username: nombreNormalizado })
-            .update({ solicitoRestablecimiento: true });
+        await db.transaction(async (tx) => {
+            // Sólo la primera solicitud pendiente genera un aviso, incluso si llegan varias a la vez.
+            const solicitudesNuevas = await tx.orm.public.Usuario
+                .where({ username: nombreNormalizado, solicitoRestablecimiento: false })
+                .updateAndCount({ solicitoRestablecimiento: true });
+            if (solicitudesNuevas === 0) return;
+
+            const nombreEnAviso = nombreNormalizado.length > 160
+                ? `${nombreNormalizado.slice(0, 160)}…`
+                : nombreNormalizado;
+            const { enviadas } = await enviarNotificacion({
+                texto: `El usuario ${nombreEnAviso} solicitó restablecer su contraseña.`,
+                url: "/administracion#usuarios",
+                roles: ["ADMINISTRADOR"],
+            }, tx);
+            if (enviadas === 0) throw new Error("No hay administradores para recibir la solicitud de recuperación.");
+        });
 
         return {
             exito: "La solicitud de recuperación fue realizada correctamente.",

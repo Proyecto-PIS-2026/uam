@@ -59,6 +59,7 @@ model Operador {
   whatsApp              String
 
   locales               Local[]
+  avisosVencimientoLocales AvisoVencimientoLocal[]
   publicacionesOperador PublicacionOperador[]
 
   @@map("operador")
@@ -99,6 +100,21 @@ model Local {
 
   @@unique([numeroLocal, naveId])
   @@map("local")
+}
+
+// Conserva los avisos aunque se borren las notificaciones o se recreen los locales al editar un operador.
+model AvisoVencimientoLocal {
+  id          Int       @id @default(autoincrement())
+  operadorId  Int
+  operador    Operador  @relation(fields:[operadorId], references:[id], onDelete: Cascade)
+  naveId      Int
+  numeroLocal String
+  finContrato Date
+  tipo        String
+  fecha       Timestamptz(3) @default(now())
+
+  @@unique([operadorId, naveId, numeroLocal, finContrato, tipo], map: "avisoVencimientoLocal_contrato_tipo_key")
+  @@map("avisoVencimientoLocal")
 }
 
 // ESPECIES
