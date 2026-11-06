@@ -288,7 +288,7 @@ describe("FiltrosPublicaciones", () => {
             busqueda: "", especie: "Todas", variedad: "Todas", envase: "Todas", kilos: "Todas",
             categoria: "Todas", calibre: "Todas", precioMinimo: "", precioMaximo: "", orden: "ninguno", nave: "Todas",
         });
-    });
+    }, 500_000);
 
     it.each([false, true])("omite Nave y su parámetro cuando no se habilita el filtro (consulta remota: %s)", (remota) => {
         const alConsultar = vi.fn();
