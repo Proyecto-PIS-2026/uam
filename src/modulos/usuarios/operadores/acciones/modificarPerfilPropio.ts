@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { guardarOperadorAtomico } from "../guardar-operador-atomico";
 import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "../../fotos-perfil";

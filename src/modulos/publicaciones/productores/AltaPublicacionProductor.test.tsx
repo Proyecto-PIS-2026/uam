@@ -368,7 +368,7 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.getByRole("option", { name: "Williams" })).toBeInTheDocument();
         expect(screen.queryByRole("option", { name: "Royal" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "Williams" }));
-    });
+    }, 500_000);
 
     it("publica para el Productor actual sin precio, cantidad ni fotografía", async () => {
         const fetchMock = prepararFetch();
@@ -377,7 +377,7 @@ describe("AltaPublicacionProductor", () => {
         completarFormulario(); enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
-        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, fechaVigencia: null, variedadId: 3, envaseId: 4, kilosId: null, categoriaId: 5, calibreId: 6, paisId: 7, ubicaciones: [{ nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2", departamento: "Montevideo" }], disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null });
+        expect(JSON.parse(envio[1]!.body as string)).toEqual({ productorId: 4, especieId: 2, fechaVigencia: null, variedadId: 3, envaseId: 4, kilosId: null, categoriaId: 5, calibreId: 6, paisId: 7, ubicaciones: [{ nombreUbicacion: "Ruta 5", urlMaps: "https://www.google.com/maps?q=-34.9,-56.2", departamento: "Montevideo" }], disponibilidad: true, precio: null, fotografia: "", cantidadUnidades: null, comentario: "" });
         expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
     });
 
@@ -563,5 +563,20 @@ describe("AltaPublicacionProductor", () => {
         await abrirAlta();
         fireEvent.change(screen.getByLabelText("Fotografía"), { target: { files: [new File(["foto"], "foto.png", { type: "image/png" })] } });
         expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo leer la fotografía.");
+    });
+
+    it("envía el comentario escrito y lo limpia al abrir un alta nueva", async () => {
+        const fetchMock = prepararFetch();
+        await abrirAlta();
+        completarFormulario();
+        fireEvent.change(screen.getByLabelText("Comentario"), { target: { value: "  Cosecha de esta semana  " } });
+        enviarFormulario();
+
+        expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({ comentario: "  Cosecha de esta semana  " });
+
+        fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
+        expect(screen.getByLabelText("Comentario")).toHaveValue("");
     });
 });

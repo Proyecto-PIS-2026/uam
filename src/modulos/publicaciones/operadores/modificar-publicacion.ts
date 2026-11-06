@@ -6,6 +6,7 @@ import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarIma
 import type { CambiosPublicacionOperador } from "./tipos";
 import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
 import { validarFechaVigencia, convertirFechaVigenciaAInstant } from "../vigencia-publicacion";
+import { validarComentario } from "../validarComentario";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
@@ -68,13 +69,23 @@ export async function modificarPublicacionOperador(
             cantidadUnidadesParaGuardar = null;
         }
     }
-let fechaVigenciaParaGuardar: FechaVigenciaDb = undefined;    
+    let fechaVigenciaParaGuardar: FechaVigenciaDb = undefined;
     if (cambios.fechaVigencia !== undefined) {
         const resVigencia = validarFechaVigencia(cambios.fechaVigencia);
         if (!resVigencia.esValido) {
             throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", resVigencia.error);
         }
         fechaVigenciaParaGuardar = convertirFechaVigenciaAInstant(resVigencia.fechaVigencia);
+    }
+
+    let comentarioParaGuardar: string | null | undefined = undefined;
+
+    if (cambios.comentario !== undefined) {
+        const resultadoComentario = validarComentario(cambios.comentario);
+        if (!resultadoComentario.esValido) {
+            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", resultadoComentario.error);
+        }
+        comentarioParaGuardar = resultadoComentario.comentario;
     }
 
     let imagenCreada: { url: string; publicacionId: number } | undefined;
@@ -172,6 +183,7 @@ let fechaVigenciaParaGuardar: FechaVigenciaDb = undefined;
                     version: cambios.version + 1,
                     precio: precioParaGuardar,
                     cantidadUnidades: cantidadUnidadesParaGuardar,
+                    ...(comentarioParaGuardar !== undefined ? { comentario: comentarioParaGuardar } : {}),
                     foto: fotoActual,
                     ...(imagenCreada || (cambios.foto === null && publicacion.foto !== null)
                         ? { fotoEliminadaPorVencimientoEn: null } : {}),

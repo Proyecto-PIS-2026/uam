@@ -528,7 +528,8 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
             paisId: 44,
             disponible: false,
             fechaVigencia: null,
-            cantidadUnidades: null
+            cantidadUnidades: null,
+            comentario: null,
         }, null));
         expect(mocks.guardar).toHaveBeenCalledOnce();
         await waitFor(() => expect(mocks.cerrar).toHaveBeenCalledOnce());
@@ -1034,5 +1035,34 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(compartir).toHaveBeenCalledOnce();
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("200");
     });
+        it("guarda cuando solo cambia el comentario y lo envía sin espacios de los costados", async () => {
+        render(<DrawerEditarPublicacion {...props} />);
 
+        fireEvent.change(screen.getByLabelText("Comentario"), { target: { value: "  Cosecha de esta semana  " } });
+        guardarDesdeBoton();
+
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
+            precio: "100",
+            comentario: "Cosecha de esta semana",
+        }), null));
+        await waitFor(() => expect(mocks.cerrar).toHaveBeenCalledOnce());
+    });
+
+    it("no guarda si el comentario solo tiene espacios y la publicación no tenía comentario", () => {
+        render(<DrawerEditarPublicacion {...props} />);
+
+        fireEvent.change(screen.getByLabelText("Comentario"), { target: { value: "   " } });
+        guardarDesdeBoton();
+
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        expect(mocks.cerrar).toHaveBeenCalledOnce();
+    });
+
+    it("muestra el comentario existente sin permitir modificarlo en consulta", () => {
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" publicacion={{ ...publicacionInicial, comentario: "Cosecha de esta semana" }} />);
+
+        const comentario = screen.getByLabelText("Comentario");
+        expect(comentario).toHaveValue("Cosecha de esta semana");
+        expect(comentario).toHaveAttribute("readonly");
+    });
 });

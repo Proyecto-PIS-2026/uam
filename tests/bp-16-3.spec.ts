@@ -53,10 +53,13 @@ async function seleccionarFiltro(
 }
 
 async function abrirGestionUsuarios(page: Page) {
-  await page.getByRole("button", {
-    name: "Usuarios",
-    exact: true,
-  }).click();
+  await page
+    .getByRole("group", { name: "Secciones de configuración" })
+    .getByRole("button", {
+      name: "Usuarios",
+      exact: true,
+    })
+    .click();
 
   await expect(
     page.getByRole("heading", {

@@ -520,4 +520,17 @@
     .fotoAmpliada {
         height: min(38rem, 80dvh);
     }
+
+    .comentario {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 1rem;
+    }
+
+    .textoComentario {
+        margin: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
 }

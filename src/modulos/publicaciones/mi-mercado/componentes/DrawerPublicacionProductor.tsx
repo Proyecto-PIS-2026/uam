@@ -32,6 +32,7 @@ import { validarUbicacionesProductor } from "../../productores/ubicaciones-produ
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import styles from "./DrawerPublicacionProductor.module.css";
+import CampoComentario from "../../componentes/CampoComentario";
 
 type Props = {
     publicacion: PublicacionMiMercadoProductor | null;
@@ -45,6 +46,7 @@ type Borrador = {
     precio: string;
     cantidadUnidades: string;
     fechaVigencia: string;
+    comentario: string;
     especieId: number;
     variedadId: number;
     envaseId: number;
@@ -86,6 +88,7 @@ function crearBorrador(publicacion: PublicacionMiMercadoProductor): Borrador {
         precio: publicacion.precio === null ? "" : String(Number(publicacion.precio)),
         cantidadUnidades: publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades),
         fechaVigencia: publicacion.fechaVigencia ?? "",
+        comentario: publicacion.comentario ?? "",
         especieId: publicacion.especie.id,
         variedadId: publicacion.variedad?.id ?? 0,
         envaseId: publicacion.envase?.id ?? 0,
@@ -355,6 +358,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         const cambios: CambiosPublicacionProductor = {
             precio: normalizarPrecioPublicacion(borrador.precio),
             cantidadUnidades: borrador.cantidadUnidades === "" ? null : Number(borrador.cantidadUnidades),
+            comentario: borrador.comentario.trim() || null,
             especieId: borrador.especieId, variedadId: borrador.variedadId || null,
             envaseId: borrador.envaseId || null, kilosId: borrador.kilosId || null, categoriaId: borrador.categoriaId || null, calibreId: borrador.calibreId || null,
             paisId: borrador.paisId || null, disponible: borrador.disponible,
@@ -459,6 +463,14 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                                 onChange={(evento) => cambiar({ fechaVigencia: evento.target.value })}
                             />
                         </div>
+                        <CampoComentario
+                            id={`publicacion-productor-${publicacion.id}-comentario`}
+                            valor={borrador?.comentario ?? publicacion.comentario ?? ""}
+                            alCambiar={(comentario) => cambiar({ comentario })}
+                            editando={editando}
+                            deshabilitado={ocupado}
+                            clases={{ campo: estilosAcciones.campo, etiqueta: estilosAcciones.etiqueta, entrada: estilosAcciones.entrada, ayuda: estilosAcciones.ayuda }}
+                        />
                         <div className={estilosAcciones.seccionFoto}>
                             {mostrarAvisoFoto && <AvisoVigenciaFoto estado={publicacion.estadoFoto} />}
                             <div className={estilosAcciones.marcoFoto}>

@@ -231,6 +231,7 @@ model Publicacion {
   publicacionDisponible Boolean              @default(true)
   publicacionActiva     Boolean              @default(true)
   precio                Numeric(12, 2)?
+  comentario            String?
   cantidadUnidades      Int?
   foto                  String?
   fotoEliminadaPorVencimientoEn DateTime?

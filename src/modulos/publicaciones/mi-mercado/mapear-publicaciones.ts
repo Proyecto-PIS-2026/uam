@@ -22,6 +22,7 @@ export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion):
             publicacionActiva: pub.publicacionActiva as boolean,
             publicacionDisponible: estaVencida ? false : (pub.publicacionDisponible as boolean),
             cantidadUnidades: pub.cantidadUnidades as number | null,
+            comentario: pub.comentario as string | null,
             especie: { id: pub.especie.id, nombreEspecie: pub.especie.nombreEspecie, fotoEspecie: pub.especie.fotoEspecie },
             variedad: pub.variedad ? { id: pub.variedad.id, nombreVariedad: pub.variedad.nombreVariedad } : null,
             envase: pub.envase ? { id: pub.envase.id, nombreEnvase: pub.envase.nombreEnvase } : null,

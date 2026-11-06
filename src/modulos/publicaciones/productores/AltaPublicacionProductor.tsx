@@ -21,6 +21,7 @@ import { ordenarOpcionesPorNombre } from "../operadores/ordenar-opciones";
 import styles from "../operadores/componentes/DrawerEditarPublicacion.module.css";
 import UbicacionesEdicionProductor, { type UbicacionEdicionProductor } from "./UbicacionesEdicionProductor";
 import { validarUbicacionesProductor } from "./ubicaciones-productor";
+import CampoComentario from "../componentes/CampoComentario";
 
 type Opcion = { id: number; nombre: string };
 type Catalogos = {
@@ -35,7 +36,7 @@ type Catalogos = {
 type Formulario = {
     productorId: number; especieId: number; variedadId: number; envaseId: number; kilosId: number; calibreId: number;
     categoriaId: number; paisId: number; ubicaciones: UbicacionEdicionProductor[]; disponibilidad: boolean;
-    precio: string; cantidad: string; fotografia: string; fechaVigencia: string;
+    precio: string; cantidad: string; comentario: string; fotografia: string; fechaVigencia: string;
 };
 
 type PropsDrawer = {
@@ -60,6 +61,7 @@ function formularioInicial(productorId: number, disponibilidadInicial: boolean):
         disponibilidad: disponibilidadInicial,
         precio: "",
         cantidad: "",
+        comentario: "",
         fotografia: "",
         fechaVigencia: "",
     };
@@ -274,6 +276,13 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
                     />
                     <small className={styles.ayuda}>Dejalo vacío si no querés ingresar una fecha de vigencia.</small>
                 </div>
+                <CampoComentario
+                    id="productor-comentario"
+                    valor={datos.comentario}
+                    alCambiar={(comentario) => cambiar({ comentario })}
+                    deshabilitado={deshabilitado}
+                    clases={{ campo: styles.campo, etiqueta: styles.etiqueta, entrada: styles.entrada, ayuda: styles.ayuda }}
+                />
             </div>
             <label className={styles.disponibilidad} htmlFor="productor-disponibilidad" data-disponible={datos.disponibilidad}><span className={styles.textoDisponibilidad}><span className={styles.etiqueta}>Disponibilidad</span><span className={styles.estadoDisponibilidad}>{datos.disponibilidad ? "Disponible" : "No disponible"}</span></span><Switch checked={datos.disponibilidad} onChange={(_, valor) => cambiar({ disponibilidad: valor })} disabled={deshabilitado} slotProps={{ input: { id: "productor-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} /></label>
             <div className={styles.seccionFoto}><div className={styles.marcoFoto}>{datos.fotografia ? <Image className={styles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill unoptimized /> : <div className={styles.sinFoto}><PhotoCameraOutlinedIcon /><span>Sin foto</span></div>}{datos.fotografia && <button type="button" className={`${styles.botonFoto} ${styles.borrarFoto}`} onClick={() => cambiar({ fotografia: "" })} disabled={deshabilitado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}

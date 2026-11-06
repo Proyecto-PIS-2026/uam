@@ -22,6 +22,7 @@ import type { DatosAltaPublicacionOperador } from "../../validarAltaPublicacionO
 import { ordenarOpcionesPorNombre } from "../ordenar-opciones";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import drawerStyles from "./DrawerEditarPublicacion.module.css";
+import CampoComentario from "../../componentes/CampoComentario";
 
 type Opcion = { id: number; nombre: string };
 type OpcionRelacionada = Opcion & { especieId?: number | null; variedadId?: number };
@@ -34,9 +35,10 @@ type Catalogos = {
     calibres: Opcion[];
     paises: Opcion[];
 };
-type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "fotografia" | "variedadId" | "envaseId" | "kilosId" | "categoriaId" | "calibreId" | "paisId"> & {
+type Formulario = Omit<DatosAltaPublicacionOperador, "precio" | "cantidadUnidades" | "comentario" | "fotografia" | "variedadId" | "envaseId" | "kilosId" | "categoriaId" | "calibreId" | "paisId"> & {
     precio: string;
     cantidadUnidades: string;
+    comentario: string;
     fotografia: string;
     fechaVigencia: string;
     variedadId: number;
@@ -89,6 +91,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
         cantidadUnidades: "",
         fotografia: "",
         fechaVigencia: "",
+        comentario: "",
     });
     const [errores, setErrores] = useState<string[]>([]);
     const [errorCarga, setErrorCarga] = useState("");
@@ -196,7 +199,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                 fechaVigencia: datos.fechaVigencia || null,
                 cantidadUnidades: datos.cantidadUnidades.trim() !== ""
                     ? parseInt(datos.cantidadUnidades, 10)
-                    : null
+                    : null,
+                comentario: datos.comentario,
             };
             const respuesta = await fetchConSesion("/api/publicaciones", {
                 method: "POST",
@@ -296,6 +300,13 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                             </div>
                         );
                     })()}
+                    <CampoComentario
+                        id="nueva-publicacion-comentario"
+                        valor={datos.comentario}
+                        alCambiar={(comentario) => actualizar({ comentario })}
+                        deshabilitado={deshabilitado}
+                        clases={{ campo: drawerStyles.campo, etiqueta: drawerStyles.etiqueta, entrada: drawerStyles.entrada, ayuda: drawerStyles.ayuda }}
+                    />
 
                     <div className={drawerStyles.campo}>
                         <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-fechaVigencia">

@@ -23,6 +23,7 @@ export type PublicacionPerfilAdminProductor = {
     foto: string | null;
     precio: string | null;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     fecha: string;
     fechaVigencia: string | null;
     disponible: boolean; // El admin ve también las publicaciones no disponibles
@@ -72,6 +73,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
                 "foto",
                 "precio",
                 "cantidadUnidades",
+                "comentario",
                 "fecha",
                 "fechaVigencia",
                 "publicacionActiva",
@@ -108,6 +110,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
                 foto: publicacion.foto,
                 precio: publicacion.precio,
                 cantidadUnidades: publicacion.cantidadUnidades,
+                comentario: publicacion.comentario,
                 fecha: publicacion.fecha.toString(),
                 fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
                 disponible: publicacion.publicacionDisponible,
