@@ -33,7 +33,7 @@ export function convertirFechaVigenciaAInstant(fechaVigencia: string | null | un
     try {
         return Temporal.PlainDate.from(fechaVigencia)
             .toPlainDateTime({ hour: 23, minute: 59, second: 59 })
-            .toZonedDateTime("UTC")
+            .toZonedDateTime("America/Montevideo")
             .toInstant();
     } catch {
         return null;
