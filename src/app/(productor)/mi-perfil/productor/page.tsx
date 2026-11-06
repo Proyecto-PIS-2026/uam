@@ -51,13 +51,13 @@ export default async function PaginaMiPerfilProductor() {
                     </Link>
                 </div>
             </header>
-            <div className={styles.contenido}>
-                {habilitarCambioContrasena && (
-                    <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
-                        Cambiar contraseña
-                    </Link>
-                )}
-            </div>
         </section>
+        <div className={styles.acciones}>
+            {habilitarCambioContrasena && (
+                <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
+                    Cambiar contraseña
+                </Link>
+            )}
+        </div>
     </main>;
 }

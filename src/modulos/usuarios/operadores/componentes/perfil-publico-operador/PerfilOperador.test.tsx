@@ -30,6 +30,26 @@ const operador: PerfilPublicoOperador = {
 const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
 
 describe("PerfilOperador", () => {
+    it("muestra el aviso y las fechas de licencia con su mensaje de recomendación", () => {
+        render(
+            <PerfilOperador operador={{ ...operador, enLicencia: true,
+                comentario: "Licencia: 2026-11-05 - 2026-11-12\n\nConsultar disponibilidad antes de comprar." }} />,
+        );
+
+        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Fecha: 05/11/2026 - 12/11/2026");
+        expect(screen.queryByText("Mensaje de recomendación")).not.toBeInTheDocument();
+        expect(screen.getByText("Consultar disponibilidad antes de comprar.")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Licencia" })).toBeInTheDocument();
+    });
+
+    it("indica que las fechas de licencia no están especificadas cuando el comentario no tiene formato", () => {
+        render(<PerfilOperador operador={{ ...operador, enLicencia: true, comentario: "En licencia sin fechas" }} />);
+
+        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Fechas no especificadas");
+        expect(screen.getByText("En licencia sin fechas")).toBeInTheDocument();
+    });
+
+
     beforeEach(() => {
         vi.clearAllMocks();
     });

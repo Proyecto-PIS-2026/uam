@@ -284,6 +284,7 @@
 }
 
 .cambiarContrasena {
+    margin: var(--espacio-secciones) 0 0 auto;
     flex-shrink: 0;
     white-space: nowrap;
     display: flex;

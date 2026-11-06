@@ -8,6 +8,7 @@ import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-produ
 
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import EditIcon from "@mui/icons-material/Edit";
 import { DrawerAltaPublicacionProductor } from "@/modulos/publicaciones/productores/AltaPublicacionProductor";
 import { useCallback, useState } from "react";
@@ -61,26 +62,27 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                         <p className={styles.tipoPerfil}>Perfil Productor</p>
                         <h1 id="nombre-productor" className={styles.nombre}>{productor.nombreFantasia}</h1>
                     </div>
-                    <Link
-                        href={`/gestion-productores/${productor.id}/editar`}
-                        className={styles.botonEditar}
-                        aria-label="Editar productor"
-                        title="Editar productor"
-                    >
-                        <EditIcon aria-hidden="true" className={styles.iconoEditar} />
-                        <span>Editar</span>
-                    </Link>
-                </header>
-
-                <div className={styles.tarjetaInformacion}>
                     <p className={`${styles.dato} ${styles.departamentos}`}>
                         <LocationOnOutlinedIcon fontSize="small" aria-hidden="true" />
                         <span><span className={styles.etiqueta}>Departamentos:</span> {departamentos.join(" · ") || "-"}</span>
                     </p>
-                    <p className={styles.dato}>
-                        <span className={styles.etiqueta}>Whatsapp:</span> {productor.whatsApp}
-                    </p>
-                </div>
+                    <div className={styles.accionesEncabezado}>
+                        <p className={styles.contacto}>
+                            <WhatsAppIcon aria-hidden="true" />
+                            <span className={styles.etiqueta}>WhatsApp:</span>
+                            <span>{productor.whatsApp || "Sin número de contacto"}</span>
+                        </p>
+                        <Link
+                            href={`/gestion-productores/${productor.id}/editar`}
+                            className={styles.botonEditar}
+                            aria-label="Editar productor"
+                            title="Editar productor"
+                        >
+                            <EditIcon aria-hidden="true" className={styles.iconoEditar} />
+                            <span>Editar</span>
+                        </Link>
+                    </div>
+                </header>
             </div>
 
 

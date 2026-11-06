@@ -6,6 +6,7 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import BotonVolver from "@/compartido/BotonVolver";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
@@ -28,7 +29,25 @@ const registrarContactoWhatsApp = (tipo: "OPERADOR" | "PRODUCTOR", entidadId: nu
     });
 };
 
+function formatearFecha(fecha: string): string {
+    const [anio, mes, dia] = fecha.split("-");
+    return `${dia}/${mes}/${anio}`;
+}
+
+function extraerLicencia(comentario: string | null | undefined) {
+    const coincidencia = comentario?.match(/^Licencia:\s*(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})\s*(?:\r?\n\r?\n)?([\s\S]*)$/);
+    return {
+        inicio: coincidencia?.[1] ?? "",
+        fin: coincidencia?.[2] ?? "",
+        comentario: coincidencia?.[3]?.trim() ?? comentario?.trim() ?? "",
+    };
+}
+
 export default function PerfilOperador({ operador,  hrefVolver = "/operadores", textoVolver = "Volver al listado de operadores"  }: PerfilOperadorProps) {
+    const licencia = extraerLicencia(operador.comentario);
+    const fechasLicencia = licencia.inicio && licencia.fin
+        ? `${formatearFecha(licencia.inicio)} - ${formatearFecha(licencia.fin)}`
+        : "Fechas no especificadas";
     const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
     const localesPorNave: Record<string, string[]> = {};
 
@@ -74,6 +93,18 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
                                 </li>
                             ))}
                         </ul>
+                    )}
+                    {operador.enLicencia && (
+                        <>
+                            <h2 className={styles.subtitulo}>
+                                <DescriptionOutlined aria-hidden="true" />
+                                Licencia
+                            </h2>
+                            <div className={styles.comentario} role="status">
+                                <p className={styles.fechasLicencia}>Fecha: {fechasLicencia}</p>
+                                {licencia.comentario && <p>{licencia.comentario}</p>}
+                            </div>
+                        </>
                     )}
                 </div>
             </div>

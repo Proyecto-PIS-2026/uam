@@ -150,11 +150,11 @@
     background: var(--color-secondary-soft);
 }
 
-.contenido {
+.acciones {
     display: flex;
     flex-direction: column;
     gap: var(--espacio-controles);
-    padding: var(--padding-panel);
+    margin-top: var(--espacio-secciones);
 }
 
 .cambiarContrasena {

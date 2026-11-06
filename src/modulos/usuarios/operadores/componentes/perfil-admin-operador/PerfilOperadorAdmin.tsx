@@ -18,6 +18,9 @@ import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import Link from "next/link";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import EditIcon from "@mui/icons-material/Edit";
 
 type PerfilOperadorAdminProps = {
@@ -76,35 +79,26 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                         <p className={styles.tipoPerfil}>Perfil Operador</p>
                         <h1 id="nombre-operador" className={styles.nombre}>{operador.nombreFantasia}</h1>
                     </div>
-                    <Link
-                        href={`/gestion-operadores/${operador.id}/editar`}
-                        className={styles.botonEditar}
-                        aria-label="Editar operador"
-                        title="Editar operador"
-                    >
-                        <EditIcon aria-hidden="true" className={styles.iconoEditar} />
-                        <span>Editar</span>
-                    </Link>
+                    <div className={styles.accionesEncabezado}>
+                        <p className={styles.contacto}>
+                            <WhatsAppIcon aria-hidden="true" />
+                            <span className={styles.etiqueta}>WhatsApp:</span>
+                            <span>{operador.whatsApp || "Sin número de contacto"}</span>
+                        </p>
+                        <Link
+                            href={`/gestion-operadores/${operador.id}/editar`}
+                            className={styles.botonEditar}
+                            aria-label="Editar operador"
+                            title="Editar operador"
+                        >
+                            <EditIcon aria-hidden="true" className={styles.iconoEditar} />
+                            <span>Editar</span>
+                        </Link>
+                    </div>
                 </header>
 
                 <div className={styles.tarjetaInformacion}>
-                    <p className={styles.dato}>
-                        <span className={styles.etiqueta}>Whatsapp:</span> {operador.whatsApp}
-                    </p>
-                    <h2 className={styles.subtitulo}>Licencia</h2>
-                    <p className={operador.enLicencia ? styles.licenciaActiva : styles.licenciaInactiva}>
-                        {operador.enLicencia ? `Licencia: ${fechasLicencia}` : "No hay licencia registrada."}
-                    </p>
-                    {operador.enLicencia && licencia.comentario && (
-                        <>
-                            <h2 className={styles.subtitulo}>Mensaje de recomendación</h2>
-                            <div className={styles.comentario}>
-                                <p>{licencia.comentario}</p>
-                            </div>
-                        </>
-                    )}
-
-                    <h2 className={styles.subtitulo}>Locales</h2>
+                    <h2 className={styles.subtitulo}><StorefrontOutlinedIcon aria-hidden="true" />Locales</h2>
                     {operador.locales.length === 0 ? (
                         <EstadoVacio titulo="Sin locales registrados" descripcion="El operador no tiene locales registrados." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
                     ) : (
@@ -125,6 +119,15 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                                 </li>
                             ))}
                         </ul>
+                    )}
+                    <h2 className={styles.subtitulo}><DescriptionOutlined aria-hidden="true" />Licencia</h2>
+                    {operador.enLicencia ? (
+                        <div className={styles.comentario}>
+                            <p className={styles.fechasLicencia}>Fecha: {fechasLicencia}</p>
+                            {licencia.comentario && <p>{licencia.comentario}</p>}
+                        </div>
+                    ) : (
+                        <p className={styles.licenciaInactiva}>No hay licencia registrada.</p>
                     )}
                 </div>
             </div>
