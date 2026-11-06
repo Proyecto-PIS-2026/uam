@@ -21,11 +21,12 @@ export async function GET() {
 		const operadoresAutorizados = sesion?.rol === "OPERADOR"
 			? [await obtenerOperadorAutorizado()]
 			: db.orm.public.Operador.all();
-		const [operadores, especies, variedades, presentaciones, categorias, calibres, paises] = await Promise.all([
+		const [operadores, especies, variedades, envases, kilos, categorias, calibres, paises] = await Promise.all([
 			operadoresAutorizados,
 			db.orm.public.Especie.all(),
 			db.orm.public.Variedad.all(),
-			db.orm.public.Presentacion.all(),
+			db.orm.public.Envase.orderBy((envase) => envase.id.asc()).all(),
+			db.orm.public.KilosEmpaquetado.orderBy((peso) => peso.id.asc()).all(),
 			db.orm.public.Categoria.all(),
 			db.orm.public.Calibre.all(),
 			db.orm.public.Pais.all(),
@@ -35,7 +36,8 @@ export async function GET() {
 			operadores: operadores.map(({ id, nombreFantasia }) => ({ id, nombre: nombreFantasia })),
 			especies: especies.filter((item) => item.especieActiva).map(({ id, nombreEspecie }) => ({ id, nombre: nombreEspecie })),
 			variedades: variedades.filter((item) => item.variedadActiva).map(({ id, especieId, nombreVariedad }) => ({ id, especieId, nombre: nombreVariedad })),
-			presentaciones: presentaciones.filter((item) => item.presentacionActiva).map(({ id, variedadId, nombrePresentacion }) => ({ id, variedadId, nombre: nombrePresentacion })),
+			envases: envases.map(({ id, nombreEnvase }) => ({ id, nombre: nombreEnvase })),
+			kilos: kilos.map(({ id, valor }) => ({ id, nombre: valor })),
 			categorias: categorias.map(({ id, especieId, nombreCategoria }) => ({ id, especieId, nombre: nombreCategoria })),
 			calibres: calibres.map(({ id, nombreCalibre }) => ({ id, nombre: nombreCalibre })),
 			paises: paises.map(({ id, nombrePais }) => ({ id, nombre: nombrePais })),

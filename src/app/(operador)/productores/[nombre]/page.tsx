@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { decodificarParametroRuta } from "@/compartido/decodificar-parametro-ruta";
-import { requerirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
 import PerfilProductor from "@/modulos/usuarios/productores/componentes/perfil-operador-productor/perfil-productor/PerfilProductor";
 import CatalogoProductor from "@/modulos/usuarios/productores/componentes/perfil-operador-productor/catalogo-productor/CatalogoProductor";
@@ -8,7 +8,7 @@ import CatalogoProductor from "@/modulos/usuarios/productores/componentes/perfil
 export const dynamic = "force-dynamic";
 
 export default async function Page({ params, searchParams }: { params: Promise<{ nombre: string }>; searchParams: Promise<{ origen?: string | string[] }> }) {
-    await requerirConsultaProductores();
+    await requerirOperador();
     const { nombre: parametroNombre } = await params;
     const nombre = decodificarParametroRuta(parametroNombre);
     if (nombre === null || !nombre.trim()) notFound();

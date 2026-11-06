@@ -5,7 +5,8 @@ const rutaListado = "/publicaciones";
 type Publicacion = {
     nombre: string;
     operador: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     categoria: string;
     calibre: string;
     precio: number | null;
@@ -43,7 +44,11 @@ for (const pantalla of [
             return tarjetas.evaluateAll((elementos) => elementos.map((tarjeta) => {
                 const nombre = tarjeta.querySelector("h3")?.textContent?.trim();
                 const operador = tarjeta.querySelector("p[title]")?.getAttribute("title");
-                const presentacion = tarjeta.querySelector('span[title^="por "]')?.getAttribute("title")?.slice(4).trim() ?? "";
+                const empaquetado = tarjeta.querySelector('span[title^="por "]')?.getAttribute("title")?.slice(4).trim() ?? "";
+                const envaseConKilos = empaquetado.match(/^(.*?) \(([^)]+) kg\)$/);
+                const soloKilos = empaquetado.match(/^([\d-]+) kg$/);
+                const envase = envaseConKilos?.[1] ?? (soloKilos ? "" : empaquetado);
+                const kilos = envaseConKilos?.[2] ?? soloKilos?.[1] ?? "";
                 const etiquetas = Array.from(tarjeta.querySelectorAll("span"));
                 const etiquetaCategoria = etiquetas.find((elemento) => elemento.textContent?.trim() === "Cat.");
                 const etiquetaCalibre = etiquetas.find((elemento) => elemento.textContent?.trim() === "Calibre");
@@ -63,7 +68,8 @@ for (const pantalla of [
                 return {
                     nombre,
                     operador: operador.trim(),
-                    presentacion,
+                    envase,
+                    kilos,
                     categoria,
                     calibre,
                     precio: texto.includes("Consultar precio") ? null : Number(coincidenciaPrecio![1].replace(/\./g, "").replace(",", ".")),
@@ -129,7 +135,7 @@ for (const pantalla of [
             publicacion.nombre.includes(" - ") &&
             publicacion.precio !== null &&
             publicacion.precio > 0 &&
-            publicacion.presentacion !== "" &&
+            publicacion.envase !== "" && publicacion.kilos !== "" &&
             publicacion.categoria !== "-" &&
             publicacion.calibre !== "-"
         );
@@ -202,6 +208,14 @@ for (const pantalla of [
             await seleccionar("Calibre", "Todos");
             await comprobarResultados(publicaciones);
 
+            await seleccionar("Empaquetado", producto.envase);
+            await comprobarResultados(publicaciones.filter((publicacion) => publicacion.envase === producto.envase));
+            await seleccionar("Empaquetado", "Todos");
+            await seleccionar("Kilos", `${producto.kilos} kg`);
+            await comprobarResultados(publicaciones.filter((publicacion) => publicacion.kilos === producto.kilos));
+            await seleccionar("Kilos", "Todos");
+            await comprobarResultados(publicaciones);
+
             await seleccionar("Especie", especie);
             let esperadas = publicaciones.filter((publicacion) => obtenerEspecie(publicacion) === especie);
             await comprobarResultados(esperadas);
@@ -210,8 +224,12 @@ for (const pantalla of [
             esperadas = esperadas.filter((publicacion) => publicacion.nombre === producto.nombre);
             await comprobarResultados(esperadas);
 
-            await seleccionar("Presentación", producto.presentacion);
-            esperadas = esperadas.filter((publicacion) => publicacion.presentacion === producto.presentacion);
+            await seleccionar("Empaquetado", producto.envase);
+            esperadas = esperadas.filter((publicacion) => publicacion.envase === producto.envase);
+            await comprobarResultados(esperadas);
+
+            await seleccionar("Kilos", `${producto.kilos} kg`);
+            esperadas = esperadas.filter((publicacion) => publicacion.kilos === producto.kilos);
             await comprobarResultados(esperadas);
 
             await seleccionar("Categoría", producto.categoria);
@@ -247,11 +265,13 @@ for (const pantalla of [
             await expect(precioMinimo).toHaveValue("");
             await expect(precioMaximo).toHaveValue("");
 
-            for (const campo of ["Especie", "Variedad", "Presentación", "Categoría"]) {
+            for (const campo of ["Especie", "Variedad", "Categoría"]) {
                 await expect(page.getByRole("combobox", { name: campo, exact: true })).toHaveText("Todas");
             }
 
-            await expect(page.getByRole("combobox", { name: "Calibre", exact: true })).toHaveText("Todos");
+            for (const campo of ["Empaquetado", "Kilos", "Calibre"]) {
+                await expect(page.getByRole("combobox", { name: campo, exact: true })).toHaveText("Todos");
+            }
             await comprobarOrdenTrasLimpiar("A-Z", publicaciones);
 
             await ordenar("A-Z");

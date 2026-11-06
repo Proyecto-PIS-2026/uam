@@ -1,3 +1,4 @@
+
 import { randomUUID } from "node:crypto";
 import { expect, mergeTests, type Locator, type Page } from "@playwright/test";
 import { test as operadores } from "./precarga-operadores";
@@ -66,13 +67,19 @@ function botonCuenta(page: Page) {
 }
 
 async function esperarContador(boton: Locator, cantidad: number) {
-    const distintivo = boton.locator("span[aria-hidden='true']");
+    const menuAbierto = await boton.getAttribute("aria-expanded") === "true";
+    const pagina = boton.page();
+    const elementoContador = menuAbierto
+        ? pagina.getByRole("menuitem", { name: "Notificaciones", exact: true })
+        : boton;
+    const distintivo = elementoContador.locator(".MuiBadge-badge");
+
     if (cantidad === 0) {
         await expect(distintivo).toHaveCount(0);
-        await expect(boton).not.toHaveAttribute("aria-describedby", /.+/);
+        await expect(elementoContador).not.toHaveAttribute("aria-describedby", /.+/);
     } else {
-        await expect(distintivo).toHaveText(cantidad > 99 ? "99+" : String(cantidad));
-        await expect(boton).toHaveAccessibleDescription(`${cantidad} ${cantidad === 1 ? "notificación sin leer" : "notificaciones sin leer"}`);
+        await expect(distintivo).toHaveText(cantidad > 9 ? "9+" : String(cantidad));
+        await expect(elementoContador).toHaveAccessibleDescription(`${cantidad} ${cantidad === 1 ? "notificación sin leer" : "notificaciones sin leer"}`);
     }
 }
 

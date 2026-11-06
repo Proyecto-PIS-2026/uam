@@ -11,7 +11,8 @@ export type PublicacionListado = {
     foto: string | null;
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     cantidadUnidades?: number | null;
     categoria: string;
     calibre: string;
@@ -48,7 +49,7 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
         ), visibles AS (
             SELECT p.id, p.precio, p.fecha, p."cantidadUnidades",
                 e."nombreEspecie" AS especie, coalesce(v."nombreVariedad", '') AS variedad,
-                coalesce(pr."nombrePresentacion", '') AS presentacion, coalesce(c."nombreCategoria", '') AS categoria,
+                coalesce(en."nombreEnvase", '') AS envase, coalesce(ki.valor, '') AS kilos, coalesce(c."nombreCategoria", '') AS categoria,
                 coalesce(ca."nombreCalibre", '') AS calibre, coalesce(ca."codigoCalibre", '') AS "codigoCalibre", coalesce(pa."nombrePais", '') AS pais,
                 o.id AS "operadorId", o."nombreFantasia" AS "operadorNombreFantasia",
                 o."whatsApp" AS "operadorWhatsApp",
@@ -57,14 +58,16 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
                 + CASE WHEN p.precio IS NOT NULL THEN 1 ELSE 0 END
                 + CASE WHEN p."cantidadUnidades" IS NOT NULL THEN 1 ELSE 0 END
                 + CASE WHEN nullif(btrim(v."nombreVariedad"), '') IS NOT NULL THEN 1 ELSE 0 END
-                + CASE WHEN nullif(btrim(pr."nombrePresentacion"), '') IS NOT NULL THEN 1 ELSE 0 END
+                + CASE WHEN nullif(btrim(en."nombreEnvase"), '') IS NOT NULL THEN 1 ELSE 0 END
+                + CASE WHEN nullif(btrim(ki.valor), '') IS NOT NULL THEN 1 ELSE 0 END
                 + CASE WHEN nullif(btrim(c."nombreCategoria"), '') IS NOT NULL THEN 1 ELSE 0 END
                 + CASE WHEN nullif(btrim(ca."nombreCalibre"), '') IS NOT NULL THEN 1 ELSE 0 END
                 + CASE WHEN nullif(btrim(pa."nombrePais"), '') IS NOT NULL THEN 1 ELSE 0 END
             ) AS ponderacion
             FROM "publicacionOperador" po
             JOIN publicacion p ON p.id = po."publicacionId"
-            LEFT JOIN presentacion pr ON pr.id = p."presentacionId"
+            LEFT JOIN envase en ON en.id = p."envaseId"
+            LEFT JOIN "kilosEmpaquetado" ki ON ki.id = p."kilosId"
             LEFT JOIN variedad v ON v.id = p."variedadId"
             JOIN especie e ON e.id = p."especieId"
             LEFT JOIN categoria c ON c.id = p."categoriaId"
@@ -80,7 +83,8 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
             SELECT * FROM visibles
             WHERE (${consulta.especie} = '' OR especie = ${consulta.especie})
               AND (${consulta.variedad} = '' OR variedad = ${consulta.variedad})
-              AND (${consulta.presentacion} = '' OR presentacion = ${consulta.presentacion})
+              AND (${consulta.envase} = '' OR envase = ${consulta.envase})
+              AND (${consulta.kilos} = '' OR kilos = ${consulta.kilos})
               AND (${consulta.categoria} = '' OR categoria = ${consulta.categoria})
               AND (${consulta.calibre} = '' OR calibre = ${consulta.calibre})
               AND (${consulta.nave} = '' OR EXISTS (
@@ -92,7 +96,7 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
               AND NOT EXISTS (
                 SELECT 1 FROM regexp_split_to_table(${consulta.busqueda}, '[[:space:]]+') AS palabra
                 WHERE palabra <> '' AND NOT EXISTS (
-                    SELECT 1 FROM unnest(ARRAY[especie, variedad, presentacion, categoria, calibre, "codigoCalibre", "operadorNombreFantasia"]) AS campo
+                    SELECT 1 FROM unnest(ARRAY[especie, variedad, envase, kilos, categoria, calibre, "codigoCalibre", "operadorNombreFantasia"]) AS campo
                     WHERE strpos(translate(lower(campo), 'áéíóúüñ', 'aeiouun'), palabra) > 0
                 )
               )
@@ -113,12 +117,12 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
             'publicaciones', coalesce((SELECT jsonb_agg(jsonb_build_object(
                 'tipoPublicacion', 'OPERADOR', 'id', ordenadas.id, 'precio', ordenadas.precio, 'fecha', ordenadas.fecha, 'foto', p.foto,
                 'cantidadUnidades', ordenadas."cantidadUnidades", 'especie', ordenadas.especie, 'variedad', ordenadas.variedad,
-                'presentacion', ordenadas.presentacion, 'categoria', ordenadas.categoria, 'calibre', ordenadas.calibre,
+                'envase', ordenadas.envase, 'kilos', ordenadas.kilos, 'categoria', ordenadas.categoria, 'calibre', ordenadas.calibre,
                 'codigoCalibre', ordenadas."codigoCalibre", 'pais', ordenadas.pais,
                 'operador', jsonb_build_object('id', ordenadas."operadorId", 'nombreFantasia', ordenadas."operadorNombreFantasia", 'whatsApp', ordenadas."operadorWhatsApp")
             ) ORDER BY ordenadas.posicion) FROM ordenadas JOIN publicacion p ON p.id = ordenadas.id), '[]'::jsonb),
-            'opciones', coalesce((SELECT jsonb_agg(opcion ORDER BY especie, variedad, presentacion, categoria, calibre)
-                FROM (SELECT DISTINCT especie, variedad, presentacion, categoria, calibre FROM visibles) AS opcion), '[]'::jsonb),
+            'opciones', coalesce((SELECT jsonb_agg(opcion ORDER BY especie, variedad, envase, kilos, categoria, calibre)
+                FROM (SELECT DISTINCT especie, variedad, envase, kilos, categoria, calibre FROM visibles) AS opcion), '[]'::jsonb),
             'naves', coalesce((SELECT jsonb_agg("nombreNave" ORDER BY "nombreNave")
                 FROM (SELECT DISTINCT l."nombreNave" FROM locales_vigentes l
                     WHERE EXISTS (SELECT 1 FROM visibles v WHERE v."operadorId" = l."operadorId")) AS naves), '[]'::jsonb),

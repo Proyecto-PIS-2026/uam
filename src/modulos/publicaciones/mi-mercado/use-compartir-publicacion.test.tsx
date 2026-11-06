@@ -8,7 +8,7 @@ const publicacion: Publicacion = {
     foto: "/api/publicaciones/imagenes/52/foto.webp", precio: "45", fecha: "2026-10-25T15:00:00Z",
     publicacionActiva: true, publicacionDisponible: true,
     especie: { id: 7, nombreEspecie: "Papa", fotoEspecie: null },
-    variedad: null, presentacion: null, categoria: null, calibre: null,
+    variedad: null, envase: null, kilos: null, categoria: null, calibre: null,
 };
 
 function respuestaFoto(tipo = "image/webp") {

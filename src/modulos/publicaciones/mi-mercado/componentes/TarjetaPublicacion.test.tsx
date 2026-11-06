@@ -40,7 +40,7 @@ function crearPublicacion(): Publicacion {
           fotoEspecie: null,
         },
             variedad: { id: 1, nombreVariedad: "Red Delicious" },
-            presentacion: { id: 1, nombrePresentacion: "Caja" },
+            envase: { id: 1, nombreEnvase: "Caja" }, kilos: null,
     categoria: {
       id: 1,
       nombreCategoria: "Primera",
@@ -124,7 +124,7 @@ describe("TarjetaPublicacion", () => {
 
   it("muestra una publicación con solo especie y permite consultarla", () => {
     const consultarPublicacion = vi.fn();
-    const pub: Publicacion = { ...crearPublicacion(), variedad: null, presentacion: null, categoria: null, calibre: null, paisId: null, precio: null };
+    const pub: Publicacion = { ...crearPublicacion(), variedad: null, envase: null, kilos: null, categoria: null, calibre: null, paisId: null, precio: null };
     render(<TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} alConsultar={consultarPublicacion} />);
 
     expect(screen.getByText("Manzana")).toBeInTheDocument();
@@ -188,7 +188,7 @@ describe("TarjetaPublicacion", () => {
 
     pub.calibre!.nombreCalibre = "";
     pub.categoria!.nombreCategoria = "";
-    pub.presentacion!.nombrePresentacion = "";
+    pub.envase!.nombreEnvase = "";
 
     render(
       <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,

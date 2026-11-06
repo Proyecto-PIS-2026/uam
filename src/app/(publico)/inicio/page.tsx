@@ -1,5 +1,5 @@
 import Inicio from "@/modulos/consulta-mercado/inicio/inicio";
-import { redirigirProductorAMiMercado } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { redirigirAMercadoPropio } from "@/modulos/identidad-acceso/autorizacion/controles";
 import {
     obtenerEspeciesInicio,
     obtenerUrlListaInteligente,
@@ -14,7 +14,7 @@ export const metadata = {
 };
 
 export default async function Page() {
-    await redirigirProductorAMiMercado();
+    await redirigirAMercadoPropio();
 
     const [especies, urlListaInteligente, ordenamiento] = await Promise.all([
         obtenerEspeciesInicio(),

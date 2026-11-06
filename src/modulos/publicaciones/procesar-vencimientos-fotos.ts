@@ -4,7 +4,7 @@ import { db } from "../../infraestructura/persistencia/prisma/db";
 import { ZONA_HORARIA_TAREAS, type ContextoTareaDiaria } from "../../infraestructura/tareas-programadas/tipos";
 import { notificarCambioCatalogoOperador } from "../../infraestructura/tiempo-real/publicaciones";
 import { enviarNotificacion } from "../notificaciones/notificaciones";
-import { obtenerLimiteAntiguedadFotos, type ConfiguracionAgingFotos } from "./vigencia-fotos";
+import { obtenerLimiteAntiguedadFotos, validarConfiguracionAgingFotos, type ConfiguracionAgingFotos } from "./vigencia-fotos";
 
 async function iniciarVigenciaFotosAnteriores({ tx, limite }: ContextoTareaDiaria): Promise<void> {
     const anteriores = await tx.query(db.raw.sql`
@@ -31,14 +31,12 @@ export async function procesarVencimientosFotos(
     contexto: ContextoTareaDiaria,
     configuracion: ConfiguracionAgingFotos,
 ): Promise<number> {
-    if (!configuracion.habilitado) return 0;
+    const validada = validarConfiguracionAgingFotos(configuracion);
+    if (!validada.habilitado) return 0;
     const { tx, limite } = contexto;
-    const { diasVigencia, diasAnticipacionAviso } = configuracion;
-    if (!Number.isSafeInteger(diasAnticipacionAviso) || diasAnticipacionAviso <= 0 || diasAnticipacionAviso >= diasVigencia) {
-        throw new Error("La anticipación del aviso debe ser un número entero de días mayor que cero y menor que la vigencia.");
-    }
+    const { diasVigencia, avisosHabilitados, diasAnticipacionAviso } = validada;
     const vencidasHasta = obtenerLimiteAntiguedadFotos(diasVigencia, limite);
-    const avisarHasta = obtenerLimiteAntiguedadFotos(diasVigencia - diasAnticipacionAviso, limite);
+    const avisarHasta = avisosHabilitados ? obtenerLimiteAntiguedadFotos(diasVigencia - diasAnticipacionAviso, limite) : vencidasHasta;
     await iniciarVigenciaFotosAnteriores(contexto);
 
     const propietarios = await tx.query(db.raw.sql`

@@ -1,3 +1,4 @@
+
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
@@ -21,6 +22,14 @@ export default function PiePagina() {
                         <span>info@uam.com.uy</span>
                     </a>
                 </address>
+                <section className={styles.avisosLegales} aria-label="Avisos legales">
+                    <p className={styles.avisoLegal}>
+                        Las fotos y precios son responsabilidad de los operadores. La UAM no se responsabiliza ni interviene en su contenido o publicación.
+                    </p>
+                    <p className={styles.avisoLegal}>
+                        Las operaciones de compraventa se realizan exclusivamente entre operadores y compradores. La UAM no participa ni interviene en dichas transacciones, ni asume responsabilidad por los acuerdos comerciales entre las partes.
+                    </p>
+                </section>
                 <p className={styles.derechos}>© UAM. Todos los derechos reservados.</p>
             </div>
         </footer>

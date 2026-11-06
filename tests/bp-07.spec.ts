@@ -12,7 +12,7 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
     campo: string,
     opcion: string,
   ) {
-    await formulario.getByRole("combobox", { name: campo }).click();
+    await formulario.getByRole("combobox", { name: campo, exact: true }).click();
     await page.getByRole("option", { name: opcion, exact: true }).click({
       timeout: 5_000,
     });
@@ -35,7 +35,8 @@ test("BP-07: alta, consulta, modificación y baja", async ({ page }) => {
 
     await seleccionar(alta, "Especie", "Uchuva");
     await seleccionar(alta, "Variedad", "-");
-    await seleccionar(alta, "Presentación", "Unidad");
+    await seleccionar(alta, "Empaquetado", "Cajon");
+    await seleccionar(alta, "Kilos del empaquetado", "20 kg");
     await seleccionar(alta, "País de origen", "URUGUAY");
     await seleccionar(alta, "Categoría", "-");
     await seleccionar(alta, "Calibre", calibre);

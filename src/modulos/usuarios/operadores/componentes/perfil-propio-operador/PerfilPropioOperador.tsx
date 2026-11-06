@@ -31,7 +31,6 @@ function extraerLicencia(comentario: string | null | undefined) {
 export default function PerfilPropioOperador({ perfil }: { perfil: PerfilPropioOperador }) {
     const [editando, setEditando] = useState(false);
     const [fotoPerfilFallida, setFotoPerfilFallida] = useState(false);
-    const inicial = perfil.nombre.trim()[0]?.toUpperCase() ?? "?";
     const licencia = extraerLicencia(perfil.comentario);
     const fechasLicencia = licencia.inicio && licencia.fin
         ? `${formatearFecha(licencia.inicio)} - ${formatearFecha(licencia.fin)}`
@@ -107,9 +106,9 @@ export default function PerfilPropioOperador({ perfil }: { perfil: PerfilPropioO
                         <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
                         <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
                     </p>
-                     <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
-                         Cambiar contraseña
-                     </Link>
+                    <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
+                        Cambiar contraseña
+                    </Link>
                 </div>
             </section>
         </main>

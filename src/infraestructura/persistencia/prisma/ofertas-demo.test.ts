@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { cargarConsultaUam } from "./catalogo-consulta";
 import { crearOfertasDemo, type OfertaDemo } from "./ofertas-demo";
+import { atributosPublicacionDemo } from "./atributos-publicacion-demo";
 
 const generalesSinBanana = [
   "jorge_ferias", "pablo_sappa", "diego_figueroa", "bacigalupi", "lucas_blanco",
@@ -27,6 +28,18 @@ describe("ofertas de demostración de los operadores UAM", () => {
   const nombresPorId = new Map(catalogo.types.flatMap((tipo) =>
     tipo.products.map((producto) => [producto.species_id, producto.species] as const)
   ));
+
+  it("mantiene únicas las publicaciones con envase y kilos independientes", () => {
+    const combinaciones = ofertas.map((oferta, indice) => {
+      const atributos = atributosPublicacionDemo(indice);
+      return JSON.stringify([
+        oferta.operatorUsername, oferta.speciesId, oferta.variety,
+        atributos.envase, atributos.kilos, oferta.category,
+        atributos.calibre ?? oferta.caliber, oferta.country,
+      ]);
+    });
+    expect(new Set(combinaciones).size).toBe(ofertas.length);
+  });
 
   it("publica una muestra acotada de bandas, con precios válidos y sin duplicados por operador", () => {
     const bandas = new Map<string, { min: number; max: number }[]>();

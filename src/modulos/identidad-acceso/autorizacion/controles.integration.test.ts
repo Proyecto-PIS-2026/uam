@@ -13,7 +13,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 describe.sequential("autorización contra datos reales", () => {
     let propio: { id: number; usuarioId: number };
     let ajeno: { id: number; usuarioId: number };
-    let publicacionAjena: { id: number; especieId: number; variedadId: number | null; presentacionId: number | null; categoriaId: number | null; calibreId: number | null };
+    let publicacionAjena: { id: number; especieId: number; variedadId: number | null; envaseId: number | null; kilosId: number | null; categoriaId: number | null; calibreId: number | null };
     let sesion: DatosSesion;
 
     beforeAll(async () => {
@@ -73,7 +73,8 @@ describe.sequential("autorización contra datos reales", () => {
         formulario.set("cambios", JSON.stringify({
             especieId: publicacionAjena.especieId,
             variedadId: publicacionAjena.variedadId,
-            presentacionId: publicacionAjena.presentacionId,
+            envaseId: publicacionAjena.envaseId,
+            kilosId: publicacionAjena.kilosId,
             categoriaId: publicacionAjena.categoriaId,
             calibreId: publicacionAjena.calibreId,
             paisId: 1,
