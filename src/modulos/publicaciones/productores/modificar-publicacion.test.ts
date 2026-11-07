@@ -1,19 +1,20 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { modificarPublicacionProductor, obtenerPublicacionProductorEditable } from "./modificar-publicacion";
 
 const mocks = vi.hoisted(() => {
     const consulta = () => ({ where: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(), include: vi.fn().mockReturnThis(), first: vi.fn(), all: vi.fn(), update: vi.fn(), deleteAll: vi.fn(), create: vi.fn() });
     return { especie: consulta(), variedad: consulta(), vinculo: consulta(), publicacion: consulta(), envase: consulta(), kilos: consulta(), categoria: consulta(), calibre: consulta(), pais: consulta(), ubicacion: consulta(),
-        transaction: vi.fn(), execute: vi.fn(), rawSql: vi.fn(), guardarImagen: vi.fn(), eliminarImagen: vi.fn() };
+        transaction: vi.fn(), execute: vi.fn(), rawSql: vi.fn(), guardarImagen: vi.fn(), eliminarImagen: vi.fn(), consultarConfig: vi.fn() };
 });
 const orm = { public: { Especie: mocks.especie, Variedad: mocks.variedad, PublicacionProductor: mocks.vinculo, Publicacion: mocks.publicacion, Envase: mocks.envase, KilosEmpaquetado: mocks.kilos,
-    Categoria: mocks.categoria, Calibre: mocks.calibre, Pais: mocks.pais, Ubicacion: mocks.ubicacion } };
+    Categoria: mocks.categoria, Calibre: mocks.calibre, Pais: mocks.pais, Ubicacion: mocks.ubicacion,
+    Configuracion: { where: ({ nombreConfiguracion }: { nombreConfiguracion: string }) => ({ select: () => ({ first: () => mocks.consultarConfig(nombreConfiguracion) }) }) } } };
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: {
     transaction: mocks.transaction, raw: { sql: mocks.rawSql },
     orm: { public: {
         Publicacion: mocks.publicacion,
-        Configuracion: { where: () => ({ select: () => ({ first: vi.fn().mockResolvedValue({ valorConfiguracion: "false" }) }) }) },
     } },
 } }));
 vi.mock("../operadores/imagenes-publicacion", () => ({
@@ -57,9 +58,75 @@ beforeEach(() => {
     mocks.eliminarImagen.mockResolvedValue(undefined);
     mocks.rawSql.mockReturnValue({ returnsRow: () => ({ build: () => ({}) }) });
     mocks.transaction.mockImplementation((callback) => callback({ orm, execute: mocks.execute }));
+    mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "false" : "3" }));
+    vi.spyOn(Temporal.Now, "plainDateISO").mockImplementation((zona) => Temporal.Instant.from("2026-11-07T01:30:00Z").toZonedDateTimeISO(zona ?? "UTC").toPlainDate());
 });
 
+afterEach(() => vi.restoreAllMocks());
+
 describe("edición de publicaciones de productores", () => {
+    it.each(["false", "true"])("conserva la fecha existente al omitirla, con vigencia habilitada=%s", async (habilitada) => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? habilitada : "3" }));
+        const anterior = relacion();
+        const fechaVigencia = Temporal.Instant.from("2026-11-09T02:59:59Z");
+        mocks.vinculo.first.mockResolvedValue({ ...anterior, publicacion: { ...anterior.publicacion, fechaVigencia } });
+
+        const resultado = await modificarPublicacionProductor(sesion, 12, cambios);
+
+        expect(mocks.publicacion.update.mock.calls[0][0]).not.toHaveProperty("fechaVigencia");
+        expect(resultado.publicacion.fechaVigencia).toBe("2026-11-08");
+    });
+
+    it.each([null, ""])("asigna el tope de Montevideo al vaciar explícitamente la fecha activa: %j", async (fechaVigencia) => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : "3" }));
+
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, fechaVigencia });
+
+        expect(mocks.publicacion.update.mock.calls[0][0].fechaVigencia.toString()).toBe("2026-11-10T02:59:59Z");
+        expect(Temporal.Now.plainDateISO).toHaveBeenCalledWith("America/Montevideo");
+        expect(mocks.transaction.mock.invocationCallOrder[0]).toBeLessThan(mocks.consultarConfig.mock.invocationCallOrder[0]);
+    });
+
+    it.each(["2026-11-08", "2026-11-09"])("acepta una fecha explícita anterior o igual al tope: %s", async (fechaVigencia) => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : "3" }));
+
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, fechaVigencia });
+
+        expect(mocks.publicacion.update.mock.calls[0][0].fechaVigencia.toZonedDateTimeISO("America/Montevideo").toPlainDate().toString()).toBe(fechaVigencia);
+    });
+
+    it("rechaza una fecha posterior al tope antes de escribir o preparar una foto", async () => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : "3" }));
+
+        await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, fechaVigencia: "2026-11-10" }, new File(["foto"], "foto.png")))
+            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La fecha de vigencia no puede superar el 2026-11-09." });
+
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+        expect(mocks.ubicacion.deleteAll).not.toHaveBeenCalled();
+        expect(mocks.guardarImagen).not.toHaveBeenCalled();
+    });
+
+    it.each([null, "", "2026-11-20"])("respeta la fecha explícita sin imponer tope cuando la vigencia está desactivada: %j", async (fechaVigencia) => {
+        await modificarPublicacionProductor(sesion, 12, { ...cambios, fechaVigencia });
+
+        const guardada = mocks.publicacion.update.mock.calls[0][0].fechaVigencia;
+        expect(guardada?.toString() ?? null).toBe(fechaVigencia ? "2026-11-21T02:59:59Z" : null);
+    });
+
+    it.each(["vigencia_publicaciones_productor_habilitada", "vigencia_publicaciones_productor"])("no modifica publicaciones si falta la configuración %s", async (faltante) => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => nombre === faltante ? null : { valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : "3" });
+
+        await expect(modificarPublicacionProductor(sesion, 12, cambios)).rejects.toThrow("No se pudo consultar la configuración de vigencia de publicaciones.");
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+    });
+
+    it.each(["0", "inválido"])("no modifica publicaciones si la vigencia activa tiene días inválidos: %s", async (dias) => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : dias }));
+
+        await expect(modificarPublicacionProductor(sesion, 12, cambios)).rejects.toThrow("La configuración de vigencia de publicaciones no es válida.");
+        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+    });
+
     it.each([0, -1, NaN, 1.5, 2147483648])("rechaza el identificador %s antes de consultar la base", async (id) => {
         await expect(modificarPublicacionProductor(sesion, id, cambios)).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
         expect(mocks.transaction).not.toHaveBeenCalled();
@@ -69,17 +136,20 @@ describe("edición de publicaciones de productores", () => {
         const resultado = await modificarPublicacionProductor(sesion, 12, cambios);
         expect(mocks.vinculo.where).toHaveBeenCalledWith({ id: 12 });
         expect(mocks.publicacion.where).toHaveBeenCalledExactlyOnceWith({ id: 20 });
-        expect(mocks.publicacion.update).toHaveBeenCalledExactlyOnceWith({ precio: "125", foto: "foto-anterior.jpg", especieId: 6, variedadId: 7, envaseId: 8, kilosId: null, categoriaId: 4, calibreId: 2, fechaVigencia: null });
+        expect(mocks.publicacion.update).toHaveBeenCalledExactlyOnceWith({ precio: "125", foto: "foto-anterior.jpg", especieId: 6, variedadId: 7, envaseId: 8, kilosId: null, categoriaId: 4, calibreId: 2 });
         expect(mocks.ubicacion.where).toHaveBeenCalledExactlyOnceWith({ publicacionId: 12 });
         expect(mocks.ubicacion.create).toHaveBeenCalledExactlyOnceWith({ ...cambios.ubicaciones[0], publicacionId: 12 });
         expect(resultado.publicacion).toMatchObject({ id: 20, publicacionProductorId: 12, paisId: 1, cantidadUnidades: 10, publicacionDisponible: true, fecha: "2026-10-21T12:00:00Z" });
         expect(mocks.pais.where).toHaveBeenCalledWith({ id: 1 });
         expect(mocks.vinculo.update).not.toHaveBeenCalled();
         expect(mocks.transaction).toHaveBeenCalledOnce();
-        expect(mocks.rawSql.mock.calls[0][0].join("?")).toContain("pg_advisory_xact_lock(1720, ?)");
-        expect(mocks.rawSql.mock.calls[0][1]).toBe(3);
-        expect(mocks.rawSql.mock.calls[1][0].join("?")).toContain('WHERE id = ? FOR UPDATE');
-        expect(mocks.execute.mock.invocationCallOrder[1]).toBeLessThan(mocks.vinculo.first.mock.invocationCallOrder[1]);
+        expect(mocks.rawSql.mock.calls[0][0].join("?")).toContain("pg_advisory_xact_lock_shared");
+        expect(mocks.rawSql.mock.calls[1][0].join("?")).toContain("pg_advisory_xact_lock(1720, ?)");
+        expect(mocks.rawSql.mock.calls[1][1]).toBe(3);
+        expect(mocks.rawSql.mock.calls[2][0].join("?")).toContain('WHERE id = ? FOR UPDATE');
+        expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.consultarConfig.mock.invocationCallOrder[0]);
+        expect(mocks.consultarConfig.mock.invocationCallOrder.at(-1)).toBeLessThan(mocks.vinculo.first.mock.invocationCallOrder[0]);
+        expect(mocks.execute.mock.invocationCallOrder[2]).toBeLessThan(mocks.vinculo.first.mock.invocationCallOrder[1]);
     });
 
     it("persiste país, unidades y disponibilidad y devuelve los datos releídos del servidor", async () => {
@@ -96,7 +166,7 @@ describe("edición de publicaciones de productores", () => {
         expect(mocks.vinculo.where.mock.calls.at(-2)?.[0]).toEqual({ id: 12 });
         expect(mocks.publicacion.update).toHaveBeenCalledExactlyOnceWith({
             precio: "125", foto: "foto-anterior.jpg", especieId: 6, variedadId: 7, envaseId: 8, kilosId: null, categoriaId: 4, calibreId: 2,
-            cantidadUnidades: 0, publicacionDisponible: false, fechaVigencia: null,
+            cantidadUnidades: 0, publicacionDisponible: false,
         });
         expect(resultado.publicacion).toMatchObject({ paisId: 2, pais: "Argentina", cantidadUnidades: 0, publicacionDisponible: false });
     });

@@ -78,7 +78,6 @@ test("BP-03: alta, consulta, modificación, errores y baja", async ({
   const nombreInicial = `e2e_admin03_${sufijo}`;
   const correoInicial = `${nombreInicial}@example.com`;
   const nombreModificado = `e2e_admin03_mod_${sufijo}`;
-  const correoModificado = `${nombreModificado}@example.com`;
 
   let nombreActual = nombreInicial;
   let creado = false;
@@ -204,15 +203,15 @@ test("BP-03: alta, consulta, modificación, errores y baja", async ({
     await test.step("CA-6: error de modificación no guarda", async () => {
       await page.getByRole("link", { name: "Editar administrador" }).click();
 
-      await page.getByLabel("Correo electrónico")
-        .fill(usuariosAdministrativos.administrador.usuario);
+      await page.getByLabel("Nombre de usuario")
+        .fill(usuariosAdministrativos.productor.usuario);
 
       await page.getByRole("button", { name: "Guardar cambios" }).click();
 
       await expect(
         page.locator('[role="alert"]:not(#__next-route-announcer__)')
       ).toContainText(
-        "Ya existe un administrador con ese correo electrónico."
+        "Ya existe un usuario con ese nombre."
       );
 
       await evidencia(page, info, "BP-03-error-modificacion");
@@ -234,8 +233,8 @@ test("BP-03: alta, consulta, modificación, errores y baja", async ({
     await test.step("CA-4: modificación persistida", async () => {
       await page.getByRole("link", { name: "Editar administrador" }).click();
 
+      await expect(page.getByLabel("Correo electrónico", { exact: true })).toHaveCount(0);
       await page.getByLabel("Nombre de usuario").fill(nombreModificado);
-      await page.getByLabel("Correo electrónico").fill(correoModificado);
 
       await page.getByRole("button", { name: "Guardar cambios" }).click();
 
@@ -251,14 +250,14 @@ test("BP-03: alta, consulta, modificación, errores y baja", async ({
         page.getByRole("heading", { name: nombreModificado, exact: true })
       ).toBeVisible();
 
-      await expect(page.getByText(correoModificado, { exact: false }))
+      await expect(page.getByText(correoInicial, { exact: false }))
         .toBeVisible();
 
       await evidencia(page, info, "BP-03-modificacion-persistida");
 
       await abrirGestion(page);
       await expect(await buscarFila(page, nombreModificado))
-        .toContainText(correoModificado);
+        .toContainText(correoInicial);
     });
 
     const contextoNuevoAdmin = await browser.newContext({
@@ -268,11 +267,20 @@ test("BP-03: alta, consulta, modificación, errores y baja", async ({
     try {
       const nuevoAdmin = await contextoNuevoAdmin.newPage();
 
-      await test.step("CA-4: iniciar sesión con correo nuevo", async () => {
+      await test.step("CA-4: iniciar sesión con el correo original después de editar", async () => {
         await iniciarSesionAdministrador(nuevoAdmin, {
-          usuario: correoModificado,
+          usuario: correoInicial,
           contrasena: CLAVE,
         });
+      });
+
+      await test.step("La edición de Mi perfil no incluye el campo de correo", async () => {
+        await nuevoAdmin.goto("/mi-perfil");
+        await nuevoAdmin.getByRole("link", { name: "Editar mi perfil" }).click();
+        await expect(nuevoAdmin).toHaveURL(/\/mi-perfil\/editar$/);
+        await expect(nuevoAdmin.getByLabel("Correo electrónico", { exact: true })).toHaveCount(0);
+        await nuevoAdmin.getByRole("button", { name: "Cancelar", exact: true }).click();
+        await expect(nuevoAdmin).toHaveURL(/\/mi-perfil$/);
       });
 
       await test.step("CA-5: cancelar y confirmar baja", async () => {
@@ -323,7 +331,7 @@ test("BP-03: alta, consulta, modificación, errores y baja", async ({
         );
 
         await nuevoAdmin.getByLabel("Correo electrónico o nombre de usuario")
-          .fill(correoModificado);
+          .fill(correoInicial);
 
         await nuevoAdmin.getByLabel("Contraseña", { exact: true })
           .fill(CLAVE);

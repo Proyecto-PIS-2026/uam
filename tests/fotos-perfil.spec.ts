@@ -90,7 +90,12 @@ for (const rol of ["operador", "productor"] as const) {
             await page.goto(`${ruta}/editar`);
             await page.getByRole("button", { name: "Quitar foto", exact: true }).click();
             expect((await consultar()).fotoPerfil).toBe(fotoNueva);
-            await page.getByRole("button", { name: "Deshacer cambio", exact: true }).click();
+            await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+            await expect(page).toHaveURL(new RegExp(`${ruta}$`));
+            expect((await consultar()).fotoPerfil).toBe(fotoNueva);
+            await esperarFoto(page, nombre, fotoNueva);
+
+            await page.goto(`${ruta}/editar`);
             await expect.poll(async () => new URL((await page.getByRole("img", { name: "Vista previa de la foto de perfil" }).getAttribute("src")) ?? "", page.url()).pathname).toBe(fotoNueva);
             await page.getByRole("button", { name: "Quitar foto", exact: true }).click();
             await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();

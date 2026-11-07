@@ -26,7 +26,6 @@ export default function FormularioModificarAdministrador({ administrador, perfil
     const rutaPerfil = perfilPropio ? RUTA_MI_PERFIL : `/gestion-administradores/${administrador.id}`;
 
     const [nombreUsuario, setNombreUsuario] = useState(administrador.nombreUsuario);
-    const [email, setEmail] = useState(administrador.email);
 
     const [contraseña, setContraseña] = useState("");
     const [confirmacionContraseña, setConfirmacionContraseña] = useState("");
@@ -51,11 +50,10 @@ export default function FormularioModificarAdministrador({ administrador, perfil
 
         try {
             const resultado = perfilPropio
-                ? await modificarMiPerfilAdministrador({ nombreUsuario, email })
+                ? await modificarMiPerfilAdministrador({ nombreUsuario })
                 : await modificarAdministrador({
                     administradorId: administrador.id,
                     nombreUsuario,
-                    email,
                     contraseña,
                     confirmacionContraseña,
                 });
@@ -107,23 +105,6 @@ export default function FormularioModificarAdministrador({ administrador, perfil
                             onChange={(evento) => setNombreUsuario(evento.target.value)}
                             disabled={guardando}
                         />
-
-                        <TextField
-                            fullWidth
-                            size="small"
-                            className={styles.control}
-                            label="Correo electrónico"
-                            type="email"
-                            value={email}
-                            onChange={(evento) => setEmail(evento.target.value)}
-                            disabled={guardando}
-                        />
-
-                        <p className={styles.ayuda}>
-                            {perfilPropio
-                                ? "El correo electrónico se usa para iniciar sesión: si lo cambiás, vas a tener que ingresar con el nuevo."
-                                : "El correo electrónico se usa para iniciar sesión: si lo cambiás, el administrador va a tener que ingresar con el nuevo."}
-                        </p>
                     </section>
 
                     {!perfilPropio && (

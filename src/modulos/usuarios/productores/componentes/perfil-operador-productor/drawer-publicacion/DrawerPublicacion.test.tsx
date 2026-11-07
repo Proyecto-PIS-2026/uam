@@ -196,8 +196,8 @@ vi.mock("@mui/material/Dialog", async () => {
     };
 });
 
-vi.mock("@mui/icons-material/ImageOutlined", () => ({
-    default: () => <svg data-testid="ImageOutlinedIcon" />,
+vi.mock("@mui/icons-material/HideImageOutlined", () => ({
+    default: () => <svg data-testid="HideImageOutlinedIcon" />,
 }));
 
 vi.mock("@mui/icons-material/WhatsApp", () => ({
@@ -525,7 +525,7 @@ describe("DrawerPublicacion", () => {
             name: "Foto de Tomate",
         })).toBeInTheDocument();
 
-        expect(screen.queryByTestId("ImageOutlinedIcon")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("HideImageOutlinedIcon")).not.toBeInTheDocument();
     });
 
     it("muestra un reemplazo cuando no hay foto", () => {
@@ -537,9 +537,9 @@ describe("DrawerPublicacion", () => {
             />,
         );
 
-        expect(screen.getByTestId("ImageOutlinedIcon")).toBeInTheDocument();
-        expect(screen.getByText("Foto")).toBeInTheDocument();
-        expect(screen.queryByRole("img")).not.toBeInTheDocument();
+        expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Foto de Tomate" })).not.toBeInTheDocument();
     });
 
     it("muestra un reemplazo cuando falla la carga de la foto", () => {
@@ -556,8 +556,8 @@ describe("DrawerPublicacion", () => {
 
         fireEvent.error(screen.getByAltText("Foto de Tomate"));
 
-        expect(screen.getByTestId("ImageOutlinedIcon")).toBeInTheDocument();
-        expect(screen.getByText("Foto")).toBeInTheDocument();
+        expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
 
         expect(screen.getByRole("dialog", {
             name: "Detalle de publicación",
@@ -1212,9 +1212,7 @@ describe("DrawerPublicacion con productores", () => {
             name: "Detalle de publicación",
         })).toBeInTheDocument();
 
-        expect(screen.getByText("Foto", {
-            exact: true,
-        })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
     });
 
     it("amplía la foto y permite cerrarla sin cerrar el detalle", async () => {

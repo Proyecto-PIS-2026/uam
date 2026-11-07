@@ -64,11 +64,9 @@
 }
 
 .iconoFoto {
-    display: none !important;
-}
-
-.textoSinFotoMobile {
-    display: inline;
+    display: block !important;
+    font-size: 2rem !important;
+    flex-shrink: 0;
 }
 
 .textoSinFotoWeb {
@@ -369,15 +367,6 @@
         gap: var(--espacio-inline);
         color: var(--color-secondary);
         font-size: var(--tamano-texto-auxiliar);
-    }
-
-    .iconoFoto {
-        display: block !important;
-        font-size: 2rem !important;
-    }
-
-    .textoSinFotoMobile {
-        display: none;
     }
 
     .textoSinFotoWeb {

@@ -12,7 +12,7 @@
     display: flex;
     width: 100%;
     max-width: var(--ancho-maximo-pagina);
-    min-height: 4.5rem;
+    min-height: var(--alto-contenido-header);
     margin: 0 auto;
     padding: 0 var(--padding-exterior-pagina);
     align-items: center;
@@ -288,7 +288,6 @@
     }
 
     .contenido {
-        min-height: 4rem;
         padding: 0 var(--padding-exterior-pagina);
     }
 
@@ -363,6 +362,10 @@
             background-color 150ms ease,
             color 150ms ease;
         border-top: 1px solid var(--color-border);
+    }
+
+    .enlaceActivo::after {
+        display: none;
     }
 
     .enlaceMobile:hover {

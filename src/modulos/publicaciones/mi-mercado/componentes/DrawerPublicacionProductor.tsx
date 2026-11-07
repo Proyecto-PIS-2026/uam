@@ -445,7 +445,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                             <OutlinedInput color="secondary" className={estilosAcciones.entrada} size="small" id={`publicacion-productor-${publicacion.id}-unidades`} slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }}
                                 value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "-"} readOnly={!editando} disabled={ocupado}
                                 onChange={(evento) => escribirCantidadUnidades(evento.target.value)} />
-                            {editando && <small className={estilosAcciones.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small>}
                         </div>
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-vigencia`}>

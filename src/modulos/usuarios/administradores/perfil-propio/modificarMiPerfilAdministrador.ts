@@ -29,7 +29,6 @@ export async function modificarMiPerfilAdministrador(valor: unknown): Promise<Re
         const validacion = validarModificacionAdministrador({
             administradorId: administrador.id,
             nombreUsuario: entrada.nombreUsuario,
-            email: entrada.email,
         });
 
         if (!validacion.esValido) {
@@ -38,14 +37,6 @@ export async function modificarMiPerfilAdministrador(valor: unknown): Promise<Re
 
         const datos = validacion.datos;
 
-        const correoRepetido = await tx.orm.public.Administrador
-            .where({ email: datos.email })
-            .first();
-
-        if (correoRepetido && correoRepetido.id !== administrador.id) {
-            return ["Ya existe un administrador con ese correo electrónico."];
-        }
-
         const nombreRepetido = await tx.orm.public.Usuario
             .where({ username: datos.nombreUsuario })
             .first();
@@ -53,10 +44,6 @@ export async function modificarMiPerfilAdministrador(valor: unknown): Promise<Re
         if (nombreRepetido && nombreRepetido.id !== administrador.usuarioId) {
             return ["Ya existe un usuario con ese nombre."];
         }
-
-        await tx.orm.public.Administrador
-            .where({ id: administrador.id })
-            .update({ email: datos.email });
 
         await tx.orm.public.Usuario
             .where({ id: administrador.usuarioId })

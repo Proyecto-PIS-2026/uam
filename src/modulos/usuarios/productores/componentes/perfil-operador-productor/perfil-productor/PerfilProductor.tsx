@@ -8,6 +8,7 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 
 import styles from "./PerfilProductor.module.css";
 
@@ -52,10 +53,19 @@ export default function PerfilProductor({ productor, hrefVolver = "/productores"
                     </div>
                 </header>
                 <div className={styles.tarjetaInformacion}>
-                    <p className={styles.departamentos}>
-                        <LocationOnOutlinedIcon fontSize="small" aria-hidden="true" />
-                        <span><strong>Departamentos:</strong> {productor.departamentos.join(" · ") || "-"}</span>
-                    </p>
+                    <div className={styles.contacto}>
+                        <span className={styles.iconoContacto} aria-hidden="true"><PhoneOutlinedIcon /></span>
+                        <div className={styles.datosContacto}>
+                            <span className={styles.etiquetaContacto}>Teléfono:</span>
+                            <span className={styles.valorContacto}>{productor.whatsApp || "Sin número de contacto"}</span>
+                        </div>
+                    </div>
+                    <section className={styles.seccionPerfil} aria-labelledby="departamentos-productor">
+                        <h2 id="departamentos-productor" className={styles.subtitulo}>
+                            <LocationOnOutlinedIcon aria-hidden="true" />Departamentos
+                        </h2>
+                        <p className={styles.departamentos}>{productor.departamentos.join(" · ") || "-"}</p>
+                    </section>
                 </div>
             </div>
             <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} onClick={() => registrarContactoWhatsApp("PRODUCTOR", productor.id)} className={styles.botonWhatsApp} aria-label={`Contactar a ${productor.nombreFantasia} por WhatsApp`}>

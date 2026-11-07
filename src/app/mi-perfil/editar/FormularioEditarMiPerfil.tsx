@@ -2,13 +2,14 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import TextField from "@mui/material/TextField";
 import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/modificar-mi-perfil";
 import type { MiPerfilAdministrador } from "@/modulos/usuarios/administradores/consultar-mi-perfil";
+import styles from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador.module.css";
 
 export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilAdministrador }) {
     const router = useRouter();
     const [nombre, setNombre] = useState(perfil.nombre);
-    const [correo, setCorreo] = useState(perfil.correo);
     const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
     const enviando = useRef(false);
@@ -20,7 +21,7 @@ export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilA
         setGuardando(true);
         setErrores([]);
         try {
-            const resultado = await modificarMiPerfilAdministrador({ nombre, correo });
+            const resultado = await modificarMiPerfilAdministrador({ nombre });
             if (!resultado.esValido) {
                 setErrores(resultado.errores);
                 return;
@@ -36,20 +37,27 @@ export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilA
     }
 
     return (
-        <form onSubmit={guardar} noValidate className="flex w-full flex-col gap-5 rounded-2xl border p-6" aria-label="Editar mi perfil">
-            <div className="flex flex-col gap-2">
-                <label htmlFor="mi-perfil-usuario">Nombre de usuario</label>
-                <input id="mi-perfil-usuario" className="rounded-lg border p-3" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="username" disabled={guardando} required minLength={3} />
-            </div>
-            <div className="flex flex-col gap-2">
-                <label htmlFor="mi-perfil-correo">Correo electrónico</label>
-                <input id="mi-perfil-correo" className="rounded-lg border p-3" type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} autoComplete="email" disabled={guardando} required />
-                <p className="text-sm text-gray-500">Usá el nuevo correo para iniciar sesión después de guardarlo.</p>
-            </div>
-            {errores.length > 0 && <div role="alert" className="text-red-700">{errores.join(" ")}</div>}
-            <div className="flex flex-wrap gap-3">
-                <button type="submit" className="boton-primario" disabled={guardando}>{guardando ? "Guardando…" : "Guardar cambios"}</button>
-                <button type="button" className="boton-secundario" disabled={guardando} onClick={() => router.push("/mi-perfil")}>Cancelar</button>
+        <form onSubmit={guardar} noValidate className={styles.formulario} aria-label="Editar mi perfil">
+            <section className={styles.seccion} aria-labelledby="datos-mi-perfil">
+                <h2 id="datos-mi-perfil" className={styles.subtitulo}>Datos de mi perfil</h2>
+                <TextField
+                    id="mi-perfil-usuario"
+                    label="Nombre de usuario"
+                    fullWidth
+                    size="small"
+                    className={styles.control}
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    autoComplete="username"
+                    disabled={guardando}
+                    required
+                    slotProps={{ htmlInput: { minLength: 3 } }}
+                />
+            </section>
+            {errores.length > 0 && <div role="alert" className={styles.error}>{errores.join(" ")}</div>}
+            <div className={styles.acciones}>
+                <button type="button" className={styles.cancelar} disabled={guardando} onClick={() => router.push("/mi-perfil")}>Cancelar</button>
+                <button type="submit" className={styles.guardar} disabled={guardando}>{guardando ? "Guardando…" : "Guardar cambios"}</button>
             </div>
         </form>
     );

@@ -2,7 +2,7 @@
 
 import EnlaceWhatsApp from "@/compartido/componentes/EnlaceWhatsApp";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "../ImagenPublicacion";
 import Link from "next/link";
@@ -25,6 +25,8 @@ interface DrawerPublicacionProps {
     esAdmin?: boolean;
 }
 
+const formatoNaves = new Intl.ListFormat("es", { style: "long", type: "conjunction" });
+
 const registrarContactoWhatsApp = (tipo: "OPERADOR" | "PRODUCTOR", entidadId: number, publicacionId: number) => {
     fetch("/api/estadisticas/whatsapp", {
         method: "POST",
@@ -40,6 +42,8 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
     const esWeb = useMediaQuery("(min-width: 768px)");
     
     const usuario = publicacion ? publicacion.tipoPublicacion === "PRODUCTOR" ? publicacion.productor : publicacion.operador : null;
+    const naves = publicacion?.tipoPublicacion === "OPERADOR" ? publicacion.operador.naves ?? [] : [];
+    const textoNaves = naves.length > 0 ? `${naves.length === 1 ? "Nave" : "Naves"} ${formatoNaves.format(naves)}` : "";
     const numeroWhatsApp = usuario?.whatsApp.replace(/\D/g, "") ?? "";
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
     const rutaPerfil = publicacion?.tipoPublicacion === "PRODUCTOR" ? "productores" : "operadores";
@@ -116,9 +120,8 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                                     <div className={styles.marcoImagen}>
                                         <div className={styles.contenedorImagen}>
                                             <ImagenPublicacion key={claveFoto} src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} loading="eager" onLoad={() => setFotoPreparada(claveFoto)} fill sizes="(min-width: 768px) 400px, 160px" className={styles.imagen} onError={() => setFotoPreparada(claveFoto)} reemplazo={
-                                                <div className={styles.sinFoto}>
-                                                    <ImageOutlinedIcon className={styles.iconoFoto} />
-                                                    Foto
+                                                <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
+                                                    <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
                                                 </div>
                                             } />
                                             {publicacion.foto && (
@@ -181,6 +184,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             <div className={styles.operador}>
                                 <span className={styles.publicado}>Publicado por</span>{" "}
                                 <Link href={enlacePerfil} className={styles.nombreOperador} onClick={() => onOpenChange(false)}>{usuario.nombreFantasia}</Link>
+                                {textoNaves && <> · <span className={styles.naves}>{textoNaves}</span></>}
                             </div>
                             <div className={styles.bloqueBotones}>
                                 <Link href={enlacePerfil} className={`boton-secundario ${styles.botonPerfil}`} onClick={() => onOpenChange(false)}>Ver Perfil</Link>
@@ -203,9 +207,8 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                         </button>
                         <div className={styles.fotoAmpliada}>
                             <ImagenPublicacion loading="eager" key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="(min-width: 832px) 50rem, (min-width: 768px) calc(100vw - 2rem), (min-width: 536px) 32rem, calc(100vw - 1.5rem)" className={styles.imagenAmpliada}  reemplazo={
-                                <div className={styles.sinFoto}>
-                                    <ImageOutlinedIcon className={styles.iconoFoto} />
-                                    Foto
+                                <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
+                                    <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
                                 </div>
                             } />
                         </div>

@@ -1,6 +1,6 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { PerfilProductorPorOperador } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
 import PerfilProductor from "./PerfilProductor";
 
@@ -78,9 +78,7 @@ describe("PerfilProductor", () => {
             />,
         );
 
-        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent(
-            "Departamentos: -",
-        );
+        expect(within(screen.getByRole("region", { name: "Departamentos" })).getByText("-")).toBeInTheDocument();
     });
 
     it("muestra las iniciales si falla la foto del perfil", () => {

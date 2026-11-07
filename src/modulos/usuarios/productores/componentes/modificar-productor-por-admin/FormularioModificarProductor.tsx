@@ -139,6 +139,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                             size="small"
                             className={styles.control}
                             label="Nombre"
+                            required
                             value={nombre}
                             onChange={(evento) => setNombre(evento.target.value)}
                             disabled={guardando}

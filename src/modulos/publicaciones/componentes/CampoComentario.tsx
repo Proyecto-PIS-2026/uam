@@ -35,7 +35,7 @@ export default function CampoComentario({ id, valor, alCambiar, editando = true,
                 minRows={2}
                 maxRows={6}
                 slotProps={{ input: { maxLength: LARGO_MAXIMO_COMENTARIO } }}
-                placeholder={editando ? "Agregá un comentario sobre la publicación (opcional)" : "-"}
+                placeholder={editando ? "Agregá un comentario sobre la publicación" : "-"}
                 value={valor}
                 onChange={(evento) => alCambiar?.(evento.target.value)}
                 readOnly={!editando}

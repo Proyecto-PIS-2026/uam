@@ -3,6 +3,8 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
+import { bloquearCambioVigenciaPublicaciones } from "@/modulos/publicaciones/configuracion-vigencia-publicaciones";
+import { calcularFechaMaximaVigencia, convertirFechaVigenciaAInstant } from "@/modulos/publicaciones/vigencia-publicacion";
 
 
 const clavesOrdenamiento = [
@@ -184,7 +186,15 @@ export async function guardarConfiguraciones(cambios: Record<string, string>): P
         }
     }
 
+    const modificaVigenciaProductor = clavesVigenciaPublicacionesProductor.some((clave) => Object.hasOwn(cambios, clave));
+    const diasVigencia = cambios.vigencia_publicaciones_productor_habilitada === "true"
+        ? Number(cambios.vigencia_publicaciones_productor)
+        : null;
+
     await db.transaction(async (tx) => {
+        if (modificaVigenciaProductor) {
+            await bloquearCambioVigenciaPublicaciones(tx);
+        }
         for (const [nombre, valor] of entradas) {
             const actualizada = await tx.orm.public.Configuracion
                 .where({ nombreConfiguracion: nombre })
@@ -194,6 +204,17 @@ export async function guardarConfiguraciones(cambios: Record<string, string>): P
             if (!actualizada) {
                 throw new Error(`No existe la configuración ${nombre}.`);
             }
+        }
+        if (diasVigencia !== null) {
+            const fechaMaxima = calcularFechaMaximaVigencia(diasVigencia);
+            const limite = convertirFechaVigenciaAInstant(fechaMaxima)!.toString();
+            // El cambio de política no renueva la fecha de actualización ni la disponibilidad.
+            await tx.execute(db.raw.sql`
+                UPDATE publicacion
+                SET "fechaVigencia" = ${limite}::timestamptz
+                WHERE "tipoPublicacion" = 'PRODUCTOR'
+                    AND ("fechaVigencia" IS NULL OR "fechaVigencia" > ${limite}::timestamptz)
+            `.affectedCount().build());
         }
     });
 }

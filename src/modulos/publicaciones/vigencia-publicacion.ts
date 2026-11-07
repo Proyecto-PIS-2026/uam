@@ -1,8 +1,26 @@
+import { Temporal } from "temporal-polyfill";
+
 export type ResultadoValidacionVigencia =
     | { esValido: true; fechaVigencia: string | null }
     | { esValido: false; error: string };
 
 const REGEX_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
+export function calcularFechaMaximaVigencia(
+    dias: number,
+    hoy = Temporal.Now.plainDateISO("America/Montevideo"),
+): string {
+    if (!Number.isSafeInteger(dias) || dias <= 0) {
+        throw new Error("La configuración de vigencia de publicaciones no es válida.");
+    }
+    try {
+        const fecha = hoy.add({ days: dias }).toString();
+        if (!REGEX_FECHA.test(fecha)) throw new RangeError("Fecha fuera de rango");
+        return fecha;
+    } catch {
+        throw new Error("La configuración de vigencia de publicaciones no es válida.");
+    }
+}
 
 export function validarFechaVigencia(valor: unknown): ResultadoValidacionVigencia {
     if (valor === undefined || valor === null || valor === "") {

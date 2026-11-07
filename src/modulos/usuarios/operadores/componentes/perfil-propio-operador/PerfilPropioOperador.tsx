@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import EditIcon from "@mui/icons-material/Edit";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import Link from "next/link";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 import BotonVolver from "@/compartido/BotonVolver";
@@ -14,7 +16,7 @@ import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
 import FormularioPerfilPropio from "./FormularioPerfilPropio";
 import styles from "./PerfilPropioOperador.module.css";
-import { DescriptionOutlined } from "@mui/icons-material";
+import estilosFormulario from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador.module.css";
 
 function formatearFecha(fecha: string): string {
     const [anio, mes, dia] = fecha.split("-");
@@ -66,61 +68,86 @@ export default function PerfilPropioOperador({ perfil, cambioContrasenaHabilitad
                     <div className={styles.identidad}>
                         <p className={styles.tipo}>Mi perfil</p>
                         <h1 id="perfil-propio-titulo" className={styles.nombre}>{perfil.nombre}</h1>
-                        <p className={styles.usuario}>Usuario: {perfil.nombreUsuario}</p>
-                    </div>
-                    <div className={styles.accionesEncabezado}>
-                        <p className={styles.whatsapp}>
-                            <PhoneOutlinedIcon aria-hidden="true" />
-                            <span>Teléfono: {perfil.contacto ?? "No hay un número de contacto registrado."}</span>
-                        </p>
-                        <button type="button" className={styles.editar} onClick={() => setEditando(true)}><EditIcon aria-hidden="true" />Editar</button>
                     </div>
                 </header>
                 <div className={styles.contenido}>
-                    <h2 className={styles.subtitulo}>
-                        <StorefrontOutlinedIcon aria-hidden="true" />
-                        Locales
-                    </h2>
-                    {perfil.locales.length === 0 ? (
-                        <EstadoVacio titulo="Sin locales registrados" descripcion="No tenés locales asociados." icono={<StorefrontOutlinedIcon />} compacto anunciar={false} />
-                    ) : (
-                        <ul className={styles.locales}>{perfil.locales.map((local) => (
-                            <li className={styles.local} key={`${local.nave}-${local.local}`}>
-                                <span>
-                                    <span className={styles.nombreNave}>Nave {local.nave}</span>
-                                    {" · "}Local {local.local}
-                                </span>
-                                <span className={styles.finContrato}>
-                                    {local.finContrato
-                                        ? `Vence: ${formatearFecha(local.finContrato)}`
-                                        : "Sin fecha de fin"}
-                                </span>
-                            </li>
-                        ))}</ul>
-                    )}
-                    <h2 className={styles.subtitulo}>
-                        <DescriptionOutlined aria-hidden="true" />
-                        Licencia
-                    </h2>
-                    {perfil.enLicencia ? (
-                        <div className={styles.comentario}>
-                            <p className={styles.fechasLicencia}>Fecha: {fechasLicencia}</p>
-                            {licencia.comentario && <p>{licencia.comentario}</p>}
+                    <div className={styles.datosCuenta}>
+                        <div className={styles.datoCuenta}>
+                            <span className={styles.iconoDato} aria-hidden="true"><PersonOutlinedIcon /></span>
+                            <div className={styles.contenidoDato}>
+                                <span className={styles.etiquetaDato}>Usuario:</span>
+                                <span className={styles.valorDato}>{perfil.nombreUsuario}</span>
+                            </div>
                         </div>
-                    ) : (
-                        <p className={styles.licenciaInactiva}>No hay licencia registrada.</p>
-                    )}
-                    <div className={styles.filaAcciones}>
-                        <p className={styles.aviso}>
-                            <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
-                            <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
-                        </p>
+                        <div className={styles.datoCuenta}>
+                            <span className={styles.iconoDato} aria-hidden="true"><PhoneOutlinedIcon /></span>
+                            <div className={styles.contenidoDato}>
+                                <span className={styles.etiquetaDato}>Teléfono:</span>
+                                <span className={styles.valorDato}>
+                                    {perfil.contacto ?? "No hay un número de contacto registrado."}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.seccionesPerfil}>
+                        <section className={styles.seccionPerfil} aria-labelledby="locales-mi-perfil">
+                            <h2 id="locales-mi-perfil" className={styles.subtitulo}>
+                                <StorefrontOutlinedIcon aria-hidden="true" />
+                                Locales
+                            </h2>
+                            {perfil.locales.length === 0 ? (
+                                <EstadoVacio titulo="Sin locales registrados" descripcion="No tenés locales asociados." icono={<StorefrontOutlinedIcon />} compacto anunciar={false} />
+                            ) : (
+                                <ul className={styles.locales}>{perfil.locales.map((local) => (
+                                    <li className={styles.local} key={`${local.nave}-${local.local}`}>
+                                        <div className={styles.identidadLocal}>
+                                            <span className={styles.nombreNave}>Nave {local.nave}</span>
+                                            <span className={styles.numeroLocal}>Local {local.local}</span>
+                                        </div>
+                                        <p className={styles.finContrato}>
+                                            <EventOutlinedIcon fontSize="small" aria-hidden="true" />
+                                            <span>{local.finContrato
+                                                ? `Vence: ${formatearFecha(local.finContrato)}`
+                                                : "Sin fecha de fin"}</span>
+                                        </p>
+                                    </li>
+                                ))}</ul>
+                            )}
+                        </section>
+                        <section className={styles.seccionPerfil} aria-labelledby="licencia-mi-perfil">
+                            <h2 id="licencia-mi-perfil" className={styles.subtitulo}>
+                                <DescriptionOutlinedIcon aria-hidden="true" />
+                                Licencia
+                            </h2>
+                            {perfil.enLicencia ? (
+                                <div className={styles.comentario}>
+                                    <p className={styles.fechasLicencia}>
+                                        <EventOutlinedIcon fontSize="small" aria-hidden="true" />
+                                        <span>Fecha: {fechasLicencia}</span>
+                                    </p>
+                                    {licencia.comentario && <p>{licencia.comentario}</p>}
+                                </div>
+                            ) : (
+                                <p className={styles.licenciaInactiva}>No hay licencia registrada.</p>
+                            )}
+                            <p className={styles.aviso}>
+                                <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
+                                <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
+                            </p>
+                        </section>
                     </div>
                 </div>
             </section>
-            {cambioContrasenaHabilitado && <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
-                Cambiar contraseña
-            </Link>}
+            <div className={`${estilosFormulario.acciones} ${styles.acciones}`}>
+                <button type="button" className={`${estilosFormulario.cancelar} ${styles.accion}`} onClick={() => setEditando(true)}>
+                    Editar
+                </button>
+                {cambioContrasenaHabilitado && (
+                    <Link href="/mi-perfil/cambiar-contrasena" className={`${estilosFormulario.guardar} ${styles.accion}`}>
+                        Cambiar contraseña
+                    </Link>
+                )}
+            </div>
         </main>
     );
 }

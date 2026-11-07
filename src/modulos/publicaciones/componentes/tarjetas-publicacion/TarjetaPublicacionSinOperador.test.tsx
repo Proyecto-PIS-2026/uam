@@ -67,7 +67,7 @@ describe("TarjetaPublicacionSinOperador", () => {
     it("muestra un reemplazo cuando la publicación no tiene foto", () => {
         render(<TarjetaPublicacionSinOperador publicacion={crearPublicacion()} onClick={vi.fn()}/>);
         expect(screen.getByText("Sin foto disponible"), ).toBeInTheDocument();
-        expect(screen.queryByRole("img")).not.toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
     });
 
     it.each([

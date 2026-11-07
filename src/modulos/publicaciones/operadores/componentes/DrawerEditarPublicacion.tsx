@@ -328,7 +328,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
             <div className={styles.controlesPrecio} data-editando={editando}>
                 {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={bloqueado} aria-label={`Disminuir precio en ${incrementoPrecio}`}><RemoveIcon aria-hidden="true" fontSize="inherit" /></button>}
-                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-precio`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder={editando ? "Ingresar precio aquí" : "Consultar precio"} value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={ocupado} />
+                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-precio`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder={editando ? "Ingresar precio aquí" : "Sin precio"} value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={ocupado} />
                 {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={bloqueado} aria-label={`Aumentar precio en ${incrementoPrecio}`}><AddIcon aria-hidden="true" fontSize="inherit" /></button>}
             </div>
             {editando && <small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
@@ -430,7 +430,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             <div className={styles.controlesPrecio} data-editando={false}>
                 <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-cantidadUnidades`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder={editando ? "Ingresar cantidad aquí" : "-"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
             </div>
-            {editando && <small className={styles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>}
         </div>
     );
     const campoFechaVigencia = (

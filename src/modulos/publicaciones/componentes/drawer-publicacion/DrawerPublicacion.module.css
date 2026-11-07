@@ -287,6 +287,11 @@
     padding-top: 0;
     padding-bottom: var(--espacio-inline);
     line-height: var(--interlineado-texto);
+    overflow-wrap: anywhere;
+}
+
+.naves {
+    color: var(--color-muted);
 }
 
 .publicado {

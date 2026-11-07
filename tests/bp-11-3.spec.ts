@@ -8,7 +8,7 @@ const CONTACTO_INICIAL = "90000000";
 
 // La tarjeta del perfil se identifica por el nombre del productor (h1).
 const datosPerfil = (page: Page) => page.getByRole("region", { name: /^Productor de prueba \d+$/ });
-const lineaContacto = (page: Page) => datosPerfil(page).locator("p").filter({ hasText: /^Teléfono:/ });
+const lineaContacto = (page: Page) => datosPerfil(page).getByText("Teléfono:", { exact: true }).locator("..");
 const campoContacto = (page: Page) => page.getByRole("textbox", { name: /Teléfono/ });
 
 async function abrirModificacion(page: Page) {
@@ -44,7 +44,7 @@ test.describe("BP-11.3 - Modificación de mi perfil como Productor", () => {
     await expect(lineaContacto(page)).toContainText(`+598 ${CONTACTO_INICIAL}`);
 
     await abrirModificacion(page);
-    await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue(nombre);
+    await expect(page.getByRole("textbox", { name: "Nombre", exact: true })).toHaveValue(nombre);
     await expect(page.getByRole("combobox", { name: "Código de país" })).toContainText("+598 (Uruguay)");
     await expect(campoContacto(page)).toHaveValue(CONTACTO_INICIAL);
   });

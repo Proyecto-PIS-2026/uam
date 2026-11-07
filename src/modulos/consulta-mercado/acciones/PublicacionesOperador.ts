@@ -24,6 +24,7 @@ export type PublicacionListado = {
         id: number;
         nombreFantasia: string;
         whatsApp: string;
+        naves?: string[];
     };
 };
 
@@ -122,7 +123,11 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
                 'cantidadUnidades', ordenadas."cantidadUnidades", 'comentario', p.comentario, 'especie', ordenadas.especie, 'variedad', ordenadas.variedad,
                 'envase', ordenadas.envase, 'kilos', ordenadas.kilos, 'categoria', ordenadas.categoria, 'calibre', ordenadas.calibre,
                 'codigoCalibre', ordenadas."codigoCalibre", 'pais', ordenadas.pais,
-                'operador', jsonb_build_object('id', ordenadas."operadorId", 'nombreFantasia', ordenadas."operadorNombreFantasia", 'whatsApp', ordenadas."operadorWhatsApp")
+                'operador', jsonb_build_object(
+                    'id', ordenadas."operadorId", 'nombreFantasia', ordenadas."operadorNombreFantasia", 'whatsApp', ordenadas."operadorWhatsApp",
+                    'naves', coalesce((SELECT jsonb_agg(DISTINCT l."nombreNave" ORDER BY l."nombreNave")
+                        FROM locales_vigentes l WHERE l."operadorId" = ordenadas."operadorId"), '[]'::jsonb)
+                )
             ) ORDER BY ordenadas.posicion) FROM ordenadas JOIN publicacion p ON p.id = ordenadas.id), '[]'::jsonb),
             'opciones', coalesce((SELECT jsonb_agg(opcion ORDER BY especie, variedad, envase, kilos, categoria, calibre)
                 FROM (SELECT DISTINCT especie, variedad, envase, kilos, categoria, calibre FROM visibles) AS opcion), '[]'::jsonb),

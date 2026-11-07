@@ -149,7 +149,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                                         size="small"
                                     />
                                 </div>
-                            <TextField label="Mensaje de recomendación (opcional)" multiline minRows={3} value={comentario} onChange={(event) => setComentario(event.target.value)} disabled={guardando} fullWidth />
+                            <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(event) => setComentario(event.target.value)} disabled={guardando} fullWidth />
                             </>
                         )}
                     </section>

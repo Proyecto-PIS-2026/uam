@@ -212,10 +212,14 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
         expect(ordenarIds(resultadoA.publicaciones.map((publicacion) => publicacion.id))).toEqual(ordenarIds(publicacionesOperador));
         expect(resultadoA.total).toBe(36);
         expect(resultadoA.publicaciones.every((publicacion) => publicacion.operador.id === fixture!.operadorId)).toBe(true);
+        for (const publicacion of resultadoA.publicaciones) {
+            expect(publicacion.operador.naves).toEqual([fixture!.naveA, fixture!.naveB, fixture!.naveHoy]);
+        }
         expect(resultadoA.publicaciones.map((publicacion) => publicacion.id)).not.toContain(fixture!.publicacionSoloBId);
         const resultadoB = await consultarPublicaciones({ nave: fixture!.naveB, orden: "ninguno" });
         expect(ordenarIds(resultadoB.publicaciones.map((publicacion) => publicacion.id))).toEqual(ordenarIds([...fixture!.visibles, fixture!.publicacionSoloBId, fixture!.publicacionOtraEspecieId]));
         expect(resultadoB.total).toBe(37);
+        expect(resultadoB.publicaciones.find((publicacion) => publicacion.id === fixture!.publicacionSoloBId)?.operador.naves).toEqual([fixture!.naveB]);
     });
 
     it("combina nave, especie y rango de precios manteniendo las naves globales disponibles", async () => {

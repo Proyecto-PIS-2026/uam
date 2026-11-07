@@ -5,7 +5,6 @@ import Image from "next/image";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutlined";
-import UndoIcon from "@mui/icons-material/Undo";
 import { obtenerIniciales } from "../obtener-iniciales";
 import styles from "./SelectorFotoPerfil.module.css";
 
@@ -80,7 +79,7 @@ export default function SelectorFotoPerfil({ nombre = "", fotoActual, cambio, al
                     : <PersonOutlineIcon className={styles.sinFoto} aria-hidden="true" />}
         </div>
         <div className={styles.contenido}>
-            <p id={`${id}-titulo`} className={styles.titulo}>Foto de perfil <span className={styles.opcional}>(opcional)</span></p>
+            <p id={`${id}-titulo`} className={styles.titulo}>Foto de perfil</p>
             <p id={`${id}-ayuda`} className={styles.ayuda}>JPEG, PNG o WebP, hasta 10 MB. Los cambios se aplicarán al guardar.</p>
             <input ref={entrada} id={id} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Seleccionar foto de perfil" aria-describedby={`${id}-ayuda`} onChange={seleccionar} disabled={deshabilitado} hidden />
             <div className={styles.acciones}>
@@ -89,9 +88,6 @@ export default function SelectorFotoPerfil({ nombre = "", fotoActual, cambio, al
                 </button>
                 {hayFoto && <button type="button" className={`boton-secundario ${styles.quitar}`} onClick={() => cambiar(fotoActual ? null : undefined)} disabled={deshabilitado}>
                     <DeleteOutlinedIcon fontSize="small" aria-hidden="true" />Quitar foto
-                </button>}
-                {cambio !== undefined && fotoActual && <button type="button" className="boton-secundario" onClick={() => cambiar(undefined)} disabled={deshabilitado}>
-                    <UndoIcon fontSize="small" aria-hidden="true" />Deshacer cambio
                 </button>}
             </div>
             {cambio === null && fotoActual && <p className={styles.ayuda} role="status">La foto se eliminará al guardar.</p>}

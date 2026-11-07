@@ -1,7 +1,7 @@
 import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-publicacion";
 import { formatearPrecio } from "@/compartido/formatear-precio";
 import ImagenPublicacion from "../../../../../publicaciones/componentes/ImagenPublicacion";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import type { PublicacionPerfilProductor } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
 import styles from "./TarjetaPublicacion.module.css";
 
@@ -18,9 +18,8 @@ export default function TarjetaPublicacion({publicacion, onSeleccionar}: Tarjeta
         <button type="button" className={styles.tarjeta} onClick={() => onSeleccionar?.(publicacion)} aria-label={`Ver detalles de ${nombreProducto}`} aria-haspopup="dialog">
             <div className={styles.contenedorImagen}>
                 <ImagenPublicacion src={publicacion.foto} alt={`Foto de ${nombreProducto}`} fill sizes="(max-width: 380px) 72px, (max-width: 767px) 96px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.imagen} reemplazo={
-                    <div className={styles.sinFoto}>
-                        <ImageOutlinedIcon className={styles.iconoFoto}/>
-                        <span className={styles.textoSinFotoMobile}>Foto</span>
+                    <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
+                        <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
                         <span className={styles.textoSinFotoWeb}>Sin foto disponible</span>
                     </div>
                 } />

@@ -3,7 +3,6 @@
     max-width: var(--ancho-maximo-pagina);
     margin: 0 auto;
     padding: var(--padding-exterior-pagina);
-    padding-bottom: var(--espacio-grupos);
 }
 
 .tarjetaPerfil {
@@ -17,7 +16,8 @@
 }
 
 .encabezado {
-    display: flex;
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
     position: relative;
     isolation: isolate;
     width: 100%;
@@ -73,59 +73,84 @@
 }
 
 .tarjetaInformacion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
     width: 100%;
     padding: var(--padding-panel);
     background-color: var(--color-surface);
 }
 
-.departamentos {
+.contacto {
     display: flex;
-    align-items: flex-start;
-    gap: var(--espacio-inline);
+    min-width: 0;
+    align-items: center;
+    gap: var(--espacio-controles);
     margin: 0;
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radio-control);
+    background: var(--color-surface-muted);
+}
+
+.iconoContacto {
+    display: grid;
+    width: var(--alto-control);
+    height: var(--alto-control);
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: var(--radio-control);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
+}
+
+.datosContacto {
+    min-width: 0;
+}
+
+.etiquetaContacto {
+    display: block;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+}
+
+.valorContacto {
+    display: block;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+}
+
+.seccionPerfil {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radio-panel);
+}
+
+.departamentos {
+    margin: 0;
+    padding: var(--padding-panel);
+    border-radius: var(--radio-control);
+    background: var(--color-surface-muted);
     color: var(--color-foreground);
     font-size: var(--tamano-texto-secundario);
     line-height: var(--interlineado-texto);
     overflow-wrap: anywhere;
 }
 
-.departamentos svg {
-    flex-shrink: 0;
-    color: var(--color-secondary);
-}
-
-.listaLocales {
-    display: grid;
-    margin: 0;
-    padding: 0;
-    grid-template-columns: 1fr;
-    gap: var(--espacio-controles);
-    list-style: none;
-}
-
-.local {
+.subtitulo {
     display: flex;
-    min-width: 0;
-    padding: var(--espacio-controles) 0.875rem;
     align-items: center;
     gap: var(--espacio-inline);
-    border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);
-    border-radius: var(--radio-control);
-    background-color: var(--color-secondary-soft);
-    font-size: var(--tamano-texto-secundario);
-}
-
-.nombreNave {
-    color: var(--color-secondary-hover);
-    font-weight: 600;
-}
-
-.separadorLocal {
-    color: var(--color-muted);
-}
-
-.numeroLocal {
-    color: var(--color-foreground);
+    margin: 0;
+    color: var(--color-secondary);
+    font-size: var(--tamano-titulo-seccion);
+    font-weight: 700;
 }
 
 .botonWhatsApp {
@@ -173,6 +198,22 @@
 }
 
 @media (min-width: 768px) {
+    .tarjetaInformacion {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+    }
+
+    .seccionPerfil {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .contacto {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
     .botonWhatsApp {
         width: 4rem;
         height: 4rem;
@@ -205,5 +246,11 @@
     .botonWhatsApp:hover .textoWhatsApp {
         width: 11rem;
         opacity: 1;
+    }
+}
+
+@media (max-width: 700px) {
+    .encabezado {
+        padding: var(--padding-panel);
     }
 }
