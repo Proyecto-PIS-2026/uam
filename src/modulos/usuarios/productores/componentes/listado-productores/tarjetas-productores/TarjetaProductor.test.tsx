@@ -47,9 +47,9 @@ describe("TarjetaOperador", () => {
         expect(link).toHaveAttribute("href", "/productores/Nombre%201?origen=productores");
     });
 
-    it("Mostrar inicial si no tiene foto", () => {
+    it("Mostrar iniciales si no tiene foto", () => {
         render(<TarjetaProductor  productor={productor} />);
-        expect(screen.getByText("N")).toBeInTheDocument();
+        expect(screen.getByText("N1")).toBeInTheDocument();
     });
 
     it("Mostrar la foto si tiene", () => {
@@ -67,10 +67,10 @@ describe("TarjetaOperador", () => {
         expect(screen.getByText("-")).toBeInTheDocument();
     });
 
-    it("recupera la inicial si la fotografía falla", () => {
+    it("recupera las iniciales si la fotografía falla", () => {
         render(<TarjetaProductor productor={productorConFoto} />);
         fireEvent.error(screen.getByRole("img", { name: "Foto de Nombre 1" }));
-        expect(screen.getByText("N")).toBeInTheDocument();
+        expect(screen.getByText("N1")).toBeInTheDocument();
         expect(screen.queryByRole("img", { name: "Foto de Nombre 1" })).not.toBeInTheDocument();
     });
 

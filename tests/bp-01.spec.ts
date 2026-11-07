@@ -262,7 +262,7 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       await page.getByRole("link", { name: "Editar operador" }).click();
       await expect(page.getByRole("heading", { name: "Modificar operador" })).toBeVisible();
       const campoNombre = page.getByRole("textbox", { name: "Nombre", exact: true });
-      const campoTelefono = page.getByRole("textbox", { name: "WhatsApp" });
+      const campoTelefono = page.getByRole("textbox", { name: "Teléfono" });
       await expect(campoNombre).toHaveValue(nombre);
       await expect(campoTelefono).toHaveValue("99123456");
 
@@ -273,10 +273,10 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       await page.getByRole("link", { name: "Editar operador" }).click();
 
       // CP-08/09/10: entradas inválidas.
-      await page.getByRole("textbox", { name: "WhatsApp" }).fill("123");
+      await page.getByRole("textbox", { name: "Teléfono" }).fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
       await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("El teléfono no es válido.");
-      await page.getByRole("textbox", { name: "WhatsApp" }).fill("99234567");
+      await page.getByRole("textbox", { name: "Teléfono" }).fill("99234567");
 
       await page.getByLabel("Nueva contraseña").fill("123");
       await page.getByLabel("Confirmar contraseña").fill("123");

@@ -200,7 +200,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
                     </div>
 
                     {usuariosPagina.map((usuario) => (
-                        <div key={usuario.id} className={`${styles.fila} ${usuario.id === usuarioSeleccionadoId ? styles.seleccionada : ""} ${usuario.solicitoRestablecimiento ? styles.restablecimientoSolicitado : ""}`} onClick={() =>
+                        <div key={usuario.id} data-habilitado={usuario.habilitado !== false} className={`${styles.fila} ${usuario.id === usuarioSeleccionadoId ? styles.seleccionada : ""} ${usuario.solicitoRestablecimiento ? styles.restablecimientoSolicitado : ""}`} onClick={() =>
                             manejarSeleccionar(usuario)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) manejarSeleccionar(usuario) }}
                         >
                             <span className={styles.username}>
@@ -221,7 +221,11 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
                                 )}
                             </span>
                             <span className={styles.informacion}>{obtenerInformacion(usuario)}</span>
-                            <span className={styles.rol}>{obtenerNombreRol(usuario.rol)}</span>
+                            <span className={styles.rol}>
+                                {esMobile
+                                    ? <abbr title={obtenerNombreRol(usuario.rol)}>{obtenerNombreRol(usuario.rol)[0]}</abbr>
+                                    : obtenerNombreRol(usuario.rol)}
+                            </span>
                             <div className={styles.acciones} onClick={(evento) => evento.stopPropagation()}>
                                 <IconButton size="small" onClick={(e) => manejarEditar(e, usuario)} disabled={ocupado || !puedeEditar(usuario)} title={puedeEditar(usuario) ? "Editar perfil" : "Edición todavía no disponible"} className={styles.botonEditar}>
                                     <EditIcon fontSize="small" />

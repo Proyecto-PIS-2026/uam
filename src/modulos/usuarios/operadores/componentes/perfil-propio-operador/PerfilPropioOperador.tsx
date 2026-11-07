@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import EditIcon from "@mui/icons-material/Edit";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import Link from "next/link";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
@@ -60,7 +60,7 @@ export default function PerfilPropioOperador({ perfil, cambioContrasenaHabilitad
                                 onError={() => setFotoPerfilFallida(true)}
                             />
                         ) : (
-                            <AccountCircleIcon className={styles.iconoSinFoto} aria-hidden="true" />
+                            <span className={styles.inicial} aria-hidden="true">{obtenerIniciales(perfil.nombre)}</span>
                         )}
                     </div>
                     <div className={styles.identidad}>
@@ -70,8 +70,8 @@ export default function PerfilPropioOperador({ perfil, cambioContrasenaHabilitad
                     </div>
                     <div className={styles.accionesEncabezado}>
                         <p className={styles.whatsapp}>
-                            <WhatsAppIcon aria-hidden="true" />
-                            <span>WhatsApp: {perfil.contacto ?? "No hay un número de contacto registrado."}</span>
+                            <PhoneOutlinedIcon aria-hidden="true" />
+                            <span>Teléfono: {perfil.contacto ?? "No hay un número de contacto registrado."}</span>
                         </p>
                         <button type="button" className={styles.editar} onClick={() => setEditando(true)}><EditIcon aria-hidden="true" />Editar</button>
                     </div>

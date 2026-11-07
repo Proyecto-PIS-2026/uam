@@ -37,20 +37,16 @@ export async function obtenerUsuarioAdministradorPorCorreo(correo: string) {
         .first();
 }
 
-export async function obtenerFotoPerfilOperadorPorUsuarioId(usuarioId: number) {
-    const operador = await db.orm.public.Operador
-        .select("fotoPerfil")
+export async function obtenerIdentidadOperadorPorUsuarioId(usuarioId: number) {
+    return db.orm.public.Operador
+        .select("nombreFantasia", "fotoPerfil")
         .where({ usuarioId })
         .first();
-
-    return operador?.fotoPerfil ?? null;
 }
 
-export async function obtenerFotoPerfilProductorPorUsuarioId(usuarioId: number) {
-    const productor = await db.orm.public.Productor
-        .select("fotoPerfil")
+export async function obtenerIdentidadProductorPorUsuarioId(usuarioId: number) {
+    return db.orm.public.Productor
+        .select("nombreFantasia", "fotoPerfil")
         .where({ usuarioId })
         .first();
-
-    return productor?.fotoPerfil ?? null;
 }

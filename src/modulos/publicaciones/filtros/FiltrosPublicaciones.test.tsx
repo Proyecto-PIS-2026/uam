@@ -520,7 +520,7 @@ describe("FiltrosPublicaciones", () => {
         expect(precioMaximo).toHaveAttribute("type", "text");
         expect(precioMaximo).toHaveAttribute("inputmode", "numeric");
         expect(precioMaximo).toHaveAttribute("pattern", "0*[1-9][0-9]*");
-        expect(precioMaximo).toHaveAttribute("placeholder", "Sin límite");
+        expect(precioMaximo).toHaveAttribute("placeholder", "Sin máximo");
     });
 
     it("rechaza separadores, signos y letras en ambos precios, incluso al pegar", () => {

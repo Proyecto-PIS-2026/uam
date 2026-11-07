@@ -10,7 +10,7 @@ const alError = vi.fn();
 
 function SelectorControlado({ fotoActual, deshabilitado = false }: { fotoActual?: string; deshabilitado?: boolean }) {
     const [cambio, setCambio] = useState<CambioFotoPerfil>(undefined);
-    return <SelectorFotoPerfil fotoActual={fotoActual} cambio={cambio} alCambiar={setCambio} alError={alError} deshabilitado={deshabilitado} />;
+    return <SelectorFotoPerfil nombre="  granja   del norte  " fotoActual={fotoActual} cambio={cambio} alCambiar={setCambio} alError={alError} deshabilitado={deshabilitado} />;
 }
 
 function elegir(archivo: File) {
@@ -40,16 +40,19 @@ describe("SelectorFotoPerfil", () => {
 
     it("permite cargar, reemplazar y quitar una foto nueva liberando sus vistas previas", async () => {
         const vista = render(<SelectorControlado />);
+        expect(screen.getByText("GD", { exact: true })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Agregar foto" })).toBeEnabled();
         expect(screen.queryByRole("button", { name: "Quitar foto" })).not.toBeInTheDocument();
         elegir(new File(["jpeg"], "primera.jpg", { type: "image/jpeg" }));
         expect(await screen.findByRole("img", { name: "Vista previa de la foto de perfil" })).toHaveAttribute("src", "blob:primera.jpg");
+        expect(screen.queryByText("GD", { exact: true })).not.toBeInTheDocument();
         expect(screen.getByLabelText("Seleccionar foto de perfil")).toHaveValue("");
         elegir(new File(["png"], "segunda.png", { type: "image/png" }));
         await waitFor(() => expect(screen.getByRole("img")).toHaveAttribute("src", "blob:segunda.png"));
         expect(revocarUrl).toHaveBeenCalledWith("blob:primera.jpg");
         fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
         expect(screen.queryByRole("img")).not.toBeInTheDocument();
+        expect(screen.getByText("GD", { exact: true })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Agregar foto" })).toBeEnabled();
         expect(revocarUrl).toHaveBeenCalledWith("blob:segunda.png");
         elegir(new File(["webp"], "tercera.webp", { type: "image/webp" }));

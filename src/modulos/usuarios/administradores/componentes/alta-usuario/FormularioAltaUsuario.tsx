@@ -258,7 +258,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
 
                 {(rol === "operador" || rol === "productor") && (
                     <>
-                        <SelectorFotoPerfil key={rol} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={enviando} />
+                        <SelectorFotoPerfil key={rol} nombre={nombre} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={enviando} />
                         <TextField
                             disabled={enviando}
                             id="nombre"

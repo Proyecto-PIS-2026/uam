@@ -8,7 +8,7 @@ import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-produ
 
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import { DrawerAltaPublicacionProductor } from "@/modulos/publicaciones/productores/AltaPublicacionProductor";
 import { useCallback, useState } from "react";
@@ -17,6 +17,7 @@ import styles from "./PerfilProductorAdmin.module.css";
 import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
 import Link from "next/link";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 
 type PerfilProductorAdminProps = {
@@ -25,7 +26,7 @@ type PerfilProductorAdminProps = {
 
 
 export default function PerfilProductorAdmin({ productor }: PerfilProductorAdminProps) {
-    const inicialProductor = productor.nombreFantasia.trim()[0]?.toUpperCase();
+    const inicialesProductor = obtenerIniciales(productor.nombreFantasia);
     const [altaAbierta, setAltaAbierta] = useState(false);
     const { notificar } = useNotificacionToast();
     const router = useRouter();
@@ -55,7 +56,7 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                     <HojasDecorativas />
                     <div className={styles.avatar}>
                         <ImagenPerfil src={productor.fotoPerfil} alt={`Foto de ${productor.nombreFantasia}`} width={96} height={96} className={styles.imagenAvatar}
-                            reemplazo={<span aria-hidden="true">{inicialProductor}</span>} />
+                            reemplazo={<span aria-hidden="true">{inicialesProductor}</span>} />
                     </div>
 
                     <div className={styles.identidad}>
@@ -68,8 +69,8 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                     </p>
                     <div className={styles.accionesEncabezado}>
                         <p className={styles.contacto}>
-                            <WhatsAppIcon aria-hidden="true" />
-                            <span className={styles.etiqueta}>WhatsApp:</span>
+                            <PhoneOutlinedIcon aria-hidden="true" />
+                            <span className={styles.etiqueta}>Teléfono:</span>
                             <span>{productor.whatsApp || "Sin número de contacto"}</span>
                         </p>
                         <Link

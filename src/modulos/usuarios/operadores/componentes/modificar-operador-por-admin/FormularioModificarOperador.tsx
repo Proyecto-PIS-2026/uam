@@ -16,6 +16,7 @@ import { modificarOperador } from "../../acciones/modificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 import type { OperadorParaModificar } from "../../tipos";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
+import ConfirmacionLicencia from "@/modulos/usuarios/operadores/componentes/ConfirmacionLicencia";
 
 import styles from "./FormularioModificarOperador.module.css";
 
@@ -61,6 +62,7 @@ export default function FormularioModificarOperador({
     const [telefono, setTelefono] = useState(operador.telefono);
     const licencia = extraerLicencia(operador.comentario);
     const [enLicencia, setEnLicencia] = useState(operador.enLicencia ?? false);
+    const [confirmandoLicencia, setConfirmandoLicencia] = useState(false);
     const [inicioLicencia, setInicioLicencia] = useState(licencia.inicio);
     const [finLicencia, setFinLicencia] = useState(licencia.fin);
     const [comentario, setComentario] = useState(licencia.comentario);
@@ -206,11 +208,7 @@ export default function FormularioModificarOperador({
                     noValidate
                 >
                     <section className={styles.seccion}>
-                        <h2 className={styles.subtitulo}>
-                            Datos del operador
-                        </h2>
-
-                        <SelectorFotoPerfil fotoActual={operador.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
+                        <SelectorFotoPerfil nombre={nombre} fotoActual={operador.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
 
                         <TextField
                             fullWidth
@@ -243,7 +241,7 @@ export default function FormularioModificarOperador({
                                 fullWidth
                                 size="small"
                                 className={styles.control}
-                                label="WhatsApp"
+                                label="Teléfono"
                                 required
                                 type="tel"
                                 value={telefono}
@@ -389,7 +387,10 @@ export default function FormularioModificarOperador({
                             </span>
                             <Switch
                                 checked={enLicencia}
-                                onChange={(_, valor) => setEnLicencia(valor)}
+                                onChange={(_, valor) => {
+                                    if (valor) setConfirmandoLicencia(true);
+                                    else setEnLicencia(false);
+                                }}
                                 disabled={guardando}
                                 slotProps={{ input: { id: `${idFormulario}-licencia`, role: "switch", "aria-label": "En licencia" } }}
                             />
@@ -479,6 +480,14 @@ export default function FormularioModificarOperador({
                     </div>
                 </form>
             </div>
+            <ConfirmacionLicencia
+                abierto={confirmandoLicencia}
+                alAceptar={() => {
+                    setEnLicencia(true);
+                    setConfirmandoLicencia(false);
+                }}
+                alCancelar={() => setConfirmandoLicencia(false)}
+            />
         </div>
     );
 }

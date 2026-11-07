@@ -28,6 +28,7 @@ import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesio
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 
 import { useId } from "react";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -166,6 +167,7 @@ const opcionesMenuProductor: OpcionMenu[] = [
 type PropiedadesEncabezado = {
     sesion: DatosSesion | null;
     fotoPerfil?: string | null;
+    nombrePerfil?: string | null;
 };
 
 function MenuGrupoNavegacion({
@@ -295,9 +297,10 @@ function MenuGrupoNavegacion({
     );
 }
 
-export default function HeaderPublico({ sesion, fotoPerfil = null }: PropiedadesEncabezado) {
+export default function HeaderPublico({ sesion, fotoPerfil = null, nombrePerfil = null }: PropiedadesEncabezado) {
     const rolUsuario = sesion?.rol ?? null;
     const esProductor = rolUsuario === "PRODUCTOR";
+    const inicialesPerfil = rolUsuario === "OPERADOR" || esProductor ? obtenerIniciales(nombrePerfil ?? "") : "";
     const [menuAbierto, cambiarMenuAbierto] = useState(false);
     const [menuUsuarioAbierto, cambiarMenuUsuarioAbierto] = useState(false);
     const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
@@ -442,6 +445,8 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         className={estilos.fotoPerfil}
                         onError={() => cambiarFotoPerfilFallida(true)}
                     />
+                ) : inicialesPerfil ? (
+                    <span className={estilos.inicialesPerfil} aria-hidden="true">{inicialesPerfil}</span>
                 ) : (
                     <AccountCircleIcon className={estilos.iconoOperador} />
                 )}
@@ -474,7 +479,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                 <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
                 Mi perfil
             </span>
-            {fotoPerfil && !fotoPerfilFallida && (
+            {fotoPerfil && !fotoPerfilFallida ? (
                 <Image
                     src={fotoPerfil}
                     alt=""
@@ -484,7 +489,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     className={estilos.fotoPerfilMobile}
                     onError={() => cambiarFotoPerfilFallida(true)}
                 />
-            )}
+            ) : inicialesPerfil ? (
+                <span className={`${estilos.inicialesPerfil} ${estilos.inicialesPerfilMobile}`} aria-hidden="true">{inicialesPerfil}</span>
+            ) : null}
         </Link>
     );
 

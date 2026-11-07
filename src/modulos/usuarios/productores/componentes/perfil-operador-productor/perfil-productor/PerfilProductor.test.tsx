@@ -36,7 +36,7 @@ describe("PerfilProductor", () => {
         vi.restoreAllMocks();
     });
 
-    it("muestra el nombre, la inicial y el tipo de perfil", () => {
+    it("muestra el nombre, las iniciales y el tipo de perfil", () => {
         render(<PerfilProductor productor={productor} />);
 
         expect(screen.getByRole("heading", {
@@ -44,7 +44,7 @@ describe("PerfilProductor", () => {
         })).toBeInTheDocument();
 
         expect(screen.getByText("Perfil Productor")).toBeInTheDocument();
-        expect(screen.getByText("F")).toBeInTheDocument();
+        expect(screen.getByText("FD")).toBeInTheDocument();
 
         expect(screen.queryByRole("img", {
             name: "Foto de Frutas del Norte",
@@ -62,7 +62,7 @@ describe("PerfilProductor", () => {
             name: "Foto de Frutas del Norte",
         })).toHaveAttribute("src", "/productor.jpg");
 
-        expect(screen.queryByText("F")).not.toBeInTheDocument();
+        expect(screen.queryByText("FD")).not.toBeInTheDocument();
     });
 
     it("muestra los departamentos y un guion cuando no hay información", () => {
@@ -83,7 +83,7 @@ describe("PerfilProductor", () => {
         );
     });
 
-    it("muestra la inicial si falla la foto del perfil", () => {
+    it("muestra las iniciales si falla la foto del perfil", () => {
         render(
             <PerfilProductor
                 productor={{ ...productor, fotoPerfil: "/productor.jpg" }}
@@ -94,7 +94,7 @@ describe("PerfilProductor", () => {
             screen.getByRole("img", { name: "Foto de Frutas del Norte" }),
         );
 
-        expect(screen.getByText("F")).toBeInTheDocument();
+        expect(screen.getByText("FD")).toBeInTheDocument();
 
         expect(screen.queryByRole("img", {
             name: "Foto de Frutas del Norte",
@@ -208,7 +208,7 @@ describe("PerfilProductor", () => {
             name: "Productor del Sur",
         })).toBeInTheDocument();
 
-        expect(screen.getByText("P")).toBeInTheDocument();
+        expect(screen.getByText("PD")).toBeInTheDocument();
         expect(screen.getByText("Montevideo", {
             exact: false,
         })).toBeInTheDocument();

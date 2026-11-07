@@ -115,13 +115,11 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                         {perfilPropio ? "Editar mi perfil" : "Modificar productor"}
                     </h1>
 
-                    <p className={styles.descripcion}>
-                        {perfilPropio ? (
-                            <>Actualizar información de <strong>{productor.nombreUsuario}</strong></>
-                        ) : (
-                            <>Actualizá la información registrada de <strong>{productor.nombre}</strong>.</>
-                        )}
-                    </p>
+                    {!perfilPropio && (
+                        <p className={styles.descripcion}>
+                            Actualizá la información registrada de <strong>{productor.nombre}</strong>.
+                        </p>
+                    )}
                 </header>
 
                 <form
@@ -134,7 +132,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                             {perfilPropio ? "Datos de mi perfil" : "Datos del productor"}
                         </h2>
 
-                        <SelectorFotoPerfil fotoActual={productor.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
+                        <SelectorFotoPerfil nombre={nombre} fotoActual={productor.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
 
                         <TextField
                             fullWidth
@@ -167,7 +165,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                                 fullWidth
                                 size="small"
                                 className={styles.control}
-                                label="WhatsApp"
+                                label="Teléfono"
                                 required
                                 type="tel"
                                 value={telefono}

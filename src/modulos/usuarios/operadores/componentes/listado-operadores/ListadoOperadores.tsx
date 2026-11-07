@@ -67,7 +67,7 @@ export default function ListadoOperadores({ operadores, puedeGestionar = false }
 
     const contenido = (
         <section className="contenedor-pagina secciones-pagina">
-            <EncabezadoPagina titulo="Operadores" subtitulo="Consultá los operadores de la plataforma." />
+            <EncabezadoPagina titulo="Operadores" subtitulo={`${operadores.length} ${operadores.length === 1 ? "operador" : "operadores"}`} />
 
             <ControlesListadoOperadores
                 busqueda={busqueda}

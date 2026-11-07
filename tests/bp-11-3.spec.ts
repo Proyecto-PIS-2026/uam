@@ -8,8 +8,8 @@ const CONTACTO_INICIAL = "90000000";
 
 // La tarjeta del perfil se identifica por el nombre del productor (h1).
 const datosPerfil = (page: Page) => page.getByRole("region", { name: /^Productor de prueba \d+$/ });
-const lineaContacto = (page: Page) => datosPerfil(page).locator("p").filter({ hasText: /^Whatsapp:/ });
-const campoContacto = (page: Page) => page.getByRole("textbox", { name: /WhatsApp/ });
+const lineaContacto = (page: Page) => datosPerfil(page).locator("p").filter({ hasText: /^Teléfono:/ });
+const campoContacto = (page: Page) => page.getByRole("textbox", { name: /Teléfono/ });
 
 async function abrirModificacion(page: Page) {
   await page.goto(RUTA_PERFIL);

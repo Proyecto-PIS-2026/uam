@@ -357,7 +357,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 type="text"
                                 size="small"
                                 value={precioMaximo}
-                                placeholder="Sin límite"
+                                placeholder="Sin máximo"
                                 error={rangoPrecioInvalido}
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMaximo)}
                                 slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}

@@ -56,11 +56,6 @@
     object-fit: cover;
 }
 
-.iconoSinFoto {
-    width: 4rem;
-    height: 4rem;
-}
-
 .identidad {
     position: relative;
     z-index: 1;

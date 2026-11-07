@@ -10,6 +10,7 @@ import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import BotonVolver from "@/compartido/BotonVolver";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import styles from "./PerfilOperador.module.css";
 
 type PerfilOperadorProps = {
@@ -48,7 +49,7 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
     const fechasLicencia = licencia.inicio && licencia.fin
         ? `${formatearFecha(licencia.inicio)} - ${formatearFecha(licencia.fin)}`
         : "Fechas no especificadas";
-    const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
+    const inicialesOperador = obtenerIniciales(operador.nombreFantasia);
     const localesPorNave: Record<string, string[]> = {};
 
     for (const local of operador.locales) {
@@ -71,7 +72,7 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
-                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialOperador}</span>} />
+                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialesOperador}</span>} />
                     </div>
 
                     <div className={styles.identidad}>

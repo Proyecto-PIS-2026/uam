@@ -16,7 +16,7 @@ test("BP-11.6 CP-01, CP-02, CP-04, CP-05, CP-06: el perfil muestra los datos de 
   // CP-01 y CP-02: identificación y contacto.
   await expect(datos.getByRole("heading", { level: 1 })).toHaveText(/^Productor de prueba \d+$/);
   await expect(datos.getByText(`Usuario: ${productor.usuario}`, { exact: true })).toBeVisible();
-  await expect(datos.locator("p").filter({ hasText: /^Whatsapp:/ })).toContainText("+598 90000000");
+  await expect(datos.locator("p").filter({ hasText: /^Teléfono:/ })).toContainText("+598 90000000");
 
   // CP-04: no se expone la contraseña.
   await expect(page.locator('input[type="password"]')).toHaveCount(0);

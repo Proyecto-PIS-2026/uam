@@ -36,7 +36,7 @@ export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilA
     }
 
     return (
-        <form onSubmit={guardar} noValidate className="flex w-full max-w-xl flex-col gap-5 rounded-2xl border p-6" aria-label="Editar mi perfil">
+        <form onSubmit={guardar} noValidate className="flex w-full flex-col gap-5 rounded-2xl border p-6" aria-label="Editar mi perfil">
             <div className="flex flex-col gap-2">
                 <label htmlFor="mi-perfil-usuario">Nombre de usuario</label>
                 <input id="mi-perfil-usuario" className="rounded-lg border p-3" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="username" disabled={guardando} required minLength={3} />

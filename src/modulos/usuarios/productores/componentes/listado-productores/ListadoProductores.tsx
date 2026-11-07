@@ -39,7 +39,7 @@ export default function ListadoProductores({ productores, puedeGestionar = false
 
     const contenido = (
         <div className="contenedor-pagina secciones-pagina">
-            <EncabezadoPagina titulo="Productores" subtitulo="Consultá los productores de la plataforma." />
+            <EncabezadoPagina titulo="Productores" subtitulo={`${productores.length} ${productores.length === 1 ? "productor" : "productores"}`} />
             <ControlesListadoProductores busqueda={busqueda} alCambiarBusqueda={setBusqueda} orden={orden} alCambiarOrden={setOrden}
                 departamento={departamentoVigente} departamentosDisponibles={departamentosDisponibles} alCambiarDepartamento={setDepartamentoSeleccionado} />
             {productoresFiltrados.length === 0 ? (

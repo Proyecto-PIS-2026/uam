@@ -19,15 +19,15 @@ describe("formulario de mi perfil como Productor", () => {
     it("muestra nombre, contacto y fotografía actuales", () => {
         render(<FormularioModificarProductor productor={productor} perfilPropio />);
         expect(screen.getByRole("heading", { name: "Editar mi perfil" })).toBeInTheDocument();
-        expect(screen.getByText("granja_norte")).toBeInTheDocument();
+        expect(screen.queryByText("granja_norte")).not.toBeInTheDocument();
         expect(screen.getByLabelText("Nombre")).toHaveValue("Granja Norte");
-        expect(screen.getByLabelText(/WhatsApp/)).toHaveValue("99123456");
+        expect(screen.getByLabelText(/Teléfono/)).toHaveValue("99123456");
         expect(screen.getByRole("img", { name: "Vista previa de la foto de perfil" })).toHaveAttribute("src", expect.stringContaining(productor.fotoPerfil));
     });
 
     it.each(["99222333"])("envía el contacto %j y vuelve al perfil actualizado", async (telefono) => {
         render(<FormularioModificarProductor productor={productor} perfilPropio />);
-        fireEvent.change(screen.getByLabelText(/WhatsApp/), { target: { value: telefono } });
+        fireEvent.change(screen.getByLabelText(/Teléfono/), { target: { value: telefono } });
         guardar();
         await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/mi-perfil/productor"));
         expect(mocks.guardar).toHaveBeenCalledExactlyOnceWith({ nombre: productor.nombre, codigoPais: "+598", telefono });
@@ -37,14 +37,14 @@ describe("formulario de mi perfil como Productor", () => {
 
     it("permite cargar contacto en un perfil sin número", async () => {
         render(<FormularioModificarProductor productor={{ ...productor, telefono: "" }} perfilPropio />);
-        fireEvent.change(screen.getByLabelText(/WhatsApp/), { target: { value: "099123456" } });
+        fireEvent.change(screen.getByLabelText(/Teléfono/), { target: { value: "099123456" } });
         guardar();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(expect.objectContaining({ telefono: "099123456" })));
     });
 
-    it("identifica WhatsApp como un campo obligatorio", () => {
+    it("identifica Teléfono como un campo obligatorio", () => {
         render(<FormularioModificarProductor productor={productor} perfilPropio />);
-        const telefono = screen.getByLabelText(/WhatsApp/);
+        const telefono = screen.getByLabelText(/Teléfono/);
         expect(telefono).toBeRequired();
         fireEvent.change(telefono, { target: { value: "" } });
         expect(telefono).toBeInvalid();

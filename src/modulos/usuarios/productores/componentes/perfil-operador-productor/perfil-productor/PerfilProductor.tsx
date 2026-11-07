@@ -6,6 +6,7 @@ import type { PerfilProductorPorOperador } from "../../../acciones/consultas-per
 import BotonVolver from "@/compartido/BotonVolver";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 
 import styles from "./PerfilProductor.module.css";
@@ -28,7 +29,7 @@ const registrarContactoWhatsApp = (tipo: "OPERADOR" | "PRODUCTOR", entidadId: nu
 };
 
 export default function PerfilProductor({ productor, hrefVolver = "/productores", textoVolver = "Volver al listado de productores" }: PerfilProductorProps) {
-    const inicialOperador = productor.nombreFantasia.trim()[0]?.toUpperCase();
+    const inicialesProductor = obtenerIniciales(productor.nombreFantasia);
 
     const numeroWhatsApp = productor.whatsApp.replace(/\D/g, "");
     const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
@@ -43,7 +44,7 @@ export default function PerfilProductor({ productor, hrefVolver = "/productores"
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
                         <ImagenPerfil src={productor.fotoPerfil} alt={`Foto de ${productor.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador}
-                            reemplazo={<span aria-hidden="true">{inicialOperador}</span>} />
+                            reemplazo={<span aria-hidden="true">{inicialesProductor}</span>} />
                     </div>
                     <div className={styles.identidad}>
                         <p className={styles.tipoPerfil}>Perfil Productor</p>

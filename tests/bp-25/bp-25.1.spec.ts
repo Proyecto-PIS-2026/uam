@@ -121,14 +121,14 @@ test.describe("BP-25.1: listado de Productores para Operadores", () => {
     await expect(tarjetas.first()).toContainText("Citrícola Salto Norte");
   });
 
-  test("CP-25.1-12: muestra la foto predeterminada cuando el Productor no tiene foto", async ({ page }) => {
+  test("CP-25.1-12: muestra las primeras dos iniciales cuando el Productor no tiene foto", async ({ page }) => {
     await iniciarSesion(page, "OPERADOR");
     await abrirListadoProductores(page);
 
     const tarjeta = tarjetasProductores(page).filter({ hasText: "Agro San José" });
     await expect(tarjeta).toBeVisible();
     await expect(tarjeta.locator("img")).toHaveCount(0);
-    await expect(tarjeta.locator(":scope > div").first().locator("span")).toHaveText("A");
+    await expect(tarjeta.locator(":scope > div").first().locator("span")).toHaveText("AS");
   });
 
   test("CP-25.1-04: muestra estado vacío si no hay Productores con publicaciones públicas", async ({ page }) => {

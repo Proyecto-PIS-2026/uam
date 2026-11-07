@@ -17,10 +17,11 @@ import NuevaPublicacion from "@/modulos/publicaciones/operadores/componentes/Nue
 import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import Link from "next/link";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 
 type PerfilOperadorAdminProps = {
@@ -44,7 +45,7 @@ function extraerLicencia(comentario: string | null | undefined) {
 }
 
 export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrecio }: PerfilOperadorAdminProps) {
-    const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
+    const inicialesOperador = obtenerIniciales(operador.nombreFantasia);
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(false);
     const { notificar } = useNotificacionToast();
@@ -72,7 +73,7 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
-                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialOperador}</span>} />
+                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialesOperador}</span>} />
                     </div>
 
                     <div className={styles.identidad}>
@@ -81,8 +82,8 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                     </div>
                     <div className={styles.accionesEncabezado}>
                         <p className={styles.contacto}>
-                            <WhatsAppIcon aria-hidden="true" />
-                            <span className={styles.etiqueta}>WhatsApp:</span>
+                            <PhoneOutlinedIcon aria-hidden="true" />
+                            <span className={styles.etiqueta}>Teléfono:</span>
                             <span>{operador.whatsApp || "Sin número de contacto"}</span>
                         </p>
                         <Link

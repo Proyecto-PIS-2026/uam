@@ -439,7 +439,8 @@
     /* CUERPO DESKTOP */
 
     .cuerpo {
-        display: block;
+        display: flex;
+        flex-direction: column;
         margin-top: auto;
     }
 
@@ -450,6 +451,7 @@
     .filaInferior {
         display: flex;
         min-width: 0;
+        flex: 1;
         align-items: center;
         justify-content: space-between;
         gap: var(--espacio-inline);

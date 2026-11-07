@@ -74,7 +74,7 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
     await expect(perfil.getByText(`Usuario: ${operador.usuario}`, { exact: true })).toBeVisible();
 
     // CA-3: número de contacto.
-    await expect(perfil.getByText("WhatsApp: +59899123456", { exact: true })).toBeVisible();
+    await expect(perfil.getByText("Teléfono: +59899123456", { exact: true })).toBeVisible();
 
     // CA-4: todos los locales con su nave.
     await expect(perfil.getByRole("listitem")).toHaveCount(2);
@@ -115,7 +115,7 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
     await page.goto("/mi-perfil");
     const perfil = page.getByRole("region", { name: operador.nombre, exact: true });
 
-    await expect(perfil.getByText("WhatsApp: No hay un número de contacto registrado.", { exact: true })).toBeVisible();
+    await expect(perfil.getByText("Teléfono: No hay un número de contacto registrado.", { exact: true })).toBeVisible();
     await expect(perfil.getByRole("img", { name: `Foto de ${operador.nombre}`, exact: true })).toHaveCount(0);
     await expect(perfil.getByText("No hay licencia registrada.", { exact: true })).toBeVisible();
   });

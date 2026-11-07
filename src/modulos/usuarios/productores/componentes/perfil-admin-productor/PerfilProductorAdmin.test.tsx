@@ -52,28 +52,28 @@ describe("PerfilProductorAdmin", () => {
         cleanup();
     });
 
-    // Muestra la identidad del productor: nombre de fantasía, inicial y WhatsApp
-    it("muestra el nombre de fantasía, la inicial y el WhatsApp del productor", () => {
+    // Muestra la identidad del productor: nombre de fantasía, iniciales y WhatsApp
+    it("muestra el nombre de fantasía, las iniciales y el WhatsApp del productor", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
         expect(screen.getByRole("heading", { level: 1, name: "Granja Los Álamos" })).toBeInTheDocument();
-        expect(screen.getByText("G")).toBeInTheDocument();
+        expect(screen.getByText("GL")).toBeInTheDocument();
         expect(screen.getByText("+59899200002")).toBeInTheDocument();
         expect(screen.getByText("Salto", { exact: false })).toBeInTheDocument();
     });
 
-    // Con foto, se muestra la foto en lugar de la inicial
+    // Con foto, se muestra la foto en lugar de las iniciales
     it("muestra la foto del productor cuando tiene", () => {
         render(<PerfilProductorAdmin productor={{ ...productorBase, fotoPerfil: "/productores/granja.jpg" }} />);
 
         expect(screen.getByRole("img", { name: "Foto de Granja Los Álamos" })).toBeInTheDocument();
-        expect(screen.queryByText("G")).not.toBeInTheDocument();
+        expect(screen.queryByText("GL")).not.toBeInTheDocument();
     });
 
-    it("recupera la inicial cuando falla la foto del productor", () => {
+    it("recupera las iniciales cuando falla la foto del productor", () => {
         render(<PerfilProductorAdmin productor={{ ...productorBase, fotoPerfil: "/productores/granja.jpg" }} />);
         fireEvent.error(screen.getByRole("img", { name: "Foto de Granja Los Álamos" }));
-        expect(screen.getByText("G")).toBeInTheDocument();
+        expect(screen.getByText("GL")).toBeInTheDocument();
         expect(screen.queryByRole("img", { name: "Foto de Granja Los Álamos" })).not.toBeInTheDocument();
     });
 

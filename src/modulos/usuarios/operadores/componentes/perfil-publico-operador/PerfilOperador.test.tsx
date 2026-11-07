@@ -59,14 +59,14 @@ describe("PerfilOperador", () => {
         vi.restoreAllMocks();
     });
 
-    it("muestra el nombre, la inicial y los locales agrupados por nave", () => {
+    it("muestra el nombre, las iniciales y los locales agrupados por nave", () => {
         render(<PerfilOperador operador={operador} />);
 
         expect(screen.getByRole("heading", {
             name: "Frutas del Norte",
         })).toBeInTheDocument();
 
-        expect(screen.getByText("F")).toBeInTheDocument();
+        expect(screen.getByText("FD")).toBeInTheDocument();
 
         expect(screen.queryByRole("img", {
             name: "Foto de Frutas del Norte",
@@ -95,7 +95,7 @@ describe("PerfilOperador", () => {
             name: "Foto de Frutas del Norte",
         })).toHaveAttribute("src", "/operador.jpg");
 
-        expect(screen.queryByText("F")).not.toBeInTheDocument();
+        expect(screen.queryByText("FD")).not.toBeInTheDocument();
     });
 
     it("muestra el estado vacío cuando el operador no tiene locales", () => {

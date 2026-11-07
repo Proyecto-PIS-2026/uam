@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-    obtenerFotoPerfilProductorPorUsuarioId,
+    obtenerIdentidadProductorPorUsuarioId,
     obtenerUsuarioAdministradorPorCorreo,
     obtenerUsuarioOperadorPorNombre,
     obtenerUsuarioProductorPorNombre,
@@ -84,17 +84,17 @@ describe("obtenerUsuarioAdministradorPorCorreo", () => {
     });
 });
 
-describe("obtenerFotoPerfilProductorPorUsuarioId", () => {
-    it("devuelve la foto del productor asociado al usuario", async () => {
-        baseSimulada.productor.first.mockResolvedValue({ fotoPerfil: "/api/imagenes/foto-productor" });
+describe("obtenerIdentidadProductorPorUsuarioId", () => {
+    it.each(["/api/imagenes/foto-productor", null])("devuelve nombre y foto del productor asociado al usuario: %s", async (fotoPerfil) => {
+        const perfil = { nombreFantasia: "Granja Norte", fotoPerfil };
+        baseSimulada.productor.first.mockResolvedValue(perfil);
 
-        expect(await obtenerFotoPerfilProductorPorUsuarioId(9)).toBe("/api/imagenes/foto-productor");
+        expect(await obtenerIdentidadProductorPorUsuarioId(9)).toEqual(perfil);
+        expect(baseSimulada.productor.select).toHaveBeenCalledWith("nombreFantasia", "fotoPerfil");
         expect(baseSimulada.productor.where).toHaveBeenCalledWith({ usuarioId: 9 });
     });
 
-    it.each([null, { fotoPerfil: null }])("devuelve null si el productor no tiene foto: %s", async (productor) => {
-        baseSimulada.productor.first.mockResolvedValue(productor);
-
-        expect(await obtenerFotoPerfilProductorPorUsuarioId(9)).toBeNull();
+    it("devuelve null si no existe el productor", async () => {
+        expect(await obtenerIdentidadProductorPorUsuarioId(9)).toBeNull();
     });
 });

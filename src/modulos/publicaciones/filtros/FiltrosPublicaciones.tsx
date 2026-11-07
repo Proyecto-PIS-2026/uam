@@ -450,7 +450,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                 </div>
                 {/* Precio maximo */}
                 <div className={styles.filtroPrecioMaximo}>
-                    <TextField fullWidth size="small" id="precio-maximo" label="Precio Máximo" type="text" value={precioMaximo} placeholder="Sin límite" className={styles.selectMui} error={rangoPrecioInvalido}
+                    <TextField fullWidth size="small" id="precio-maximo" label="Precio Máximo" type="text" value={precioMaximo} placeholder="Sin máximo" className={styles.selectMui} error={rangoPrecioInvalido}
                         slotProps={{
                             htmlInput: {
                                 inputMode: "numeric",

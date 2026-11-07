@@ -187,7 +187,7 @@ test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo P
       await page.getByRole("link", { name: "Editar productor" }).click();
       await expect(page.getByRole("heading", { name: "Modificar productor" })).toBeVisible();
       const nombreCampo = page.getByRole("textbox", { name: "Nombre", exact: true });
-      const telefono = page.getByRole("textbox", { name: "WhatsApp" });
+      const telefono = page.getByRole("textbox", { name: "Teléfono" });
       await expect(nombreCampo).toHaveValue(nombre);
       await expect(telefono).toHaveValue("99123456");
 
@@ -196,10 +196,10 @@ test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo P
       await expect(page.getByRole("heading", { name: nombre, exact: true })).toBeVisible();
       await page.getByRole("link", { name: "Editar productor" }).click();
 
-      await page.getByRole("textbox", { name: "WhatsApp" }).fill("123");
+      await page.getByRole("textbox", { name: "Teléfono" }).fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
       await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("El teléfono no es válido.");
-      await page.getByRole("textbox", { name: "WhatsApp" }).fill("99234567");
+      await page.getByRole("textbox", { name: "Teléfono" }).fill("99234567");
 
       await page.getByRole("textbox", { name: "Nombre", exact: true }).fill("");
       await page.getByRole("button", { name: "Guardar cambios" }).click();

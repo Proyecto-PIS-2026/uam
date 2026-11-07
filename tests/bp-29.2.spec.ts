@@ -60,7 +60,7 @@ async function cargar(page: Page) {
 }
 
 async function contador(page: Page, cantidad: number) {
-  const distintivo = cuenta(page).locator("span[aria-hidden='true']");
+  const distintivo = cuenta(page).locator(".MuiBadge-badge");
   if (cantidad === 0) {
     await expect(distintivo).toHaveCount(0);
     await expect(cuenta(page)).not.toHaveAttribute("aria-describedby", /.+/);
@@ -92,7 +92,7 @@ test("CP-29.2-01: sin sesión no hay acceso ni contador de notificaciones", asyn
   await expect(page.getByRole("menuitem", { name: "Notificaciones", exact: true })).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   const abrir = page.getByRole("button", { name: "Abrir menú", exact: true });
-  await expect(abrir.locator("span[aria-hidden='true']")).toHaveCount(0);
+  await expect(abrir.locator(".MuiBadge-badge")).toHaveCount(0);
   await abrir.click();
   await expect(page.getByRole("navigation", { name: "Navegación móvil", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Notificaciones", exact: true })).toHaveCount(0);
@@ -137,7 +137,7 @@ test("CP-29.2-07: la barra tiene campana y contador y abre las notificaciones", 
   await expect(acceso).toHaveAttribute("href", "/notificaciones");
   await expect(acceso).toHaveAccessibleDescription("3 notificaciones sin leer");
   await expect(acceso.locator("svg")).toHaveCount(1);
-  await expect(acceso.locator("span[aria-hidden='true']")).toHaveText("3");
+  await expect(acceso.locator(".MuiBadge-badge")).toHaveText("3");
   await acceso.click();
   await expect(page).toHaveURL(/\/notificaciones$/, { timeout: 30_000 });
   await expect(filas(page)).toHaveCount(3, { timeout: 30_000 });

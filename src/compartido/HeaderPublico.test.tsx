@@ -1,5 +1,6 @@
 
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { createElement } from "react";
 import type { RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import * as autorizacion from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { usePathname } from "next/navigation";
@@ -16,13 +17,13 @@ vi.mock("next/image", () => ({
         alt,
         src,
         className,
+        onError,
     }: {
         alt?: string;
         src?: string;
         className?: string;
-    }) => (
-        <span role="img" aria-label={alt} data-src={src} className={className}/>
-    ),
+        onError?: () => void;
+    }) => createElement("img", { role: "img", alt: alt ?? "", "data-src": src, className, onError }),
 }));
 vi.mock("next/link", () => ({
     default: ({
@@ -90,9 +91,10 @@ describe("HeaderPublico", () => {
     it.each([
         { rol: "OPERADOR", ruta: "/mi-perfil" },
         { rol: "PRODUCTOR", ruta: "/mi-perfil/productor" },
-    ] as const)("muestra la foto del $rol en los menús de escritorio y móvil", ({ rol, ruta }) => {
+    ] as const)("muestra la foto o las iniciales del $rol en los menús de escritorio y móvil", ({ rol, ruta }) => {
         const fotoPerfil = "/api/imagenes/foto-perfil";
-        render(<HeaderPublico sesion={{ usuarioId: 10, rol, expiraEn: 2000000000 }} fotoPerfil={fotoPerfil} />);
+        const sesion = { usuarioId: 10, rol, expiraEn: 2000000000 };
+        const vista = render(<HeaderPublico sesion={sesion} fotoPerfil={fotoPerfil} nombrePerfil="Huerta Sur Mercado" />);
 
         expect(within(screen.getByRole("button", { name: "Abrir menú de usuario" }))
             .getByRole("img", { name: "Foto de perfil" })).toHaveAttribute("data-src", fotoPerfil);
@@ -102,6 +104,14 @@ describe("HeaderPublico", () => {
             .getByRole("link", { name: "Mi perfil" });
         expect(enlacePerfil).toHaveAttribute("href", ruta);
         expect(within(enlacePerfil).getByRole("img", { name: "" })).toHaveAttribute("data-src", fotoPerfil);
+
+        fireEvent.error(within(enlacePerfil).getByRole("img", { name: "" }));
+        expect(within(screen.getByRole("button", { name: "Abrir menú de usuario" })).getByText("HS")).toBeInTheDocument();
+        expect(within(enlacePerfil).getByText("HS")).toBeInTheDocument();
+
+        vista.rerender(<HeaderPublico sesion={sesion} nombrePerfil="  álamo   del  sur  " />);
+        expect(within(screen.getByRole("button", { name: "Abrir menú de usuario" })).getByText("ÁD")).toBeInTheDocument();
+        expect(within(enlacePerfil).getByText("ÁD")).toBeInTheDocument();
     });
 
     it("ofrece la ruta real de Administración al administrador en ambos menús", () => {
