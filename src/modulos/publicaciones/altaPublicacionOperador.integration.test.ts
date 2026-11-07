@@ -132,7 +132,9 @@ async function obtenerUsuarioOperador(operadorId: number) {
 }
 
 function obtenerFechaSnapshotActual(): Temporal.Instant {
-    const fechaStr = new Date().toISOString().slice(0, 10);
+    const fechaStr = Temporal.Now
+        .plainDateISO("America/Montevideo")
+        .toString();
 
     return Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
 }

@@ -261,10 +261,8 @@ export async function altaPublicacionProductor(
                         .where({ productorId: productor.id })
                         .all();
 
-                const fechaStr = new Date().toISOString().slice(0, 10);
-                const fecha = Temporal.Instant.from(
-                    `${fechaStr}T00:00:00Z`,
-                );
+                const fechaStr = Temporal.Now.plainDateISO("America/Montevideo").toString();
+                const fecha = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
 
                 const estadisticaExistente =
                     await tx.orm.public.EstadisticaCantidadPublicacion

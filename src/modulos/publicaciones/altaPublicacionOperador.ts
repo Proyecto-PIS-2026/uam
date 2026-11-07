@@ -147,7 +147,7 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
                 .where({ operadorId: operador.id })
                 .all();
 
-            const fechaStr = new Date().toISOString().slice(0, 10);
+            const fechaStr = Temporal.Now.plainDateISO("America/Montevideo").toString();
             const fecha = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
 
             const estadisticaExistente = await tx.orm.public.EstadisticaCantidadPublicacion

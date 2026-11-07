@@ -235,6 +235,14 @@ function configurarVigencia(
     );
 }
 
+function obtenerFechaEstadisticaEsperada(): Temporal.Instant {
+    const fechaStr = Temporal.Now
+        .plainDateISO("America/Montevideo")
+        .toString();
+
+    return Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
+}
+
 describe("altaPublicacionProductor", () => {
     beforeEach(() => {
         vi.resetAllMocks();
@@ -898,7 +906,7 @@ describe("altaPublicacionProductor", () => {
         });
     });
 
-    it("crea el registro estadístico cuando todavía no existe uno para el día", async () => {
+    it("crea el registro estadístico con la fecha del día actual de Uruguay", async () => {
         await expect(
             altaPublicacionProductor(datos),
         ).resolves.toEqual({
@@ -914,6 +922,13 @@ describe("altaPublicacionProductor", () => {
             username: "productor1",
             cantidad: 1,
         });
+
+        const fechaRegistrada = mocks.crearEstadistica.mock.calls[0][0]
+            .fecha as Temporal.Instant;
+
+        expect(fechaRegistrada.toString()).toBe(
+            obtenerFechaEstadisticaEsperada().toString(),
+        );
 
         expect(mocks.actualizarEstadistica).not.toHaveBeenCalled();
     });

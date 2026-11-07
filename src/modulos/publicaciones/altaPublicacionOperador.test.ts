@@ -1,3 +1,6 @@
+import "temporal-polyfill/full/global";
+import "temporal-polyfill/types/global";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { altaPublicacionOperador } from "./altaPublicacionOperador";
 import { ErrorImagenPublicacion } from "./operadores/imagenes-publicacion";
@@ -148,6 +151,14 @@ const RELACION_CREADA = {
     operadorId: 1,
     paisId: 60,
 };
+
+function obtenerFechaEstadisticaEsperada(): Temporal.Instant {
+    const fechaStr = Temporal.Now
+        .plainDateISO("America/Montevideo")
+        .toString();
+
+    return Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
+}
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -402,18 +413,25 @@ describe("altaPublicacionOperador", () => {
         );
     });
 
-    it("crea el registro estadístico cuando todavía no existe uno para el día", async () => {
+    it("crea el registro estadístico con la fecha del día actual de Uruguay", async () => {
         expect((await altaPublicacionOperador(DATOS)).esValido).toBe(true);
 
         expect(mocks.usuarioActual).toHaveBeenCalled();
         expect(mocks.estadisticaExistente).toHaveBeenCalled();
 
-        expect(mocks.crearEstadistica).toHaveBeenCalledWith(
+        expect(mocks.crearEstadistica).toHaveBeenCalledExactlyOnceWith(
             expect.objectContaining({
                 username: "operador1",
                 cantidad: 1,
                 fecha: expect.anything(),
             }),
+        );
+
+        const fechaRegistrada = mocks.crearEstadistica.mock.calls[0][0]
+            .fecha as Temporal.Instant;
+
+        expect(fechaRegistrada.toString()).toBe(
+            obtenerFechaEstadisticaEsperada().toString(),
         );
 
         expect(mocks.actualizarEstadistica).not.toHaveBeenCalled();
