@@ -352,33 +352,56 @@ model HistoricoPrecios {
 
 // ESTADISTICA DE VISITAS
 model EstadisticaVisita {
-    id             Int      @id @default(autoincrement())
-    fecha          DateTime 
-    tipoVisitante  String   
-    cantidad       Int      @default(0)
+  id             Int      @id @default(autoincrement())
+  fecha          DateTime 
+  tipoVisitante  String   
+  cantidad       Int      @default(0)
 
-    @@unique([fecha, tipoVisitante])
-    @@map("estadisticaVisita")
+  @@unique([fecha, tipoVisitante])
+  @@map("estadisticaVisita")
 }
 
-// ESTADISTICA DE CONTACTOS
+// ESTADISTICA DE CONTACTOS POR PERFIL
 model EstadisticaContacto {
-    id           Int      @id @default(autoincrement())
-    fecha        DateTime 
-    username     String   
-    cantidad     Int      @default(0)
+  id           Int      @id @default(autoincrement())
+  fecha        DateTime 
+  username     String   
+  cantidad     Int      @default(0)
 
-    @@unique([fecha, username])
-    @@map("estadisticaContacto")
+  @@unique([fecha, username])
+  @@map("estadisticaContacto")
 }
 
-// ESTADISTICA DE PUBLICACIONES
-model EstadisticaPublicacion {
-    id           Int      @id @default(autoincrement())
-    fecha        DateTime 
-    username     String   
-    cantidad     Int      @default(0)
+// ESTADISTICA DE CONTACTOS POR PUBLICACION
+model EstadisticaContactoPublicacion {
+  id       Int      @id @default(autoincrement())
+  fecha    DateTime
+  username String
+  especie  String
+  cantidad Int      @default(0)
 
-    @@unique([fecha, username])
-    @@map("estadisticaPublicacion")
+  @@unique([fecha, username, especie])
+  @@map("estadisticaContactoPublicacion")
+}
+
+// ESTADISTICA DE PUBLICACIONES MODIFICADAS
+model EstadisticaPublicacion {
+  id           Int      @id @default(autoincrement())
+  fecha        DateTime 
+  username     String   
+  cantidad     Int      @default(0)
+
+  @@unique([fecha, username])
+  @@map("estadisticaPublicacion")
+}
+
+// ESTADISTICA DE  CANTIDAD DE PUBLICACIONES EN EL SISTEMA
+model EstadisticaCantidadPublicacion {
+  id       Int      @id @default(autoincrement())
+  fecha    DateTime
+  username String
+  cantidad Int      @default(0)
+
+  @@unique([fecha, username])
+  @@map("estadisticaCantidadPublicacion")
 }

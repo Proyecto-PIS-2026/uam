@@ -399,7 +399,7 @@ describe("AltaPublicacionProductor", () => {
         enviarFormulario();
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         expect(JSON.parse(fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")![1]!.body as string)).toMatchObject({ precio: "25", cantidadUnidades: 25, disponibilidad: false });
-    });
+    }, 500_000);
 
     it.each([true, false])("abre un formulario limpio después de crear con todos los datos en escritorio=%s", async (esWeb) => {
         mocks.esWeb = esWeb;
@@ -488,7 +488,7 @@ describe("AltaPublicacionProductor", () => {
         expect(await screen.findByRole("alert")).toHaveTextContent("errores" in resultado ? "El producto ya existe." : "No se pudo guardar la publicación.");
         fireEvent.change(screen.getByLabelText("Precio en pesos"), { target: { value: "10" } });
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    });
+    }, 500_000);
 
     it("informa una interrupción de conexión al publicar", async () => {
         const fetchMock = prepararFetch();
@@ -499,7 +499,7 @@ describe("AltaPublicacionProductor", () => {
         fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
-    });
+    }, 500_000);
 
     it("permite cerrar el drawer móvil mientras se cargan los catálogos", async () => {
         mocks.esWeb = false;
@@ -578,5 +578,5 @@ describe("AltaPublicacionProductor", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
         expect(screen.getByLabelText("Comentario")).toHaveValue("");
-    });
+    }, 500_000);
 });

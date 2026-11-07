@@ -1,19 +1,33 @@
-
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
 import type { PerfilPropioOperador as Perfil } from "../../consultasPerfilPropio";
 import PerfilPropioOperador from "./PerfilPropioOperador";
 
 vi.mock("next/image", () => ({
-    default: (props: { src: string; alt: string; onError?: () => void }) => (
-        <span role="img" aria-label={props.alt} data-src={props.src} />
-    ),
+    default: ({
+        src,
+        alt,
+        onError,
+    }: {
+        src: string;
+        alt?: string;
+        onError?: () => void;
+    }) =>
+        createElement("img", {
+            src,
+            alt: alt ?? "",
+            onError,
+        }),
 }));
+
 vi.mock("./FormularioPerfilPropio", () => ({
     default: ({ alCancelar }: { alCancelar: () => void }) => (
         <div>
             <span>Formulario simulado</span>
-            <button type="button" onClick={alCancelar}>Cancelar edición</button>
+            <button type="button" onClick={alCancelar}>
+                Cancelar edición
+            </button>
         </div>
     ),
 }));
@@ -48,18 +62,61 @@ describe("PerfilPropioOperador", () => {
     });
 
     it("oculta el acceso al cambio de contraseña cuando está deshabilitado", () => {
-        render(<PerfilPropioOperador perfil={perfil} cambioContrasenaHabilitado={false} />);
-        expect(screen.queryByRole("link", { name: "Cambiar contraseña" })).not.toBeInTheDocument();
+        render(
+            <PerfilPropioOperador
+                perfil={perfil}
+                cambioContrasenaHabilitado={false}
+            />,
+        );
+
+        expect(
+            screen.queryByRole("link", {
+                name: "Cambiar contraseña",
+            }),
+        ).not.toBeInTheDocument();
     });
 
     it("muestra el estado vacío y permite entrar y salir de edición", () => {
-        const perfilSinDatos = { ...perfil, locales: [], enLicencia: false, comentario: null, contacto: null };
-        render(<PerfilPropioOperador perfil={perfilSinDatos} />);
-        expect(screen.getByText("Sin locales registrados")).toBeInTheDocument();
-        expect(screen.getByText("No hay licencia registrada.")).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-        expect(screen.getByText("Formulario simulado")).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Cancelar edición" }));
-        expect(screen.getByRole("heading", { name: "Frutas del Norte" })).toBeInTheDocument();
+        const perfilSinDatos = {
+            ...perfil,
+            locales: [],
+            enLicencia: false,
+            comentario: null,
+            contacto: null,
+        };
+
+        render(
+            <PerfilPropioOperador perfil={perfilSinDatos} />,
+        );
+
+        expect(
+            screen.getByText("Sin locales registrados"),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByText("No hay licencia registrada."),
+        ).toBeInTheDocument();
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Editar",
+            }),
+        );
+
+        expect(
+            screen.getByText("Formulario simulado"),
+        ).toBeInTheDocument();
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Cancelar edición",
+            }),
+        );
+
+        expect(
+            screen.getByRole("heading", {
+                name: "Frutas del Norte",
+            }),
+        ).toBeInTheDocument();
     });
 });

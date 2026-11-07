@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { validarAltaPublicacionProductor } from "./validarAltaPublicacionProductor";
-import { validarAltaPublicacionOperador } from "./validarAltaPublicacionOperador";
 
 const datosValidos = {
     productorId: 1, especieId: 2, variedadId: 3, envaseId: 4, kilosId: null,

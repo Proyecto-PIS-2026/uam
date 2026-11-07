@@ -2,6 +2,7 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
 import type { Numeric } from "@prisma/orm-postgres/target/codec-types";
 import { MAXIMO_PRECIO_PUBLICACION } from "../precio-publicacion";
+import { Temporal } from "temporal-polyfill";
 import { agregarEstadoFotosPropias } from "../estado-fotos-propias";
 
 export class PublicacionNoEncontradaError extends Error {
@@ -67,6 +68,26 @@ export async function incrementarPrecioPublicacion(operadorId: number, publicaci
     return guardarPrecio(operadorId, publicacionId, incremento, true);
 }
 
+async function registrarEstadisticaPublicacion(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], operadorId: number) {
+    const operador = await tx.orm.public.Operador.select("usuarioId").where({ id: operadorId }).first();
+    if (!operador) throw new PublicacionNoEncontradaError(); 
+    const usuario = await tx.orm.public.Usuario.select("username").where({ id: operador.usuarioId }).first();
+    if (!usuario?.username) throw new Error("No se pudo obtener el usuario del operador.");
+    const ahora = new Date();
+    const fechaStr = [ahora.getFullYear(), String(ahora.getMonth() + 1).padStart(2, "0"), String(ahora.getDate()).padStart(2, "0")].join("-");
+    const fecha = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
+    const existente = await tx.orm.public.EstadisticaPublicacion.where({ fecha, username: usuario.username }).first();
+    if (existente) {
+        await tx.orm.public.EstadisticaPublicacion.where({ id: existente.id }).update({ cantidad: existente.cantidad + 1 });
+    } else {
+        await tx.orm.public.EstadisticaPublicacion.create({
+            fecha,
+            username: usuario.username,
+            cantidad: 1,
+        });
+    }
+}
+
 async function guardarPrecio(operadorId: number, publicacionId: number, valor: number | null, incrementar: boolean, versionEsperada?: number): Promise<PrecioActualizado> {
     return db.transaction(async (tx) => {
         await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ${operadorId})`
@@ -89,6 +110,7 @@ async function guardarPrecio(operadorId: number, publicacionId: number, valor: n
             throw new ConflictoPublicacionError({ precio: vigente.precio === null ? null : Number(vigente.precio), fecha: vigente.fecha.toString(), version: vigente.version });
         }
         await notificarCambioPublicacion(tx, { operadorId, publicacionId });
+        await registrarEstadisticaPublicacion(tx, operadorId);
         return { precio: actualizada.precio === null ? null : Number(actualizada.precio), fecha: actualizada.fecha.toString(), version: actualizada.version };
     });
 }

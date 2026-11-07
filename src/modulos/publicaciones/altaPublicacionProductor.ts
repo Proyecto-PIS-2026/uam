@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import { validarCatalogosSeleccion } from "./seleccion-publicacion";
 import { db } from "../../infraestructura/persistencia/prisma/db";
 import { ErrorImagenProductor, guardarImagenProductor } from "./imagenes-productor";
@@ -96,6 +97,46 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
                     departamento: datos.departamento,
                 });
             }
+            const usuarioActual = await tx.orm.public.Usuario
+                .where({ id: productorActual.usuarioId })
+                .first();
+
+            if (!usuarioActual) {
+                throw new Error(
+                    "No se encontró el usuario asociado al productor.",
+                );
+            }
+
+            const relacionesActualizadas =
+                await tx.orm.public.PublicacionProductor
+                    .where({ productorId: productor.id })
+                    .all();
+
+            const fechaStr = Temporal.Now.plainDateISO("America/Montevideo").toString();
+            const fecha = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
+
+            const estadisticaExistente =
+                await tx.orm.public.EstadisticaCantidadPublicacion
+                    .where({
+                        fecha,
+                        username: usuarioActual.username,
+                    })
+                    .first();
+
+            if (estadisticaExistente) {
+                await tx.orm.public.EstadisticaCantidadPublicacion
+                    .where({ id: estadisticaExistente.id })
+                    .update({
+                        cantidad: relacionesActualizadas.length,
+                    });
+            } else {
+                await tx.orm.public.EstadisticaCantidadPublicacion.create({
+                    fecha,
+                    username: usuarioActual.username,
+                    cantidad: relacionesActualizadas.length,
+                });
+            }
+
             return { esValido: true, id: publicacion.id, mensaje: "Publicación creada correctamente." };
         });
     } catch (error) {

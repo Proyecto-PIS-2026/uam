@@ -500,15 +500,22 @@ describe("DrawerPublicacion con operadores", () => {
         expect(url.searchParams.get("text")).toBe(mensajeWhatsApp);
     });
 
-    it("registra el contacto de WhatsApp del operador", () => {
+    it("registra el contacto de WhatsApp del operador junto con la publicación", () => {
         const fetchMock = vi.fn().mockResolvedValue({});
         vi.stubGlobal("fetch", fetchMock);
+
         render(<DrawerPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} />);
+
         fireEvent.click(screen.getByRole("link", { name: "Contactar a Huerta Sur por WhatsApp" }));
+
         expect(fetchMock).toHaveBeenCalledExactlyOnceWith("/api/estadisticas/whatsapp", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tipo: "OPERADOR", entidadId: 10 }),
+            body: JSON.stringify({
+                tipo: "OPERADOR",
+                entidadId: 10,
+                publicacionId: 7,
+            }),
             keepalive: true,
         });
     });
@@ -552,15 +559,22 @@ describe("DrawerPublicacion con productores", () => {
         expect(enlace).toHaveAttribute("rel", "noopener noreferrer");
     });
 
-    it("registra el contacto de WhatsApp del productor", () => {
+    it("registra el contacto de WhatsApp del productor junto con la publicación", () => {
         const fetchMock = vi.fn().mockResolvedValue({});
         vi.stubGlobal("fetch", fetchMock);
+
         render(<DrawerPublicacion publicacion={crearPublicacionProductor()} open onOpenChange={vi.fn()} />);
+
         fireEvent.click(screen.getByRole("link", { name: "Contactar a Huerta Productora por WhatsApp" }));
+
         expect(fetchMock).toHaveBeenCalledExactlyOnceWith("/api/estadisticas/whatsapp", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tipo: "PRODUCTOR", entidadId: 30 }),
+            body: JSON.stringify({
+                tipo: "PRODUCTOR",
+                entidadId: 30,
+                publicacionId: 8,
+            }),
             keepalive: true,
         });
     });
