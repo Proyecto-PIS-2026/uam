@@ -3,6 +3,9 @@ import { modificarAdministrador } from "./modificarAdministrador";
 
 const autorizacion = vi.hoisted(() => ({ exigirAdministrador: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => autorizacion);
+vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({
+    controlarSesionEnAccion: (exigir: () => Promise<unknown>) => exigir(),
+}));
 
 const cache = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
 vi.mock("next/cache", () => cache);
@@ -152,7 +155,7 @@ describe("modificarAdministrador", () => {
         expect(mockArgon2.hash).not.toHaveBeenCalled();
     });
 
-    it("guarda el hash de la contraseña nueva sin tocar el segundo factor", async () => {
+    it("restablece la contraseña, limpia la solicitud pendiente y conserva el segundo factor", async () => {
         await modificarAdministrador({
             ...datosValidos,
             contraseña: "contraseña123",
@@ -160,7 +163,7 @@ describe("modificarAdministrador", () => {
         });
 
         expect(mockArgon2.hash).toHaveBeenCalledWith("contraseña123", { type: 2 });
-        expect(mockDb.usuario.update).toHaveBeenCalledWith({ username: "beto.admin", passwordHash: "hash-falso" });
+        expect(mockDb.usuario.update).toHaveBeenCalledWith({ username: "beto.admin", passwordHash: "hash-falso", solicitoRestablecimiento: false });
     });
 
     it("refresca el panel y el perfil después de guardar", async () => {

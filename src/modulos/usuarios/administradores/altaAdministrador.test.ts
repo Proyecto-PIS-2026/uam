@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
     usuarioExistente: vi.fn(), emailExistente: vi.fn(), crearUsuario: vi.fn(), crearAdministrador: vi.fn(),
 }));
 
+vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({ controlarSesionEnAccion: (control: () => Promise<unknown>) => control() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirAdministrador: mocks.exigir }));
 vi.mock("./validarAltaAdministrador", () => ({ validarAltaAdministrador: mocks.validar }));
 vi.mock("argon2", () => ({ default: { hash: mocks.hash, argon2id: 2 } }));

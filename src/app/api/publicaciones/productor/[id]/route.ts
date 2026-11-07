@@ -7,7 +7,7 @@ import { ErrorEdicionPublicacionProductor, modificarPublicacionProductor, obtene
 import { bajaPublicacionProductorAutorizada, ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada";
 import { ErrorCuerpoDemasiadoGrande, leerFormularioLimitado } from "@/infraestructura/http/cuerpo-limitado";
 import { agregarEstadoFotosPropias } from "@/modulos/publicaciones/estado-fotos-propias";
-import { Temporal } from "temporal-polyfill";
+import { registrarPublicacion } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 
 export const runtime = "nodejs";
@@ -41,29 +41,7 @@ async function registrarEstadisticaPublicacionPorProductorId(productorId: number
         if (productorRecord) {
             const usuarioVinculado = await db.orm.public.Usuario.select("username").where({ id: productorRecord.usuarioId }).first();
             if (usuarioVinculado?.username) {
-                const ahora = new Date();
-                const anio = ahora.getFullYear();
-                const mes = String(ahora.getMonth() + 1).padStart(2, "0");
-                const dia = String(ahora.getDate()).padStart(2, "0");
-                const fechaStr = `${anio}-${mes}-${dia}`;
-                const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
-                const username = usuarioVinculado.username;
-
-                const existente = await db.orm.public.EstadisticaPublicacion
-                    .where({ fecha: fechaInstant, username })
-                    .first();
-
-                if (existente) {
-                    await db.orm.public.EstadisticaPublicacion
-                        .where({ id: existente.id })
-                        .update({ cantidad: existente.cantidad + 1 });
-                } else {
-                    await db.orm.public.EstadisticaPublicacion.create({
-                        fecha: fechaInstant,
-                        username: username,
-                        cantidad: 1,
-                    });
-                }
+                await registrarPublicacion(usuarioVinculado.username);
             }
         }
     } catch (errEst) {

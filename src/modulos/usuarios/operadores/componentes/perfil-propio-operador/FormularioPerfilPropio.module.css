@@ -1,11 +1,14 @@
 .pagina {
+    width: 100%;
+    max-width: var(--ancho-maximo-pagina);
+    margin: 0 auto;
     padding: var(--padding-exterior-pagina);
     background: var(--color-background);
     color: var(--color-foreground);
 }
 
 .contenedor {
-    width: min(860px, 100%);
+    width: 100%;
     margin: 0 auto;
 }
 
@@ -79,6 +82,25 @@
     display: grid;
     grid-template-columns: 13rem minmax(0, 1fr);
     gap: var(--espacio-controles);
+}
+
+.aviso {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    margin: 0;
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radio-control);
+    background: var(--color-warning-soft);
+    color: var(--color-muted);
+    font-size: .8rem;
+    line-height: 1.1;
+}
+
+.iconoAviso {
+    flex-shrink: 0;
+    color: var(--color-warning);
+    font-size: .9rem;
 }
 
 .licencia {

@@ -25,8 +25,15 @@
     object-fit: cover;
 }
 
-.sinFoto {
+.sinFoto,
+.iniciales {
     font-size: 3rem;
+}
+
+.iniciales {
+    color: var(--color-secondary);
+    font-weight: 700;
+    line-height: 1;
 }
 
 .contenido {
@@ -86,7 +93,8 @@
         height: 4.5rem;
     }
 
-    .sinFoto {
+    .sinFoto,
+    .iniciales {
         font-size: 2rem;
     }
 

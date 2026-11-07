@@ -1,4 +1,3 @@
-
 import "temporal-polyfill/full/global";
 import "temporal-polyfill/types/global";
 
@@ -22,6 +21,7 @@ vi.mock("next/cache", () => ({
 
 function obtenerFechaEstadisticaActual() {
     const fechaStr = new Date().toISOString().slice(0, 10);
+
     return Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
 }
 
@@ -38,24 +38,44 @@ async function crearProductorDePrueba() {
         whatsApp: "099123456",
     });
 
-    return { usuario, productor };
+    return {
+        usuario,
+        productor,
+    };
 }
 
 async function crearPublicacionDePrueba(productorId: number) {
-    const calibre = (await db.orm.public.Calibre.all())[0];
-    const categoria = (await db.orm.public.Categoria.all())[0];
+    const [
+        calibres,
+        categorias,
+        variedades,
+        envases,
+        kilosEmpaquetados,
+        paises,
+    ] = await Promise.all([
+        db.orm.public.Calibre.all(),
+        db.orm.public.Categoria.all(),
+        db.orm.public.Variedad.all(),
+        db.orm.public.Envase.all(),
+        db.orm.public.KilosEmpaquetado.all(),
+        db.orm.public.Pais.all(),
+    ]);
 
-    const presentacion = (
-        await db.orm.public.Presentacion
-            .include("variedad", (variedad) =>
-                variedad.select("id", "especieId"),
-            )
-            .all()
-    )[0];
+    const calibre = calibres[0];
+    const categoria = categorias[0];
+    const variedad = variedades[0];
+    const envase = envases[0];
+    const kilos = kilosEmpaquetados[0];
+    const pais = paises[0];
 
-    const pais = (await db.orm.public.Pais.all())[0];
-
-    if (!calibre || !categoria || !presentacion || !pais) {
+    if (
+        !calibre ||
+        !categoria ||
+        !variedad ||
+        !envase ||
+        !kilos ||
+        !pais
+    ) {
         throw new Error(
             "Faltan datos de referencia para crear la publicación de prueba.",
         );
@@ -69,11 +89,13 @@ async function crearPublicacionDePrueba(productorId: number) {
         fecha: Temporal.Instant.fromEpochMilliseconds(
             new Date("2026-10-03T15:00:00.000Z").getTime(),
         ),
+        fechaVigencia: null,
         foto: null,
         precio,
-        especieId: presentacion.variedad.especieId,
-        variedadId: presentacion.variedad.id,
-        presentacionId: presentacion.id,
+        especieId: variedad.especieId,
+        variedadId: variedad.id,
+        envaseId: envase.id,
+        kilosId: kilos.id,
         publicacionActiva: true,
         publicacionDisponible: true,
         tipoPublicacion: "PRODUCTOR",
@@ -86,7 +108,10 @@ async function crearPublicacionDePrueba(productorId: number) {
         paisId: pais.id,
     });
 
-    return { publicacion, relacion };
+    return {
+        publicacion,
+        relacion,
+    };
 }
 
 async function obtenerEstadisticasDelDia() {
@@ -98,7 +123,7 @@ async function obtenerEstadisticasDelDia() {
         .all();
 }
 
-describe("baja de productor", () => {
+describe.sequential("baja de productor", () => {
     beforeEach(async () => {
         // Eliminar estadísticas de ejecuciones anteriores.
         await db.orm.public.EstadisticaCantidadPublicacion
@@ -244,8 +269,8 @@ describe("baja de productor", () => {
 
         const fecha = obtenerFechaEstadisticaActual();
 
-        const estadisticaInicial = await db.orm.public.EstadisticaCantidadPublicacion
-            .create({
+        const estadisticaInicial =
+            await db.orm.public.EstadisticaCantidadPublicacion.create({
                 fecha,
                 username: usuario.username,
                 cantidad: 1,

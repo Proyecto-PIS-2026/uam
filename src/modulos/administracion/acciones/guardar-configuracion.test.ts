@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     update: vi.fn(),
 }));
 
+vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({ controlarSesionEnAccion: (control: () => Promise<unknown>) => control() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
     exigirAdministrador: mocks.exigirAdministrador,
 }));
@@ -88,7 +89,6 @@ describe("guardarConfiguraciones", () => {
     });
 
     it.each([
-        "",
         "https://uam.com.uy/lista.pdf",
         "http://uam.com.uy/lista.pdf",
         "https://uam.com.uy/lista.PDF",
@@ -99,6 +99,12 @@ describe("guardarConfiguraciones", () => {
         expect(mocks.exigirAdministrador).toHaveBeenCalledOnce();
         expect(mocks.where).toHaveBeenCalledWith({ nombreConfiguracion: "url_lista_inteligente" });
         expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: valor });
+    });
+
+    it.each(["", "   ", "\t\r\n"])("rechaza una URL vacía %j sin reemplazar la configuración guardada", async (valor) => {
+        await expect(guardarConfiguraciones({ url_lista_inteligente: valor })).rejects.toThrow("La URL de la Lista Inteligente no puede estar vacía.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -286,6 +292,24 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
     it("permite un día de vigencia con avisos apagados", async () => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "1", [grupo.avisos]: "false", [grupo.anticipacion]: "" }))).resolves.toBeUndefined();
     });
+
+    it("permite una vigencia de 36500 días", async () => {
+        await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "36500" }))).resolves.toBeUndefined();
+        expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: "36500" });
+    });
+
+    if (grupo.nombre === "fotos") {
+        it("rechaza una vigencia de fotos mayor a 36500 días antes de guardar", async () => {
+            await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "36501" }))).rejects.toThrow("La vigencia de las fotos no puede superar los 36500 días.");
+            expect(mocks.transaction).not.toHaveBeenCalled();
+            expect(mocks.update).not.toHaveBeenCalled();
+        });
+    } else {
+        it("conserva la validación de publicaciones sin el límite exclusivo de las fotos", async () => {
+            await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "36501" }))).resolves.toBeUndefined();
+            expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: "36501" });
+        });
+    }
 
     it("permite guardar todo desactivado con campos vacíos", async () => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.habilitado]: "false", [grupo.vigencia]: "", [grupo.avisos]: "false", [grupo.anticipacion]: "" }))).resolves.toBeUndefined();

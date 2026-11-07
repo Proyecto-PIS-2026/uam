@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LIMITE_JSON_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarPublicacion: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
+
 const mocks = vi.hoisted(() => ({
     operadores: vi.fn(),
     especies: vi.fn(),
     variedades: vi.fn(),
-    presentaciones: vi.fn(),
+    envases: vi.fn(),
+    kilos: vi.fn(),
     categorias: vi.fn(),
     calibres: vi.fn(),
     paises: vi.fn(),
@@ -32,7 +39,8 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
                 Operador: { all: mocks.operadores },
                 Especie: { all: mocks.especies },
                 Variedad: { all: mocks.variedades },
-                Presentacion: { all: mocks.presentaciones },
+                Envase: { orderBy: vi.fn(() => ({ all: mocks.envases })) },
+                KilosEmpaquetado: { orderBy: vi.fn(() => ({ all: mocks.kilos })) },
                 Categoria: { all: mocks.categorias },
                 Calibre: { all: mocks.calibres },
                 Pais: { all: mocks.paises },
@@ -54,12 +62,14 @@ import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/contr
 describe("GET /api/publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerSesion.mockResolvedValue(null);
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador propio" });
         mocks.operadores.mockResolvedValue([]);
         mocks.especies.mockResolvedValue([]);
         mocks.variedades.mockResolvedValue([]);
-        mocks.presentaciones.mockResolvedValue([]);
+        mocks.envases.mockResolvedValue([]);
+        mocks.kilos.mockResolvedValue([]);
         mocks.categorias.mockResolvedValue([]);
         mocks.calibres.mockResolvedValue([]);
         mocks.paises.mockResolvedValue([]);
@@ -76,7 +86,8 @@ describe("GET /api/publicaciones", () => {
         ]);
 
         mocks.variedades.mockResolvedValue([]);
-        mocks.presentaciones.mockResolvedValue([]);
+        mocks.envases.mockResolvedValue([]);
+        mocks.kilos.mockResolvedValue([]);
         mocks.categorias.mockResolvedValue([]);
         mocks.calibres.mockResolvedValue([]);
         mocks.paises.mockResolvedValue([]);
@@ -104,7 +115,7 @@ describe("GET /api/publicaciones", () => {
 
         expect(respuesta.status).toBe(403);
         expect(await respuesta.json()).toEqual({ errores: ["No tiene permisos para consultar el catálogo de Operadores."] });
-        for (const consulta of [mocks.operadores, mocks.especies, mocks.variedades, mocks.presentaciones, mocks.categorias, mocks.calibres, mocks.paises, mocks.obtenerOperadorAutorizado]) {
+        for (const consulta of [mocks.operadores, mocks.especies, mocks.variedades, mocks.envases, mocks.categorias, mocks.calibres, mocks.paises, mocks.obtenerOperadorAutorizado]) {
             expect(consulta).not.toHaveBeenCalled();
         }
     });
@@ -117,7 +128,8 @@ describe("GET /api/publicaciones", () => {
             { id: 2, nombreEspecie: "Pera", especieActiva: false },
         ]);
         mocks.variedades.mockResolvedValue([{ id: 3, especieId: 1, nombreVariedad: "Roja", variedadActiva: true }]);
-        mocks.presentaciones.mockResolvedValue([{ id: 4, variedadId: 3, nombrePresentacion: "Caja", presentacionActiva: true }]);
+        mocks.envases.mockResolvedValue([{ id: 4, nombreEnvase: "Cajon" }]);
+        mocks.kilos.mockResolvedValue([{ id: 1, valor: "20" }]);
         mocks.categorias.mockResolvedValue([{ id: 5, especieId: 1, nombreCategoria: "Primera" }]);
         mocks.calibres.mockResolvedValue([{ id: 6, nombreCalibre: "Mediano" }]);
         mocks.paises.mockResolvedValue([{ id: 7, nombrePais: "Uruguay" }]);
@@ -129,7 +141,8 @@ describe("GET /api/publicaciones", () => {
             operadores: [{ id: 1, nombre: "Operador propio" }],
             especies: [{ id: 1, nombre: "Manzana" }],
             variedades: [{ id: 3, especieId: 1, nombre: "Roja" }],
-            presentaciones: [{ id: 4, variedadId: 3, nombre: "Caja" }],
+            envases: [{ id: 4, nombre: "Cajon" }],
+            kilos: [{ id: 1, nombre: "20" }],
             categorias: [{ id: 5, especieId: 1, nombre: "Primera" }],
             calibres: [{ id: 6, nombre: "Mediano" }],
             paises: [{ id: 7, nombre: "Uruguay" }],
@@ -168,6 +181,7 @@ describe("GET /api/publicaciones", () => {
 describe("POST /api/publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" });
         mocks.usuarioSelect.mockReturnValue({
@@ -415,6 +429,7 @@ describe("POST /api/publicaciones", () => {
 describe("autorización de alta de publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Propio" });
         mocks.usuarioSelect.mockReturnValue({
             where: vi.fn().mockReturnValue({
@@ -457,6 +472,7 @@ describe("autorización de alta de publicaciones", () => {
 describe("alta de publicaciones como administrador", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
         mocks.operadores.mockResolvedValue([
             { id: 7, usuarioId: 70, nombreFantasia: "Operador 7" },

@@ -55,9 +55,9 @@ describe("TarjetaOperador", () => {
         expect(link).toHaveAttribute("href","/operadores/Nombre%201?origen=operadores");
     });
 
-    it("Mostrar inicial si no tiene foto", () => {
+    it("Mostrar iniciales si no tiene foto", () => {
         render(<TarjetaOperador operador={operador} />);
-        expect(screen.getByText("N")).toBeInTheDocument();
+        expect(screen.getByText("N1")).toBeInTheDocument();
     });
 
     it("Mostrar la foto si tiene", () => {

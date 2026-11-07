@@ -6,6 +6,7 @@ import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
 import { Checkbox, MenuItem, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
@@ -89,7 +90,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     const [precioMinimo, setPrecioMinimo] = useState("");
     const [precioMaximo, setPrecioMaximo] = useState("");
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
-    const [soloReferencias, setSoloReferencias] = useState(false);
+    const [soloReferencias, setSoloReferencias] = useState(true);
     const [pagina, setPagina] = useState(1);
     const panelFiltrosRef = useRef<HTMLDivElement>(null);
     const contenidoFiltrosRef = useRef<HTMLDivElement>(null);
@@ -160,7 +161,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     const visibles = filtradas.slice(desde, desde + LIMITE);
     const [anio, mes, dia] = fechaRelevamiento.split("-");
 
-    function abrirHistorico(fila: PrecioReferencia) {
+    function rutaHistorico(fila: PrecioReferencia) {
         const [, especie] = JSON.parse(fila.id);
         const parametros = new URLSearchParams({
             species_id: String(especie),
@@ -170,7 +171,11 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
             calibre: fila.calibre,
             categoria: fila.categoria,
         });
-        router.push(`/precios-historicos?${parametros}`);
+        return `/precios-historicos?${parametros}`;
+    }
+
+    function abrirHistorico(fila: PrecioReferencia) {
+        router.push(rutaHistorico(fila));
     }
 
     function cambiar(accion: () => void) {
@@ -352,7 +357,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 type="text"
                                 size="small"
                                 value={precioMaximo}
-                                placeholder="Sin límite"
+                                placeholder="Sin máximo"
                                 error={rangoPrecioInvalido}
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMaximo)}
                                 slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}
@@ -402,7 +407,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 <tbody>
                                     {visibles.map((fila) => (
                                         <tr key={fila.id} className={fila.esReferencia ? styles.filaReferencia : undefined} onClick={() => abrirHistorico(fila)} style={{ cursor: "pointer" }}>
-                                            <td className={styles.producto}><strong>{fila.especie}</strong></td>
+                                            <td className={styles.producto}><Link className={styles.enlaceHistorico} href={rutaHistorico(fila)} prefetch={false} onClick={(evento) => evento.stopPropagation()} aria-label={`Ver histórico de ${fila.especie}, ${fila.variedad}`}><strong>{fila.especie}</strong></Link></td>
                                             <td className={styles.variedad}>{fila.variedad}</td>
                                             <td className={styles.referencia}>
                                                 {fila.esReferencia ? (
@@ -440,7 +445,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 >
                                     <div className={styles.filaMobileCabecera}>
                                         <div className={styles.filaMobileProducto}>
-                                            <strong>{fila.especie}</strong>
+                                            <Link className={styles.enlaceHistorico} href={rutaHistorico(fila)} prefetch={false} onClick={(evento) => evento.stopPropagation()} aria-label={`Ver histórico de ${fila.especie}, ${fila.variedad}`}><strong>{fila.especie}</strong></Link>
                                             {fila.variedad !== "-" && <span>{fila.variedad}</span>}
                                         </div>
                                         {fila.esReferencia && <span className={styles.insignia}>Referencia</span>}

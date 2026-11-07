@@ -8,6 +8,7 @@ import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-produ
 
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import { DrawerAltaPublicacionProductor } from "@/modulos/publicaciones/productores/AltaPublicacionProductor";
 import { useCallback, useState } from "react";
@@ -16,6 +17,7 @@ import styles from "./PerfilProductorAdmin.module.css";
 import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
 import Link from "next/link";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 
 type PerfilProductorAdminProps = {
@@ -24,7 +26,7 @@ type PerfilProductorAdminProps = {
 
 
 export default function PerfilProductorAdmin({ productor }: PerfilProductorAdminProps) {
-    const inicialProductor = productor.nombreFantasia.trim()[0]?.toUpperCase();
+    const inicialesProductor = obtenerIniciales(productor.nombreFantasia);
     const [altaAbierta, setAltaAbierta] = useState(false);
     const { notificar } = useNotificacionToast();
     const router = useRouter();
@@ -54,33 +56,34 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                     <HojasDecorativas />
                     <div className={styles.avatar}>
                         <ImagenPerfil src={productor.fotoPerfil} alt={`Foto de ${productor.nombreFantasia}`} width={96} height={96} className={styles.imagenAvatar}
-                            reemplazo={<span aria-hidden="true">{inicialProductor}</span>} />
+                            reemplazo={<span aria-hidden="true">{inicialesProductor}</span>} />
                     </div>
 
                     <div className={styles.identidad}>
                         <p className={styles.tipoPerfil}>Perfil Productor</p>
                         <h1 id="nombre-productor" className={styles.nombre}>{productor.nombreFantasia}</h1>
                     </div>
-                    <Link
-                        href={`/gestion-productores/${productor.id}/editar`}
-                        className={styles.botonEditar}
-                        aria-label="Editar productor"
-                        title="Editar productor"
-                    >
-                        <EditIcon aria-hidden="true" className={styles.iconoEditar} />
-                        <span>Editar</span>
-                    </Link>
-                </header>
-
-                <div className={styles.tarjetaInformacion}>
                     <p className={`${styles.dato} ${styles.departamentos}`}>
                         <LocationOnOutlinedIcon fontSize="small" aria-hidden="true" />
                         <span><span className={styles.etiqueta}>Departamentos:</span> {departamentos.join(" · ") || "-"}</span>
                     </p>
-                    <p className={styles.dato}>
-                        <span className={styles.etiqueta}>Whatsapp:</span> {productor.whatsApp}
-                    </p>
-                </div>
+                    <div className={styles.accionesEncabezado}>
+                        <p className={styles.contacto}>
+                            <PhoneOutlinedIcon aria-hidden="true" />
+                            <span className={styles.etiqueta}>Teléfono:</span>
+                            <span>{productor.whatsApp || "Sin número de contacto"}</span>
+                        </p>
+                        <Link
+                            href={`/gestion-productores/${productor.id}/editar`}
+                            className={styles.botonEditar}
+                            aria-label="Editar productor"
+                            title="Editar productor"
+                        >
+                            <EditIcon aria-hidden="true" className={styles.iconoEditar} />
+                            <span>Editar</span>
+                        </Link>
+                    </div>
+                </header>
             </div>
 
 

@@ -2,6 +2,8 @@
 
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
+
 
 const clavesOrdenamiento = [
     "ordenamiento_habilitado",
@@ -69,8 +71,8 @@ const clavesDias = new Set<string>([
 
 function validarValor(nombre: string, valor: string): void {
     if (nombre === "url_lista_inteligente") {
-        if (valor === "") {
-            return;
+        if (!valor.trim()) {
+            throw new Error("La URL de la Lista Inteligente no puede estar vacía.");
         }
         if (valor !== valor.trim()) {
             throw new Error("La URL no puede contener espacios al principio o al final.");
@@ -141,6 +143,9 @@ function validarVigencia(cambios: Record<string, string>, claves: readonly [stri
     const avisosActivos = habilitado && cambios[claveAvisos] === "true";
     if (habilitado) {
         validarDias(cambios[claveVigencia], "vigencia");
+        if (claveVigencia === "vigencia_fotos" && Number(cambios[claveVigencia]) > 36500) {
+            throw new Error("La vigencia de las fotos no puede superar los 36500 días.");
+        }
     }
     if (avisosActivos) {
         validarDias(cambios[claveAnticipacion], "anticipación");
@@ -151,7 +156,7 @@ function validarVigencia(cambios: Record<string, string>, claves: readonly [stri
 }
 
 export async function guardarConfiguraciones(cambios: Record<string, string>): Promise<void> {
-    await exigirAdministrador();
+    await controlarSesionEnAccion(exigirAdministrador);
     if (!cambios || typeof cambios !== "object" || Array.isArray(cambios)) {
         throw new Error("Las configuraciones no son válidas.");
     }

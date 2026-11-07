@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     limpiarImagen: vi.fn(),
 }));
 
+vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({ controlarSesionEnAccion: (control: () => Promise<unknown>) => control() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
     exigirAdministrador: mocks.exigirAdministrador,
 }));

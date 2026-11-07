@@ -1,5 +1,6 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -10,8 +11,10 @@ export type PublicacionPerfil = {
     fecha: string;
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     categoria: string;
     calibre: string;
     pais: string;
@@ -105,13 +108,15 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 "foto",
                 "precio",
                 "fecha",
+                "fechaVigencia", 
                 "cantidadUnidades",
+                "comentario",
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion"
             );
-            const conPresentacion = camposPublicacion.include("especie").include("variedad").include("presentacion");
-            const conCategoria = conPresentacion.include("categoria");
+            const conEnvase = camposPublicacion.include("especie").include("variedad").include("envase").include("kilos");
+            const conCategoria = conEnvase.include("categoria");
             const completo = conCategoria.include("calibre");
 
             return completo;
@@ -122,7 +127,8 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
     
     for (const completa of completas) {
         const publicacion = completa.publicacion;
-        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "OPERADOR";
+        const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "OPERADOR";
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,
@@ -131,8 +137,10 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 fecha: publicacion.fecha.toString(),
                 especie: publicacion.especie.nombreEspecie,
                 variedad: publicacion.variedad?.nombreVariedad ?? "",
-                presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
+                envase: publicacion.envase?.nombreEnvase ?? "",
+                kilos: publicacion.kilos?.valor ?? "",
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
+                comentario: publicacion.comentario,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",

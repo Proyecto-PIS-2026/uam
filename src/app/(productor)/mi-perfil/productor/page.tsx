@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { habilitarCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
+import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import { notFound } from "next/navigation";
 import { requerirProductor } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerMiPerfilProductor } from "@/modulos/usuarios/productores/perfil-propio/consultas-mi-perfil-productor";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import BotonVolver from "@/compartido/BotonVolver";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import EditIcon from "@mui/icons-material/Edit";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import styles from "./PerfilPropioProductor.module.css";
 
 export const metadata = { title: "Mi perfil de Productor | UAM" };
@@ -16,6 +17,7 @@ export default async function PaginaMiPerfilProductor() {
     await requerirProductor();
     const productor = await obtenerMiPerfilProductor();
     if (!productor) notFound();
+    const habilitarCambioContrasena = await estaHabilitadoCambioContrasena();
     return <main className={styles.pagina}>
         <BotonVolver href="/mi-mercado/productor" className={styles.volver}>Volver a Mi mercado</BotonVolver>
         <section className={styles.tarjeta} aria-labelledby="perfil-propio-titulo">
@@ -28,7 +30,7 @@ export default async function PaginaMiPerfilProductor() {
                         width={96}
                         height={96}
                         className={styles.foto}
-                        reemplazo={<AccountCircleIcon className={styles.iconoSinFoto} aria-hidden="true" />}
+                        reemplazo={<span aria-hidden="true">{obtenerIniciales(productor.nombre)}</span>}
                     />
                 </div>
                 <div className={styles.identidad}>
@@ -38,7 +40,8 @@ export default async function PaginaMiPerfilProductor() {
                 </div>
                 <div className={styles.accionesEncabezado}>
                     <p className={styles.contacto}>
-                        <span className={styles.etiquetaContacto}>Whatsapp:</span>
+                        <PhoneOutlinedIcon aria-hidden="true" />
+                        <span className={styles.etiquetaContacto}>Teléfono:</span>
                         <span>{productor.telefono
                             ? `${productor.codigoPais} ${productor.telefono}`
                             : "Sin número de contacto"}</span>
@@ -49,13 +52,13 @@ export default async function PaginaMiPerfilProductor() {
                     </Link>
                 </div>
             </header>
-            <div className={styles.contenido}>
-                {habilitarCambioContrasena && (
-                    <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
-                        Cambiar contraseña
-                    </Link>
-                )}
-            </div>
         </section>
+        <div className={styles.acciones}>
+            {habilitarCambioContrasena && (
+                <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
+                    Cambiar contraseña
+                </Link>
+            )}
+        </div>
     </main>;
 }

@@ -4,13 +4,15 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import { validarBajaAdministrador } from "./validarBajaAdministrador";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
+import { bloquearYValidarAdministrador, esUltimoAdministradorHabilitado } from "./proteccion-administradores";
 
 export type ResultadoBajaAdministrador =
 	| { esValido: false; errores: string[] }
 	| { esValido: true; mensaje: string };
 
 export async function bajaAdministrador(valor: unknown): Promise<ResultadoBajaAdministrador> {
-	const adminActual = await exigirAdministrador();
+	const adminActual = await controlarSesionEnAccion(exigirAdministrador);
 
 	const validacion = validarBajaAdministrador(valor);
 	if (!validacion.esValido) return validacion;
@@ -18,11 +20,9 @@ export async function bajaAdministrador(valor: unknown): Promise<ResultadoBajaAd
 	const { administradorId } = validacion.datos;
 
 	const resultado = await db.transaction(async (tx) => {
-		await tx.execute(
-			db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1721, 0)`
-				.returnsRow({ locked: "pg/int4@1" })
-				.build()
-		);
+		if (!await bloquearYValidarAdministrador(tx, adminActual.usuarioId)) {
+			return { error: "Tu cuenta de administrador ya no está habilitada." };
+		}
 
         const actual = await tx.orm.public.Administrador.where({ usuarioId: adminActual.usuarioId }).first();
         
@@ -37,6 +37,10 @@ export async function bajaAdministrador(valor: unknown): Promise<ResultadoBajaAd
 
         if (admin.usuarioId === adminActual.usuarioId) {
 			return { error: "No podés dar de baja tu propia cuenta de administrador." };
+		}
+
+		if (await esUltimoAdministradorHabilitado(tx, admin.usuarioId)) {
+			return { error: "No podés eliminar al último administrador habilitado." };
 		}
 
 		await tx.orm.public.Administrador.where({ id: administradorId }).delete();

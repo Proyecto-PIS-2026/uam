@@ -1,5 +1,7 @@
 "use client";
 
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
+
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -63,7 +65,7 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
         const solicitud = new AbortController();
         carga.current = solicitud;
         try {
-            const respuesta = await fetch("/api/notificaciones", { cache: "no-store", signal: solicitud.signal });
+            const respuesta = await fetchConSesion("/api/notificaciones", { cache: "no-store", signal: solicitud.signal });
             const resultado: unknown = await respuesta.json();
             if (!montado.current || carga.current !== solicitud || solicitud.signal.aborted) return;
             if (!respuesta.ok) throw new ErrorNotificaciones(mensajeError(resultado, "No se pudieron cargar las notificaciones. Intentá nuevamente."));
@@ -122,7 +124,7 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
         cerrarNotificacion();
         const alternativa = operacion === "leer" ? "No se pudieron marcar las notificaciones como leídas. Intentá nuevamente." : "No se pudieron borrar las notificaciones. Intentá nuevamente.";
         try {
-            const respuesta = await fetch(`/api/notificaciones${id === undefined ? "" : `/${id}`}`, {
+            const respuesta = await fetchConSesion(`/api/notificaciones${id === undefined ? "" : `/${id}`}`, {
                 method: operacion === "leer" ? "PATCH" : "DELETE", signal: solicitud.signal,
             });
             const resultado: unknown = await respuesta.json();

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     administrador: { where: vi.fn().mockReturnThis(), first: vi.fn() },
     usuario: { where: vi.fn().mockReturnThis(), first: vi.fn(), update: vi.fn() },
 }));
+vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({ controlarSesionEnAccion: (control: () => Promise<unknown>) => control() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirAdministrador: mocks.exigirAdministrador }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: {

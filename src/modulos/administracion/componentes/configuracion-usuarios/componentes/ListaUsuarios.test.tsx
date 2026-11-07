@@ -243,16 +243,29 @@ describe("ListaUsuarios", () => {
     });
 
     it("permite ver usuarios deshabilitados y bloquea la deshabilitación del administrador actual", () => {
+        const onCambiarHabilitacion = vi.fn();
+        const onSeleccionar = vi.fn();
         renderLista({
             usuarios: [{ ...usuarios[0], habilitado: true }, { ...usuarios[1], habilitado: false }],
             usuarioActualId: 1,
-            onCambiarHabilitacion: vi.fn(),
+            onCambiarHabilitacion,
+            onSeleccionar,
         });
 
         expect(within(obtenerFila("ana.admin")).getByText("Habilitado")).toBeInTheDocument();
-        expect(within(obtenerFila("ana.admin")).getByRole("button", { name: "Deshabilitar usuario" })).toBeDisabled();
+        const botonDeshabilitarPropio = within(obtenerFila("ana.admin")).getByRole("button", { name: "Deshabilitar usuario" });
+        expect(botonDeshabilitarPropio).toBeDisabled();
         expect(within(obtenerFila("beto.operador")).getByText("Deshabilitado")).toBeInTheDocument();
         expect(within(obtenerFila("beto.operador")).getByRole("button", { name: "Habilitar usuario" })).toBeEnabled();
+
+        fireEvent.click(botonDeshabilitarPropio);
+        // MUI deja pasar el clic al contenedor cuando el botón está deshabilitado.
+        fireEvent.click(botonDeshabilitarPropio.parentElement!);
+
+        expect(screen.queryByTestId("dialog-habilitacion")).not.toBeInTheDocument();
+        expect(onCambiarHabilitacion).not.toHaveBeenCalled();
+        expect(onSeleccionar).not.toHaveBeenCalled();
+        expect(estadoTest.routerPush).not.toHaveBeenCalled();
     });
 
     it("solicita confirmación y permite cancelar sin cambiar el estado ni seleccionar la fila", () => {

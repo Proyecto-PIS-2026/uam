@@ -77,12 +77,67 @@ describe("FormularioModificarOperador", () => {
 
         expect(valorDe(screen.getByLabelText("Nombre"))).toBe("Caporale");
         expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598");
-        expect(valorDe(screen.getByLabelText("WhatsApp"))).toBe("99123456");
+        expect(valorDe(screen.getByLabelText(/Teléfono/))).toBe("99123456");
         expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
         expect(valorDe(screen.getByLabelText(/^Número de local/))).toBe("022");
         expect(valorDe(screen.getByLabelText("Fin de contrato"))).toBe("2026-12-31");
         expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
         expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
+    });
+
+    it("pide aceptar el aviso de UAM antes de marcar la licencia y sólo persiste al guardar", async () => {
+        modificarOperadorMock.mockResolvedValue({ esValido: true, id: 7 });
+        renderizar();
+        const licencia = screen.getByRole("switch", { name: "En licencia" });
+
+        fireEvent.click(licencia);
+
+        const dialogo = screen.getByRole("alertdialog", { name: "Aviso de licencia" });
+        expect(dialogo).toHaveTextContent("La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.");
+        expect(licencia).not.toBeChecked();
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
+        fireEvent.click(within(dialogo).getByRole("button", { name: "Aceptar" }));
+
+        await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+        expect(licencia).toBeChecked();
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
+        fireEvent.change(screen.getByLabelText("Inicio de licencia"), { target: { value: "2999-11-05" } });
+        fireEvent.change(screen.getByLabelText("Fin de licencia"), { target: { value: "2999-11-12" } });
+        apretarGuardar();
+
+        await waitFor(() => expect(modificarOperadorMock).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+            enLicencia: true, inicioLicencia: "2999-11-05", finLicencia: "2999-11-12",
+        })));
+    });
+
+    it.each(["Cancelar", "Escape"])("deja la licencia desmarcada al cerrar el aviso con %s", async (accion) => {
+        renderizar();
+        const licencia = screen.getByRole("switch", { name: "En licencia" });
+        fireEvent.click(licencia);
+        const dialogo = screen.getByRole("alertdialog", { name: "Aviso de licencia" });
+
+        if (accion === "Cancelar") fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" }));
+        else fireEvent.keyDown(dialogo, { key: "Escape", code: "Escape" });
+
+        await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+        expect(licencia).not.toBeChecked();
+        expect(screen.queryByLabelText("Inicio de licencia")).not.toBeInTheDocument();
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
+        expect(push).not.toHaveBeenCalled();
+    });
+
+    it("carga una licencia activa sin aviso y permite desmarcarla directamente", () => {
+        renderizar({ ...operadorBase, enLicencia: true, comentario: "Licencia: 2999-11-05 - 2999-11-12" });
+        const licencia = screen.getByRole("switch", { name: "En licencia" });
+        expect(licencia).toBeChecked();
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+        fireEvent.click(licencia);
+
+        expect(licencia).not.toBeChecked();
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Inicio de licencia")).not.toBeInTheDocument();
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
     });
 
     it.each(["A22", "22B", "-22", "+22", "2.2", "2,2", "2e2"])(
@@ -184,7 +239,7 @@ describe("FormularioModificarOperador", () => {
         fireEvent.change(screen.getByLabelText("Nombre"), {
             target: { value: "Caporale Hermanos" },
         });
-        fireEvent.change(screen.getByLabelText("WhatsApp"), {
+        fireEvent.change(screen.getByLabelText(/Teléfono/), {
             target: { value: "1123456789" },
         });
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Código de país" }));

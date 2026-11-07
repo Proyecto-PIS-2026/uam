@@ -18,9 +18,10 @@ import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { AvisoVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
-import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionPresentacion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
+import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import styles from "./DrawerEditarPublicacion.module.css";
+import CampoComentario from "../../componentes/CampoComentario";
 
 type DrawerEditarPublicacionProps = {
     abierto: boolean;
@@ -43,7 +44,8 @@ type DrawerEditarPublicacionProps = {
     variedades: OpcionVariedad[];
     categorias: OpcionCategoria[];
     calibres: OpcionEdicion[];
-    presentaciones: OpcionPresentacion[];
+    envases: OpcionEdicion[];
+    kilos: OpcionEdicion[];
     paises: OpcionEdicion[];
 };
 
@@ -56,7 +58,7 @@ function precioParaEdicion(precio: string | null) {
     return Number.isInteger(valor) ? String(valor) : precio;
 }
 
-function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta = "", mostrarAvisoFoto = false, esWeb, guardando, setGuardando, alErrorGuardar }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void; alErrorGuardar: (mensaje: string) => void }) {
+function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta = "", mostrarAvisoFoto = false, esWeb, guardando, setGuardando, alErrorGuardar }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void; alErrorGuardar: (mensaje: string) => void }) {
     const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
     const [baseEdicion, setBaseEdicion] = useState(recibida);
     const [guardada, setGuardada] = useState<{ origen: PublicacionParaEditar; datos: PublicacionParaEditar } | null>(null);
@@ -64,6 +66,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const publicacion = editando ? baseEdicion : vigente;
     const [precioEditado, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
     const [cantidadUnidadesEditado, setCantidadUnidades] = useState(() => publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
+    const [comentarioEditado, setComentario] = useState(() => publicacion.comentario ?? "");
     const [fotoEditado, setFoto] = useState(publicacion.foto);
     const [fotoNueva, setFotoNueva] = useState<File | null>(null);
     const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
@@ -71,17 +74,20 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const [variedadIdEditado, setVariedadId] = useState(publicacion.variedadId ?? 0);
     const [categoriaIdEditado, setCategoriaId] = useState(publicacion.categoriaId ?? 0);
     const [calibreIdEditado, setCalibreId] = useState(publicacion.calibreId ?? 0);
-    const [presentacionIdEditado, setPresentacionId] = useState(publicacion.presentacionId ?? 0);
+    const [envaseIdEditado, setEnvaseId] = useState(publicacion.envaseId ?? 0);
+    const [kilosIdEditado, setKilosId] = useState(publicacion.kilosId ?? 0);
     const [paisIdEditado, setPaisId] = useState(publicacion.paisId ?? 0);
     const [disponibleEditado, setDisponible] = useState(publicacion.disponible);
     const precio = editando ? precioEditado : (precioParaEdicion(publicacion.precio));
     const cantidadUnidades = editando ? cantidadUnidadesEditado : (publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
+    const comentario = editando ? comentarioEditado : (publicacion.comentario ?? "");
     const foto = editando ? fotoEditado : (publicacion.foto);
     const especieId = editando ? especieIdEditado : (publicacion.especieId);
     const variedadId = editando ? variedadIdEditado : (publicacion.variedadId ?? 0);
     const categoriaId = editando ? categoriaIdEditado : (publicacion.categoriaId ?? 0);
     const calibreId = editando ? calibreIdEditado : (publicacion.calibreId ?? 0);
-    const presentacionId = editando ? presentacionIdEditado : (publicacion.presentacionId ?? 0);
+    const envaseId = editando ? envaseIdEditado : (publicacion.envaseId ?? 0);
+    const kilosId = editando ? kilosIdEditado : (publicacion.kilosId ?? 0);
     const paisId = editando ? paisIdEditado : (publicacion.paisId ?? 0);
     const disponible = editando ? disponibleEditado : (publicacion.disponible);
     const [error, setError] = useState("");
@@ -95,10 +101,11 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const especieSeleccionada = especies.find((opcion) => opcion.id === especieId);
     const variedadSeleccionada = variedades.find((opcion) => opcion.id === variedadId);
     const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
-    const presentacionesDisponibles = presentaciones.filter((opcion) => opcion.variedadId === variedadId);
+    const envasesDisponibles = envases;
     const categoriasDisponibles = categorias.filter((opcion) => opcion.especieId === null || opcion.especieId === especieId);
     const paisesOrdenados = [...paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre));
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
+    const [fechaVigenciaEditada, setFechaVigencia] = useState(publicacion.fechaVigencia ?? "");
     useEffect(() => {
         return () => {
             if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
@@ -171,14 +178,12 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         const categoriaCompatible = categoriaActual?.especieId === null || categoriaActual?.especieId === nuevaEspecieId;
         setEspecieId(nuevaEspecieId);
         setVariedadId(0);
-        setPresentacionId(0);
         if (!categoriaCompatible) setCategoriaId(0);
     }
 
     function cambiarVariedad(nuevaVariedadId: number) {
         if (bloqueado) return;
         setVariedadId(nuevaVariedadId);
-        setPresentacionId(0);
     }
 
     function prepararEdicion() {
@@ -192,14 +197,17 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         setFoto(vigente.foto);
         setPrecio(precioParaEdicion(vigente.precio));
         setCantidadUnidades(vigente.cantidadUnidades == null ? "" : String(vigente.cantidadUnidades));
+        setComentario(vigente.comentario ?? "");
         setEspecieId(vigente.especieId);
         setVariedadId(vigente.variedadId ?? 0);
-        setPresentacionId(vigente.presentacionId ?? 0);
+        setEnvaseId(vigente.envaseId ?? 0);
+        setKilosId(vigente.kilosId ?? 0);
         setCategoriaId(vigente.categoriaId ?? 0);
         setCalibreId(vigente.calibreId ?? 0);
         setPaisId(vigente.paisId ?? 0);
         setDisponible(vigente.disponible);
         setError("");
+        setFechaVigencia(vigente.fechaVigencia ?? "");
     }
 
     function cancelarEdicion() {
@@ -224,12 +232,13 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         }
 
         const variedadValida = variedadId === 0 || variedadesDisponibles.some((opcion) => opcion.id === variedadId);
-        const presentacionValida = presentacionId === 0 || presentacionesDisponibles.some((opcion) => opcion.id === presentacionId);
+        const envaseValido = envaseId === 0 || envasesDisponibles.some((opcion) => opcion.id === envaseId);
+        const kilosValidos = kilosId === 0 || kilos.some((opcion) => opcion.id === kilosId);
         const categoriaValida = categoriaId === 0 || categoriasDisponibles.some((opcion) => opcion.id === categoriaId);
         const calibreValido = calibreId === 0 || calibres.some((opcion) => opcion.id === calibreId);
         const paisValido = paisId === 0 || paises.some((opcion) => opcion.id === paisId);
-        if (!especieSeleccionada || !variedadValida || !presentacionValida || !categoriaValida || !calibreValido || !paisValido) {
-            setError("Elegí una especie, variedad, presentación, categoría, calibre y país válidos.");
+        if (!especieSeleccionada || !variedadValida || !envaseValido || !kilosValidos || !categoriaValida || !calibreValido || !paisValido) {
+            setError("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.");
             return;
         }
 
@@ -243,19 +252,24 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         const cantidadUnidadesNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
         const cantidadFinal = (cantidadUnidadesNormalizada === "" ? null : Number(cantidadUnidadesNormalizada)) as number | null;
         const cantidadOriginal = publicacion.cantidadUnidades ?? null;
+        const comentarioFinal = comentario.trim() || null;
+        const comentarioOriginal = publicacion.comentario ?? null;
 
         const sinCambios =
             precioNuevo === precioOriginal &&
             cantidadFinal === cantidadOriginal &&
+            comentarioFinal === comentarioOriginal &&
             foto === publicacion.foto &&
             fotoNueva === null &&
             especieId === publicacion.especieId &&
             variedadId === (publicacion.variedadId ?? 0) &&
             categoriaId === (publicacion.categoriaId ?? 0) &&
             calibreId === (publicacion.calibreId ?? 0) &&
-            presentacionId === (publicacion.presentacionId ?? 0) &&
+            envaseId === (publicacion.envaseId ?? 0) &&
+            kilosId === (publicacion.kilosId ?? 0) &&
             paisId === (publicacion.paisId ?? 0) &&
-            disponible === publicacion.disponible
+            disponible === publicacion.disponible &&
+            fechaVigenciaEditada === (publicacion.fechaVigencia ?? "");
 
         if(sinCambios) {
             if(modoInicial === "consulta") {
@@ -271,14 +285,17 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             version: publicacion.version ?? 0,
             precio: precioNuevo,
             cantidadUnidades: cantidadFinal,
+            comentario: comentarioFinal,
             foto: foto === publicacion.foto ? undefined : foto,
             especieId,
             variedadId: variedadId || null,
             categoriaId: categoriaId || null,
             calibreId: calibreId || null,
-            presentacionId: presentacionId || null,
+            envaseId: envaseId || null,
+            kilosId: kilosId || null,
             paisId: paisId || null,
             disponible,
+            fechaVigencia: fechaVigenciaEditada || null,
         };
         setGuardando(true);
         try {
@@ -288,7 +305,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 estadoFoto: fotoNueva || (foto === null && publicacion.foto !== null) ? null : publicacion.estadoFoto,
                 especie: especieSeleccionada?.nombre ?? publicacion.especie,
                 variedad: variedadSeleccionada?.nombre ?? "",
-                presentacion: presentaciones.find((opcion) => opcion.id === presentacionId)?.nombre ?? "",
+                envase: envases.find((opcion) => opcion.id === envaseId)?.nombre ?? "",
+                kilos: kilos.find((opcion) => opcion.id === kilosId)?.nombre ?? "",
                 categoria: categorias.find((opcion) => opcion.id === categoriaId)?.nombre ?? "",
                 calibre: calibres.find((opcion) => opcion.id === calibreId)?.nombre ?? "",
             } });
@@ -304,7 +322,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             setGuardando(false);
         }
     }
-    const presentacionActual = presentacionId ? presentaciones.find(p => p.id === presentacionId)?.nombre || publicacion.presentacion : null;
+    const envaseActual = envaseId ? envases.find(p => p.id === envaseId)?.nombre || publicacion.envase : null;
     const campoPrecio = (
         <div key="precio" className={styles.campo}>
             <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
@@ -368,10 +386,17 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 </TextField>
             </div>
             <div className={styles.campo}>
-                <TextField select label="Presentación" id={`${idBase}-presentacion`} value={presentacionId} onChange={(evento) => { if (!bloqueado) setPresentacionId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
+                <TextField select label="Empaquetado" id={`${idBase}-envase`} value={envaseId} onChange={(evento) => { if (!bloqueado) setEnvaseId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
                     <MenuItem value={0} className={styles.opcionSelect}>{editando ? "Sin especificar" : "-"}</MenuItem>
-                    {!editando && presentacionId !== 0 && !presentacionesDisponibles.some((opcion) => opcion.id === presentacionId) && <MenuItem value={presentacionId} className={styles.opcionSelect}>{publicacion.presentacion?.trim() || "-"}</MenuItem>}
-                    {presentacionesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                    {!editando && envaseId !== 0 && !envasesDisponibles.some((opcion) => opcion.id === envaseId) && <MenuItem value={envaseId} className={styles.opcionSelect}>{publicacion.envase?.trim() || "-"}</MenuItem>}
+                    {envasesDisponibles.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre}</MenuItem>)}
+                </TextField>
+            </div>
+            <div className={styles.campo}>
+                <TextField select label="Kilos del empaquetado" id={`${idBase}-kilos`} value={kilosId} onChange={(evento) => { if (!bloqueado) setKilosId(Number(evento.target.value)); }} size="small" fullWidth disabled={bloqueado} className={styles.selectMui} slotProps={propiedadesMenuSelect}>
+                    <MenuItem value={0} className={styles.opcionSelect}>{editando ? "Sin especificar" : "-"}</MenuItem>
+                    {!editando && kilosId !== 0 && !kilos.some((opcion) => opcion.id === kilosId) && <MenuItem value={kilosId} className={styles.opcionSelect}>{publicacion.kilos?.trim() ? `${publicacion.kilos.trim()} kg` : "-"}</MenuItem>}
+                    {kilos.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={styles.opcionSelect}>{opcion.nombre} kg</MenuItem>)}
                 </TextField>
             </div>
             <div className={styles.campo}>
@@ -400,13 +425,41 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const campoUnidades = (
         <div key="unidades" className={styles.campo}>
             <label className={styles.etiqueta} htmlFor={`${idBase}-cantidadUnidades`}>
-                Unidades{presentacionActual ? ` (${presentacionActual})` : ""}
+                Unidades{envaseActual ? ` (${envaseActual})` : ""}
             </label>
             <div className={styles.controlesPrecio} data-editando={false}>
                 <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-cantidadUnidades`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder={editando ? "Ingresar cantidad aquí" : "-"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
             </div>
             {editando && <small className={styles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>}
         </div>
+    );
+    const campoFechaVigencia = (
+        <div key="fechaVigencia" className={styles.campo}>
+            <label className={styles.etiqueta} htmlFor={`${idBase}-fechaVigencia`}>
+                Fecha de vigencia
+            </label>
+            <OutlinedInput
+                className={styles.entrada}
+                size="small"
+                id={`${idBase}-fechaVigencia`}
+                type="date"
+                value={editando ? fechaVigenciaEditada : (publicacion.fechaVigencia ?? "")}
+                onChange={(evento) => setFechaVigencia(evento.target.value)}
+                readOnly={!editando}
+                disabled={ocupado}
+            />
+        </div>
+    );
+    const campoComentario = (
+        <CampoComentario
+            key="comentario"
+            id={`${idBase}-comentario`}
+            valor={comentario}
+            alCambiar={setComentario}
+            editando={editando}
+            deshabilitado={ocupado}
+            clases={{ campo: styles.campo, etiqueta: styles.etiqueta, entrada: styles.entrada, ayuda: styles.ayuda }}
+        />
     );
     const errorFormulario = (error || errorConsulta) ? <p key="error" className={styles.error} role="alert">{error || errorConsulta}</p> : null;
     return (
@@ -425,7 +478,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             </div>
             <form className={styles.formulario} onSubmit={solicitarGuardado} aria-busy={ocupado}>
                 <div className={styles.cuerpo}>
-                    {[campoPrecio, campoUnidades, seccionFoto, accionesPublicacion, datosProducto, errorFormulario]}
+                    {[campoPrecio, campoUnidades, campoFechaVigencia, campoComentario, seccionFoto, accionesPublicacion, datosProducto, errorFormulario]}
                 </div>
                 <div className={styles.pie}>
                     {editando ? (
@@ -445,7 +498,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     );
 }
 
-export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, presentaciones, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta, mostrarAvisoFoto = false, children }: DrawerEditarPublicacionProps) {
+export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta, mostrarAvisoFoto = false, children }: DrawerEditarPublicacionProps) {
     const { notificar } = useNotificacionToast();
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
@@ -456,7 +509,7 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
         <>
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} arrastreDeshabilitado={guardando || eliminando || actualizando} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} presentaciones={presentaciones} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} mostrarAvisoFoto={mostrarAvisoFoto} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} alErrorGuardar={(mensaje) => notificar(mensaje, "error")} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} envases={envases} kilos={kilos} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} mostrarAvisoFoto={mostrarAvisoFoto} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} alErrorGuardar={(mensaje) => notificar(mensaje, "error")} />
             )}
             {publicacion && children}
         </DrawerDeslizable>

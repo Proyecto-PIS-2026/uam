@@ -222,7 +222,7 @@ function crearPublicacion(): PublicacionListado {
         precio: 150,
         fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
-        presentacion: "Cajón",
+        envase: "Cajón", kilos: "",
         categoria: "Primera",
         calibre: "Mediano",
         codigoCalibre: "M",
@@ -244,7 +244,7 @@ function crearPublicacionProductor(): PublicacionProductorListado {
         precio: 120,
         fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         cantidadUnidades: 20,
         categoria: "Primera",
         calibre: "Grande",
@@ -504,7 +504,7 @@ describe("DrawerPublicacion", () => {
         );
 
         expect(screen.getByText("Tomate")).toBeInTheDocument();
-        expect(screen.queryByText("-")).not.toBeInTheDocument();
+        expect(screen.getByText("Tomate").parentElement).toHaveTextContent(/^Tomate$/);
     });
 
     it("muestra la foto con la especie como texto alternativo", () => {
@@ -761,8 +761,8 @@ describe("DrawerPublicacion", () => {
             />,
         );
 
-        const etiquetaPresentacion = screen.getByText("Presentación");
-        const contenido = etiquetaPresentacion.parentElement?.parentElement?.parentElement as HTMLDivElement;
+        const etiquetaEnvase = screen.getByText("Empaquetado");
+        const contenido = etiquetaEnvase.parentElement?.parentElement?.parentElement as HTMLDivElement;
         const pie = contenido.parentElement?.lastElementChild as HTMLDivElement;
 
         const observer = ResizeObserverMock.instancias.at(-1);
@@ -1268,5 +1268,18 @@ describe("DrawerPublicacion con productores", () => {
 
         expect(document.activeElement).toBe(botonAmpliar);
         expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it("muestra el comentario del publicador", () => {
+        render(<DrawerPublicacion publicacion={{ ...crearPublicacion(), comentario: "Cosecha de esta semana" }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario")).toBeInTheDocument();
+        expect(screen.getByText("Cosecha de esta semana")).toBeInTheDocument();
+    });
+
+    it.each([null, undefined, "   "])("muestra un guion cuando el comentario es %j", (comentario) => {
+        render(<DrawerPublicacion publicacion={{ ...crearPublicacion(), comentario }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario").nextElementSibling).toHaveTextContent("-");
     });
 });

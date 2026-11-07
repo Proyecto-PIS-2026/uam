@@ -33,6 +33,7 @@ describe("autenticarUsuario", () => {
             id: 1,
             passwordHash: hashContrasena,
             rol: "ADMINISTRADOR",
+            habilitado: true,
         });
 
         const resultado = await autenticarUsuario({
@@ -50,6 +51,7 @@ describe("autenticarUsuario", () => {
             id: 2,
             passwordHash: hashContrasena,
             rol: "OPERADOR",
+            habilitado: true,
         });
 
         const resultado = await autenticarUsuario({
@@ -76,6 +78,7 @@ describe("autenticarUsuario", () => {
             id: 3,
             passwordHash: hashContrasena,
             rol: "PRODUCTOR",
+            habilitado: true,
         });
 
         const resultado = await autenticarUsuario({
@@ -97,7 +100,7 @@ describe("autenticarUsuario", () => {
                 PRODUCTOR: consultasSimuladas.obtenerUsuarioProductorPorNombre,
             };
             const consulta = consultasPorRol[rol as keyof typeof consultasPorRol];
-            consulta.mockResolvedValue({ id: 1, passwordHash: hashContrasena, rol });
+            consulta.mockResolvedValue({ id: 1, passwordHash: hashContrasena, rol, habilitado: true });
 
             const resultado = await autenticarUsuario({
                 identificador: "identificador-de-prueba",
@@ -107,6 +110,39 @@ describe("autenticarUsuario", () => {
             expect(resultado).toBeNull();
         },
     );
+
+    describe.each([
+        { rol: "ADMINISTRADOR", consultar: consultasSimuladas.obtenerUsuarioAdministradorPorCorreo },
+        { rol: "OPERADOR", consultar: consultasSimuladas.obtenerUsuarioOperadorPorNombre },
+        { rol: "PRODUCTOR", consultar: consultasSimuladas.obtenerUsuarioProductorPorNombre },
+    ])("cuenta deshabilitada de $rol", ({ rol, consultar }) => {
+        beforeEach(() => {
+            consultar.mockResolvedValue({ id: 4, passwordHash: hashContrasena, rol, habilitado: false });
+        });
+
+        it("informa su estado solo después de verificar la contraseña", async () => {
+            expect(await autenticarUsuario({ identificador: "cuenta", contrasena: "contrasena-de-prueba" }))
+                .toEqual({ error: "CUENTA_DESHABILITADA" });
+            expect(vigenciaContratoSimulada.operadorTieneContratoVigente).not.toHaveBeenCalled();
+        });
+
+        it("mantiene el rechazo genérico cuando la contraseña es incorrecta", async () => {
+            expect(await autenticarUsuario({ identificador: "cuenta", contrasena: "incorrecta" })).toBeNull();
+            expect(vigenciaContratoSimulada.operadorTieneContratoVigente).not.toHaveBeenCalled();
+        });
+    });
+
+    it("mantiene el rechazo por contrato vencido de un operador habilitado", async () => {
+        consultasSimuladas.obtenerUsuarioOperadorPorNombre.mockResolvedValue({
+            id: 2,
+            passwordHash: hashContrasena,
+            rol: "OPERADOR",
+            habilitado: true,
+        });
+        vigenciaContratoSimulada.operadorTieneContratoVigente.mockResolvedValue(false);
+        expect(await autenticarUsuario({ identificador: "cuenta", contrasena: "contrasena-de-prueba" }))
+            .toEqual({ error: "SIN_CONTRATO_VIGENTE" });
+    });
 
     it("rechaza roles que la sesion no admite", async () => {
         consultasSimuladas.obtenerUsuarioOperadorPorNombre.mockResolvedValue({

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPerfilProductorPorOperador } from "./consultas-perfil-por-operador";
+import "temporal-polyfill/full/global";
 
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(),
@@ -80,7 +81,8 @@ function crearFila() {
             tipoPublicacion: "PRODUCTOR",
             especie: { nombreEspecie: "Tomate" },
             variedad: { nombreVariedad: "Perita" },
-            presentacion: { nombrePresentacion: "Caja" },
+            envase: { nombreEnvase: "Caja" },
+            kilos: null,
             categoria: { nombreCategoria: "Primera" },
             calibre: { codigoCalibre: "M" },
         },
@@ -136,7 +138,8 @@ describe("obtenerPerfilProductorPorOperador", () => {
                         cantidadUnidades: 25,
                         especie: "Tomate",
                         variedad: "Perita",
-                        presentacion: "Caja",
+                        envase: "Caja",
+                        kilos: "",
                         categoria: "Primera",
                         calibre: "M",
                         pais: "Uruguay",
@@ -190,7 +193,8 @@ describe("obtenerPerfilProductorPorOperador", () => {
                     cantidadUnidades: 25,
                     especie: "Tomate",
                     variedad: "Perita",
-                    presentacion: "Caja",
+                    envase: "Caja",
+                    kilos: "",
                     categoria: "Primera",
                     calibre: "M",
                     pais: "Uruguay",
@@ -279,4 +283,74 @@ describe("obtenerPerfilProductorPorOperador", () => {
         mocks.all.mockRejectedValue(new Error("Error de publicaciones"));
         await expect(obtenerPerfilProductorPorOperador("Huerta Norte")).rejects.toThrow("Error de publicaciones");
     });
+
+     describe("vigencia de las publicaciones", () => {
+    const DIA = 86_400_000;
+    const enDias = (dias: number) =>
+        Temporal.Instant.fromEpochMilliseconds(Date.now() + dias * DIA);
+
+    const filaConVigencia = (id: number, fechaVigencia: Temporal.Instant | null) => {
+        const fila = crearFila();
+        return { ...fila, publicacion: { ...fila.publicacion, id, fechaVigencia } };
+    };
+
+    it("no muestra publicaciones vencidas en el perfil del productor visto por operador", async () => {
+        mocks.all.mockResolvedValue([filaConVigencia(20, enDias(-3))]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.publicaciones).toEqual([]);
+    });
+
+    it("muestra publicaciones con fechaVigencia futura", async () => {
+        mocks.all.mockResolvedValue([filaConVigencia(20, enDias(15))]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.publicaciones.map((p) => p.id)).toEqual([20]);
+    });
+
+    it("muestra publicaciones sin fechaVigencia", async () => {
+        mocks.all.mockResolvedValue([filaConVigencia(20, null)]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.publicaciones.map((p) => p.id)).toEqual([20]);
+    });
+
+    it("conserva las vigentes cuando conviven con una vencida", async () => {
+        mocks.all.mockResolvedValue([
+            filaConVigencia(20, enDias(-3)),
+            filaConVigencia(21, enDias(15)),
+            filaConVigencia(22, null),
+        ]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.publicaciones.map((p) => p.id)).toEqual([21, 22]);
+    });
+
+    it("no revela los departamentos de publicaciones vencidas", async () => {
+        const vencida = filaConVigencia(20, enDias(-3));
+        mocks.all.mockResolvedValue([
+            {
+                ...vencida,
+                ubicaciones: [{ ...vencida.ubicaciones[0], departamento: "Artigas" }],
+            },
+            filaConVigencia(21, enDias(15)),
+        ]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.departamentos).toEqual(["Salto"]);
+    });
+
+    it("devuelve el perfil sin publicaciones ni departamentos cuando todas están vencidas", async () => {
+        mocks.all.mockResolvedValue([filaConVigencia(20, enDias(-1))]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado).toEqual({ ...productor, departamentos: [], publicaciones: [] });
+    });
+});
 });

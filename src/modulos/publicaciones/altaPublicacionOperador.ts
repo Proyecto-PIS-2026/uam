@@ -1,4 +1,3 @@
-
 import "temporal-polyfill/full/global";
 import "temporal-polyfill/types/global";
 
@@ -9,6 +8,7 @@ import { normalizarPrecioPublicacion } from "./precio-publicacion";
 import { ErrorImagenPublicacion, guardarImagenPublicacion } from "./operadores/imagenes-publicacion";
 import { limpiarImagenPublicacionNoReferenciada } from "./operadores/limpiar-imagen-publicacion";
 import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
+import { convertirFechaVigenciaAInstant } from "./vigencia-publicacion";
 
 export type ResultadoAltaPublicacion =
     | { esValido: false; errores: string[] }
@@ -94,7 +94,8 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
                 const coincidencias = await tx.orm.public.Publicacion.where({
                     especieId: datos.especieId,
                     variedadId: datos.variedadId,
-                    presentacionId: datos.presentacionId,
+                    envaseId: datos.envaseId,
+                    kilosId: datos.kilosId,
                     categoriaId: datos.categoriaId,
                     calibreId: datos.calibreId,
                 }).select("id").all();
@@ -103,7 +104,7 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
                     return {
                         esValido: false,
                         errores: [
-                            "Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país.",
+                            "Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.",
                         ],
                     };
                 }
@@ -116,11 +117,14 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
                 precio,
                 foto: imagenCreada?.url ?? null,
                 cantidadUnidades: datos.cantidadUnidades,
+                comentario: datos.comentario ?? null,
                 especieId: datos.especieId,
                 variedadId: datos.variedadId,
-                presentacionId: datos.presentacionId,
+                envaseId: datos.envaseId,
+                kilosId: datos.kilosId,
                 categoriaId: datos.categoriaId,
                 calibreId: datos.calibreId,
+                fechaVigencia: convertirFechaVigenciaAInstant(datos.fechaVigencia),
             });
 
             await tx.orm.public.PublicacionOperador.create({

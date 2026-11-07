@@ -13,12 +13,18 @@ const mocks = vi.hoisted(() => ({
 	},
 	usuario: {
 		where: vi.fn().mockReturnThis(),
+		select: vi.fn().mockReturnThis(),
+		first: vi.fn(),
+		all: vi.fn(),
 		delete: vi.fn(),
 	},
 }));
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
 	exigirAdministrador: mocks.exigirAdministrador,
+}));
+vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({
+	controlarSesionEnAccion: (exigir: () => Promise<unknown>) => exigir(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -52,6 +58,8 @@ describe("baja de administrador", () => {
 		vi.clearAllMocks();
 
 		mocks.exigirAdministrador.mockResolvedValue({ usuarioId: 90 });
+		mocks.usuario.first.mockResolvedValue({ id: 90 });
+		mocks.usuario.all.mockResolvedValue([{ id: 90 }, { id: 91 }]);
 
 		administradorActualExiste = true;
 		administradorSeleccionadoExiste = true;
@@ -265,5 +273,29 @@ describe("baja de administrador", () => {
 		expect(usuarioExiste).toBe(true);
 
 		expect(mocks.revalidatePath).not.toHaveBeenCalled();
+	});
+
+	it("rechaza al administrador deshabilitado mientras esperaba el bloqueo", async () => {
+		mocks.usuario.first.mockResolvedValue(null);
+		expect(await bajaAdministrador({ administradorId: 14 })).toEqual({
+			esValido: false, errores: ["Tu cuenta de administrador ya no está habilitada."],
+		});
+		expect(mocks.usuario.where).toHaveBeenCalledWith({ id: 90, rol: "ADMINISTRADOR", habilitado: true });
+		expect(mocks.administrador.delete).not.toHaveBeenCalled();
+		expect(mocks.usuario.delete).not.toHaveBeenCalled();
+	});
+
+	it("impide eliminar al último administrador habilitado", async () => {
+		mocks.usuario.all.mockResolvedValue([{ id: 91 }]);
+		expect(await bajaAdministrador({ administradorId: 14 })).toEqual({
+			esValido: false, errores: ["No podés eliminar al último administrador habilitado."],
+		});
+		expect(mocks.administrador.delete).not.toHaveBeenCalled();
+		expect(mocks.usuario.delete).not.toHaveBeenCalled();
+	});
+
+	it("permite eliminar un administrador deshabilitado aunque sólo quede otro habilitado", async () => {
+		mocks.usuario.all.mockResolvedValue([{ id: 90 }]);
+		expect(await bajaAdministrador({ administradorId: 14 })).toMatchObject({ esValido: true });
 	});
 });

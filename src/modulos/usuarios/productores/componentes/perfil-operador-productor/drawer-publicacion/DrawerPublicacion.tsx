@@ -135,8 +135,12 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPub
                             </div>
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Presentación</span>
-                                    <span className={styles.valorInformacion}>{publicacion.presentacion?.trim() || "-"}</span>
+                                    <span className={styles.nombreInformacion}>Empaquetado</span>
+                                    <span className={styles.valorInformacion}>{publicacion.envase?.trim() || "-"}</span>
+                                </div>
+                                <div className={styles.informacionDetallada}>
+                                    <span className={styles.nombreInformacion}>Kilos</span>
+                                    <span className={styles.valorInformacion}>{publicacion.kilos?.trim() && publicacion.kilos !== "-" ? `${publicacion.kilos} kg` : "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Calibre</span>
@@ -147,7 +151,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPub
                                     <span className={styles.valorInformacion}>{publicacion.categoria?.trim() || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Unidades ({publicacion.presentacion?.trim() || "-"})</span>
+                                    <span className={styles.nombreInformacion}>Unidades</span>
                                     <span className={styles.valorInformacion}>{publicacion.cantidadUnidades ?? "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
@@ -157,6 +161,10 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPub
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Actualización</span>
                                     <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
+                                </div>
+                                <div className={`${styles.informacionDetallada} ${publicacion.comentario?.trim() ? styles.filaComentario : ""}`}>
+                                    <span className={styles.nombreInformacion}>Comentario</span>
+                                    <p className={`${styles.valorInformacion} ${styles.textoComentario}`}>{publicacion.comentario?.trim() || "-"}</p>
                                 </div>
                             </div>
                             {publicacion.tipoPublicacion === "PRODUCTOR" && (

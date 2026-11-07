@@ -77,29 +77,27 @@
     line-height: var(--interlineado-titulo-pagina);
 }
 
-.tarjetaInformacion {
-    width: 100%;
-    padding: var(--padding-panel);
-    background-color: var(--color-surface);
-}
-
 .dato {
     margin: 0;
     font-size: var(--tamano-texto-secundario);
 }
 
 .departamentos {
+    position: relative;
+    z-index: 1;
+    grid-column: 1 / -1;
+    color: var(--color-surface);
     display: flex;
     align-items: flex-start;
     gap: var(--espacio-inline);
-    margin-bottom: var(--espacio-controles);
+    margin-bottom: 0;
     line-height: var(--interlineado-texto);
     overflow-wrap: anywhere;
 }
 
 .departamentos svg {
     flex-shrink: 0;
-    color: var(--color-secondary);
+    color: inherit;
 }
 
 .etiqueta {
@@ -140,15 +138,14 @@
     display: inline-flex;
     position: relative;
     z-index: 1;
-    grid-column: 1 / -1;
     justify-self: end;
-    min-height: 3rem;
+    min-height: var(--alto-control);
     align-items: center;
     justify-content: center;
     gap: var(--espacio-inline);
-    padding: 0.625rem var(--padding-panel);
+    padding: var(--padding-control);
     border: 1px solid var(--color-secondary);
-    border-radius: var(--radio-panel);
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     color: var(--color-secondary);
     font: inherit;
@@ -240,5 +237,37 @@
     .botonAlta {
         width: auto;
         height: var(--alto-control) !important;
+    }
+}
+
+.accionesEncabezado {
+    display: grid;
+    position: relative;
+    z-index: 1;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--espacio-controles);
+}
+
+.contacto {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espacio-inline);
+    margin: 0;
+    color: var(--color-surface);
+    font-size: var(--tamano-texto-secundario);
+    overflow-wrap: anywhere;
+}
+
+.contacto svg {
+    flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+    .encabezado {
+        padding: var(--padding-panel);
     }
 }

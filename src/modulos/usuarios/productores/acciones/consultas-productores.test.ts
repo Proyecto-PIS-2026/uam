@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPerfilProductor, obtenerProductoresDisponibles } from "./consultas-productores";
+import "temporal-polyfill/full/global";
 
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(), select: vi.fn(), include: vi.fn(), all: vi.fn(), first: vi.fn(),
@@ -27,7 +28,8 @@ function relacion(publicacionActiva = true, publicacionDisponible = true, tipoPu
             publicacionActiva, publicacionDisponible, tipoPublicacion,
             especie: { nombreEspecie: "Naranja" },
             variedad: { nombreVariedad: "Valencia" },
-            presentacion: { nombrePresentacion: "KG" },
+            envase: { nombreEnvase: "KG" },
+            kilos: null,
             categoria: { nombreCategoria: "I" }, calibre: { codigoCalibre: "M" },
         },
     };
@@ -156,5 +158,70 @@ describe("Consultas de productores para operadores", () => {
     it("no consulta un nombre vacío", async () => {
         expect(await obtenerPerfilProductor(" ")).toBeNull();
         expect(mocks.first).not.toHaveBeenCalled();
+    });
+
+    it("excluye publicaciones con fechaVigencia vencida", async () => {
+        const publicacionVencida = {
+            ...relacion(),
+            publicacion: {
+                ...relacion().publicacion,
+                fechaVigencia: Temporal.Instant.fromEpochMilliseconds(
+                    Date.now() - 3 * 86_400_000
+                ),
+            },
+        };
+
+        mocks.all.mockResolvedValue([
+            {
+                ...productor,
+                publicacionesProductor: [publicacionVencida],
+            },
+        ]);
+
+        await expect(obtenerProductoresDisponibles()).resolves.toEqual([]);
+    });
+
+    it("incluye publicaciones con fechaVigencia futura", async () => {
+        const publicacionFutura = {
+            ...relacion(),
+            publicacion: {
+                ...relacion().publicacion,
+                fechaVigencia: Temporal.Instant.fromEpochMilliseconds(
+                    Date.now() + 15 * 86_400_000
+                ),
+            },
+        };
+
+        mocks.all.mockResolvedValue([
+            {
+                ...productor,
+                publicacionesProductor: [publicacionFutura],
+            },
+        ]);
+
+        await expect(obtenerProductoresDisponibles()).resolves.toMatchObject([
+            { cantidadProductos: 1 },
+        ]);
+    });
+
+    it("incluye publicaciones con fechaVigencia nula", async () => {
+        const publicacionSinVigencia = {
+            ...relacion(),
+            publicacion: {
+                ...relacion().publicacion,
+                fechaVigencia: null,
+            },
+        };
+
+        mocks.all.mockResolvedValue([
+            {
+                ...productor,
+                publicacionesProductor: [publicacionSinVigencia],
+            },
+        ]);
+
+        await expect(obtenerProductoresDisponibles()).resolves.toMatchObject([
+            { cantidadProductos: 1 },
+        ]);
     });
 });

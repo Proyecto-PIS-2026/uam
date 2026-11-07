@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -27,6 +28,7 @@ import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesio
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { cerrarSesionYVolverAlInicio } from "@/modulos/identidad-acceso/autenticacion/accionCerrarSesion";
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 
 import { useId } from "react";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -40,7 +42,7 @@ function ContadorNotificaciones({ cantidad, enEsquina = false }: { cantidad: num
     return (
         <Badge
             badgeContent={cantidad}
-            max={99}
+            max={9}
             color="error"
             sx={enEsquina ? {
                 position: "absolute",
@@ -165,13 +167,20 @@ const opcionesMenuProductor: OpcionMenu[] = [
 type PropiedadesEncabezado = {
     sesion: DatosSesion | null;
     fotoPerfil?: string | null;
+    nombrePerfil?: string | null;
 };
 
-function MenuPublicaciones({
+function MenuGrupoNavegacion({
+    nombre,
+    icono: Icono,
+    opciones,
     mobile = false,
     rutaActual,
     onNavigate,
 }: {
+    nombre: string;
+    icono: typeof StorefrontOutlinedIcon;
+    opciones: Pick<OpcionMenu, "nombre" | "ruta" | "icono">[];
     mobile?: boolean;
     rutaActual: string;
     onNavigate: () => void;
@@ -180,11 +189,6 @@ function MenuPublicaciones({
     const referencia = useRef<HTMLDivElement>(null);
     const botonRef = useRef<HTMLButtonElement>(null);
     const id = useId();
-
-    const opciones = [
-        { nombre: "Mercado Virtual", ruta: "/publicaciones", icono: StorefrontOutlinedIcon },
-        { nombre: "Mercado Producción", ruta: "/publicaciones-productor", icono: AgricultureOutlinedIcon },
-    ];
 
     const esActiva = (ruta: string) =>
         rutaActual === ruta || rutaActual.startsWith(`${ruta}/`);
@@ -213,7 +217,7 @@ function MenuPublicaciones({
     return (
         <div
             ref={referencia}
-            className={estilos.grupoPublicaciones}
+            className={estilos.grupoMenu}
             onBlur={(evento) => {
                 if (!evento.currentTarget.contains(evento.relatedTarget)) {
                     setAbierto(false);
@@ -233,7 +237,7 @@ function MenuPublicaciones({
                 type="button"
                 className={[
                     mobile ? estilos.enlaceMobile : estilos.enlace,
-                    estilos.botonPublicaciones,
+                    estilos.botonGrupoMenu,
                     activo ? estilos.enlaceActivo : "",
                 ].join(" ")}
                 aria-expanded={abierto}
@@ -242,10 +246,10 @@ function MenuPublicaciones({
             >
                 {mobile ? (
                     <span className={estilos.etiquetaMenuMobile}>
-                        <StorefrontOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
-                        Mercados
+                        <Icono className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
+                        {nombre}
                     </span>
-                ) : "Mercados"}
+                ) : nombre}
                 {abierto ? (
                     <KeyboardArrowUpIcon
                         className={estilos.iconoExpandir}
@@ -263,9 +267,9 @@ function MenuPublicaciones({
                 id={id}
                 inert={!abierto}
                 className={[
-                    estilos.listaPublicaciones,
-                    abierto ? estilos.listaPublicacionesAbierta : "",
-                    mobile ? estilos.listaPublicacionesMobile : "",
+                    estilos.listaGrupoMenu,
+                    abierto ? estilos.listaGrupoMenuAbierta : "",
+                    mobile ? estilos.listaGrupoMenuMobile : "",
                 ].join(" ")}
             >
                 {opciones.map((opcion) => (
@@ -274,9 +278,9 @@ function MenuPublicaciones({
                         href={opcion.ruta}
                         aria-current={esActiva(opcion.ruta) ? "page" : undefined}
                         className={[
-                            estilos.opcionPublicaciones,
+                            estilos.opcionGrupoMenu,
                             esActiva(opcion.ruta)
-                                ? estilos.opcionPublicacionesActiva
+                                ? estilos.opcionGrupoMenuActiva
                                 : "",
                         ].join(" ")}
                         onClick={() => {
@@ -293,9 +297,10 @@ function MenuPublicaciones({
     );
 }
 
-export default function HeaderPublico({ sesion, fotoPerfil = null }: PropiedadesEncabezado) {
+export default function HeaderPublico({ sesion, fotoPerfil = null, nombrePerfil = null }: PropiedadesEncabezado) {
     const rolUsuario = sesion?.rol ?? null;
     const esProductor = rolUsuario === "PRODUCTOR";
+    const inicialesPerfil = rolUsuario === "OPERADOR" || esProductor ? obtenerIniciales(nombrePerfil ?? "") : "";
     const [menuAbierto, cambiarMenuAbierto] = useState(false);
     const [menuUsuarioAbierto, cambiarMenuUsuarioAbierto] = useState(false);
     const [fotoPerfilFallida, cambiarFotoPerfilFallida] = useState(false);
@@ -312,7 +317,27 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
     );
 
     const esAdministrador = rolUsuario === "ADMINISTRADOR";
-    const opcionesNavegacion = opcionesVisibles.filter((opcion) => !esAdministrador || opcion.ruta !== "/publicaciones-productor");
+    const rutasMercadosAdmin = ["/publicaciones", "/publicaciones-productor"];
+    const rutasUsuariosAdmin = ["/operadores", "/productores"];
+    const opcionesMercadosAdmin = opcionesVisibles
+        .filter((opcion) => rutasMercadosAdmin.includes(opcion.ruta))
+        .map((opcion) => ({
+            ...opcion,
+            nombre: opcion.ruta === "/publicaciones" ? "Operadores" : "Productores",
+        }));
+    const opcionesUsuariosAdmin = opcionesVisibles.filter((opcion) => rutasUsuariosAdmin.includes(opcion.ruta));
+    const opcionesInicioAdmin = opcionesVisibles.filter((opcion) => opcion.ruta === "/inicio");
+    const opcionesAdministracionAdmin = opcionesVisibles.filter((opcion) => opcion.ruta === "/administracion");
+    const opcionesRestantesAdmin = opcionesVisibles.filter(
+        (opcion) =>
+            !rutasMercadosAdmin.includes(opcion.ruta) &&
+            !rutasUsuariosAdmin.includes(opcion.ruta) &&
+            opcion.ruta !== "/inicio" &&
+            opcion.ruta !== "/administracion" &&
+            opcion.ruta !== "/precios-referencia",
+    );
+    const opcionesPreciosAdmin = opcionesVisibles.filter((opcion) => opcion.ruta === "/precios-referencia");
+    const opcionesNavegacion = opcionesVisibles;
 
     useEffect(() => {
         if (!menuUsuarioAbierto) return;
@@ -352,6 +377,54 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
         cambiarMenuUsuarioAbierto(false);
     }
 
+    function renderOpcionNavegacion(opcion: OpcionMenu, mobile = false) {
+        return (
+            <Link
+                key={opcion.ruta}
+                href={opcion.ruta}
+                aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined}
+                className={mobile
+                    ? `${estilos.enlaceMobile} ${esRutaActiva(opcion.ruta) ? estilos.enlaceActivo : ""}`
+                    : `${estilos.enlace} ${esRutaActiva(opcion.ruta) ? estilos.enlaceActivo : ""}`}
+                onClick={() => mobile && cambiarMenuAbierto(false)}
+            >
+                {mobile && <opcion.icono className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />}
+                {opcion.nombre}
+            </Link>
+        );
+    }
+
+    function renderNavegacionAdministrador(mobile = false) {
+        return (
+            <>
+                {opcionesInicioAdmin.map((opcion) => renderOpcionNavegacion(opcion, mobile))}
+                {opcionesMercadosAdmin.length > 0 && (
+                    <MenuGrupoNavegacion
+                        nombre="Mercados"
+                        icono={StorefrontOutlinedIcon}
+                        opciones={opcionesMercadosAdmin}
+                        mobile={mobile}
+                        rutaActual={rutaActual}
+                        onNavigate={() => cambiarMenuAbierto(false)}
+                    />
+                )}
+                {opcionesUsuariosAdmin.length > 0 && (
+                    <MenuGrupoNavegacion
+                        nombre="Usuarios"
+                        icono={GroupsOutlinedIcon}
+                        opciones={opcionesUsuariosAdmin}
+                        mobile={mobile}
+                        rutaActual={rutaActual}
+                        onNavigate={() => cambiarMenuAbierto(false)}
+                    />
+                )}
+                {opcionesRestantesAdmin.map((opcion) => renderOpcionNavegacion(opcion, mobile))}
+                {opcionesPreciosAdmin.map((opcion) => renderOpcionNavegacion(opcion, mobile))}
+                {opcionesAdministracionAdmin.map((opcion) => renderOpcionNavegacion(opcion, mobile))}
+            </>
+        );
+    }
+
     const menuUsuario = rolUsuario && (
         <div ref={referenciaMenuUsuario} className={estilos.menuOperador}>
             <button
@@ -372,10 +445,12 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         className={estilos.fotoPerfil}
                         onError={() => cambiarFotoPerfilFallida(true)}
                     />
+                ) : inicialesPerfil ? (
+                    <span className={estilos.inicialesPerfil} aria-hidden="true">{inicialesPerfil}</span>
                 ) : (
                     <AccountCircleIcon className={estilos.iconoOperador} />
                 )}
-                <ContadorNotificaciones cantidad={noLeidas} enEsquina />
+                {!menuUsuarioAbierto && <ContadorNotificaciones cantidad={noLeidas} enEsquina />}
             </button>
             {menuUsuarioAbierto && (
                 <div className={estilos.desplegableOperador} role="menu">
@@ -383,23 +458,13 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
                         <ContadorNotificaciones cantidad={noLeidas} />
                     </Link>
-                    {esProductor ? (
-                        <Link href="/mi-perfil/productor" className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>Mi perfil</Link>
-                    ) : (
-                        <Link href="/mi-perfil" className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>
-                            Mi perfil
-                        </Link>
-                    )}
-
-                    {/* {!esProductor && (
-                        <Link
-                            href="/mi-perfil"
-                            className={estilos.opcionDesplegable}
-                            role="menuitem"
-                            onClick={cerrarMenus}
-                        ></Link> */}
+                    <Link href={esProductor ? "/mi-perfil/productor" : "/mi-perfil"} className={estilos.opcionDesplegable} role="menuitem" onClick={cerrarMenus}>
+                        <AccountCircleOutlinedIcon className={estilos.iconoMenuDesplegable} fontSize="small" aria-hidden="true" />
+                        Mi perfil
+                    </Link>
                     <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
                         <button type="submit" className={estilos.opcionDesplegable} role="menuitem">
+                            <LogoutOutlinedIcon className={estilos.iconoMenuDesplegable} fontSize="small" aria-hidden="true" />
                             Cerrar sesión
                         </button>
                     </form>
@@ -408,20 +473,13 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
         </div>
     );
 
-    const menuPerfilMobile = rolUsuario && (esProductor ? (
-        <Link href="/mi-perfil/productor" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
+    const menuPerfilMobile = rolUsuario && (
+        <Link href={esProductor ? "/mi-perfil/productor" : "/mi-perfil"} className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
             <span className={estilos.etiquetaMenuMobile}>
                 <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
                 Mi perfil
             </span>
-        </Link>
-    ) : (
-        <Link href="/mi-perfil" className={`${estilos.enlaceMobile} ${estilos.perfilMobile}`} onClick={cerrarMenus}>
-            <span className={estilos.etiquetaMenuMobile}>
-                <AccountCircleOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
-                Mi perfil
-            </span>
-            {fotoPerfil && !fotoPerfilFallida && (
+            {fotoPerfil && !fotoPerfilFallida ? (
                 <Image
                     src={fotoPerfil}
                     alt=""
@@ -431,9 +489,11 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     className={estilos.fotoPerfilMobile}
                     onError={() => cambiarFotoPerfilFallida(true)}
                 />
-            )}
+            ) : inicialesPerfil ? (
+                <span className={`${estilos.inicialesPerfil} ${estilos.inicialesPerfilMobile}`} aria-hidden="true">{inicialesPerfil}</span>
+            ) : null}
         </Link>
-    ));
+    );
 
     const menuCerrarSesionMobile = rolUsuario && (
         <form action={cerrarSesionYVolverAlInicio} onSubmit={cerrarMenus}>
@@ -464,26 +524,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         />
                     </Link>
                     <nav className={estilos.navegacion} aria-label="Navegación principal">
-                        {opcionesNavegacion.map((opcion) =>
-                            esAdministrador && opcion.ruta === "/publicaciones" ? (
-                                <MenuPublicaciones
-                                    key={opcion.ruta}
-                                    rutaActual={rutaActual}
-                                    onNavigate={() => cambiarMenuAbierto(false)}
-                                />
-                            ) : (
-                                <Link
-                                    key={opcion.ruta}
-                                    href={opcion.ruta}
-                                    aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined}
-                                    className={`${estilos.enlace} ${
-                                        esRutaActiva(opcion.ruta) ? estilos.enlaceActivo : ""
-                                    }`}
-                                >
-                                    {opcion.nombre}
-                                </Link>
-                            ),
-                        )}
+                        {esAdministrador
+                            ? renderNavegacionAdministrador()
+                            : opcionesNavegacion.map((opcion) => renderOpcionNavegacion(opcion))}
                     </nav>
                     {menuUsuario}
                     <button
@@ -501,7 +544,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                         <CloseIcon
                             className={`${estilos.iconoMenu} ${menuAbierto ? estilos.iconoCerrarVisible : estilos.iconoCerrarOculto}`}
                         />
-                        <ContadorNotificaciones cantidad={noLeidas} enEsquina />
+                        {!menuAbierto && <ContadorNotificaciones cantidad={noLeidas} enEsquina />}
                     </button>
                     {rolUsuario && <span id={descripcionNotificacionesId} className={estilos.descripcionNotificaciones}>{noLeidas} {noLeidas === 1 ? "notificación sin leer" : "notificaciones sin leer"}</span>}
                 </div>
@@ -510,32 +553,19 @@ export default function HeaderPublico({ sesion, fotoPerfil = null }: Propiedades
                     className={`${estilos.navegacionMobile} ${menuAbierto ? estilos.navegacionMobileAbierta : ""}`}
                     aria-label="Navegación móvil"
                 >
-                    {menuPerfilMobile}
-                    {rolUsuario && <Link href="/notificaciones" className={`${estilos.enlaceMobile} ${estilos.enlaceNotificaciones}`} aria-current={esRutaActiva("/notificaciones") ? "page" : undefined} aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined} onClick={cerrarMenus}>
+                    {!esAdministrador && menuPerfilMobile}
+                    {!esAdministrador && rolUsuario && <Link href="/notificaciones" className={`${estilos.enlaceMobile} ${estilos.enlaceNotificaciones}`} aria-current={esRutaActiva("/notificaciones") ? "page" : undefined} aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined} onClick={cerrarMenus}>
                         <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
                         <ContadorNotificaciones cantidad={noLeidas} />
                     </Link>}
-                    {opcionesNavegacion.map((opcion) =>
-                        esAdministrador && opcion.ruta === "/publicaciones" ? (
-                            <MenuPublicaciones
-                                key={opcion.ruta}
-                                mobile
-                                rutaActual={rutaActual}
-                                onNavigate={() => cambiarMenuAbierto(false)}
-                            />
-                        ) : (
-                            <Link
-                                key={opcion.ruta}
-                                href={opcion.ruta}
-                                aria-current={esRutaActiva(opcion.ruta) ? "page" : undefined}
-                                className={estilos.enlaceMobile}
-                                onClick={() => cambiarMenuAbierto(false)}
-                            >
-                                <opcion.icono className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />
-                                {opcion.nombre}
-                            </Link>
-                        ),
-                    )}
+                    {esAdministrador
+                        ? renderNavegacionAdministrador(true)
+                        : opcionesNavegacion.map((opcion) => renderOpcionNavegacion(opcion, true))}
+                    {esAdministrador && rolUsuario && <Link href="/notificaciones" className={`${estilos.enlaceMobile} ${estilos.enlaceNotificaciones}`} aria-current={esRutaActiva("/notificaciones") ? "page" : undefined} aria-describedby={noLeidas > 0 ? descripcionNotificacionesId : undefined} onClick={cerrarMenus}>
+                        <span className={estilos.etiquetaMenuMobile}><NotificationsNoneOutlinedIcon className={estilos.iconoMenuMobile} fontSize="small" aria-hidden="true" />Notificaciones</span>
+                        <ContadorNotificaciones cantidad={noLeidas} />
+                    </Link>}
+                    {esAdministrador && menuPerfilMobile}
                     {menuCerrarSesionMobile}
                 </nav>
             </header>

@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
     obtenerPerfil: vi.fn(),
     refresh: vi.fn(),
     obtenerSesion: vi.fn(),
-    obtenerOperadorActual: vi.fn(),
     redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
     notFound: vi.fn(() => {
         throw new Error("PERFIL_NO_ENCONTRADO");
@@ -17,10 +16,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     obtenerSesion: mocks.obtenerSesion,
-}));
-
-vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
-    obtenerOperadorActual: mocks.obtenerOperadorActual,
 }));
 
 // Reemplaza el import de la página por mi función falsa
@@ -57,7 +52,7 @@ const perfil: PerfilPublicoOperador = {
         fecha: "2026-10-03T15:00:00.000Z",
         especie: "Tomate",
         variedad: "Perita",
-        presentacion: "Cajón",
+        envase: "Cajón", kilos: "",
         categoria: "Extra",
         calibre: "A",
         pais: "URUGUAY",
@@ -70,33 +65,22 @@ describe("Página pública del operador", () => {
         mocks.obtenerSesion.mockResolvedValue(null);
     });
 
-    it("redirige al operador a su mercado sin consultar un perfil ajeno", async () => {
+    it("redirige al operador aunque la URL corresponda a su propio perfil público", async () => {
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
-        mocks.obtenerOperadorActual.mockResolvedValue({ id: 24, usuarioId: 10, nombreFantasia: "Mi huerta" });
+        mocks.obtenerPerfil.mockResolvedValue(perfil);
         await expect(Page({ params: Promise.resolve({ nombre: encodeURIComponent("Frutas del Norte") }), searchParams: Promise.resolve({})})).rejects.toThrow("NEXT_REDIRECT");
 
         expect(mocks.redirect).toHaveBeenCalledWith("/mi-mercado");
-        expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
         expect(mocks.obtenerPerfil).not.toHaveBeenCalled();
         expect(mocks.notFound).not.toHaveBeenCalled();
     });
 
-    it("permite al operador consultar su propio perfil con el nombre decodificado", async () => {
-        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
-        mocks.obtenerOperadorActual.mockResolvedValue({ id: perfil.id, usuarioId: 10, nombreFantasia: perfil.nombreFantasia });
-        mocks.obtenerPerfil.mockResolvedValue(perfil);
-
-        render(await Page({ params: Promise.resolve({ nombre: encodeURIComponent("Frutas del Norte") }), searchParams: Promise.resolve({}) }));
-
-        expect(mocks.redirect).not.toHaveBeenCalled();
-        expect(mocks.obtenerOperadorActual).toHaveBeenCalledOnce();
-        expect(mocks.obtenerPerfil).toHaveBeenCalledWith("Frutas del Norte");
-        expect(screen.getByRole("heading", { name: "Frutas del Norte" })).toBeInTheDocument();
-        expect(screen.getByText("Tomate - Perita")).toBeInTheDocument();
-    });
-
-    it("redirige al productor antes de esperar los parámetros o consultar el perfil", async () => {
-        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 });
+    it.each([
+        { rol: "OPERADOR", destino: "/mi-mercado" },
+        { rol: "PRODUCTOR", destino: "/mi-mercado/productor" },
+        { rol: "ADMINISTRADOR", destino: "/inicio" },
+    ] as const)("redirige a $rol antes de esperar los parámetros o consultar el perfil", async ({ rol, destino }) => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
         const esperarNombre = vi.fn((resolver: (valor: { nombre: string }) => void) => resolver({ nombre: "Frutas" }));
         const esperarOrigen = vi.fn((resolver: (valor: { origen: string }) => void) => resolver({ origen: "publicaciones" }));
         const params = { then: esperarNombre } as unknown as Promise<{ nombre: string }>;
@@ -104,26 +88,22 @@ describe("Página pública del operador", () => {
 
         await expect(Page({ params, searchParams })).rejects.toThrow("NEXT_REDIRECT");
 
-        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/mi-mercado/productor");
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith(destino);
         expect(mocks.obtenerSesion).toHaveBeenCalledOnce();
         expect(esperarNombre).not.toHaveBeenCalled();
         expect(esperarOrigen).not.toHaveBeenCalled();
-        expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
         expect(mocks.obtenerPerfil).not.toHaveBeenCalled();
         expect(mocks.notFound).not.toHaveBeenCalled();
     });
 
-    it.each([null, "ADMINISTRADOR"] as const)("conserva el perfil público para la sesión %s", async (rol) => {
-        mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 20, rol, expiraEn: 2000000000 } : null);
-        mocks.obtenerPerfil.mockResolvedValue(perfil);
+    it("no consulta datos cuando falla la verificación de sesión", async () => {
+        const error = new Error("Sesión no disponible");
+        mocks.obtenerSesion.mockRejectedValue(error);
 
-        render(await Page({ params: Promise.resolve({ nombre: encodeURIComponent("Frutas del Norte") }), searchParams: Promise.resolve({}) }));
+        await expect(Page({ params: Promise.resolve({ nombre: perfil.nombreFantasia }), searchParams: Promise.resolve({}) })).rejects.toBe(error);
 
+        expect(mocks.obtenerPerfil).not.toHaveBeenCalled();
         expect(mocks.redirect).not.toHaveBeenCalled();
-        expect(mocks.obtenerOperadorActual).not.toHaveBeenCalled();
-        expect(mocks.obtenerPerfil).toHaveBeenCalledWith("Frutas del Norte");
-        expect(screen.getByRole("heading", { name: "Frutas del Norte" })).toBeInTheDocument();
-        expect(screen.getByText("Tomate - Perita")).toBeInTheDocument();
     });
 
     it("consulta el operador indicado en la URL y muestra su perfil y catálogo", async () => {
@@ -149,7 +129,7 @@ describe("Página pública del operador", () => {
 
         render(await Page({ params: Promise.resolve({ nombre: encodeURIComponent("Frutas del Norte") }), searchParams: Promise.resolve({}) }));
 
-        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Licencia: 05/11/2026 - 12/11/2026");
+        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Fecha: 05/11/2026 - 12/11/2026");
         expect(screen.getByText("Consultar disponibilidad.")).toBeInTheDocument();
         expect(screen.getByText("Sin publicaciones, esta de licencia")).toBeInTheDocument();
         expect(screen.queryByText("Tomate - Perita")).not.toBeInTheDocument();
@@ -165,8 +145,6 @@ describe("Página pública del operador", () => {
     });
 
     it.each(["Jorge Ferias", "Frutas & Más", "Frutas 100%", "Frutas %20", "%", "%ZZ", "%C3"])("recupera el nombre original del segmento codificado: %s", async (nombre) => {
-        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
-        mocks.obtenerOperadorActual.mockResolvedValue({ id: perfil.id, usuarioId: 10, nombreFantasia: nombre });
         mocks.obtenerPerfil.mockResolvedValue({ ...perfil, nombreFantasia: nombre });
 
         await Page({ params: Promise.resolve({ nombre: encodeURIComponent(nombre) }), searchParams: Promise.resolve({}) });

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
     transaction: vi.fn(), usuarioWhere: vi.fn(), select: vi.fn(), update: vi.fn(),
     operadorWhere: vi.fn(), operadorSelect: vi.fn(), first: vi.fn(),
     revalidatePath: vi.fn(), notificar: vi.fn(),
+    execute: vi.fn(), usuarioFirst: vi.fn(), usuarioAll: vi.fn(),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
@@ -14,11 +15,14 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioCatalogoOperador: mocks.notificar }));
-vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: { transaction: mocks.transaction } }));
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: {
+    transaction: mocks.transaction,
+    raw: { sql: (partes: TemplateStringsArray) => ({ returnsRow: () => ({ build: () => partes.join("") }) }) },
+} }));
 
-const usuario = { where: mocks.usuarioWhere, select: mocks.select, update: mocks.update };
+const usuario = { where: mocks.usuarioWhere, select: mocks.select, update: mocks.update, first: mocks.usuarioFirst, all: mocks.usuarioAll };
 const operador = { select: mocks.operadorSelect, where: mocks.operadorWhere, first: mocks.first };
-const tx = { orm: { public: { Usuario: usuario, Operador: operador } } };
+const tx = { execute: mocks.execute, orm: { public: { Usuario: usuario, Operador: operador } } };
 
 describe("cambiarHabilitacionUsuario — BP-18.12", () => {
     beforeEach(() => {
@@ -29,6 +33,8 @@ describe("cambiarHabilitacionUsuario — BP-18.12", () => {
         mocks.usuarioWhere.mockReturnValue(usuario);
         mocks.select.mockReturnValue(usuario);
         mocks.update.mockResolvedValue({ id: 2, rol: "OPERADOR" });
+        mocks.usuarioFirst.mockResolvedValue({ id: 1 });
+        mocks.usuarioAll.mockResolvedValue([{ id: 1 }, { id: 2 }]);
         mocks.operadorSelect.mockReturnValue(operador);
         mocks.operadorWhere.mockReturnValue(operador);
         mocks.first.mockResolvedValue({ id: 20 });
@@ -115,6 +121,36 @@ describe("cambiarHabilitacionUsuario — BP-18.12", () => {
         await expect(cambiarHabilitacionUsuario({ usuarioId: 2, habilitado: false }))
             .rejects.toThrow("No se pudo guardar");
         expect(mocks.notificar).not.toHaveBeenCalled();
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("comparte el bloqueo de bajas antes de revalidar al administrador", async () => {
+        let liberar!: () => void;
+        mocks.execute.mockReturnValueOnce(new Promise<void>((resolve) => { liberar = resolve; }));
+        const cambio = cambiarHabilitacionUsuario({ usuarioId: 2, habilitado: false });
+        await vi.waitFor(() => expect(mocks.execute).toHaveBeenCalledOnce());
+        expect(mocks.execute).toHaveBeenCalledWith(expect.stringContaining("pg_advisory_xact_lock(1721, 0)"));
+        expect(mocks.usuarioFirst).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+        liberar();
+        await expect(cambio).resolves.toMatchObject({ esValido: true });
+    });
+
+    it("rechaza la segunda deshabilitación si el emisor fue deshabilitado por la primera", async () => {
+        mocks.usuarioFirst.mockResolvedValue(null);
+        expect(await cambiarHabilitacionUsuario({ usuarioId: 2, habilitado: false })).toEqual({
+            esValido: false, errores: ["Tu cuenta de administrador ya no está habilitada."],
+        });
+        expect(mocks.usuarioWhere).toHaveBeenCalledWith({ id: 1, rol: "ADMINISTRADOR", habilitado: true });
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it("impide deshabilitar al último administrador habilitado", async () => {
+        mocks.usuarioAll.mockResolvedValue([{ id: 2 }]);
+        expect(await cambiarHabilitacionUsuario({ usuarioId: 2, habilitado: false })).toEqual({
+            esValido: false, errores: ["No podés deshabilitar al último administrador habilitado."],
+        });
+        expect(mocks.update).not.toHaveBeenCalled();
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 });

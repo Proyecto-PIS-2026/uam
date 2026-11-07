@@ -78,6 +78,6 @@ describe("página de modificación de un administrador", () => {
         mocks.requerirAdministrador.mockResolvedValue({ usuarioId: 2, rol: "ADMINISTRADOR" });
 
         await expect(Page(parametros("102"))).rejects.toThrow("NEXT_REDIRECT");
-        expect(mocks.redirect).toHaveBeenCalledWith("/mi-perfil");
+        expect(mocks.redirect).toHaveBeenCalledWith("/mi-perfil/administrador/editar");
     });
 });

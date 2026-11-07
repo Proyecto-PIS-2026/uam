@@ -16,6 +16,18 @@
     font-size: var(--tamano-texto-secundario);
 }
 
+.enlaceHistorico {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.enlaceHistorico:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
 .contexto strong {
     color: var(--color-secondary);
 }

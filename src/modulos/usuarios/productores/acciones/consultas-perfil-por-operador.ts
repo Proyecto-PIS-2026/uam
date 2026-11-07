@@ -2,6 +2,7 @@ import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { normalizarDepartamento, obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 
 export type PublicacionPerfilProductor = {
     id: number;
@@ -10,8 +11,10 @@ export type PublicacionPerfilProductor = {
     fecha: string;
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     cantidadUnidades: number | null;
+    comentario?: string | null;
     categoria: string;
     calibre: string;
     pais: string;
@@ -63,13 +66,15 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
                 "foto",
                 "precio",
                 "fecha",
+                "fechaVigencia",
                 "cantidadUnidades",
+                "comentario",
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion"
             );
-            const conPresentacion = camposPublicacion.include("especie").include("variedad").include("presentacion");
-            const conCategoria = conPresentacion.include("categoria");
+            const conEnvase = camposPublicacion.include("especie").include("variedad").include("envase").include("kilos");
+            const conCategoria = conEnvase.include("categoria");
             const completo = conCategoria.include("calibre");
             return completo;
         });
@@ -79,7 +84,8 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
     
     for (const completa of completas) {
         const publicacion = completa.publicacion;
-        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "PRODUCTOR";
+        const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "PRODUCTOR";
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,
@@ -88,8 +94,10 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
                 fecha: publicacion.fecha.toString(),
                 especie: publicacion.especie.nombreEspecie,
                 variedad: publicacion.variedad?.nombreVariedad ?? "",
-                presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
+                envase: publicacion.envase?.nombreEnvase ?? "",
+                kilos: publicacion.kilos?.valor ?? "",
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
+                comentario: publicacion.comentario,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",

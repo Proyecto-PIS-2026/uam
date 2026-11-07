@@ -1,4 +1,3 @@
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import obtenerConfiguraciones, {
     actualizarConfiguracion,
@@ -203,6 +202,39 @@ describe("obtenerEstadisticas", () => {
         expect(mocks.cantidadPublicacionesAll).toHaveBeenCalledOnce();
     });
 
+    it("envía días calendario sin convertirlos a la zona horaria del navegador", async () => {
+        const fecha = { toString: () => "2026-11-06T00:00:00Z" };
+
+        mocks.visitasAll.mockResolvedValue([
+            { id: 1, fecha, tipoVisitante: "comprador", cantidad: 2 },
+        ]);
+
+        mocks.contactosAll.mockResolvedValue([
+            { id: 2, fecha, username: "operador", cantidad: 3 },
+        ]);
+
+        mocks.publicacionesAll.mockResolvedValue([
+            { id: 3, fecha, username: "productor", cantidad: 4 },
+        ]);
+
+        const resultado = await obtenerEstadisticas();
+
+        expect(resultado.visitas[0]).toMatchObject({
+            fecha: "2026-11-06",
+            cantidad: 2,
+        });
+
+        expect(resultado.contactos[0]).toMatchObject({
+            fecha: "2026-11-06",
+            cantidad: 3,
+        });
+
+        expect(resultado.publicaciones[0]).toMatchObject({
+            fecha: "2026-11-06",
+            cantidad: 4,
+        });
+    });
+
     it("devuelve las cinco colecciones con sus respectivos datos", async () => {
         const fecha = new Date("2026-03-15T00:00:00.000Z");
 
@@ -234,17 +266,18 @@ describe("obtenerEstadisticas", () => {
 
         const resultado = await obtenerEstadisticas();
 
+        const fechaCalendario = "2026-03-15";
         const fechaLocal = new Date(2026, 2, 15);
 
         expect(resultado).toEqual({
             visitas: [
-                { ...visitas[0], fecha: fechaLocal },
+                { ...visitas[0], fecha: fechaCalendario },
             ],
             contactos: [
-                { ...contactos[0], fecha: fechaLocal },
+                { ...contactos[0], fecha: fechaCalendario },
             ],
             publicaciones: [
-                { ...publicaciones[0], fecha: fechaLocal },
+                { ...publicaciones[0], fecha: fechaCalendario },
             ],
             contactosPorPublicacion: [
                 { ...contactosPorPublicacion[0], fecha: fechaLocal },
@@ -284,18 +317,21 @@ describe("obtenerEstadisticas", () => {
             id: 1,
             tipoVisitante: "PRODUCTOR",
             cantidad: 8,
+            fecha: "2026-03-15",
         });
 
         expect(resultado.contactos[0]).toMatchObject({
             id: 2,
             username: "productor1",
             cantidad: 6,
+            fecha: "2026-03-15",
         });
 
         expect(resultado.publicaciones[0]).toMatchObject({
             id: 3,
             username: "operador1",
             cantidad: 2,
+            fecha: "2026-03-15",
         });
 
         expect(resultado.contactosPorPublicacion[0]).toMatchObject({
@@ -303,12 +339,14 @@ describe("obtenerEstadisticas", () => {
             username: "productor1",
             especie: "Manzana",
             cantidad: 3,
+            fecha: new Date(2026, 2, 15),
         });
 
         expect(resultado.cantidadPublicaciones[0]).toMatchObject({
             id: 5,
             username: "operador1",
             cantidad: 15,
+            fecha: new Date(2026, 2, 15),
         });
     });
 

@@ -37,6 +37,15 @@ model Usuario {
   @@map("usuario")
 }
 
+// Tokens cerrados: la revocación se comparte entre instancias hasta su vencimiento.
+model SesionRevocada {
+  tokenHash String @id
+  expiraEn  Timestamptz(3)
+
+  @@index([expiraEn])
+  @@map("sesionRevocada")
+}
+
 // ADMINISTRADORES
 model Administrador {
   id        Int     @id @default(autoincrement())
@@ -59,6 +68,7 @@ model Operador {
   whatsApp              String
 
   locales               Local[]
+  avisosVencimientoLocales AvisoVencimientoLocal[]
   publicacionesOperador PublicacionOperador[]
 
   @@map("operador")
@@ -101,6 +111,21 @@ model Local {
   @@map("local")
 }
 
+// Conserva los avisos aunque se borren las notificaciones o se recreen los locales al editar un operador.
+model AvisoVencimientoLocal {
+  id          Int       @id @default(autoincrement())
+  operadorId  Int
+  operador    Operador  @relation(fields:[operadorId], references:[id], onDelete: Cascade)
+  naveId      Int
+  numeroLocal String
+  finContrato Date
+  tipo        String
+  fecha       Timestamptz(3) @default(now())
+
+  @@unique([operadorId, naveId, numeroLocal, finContrato, tipo], map: "avisoVencimientoLocal_contrato_tipo_key")
+  @@map("avisoVencimientoLocal")
+}
+
 // ESPECIES
 model Especie {
   id            Int         @id @default(autoincrement())
@@ -140,9 +165,24 @@ model Presentacion {
   presentacionDefault Boolean         @default(false)
   variedadId          Int
   variedad            Variedad        @relation(fields:[variedadId], references:[id])
-  publicaciones       Publicacion[]
 
   @@map("presentacion")
+}
+
+model Envase {
+  id           Int           @id @default(autoincrement())
+  nombreEnvase String        @unique
+  publicaciones Publicacion[]
+
+  @@map("envase")
+}
+
+model KilosEmpaquetado {
+  id           Int           @id @default(autoincrement())
+  valor        String        @unique
+  publicaciones Publicacion[]
+
+  @@map("kilosEmpaquetado")
 }
 
 // CATEGORIAS
@@ -212,9 +252,11 @@ model Publicacion {
   id                    Int                  @id @default(autoincrement())
   version               Int                  @default(1)
   fecha                 temporal.updatedAt()
+  fechaVigencia         DateTime?
   publicacionDisponible Boolean              @default(true)
   publicacionActiva     Boolean              @default(true)
   precio                Numeric(12, 2)?
+  comentario            String?
   cantidadUnidades      Int?
   foto                  String?
   fotoEliminadaPorVencimientoEn DateTime?
@@ -223,8 +265,10 @@ model Publicacion {
   especie               Especie              @relation(fields:[especieId], references:[id])
   variedadId            Int?
   variedad              Variedad?            @relation(fields:[variedadId], references:[id])
-  presentacionId        Int?
-  presentacion          Presentacion?        @relation(fields:[presentacionId], references:[id])
+  envaseId              Int?
+  envase                Envase?              @relation(fields:[envaseId], references:[id])
+  kilosId               Int?
+  kilos                 KilosEmpaquetado?     @relation(fields:[kilosId], references:[id])
   categoriaId           Int?
   categoria             Categoria?           @relation(fields:[categoriaId], references:[id])
   calibreId             Int?

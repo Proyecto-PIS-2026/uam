@@ -6,6 +6,7 @@ import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternate
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutlined";
 import UndoIcon from "@mui/icons-material/Undo";
+import { obtenerIniciales } from "../obtener-iniciales";
 import styles from "./SelectorFotoPerfil.module.css";
 
 export type CambioFotoPerfil = File | null | undefined;
@@ -19,6 +20,7 @@ export function argumentosFotoPerfil(cambio: CambioFotoPerfil): [] | [FormData] 
 }
 
 type Props = {
+    nombre?: string;
     fotoActual?: string | null;
     cambio: CambioFotoPerfil;
     alCambiar: (cambio: CambioFotoPerfil) => void;
@@ -26,7 +28,7 @@ type Props = {
     deshabilitado?: boolean;
 };
 
-export default function SelectorFotoPerfil({ fotoActual, cambio, alCambiar, alError, deshabilitado = false }: Props) {
+export default function SelectorFotoPerfil({ nombre = "", fotoActual, cambio, alCambiar, alError, deshabilitado = false }: Props) {
     const id = useId();
     const entrada = useRef<HTMLInputElement>(null);
     const [vistaPrevia, setVistaPrevia] = useState<{ archivo: File; url: string } | null>(null);
@@ -46,6 +48,7 @@ export default function SelectorFotoPerfil({ fotoActual, cambio, alCambiar, alEr
 
     const url = archivo ? vistaPrevia?.archivo === archivo ? vistaPrevia.url : null : cambio === null ? null : fotoActual;
     const hayFoto = Boolean(archivo || cambio !== null && fotoActual);
+    const iniciales = obtenerIniciales(nombre);
 
     function seleccionar(evento: ChangeEvent<HTMLInputElement>) {
         const seleccionada = evento.currentTarget.files?.[0];
@@ -72,7 +75,9 @@ export default function SelectorFotoPerfil({ fotoActual, cambio, alCambiar, alEr
         <div className={styles.vistaPrevia}>
             {url && url !== fotoFallida
                 ? <Image src={url} alt="Vista previa de la foto de perfil" width={112} height={112} unoptimized className={styles.imagen} onError={() => setFotoFallida(url)} />
-                : <PersonOutlineIcon className={styles.sinFoto} aria-hidden="true" />}
+                : iniciales
+                    ? <span className={styles.iniciales} aria-hidden="true">{iniciales}</span>
+                    : <PersonOutlineIcon className={styles.sinFoto} aria-hidden="true" />}
         </div>
         <div className={styles.contenido}>
             <p id={`${id}-titulo`} className={styles.titulo}>Foto de perfil <span className={styles.opcional}>(opcional)</span></p>

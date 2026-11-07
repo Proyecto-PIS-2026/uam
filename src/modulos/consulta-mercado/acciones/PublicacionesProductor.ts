@@ -1,6 +1,7 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import type { DatosSesion } from "../../identidad-acceso/autenticacion/sesiones";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { esPublicacionVencida } from "../../publicaciones/vigencia-publicacion";
 
 export type UbicacionPublicacionProductorListado = {
     id: number;
@@ -15,8 +16,10 @@ export type PublicacionProductorListado = {
     foto: string | null;
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -48,10 +51,11 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
     ).where((pp) =>
         pp.productor.some((productor) => productor.usuario.some((usuario) => usuario.habilitado.eq(true))),
     ).include("publicacion", (p) =>
-        p.select("id", "precio", "fecha", "foto", "cantidadUnidades", "tipoPublicacion")
+        p.select("id", "precio", "fecha", "fechaVigencia", "foto", "cantidadUnidades", "comentario", "tipoPublicacion")
             .include("especie", (e) => e.select("nombreEspecie"))
             .include("variedad", (v) => v.select("nombreVariedad"))
-            .include("presentacion", (pr) => pr.select("nombrePresentacion"))
+            .include("envase", (e) => e.select("nombreEnvase"))
+            .include("kilos", (k) => k.select("valor"))
             .include("categoria", (c) => c.select("nombreCategoria"))
             .include("calibre", (c) => c.select("nombreCalibre", "codigoCalibre"))
     ).include("productor", (p) =>
@@ -65,13 +69,14 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
         const p = fila.publicacion;
         const productor = fila.productor;
         const pais = fila.pais;
-        const presentacion = p?.presentacion;
+        const envase = p?.envase;
+        const kilos = p?.kilos;
         const variedad = p?.variedad;
         const especie = p?.especie;
         const categoria = p?.categoria;
         const calibre = p?.calibre;
         const tipoPublicacion = p?.tipoPublicacion;
-        if (!p || !productor || !especie || tipoPublicacion !== "PRODUCTOR") return [];
+        if (!p || !productor || !especie || tipoPublicacion !== "PRODUCTOR" || esPublicacionVencida(p.fechaVigencia)) return [];
         return [{
             id: Number(p.id),
             precio: p.precio === null ? null : Number(p.precio),
@@ -79,8 +84,10 @@ export async function consultarPublicacionesProductores(sesion: DatosSesion | nu
             foto: p.foto,
             especie: especie.nombreEspecie,
             variedad: variedad?.nombreVariedad ?? "",
-            presentacion: presentacion?.nombrePresentacion ?? "",
+            envase: envase?.nombreEnvase ?? "",
+            kilos: kilos?.valor ?? "",
             cantidadUnidades: p.cantidadUnidades === null ? null : Number(p.cantidadUnidades),
+            comentario: p.comentario,
             categoria: categoria?.nombreCategoria ?? "",
             calibre: calibre?.nombreCalibre ?? "",
             codigoCalibre: calibre?.codigoCalibre ?? "",

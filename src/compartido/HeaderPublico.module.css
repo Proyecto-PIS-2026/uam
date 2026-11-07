@@ -1,3 +1,4 @@
+
 .header {
     position: relative;
     z-index: 100;
@@ -81,6 +82,25 @@
     object-fit: cover;
 }
 
+.inicialesPerfil {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    border-radius: 50%;
+    background-color: var(--color-secondary-soft);
+    color: var(--color-secondary);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.inicialesPerfilMobile {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: var(--tamano-texto-auxiliar);
+}
+
 .desplegableOperador {
     display: flex;
     position: absolute;
@@ -98,8 +118,10 @@
 
 .desplegableOperador a,
 .desplegableOperador button {
-    display: block;
+    display: flex;
     padding: 0.6rem 0.75rem;
+    align-items: center;
+    gap: var(--espacio-inline);
     border: 0;
     background: transparent;
     color: var(--color-foreground);
@@ -111,9 +133,11 @@
 }
 
 .opcionDesplegable {
-    display: block;
+    display: flex;
     width: 100%;
     padding: 0.6rem 0.75rem;
+    align-items: center;
+    gap: var(--espacio-inline);
     border: none;
     background: none;
     color: var(--color-muted);
@@ -216,6 +240,10 @@
     margin-right: var(--espacio-inline);
 }
 
+.iconoMenuDesplegable {
+    flex-shrink: 0;
+}
+
 .etiquetaMenuMobile {
     display: inline-flex;
     min-width: 0;
@@ -248,7 +276,7 @@
     background: transparent;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 970px) {
     .overlayMenu {
         display: block;
     }
@@ -323,6 +351,7 @@
 
     .enlaceMobile {
         display: flex;
+        position: relative;
         width: 100%;
         padding: 0.75rem;
         align-items: center;
@@ -381,7 +410,7 @@
     }
 }
 
-.botonPublicaciones {
+.botonGrupoMenu {
     width: 100%;
     gap: var(--espacio-inline);
     justify-content: space-between;
@@ -393,13 +422,13 @@
     cursor: pointer;
 }
 
-.botonPublicaciones:focus-visible {
+.botonGrupoMenu:focus-visible {
     outline: 2px solid var(--color-secondary);
     outline-offset: -2px;
 }
 
-@media (max-width: 900px) {
-    .botonPublicaciones {
+@media (max-width: 970px) {
+    .botonGrupoMenu {
         justify-content: space-between;
         border-top: 1px solid var(--color-border);
     }
@@ -410,14 +439,14 @@
     height: 1.25rem;
 }
 
-.grupoPublicaciones {
+.grupoMenu {
     position: relative;
     display: flex;
     align-items: stretch;
     margin: 0;
 }
 
-.listaPublicaciones {
+.listaGrupoMenu {
     position: absolute;
     top: 100%;
     left: 0;
@@ -439,14 +468,14 @@
         visibility 0.2s ease;
 }
 
-.listaPublicacionesAbierta {
+.listaGrupoMenuAbierta {
     max-height: 15rem;
     visibility: visible;
     opacity: 1;
     box-shadow: 0 8px 12px rgb(0 0 0 / 10%);
 }
 
-.opcionPublicaciones {
+.opcionGrupoMenu {
     display: flex;
     align-items: center;
     min-height: 2.5rem;
@@ -461,35 +490,39 @@
         color 150ms ease;
 }
 
-.opcionPublicaciones:hover,
-.opcionPublicaciones:focus-visible,
-.opcionPublicacionesActiva {
+.opcionGrupoMenu:hover,
+.opcionGrupoMenu:focus-visible,
+.opcionGrupoMenuActiva {
     background: var(--color-secondary-soft);
     color: var(--color-secondary);
 }
 
-.opcionPublicacionesActiva {
+.opcionGrupoMenuActiva {
     font-weight: 600;
 }
 
-@media (max-width: 900px) {
-    .grupoPublicaciones {
+@media (max-width: 970px) {
+    .grupoMenu {
         flex-direction: column;
     }
 
-    .botonPublicaciones {
+    .botonGrupoMenu {
         padding: 0.75rem;
         border-top: 1px solid var(--color-border);
     }
 
-    .listaPublicacionesMobile {
+    .listaGrupoMenuMobile {
         position: static;
         width: 100%;
         flex-shrink: 0;
     }
+
+    .listaGrupoMenuMobile .opcionGrupoMenu {
+        padding-left: 2.5rem;
+    }
 }
 
-.grupoPublicaciones:has(.listaPublicacionesAbierta)
-    .botonPublicaciones::after {
+.grupoMenu:has(.listaGrupoMenuAbierta)
+    .botonGrupoMenu::after {
     display: none;
 }

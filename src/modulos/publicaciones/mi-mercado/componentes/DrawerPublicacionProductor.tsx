@@ -32,6 +32,7 @@ import { validarUbicacionesProductor } from "../../productores/ubicaciones-produ
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import styles from "./DrawerPublicacionProductor.module.css";
+import CampoComentario from "../../componentes/CampoComentario";
 
 type Props = {
     publicacion: PublicacionMiMercadoProductor | null;
@@ -44,9 +45,12 @@ type Props = {
 type Borrador = {
     precio: string;
     cantidadUnidades: string;
+    fechaVigencia: string;
+    comentario: string;
     especieId: number;
     variedadId: number;
-    presentacionId: number;
+    envaseId: number;
+    kilosId: number;
     categoriaId: number;
     calibreId: number;
     paisId: number;
@@ -83,9 +87,12 @@ function crearBorrador(publicacion: PublicacionMiMercadoProductor): Borrador {
     return {
         precio: publicacion.precio === null ? "" : String(Number(publicacion.precio)),
         cantidadUnidades: publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades),
+        fechaVigencia: publicacion.fechaVigencia ?? "",
+        comentario: publicacion.comentario ?? "",
         especieId: publicacion.especie.id,
         variedadId: publicacion.variedad?.id ?? 0,
-        presentacionId: publicacion.presentacion?.id ?? 0,
+        envaseId: publicacion.envase?.id ?? 0,
+        kilosId: publicacion.kilos?.id ?? 0,
         categoriaId: publicacion.categoria?.id ?? 0,
         calibreId: publicacion.calibre?.id ?? 0,
         paisId: publicacion.paisId ?? 0,
@@ -200,11 +207,11 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     const variedad = publicacion?.variedad;
     const especie = publicacion?.especie;
     const especieId = borrador?.especieId ?? especie?.id;
-    const variedadId = borrador?.variedadId ?? variedad?.id;
     const variedades = edicion?.opciones.variedades.filter((opcion) => opcion.especieId === especieId) ?? [];
-    const presentaciones = edicion?.opciones.presentaciones.filter((opcion) => opcion.variedadId === variedadId) ?? [];
+    const envases = edicion?.opciones.envases ?? [];
+    const kilos = edicion?.opciones.kilos ?? [];
     const categorias = edicion?.opciones.categorias.filter((opcion) => opcion.especieId === null || opcion.especieId === especieId) ?? [];
-    const nombrePresentacion = borrador?.presentacionId === 0 ? null : presentaciones.find((opcion) => opcion.id === borrador?.presentacionId)?.nombre ?? publicacion?.presentacion?.nombrePresentacion;
+    const nombreEnvase = borrador?.envaseId === 0 ? null : envases.find((opcion) => opcion.id === borrador?.envaseId)?.nombre ?? publicacion?.envase?.nombreEnvase;
     const disponible = borrador?.disponible ?? publicacion?.publicacionDisponible;
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     const reemplazoFoto = <div className={estilosAcciones.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>;
@@ -269,14 +276,13 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         cambiar({
             especieId: nuevaEspecieId,
             variedadId: 0,
-            presentacionId: 0,
             categoriaId: categoriaCompatible ? borrador.categoriaId : 0,
         });
     }
 
     function cambiarVariedad(nuevaVariedadId: number) {
         if (!edicion) return;
-        cambiar({ variedadId: nuevaVariedadId, presentacionId: 0 });
+        cambiar({ variedadId: nuevaVariedadId });
     }
 
     function escribirCantidadUnidades(valor: string) {
@@ -335,11 +341,12 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         const opciones = edicion.opciones;
         if (!opciones.especies.some((opcion) => opcion.id === borrador.especieId)
             || (borrador.variedadId !== 0 && !variedades.some((opcion) => opcion.id === borrador.variedadId))
-            || (borrador.presentacionId !== 0 && !presentaciones.some((opcion) => opcion.id === borrador.presentacionId))
+            || (borrador.envaseId !== 0 && !envases.some((opcion) => opcion.id === borrador.envaseId))
+            || (borrador.kilosId !== 0 && !kilos.some((opcion) => opcion.id === borrador.kilosId))
             || (borrador.categoriaId !== 0 && !categorias.some((opcion) => opcion.id === borrador.categoriaId))
             || (borrador.calibreId !== 0 && !opciones.calibres.some((opcion) => opcion.id === borrador.calibreId))
             || (borrador.paisId !== 0 && !opciones.paises.some((opcion) => opcion.id === borrador.paisId))) {
-            setEstado((actual) => ({ ...actual, errores: ["Elegí una especie, variedad, presentación, categoría, calibre y país válidos."] }));
+            setEstado((actual) => ({ ...actual, errores: ["Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos."] }));
             return;
         }
         const validacionUbicaciones = validarUbicacionesProductor(borrador.ubicaciones);
@@ -351,11 +358,13 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         const cambios: CambiosPublicacionProductor = {
             precio: normalizarPrecioPublicacion(borrador.precio),
             cantidadUnidades: borrador.cantidadUnidades === "" ? null : Number(borrador.cantidadUnidades),
+            comentario: borrador.comentario.trim() || null,
             especieId: borrador.especieId, variedadId: borrador.variedadId || null,
-            presentacionId: borrador.presentacionId || null, categoriaId: borrador.categoriaId || null, calibreId: borrador.calibreId || null,
+            envaseId: borrador.envaseId || null, kilosId: borrador.kilosId || null, categoriaId: borrador.categoriaId || null, calibreId: borrador.calibreId || null,
             paisId: borrador.paisId || null, disponible: borrador.disponible,
             foto: borrador.foto === edicion.base.foto ? undefined : borrador.foto,
             ubicaciones: validacionUbicaciones.ubicaciones,
+            fechaVigencia: borrador.fechaVigencia || null,
         };
         formulario.set("cambios", JSON.stringify(cambios));
         if (borrador.archivo) formulario.set("foto", borrador.archivo);
@@ -432,12 +441,36 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                             {editando && <small className={estilosAcciones.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
                         </div>
                         <div className={estilosAcciones.campo}>
-                            <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-unidades`}>Unidades{nombrePresentacion ? ` (${nombrePresentacion})` : ""}</label>
+                            <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-unidades`}>Unidades{nombreEnvase ? ` (${nombreEnvase})` : ""}</label>
                             <OutlinedInput color="secondary" className={estilosAcciones.entrada} size="small" id={`publicacion-productor-${publicacion.id}-unidades`} slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }}
                                 value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "-"} readOnly={!editando} disabled={ocupado}
                                 onChange={(evento) => escribirCantidadUnidades(evento.target.value)} />
                             {editando && <small className={estilosAcciones.ayuda}>Dejalo vacío si no querés ingresar una cantidad.</small>}
                         </div>
+                        <div className={estilosAcciones.campo}>
+                            <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-vigencia`}>
+                                Fecha de vigencia
+                            </label>
+                            <OutlinedInput
+                                color="secondary"
+                                className={estilosAcciones.entrada}
+                                size="small"
+                                id={`publicacion-productor-${publicacion.id}-vigencia`}
+                                type="date"
+                                value={borrador?.fechaVigencia ?? publicacion.fechaVigencia ?? ""}
+                                readOnly={!editando}
+                                disabled={ocupado}
+                                onChange={(evento) => cambiar({ fechaVigencia: evento.target.value })}
+                            />
+                        </div>
+                        <CampoComentario
+                            id={`publicacion-productor-${publicacion.id}-comentario`}
+                            valor={borrador?.comentario ?? publicacion.comentario ?? ""}
+                            alCambiar={(comentario) => cambiar({ comentario })}
+                            editando={editando}
+                            deshabilitado={ocupado}
+                            clases={{ campo: estilosAcciones.campo, etiqueta: estilosAcciones.etiqueta, entrada: estilosAcciones.entrada, ayuda: estilosAcciones.ayuda }}
+                        />
                         <div className={estilosAcciones.seccionFoto}>
                             {mostrarAvisoFoto && <AvisoVigenciaFoto estado={publicacion.estadoFoto} />}
                             <div className={estilosAcciones.marcoFoto}>
@@ -464,7 +497,8 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                         <div className={estilosAcciones.datosProducto} data-editando={editando}>
                             <Campo nombre="Especie" valor={borrador?.especieId ?? especie.id} opciones={edicion?.opciones.especies ?? []} nombreActual={especie.nombreEspecie} cambiar={cambiarEspecie} deshabilitado={!editando || ocupado} enConsulta={!editando} priorizarEspecies />
                             <Campo nombre="Variedad" valor={borrador?.variedadId ?? variedad?.id ?? 0} opciones={variedades} nombreActual={variedad?.nombreVariedad ?? ""} cambiar={cambiarVariedad} deshabilitado={!editando || ocupado} enConsulta={!editando} />
-                            <Campo nombre="Presentación" valor={borrador?.presentacionId ?? publicacion.presentacion?.id ?? 0} opciones={presentaciones} nombreActual={publicacion.presentacion?.nombrePresentacion ?? ""} cambiar={(id) => cambiar({ presentacionId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
+                            <Campo nombre="Empaquetado" valor={borrador?.envaseId ?? publicacion.envase?.id ?? 0} opciones={envases} nombreActual={publicacion.envase?.nombreEnvase ?? ""} cambiar={(id) => cambiar({ envaseId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
+                            <Campo nombre="Kilos del empaquetado" valor={borrador?.kilosId ?? publicacion.kilos?.id ?? 0} opciones={kilos.map((opcion) => ({ ...opcion, nombre: `${opcion.nombre} kg` }))} nombreActual={publicacion.kilos?.valor ? `${publicacion.kilos.valor} kg` : ""} cambiar={(id) => cambiar({ kilosId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
                             <Campo nombre="País de origen" valor={borrador?.paisId ?? publicacion.paisId ?? 0} opciones={edicion?.opciones.paises ?? []} nombreActual={publicacion.pais || ""} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} priorizarUruguay />
                             <Campo nombre="Categoría" valor={borrador?.categoriaId ?? publicacion.categoria?.id ?? 0} opciones={categorias} nombreActual={publicacion.categoria?.nombreCategoria ?? ""} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
                             <Campo nombre="Calibre" valor={borrador?.calibreId ?? publicacion.calibre?.id ?? 0} opciones={edicion?.opciones.calibres ?? []} nombreActual={publicacion.calibre?.nombreCalibre ?? ""} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />

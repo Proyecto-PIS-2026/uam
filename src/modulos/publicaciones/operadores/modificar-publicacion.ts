@@ -5,9 +5,12 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 import { eliminarImagenPublicacionGestionada, ErrorImagenPublicacion, guardarImagenPublicacion } from "./imagenes-publicacion";
 import type { CambiosPublicacionOperador } from "./tipos";
 import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
+import { validarFechaVigencia, convertirFechaVigenciaAInstant } from "../vigencia-publicacion";
+import { validarComentario } from "../validarComentario";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
+type FechaVigenciaDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["fechaVigencia"];
 
 export class ErrorEdicionPublicacion extends Error {
     constructor(
@@ -65,6 +68,24 @@ export async function modificarPublicacionOperador(
         } else {
             cantidadUnidadesParaGuardar = null;
         }
+    }
+    let fechaVigenciaParaGuardar: FechaVigenciaDb = undefined;
+    if (cambios.fechaVigencia !== undefined) {
+        const resVigencia = validarFechaVigencia(cambios.fechaVigencia);
+        if (!resVigencia.esValido) {
+            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", resVigencia.error);
+        }
+        fechaVigenciaParaGuardar = convertirFechaVigenciaAInstant(resVigencia.fechaVigencia);
+    }
+
+    let comentarioParaGuardar: string | null | undefined = undefined;
+
+    if (cambios.comentario !== undefined) {
+        const resultadoComentario = validarComentario(cambios.comentario);
+        if (!resultadoComentario.esValido) {
+            throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", resultadoComentario.error);
+        }
+        comentarioParaGuardar = resultadoComentario.comentario;
     }
 
     let imagenCreada: { url: string; publicacionId: number } | undefined;
@@ -142,12 +163,13 @@ export async function modificarPublicacionOperador(
                 const coincidencias = await tx.orm.public.Publicacion.where({
                     especieId: cambios.especieId,
                     variedadId: cambios.variedadId,
-                    presentacionId: cambios.presentacionId,
+                    envaseId: cambios.envaseId,
+                    kilosId: cambios.kilosId,
                     categoriaId: cambios.categoriaId,
                     calibreId: cambios.calibreId,
                 }).select("id").all();
                 if (coincidencias.some((coincidencia) => idsDeOtrasPublicaciones.has(coincidencia.id))) {
-                    throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Este operador ya tiene una publicación con la misma especie, variedad, presentación, categoría, calibre y país.");
+                    throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "Este operador ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.");
                 }
             }
 
@@ -161,6 +183,7 @@ export async function modificarPublicacionOperador(
                     version: cambios.version + 1,
                     precio: precioParaGuardar,
                     cantidadUnidades: cantidadUnidadesParaGuardar,
+                    ...(comentarioParaGuardar !== undefined ? { comentario: comentarioParaGuardar } : {}),
                     foto: fotoActual,
                     ...(imagenCreada || (cambios.foto === null && publicacion.foto !== null)
                         ? { fotoEliminadaPorVencimientoEn: null } : {}),
@@ -168,8 +191,10 @@ export async function modificarPublicacionOperador(
                     variedadId: cambios.variedadId,
                     categoriaId: cambios.categoriaId,
                     calibreId: cambios.calibreId,
-                    presentacionId: cambios.presentacionId,
+                    envaseId: cambios.envaseId,
+                    kilosId: cambios.kilosId,
                     publicacionDisponible: cambios.disponible,
+                    ...(fechaVigenciaParaGuardar !== undefined ? { fechaVigencia: fechaVigenciaParaGuardar } : {}),
                 });
 
             if (!actualizada) {

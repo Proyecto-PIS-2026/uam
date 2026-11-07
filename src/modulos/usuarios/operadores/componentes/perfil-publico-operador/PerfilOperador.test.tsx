@@ -30,6 +30,26 @@ const operador: PerfilPublicoOperador = {
 const mensajeWhatsApp = "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
 
 describe("PerfilOperador", () => {
+    it("muestra el aviso y las fechas de licencia con su mensaje de recomendación", () => {
+        render(
+            <PerfilOperador operador={{ ...operador, enLicencia: true,
+                comentario: "Licencia: 2026-11-05 - 2026-11-12\n\nConsultar disponibilidad antes de comprar." }} />,
+        );
+
+        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Fecha: 05/11/2026 - 12/11/2026");
+        expect(screen.queryByText("Mensaje de recomendación")).not.toBeInTheDocument();
+        expect(screen.getByText("Consultar disponibilidad antes de comprar.")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Licencia" })).toBeInTheDocument();
+    });
+
+    it("indica que las fechas de licencia no están especificadas cuando el comentario no tiene formato", () => {
+        render(<PerfilOperador operador={{ ...operador, enLicencia: true, comentario: "En licencia sin fechas" }} />);
+
+        expect(screen.getAllByRole("status")[0]).toHaveTextContent("Fechas no especificadas");
+        expect(screen.getByText("En licencia sin fechas")).toBeInTheDocument();
+    });
+
+
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -39,14 +59,14 @@ describe("PerfilOperador", () => {
         vi.restoreAllMocks();
     });
 
-    it("muestra el nombre, la inicial y los locales agrupados por nave", () => {
+    it("muestra el nombre, las iniciales y los locales agrupados por nave", () => {
         render(<PerfilOperador operador={operador} />);
 
         expect(screen.getByRole("heading", {
             name: "Frutas del Norte",
         })).toBeInTheDocument();
 
-        expect(screen.getByText("F")).toBeInTheDocument();
+        expect(screen.getByText("FD")).toBeInTheDocument();
 
         expect(screen.queryByRole("img", {
             name: "Foto de Frutas del Norte",
@@ -75,7 +95,7 @@ describe("PerfilOperador", () => {
             name: "Foto de Frutas del Norte",
         })).toHaveAttribute("src", "/operador.jpg");
 
-        expect(screen.queryByText("F")).not.toBeInTheDocument();
+        expect(screen.queryByText("FD")).not.toBeInTheDocument();
     });
 
     it("muestra el estado vacío cuando el operador no tiene locales", () => {

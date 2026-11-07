@@ -4,6 +4,12 @@ import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones
 import { cookies } from "next/headers";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarVisita: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
+
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     obtenerSesion: vi.fn(),
 }));
@@ -25,6 +31,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 describe("GET /api/estadisticas/visitas", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         vi.stubEnv("DISABLE_VISIT_TRACKING", "false");
     });
 
@@ -43,8 +50,8 @@ describe("GET /api/estadisticas/visitas", () => {
 
         expect(obtenerSesion).not.toHaveBeenCalled();
         expect(cookies).not.toHaveBeenCalled();
-        expect(db.orm.public.EstadisticaVisita.where).not.toHaveBeenCalled();
-        expect(db.orm.public.EstadisticaVisita.create).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+
     });
 
     it("debería omitir el conteo si hay una sesión activa", async () => {
@@ -90,7 +97,7 @@ describe("GET /api/estadisticas/visitas", () => {
 
         expect(res.status).toBe(200);
         expect(data).toEqual({ ok: true, registrado: true });
-        expect(mockEstadisticaWhere.update).toHaveBeenCalledWith({ cantidad: 11 });
+        expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("comprador", "2026-11-06");
     });
 
     it("debería crear el registro si no existe en la base de datos para hoy", async () => {
@@ -112,7 +119,7 @@ describe("GET /api/estadisticas/visitas", () => {
 
         expect(res.status).toBe(200);
         expect(data).toEqual({ ok: true, registrado: true });
-        expect(db.orm.public.EstadisticaVisita.create).toHaveBeenCalled();
+        expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("comprador", "2026-11-06");
     });
 
     it("debería retornar 500 si ocurre un error interno", async () => {

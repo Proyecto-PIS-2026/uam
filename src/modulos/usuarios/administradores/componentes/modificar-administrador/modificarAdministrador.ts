@@ -4,6 +4,7 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import argon2 from "argon2";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { validarModificacionAdministrador } from "./validarModificacionAdministrador";
 
 export type ResultadoModificacionAdministrador =
@@ -11,7 +12,7 @@ export type ResultadoModificacionAdministrador =
     | { esValido: true; id: number; mensaje: string };
 
 export async function modificarAdministrador(valor: unknown): Promise<ResultadoModificacionAdministrador> {
-    const sesion = await exigirAdministrador();
+    const sesion = await controlarSesionEnAccion(exigirAdministrador);
 
     const validacion = validarModificacionAdministrador(valor);
 
@@ -61,7 +62,7 @@ export async function modificarAdministrador(valor: unknown): Promise<ResultadoM
 
         await tx.orm.public.Usuario
             .where({ id: administrador.usuarioId })
-            .update(passwordHash ? { username: datos.nombreUsuario, passwordHash } : { username: datos.nombreUsuario });
+            .update(passwordHash ? { username: datos.nombreUsuario, passwordHash, solicitoRestablecimiento: false } : { username: datos.nombreUsuario });
 
         return datos.administradorId;
     });

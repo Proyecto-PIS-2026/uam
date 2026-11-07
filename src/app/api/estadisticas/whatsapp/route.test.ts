@@ -1,3 +1,6 @@
+import "temporal-polyfill/full/global";
+import "temporal-polyfill/types/global";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
@@ -34,6 +37,13 @@ const mocks = vi.hoisted(() => {
         estadisticaContactoPublicacion: consulta(),
     };
 });
+
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarContacto: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     obtenerSesion: vi.fn(),
@@ -91,6 +101,8 @@ describe("POST /api/estadisticas/whatsapp", () => {
 
         mocks.estadisticaContacto.first.mockResolvedValue(null);
         mocks.estadisticaContactoPublicacion.first.mockResolvedValue(null);
+
+        registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
     });
 
     it("omite el registro si el usuario es administrador", async () => {
@@ -107,6 +119,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
         expect(await res.json()).toEqual({ ok: true });
 
         expect(mocks.operador.where).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         expect(mocks.estadisticaContacto.create).not.toHaveBeenCalled();
         expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
     });
@@ -125,6 +138,8 @@ describe("POST /api/estadisticas/whatsapp", () => {
 
         expect(res.status).toBe(400);
         expect(await res.json()).toEqual({ error: "Datos inválidos" });
+
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 
     it("retorna 404 si el operador no tiene usuario asociado", async () => {
@@ -135,6 +150,8 @@ describe("POST /api/estadisticas/whatsapp", () => {
 
         expect(res.status).toBe(404);
         expect(await res.json()).toEqual({ error: "Entidad no encontrada" });
+
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 
     it("retorna 404 si el productor no tiene usuario asociado", async () => {
@@ -145,16 +162,13 @@ describe("POST /api/estadisticas/whatsapp", () => {
 
         expect(res.status).toBe(404);
         expect(await res.json()).toEqual({ error: "Entidad no encontrada" });
+
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 
     describe("contactos desde el perfil", () => {
-        it("incrementa la estadística de contacto existente para un operador", async () => {
+        it("registra el contacto general para un operador", async () => {
             configurarUsuario("OPERADOR", 10, "operador1");
-
-            mocks.estadisticaContacto.first.mockResolvedValue({
-                id: 1,
-                cantidad: 5,
-            });
 
             const res = await POST(crearRequest({
                 tipo: "OPERADOR",
@@ -164,15 +178,15 @@ describe("POST /api/estadisticas/whatsapp", () => {
             expect(res.status).toBe(200);
             expect(await res.json()).toEqual({ ok: true });
 
-            expect(mocks.estadisticaContacto.update).toHaveBeenCalledWith({
-                cantidad: 6,
-            });
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1");
 
-            expect(mocks.estadisticaContactoPublicacion.first).not.toHaveBeenCalled();
+            expect(mocks.publicacionOperador.where).not.toHaveBeenCalled();
+            expect(mocks.publicacionProductor.where).not.toHaveBeenCalled();
             expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContactoPublicacion.update).not.toHaveBeenCalled();
         });
 
-        it("crea la estadística de contacto para un productor si todavía no existe", async () => {
+        it("registra el contacto general para un productor", async () => {
             configurarUsuario("PRODUCTOR", 20, "productor1");
 
             const res = await POST(crearRequest({
@@ -183,15 +197,12 @@ describe("POST /api/estadisticas/whatsapp", () => {
             expect(res.status).toBe(200);
             expect(await res.json()).toEqual({ ok: true });
 
-            expect(mocks.estadisticaContacto.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    username: "productor1",
-                    cantidad: 1,
-                    fecha: expect.anything(),
-                }),
-            );
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
 
+            expect(mocks.publicacionOperador.where).not.toHaveBeenCalled();
+            expect(mocks.publicacionProductor.where).not.toHaveBeenCalled();
             expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContactoPublicacion.update).not.toHaveBeenCalled();
         });
     });
 
@@ -242,6 +253,8 @@ describe("POST /api/estadisticas/whatsapp", () => {
                 cantidad: 4,
             });
 
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1");
+
             expect(mocks.estadisticaContacto.create).not.toHaveBeenCalled();
             expect(mocks.estadisticaContacto.update).not.toHaveBeenCalled();
         });
@@ -269,6 +282,10 @@ describe("POST /api/estadisticas/whatsapp", () => {
             expect(res.status).toBe(200);
             expect(await res.json()).toEqual({ ok: true });
 
+            expect(mocks.publicacionProductor.where).toHaveBeenCalledWith({
+                publicacionId: 30,
+            });
+
             expect(mocks.estadisticaContactoPublicacion.create).toHaveBeenCalledWith(
                 expect.objectContaining({
                     username: "productor1",
@@ -278,7 +295,10 @@ describe("POST /api/estadisticas/whatsapp", () => {
                 }),
             );
 
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
+
             expect(mocks.estadisticaContacto.create).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContacto.update).not.toHaveBeenCalled();
         });
 
         it("retorna 404 si la publicación no pertenece al operador", async () => {
@@ -299,6 +319,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
 
             expect(mocks.publicacion.first).not.toHaveBeenCalled();
             expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         });
 
         it("retorna 404 si la publicación no pertenece al productor", async () => {
@@ -319,6 +340,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
 
             expect(mocks.publicacion.first).not.toHaveBeenCalled();
             expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         });
 
         it("retorna 404 si la publicación no tiene una especie asociada", async () => {
@@ -346,6 +368,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
             });
 
             expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         });
     });
 
@@ -359,5 +382,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
 
         expect(res.status).toBe(500);
         expect(await res.json()).toEqual({ error: "Error interno" });
+
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 });

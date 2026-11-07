@@ -1,4 +1,3 @@
-
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
@@ -14,8 +13,11 @@ import contractJson from "./contract.json" with { type: "json" };
 import { cargarConsultaUam, type ConsultaUam } from "./catalogo-consulta";
 import { crearOfertasDemo, type OfertaDemo } from "./ofertas-demo";
 import { crearOfertasProductoresDemo } from "./ofertas-productores-demo";
+import { CALIBRES_GENERALES_ADICIONALES, ENVASES_PUBLICACION, KILOS_EMPAQUETADO } from "./catalogos-publicacion";
+import { atributosPublicacionDemo } from "./atributos-publicacion-demo";
 import { especiesPrioritarias } from "../../../compartido/prioridad-especies";
 import { claveImagen, urlImagen } from "../../imagenes/almacenamiento-imagenes";
+import { convertirFechaVigenciaAInstant } from "../../../modulos/publicaciones/vigencia-publicacion";
 
 const prisma = postgres<Contract>({
   contractJson,
@@ -242,12 +244,20 @@ const operadorInhabilitado: OperadorDemo = {
   locales: [{ nave: "E", numero: "999", finContrato: "2020-12-31T23:59:59Z" }],
 };
 
-const operadorVigencia: OperadorDemo = {
+const operadorAging: OperadorDemo = {
   username: "op_aging",
   passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$994nl3BFaYdq/bgEmkxAZg$9sjiUNNHyx+2Mj2/F9Lc92SpTOmj8YhcuOWvDjdQI6E",
   nombreFantasia: "op_aging",
   whatsApp: "+598919",
   locales: [{ nave: "E", numero: "998", finContrato: null }],
+};
+
+const operadorVigencia: OperadorDemo = {
+  username: "op_vigencia",
+  passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$M6p1iDPCfF7NVcXk6LNDDw$rb+rQzbtdfBXOW+nQSTR4086J1ZMSBQx6epocfYpD0I",
+  nombreFantasia: "op_vigencia",
+  whatsApp: "+59899000920",
+  locales: [{ nave: "E", numero: "997", finContrato: null }],
 };
 
 type KgPorUnidad = Parameters<typeof prisma.orm.public.Presentacion.create>[0]["kgPorUnidad"];
@@ -428,10 +438,14 @@ async function limpiarBase() {
 
   await prisma.orm.public.Imagen.where(() => all()).deleteAll();
   await prisma.orm.public.Notificacion.where(() => all()).deleteAll();
+  await prisma.orm.public.AvisoVencimientoLocal.where(() => all()).deleteAll();
+  await prisma.orm.public.SesionRevocada.where(() => all()).deleteAll();
   await prisma.orm.public.PublicacionOperador.where(() => all()).deleteAll();
   await prisma.orm.public.PublicacionProductor.where(() => all()).deleteAll();
   await prisma.orm.public.Ubicacion.where(() => all()).deleteAll();
   await prisma.orm.public.Publicacion.where(() => all()).deleteAll();
+  await prisma.orm.public.Envase.where(() => all()).deleteAll();
+  await prisma.orm.public.KilosEmpaquetado.where(() => all()).deleteAll();
   await prisma.orm.public.Local.where(() => all()).deleteAll();
   await prisma.orm.public.Nave.where(() => all()).deleteAll();
   await prisma.orm.public.Operador.where(() => all()).deleteAll();
@@ -475,7 +489,22 @@ async function crearDatosBase(consulta: ConsultaUam) {
     calibreIds.set(codigoCalibre, calibre.id);
   }
 
-  return { paisIds, calibreIds };
+  for (const nombreCalibre of CALIBRES_GENERALES_ADICIONALES) {
+    const calibre = await prisma.orm.public.Calibre.create({ codigoCalibre: nombreCalibre, nombreCalibre });
+    calibreIds.set(nombreCalibre, calibre.id);
+  }
+  const envaseIds = new Map<string, number>();
+  for (const nombreEnvase of ENVASES_PUBLICACION) {
+    const envase = await prisma.orm.public.Envase.create({ nombreEnvase });
+    envaseIds.set(nombreEnvase, envase.id);
+  }
+  const kilosIds = new Map<string, number>();
+  for (const valor of KILOS_EMPAQUETADO) {
+    const kilos = await prisma.orm.public.KilosEmpaquetado.create({ valor });
+    kilosIds.set(valor, kilos.id);
+  }
+
+  return { paisIds, calibreIds, envaseIds, kilosIds };
 }
 
 async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, number>, archivos: Set<string>) {
@@ -536,7 +565,7 @@ async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, nu
 }
 
 async function crearOperadores(archivos: Map<string, string>) {
-  const todosLosOperadores = [...operadores, operadorInhabilitado, operadorVigencia];
+  const todosLosOperadores = [...operadores, operadorInhabilitado, operadorAging, operadorVigencia];
   const nombresNave = new Set(todosLosOperadores.flatMap((operador) => operador.locales.map((local) => local.nave)));
   for (const nombreNave of nombresNave) {
     await prisma.orm.public.Nave.create({ nombreNave });
@@ -549,6 +578,31 @@ async function crearOperadores(archivos: Map<string, string>) {
     twoFactorEnabled: false,
   });
   await prisma.orm.public.Administrador.create({ usuarioId: usuarioAdmin.id, email: "admin@uam.com.uy" });
+
+  const administradoresEquipo = [
+    "victoria",
+    "camila",
+    "lucia",
+    "martin_anido",
+    "luciano",
+    "mauricio",
+    "santiago",
+    "matias",
+    "paula",
+    "diego",
+    "maximo",
+    "juan",
+    "martin_bula",
+    "alexis",
+    "ignacio",
+    "valentin",
+  ];
+  const passwordHashEquipo = "$argon2id$v=19$m=65536,p=4,t=3$Rh1ZJyJaZEXoelNDSVFYGA$dNUPJ66lOOG79ojT1uad8gJOIDw5NZZNET6tYRQlNns";
+
+  for (const username of administradoresEquipo) {
+    const usuario = await prisma.orm.public.Usuario.create({username, passwordHash: passwordHashEquipo, rol: "ADMINISTRADOR", twoFactorEnabled: false});
+    await prisma.orm.public.Administrador.create({usuarioId: usuario.id, email: `${username}@uam.com.uy`});
+  }
 
   for (const datos of productores) {
     const usuario = await prisma.orm.public.Usuario.create({
@@ -580,9 +634,11 @@ async function crearOperadores(archivos: Map<string, string>) {
       nombreFantasia: datos.nombreFantasia,
       fotoPerfil: fotoOperador(datos.nombreFantasia, archivos),
       enLicencia: false,
-      comentario: datos.username === operadorVigencia.username
+      comentario: datos.username === operadorAging.username
         ? "Fotos de prueba cargadas del 01/11/2026 al 15/11/2026, una por día a las 00:00 de Uruguay."
-        : null,
+        : datos.username === operadorVigencia.username
+          ? "Publicaciones de prueba con vigencia del 01/11/2026 al 15/11/2026, una por día a las 23:59:59 de Uruguay."
+          : null,
       whatsApp: datos.whatsApp,
     });
     operadorIds.set(datos.username, operador.id);
@@ -600,19 +656,39 @@ async function crearOperadores(archivos: Map<string, string>) {
   return operadorIds;
 }
 
-async function crearPublicacionesVigencia(operadorId: number, archivos: Set<string>) {
+async function guardarFotoPublicacionDemo(
+  cliente: Pick<typeof prisma, "orm">,
+  publicacion: { id: number; fecha: Temporal.Instant },
+  foto: string,
+) {
+  const contenido = readFileSync(new URL(`../../../../public${foto}`, import.meta.url));
+  const archivo = `${randomUUID()}${foto.slice(foto.lastIndexOf("."))}`;
+  await cliente.orm.public.Imagen.create({
+    clave: claveImagen("publicaciones", publicacion.id, archivo),
+    contenido,
+    // La foto comparte la antigüedad de prueba de su publicación.
+    cargadaEn: publicacion.fecha,
+    avisoVencimientoEn: null,
+  });
+  await cliente.orm.public.Publicacion.where({ id: publicacion.id }).update({
+    foto: urlImagen("publicaciones", publicacion.id, archivo),
+    // Evitar que temporal.updatedAt() reemplace la fecha de prueba al vincular la foto.
+    fecha: publicacion.fecha,
+  });
+}
+
+async function crearPublicacionesAging(operadorId: number, archivos: Set<string>) {
   const especies = await prisma.orm.public.Especie.select("id", "nombreEspecie").all();
   const muestras = especiesPrioritarias.slice(0, 15).map((nombre, indice) => {
     const especie = especies.find((fila) => fila.nombreEspecie === nombre);
     const foto = fotoGenerica(nombre, archivos);
-    if (!especie || !foto) throw new Error(`Faltan la especie o la foto de ${nombre} para la prueba de vigencia.`);
+    if (!especie || !foto) throw new Error(`Faltan la especie o la foto de ${nombre} para la prueba de aging.`);
     const dia = String(indice + 1).padStart(2, "0");
     return {
       especie,
       dia,
       cargadaEn: Temporal.Instant.from(`2026-11-${dia}T00:00:00-03:00`),
-      contenido: readFileSync(new URL(`../../../../public${foto}`, import.meta.url)),
-      extension: foto.slice(foto.lastIndexOf(".")),
+      foto,
     };
   });
 
@@ -627,18 +703,40 @@ async function crearPublicacionesVigencia(operadorId: number, archivos: Set<stri
         publicacionDisponible: true,
       });
       await tx.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId });
-      const archivo = `${randomUUID()}${muestra.extension}`;
-      await tx.orm.public.Imagen.create({
-        clave: claveImagen("publicaciones", publicacion.id, archivo),
-        contenido: muestra.contenido,
-        cargadaEn: muestra.cargadaEn,
-        avisoVencimientoEn: null,
-      });
-      await tx.orm.public.Publicacion.where({ id: publicacion.id }).update({
-        foto: urlImagen("publicaciones", publicacion.id, archivo),
-        fecha: muestra.cargadaEn,
-      });
+      await guardarFotoPublicacionDemo(tx, publicacion, muestra.foto);
       publicaciones.push({ publicacion: publicacion.id, especie: muestra.especie.nombreEspecie, carga: `${muestra.dia}/11/2026` });
+    }
+    return publicaciones;
+  });
+}
+
+async function crearPublicacionesVigencia(operadorId: number) {
+  const especies = await prisma.orm.public.Especie.select("id", "nombreEspecie").all();
+  const fecha = Temporal.Instant.from("2026-10-31T00:00:00-03:00");
+  const ahora = Temporal.Now.instant();
+  const muestras = especiesPrioritarias.slice(0, 15).map((nombre, indice) => {
+    const especie = especies.find((fila) => fila.nombreEspecie === nombre);
+    if (!especie) throw new Error(`Falta la especie ${nombre} para la prueba de vigencia de publicaciones.`);
+    const dia = String(indice + 1).padStart(2, "0");
+    const fechaVigencia = convertirFechaVigenciaAInstant(`2026-11-${dia}`);
+    if (!fechaVigencia) throw new Error(`No se pudo convertir la fecha de vigencia del ${dia}/11/2026.`);
+    return { especie, dia, fechaVigencia };
+  });
+
+  return prisma.transaction(async (tx) => {
+    const publicaciones = [];
+    for (const muestra of muestras) {
+      const publicacionDisponible = Temporal.Instant.compare(muestra.fechaVigencia, ahora) >= 0;
+      const publicacion = await tx.orm.public.Publicacion.create({
+        fecha,
+        fechaVigencia: muestra.fechaVigencia,
+        tipoPublicacion: "OPERADOR",
+        especieId: muestra.especie.id,
+        publicacionActiva: true,
+        publicacionDisponible,
+      });
+      await tx.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId });
+      publicaciones.push({ publicacion: publicacion.id, especie: muestra.especie.nombreEspecie, vigencia: `${muestra.dia}/11/2026`, disponible: publicacionDisponible });
     }
     return publicaciones;
   });
@@ -713,7 +811,7 @@ async function main() {
   console.log(`Cargando catálogo de la consulta UAM del ${consulta.survey_date}...`);
   await limpiarBase();
 
-  const { paisIds, calibreIds } = await crearDatosBase(consulta);
+  const { paisIds, calibreIds, envaseIds, kilosIds } = await crearDatosBase(consulta);
   const { presentacionIds, categoriaIds, cantidadVariedades } =
     await crearCatalogo(consulta, conversiones, archivos);
   const operadorIds = await crearOperadores(fotosOperadores);
@@ -728,12 +826,13 @@ async function main() {
 
   // Insertar publicaciones de operadores existentes
   for (const [indice, oferta] of ofertas.entries()) {
+    const atributos = atributosPublicacionDemo(indice);
     const operadorId = idRequerido(operadorIds, oferta.operatorUsername, `operador ${oferta.operatorUsername}`);
     const presentacionId = idRequerido(presentacionIds,
       clave(oferta.speciesId, oferta.variety, oferta.measureUnit), "presentación");
     const categoriaId = idRequerido(categoriaIds,
       clave(oferta.speciesId, oferta.category), "categoría");
-    const calibreId = idRequerido(calibreIds, oferta.caliber, `calibre ${oferta.caliber}`);
+    const calibreId = idRequerido(calibreIds, atributos.calibre ?? oferta.caliber, `calibre ${atributos.calibre ?? oferta.caliber}`);
     const paisId = idRequerido(paisIds, oferta.country, `país ${oferta.country}`);
     const precio = oferta.price === null
       ? null
@@ -742,32 +841,50 @@ async function main() {
       oferta.measureUnit, oferta.caliber, oferta.category, oferta.country));
     if (!foto) throw new Error(`No se encontró la foto de la publicación ${oferta.speciesId} / ${oferta.variety}.`);
 
-    const publicacion = await prisma.orm.public.Publicacion.create({
-      fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 15) * 86_400_000),
-      publicacionDisponible: oferta.available,
-      publicacionActiva: oferta.active,
-      precio,
-      cantidadUnidades: cantidadUnidadesDemo(indice, oferta.measureUnit),
-      foto,
-      tipoPublicacion: "OPERADOR",
-      especieId: clasificaciones.get(presentacionId)!.especieId,
-      variedadId: clasificaciones.get(presentacionId)!.id,
-      presentacionId,
-      categoriaId,
-      calibreId,
+    let fechaVigencia: Temporal.Instant | null = null;
+    if (indice % 4 === 0) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 15 * 86_400_000);
+    } else if (indice % 4 === 1) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 2 * 86_400_000);
+    } else if (indice % 4 === 2) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() - 3 * 86_400_000);
+    }
+
+    await prisma.transaction(async (tx) => {
+      const publicacion = await tx.orm.public.Publicacion.create({
+        fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 15) * 86_400_000),
+        publicacionDisponible: fechaVigencia && Temporal.Instant.compare(fechaVigencia, Temporal.Now.instant()) < 0
+          ? false
+          : oferta.available,
+        publicacionActiva: oferta.active,
+        precio,
+        cantidadUnidades: cantidadUnidadesDemo(indice, oferta.measureUnit),
+        tipoPublicacion: "OPERADOR",
+        fechaVigencia,
+        especieId: clasificaciones.get(presentacionId)!.especieId,
+        variedadId: clasificaciones.get(presentacionId)!.id,
+        envaseId: atributos.envase === null ? null : idRequerido(envaseIds, atributos.envase, "envase"),
+        kilosId: atributos.kilos === null ? null : idRequerido(kilosIds, atributos.kilos, "kilos del empaquetado"),
+        categoriaId,
+        calibreId,
+      });
+      await tx.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId, paisId });
+      await guardarFotoPublicacionDemo(tx, publicacion, foto);
     });
-    await prisma.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId, paisId });
 
     if (oferta.price === null) sinPrecio++; else conPrecio++;
     if (!oferta.available) noDisponibles++;
     if (!oferta.active) inactivas++;
   }
 
-  
-  const fotosVigencia = await crearPublicacionesVigencia(
-    idRequerido(operadorIds, operadorVigencia.username, "operador de prueba de vigencia"), archivos,
+  const fotosAging = await crearPublicacionesAging(
+    idRequerido(operadorIds, operadorAging.username, "operador de prueba de aging"), archivos,
   );
-  sinPrecio += fotosVigencia.length;
+  const publicacionesVigencia = await crearPublicacionesVigencia(
+    idRequerido(operadorIds, operadorVigencia.username, "operador de prueba de vigencia de publicaciones"),
+  );
+  sinPrecio += fotosAging.length + publicacionesVigencia.length;
+  noDisponibles += publicacionesVigencia.filter((publicacion) => !publicacion.disponible).length;
 
   // Obtener IDs de productores creados para asociar sus publicaciones y ubicaciones
   const productoresDb = await prisma.orm.public.Productor.all();
@@ -815,6 +932,7 @@ async function main() {
   ];
 
   for (const [indice, oferta] of ofertasProductores.entries()) {
+    const atributos = atributosPublicacionDemo(indice);
     const prodDemo = productoresPorUsername.get(oferta.producerUsername);
     if (!prodDemo) throw new Error(`Productor de demostración inexistente: ${oferta.producerUsername}`);
     const productorId = idRequerido(productorIdsMap, oferta.producerUsername, `productor ${oferta.producerUsername}`);
@@ -822,41 +940,59 @@ async function main() {
       clave(oferta.speciesId, oferta.variety, oferta.measureUnit), "presentación de productor");
     const categoriaId = idRequerido(categoriaIds,
       clave(oferta.speciesId, oferta.category), "categoría de productor");
-    const calibreId = idRequerido(calibreIds, oferta.caliber, `calibre ${oferta.caliber}`);
+    const calibreId = idRequerido(calibreIds, atributos.calibre ?? oferta.caliber, `calibre ${atributos.calibre ?? oferta.caliber}`);
     const paisId = idRequerido(paisIds, oferta.country, `país ${oferta.country}`);
     const precio = oferta.price === null
       ? null
       : oferta.price.toFixed(2) as unknown as PrecioPublicacion;
 
-    const publicacion = await prisma.orm.public.Publicacion.create({
-      fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 12) * 36_000_000),
-      publicacionDisponible: oferta.available,
-      publicacionActiva: true,
-      precio,
-      cantidadUnidades: oferta.quantity,
-      foto: fotoGenerica(oferta.speciesName, archivos),
-      tipoPublicacion: "PRODUCTOR",
-      especieId: clasificaciones.get(presentacionId)!.especieId,
-      variedadId: clasificaciones.get(presentacionId)!.id,
-      presentacionId,
-      categoriaId,
-      calibreId,
-    });
-
-    const publicacionProductor = await prisma.orm.public.PublicacionProductor.create({
-      publicacionId: publicacion.id,
-      productorId,
-      paisId,
-    });
-
-    for (const punto of ubicacionesDemo.slice(0, oferta.cantidadUbicaciones)) {
-      await prisma.orm.public.Ubicacion.create({
-        nombreUbicacion: punto.nombreUbicacion,
-        departamento: punto.departamento,
-        urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${punto.latitud},${punto.longitud}`)}`,
-        publicacionId: publicacionProductor.id,
-      });
+    let fechaVigencia: Temporal.Instant | null = null;
+    if (!oferta.available) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() - 3 * 86_400_000);
+    } else if (indice % 3 === 0) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 15 * 86_400_000);
+    } else if (indice % 3 === 1) {
+      fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() + 2 * 86_400_000);
     }
+
+    const foto = fotoGenerica(oferta.speciesName, archivos);
+    if (!foto) throw new Error(`No se encontró la foto de ${oferta.speciesName} para la publicación de productor.`);
+
+    await prisma.transaction(async (tx) => {
+      const publicacion = await tx.orm.public.Publicacion.create({
+        fecha: Temporal.Instant.fromEpochMilliseconds(Date.now() - (indice % 12) * 36_000_000),
+        publicacionDisponible: fechaVigencia && Temporal.Instant.compare(fechaVigencia, Temporal.Now.instant()) < 0
+          ? false
+          : oferta.available,
+        publicacionActiva: true,
+        precio,
+        cantidadUnidades: oferta.quantity,
+        tipoPublicacion: "PRODUCTOR",
+        fechaVigencia,
+        especieId: clasificaciones.get(presentacionId)!.especieId,
+        variedadId: clasificaciones.get(presentacionId)!.id,
+        envaseId: atributos.envase === null ? null : idRequerido(envaseIds, atributos.envase, "envase de productor"),
+        kilosId: atributos.kilos === null ? null : idRequerido(kilosIds, atributos.kilos, "kilos del empaquetado de productor"),
+        categoriaId,
+        calibreId,
+      });
+
+      const publicacionProductor = await tx.orm.public.PublicacionProductor.create({
+        publicacionId: publicacion.id,
+        productorId,
+        paisId,
+      });
+      await guardarFotoPublicacionDemo(tx, publicacion, foto);
+
+      for (const punto of ubicacionesDemo.slice(0, oferta.cantidadUbicaciones)) {
+        await tx.orm.public.Ubicacion.create({
+          nombreUbicacion: punto.nombreUbicacion,
+          departamento: punto.departamento,
+          urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${punto.latitud},${punto.longitud}`)}`,
+          publicacionId: publicacionProductor.id,
+        });
+      }
+    });
   }
 
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "incremento_precio", valorConfiguracion: "10" });
@@ -866,18 +1002,18 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_landing_page_default", valorConfiguracion: "mas_vendidas" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_virtual_default", valorConfiguracion: "mas_vendidas" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_produccion_default", valorConfiguracion: "mas_vendidas" });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "false" });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "30" });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "false" });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "7" });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada", valorConfiguracion: "false" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "true" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "3" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "true" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "1" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor", valorConfiguracion: "30" });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado", valorConfiguracion: "false" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_publicaciones_productor", valorConfiguracion: "7" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "restablecimiento_contrasena_habilitado", valorConfiguracion: "true" });
 
   const cantidadNotificaciones = await crearNotificacionesDemo(
-    usuariosDb.filter((usuario) => usuario.username !== operadorVigencia.username),
+    usuariosDb.filter((usuario) => usuario.username !== operadorAging.username && usuario.username !== operadorVigencia.username),
   );
 
   // DATOS DE PRUEBA REALES PARA LAS TABLAS DE ESTADISTICAS
@@ -1271,13 +1407,16 @@ async function main() {
     especies: consulta.types.reduce((total, tipo) => total + tipo.products.length, 0),
     variedades: cantidadVariedades,
     presentaciones: presentacionIds.size,
+    envases: envaseIds.size,
+    kilos: kilosIds.size,
     paises: paisIds.size,
     calibres: calibreIds.size,
     operadores: operadorIds.size,
     productores: productores.length,
     notificaciones: cantidadNotificaciones,
-    publicacionesOperadores: ofertas.length + fotosVigencia.length,
-    publicacionesPruebaVigencia: fotosVigencia.length,
+    publicacionesOperadores: ofertas.length + fotosAging.length + publicacionesVigencia.length,
+    publicacionesPruebaAging: fotosAging.length,
+    publicacionesPruebaVigencia: publicacionesVigencia.length,
     publicacionesProductores: ofertasProductores.length,
     conPrecio,
     sinPrecio,
@@ -1286,8 +1425,10 @@ async function main() {
     contactosPorPublicacion: contactosPorPublicacionSeed.length,
     registrosCantidadPublicaciones: cantidadRegistrosCantidadPublicaciones,
   });
-  console.log(`Fotos para probar vigencia con ${operadorVigencia.username}:`);
-  console.table(fotosVigencia);
+  console.log(`Fotos para probar aging con ${operadorAging.username}:`);
+  console.table(fotosAging);
+  console.log(`Publicaciones para probar vigencia con ${operadorVigencia.username}:`);
+  console.table(publicacionesVigencia);
   console.log("Seed completada con éxito.");
 }
 

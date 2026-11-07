@@ -8,6 +8,10 @@
       "model": "Administrador",
       "namespace": "public"
     },
+    "avisoVencimientoLocal": {
+      "model": "AvisoVencimientoLocal",
+      "namespace": "public"
+    },
     "cachePreciosReferencia": {
       "model": "CachePreciosReferencia",
       "namespace": "public"
@@ -26,6 +30,10 @@
     },
     "ejecucionTareaProgramada": {
       "model": "EjecucionTareaProgramada",
+      "namespace": "public"
+    },
+    "envase": {
+      "model": "Envase",
       "namespace": "public"
     },
     "especie": {
@@ -58,6 +66,10 @@
     },
     "imagen": {
       "model": "Imagen",
+      "namespace": "public"
+    },
+    "kilosEmpaquetado": {
+      "model": "KilosEmpaquetado",
       "namespace": "public"
     },
     "local": {
@@ -98,6 +110,10 @@
     },
     "publicacionProductor": {
       "model": "PublicacionProductor",
+      "namespace": "public"
+    },
+    "sesionRevocada": {
+      "model": "SesionRevocada",
       "namespace": "public"
     },
     "ubicacion": {
@@ -204,6 +220,106 @@
               },
               "namespaceId": "public",
               "table": "administrador"
+            }
+          },
+          "AvisoVencimientoLocal": {
+            "fields": {
+              "fecha": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "finContrato": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "naveId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "numeroLocal": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "operadorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "tipo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "operador": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "operadorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Operador",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "fecha": {
+                  "column": "fecha"
+                },
+                "finContrato": {
+                  "column": "finContrato"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "naveId": {
+                  "column": "naveId"
+                },
+                "numeroLocal": {
+                  "column": "numeroLocal"
+                },
+                "operadorId": {
+                  "column": "operadorId"
+                },
+                "tipo": {
+                  "column": "tipo"
+                }
+              },
+              "namespaceId": "public",
+              "table": "avisoVencimientoLocal"
             }
           },
           "CachePreciosReferencia": {
@@ -466,6 +582,53 @@
               },
               "namespaceId": "public",
               "table": "ejecucionTareaProgramada"
+            }
+          },
+          "Envase": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "nombreEnvase": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "publicaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "envaseId"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "nombreEnvase": {
+                  "column": "nombreEnvase"
+                }
+              },
+              "namespaceId": "public",
+              "table": "envase"
             }
           },
           "Especie": {
@@ -983,6 +1146,53 @@
               "table": "imagen"
             }
           },
+          "KilosEmpaquetado": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "valor": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "publicaciones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "kilosId"
+                  ]
+                },
+                "to": {
+                  "model": "Publicacion",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "valor": {
+                  "column": "valor"
+                }
+              },
+              "namespaceId": "public",
+              "table": "kilosEmpaquetado"
+            }
+          },
           "Local": {
             "fields": {
               "finContrato": {
@@ -1275,6 +1485,21 @@
               }
             },
             "relations": {
+              "avisosVencimientoLocales": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "operadorId"
+                  ]
+                },
+                "to": {
+                  "model": "AvisoVencimientoLocal",
+                  "namespace": "public"
+                }
+              },
               "locales": {
                 "cardinality": "1:N",
                 "on": {
@@ -1478,21 +1703,6 @@
               }
             },
             "relations": {
-              "publicaciones": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "presentacionId"
-                  ]
-                },
-                "to": {
-                  "model": "Publicacion",
-                  "namespace": "public"
-                }
-              },
               "variedad": {
                 "cardinality": "N:1",
                 "on": {
@@ -1652,6 +1862,20 @@
                   "kind": "scalar"
                 }
               },
+              "comentario": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "envaseId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "especieId": {
                 "nullable": false,
                 "type": {
@@ -1661,6 +1885,13 @@
               },
               "fecha": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "fechaVigencia": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "kind": "scalar"
@@ -1687,6 +1918,13 @@
                   "kind": "scalar"
                 }
               },
+              "kilosId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "precio": {
                 "nullable": true,
                 "type": {
@@ -1696,13 +1934,6 @@
                     "precision": 12,
                     "scale": 2
                   }
-                }
-              },
-              "presentacionId": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
                 }
               },
               "publicacionActiva": {
@@ -1778,6 +2009,21 @@
                   "namespace": "public"
                 }
               },
+              "envase": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "envaseId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Envase",
+                  "namespace": "public"
+                }
+              },
               "especie": {
                 "cardinality": "N:1",
                 "on": {
@@ -1793,18 +2039,18 @@
                   "namespace": "public"
                 }
               },
-              "presentacion": {
+              "kilos": {
                 "cardinality": "N:1",
                 "on": {
                   "localFields": [
-                    "presentacionId"
+                    "kilosId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "Presentacion",
+                  "model": "KilosEmpaquetado",
                   "namespace": "public"
                 }
               },
@@ -1835,11 +2081,20 @@
                 "categoriaId": {
                   "column": "categoriaId"
                 },
+                "comentario": {
+                  "column": "comentario"
+                },
+                "envaseId": {
+                  "column": "envaseId"
+                },
                 "especieId": {
                   "column": "especieId"
                 },
                 "fecha": {
                   "column": "fecha"
+                },
+                "fechaVigencia": {
+                  "column": "fechaVigencia"
                 },
                 "foto": {
                   "column": "foto"
@@ -1850,11 +2105,11 @@
                 "id": {
                   "column": "id"
                 },
+                "kilosId": {
+                  "column": "kilosId"
+                },
                 "precio": {
                   "column": "precio"
-                },
-                "presentacionId": {
-                  "column": "presentacionId"
                 },
                 "publicacionActiva": {
                   "column": "publicacionActiva"
@@ -2083,6 +2338,40 @@
               },
               "namespaceId": "public",
               "table": "publicacionProductor"
+            }
+          },
+          "SesionRevocada": {
+            "fields": {
+              "expiraEn": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "expiraEn": {
+                  "column": "expiraEn"
+                },
+                "tokenHash": {
+                  "column": "tokenHash"
+                }
+              },
+              "namespaceId": "public",
+              "table": "sesionRevocada"
             }
           },
           "Ubicacion": {
@@ -2511,6 +2800,102 @@
                 }
               ]
             },
+            "avisoVencimientoLocal": {
+              "columns": {
+                "fecha": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "finContrato": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "naveId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "numeroLocal": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "operadorId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "tipo": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "operadorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "avisoVencimientoLocal"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "operador"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "operadorId"
+                  ],
+                  "name": "avisoVencimientoLocal_operadorId_idx_b7d31568",
+                  "prefix": "avisoVencimientoLocal_operadorId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "operadorId",
+                    "naveId",
+                    "numeroLocal",
+                    "finContrato",
+                    "tipo"
+                  ],
+                  "name": "avisoVencimientoLocal_contrato_tipo_key"
+                }
+              ]
+            },
             "cachePreciosReferencia": {
               "columns": {
                 "claveCache": {
@@ -2710,6 +3095,38 @@
                 ]
               },
               "uniques": []
+            },
+            "envase": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "nombreEnvase": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "nombreEnvase"
+                  ]
+                }
+              ]
             },
             "especie": {
               "columns": {
@@ -3088,6 +3505,38 @@
                 ]
               },
               "uniques": []
+            },
+            "kilosEmpaquetado": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "valor": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "valor"
+                  ]
+                }
+              ]
             },
             "local": {
               "columns": {
@@ -3642,6 +4091,16 @@
                   "nativeType": "int4",
                   "nullable": true
                 },
+                "comentario": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "envaseId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "especieId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -3651,6 +4110,11 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
                   "nullable": false
+                },
+                "fechaVigencia": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
                 },
                 "foto": {
                   "codecId": "pg/text@1",
@@ -3671,6 +4135,11 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "kilosId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "precio": {
                   "codecId": "pg/numeric@1",
                   "nativeType": "numeric",
@@ -3679,11 +4148,6 @@
                     "precision": 12,
                     "scale": 2
                   }
-                },
-                "presentacionId": {
-                  "codecId": "pg/int4@1",
-                  "nativeType": "int4",
-                  "nullable": true
                 },
                 "publicacionActiva": {
                   "codecId": "pg/bool@1",
@@ -3765,7 +4229,7 @@
                 {
                   "source": {
                     "columns": [
-                      "presentacionId"
+                      "envaseId"
                     ],
                     "namespaceId": "public",
                     "tableName": "publicacion"
@@ -3775,7 +4239,23 @@
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "presentacion"
+                    "tableName": "envase"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "kilosId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "publicacion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "kilosEmpaquetado"
                   }
                 },
                 {
@@ -3830,6 +4310,14 @@
                 },
                 {
                   "columns": [
+                    "envaseId"
+                  ],
+                  "name": "publicacion_envaseId_idx_c66e7843",
+                  "prefix": "publicacion_envaseId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "especieId"
                   ],
                   "name": "publicacion_especieId_idx_23a2c94e",
@@ -3838,10 +4326,10 @@
                 },
                 {
                   "columns": [
-                    "presentacionId"
+                    "kilosId"
                   ],
-                  "name": "publicacion_presentacionId_idx_2981aeac",
-                  "prefix": "publicacion_presentacionId_idx",
+                  "name": "publicacion_kilosId_idx_9257854e",
+                  "prefix": "publicacion_kilosId_idx",
                   "unique": false
                 },
                 {
@@ -4077,6 +4565,40 @@
                   ]
                 }
               ]
+            },
+            "sesionRevocada": {
+              "columns": {
+                "expiraEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "tokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "expiraEn"
+                  ],
+                  "name": "sesionRevocada_expiraEn_idx_68039536",
+                  "prefix": "sesionRevocada_expiraEn_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "tokenHash"
+                ]
+              },
+              "uniques": []
             },
             "ubicacion": {
               "columns": {
@@ -4372,7 +4894,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "dd2325f84e913b72a7ab0918be5325fea4a11638dff51a37d577978c8637f59c"
+    "storageHash": "d79f1cd356b2a43f5bd3afc98fe6393e620060df81d4cdc92dea125dbdbbd1b6"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

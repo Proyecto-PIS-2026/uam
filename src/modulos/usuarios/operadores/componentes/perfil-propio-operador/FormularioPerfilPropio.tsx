@@ -11,6 +11,8 @@ import { modificarPerfilPropio } from "../../acciones/modificarPerfilPropio";
 import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 import BotonVolver from "@/compartido/BotonVolver";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import ConfirmacionLicencia from "../ConfirmacionLicencia";
 import styles from "./FormularioPerfilPropio.module.css";
 
 const CODIGOS_PAIS = [
@@ -45,6 +47,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
     const [nombre, setNombre] = useState(perfil.nombre);
     const licencia = extraerLicencia(perfil.comentario);
     const [enLicencia, setEnLicencia] = useState(perfil.enLicencia);
+    const [confirmandoLicencia, setConfirmandoLicencia] = useState(false);
     const [inicioLicencia, setInicioLicencia] = useState(licencia.inicio);
     const [finLicencia, setFinLicencia] = useState(licencia.fin);
     const [comentario, setComentario] = useState(licencia.comentario);
@@ -96,16 +99,19 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                 </header>
                 <form className={styles.formulario} onSubmit={guardar} noValidate>
                     <section className={styles.seccion}>
-                        <h2 className={styles.subtitulo}>Datos del operador</h2>
-                        <SelectorFotoPerfil fotoActual={perfil.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => setErrores([mensaje])} deshabilitado={guardando} />
+                        <SelectorFotoPerfil nombre={nombre} fotoActual={perfil.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => setErrores([mensaje])} deshabilitado={guardando} />
                         <TextField label="Nombre" value={nombre} onChange={(event) => setNombre(event.target.value)} disabled={guardando} fullWidth />
                         
                         <div className={styles.telefono}>
                             <TextField select label="Código de país" value={codigoPais} onChange={(event) => setCodigoPais(event.target.value)} disabled={guardando}>
                                 {CODIGOS_PAIS.map(({ codigo, pais }) => <MenuItem key={codigo} value={codigo}>{codigo} ({pais})</MenuItem>)}
                             </TextField>
-                            <TextField label="WhatsApp" type="tel" value={telefono} onChange={(event) => { if (/^[0-9]*$/.test(event.target.value)) setTelefono(event.target.value); }} disabled={guardando} />
+                            <TextField label="Teléfono" required type="tel" value={telefono} onChange={(event) => { if (/^[0-9]*$/.test(event.target.value)) setTelefono(event.target.value); }} disabled={guardando} />
                         </div>
+                        <p className={styles.aviso}>
+                            <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
+                            <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
+                        </p>
                         <label className={styles.licencia} htmlFor="perfil-propio-licencia" data-activa={enLicencia}>
                             <span className={styles.textoLicencia}>
                                 <span className={styles.etiquetaLicencia}>En licencia</span>
@@ -113,7 +119,10 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                             </span>
                             <Switch
                                 checked={enLicencia}
-                                onChange={(_, valor) => setEnLicencia(valor)}
+                                onChange={(_, valor) => {
+                                    if (valor) setConfirmandoLicencia(true);
+                                    else setEnLicencia(false);
+                                }}
                                 disabled={guardando}
                                 slotProps={{ input: { id: "perfil-propio-licencia", role: "switch", "aria-label": "En licencia" } }}
                             />
@@ -151,6 +160,11 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                     </div>
                 </form>
             </div>
+            <ConfirmacionLicencia
+                abierto={confirmandoLicencia}
+                alAceptar={() => { setEnLicencia(true); setConfirmandoLicencia(false); }}
+                alCancelar={() => setConfirmandoLicencia(false)}
+            />
         </main>
     );
 }

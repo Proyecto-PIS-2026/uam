@@ -258,7 +258,7 @@ function crearPublicacion(): PublicacionListado {
         precio: 150,
         fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
-        presentacion: "Cajón",
+        envase: "Cajón", kilos: "",
         categoria: "Primera",
         calibre: "Mediano",
         codigoCalibre: "M",
@@ -280,7 +280,7 @@ function crearPublicacionProductor(): PublicacionProductorListado {
         precio: 120,
         fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         cantidadUnidades: 20,
         categoria: "Primera",
         calibre: "Grande",
@@ -570,7 +570,7 @@ describe("DrawerPublicacionPerfil con operadores", () => {
         const publicacion = {
             ...crearPublicacion(),
             variedad: "   ",
-            presentacion: " ",
+            envase: " ", kilos: "",
             calibre: " ",
             categoria: " ",
             pais: " ",
@@ -589,7 +589,7 @@ describe("DrawerPublicacionPerfil con operadores", () => {
         expect(screen.queryByText("   ")).not.toBeInTheDocument();
 
         for (const etiqueta of [
-            "Presentación",
+            "Empaquetado",
             "Calibre",
             "Categoría",
             "País",
@@ -1553,5 +1553,18 @@ describe("DrawerPublicacionPerfil con productores", () => {
         ).toBeInTheDocument();
 
         expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it("muestra el comentario del publicador", () => {
+        render(<DrawerPublicacionPerfil publicacion={{ ...crearPublicacion(), comentario: "Cosecha de esta semana" }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario")).toBeInTheDocument();
+        expect(screen.getByText("Cosecha de esta semana")).toBeInTheDocument();
+    });
+
+    it.each([null, undefined, "   "])("muestra un guion cuando el comentario es %j", (comentario) => {
+        render(<DrawerPublicacionPerfil publicacion={{ ...crearPublicacion(), comentario }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario").nextElementSibling).toHaveTextContent("-");
     });
 });

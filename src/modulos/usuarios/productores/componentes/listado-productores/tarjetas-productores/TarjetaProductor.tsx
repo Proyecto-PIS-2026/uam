@@ -1,4 +1,5 @@
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import Link from "next/link";
 import type { ProductorListado } from "../../../acciones/consultas-listado-por-operador";
@@ -11,7 +12,7 @@ type TarjetaProductorProps = {
 
 export default function TarjetaProductor({ productor, puedeGestionar = false }: TarjetaProductorProps) {
     const foto = productor.fotoPerfil?.trim();
-    const inicial = productor.nombreFantasia.trim().charAt(0).toLocaleUpperCase("es");
+    const iniciales = obtenerIniciales(productor.nombreFantasia);
     const href = puedeGestionar
         ? `/gestion-productores/${productor.id}`
         : `/productores/${encodeURIComponent(productor.nombreFantasia)}?origen=productores`;
@@ -20,7 +21,7 @@ export default function TarjetaProductor({ productor, puedeGestionar = false }: 
         <Link href={href} className={styles.tarjeta}>
             <div className={styles.imagen}>
                 <ImagenPerfil src={foto} alt={`Foto de ${productor.nombreFantasia}`} fill sizes="(max-width: 767px) 64px, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 234px" className={styles.foto}
-                    reemplazo={<span className={styles.inicial}>{inicial}</span>} />
+                    reemplazo={<span className={styles.inicial}>{iniciales}</span>} />
             </div>
 
             <div className={styles.contenido}>

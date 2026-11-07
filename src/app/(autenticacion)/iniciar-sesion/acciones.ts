@@ -8,7 +8,9 @@ import { autenticarUsuario } from "@/modulos/identidad-acceso/autenticacion/aute
 import { existeUsuarioPorNombre } from "@/modulos/identidad-acceso/autenticacion/consultasAutenticacion";
 import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/rutas";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { Temporal } from "temporal-polyfill";
+import { enviarNotificacion } from "@/modulos/notificaciones/notificaciones";
+import { registrarVisita } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
+import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 
 export type EstadoInicioSesion = {
     error?: string;
@@ -22,28 +24,7 @@ export type EstadoRecuperacion = {
 
 async function registrarVisitaLogin(tipoVisitante: "OPERADOR" | "PRODUCTOR") {
     try {
-        const ahora = new Date();
-        const anio = ahora.getFullYear();
-        const mes = String(ahora.getMonth() + 1).padStart(2, "0");
-        const dia = String(ahora.getDate()).padStart(2, "0");
-        const fechaStr = `${anio}-${mes}-${dia}`;
-        const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
-
-        const existente = await db.orm.public.EstadisticaVisita
-            .where({ fecha: fechaInstant, tipoVisitante })
-            .first();
-
-        if (existente) {
-            await db.orm.public.EstadisticaVisita
-                .where({ id: existente.id })
-                .update({ cantidad: existente.cantidad + 1 });
-        } else {
-            await db.orm.public.EstadisticaVisita.create({
-                fecha: fechaInstant,
-                tipoVisitante,
-                cantidad: 1,
-            });
-        }
+        await registrarVisita(tipoVisitante);
     } catch (error) {
         console.error("Error al registrar estadística de visita:", error);
     }
@@ -61,6 +42,9 @@ export async function solicitarRecuperacion(
     }
 
     try {
+        if (!await estaHabilitadoCambioContrasena()) {
+            return { error: "La recuperación de contraseña no está habilitada por el administrador." };
+        }
         const usuarioExiste = await existeUsuarioPorNombre(nombreNormalizado);
 
         if (!usuarioExiste) {
@@ -69,10 +53,23 @@ export async function solicitarRecuperacion(
             };
         }
 
-        // Registrar la solicitud en la base de datos.
-        await db.orm.public.Usuario
-            .where({ username: nombreNormalizado })
-            .update({ solicitoRestablecimiento: true });
+        await db.transaction(async (tx) => {
+            // Sólo la primera solicitud pendiente genera un aviso, incluso si llegan varias a la vez.
+            const solicitudesNuevas = await tx.orm.public.Usuario
+                .where({ username: nombreNormalizado, solicitoRestablecimiento: false })
+                .updateAndCount({ solicitoRestablecimiento: true });
+            if (solicitudesNuevas === 0) return;
+
+            const nombreEnAviso = nombreNormalizado.length > 160
+                ? `${nombreNormalizado.slice(0, 160)}…`
+                : nombreNormalizado;
+            const { enviadas } = await enviarNotificacion({
+                texto: `El usuario ${nombreEnAviso} solicitó restablecer su contraseña.`,
+                url: "/administracion#usuarios",
+                roles: ["ADMINISTRADOR"],
+            }, tx);
+            if (enviadas === 0) throw new Error("No hay administradores para recibir la solicitud de recuperación.");
+        });
 
         return {
             exito: "La solicitud de recuperación fue realizada correctamente.",
@@ -111,7 +108,9 @@ export async function iniciarSesion(
     }
     if ("error" in usuario) {
         return {
-            error: "No tenés ningún contrato vigente para iniciar sesión. Comunicate con los administradores de la UAM.",
+            error: usuario.error === "CUENTA_DESHABILITADA"
+                ? "La cuenta está deshabilitada. Comunicate con un administrador."
+                : "No tenés ningún contrato vigente para iniciar sesión. Comunicate con los administradores de la UAM.",
         };
     }
 

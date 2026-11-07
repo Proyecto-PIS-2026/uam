@@ -87,7 +87,7 @@ export async function crearPublicacion(sesion, posicion, creadas) {
     if (ocupadas.has(especie.nombre)) continue;
     const r = await sesion.context.request.post("/api/publicaciones", { data: {
       operadorId: sesion.operadorId, especieId: especie.id, precio: "1000", disponibilidad: true,
-      variedadId: null, presentacionId: null, categoriaId: null, calibreId: null, paisId: null,
+      variedadId: null, envaseId: null, kilosId: null, categoriaId: null, calibreId: null, paisId: null,
       cantidadUnidades: null, fotografia: "",
     } });
     const body = await r.json();
@@ -105,7 +105,7 @@ export async function crearPublicacion(sesion, posicion, creadas) {
 
 export function enviarPrecio(sesion, registro, precio, version = registro.version) {
   const cambios = { version, precio: String(precio), especieId: registro.especieId, disponible: true,
-    variedadId: null, presentacionId: null, categoriaId: null, calibreId: null, paisId: null,
+    variedadId: null, envaseId: null, kilosId: null, categoriaId: null, calibreId: null, paisId: null,
     cantidadUnidades: null, foto: null };
   return sesion.context.request.patch("/api/publicaciones/" + registro.id + "?operadorId=" + registro.operadorId,
     { multipart: { cambios: JSON.stringify(cambios) } });

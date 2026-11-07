@@ -38,6 +38,27 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
         if (guardando || !huboCambios) {
             return;
         }
+        if (tipo === "numero" && (!/^[0-9]+$/.test(valor) || !Number.isSafeInteger(Number(valor)) || Number(valor) <= 0)) {
+            notificar("El importe debe ser un número entero positivo.", "error");
+            return;
+        }
+        if (tipo === "url") {
+            if (!valor.trim()) {
+                notificar("La URL de la Lista Inteligente no puede estar vacía.", "error");
+                return;
+            }
+            let url: URL;
+            try {
+                url = new URL(valor);
+            } catch {
+                notificar("La URL de la Lista Inteligente no es válida.", "error");
+                return;
+            }
+            if (valor !== valor.trim() || !["http:", "https:"].includes(url.protocol) || !url.hostname || !url.pathname.toLowerCase().endsWith(".pdf")) {
+                notificar("La URL de la Lista Inteligente no es válida.", "error"); 
+                return;
+            }
+        }
         setGuardando(true);
         try {
             await onGuardarValor?.(valor);

@@ -2,6 +2,7 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 export default async function obtenerConfiguraciones(nombres: readonly string[]) {
     if (nombres.length === 0) return [];
+
     return db.orm.public.Configuracion
         .where((configuracion) => configuracion.nombreConfiguracion.in([...nombres]))
         .select("nombreConfiguracion", "valorConfiguracion")
@@ -45,6 +46,9 @@ export async function obtenerEstadisticas() {
         db.orm.public.EstadisticaCantidadPublicacion.all(),
     ]);
 
+    const fechaCalendario = (fechaDb: { toString(): string }) =>
+        new Date(fechaDb.toString()).toISOString().slice(0, 10);
+
     const corregirFechaLocal = (fechaDb: { toString(): string }) => {
         const isoString = new Date(fechaDb.toString()).toISOString();
         const [anio, mes, dia] = isoString.split("T")[0].split("-").map(Number);
@@ -54,15 +58,15 @@ export async function obtenerEstadisticas() {
     return {
         visitas: visitas.map((v) => ({
             ...v,
-            fecha: corregirFechaLocal(v.fecha),
+            fecha: fechaCalendario(v.fecha),
         })),
         contactos: contactos.map((c) => ({
             ...c,
-            fecha: corregirFechaLocal(c.fecha),
+            fecha: fechaCalendario(c.fecha),
         })),
         publicaciones: publicaciones.map((p) => ({
             ...p,
-            fecha: corregirFechaLocal(p.fecha),
+            fecha: fechaCalendario(p.fecha),
         })),
         contactosPorPublicacion: contactosPorPublicacion.map((c) => ({
             ...c,

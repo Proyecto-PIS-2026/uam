@@ -20,30 +20,15 @@ import styles from "./CatalogoOperador.module.css";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
-function formatearFecha(fecha: string): string {
-    const [anio, mes, dia] = fecha.split("-");
-    return `${dia}/${mes}/${anio}`;
-}
-
-function extraerLicencia(comentario: string | null) {
-    const coincidencia = comentario?.match(/^Licencia:\s*(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})\s*(?:\r?\n\r?\n)?([\s\S]*)$/);
-    return {
-        inicio: coincidencia?.[1] ?? "",
-        fin: coincidencia?.[2] ?? "",
-        comentario: coincidencia?.[3]?.trim() ?? comentario?.trim() ?? "",
-    };
-}
-
 type CatalogoOperadorProps = {
     publicaciones: PublicacionPerfil[];
     whatsAppOperador?: string;
     idOperador?: number;
     nombreOperador?: string;
     enLicencia?: boolean;
-    comentario?: string | null;
 };
 
-export default function CatalogoOperador({publicaciones, whatsAppOperador = "", idOperador = 0, nombreOperador = "", enLicencia = false, comentario = null}: CatalogoOperadorProps) {
+export default function CatalogoOperador({publicaciones, whatsAppOperador = "", idOperador = 0, nombreOperador = "", enLicencia = false}: CatalogoOperadorProps) {
     const router = useRouter();
     useActualizacionesPublicaciones(() => router.refresh(), { operadorPublicoId: idOperador });
     const [seleccionId, setSeleccionId] = useState<number | null>(null);
@@ -51,10 +36,6 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
     const [drawerAbierto, setDrawerAbierto] = useState(false);
     const [agruparPorEspecie, setAgruparPorEspecie] = useState(false);
     const [ordenActual, setOrdenActual] = useState<OrdenPublicaciones>("prioridad");
-    const licencia = extraerLicencia(comentario);
-    const fechasLicencia = licencia.inicio && licencia.fin
-        ? `${formatearFecha(licencia.inicio)} - ${formatearFecha(licencia.fin)}`
-        : "Fechas no especificadas";
     const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicaciones.map((publicacion) => ({
         ...publicacion,
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
@@ -99,19 +80,6 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
         <>
             <section className={styles.contenedor}>
                 <div className={styles.catalogo}>
-                    {enLicencia && (
-                        <div className={styles.avisoLicencia} role="status">
-                            <div className={styles.contenidoLicencia}>
-                                <p className={styles.licenciaActiva}>Licencia: {fechasLicencia}</p>
-                                {licencia.comentario ? (
-                                    <>
-                                        <p className={styles.etiquetaMensaje}>Mensaje de recomendación</p>
-                                        <p className={styles.comentario}>{licencia.comentario}</p>
-                                    </>
-                                ) : null}
-                            </div>
-                        </div>
-                    )}
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} alCambiarOrden={setOrdenActual}/>
                     </div>

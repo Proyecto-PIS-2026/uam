@@ -17,7 +17,11 @@ import NuevaPublicacion from "@/modulos/publicaciones/operadores/componentes/Nue
 import styles from "./PerfilOperadorAdmin.module.css";
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
+import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import Link from "next/link";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 
 type PerfilOperadorAdminProps = {
@@ -41,7 +45,7 @@ function extraerLicencia(comentario: string | null | undefined) {
 }
 
 export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrecio }: PerfilOperadorAdminProps) {
-    const inicialOperador = operador.nombreFantasia.trim()[0]?.toUpperCase();
+    const inicialesOperador = obtenerIniciales(operador.nombreFantasia);
     const router = useRouter();
     const [altaAbierta, setAltaAbierta] = useState(false);
     const { notificar } = useNotificacionToast();
@@ -69,42 +73,33 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                 <header className={styles.encabezado}>
                     <HojasDecorativas />
                     <div className={styles.fotoOperador}>
-                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialOperador}</span>} />
+                        <ImagenPerfil src={operador.fotoPerfil} alt={`Foto de ${operador.nombreFantasia}`} width={96} height={96} className={styles.imagenOperador} reemplazo={<span aria-hidden="true">{inicialesOperador}</span>} />
                     </div>
 
                     <div className={styles.identidad}>
                         <p className={styles.tipoPerfil}>Perfil Operador</p>
                         <h1 id="nombre-operador" className={styles.nombre}>{operador.nombreFantasia}</h1>
                     </div>
-                    <Link
-                        href={`/gestion-operadores/${operador.id}/editar`}
-                        className={styles.botonEditar}
-                        aria-label="Editar operador"
-                        title="Editar operador"
-                    >
-                        <EditIcon aria-hidden="true" className={styles.iconoEditar} />
-                        <span>Editar</span>
-                    </Link>
+                    <div className={styles.accionesEncabezado}>
+                        <p className={styles.contacto}>
+                            <PhoneOutlinedIcon aria-hidden="true" />
+                            <span className={styles.etiqueta}>Teléfono:</span>
+                            <span>{operador.whatsApp || "Sin número de contacto"}</span>
+                        </p>
+                        <Link
+                            href={`/gestion-operadores/${operador.id}/editar`}
+                            className={styles.botonEditar}
+                            aria-label="Editar operador"
+                            title="Editar operador"
+                        >
+                            <EditIcon aria-hidden="true" className={styles.iconoEditar} />
+                            <span>Editar</span>
+                        </Link>
+                    </div>
                 </header>
 
                 <div className={styles.tarjetaInformacion}>
-                    <p className={styles.dato}>
-                        <span className={styles.etiqueta}>Whatsapp:</span> {operador.whatsApp}
-                    </p>
-                    <h2 className={styles.subtitulo}>Licencia</h2>
-                    <p className={operador.enLicencia ? styles.licenciaActiva : styles.licenciaInactiva}>
-                        {operador.enLicencia ? `Licencia: ${fechasLicencia}` : "No hay licencia registrada."}
-                    </p>
-                    {operador.enLicencia && licencia.comentario && (
-                        <>
-                            <h2 className={styles.subtitulo}>Mensaje de recomendación</h2>
-                            <div className={styles.comentario}>
-                                <p>{licencia.comentario}</p>
-                            </div>
-                        </>
-                    )}
-
-                    <h2 className={styles.subtitulo}>Locales</h2>
+                    <h2 className={styles.subtitulo}><StorefrontOutlinedIcon aria-hidden="true" />Locales</h2>
                     {operador.locales.length === 0 ? (
                         <EstadoVacio titulo="Sin locales registrados" descripcion="El operador no tiene locales registrados." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
                     ) : (
@@ -125,6 +120,15 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                                 </li>
                             ))}
                         </ul>
+                    )}
+                    <h2 className={styles.subtitulo}><DescriptionOutlined aria-hidden="true" />Licencia</h2>
+                    {operador.enLicencia ? (
+                        <div className={styles.comentario}>
+                            <p className={styles.fechasLicencia}>Fecha: {fechasLicencia}</p>
+                            {licencia.comentario && <p>{licencia.comentario}</p>}
+                        </div>
+                    ) : (
+                        <p className={styles.licenciaInactiva}>No hay licencia registrada.</p>
                     )}
                 </div>
             </div>

@@ -54,7 +54,7 @@ describe("FormularioModificarProductor", () => {
 
         expect(valorDe(screen.getByLabelText("Nombre"))).toBe("Granja Los Álamos");
         expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598");
-        expect(valorDe(screen.getByLabelText("WhatsApp"))).toBe("99200002");
+        expect(valorDe(screen.getByLabelText(/Teléfono/))).toBe("99200002");
         expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
         expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
     });
@@ -66,7 +66,7 @@ describe("FormularioModificarProductor", () => {
         fireEvent.change(screen.getByLabelText("Nombre"), {
             target: { value: "Granja Los Álamos Hermanos" },
         });
-        fireEvent.change(screen.getByLabelText("WhatsApp"), {
+        fireEvent.change(screen.getByLabelText(/Teléfono/), {
             target: { value: "1123456789" },
         });
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Código de país" }));

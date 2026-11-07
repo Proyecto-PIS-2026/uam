@@ -1,5 +1,6 @@
 import { db } from "../../../../infraestructura/persistencia/prisma/db";
 import { normalizarDepartamento, obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
+import { convertirInstantAFechaVigencia } from "@/modulos/publicaciones/vigencia-publicacion";
 
 // Una ubicación donde está el producto, con su enlace a Google Maps
 export type UbicacionPublicacionProductor = {
@@ -14,18 +15,22 @@ export type PublicacionPerfilAdminProductor = {
     publicacionProductorId: number;
     especieId: number;
     variedadId: number | null;
-    presentacionId: number | null;
+    envaseId: number | null;
+    kilosId: number | null;
     categoriaId: number | null;
     calibreId: number | null;
     paisId: number | null;
     foto: string | null;
     precio: string | null;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     fecha: string;
+    fechaVigencia: string | null;
     disponible: boolean; // El admin ve también las publicaciones no disponibles
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -68,16 +73,18 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
                 "foto",
                 "precio",
                 "cantidadUnidades",
+                "comentario",
                 "fecha",
+                "fechaVigencia",
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion",
-                "presentacionId",
+                "envaseId", "kilosId",
                 "categoriaId",
                 "calibreId"
             );
-            const conPresentacion = camposPublicacion.include("especie").include("variedad").include("presentacion");
-            const conCategoria = conPresentacion.include("categoria");
+            const conEnvase = camposPublicacion.include("especie").include("variedad").include("envase").include("kilos");
+            const conCategoria = conEnvase.include("categoria");
             const completo = conCategoria.include("calibre");
 
             return completo;
@@ -95,18 +102,22 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
                 publicacionProductorId: completa.id,
                 especieId: publicacion.especie.id,
                 variedadId: publicacion.variedad?.id ?? null,
-                presentacionId: publicacion.presentacionId,
+                envaseId: publicacion.envaseId,
+                kilosId: publicacion.kilosId,
                 categoriaId: publicacion.categoriaId,
                 calibreId: publicacion.calibreId,
                 paisId: completa.paisId,
                 foto: publicacion.foto,
                 precio: publicacion.precio,
                 cantidadUnidades: publicacion.cantidadUnidades,
+                comentario: publicacion.comentario,
                 fecha: publicacion.fecha.toString(),
+                fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
                 disponible: publicacion.publicacionDisponible,
                 especie: publicacion.especie.nombreEspecie,
                 variedad: publicacion.variedad?.nombreVariedad ?? "",
-                presentacion: publicacion.presentacion?.nombrePresentacion ?? "",
+                envase: publicacion.envase?.nombreEnvase ?? "",
+                kilos: publicacion.kilos?.valor ?? "",
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
                 calibre: publicacion.calibre?.codigoCalibre ?? "",
                 codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",

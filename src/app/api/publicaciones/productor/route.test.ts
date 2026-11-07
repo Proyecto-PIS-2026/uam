@@ -3,12 +3,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LIMITE_JSON_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarPublicacion: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
+
 const mocks = vi.hoisted(() => {
     const consulta = () => ({
         all: vi.fn(),
         first: vi.fn(),
         where: vi.fn(),
         select: vi.fn(),
+        orderBy: vi.fn(),
         update: vi.fn(),
         create: vi.fn(),
     });
@@ -21,7 +28,8 @@ const mocks = vi.hoisted(() => {
             Productor: consulta(),
             Especie: consulta(),
             Variedad: consulta(),
-            Presentacion: consulta(),
+            Envase: consulta(),
+            KilosEmpaquetado: consulta(),
             Categoria: consulta(),
             Calibre: consulta(),
             Pais: consulta(),
@@ -63,20 +71,15 @@ function solicitud(datos: unknown) {
     });
 }
 
-function obtenerOpcionesEstadistica() {
-    return mocks.modelos.EstadisticaPublicacion.where.mock.calls[0]?.[0] as {
-        fecha: { toString: () => string };
-        username: string;
-    };
-}
-
 describe("/api/publicaciones/productor", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
 
         for (const modelo of Object.values(mocks.modelos)) {
             modelo.where.mockReturnThis();
             modelo.select.mockReturnThis();
+            modelo.orderBy.mockReturnThis();
             modelo.all.mockResolvedValue([]);
             modelo.first.mockResolvedValue(null);
             modelo.update.mockResolvedValue(1);
@@ -154,10 +157,11 @@ describe("/api/publicaciones/productor", () => {
                 { id: 2, especieId: 1, nombreVariedad: "Royal" },
             ]);
 
-            mocks.modelos.Presentacion.all.mockResolvedValue([
-                { id: 3, variedadId: 2, nombrePresentacion: "Caja" },
+            mocks.modelos.Envase.all.mockResolvedValue([
+                { id: 3, nombreEnvase: "Cajon" },
             ]);
 
+            mocks.modelos.KilosEmpaquetado.all.mockResolvedValue([{ id: 1, valor: "10-12" }]);
             mocks.modelos.Categoria.all.mockResolvedValue([
                 { id: 4, especieId: 1, nombreCategoria: "Primera" },
             ]);
@@ -176,7 +180,8 @@ describe("/api/publicaciones/productor", () => {
             expect(await respuesta.json()).toEqual({
                 especies: [{ id: 1, nombre: "Manzana" }],
                 variedades: [{ id: 2, especieId: 1, nombre: "Royal" }],
-                presentaciones: [{ id: 3, variedadId: 2, nombre: "Caja" }],
+                envases: [{ id: 3, nombre: "Cajon" }],
+                kilos: [{ id: 1, nombre: "10-12" }],
                 categorias: [{ id: 4, especieId: 1, nombre: "Primera" }],
                 calibres: [{ id: 5, nombre: "Grande" }],
                 paises: [{ id: 6, codigo: "UY", nombre: "Uruguay" }],
@@ -190,9 +195,8 @@ describe("/api/publicaciones/productor", () => {
                 variedadActiva: true,
             });
 
-            expect(mocks.modelos.Presentacion.where).toHaveBeenCalledWith({
-                presentacionActiva: true,
-            });
+            expect(mocks.modelos.Envase.where).not.toHaveBeenCalled();
+            expect(mocks.modelos.KilosEmpaquetado.where).not.toHaveBeenCalled();
 
             expect(mocks.modelos.Categoria.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Calibre.all).toHaveBeenCalledOnce();
@@ -217,7 +221,7 @@ describe("/api/publicaciones/productor", () => {
             expect(respuesta.status).toBe(200);
             expect(mocks.modelos.Especie.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Variedad.all).toHaveBeenCalledOnce();
-            expect(mocks.modelos.Presentacion.all).toHaveBeenCalledOnce();
+            expect(mocks.modelos.Envase.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Categoria.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Calibre.all).toHaveBeenCalledOnce();
             expect(mocks.modelos.Pais.all).toHaveBeenCalledOnce();
@@ -258,7 +262,7 @@ describe("/api/publicaciones/productor", () => {
 
             expect(mocks.modelos.Productor.where).not.toHaveBeenCalled();
             expect(mocks.altaPublicacionProductor).not.toHaveBeenCalled();
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         });
 
         it("rechaza cuerpos que no son objetos", async () => {
@@ -357,50 +361,24 @@ describe("/api/publicaciones/productor", () => {
                 id: 10,
             });
 
-            const opciones = obtenerOpcionesEstadistica();
 
-            expect(opciones.username).toBe("productor1");
-            expect(opciones.fecha.toString()).toMatch(/T00:00:00Z$/);
 
-            expect(mocks.modelos.EstadisticaPublicacion.create).toHaveBeenCalledExactlyOnceWith(
-                expect.objectContaining({
-                    fecha: expect.any(Object),
-                    username: "productor1",
-                    cantidad: 1,
-                }),
-            );
 
-            expect(mocks.modelos.EstadisticaPublicacion.update).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
+
         });
 
         it("incrementa la estadística existente del productor", async () => {
-            mocks.modelos.EstadisticaPublicacion.first.mockResolvedValue({
-                id: 45,
-                cantidad: 6,
-            });
 
             const respuesta = await POST(solicitud({ precio: "1250" }));
 
             expect(respuesta.status).toBe(201);
 
-            expect(mocks.modelos.EstadisticaPublicacion.where).toHaveBeenNthCalledWith(
-                1,
-                expect.objectContaining({
-                    fecha: expect.any(Object),
-                    username: "productor1",
-                }),
-            );
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
 
-            expect(mocks.modelos.EstadisticaPublicacion.where).toHaveBeenNthCalledWith(
-                2,
-                { id: 45 },
-            );
 
-            expect(mocks.modelos.EstadisticaPublicacion.update).toHaveBeenCalledExactlyOnceWith({
-                cantidad: 7,
-            });
 
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+
         });
 
         it("no registra estadísticas cuando el usuario vinculado no tiene username", async () => {
@@ -413,13 +391,12 @@ describe("/api/publicaciones/productor", () => {
             expect(respuesta.status).toBe(201);
             expect(mocks.modelos.Usuario.where).toHaveBeenCalledWith({ id: 10 });
 
-            expect(mocks.modelos.EstadisticaPublicacion.where).not.toHaveBeenCalled();
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
-            expect(mocks.modelos.EstadisticaPublicacion.update).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+
         });
 
         it("confirma la publicación aunque falle el registro de la estadística", async () => {
-            mocks.modelos.EstadisticaPublicacion.first.mockRejectedValue(
+            registrarEstadisticaMock.mockRejectedValue(
                 new Error("Error de base de datos"),
             );
 
@@ -429,7 +406,7 @@ describe("/api/publicaciones/productor", () => {
             expect(await respuesta.json()).toEqual(resultadoValido);
 
             expect(mocks.altaPublicacionProductor).toHaveBeenCalledOnce();
-            expect(mocks.modelos.EstadisticaPublicacion.first).toHaveBeenCalledOnce();
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
             expect(console.error).toHaveBeenCalledWith(
                 "Error al registrar estadística de publicación (productor):",
                 expect.any(Error),
@@ -450,8 +427,8 @@ describe("/api/publicaciones/productor", () => {
             expect(await respuesta.json()).toEqual(resultado);
 
             expect(mocks.modelos.Usuario.where).not.toHaveBeenCalled();
-            expect(mocks.modelos.EstadisticaPublicacion.where).not.toHaveBeenCalled();
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+
         });
 
         it("rechaza cambiar el identificador para publicar en nombre de otro Productor", async () => {
@@ -465,7 +442,7 @@ describe("/api/publicaciones/productor", () => {
             });
 
             expect(mocks.altaPublicacionProductor).not.toHaveBeenCalled();
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         });
 
         it("rechaza un perfil que no pertenece al usuario autenticado", async () => {
@@ -527,7 +504,7 @@ describe("/api/publicaciones/productor", () => {
             });
 
             expect(console.error).toHaveBeenCalledOnce();
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         });
     });
 
@@ -588,19 +565,10 @@ describe("/api/publicaciones/productor", () => {
                 id: 80,
             });
 
-            expect(mocks.modelos.EstadisticaPublicacion.create).toHaveBeenCalledExactlyOnceWith(
-                expect.objectContaining({
-                    username: "productor1",
-                    cantidad: 1,
-                }),
-            );
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
         });
 
         it("incrementa la estadística existente del Productor seleccionado", async () => {
-            mocks.modelos.EstadisticaPublicacion.first.mockResolvedValue({
-                id: 55,
-                cantidad: 3,
-            });
 
             const respuesta = await POST(solicitud({
                 productorId: 8,
@@ -608,11 +576,8 @@ describe("/api/publicaciones/productor", () => {
 
             expect(respuesta.status).toBe(201);
 
-            expect(mocks.modelos.EstadisticaPublicacion.update).toHaveBeenCalledExactlyOnceWith({
-                cantidad: 4,
-            });
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
 
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
         });
 
         it.each([
@@ -633,7 +598,7 @@ describe("/api/publicaciones/productor", () => {
 
             expect(mocks.modelos.Productor.where).not.toHaveBeenCalled();
             expect(mocks.altaPublicacionProductor).not.toHaveBeenCalled();
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         });
 
         it("informa cuando el Productor no existe", async () => {
@@ -649,7 +614,7 @@ describe("/api/publicaciones/productor", () => {
             });
 
             expect(mocks.altaPublicacionProductor).not.toHaveBeenCalled();
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         });
 
         it("devuelve los errores de validación con estado 400", async () => {
@@ -668,7 +633,7 @@ describe("/api/publicaciones/productor", () => {
             expect(await respuesta.json()).toEqual(resultado);
 
             expect(mocks.modelos.Usuario.where).not.toHaveBeenCalled();
-            expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
         });
 
         it("confirma la publicación aunque falle el registro de estadísticas", async () => {

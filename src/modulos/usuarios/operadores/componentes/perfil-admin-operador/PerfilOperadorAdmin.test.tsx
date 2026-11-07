@@ -38,7 +38,7 @@ vi.mock("@/modulos/publicaciones/operadores/componentes/NuevaPublicacion", () =>
 const opciones: OpcionesEdicionPublicacion = {
     especies: [],
     variedades: [],
-    presentaciones: [],
+    envases: [], kilos: [],
     categorias: [],
     calibres: [],
     paises: [],
@@ -66,11 +66,11 @@ describe("PerfilOperadorAdmin", () => {
     });
 
     // Muestra la identidad del operador
-    it("muestra el nombre, la inicial y el WhatsApp del operador", () => {
+    it("muestra el nombre, las iniciales y el WhatsApp del operador", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
         expect(screen.getByRole("heading", { level: 1, name: "Mercado Rural Los Olivos" })).toBeInTheDocument();
-        expect(screen.getByText("M")).toBeInTheDocument();
+        expect(screen.getByText("MR")).toBeInTheDocument();
         expect(screen.getByText("+59899100012")).toBeInTheDocument();
     });
 

@@ -138,6 +138,10 @@
     text-align: left;
 }
 
+.rol abbr {
+    text-decoration: none;
+}
+
 .acciones {
     display: flex;
     align-items: center;
@@ -151,6 +155,10 @@
 
 .botonHabilitacion {
     color: var(--color-secondary) !important;
+}
+
+.botonHabilitacion:disabled {
+    opacity: 0.4;
 }
 
 .botonEliminar {
@@ -315,4 +323,23 @@
     .rol {
         text-align: right;
     }
+}
+
+.fila[data-habilitado="false"] {
+    background-color: var(--color-surface-muted);
+}
+
+.fila[data-habilitado="false"].seleccionada {
+    box-shadow: inset 3px 0 0 var(--color-muted);
+}
+
+.fila[data-habilitado="false"] > :not(.acciones),
+.fila[data-habilitado="false"] .estadoUsuario,
+.fila[data-habilitado="false"] .iconoRestablecimiento,
+.fila[data-habilitado="false"] .indicadorRestablecimiento {
+    color: var(--color-muted);
+}
+
+.fila[data-habilitado="false"] .indicadorRestablecimiento {
+    background-color: var(--color-border);
 }

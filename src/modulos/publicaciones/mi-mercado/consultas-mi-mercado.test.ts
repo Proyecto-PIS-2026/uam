@@ -1,4 +1,3 @@
-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     actualizarPrecioPublicacion,
@@ -11,11 +10,12 @@ import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
 const configuracion = vi.hoisted(() => ({
     habilitado: false,
     diasVigencia: 30,
+    avisosHabilitados: true,
     diasAnticipacionAviso: 3,
 }));
 
 vi.mock("../configuracion-aging-fotos", () => ({
-    CONFIGURACION_AGING_FOTOS: configuracion,
+    obtenerConfiguracionAgingFotos: async () => configuracion,
 }));
 
 const mocks = vi.hoisted(() => {
@@ -101,6 +101,7 @@ describe("precios de Mi Mercado", () => {
         Object.assign(configuracion, {
             habilitado: false,
             diasVigencia: 30,
+            avisosHabilitados: true,
             diasAnticipacionAviso: 3,
         });
 
@@ -153,15 +154,26 @@ describe("precios de Mi Mercado", () => {
 
         mocks.imagen.all.mockResolvedValue([]);
 
-        mocks.publicacion.first.mockImplementation(async () => ({ ...fila }));
+        mocks.publicacion.first.mockImplementation(async () => ({
+            ...fila,
+        }));
 
         mocks.publicacion.update.mockImplementation(async (cambios) => {
-            fila = { ...fila, ...cambios };
+            fila = {
+                ...fila,
+                ...cambios,
+            };
+
             return { ...fila };
         });
 
-        mocks.operador.first.mockResolvedValue({ usuarioId: 30 });
-        mocks.usuario.first.mockResolvedValue({ username: "operador1" });
+        mocks.operador.first.mockResolvedValue({
+            usuarioId: 30,
+        });
+
+        mocks.usuario.first.mockResolvedValue({
+            username: "operador1",
+        });
 
         mocks.estadistica.first.mockImplementation(async () =>
             estadistica ? { ...estadistica } : null,
@@ -172,6 +184,7 @@ describe("precios de Mi Mercado", () => {
                 id: 1,
                 ...datos,
             };
+
             return { ...estadistica };
         });
 
@@ -228,7 +241,8 @@ describe("precios de Mi Mercado", () => {
                         fotoEspecie: null,
                     },
                     variedad: null,
-                    presentacion: null,
+                    envase: null,
+                    kilos: null,
                     categoria: null,
                     calibre: null,
                 },
@@ -257,7 +271,8 @@ describe("precios de Mi Mercado", () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-11-02T12:00:00Z"));
 
-        const archivo = "12345678-1234-4234-8234-123456789abc.webp";
+        const archivo =
+            "12345678-1234-4234-8234-123456789abc.webp";
 
         const relaciones = [
             {
@@ -315,7 +330,9 @@ describe("precios de Mi Mercado", () => {
     });
 
     it("guarda el precio con la revisión esperada, registra la estadística y notifica", async () => {
-        expect(await actualizarPrecioPublicacion(10, 20, 125, 1)).toEqual({
+        expect(
+            await actualizarPrecioPublicacion(10, 20, 125, 1),
+        ).toEqual({
             precio: 125,
             version: 2,
             fecha: fila.fecha,
@@ -335,10 +352,15 @@ describe("precios de Mi Mercado", () => {
 
         expect(mocks.notificar).toHaveBeenCalledWith(
             expect.anything(),
-            { operadorId: 10, publicacionId: 20 },
+            {
+                operadorId: 10,
+                publicacionId: 20,
+            },
         );
 
-        expect(mocks.notificar.mock.invocationCallOrder[0]).toBeGreaterThan(
+        expect(
+            mocks.notificar.mock.invocationCallOrder[0],
+        ).toBeGreaterThan(
             mocks.publicacion.update.mock.invocationCallOrder[0],
         );
     });
@@ -361,7 +383,9 @@ describe("precios de Mi Mercado", () => {
     });
 
     it("registra la estadística al incrementar rápidamente el precio", async () => {
-        expect(await incrementarPrecioPublicacion(10, 20, 10)).toMatchObject({
+        expect(
+            await incrementarPrecioPublicacion(10, 20, 10),
+        ).toMatchObject({
             precio: 110,
             version: 2,
         });
@@ -375,7 +399,9 @@ describe("precios de Mi Mercado", () => {
     });
 
     it("guarda y devuelve null al quitar el precio, conservando revisión y notificación", async () => {
-        expect(await actualizarPrecioPublicacion(10, 20, null, 1)).toEqual({
+        expect(
+            await actualizarPrecioPublicacion(10, 20, null, 1),
+        ).toEqual({
             precio: null,
             version: 2,
             fecha: fila.fecha,
@@ -388,13 +414,19 @@ describe("precios de Mi Mercado", () => {
 
         expect(mocks.notificar).toHaveBeenCalledWith(
             expect.anything(),
-            { operadorId: 10, publicacionId: 20 },
+            {
+                operadorId: 10,
+                publicacionId: 20,
+            },
         );
 
         await expect(
             actualizarPrecioPublicacion(10, 20, 125, 1),
         ).rejects.toMatchObject({
-            actual: { precio: null, version: 2 },
+            actual: {
+                precio: null,
+                version: 2,
+            },
         });
 
         expect(fila.precio).toBeNull();
@@ -405,7 +437,10 @@ describe("precios de Mi Mercado", () => {
 
         expect(
             await incrementarPrecioPublicacion(10, 20, 10),
-        ).toMatchObject({ precio: 10, version: 2 });
+        ).toMatchObject({
+            precio: 10,
+            version: 2,
+        });
 
         expect(fila.precio).toBe("10.00");
     });
@@ -474,7 +509,11 @@ describe("precios de Mi Mercado", () => {
         "quita el precio cuando el decremento %s llega a cero o lo supera",
         async (incremento) => {
             expect(
-                await incrementarPrecioPublicacion(10, 20, incremento),
+                await incrementarPrecioPublicacion(
+                    10,
+                    20,
+                    incremento,
+                ),
             ).toEqual({
                 precio: null,
                 version: 2,
@@ -488,7 +527,10 @@ describe("precios de Mi Mercado", () => {
 
             expect(mocks.notificar).toHaveBeenCalledWith(
                 expect.anything(),
-                { operadorId: 10, publicacionId: 20 },
+                {
+                    operadorId: 10,
+                    publicacionId: 20,
+                },
             );
         },
     );
@@ -514,7 +556,9 @@ describe("precios de Mi Mercado", () => {
             incrementarPrecioPublicacion(10, 20, 10),
         ]);
 
-        expect(resultados.map(({ precio }) => precio)).toEqual([null, 10]);
+        expect(
+            resultados.map(({ precio }) => precio),
+        ).toEqual([null, 10]);
 
         expect(fila).toMatchObject({
             precio: "10.00",

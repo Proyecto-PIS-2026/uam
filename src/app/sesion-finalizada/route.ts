@@ -6,14 +6,15 @@ import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/ru
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(solicitud: Request) {
+export async function GET() {
     try {
         const sesion = await obtenerSesion();
         if (!sesion) await cerrarSesion();
         const destino = sesion ? obtenerRutaPrincipal(sesion.rol) : RUTA_INICIO_SESION;
-        const respuesta = NextResponse.redirect(new URL(destino, solicitud.url), 303);
-        respuesta.headers.set("Cache-Control", "no-store");
-        return respuesta;
+        return new NextResponse(null, {
+            status: 303,
+            headers: { Location: destino, "Cache-Control": "no-store" },
+        });
     } catch {
         return new Response("No pudimos verificar tu sesión. Intentá nuevamente.", {
             status: 503,

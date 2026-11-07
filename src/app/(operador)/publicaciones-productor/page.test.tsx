@@ -50,7 +50,7 @@ const publicaciones: PublicacionProductorListado[] = [
         foto: null,
         especie: "Tomate",
         variedad: "Perita",
-        presentacion: "Cajón",
+        envase: "Cajón", kilos: "",
         cantidadUnidades: 10,
         categoria: "",
         calibre: "",
@@ -67,7 +67,7 @@ const publicaciones: PublicacionProductorListado[] = [
         foto: null,
         especie: "Acelga",
         variedad: "",
-        presentacion: "Atado",
+        envase: "Atado", kilos: "",
         cantidadUnidades: null,
         categoria: "",
         calibre: "",
@@ -170,6 +170,16 @@ describe("PaginaPublicacionesProductor", () => {
         render(await PaginaPublicacionesProductor());
         expect(propsContenedor()).toHaveProperty("publicaciones", publicaciones);
         expect(propsContenedor()).not.toHaveProperty("resultado");
+    });
+
+    it("restaura la especie de una URL compartida o recargada", async () => {
+        render(await PaginaPublicacionesProductor({ searchParams: Promise.resolve({ especie: "Tomate" }) }));
+        expect(propsContenedor()).toHaveProperty("especie", "Tomate");
+    });
+
+    it("ignora parámetros de especie repetidos", async () => {
+        render(await PaginaPublicacionesProductor({ searchParams: Promise.resolve({ especie: ["Tomate", "Acelga"] }) }));
+        expect(propsContenedor()).toHaveProperty("especie", "");
     });
 
     it("muestra cantidad cero cuando no hay publicaciones", async () => {

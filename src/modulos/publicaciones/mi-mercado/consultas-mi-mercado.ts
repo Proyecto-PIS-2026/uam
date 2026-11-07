@@ -22,14 +22,16 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
                     "fotoEliminadaPorVencimientoEn",
                     "precio",
                     "cantidadUnidades",
+                    "comentario",
                     "fecha",
+                    "fechaVigencia",
                     "version",
                     "publicacionActiva",
                     "publicacionDisponible",
                 )
                 .include("especie")
                 .include("variedad")
-                .include("presentacion")
+                .include("envase").include("kilos")
                 .include("categoria")
                 .include("calibre")
         );

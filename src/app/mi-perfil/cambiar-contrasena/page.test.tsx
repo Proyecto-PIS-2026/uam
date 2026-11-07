@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import Pagina from "./page";
 const m = vi.hoisted(() => ({ sesion: vi.fn(), habilitado: vi.fn(), redirect: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: m.sesion }));
-vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ get habilitarCambioContrasena() { return m.habilitado() } }));
+vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ estaHabilitadoCambioContrasena: m.habilitado }));
 vi.mock("next/navigation", () => ({ redirect: m.redirect }));
 vi.mock("@/modulos/identidad-acceso/cambio-contrasena/FormularioCambioContrasena", () => ({ default: ({ volver }: { volver: string }) => <form aria-label="Cambiar contraseña" data-volver={volver} /> }));
 

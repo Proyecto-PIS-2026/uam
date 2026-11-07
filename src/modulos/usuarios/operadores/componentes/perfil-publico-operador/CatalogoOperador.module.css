@@ -34,48 +34,6 @@
     margin-bottom: var(--espacio-secciones);
 }
 
-.avisoLicencia {
-    display: grid;
-    box-sizing: border-box;
-    width: 100%;
-    margin-bottom: var(--espacio-secciones);
-    padding: var(--padding-panel);
-    gap: var(--espacio-controles);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-panel);
-    background: var(--color-surface);
-    box-shadow: var(--sombra-panel);
-}
-
-.contenidoLicencia {
-    display: grid;
-    width: 100%;
-    gap: var(--espacio-controles);
-}
-
-.licenciaActiva {
-    margin: 0;
-    color: var(--color-secondary);
-    font-size: var(--tamano-texto-secundario);
-    font-weight: 500;
-}
-
-.etiquetaMensaje {
-    margin: 0;
-    color: var(--color-secondary);
-    font-size: var(--tamano-texto-secundario);
-    font-weight: 600;
-}
-
-.comentario {
-    margin: 0 !important;
-    padding: var(--padding-panel);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-control);
-    background: var(--color-surface);
-    white-space: pre-wrap;
-}
-
 .espacioAgrupar {
     display: flex;
     flex: 0 0 12.5rem;
@@ -201,14 +159,8 @@
 
 @media (min-width: 701px) {
     .lista {
-        grid-template-columns: repeat(auto-fill, minmax(14.8rem, 1fr));
+        grid-template-columns: var(--columnas-tarjetas);
         gap: var(--espacio-secciones);
-    }
-}
-
-@media (min-width: 1280px) {
-    .lista {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 }
 

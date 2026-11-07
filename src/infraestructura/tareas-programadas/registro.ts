@@ -1,20 +1,32 @@
 import { procesarVencimientosFotos } from "../../modulos/publicaciones/procesar-vencimientos-fotos";
-import { obtenerConfiguracionAgingFotos, type ConfiguracionAgingFotos } from "../../modulos/publicaciones/vigencia-fotos";
+import { obtenerConfiguracionAgingFotos } from "../../modulos/publicaciones/configuracion-aging-fotos";
+import type { ConfiguracionAgingFotos } from "../../modulos/publicaciones/vigencia-fotos";
 import type { TareaDiaria } from "./tipos";
+import { obtenerConfiguracionAvisosLocales } from "../../modulos/usuarios/operadores/configuracion-avisos-locales";
+import { procesarVencimientosLocales } from "../../modulos/usuarios/operadores/procesar-vencimientos-locales";
 
 export function obtenerTareasDiarias(): readonly TareaDiaria[] {
     return [{
         nombre: "publicaciones.eliminar-fotos-vencidas",
-        habilitada: () => obtenerConfiguracionAgingFotos().habilitado,
+        habilitada: async () => (await obtenerConfiguracionAgingFotos()).habilitado,
         ejecutar: async (contexto) => {
             let configuracion: ConfiguracionAgingFotos;
             try {
-                configuracion = obtenerConfiguracionAgingFotos();
+                configuracion = await obtenerConfiguracionAgingFotos();
             } catch (error) {
-                console.error("No se ejecutó el aging de fotos: su configuración es inválida.", error);
+                console.error("No se ejecutó el aging de fotos: no se pudo obtener una configuración válida.", error);
                 throw error;
             }
+            if (!configuracion.habilitado) return "deshabilitada";
             return procesarVencimientosFotos(contexto, configuracion);
+        },
+    }, {
+        nombre: "operadores.avisar-vencimientos-locales",
+        habilitada: () => obtenerConfiguracionAvisosLocales().habilitado,
+        ejecutar: async (contexto) => {
+            const configuracion = obtenerConfiguracionAvisosLocales();
+            if (!configuracion.habilitado) return "deshabilitada";
+            return procesarVencimientosLocales(contexto, configuracion);
         },
     }];
 }

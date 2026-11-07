@@ -2,11 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerTareasDiarias } from "./registro";
 import type { ContextoTareaDiaria } from "./tipos";
 
-const configuracion = vi.hoisted(() => ({ habilitado: false, diasVigencia: 30, diasAnticipacionAviso: 5 }));
-vi.mock("../../modulos/publicaciones/configuracion-aging-fotos", () => ({ CONFIGURACION_AGING_FOTOS: configuracion }));
+const mocksConfiguracion = vi.hoisted(() => ({ obtener: vi.fn() }));
+vi.mock("../../modulos/publicaciones/configuracion-aging-fotos", () => ({ obtenerConfiguracionAgingFotos: mocksConfiguracion.obtener }));
 
 const mocks = vi.hoisted(() => ({ procesar: vi.fn() }));
 vi.mock("../../modulos/publicaciones/procesar-vencimientos-fotos", () => ({ procesarVencimientosFotos: mocks.procesar }));
+const locales = vi.hoisted(() => ({ configurar: vi.fn(), procesar: vi.fn() }));
+vi.mock("../../modulos/usuarios/operadores/configuracion-avisos-locales", () => ({ obtenerConfiguracionAvisosLocales: locales.configurar }));
+vi.mock("../../modulos/usuarios/operadores/procesar-vencimientos-locales", () => ({ procesarVencimientosLocales: locales.procesar }));
 
 const contexto = {
     tx: {} as ContextoTareaDiaria["tx"],
@@ -17,7 +20,9 @@ const contexto = {
 beforeEach(() => {
     vi.resetAllMocks();
     mocks.procesar.mockResolvedValue(0);
-    Object.assign(configuracion, { habilitado: false, diasVigencia: 30, diasAnticipacionAviso: 5 });
+    mocksConfiguracion.obtener.mockResolvedValue({ habilitado: false });
+    locales.configurar.mockReturnValue({ habilitado: true, diasAnticipacionAviso: 3 });
+    locales.procesar.mockResolvedValue(2);
 });
 
 afterEach(() => {
@@ -25,38 +30,75 @@ afterEach(() => {
 });
 
 describe("registro de tareas con aging opcional", () => {
+    it("revisa los locales aunque el aging de fotos esté deshabilitado", async () => {
+        const tareas = obtenerTareasDiarias();
+        expect(new Set(tareas.map((tarea) => tarea.nombre)).size).toBe(tareas.length);
+        const tarea = tareas.find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
+
+        expect(await tarea.habilitada?.()).toBe(true);
+        await expect(tarea.ejecutar(contexto)).resolves.toBe(2);
+        expect(locales.procesar).toHaveBeenCalledExactlyOnceWith(contexto, { habilitado: true, diasAnticipacionAviso: 3 });
+        expect(mocksConfiguracion.obtener).not.toHaveBeenCalled();
+    });
+
+    it("permite apagar los avisos de locales sin ejecutar su procesador", async () => {
+        locales.configurar.mockReturnValue({ habilitado: false, diasAnticipacionAviso: 3 });
+        const tarea = obtenerTareasDiarias().find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
+
+        expect(await tarea.habilitada?.()).toBe(false);
+        await expect(tarea.ejecutar(contexto)).resolves.toBe("deshabilitada");
+        expect(locales.procesar).not.toHaveBeenCalled();
+    });
+
+    it("toma la anticipación configurada al ejecutar la revisión de locales", async () => {
+        const tarea = obtenerTareasDiarias().find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
+        locales.configurar.mockReturnValue({ habilitado: true, diasAnticipacionAviso: 7 });
+
+        await tarea.ejecutar(contexto);
+        expect(locales.procesar).toHaveBeenCalledWith(contexto, { habilitado: true, diasAnticipacionAviso: 7 });
+    });
+
     it("registra las tareas aunque el aging esté deshabilitado", async () => {
         const [tarea] = obtenerTareasDiarias();
 
         expect(tarea.nombre).toBe("publicaciones.eliminar-fotos-vencidas");
-        expect(tarea.habilitada?.()).toBe(false);
-        await expect(tarea.ejecutar(contexto)).resolves.toBe(0);
-        expect(mocks.procesar).toHaveBeenCalledWith(contexto, { habilitado: false });
+        await expect(tarea.habilitada?.()).resolves.toBe(false);
+        await expect(tarea.ejecutar(contexto)).resolves.toBe("deshabilitada");
+        expect(mocks.procesar).not.toHaveBeenCalled();
     });
 
     it("vuelve a leer la configuración antes de cada ejecución", async () => {
         const [tarea] = obtenerTareasDiarias();
-        expect(tarea.habilitada?.()).toBe(false);
+        await expect(tarea.habilitada?.()).resolves.toBe(false);
         await tarea.ejecutar(contexto);
-        configuracion.habilitado = true;
+        mocksConfiguracion.obtener.mockResolvedValue({ habilitado: true, diasVigencia: 30, avisosHabilitados: true, diasAnticipacionAviso: 5 });
         mocks.procesar.mockResolvedValue(7);
 
-        expect(tarea.habilitada?.()).toBe(true);
+        await expect(tarea.habilitada?.()).resolves.toBe(true);
         await expect(tarea.ejecutar(contexto)).resolves.toBe(7);
-        expect(mocks.procesar).toHaveBeenNthCalledWith(1, contexto, { habilitado: false });
-        expect(mocks.procesar).toHaveBeenNthCalledWith(2, contexto, {
-            habilitado: true, diasVigencia: 30, diasAnticipacionAviso: 5,
+        expect(mocks.procesar).toHaveBeenCalledExactlyOnceWith(contexto, {
+            habilitado: true, diasVigencia: 30, avisosHabilitados: true, diasAnticipacionAviso: 5,
         });
     });
 
-    it("rechaza y registra la configuración inválida sin procesar fotos", async () => {
-        Object.assign(configuracion, { habilitado: true, diasVigencia: 0 });
+    it.each(["La vigencia de las fotos no es válida", "No se pudo conectar a la base de datos"])("no procesa fotos ante un error de configuración: %s", async (mensaje) => {
+        mocksConfiguracion.obtener.mockRejectedValue(new Error(mensaje));
         const registrar = vi.spyOn(console, "error").mockImplementation(() => undefined);
         const [tarea] = obtenerTareasDiarias();
 
-        expect(() => tarea.habilitada?.()).toThrow("La vigencia de las fotos");
-        await expect(tarea.ejecutar(contexto)).rejects.toThrow("La vigencia de las fotos");
+        await expect(tarea.habilitada?.()).rejects.toThrow(mensaje);
+        await expect(tarea.ejecutar(contexto)).rejects.toThrow(mensaje);
         expect(mocks.procesar).not.toHaveBeenCalled();
         expect(registrar).toHaveBeenCalledWith(expect.stringContaining("No se ejecutó el aging de fotos"), expect.any(Error));
+    });
+
+    it("relee también al ejecutar por si el administrador lo deshabilitó después del chequeo", async () => {
+        mocksConfiguracion.obtener.mockResolvedValueOnce({ habilitado: true, diasVigencia: 3, avisosHabilitados: true, diasAnticipacionAviso: 1 });
+        const [tarea] = obtenerTareasDiarias();
+
+        await expect(tarea.habilitada?.()).resolves.toBe(true);
+        await expect(tarea.ejecutar(contexto)).resolves.toBe("deshabilitada");
+
+        expect(mocks.procesar).not.toHaveBeenCalled();
     });
 });

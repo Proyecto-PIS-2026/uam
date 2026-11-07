@@ -186,7 +186,7 @@ function crearPublicacion(): PublicacionListado {
         precio: 150,
         fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
-        presentacion: "Cajón",
+        envase: "Cajón", kilos: "",
         categoria: "Primera",
         calibre: "Mediano",
         codigoCalibre: "M",
@@ -204,7 +204,7 @@ function crearPublicacionProductor(): PublicacionProductorListado {
         precio: 120,
         fecha: "2026-10-03T15:00:00.000Z",
         foto: null,
-        presentacion: "Caja",
+        envase: "Caja", kilos: "",
         cantidadUnidades: 20,
         categoria: "Primera",
         calibre: "Grande",
@@ -299,10 +299,10 @@ describe("DrawerPublicacion con operadores", () => {
     });
 
     it("muestra guiones cuando los datos opcionales están vacíos o son nulos", () => {
-        const publicacion = { ...crearPublicacion(), variedad: " ", presentacion: " ", calibre: " ", categoria: " ", pais: " ", cantidadUnidades: null };
+        const publicacion = { ...crearPublicacion(), variedad: " ", envase: " ", kilos: "", calibre: " ", categoria: " ", pais: " ", cantidadUnidades: null };
         render(<DrawerPublicacion publicacion={publicacion} open onOpenChange={vi.fn()} />);
         expect(screen.getByText("Tomate")).toBeInTheDocument();
-        for (const etiqueta of ["Presentación", "Calibre", "Categoría", "País"]) {
+        for (const etiqueta of ["Empaquetado", "Calibre", "Categoría", "País"]) {
             expect(screen.getByText(etiqueta).nextElementSibling).toHaveTextContent("-");
         }
         expect(screen.getByText(/^Unidades/).nextElementSibling).toHaveTextContent("-");
@@ -694,5 +694,18 @@ describe("DrawerPublicacion con productores", () => {
         await waitFor(() => { expect(screen.queryByRole("dialog", { name: "Foto ampliada del producto" })).not.toBeInTheDocument()});
         expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
         expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it("muestra el comentario del publicador", () => {
+        render(<DrawerPublicacion publicacion={{ ...crearPublicacion(), comentario: "Cosecha de esta semana" }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario")).toBeInTheDocument();
+        expect(screen.getByText("Cosecha de esta semana")).toBeInTheDocument();
+    });
+
+    it.each([null, undefined, "   "])("muestra un guion cuando el comentario es %j", (comentario) => {
+        render(<DrawerPublicacion publicacion={{ ...crearPublicacion(), comentario }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario").nextElementSibling).toHaveTextContent("-");
     });
 });

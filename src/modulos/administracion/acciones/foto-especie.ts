@@ -2,11 +2,12 @@
 
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { guardarImagenEspecie } from "./imagenes-especies";
 import { limpiarImagenEspecieNoReferenciada } from "./limpiar-imagen-especie";
 
 export async function guardarFotoEspecie(especieId: number, archivo: File): Promise<void> {
-    await exigirAdministrador();
+    await controlarSesionEnAccion(exigirAdministrador);
     if (!Number.isSafeInteger(especieId) || especieId <= 0) {
         throw new Error("La especie no es válida.");
     }
@@ -39,7 +40,7 @@ export async function guardarFotoEspecie(especieId: number, archivo: File): Prom
 }
 
 export async function eliminarFotoEspecie(especieId: number): Promise<void> {
-    await exigirAdministrador();
+    await controlarSesionEnAccion(exigirAdministrador);
     if (!Number.isSafeInteger(especieId) || especieId <= 0) {
         throw new Error("La especie no es válida.");
     }

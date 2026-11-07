@@ -46,7 +46,7 @@ describe("obtenerPublicaciones", () => {
                 foto: "/publicaciones/manzana.jpg",
                 especie: "Manzana",
                 variedad: "Red Delicious",
-                presentacion: "Cajón",
+                envase: "Cajón", kilos: "",
                 cantidadUnidades: 20,
                 categoria: "I",
                 calibre: "Grande",

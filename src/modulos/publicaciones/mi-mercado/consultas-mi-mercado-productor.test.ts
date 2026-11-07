@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
+import "temporal-polyfill/global";
 import { obtenerPublicacionesMiMercadoProductor } from "./consultas-mi-mercado-productor";
 
 vi.mock("../configuracion-aging-fotos", () => ({
-    CONFIGURACION_AGING_FOTOS: { habilitado: true, diasVigencia: 3, diasAnticipacionAviso: 1 },
+    obtenerConfiguracionAgingFotos: async () => ({ habilitado: true, diasVigencia: 3, avisosHabilitados: true, diasAnticipacionAviso: 1 }),
 }));
 
 const mocks = vi.hoisted(() => ({
@@ -47,7 +49,8 @@ function relacionPublicacion(productorId: number, id: number) {
             publicacionDisponible: true,
             especie: { id: 9, nombreEspecie: "Lechuga", fotoEspecie: null },
             variedad: { id: 8, nombreVariedad: "Crespa" },
-            presentacion: { id: 7, nombrePresentacion: "Cajón" },
+            envase: { id: 7, nombreEnvase: "Cajón" },
+            kilos: null,
             categoria: { id: 4, nombreCategoria: "Primera" },
             calibre: { id: 5, nombreCalibre: "Mediano", codigoCalibre: "M" },
         },
@@ -80,6 +83,18 @@ describe("lectura privada de Mi Mercado del productor", () => {
 
     afterEach(() => {
         vi.useRealTimers();
+    });
+
+    it("muestra no disponible una publicación vencida sin depender del refresco de notificaciones", async () => {
+        const relacion = relacionPublicacion(23, 31);
+        mocks.todasPublicaciones.mockResolvedValue([{
+            ...relacion,
+            publicacion: { ...relacion.publicacion, fechaVigencia: Temporal.Now.instant().subtract({ hours: 24 }) },
+        }]);
+
+        const resultado = await obtenerPublicacionesMiMercadoProductor();
+
+        expect(resultado.publicaciones[0].publicacionDisponible).toBe(false);
     });
 
     it("mantiene la foto visible hasta el borrado y solo entonces muestra el estado de eliminada", async () => {
@@ -128,11 +143,13 @@ describe("lectura privada de Mi Mercado del productor", () => {
             precio: "125.00",
             cantidadUnidades: 10,
             fecha: "2026-10-16T12:00:00Z",
+            fechaVigencia: null,
             publicacionActiva: true,
             publicacionDisponible: true,
             especie: relacionPublicacion(23, 31).publicacion.especie,
             variedad: relacionPublicacion(23, 31).publicacion.variedad,
-            presentacion: relacionPublicacion(23, 31).publicacion.presentacion,
+            envase: relacionPublicacion(23, 31).publicacion.envase,
+            kilos: null,
             categoria: { id: 4, nombreCategoria: "Primera" },
             calibre: { id: 5, nombreCalibre: "Mediano", codigoCalibre: "M" },
             ubicaciones: [{ id: 231, nombreUbicacion: "Canelones", urlMaps: "https://maps.example/quinta", departamento: "Canelones" }],
