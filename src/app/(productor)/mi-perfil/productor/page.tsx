@@ -7,9 +7,10 @@ import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import BotonVolver from "@/compartido/BotonVolver";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
-import EditIcon from "@mui/icons-material/Edit";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import styles from "./PerfilPropioProductor.module.css";
+import estilosFormulario from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador.module.css";
 
 export const metadata = { title: "Mi perfil de Productor | UAM" };
 
@@ -36,26 +37,33 @@ export default async function PaginaMiPerfilProductor() {
                 <div className={styles.identidad}>
                     <p className={styles.tipo}>Mi perfil</p>
                     <h1 id="perfil-propio-titulo" className={styles.nombre}>{productor.nombre}</h1>
-                    <p className={styles.usuario}>Usuario: {productor.nombreUsuario}</p>
-                </div>
-                <div className={styles.accionesEncabezado}>
-                    <p className={styles.contacto}>
-                        <PhoneOutlinedIcon aria-hidden="true" />
-                        <span className={styles.etiquetaContacto}>Teléfono:</span>
-                        <span>{productor.telefono
-                            ? `${productor.codigoPais} ${productor.telefono}`
-                            : "Sin número de contacto"}</span>
-                    </p>
-                    <Link href="/mi-perfil/productor/editar" className={styles.editar}>
-                        <EditIcon aria-hidden="true" />
-                        Editar
-                    </Link>
                 </div>
             </header>
+            <div className={styles.contenido}>
+                <div className={styles.datoCuenta}>
+                    <span className={styles.iconoDato} aria-hidden="true"><PersonOutlinedIcon /></span>
+                    <div className={styles.contenidoDato}>
+                        <span className={styles.etiquetaDato}>Usuario:</span>
+                        <span className={styles.valorDato}>{productor.nombreUsuario}</span>
+                    </div>
+                </div>
+                <div className={styles.datoCuenta}>
+                    <span className={styles.iconoDato} aria-hidden="true"><PhoneOutlinedIcon /></span>
+                    <div className={styles.contenidoDato}>
+                        <span className={styles.etiquetaDato}>Teléfono:</span>
+                        <span className={styles.valorDato}>{productor.telefono
+                            ? `${productor.codigoPais} ${productor.telefono}`
+                            : "Sin número de contacto"}</span>
+                    </div>
+                </div>
+            </div>
         </section>
-        <div className={styles.acciones}>
+        <div className={`${estilosFormulario.acciones} ${styles.acciones}`}>
+            <Link href="/mi-perfil/productor/editar" className={`${estilosFormulario.cancelar} ${styles.accion}`}>
+                Editar
+            </Link>
             {habilitarCambioContrasena && (
-                <Link href="/mi-perfil/cambiar-contrasena" className={styles.cambiarContrasena}>
+                <Link href="/mi-perfil/cambiar-contrasena" className={`${estilosFormulario.guardar} ${styles.accion}`}>
                     Cambiar contraseña
                 </Link>
             )}

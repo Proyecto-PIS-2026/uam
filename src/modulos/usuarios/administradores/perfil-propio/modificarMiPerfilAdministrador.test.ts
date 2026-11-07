@@ -35,13 +35,11 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 
 type EstadoBase = {
     propio: { id: number; usuarioId: number } | null;
-    administradorConEseCorreo: { id: number } | null;
     usuarioConEseNombre: { id: number } | null;
 };
 
 const estadoPorDefecto: EstadoBase = {
     propio: { id: 101, usuarioId: 7 },
-    administradorConEseCorreo: null,
     usuarioConEseNombre: null,
 };
 
@@ -50,12 +48,11 @@ function prepararBase(cambios: Partial<EstadoBase> = {}) {
 
     mockDb.administrador.first
         .mockReset()
-        .mockResolvedValueOnce(estado.propio)
-        .mockResolvedValueOnce(estado.administradorConEseCorreo);
+        .mockResolvedValue(estado.propio);
     mockDb.usuario.first.mockReset().mockResolvedValue(estado.usuarioConEseNombre);
 }
 
-const datosValidos = { nombreUsuario: "ana.admin", email: "ana@example.com" };
+const datosValidos = { nombreUsuario: "ana.admin" };
 
 describe("modificarMiPerfilAdministrador", () => {
     beforeEach(() => {
@@ -85,8 +82,8 @@ describe("modificarMiPerfilAdministrador", () => {
     it("modifica la cuenta de la sesión aunque el formulario mande otro id", async () => {
         await modificarMiPerfilAdministrador({ ...datosValidos, administradorId: 999 });
 
-        expect(mockDb.administrador.where).toHaveBeenNthCalledWith(1, { usuarioId: 7 });
-        expect(mockDb.administrador.where).toHaveBeenLastCalledWith({ id: 101 });
+        expect(mockDb.administrador.where).toHaveBeenCalledExactlyOnceWith({ usuarioId: 7 });
+        expect(mockDb.administrador.update).not.toHaveBeenCalled();
         expect(mockDb.usuario.where).toHaveBeenLastCalledWith({ id: 7 });
     });
 
@@ -101,21 +98,23 @@ describe("modificarMiPerfilAdministrador", () => {
     });
 
     it("devuelve los errores de validación sin guardar", async () => {
-        expect(await modificarMiPerfilAdministrador({ ...datosValidos, email: "correo-invalido" })).toEqual({
+        expect(await modificarMiPerfilAdministrador({ ...datosValidos, nombreUsuario: "a" })).toEqual({
             esValido: false,
-            errores: ["El correo electrónico no es válido."],
+            errores: ["El nombre de usuario debe tener al menos 3 caracteres."],
         });
         expect(mockDb.administrador.update).not.toHaveBeenCalled();
+        expect(mockDb.usuario.update).not.toHaveBeenCalled();
     });
 
-    it("rechaza un correo que ya usa otro administrador", async () => {
-        prepararBase({ administradorConEseCorreo: { id: 103 } });
-
-        expect(await modificarMiPerfilAdministrador(datosValidos)).toEqual({
-            esValido: false,
-            errores: ["Ya existe un administrador con ese correo electrónico."],
+    it.each(["otro@uam.com", "", "correo-invalido", null])("no modifica el correo aunque se inyecte %j", async (email) => {
+        expect(await modificarMiPerfilAdministrador({ ...datosValidos, email, correo: email })).toEqual({
+            esValido: true,
+            id: 101,
+            mensaje: "Tu perfil se actualizó correctamente.",
         });
+        expect(mockDb.administrador.where).toHaveBeenCalledExactlyOnceWith({ usuarioId: 7 });
         expect(mockDb.administrador.update).not.toHaveBeenCalled();
+        expect(mockDb.usuario.update).toHaveBeenCalledExactlyOnceWith({ username: "ana.admin" });
     });
 
     it("rechaza un nombre que ya usa otro usuario", async () => {
@@ -128,8 +127,8 @@ describe("modificarMiPerfilAdministrador", () => {
         expect(mockDb.usuario.update).not.toHaveBeenCalled();
     });
 
-    it("permite guardar sin cambiar el correo ni el nombre", async () => {
-        prepararBase({ administradorConEseCorreo: { id: 101 }, usuarioConEseNombre: { id: 7 } });
+    it("permite guardar sin cambiar el nombre", async () => {
+        prepararBase({ usuarioConEseNombre: { id: 7 } });
 
         expect(await modificarMiPerfilAdministrador(datosValidos)).toEqual({
             esValido: true,
@@ -138,14 +137,14 @@ describe("modificarMiPerfilAdministrador", () => {
         });
     });
 
-    it("guarda solo el nombre y el correo aunque se envíe una contraseña", async () => {
+    it("guarda solo el nombre aunque se envíe una contraseña", async () => {
         await modificarMiPerfilAdministrador({
             ...datosValidos,
             contraseña: "nueva12345",
             confirmacionContraseña: "nueva12345",
         });
 
-        expect(mockDb.administrador.update).toHaveBeenCalledWith({ email: "ana@example.com" });
+        expect(mockDb.administrador.update).not.toHaveBeenCalled();
         expect(mockDb.usuario.update).toHaveBeenCalledWith({ username: "ana.admin" });
     });
 
@@ -154,7 +153,7 @@ describe("modificarMiPerfilAdministrador", () => {
         expect(cache.revalidatePath).toHaveBeenCalledWith("/", "layout");
 
         vi.clearAllMocks();
-        prepararBase({ administradorConEseCorreo: { id: 103 } });
+        prepararBase({ usuarioConEseNombre: { id: 30 } });
         await modificarMiPerfilAdministrador(datosValidos);
         expect(cache.revalidatePath).not.toHaveBeenCalled();
     });

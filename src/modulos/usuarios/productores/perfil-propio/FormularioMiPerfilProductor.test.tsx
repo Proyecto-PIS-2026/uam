@@ -20,7 +20,7 @@ describe("formulario de mi perfil como Productor", () => {
         render(<FormularioModificarProductor productor={productor} perfilPropio />);
         expect(screen.getByRole("heading", { name: "Editar mi perfil" })).toBeInTheDocument();
         expect(screen.queryByText("granja_norte")).not.toBeInTheDocument();
-        expect(screen.getByLabelText("Nombre")).toHaveValue("Granja Norte");
+        expect(screen.getByLabelText(/^Nombre\s*\*$/)).toHaveValue("Granja Norte");
         expect(screen.getByLabelText(/Teléfono/)).toHaveValue("99123456");
         expect(screen.getByRole("img", { name: "Vista previa de la foto de perfil" })).toHaveAttribute("src", expect.stringContaining(productor.fotoPerfil));
     });
@@ -61,7 +61,7 @@ describe("formulario de mi perfil como Productor", () => {
 
     it("cancela sin guardar los cambios", () => {
         render(<FormularioModificarProductor productor={productor} perfilPropio />);
-        fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Sin guardar" } });
+        fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), { target: { value: "Sin guardar" } });
         fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
         expect(mocks.push).toHaveBeenCalledWith("/mi-perfil/productor");
         expect(mocks.guardar).not.toHaveBeenCalled();

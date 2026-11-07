@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: m.push }) }));
 vi.mock("./cambiarMiContrasena", () => ({ cambiarMiContrasena: vi.fn() }));
 const accion = vi.mocked(cambiarMiContrasena);
 function completar() {
-    fireEvent.change(screen.getByLabelText("Contraseña", { exact: true }), { target: { value: "Anterior123" } });
+    fireEvent.change(screen.getByLabelText("Contraseña actual", { exact: true }), { target: { value: "Anterior123" } });
     fireEvent.change(screen.getByLabelText(/^Nueva contraseña/), { target: { value: "Nueva1234" } });
     fireEvent.change(screen.getByLabelText(/^Confirmar nueva contraseña/), { target: { value: "Nueva1234" } });
 }
@@ -20,7 +20,7 @@ describe("formulario independiente en mi perfil", () => {
     });
     it("presenta tres campos privados con autocompletado adecuado", () => {
         render(<Formulario volver="/mi-perfil/productor" />);
-        const actual = screen.getByLabelText(/^Contraseña$/);
+        const actual = screen.getByLabelText("Contraseña actual", { exact: true });
         expect(actual).toHaveAttribute("type", "password");
         expect(actual).toHaveAttribute("autocomplete", "current-password");
         for (const nombre of [/^Nueva contraseña/, /^Confirmar nueva contraseña/]) {
@@ -48,7 +48,7 @@ describe("formulario independiente en mi perfil", () => {
         completar(); guardar();
         expect(accion).toHaveBeenCalledExactlyOnceWith({ actual: "Anterior123", nueva: "Nueva1234", confirmacion: "Nueva1234" });
         expect(await screen.findByRole("status")).toHaveTextContent("se actualizó correctamente");
-        expect(screen.getByLabelText(/^Contraseña$/)).toHaveValue("");
+        expect(screen.getByLabelText("Contraseña actual", { exact: true })).toHaveValue("");
         expect(screen.getByLabelText(/^Nueva contraseña/)).toHaveValue("");
         expect(screen.getByLabelText(/^Confirmar nueva contraseña/)).toHaveValue("");
     });
@@ -81,7 +81,7 @@ describe("formulario independiente en mi perfil", () => {
         completar(); guardar(); guardar();
         expect(accion).toHaveBeenCalledTimes(1);
         expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
-        expect(screen.getByLabelText(/^Contraseña$/)).toBeDisabled();
+        expect(screen.getByLabelText("Contraseña actual", { exact: true })).toBeDisabled();
         resolver({ esValido: true, mensaje: "Listo" });
         await waitFor(() => expect(screen.getByRole("button", { name: "Cancelar" })).toBeEnabled());
     });

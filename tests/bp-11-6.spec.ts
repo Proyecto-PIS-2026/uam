@@ -15,21 +15,23 @@ test("BP-11.6 CP-01, CP-02, CP-04, CP-05, CP-06: el perfil muestra los datos de 
 
   // CP-01 y CP-02: identificación y contacto.
   await expect(datos.getByRole("heading", { level: 1 })).toHaveText(/^Productor de prueba \d+$/);
-  await expect(datos.getByText(`Usuario: ${productor.usuario}`, { exact: true })).toBeVisible();
-  await expect(datos.locator("p").filter({ hasText: /^Teléfono:/ })).toContainText("+598 90000000");
+  await expect(datos.getByText("Usuario:", { exact: true })).toBeVisible();
+  await expect(datos.getByText(productor.usuario, { exact: true })).toBeVisible();
+  await expect(datos.getByText("Teléfono:", { exact: true })).toBeVisible();
+  await expect(datos.getByText("+598 90000000", { exact: true })).toBeVisible();
 
   // CP-04: no se expone la contraseña.
   await expect(page.locator('input[type="password"]')).toHaveCount(0);
   expect(await page.content()).not.toContain(productor.contrasena);
 
   // CP-05: acceso a la modificación.
-  await expect(datos.getByRole("link", { name: "Editar", exact: true }))
+  await expect(page.getByRole("main").getByRole("link", { name: "Editar", exact: true }))
     .toHaveAttribute("href", "/mi-perfil/productor/editar");
 
   // CP-06: acceso al cambio de contraseña con contraseña actual.
   await page.getByRole("main").getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
   await expect(page).toHaveURL(/\/mi-perfil\/cambiar-contrasena$/);
-  const contrasenaActual = page.getByRole("form", { name: "Cambio de contraseña" }).getByLabel("Contraseña", { exact: true });
+  const contrasenaActual = page.getByRole("form", { name: "Cambio de contraseña" }).getByLabel("Contraseña actual", { exact: true });
   await expect(contrasenaActual).toBeVisible();
   await expect(contrasenaActual).toHaveAttribute("autocomplete", "current-password");
 }));

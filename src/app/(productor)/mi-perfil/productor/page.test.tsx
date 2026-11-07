@@ -22,7 +22,8 @@ describe("consulta de mi perfil como Productor", () => {
         render(await Pagina());
         expect(screen.getByText("Mi perfil")).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: productor.nombre })).toBeInTheDocument();
-        expect(screen.getByText("Usuario: granja_norte")).toBeInTheDocument();
+        expect(screen.getByText("Usuario:")).toBeInTheDocument();
+        expect(screen.getByText(productor.nombreUsuario)).toBeInTheDocument();
         expect(screen.getByText("+598 99123456")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Editar" })).toHaveAttribute("href", "/mi-perfil/productor/editar");
         expect(screen.queryByRole("link", { name: "Cambiar contraseña" })).not.toBeInTheDocument();

@@ -46,7 +46,7 @@ describe("FormularioPerfilPropio", () => {
         expect(screen.getByRole("switch", { name: "En licencia" })).toBeChecked();
         expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
         expect(screen.getByLabelText("Inicio de licencia")).toHaveValue("2999-11-05");
-        expect(screen.getByLabelText("Mensaje de recomendación (opcional)")).toHaveValue("Consultar disponibilidad.");
+        expect(screen.getByLabelText("Mensaje de recomendación")).toHaveValue("Consultar disponibilidad.");
 
         fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Nuevo nombre" } });
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));

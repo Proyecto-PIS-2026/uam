@@ -4,7 +4,8 @@ import { ErrorImagenProductor, guardarImagenProductor } from "./imagenes-product
 import { limpiarImagenPublicacionNoReferenciada } from "./operadores/limpiar-imagen-publicacion";
 import { validarAltaPublicacionProductor } from "./validarAltaPublicacionProductor";
 import { normalizarPrecioPublicacion } from "./precio-publicacion";
-import {validarFechaVigencia,convertirFechaVigenciaAInstant} from "./vigencia-publicacion";
+import { convertirFechaVigenciaAInstant } from "./vigencia-publicacion";
+import { obtenerFechaMaximaVigenciaProductor } from "./configuracion-vigencia-publicaciones";
 export type ResultadoAltaPublicacionProductor =
     | { esValido: false; errores: string[] }
     | { esValido: true; id: number; mensaje: string };
@@ -13,45 +14,6 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
     const validacion = validarAltaPublicacionProductor(valor);
     if (!validacion.esValido) return validacion;
     const datos = validacion.datos;
-    const [configHabilitada, configDias] = await Promise.all([
-    db.orm.public.Configuracion
-        .where({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada" })
-        .select("valorConfiguracion")
-        .first(),
-
-    db.orm.public.Configuracion
-        .where({ nombreConfiguracion: "vigencia_publicaciones_productor" })
-        .select("valorConfiguracion")
-        .first(),
-    ]);
-
-    let fechaVigencia = datos.fechaVigencia ?? null;
-
-    if (!configHabilitada || !configDias) {
-        throw new Error("No se pudo consultar la configuración de vigencia de publicaciones.");
-    }
-
-    if (configHabilitada.valorConfiguracion === "true") {
-        const dias = Number(configDias.valorConfiguracion);
-
-        if (!Number.isSafeInteger(dias) || dias <= 0) {
-            throw new Error("La configuración de vigencia de publicaciones no es válida.");
-        }
-
-        const fechaMaxima = Temporal.Now
-            .plainDateISO("America/Montevideo")
-            .add({ days: dias })
-            .toString();
-
-        if (fechaVigencia === null) {
-            fechaVigencia = fechaMaxima;
-        } else if (fechaVigencia > fechaMaxima) {
-            return {
-                esValido: false,
-                errores: [`La fecha de vigencia no puede superar el ${fechaMaxima}.`]
-            };
-        }
-    }
 
     const [productor, catalogosValidos] = await Promise.all([
         db.orm.public.Productor.where({ id: datos.productorId }).first(),
@@ -75,6 +37,11 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
             imagenCreada = { url, publicacionId: identificador.id };
         }
         resultado = await db.transaction(async (tx): Promise<ResultadoAltaPublicacionProductor> => {
+            const fechaMaxima = await obtenerFechaMaximaVigenciaProductor(tx);
+            const fechaVigencia = datos.fechaVigencia ?? fechaMaxima;
+            if (fechaMaxima !== null && fechaVigencia !== null && fechaVigencia > fechaMaxima) {
+                return { esValido: false, errores: [`La fecha de vigencia no puede superar el ${fechaMaxima}.`] };
+            }
             await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1720, ${productor.id})`
                 .returnsRow({ locked: "pg/int4@1" }).build());
             const productorActual = await tx.orm.public.Productor.where({ id: productor.id }).first();

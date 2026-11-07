@@ -143,9 +143,9 @@ vi.mock("next/image", async () => {
     };
 });
 
-vi.mock("@mui/icons-material/ImageOutlined", async () => {
+vi.mock("@mui/icons-material/HideImageOutlined", async () => {
     const React = await import("react");
-    return { default: () => React.createElement("span", { "data-testid": "ImageOutlinedIcon" }) };
+    return { default: () => React.createElement("span", { "data-testid": "HideImageOutlinedIcon" }) };
 });
 
 vi.mock("@mui/icons-material/WhatsApp", async () => {
@@ -192,7 +192,7 @@ function crearPublicacion(): PublicacionListado {
         codigoCalibre: "M",
         pais: "Uruguay",
         tipoPublicacion: "OPERADOR",
-        operador: { id: 10, nombreFantasia: "Huerta Sur", whatsApp: "099123456" },
+        operador: { id: 10, nombreFantasia: "Huerta Sur", whatsApp: "099123456", naves: ["A", "B", "E"] },
     };
 }
 
@@ -284,7 +284,7 @@ describe("DrawerPublicacion con operadores", () => {
     it("muestra los datos de la publicación y los enlaces de contacto y perfil", () => {
         render(<DrawerPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} />);
         expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
-        for (const texto of ["Tomate", "Perita", "$150", "Cajón", "Mediano", "Primera", "País", "Uruguay", "Huerta Sur"]) {
+        for (const texto of ["Tomate", "Perita", "$150", "Cajón", "Mediano", "Primera", "País", "Uruguay", "Huerta Sur", "Naves A, B y E"]) {
             expect(screen.getByText(texto)).toBeInTheDocument();
         }
         expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/operadores/Huerta%20Sur?origen=publicaciones");
@@ -319,14 +319,14 @@ describe("DrawerPublicacion con operadores", () => {
         render(<DrawerPublicacion publicacion={{ ...crearPublicacion(), foto: "/tomate.jpg" }} open onOpenChange={vi.fn()} />);
         fireEvent.load(screen.getByAltText("Foto de Tomate"));
         expect(screen.getByRole("img", { name: "Foto de Tomate" })).toHaveAttribute("src", "/tomate.jpg");
-        expect(screen.queryByTestId("ImageOutlinedIcon")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("HideImageOutlinedIcon")).not.toBeInTheDocument();
     });
 
     it("muestra un reemplazo cuando no hay foto", () => {
         render(<DrawerPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} />);
-        expect(screen.getByTestId("ImageOutlinedIcon")).toBeInTheDocument();
-        expect(screen.getByText("Foto")).toBeInTheDocument();
-        expect(screen.queryByRole("img")).not.toBeInTheDocument();
+        expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Foto de Tomate" })).not.toBeInTheDocument();
     });
 
     it.each([[150, "$150"], [1234.5, "$1234.5"], [0, "$0"]])("muestra el precio %s", (precio, esperado) => {
@@ -643,7 +643,7 @@ describe("DrawerPublicacion con productores", () => {
         render(<DrawerPublicacion publicacion={{ ...crearPublicacionProductor(), foto: "/foto-inexistente.jpg" }} open onOpenChange={vi.fn()} />);
         fireEvent.error(screen.getByAltText("Foto de Manzana"));
         expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
-        expect(screen.getByText("Foto", { exact: true })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
     });
 
     it("amplía la foto y permite cerrarla sin cerrar el detalle", async () => {

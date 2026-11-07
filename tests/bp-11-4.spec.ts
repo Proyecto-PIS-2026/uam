@@ -71,14 +71,21 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
 
     // CA-2: nombre del operador y nombre de usuario, por separado.
     await expect(perfil.getByRole("heading", { level: 1 })).toHaveText(operador.nombre);
-    await expect(perfil.getByText(`Usuario: ${operador.usuario}`, { exact: true })).toBeVisible();
+    await expect(perfil.getByText("Usuario:", { exact: true })).toBeVisible();
+    await expect(perfil.getByText(operador.usuario, { exact: true })).toBeVisible();
 
     // CA-3: número de contacto.
-    await expect(perfil.getByText("Teléfono: +59899123456", { exact: true })).toBeVisible();
+    await expect(perfil.getByText("Teléfono:", { exact: true })).toBeVisible();
+    await expect(perfil.getByText("+59899123456", { exact: true })).toBeVisible();
 
     // CA-4: todos los locales con su nave.
     await expect(perfil.getByRole("listitem")).toHaveCount(2);
-    for (const local of operador.locales) await expect(perfil.getByText(local)).toBeVisible();
+    for (const local of operador.locales) {
+      const [nave, numero] = local.split(" · ");
+      const fila = perfil.getByRole("listitem").filter({ has: page.getByText(numero, { exact: true }) });
+      await expect(fila.getByText(nave, { exact: true })).toBeVisible();
+      await expect(fila.getByText(numero, { exact: true })).toBeVisible();
+    }
 
     // CA-5: foto de perfil.
     await expect(perfil.getByRole("img", { name: `Foto de ${operador.nombre}`, exact: true })).toBeVisible();
@@ -92,12 +99,12 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
     expect(await page.content()).not.toContain(operador.contrasena);
 
     // CA-8: opción para editar el perfil.
-    await expect(perfil.getByRole("button", { name: "Editar", exact: true })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("button", { name: "Editar", exact: true })).toBeVisible();
 
     // CA-9: cambio de contraseña pidiendo la actual.
     await page.getByRole("main").getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
     await expect(page).toHaveURL("/mi-perfil/cambiar-contrasena");
-    const contrasenaActual = page.getByRole("form", { name: "Cambio de contraseña" }).getByLabel("Contraseña", { exact: true });
+    const contrasenaActual = page.getByRole("form", { name: "Cambio de contraseña" }).getByLabel("Contraseña actual", { exact: true });
     await expect(contrasenaActual).toBeVisible();
     await expect(contrasenaActual).toHaveAttribute("autocomplete", "current-password");
 
@@ -115,7 +122,8 @@ test.describe("BP-11.4 - Consulta de mi perfil como Operador", () => {
     await page.goto("/mi-perfil");
     const perfil = page.getByRole("region", { name: operador.nombre, exact: true });
 
-    await expect(perfil.getByText("Teléfono: No hay un número de contacto registrado.", { exact: true })).toBeVisible();
+    await expect(perfil.getByText("Teléfono:", { exact: true })).toBeVisible();
+    await expect(perfil.getByText("No hay un número de contacto registrado.", { exact: true })).toBeVisible();
     await expect(perfil.getByRole("img", { name: `Foto de ${operador.nombre}`, exact: true })).toHaveCount(0);
     await expect(perfil.getByText("No hay licencia registrada.", { exact: true })).toBeVisible();
   });

@@ -81,12 +81,12 @@ describe("PerfilProductorAdmin", () => {
         const vista = render(<PerfilProductorAdmin productor={productorBase} />);
         const { alCambiarDepartamentos } = mocks.propsCatalogo.mock.lastCall![0] as { alCambiarDepartamentos: (departamentos: string[]) => void };
         act(() => alCambiarDepartamentos(["Canelones"]));
-        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Canelones");
+        expect(screen.getByRole("region", { name: "Departamentos" })).toHaveTextContent("Canelones");
         expect(screen.queryByText("Salto", { exact: false })).not.toBeInTheDocument();
         act(() => alCambiarDepartamentos([]));
-        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Departamentos: -");
+        expect(within(screen.getByRole("region", { name: "Departamentos" })).getByText("-", { exact: true })).toBeInTheDocument();
         vista.rerender(<PerfilProductorAdmin productor={{ ...productorBase, departamentos: ["Rocha"], publicaciones: [] }} />);
-        expect(screen.getByText("Departamentos:").parentElement).toHaveTextContent("Rocha");
+        expect(screen.getByRole("region", { name: "Departamentos" })).toHaveTextContent("Rocha");
     });
 
     // El enlace de volver lleva al listado de usuarios del panel de administración

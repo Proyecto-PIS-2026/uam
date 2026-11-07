@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
 
 const mocks = vi.hoisted(() => ({
     productor: vi.fn(), especie: vi.fn(), variedad: vi.fn(), envase: vi.fn(), kilos: vi.fn(),
@@ -12,7 +13,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../infraestructura/persistencia/prisma/db", () => ({
     db: {
         orm: { public: {
-            Configuracion: { where: () => ({ select: () => ({ first: mocks.consultarConfig }) }) },
             Productor: { where: () => ({ first: mocks.productor }) },
             Especie: { where: () => ({ first: mocks.especie }) },
             Variedad: { where: () => ({ first: mocks.variedad }) },
@@ -26,7 +26,7 @@ vi.mock("../../infraestructura/persistencia/prisma/db", () => ({
                 select: () => ({ where: () => ({ first: mocks.leerPublicacion }) }),
             },
         } },
-        raw: { sql: () => ({ returnsRow: () => ({ build: () => "bloqueo del productor" }) }) },
+        raw: { sql: (partes: TemplateStringsArray, ...valores: unknown[]) => ({ returnsRow: () => ({ build: () => ({ texto: partes.join("?"), valores }) }) }) },
         transaction: mocks.transaccion,
         runtime: () => ({ query: mocks.reservarId }),
     },
@@ -51,6 +51,7 @@ const urlFoto = "/api/publicaciones/imagenes/42/12345678-1234-4234-8234-12345678
 const tx = {
     execute: mocks.ejecutar,
     orm: { public: {
+        Configuracion: { where: ({ nombreConfiguracion }: { nombreConfiguracion: string }) => ({ select: () => ({ first: () => mocks.consultarConfig(nombreConfiguracion) }) }) },
         Productor: { where: () => ({ first: mocks.productorActual }) },
         PublicacionProductor: { where: () => ({ all: mocks.relaciones }), create: mocks.crearRelacion },
         Publicacion: { where: () => ({ select: () => ({ all: mocks.coincidencias }) }), create: mocks.crearPublicacion },
@@ -78,7 +79,8 @@ describe("altaPublicacionProductor", () => {
         mocks.leerPublicacion.mockResolvedValue(null);
         mocks.guardarImagen.mockResolvedValue(urlFoto);
         mocks.transaccion.mockImplementation(async (operacion: (transaccion: typeof tx) => Promise<number>) => operacion(tx));
-        mocks.consultarConfig.mockResolvedValue({ valorConfiguracion: "false" });
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "false" : "3" }));
+        vi.spyOn(Temporal.Now, "plainDateISO").mockImplementation((zona) => Temporal.Instant.from("2026-11-07T01:30:00Z").toZonedDateTimeISO(zona ?? "UTC").toPlainDate());
         vi.spyOn(console, "error").mockImplementation(() => undefined);
     });
     afterEach(() => vi.restoreAllMocks());
@@ -117,8 +119,12 @@ describe("altaPublicacionProductor", () => {
 
     it("guarda la publicación y su ubicación sin exigir precio ni fotografía", async () => {
         expect(await altaPublicacionProductor(datos)).toEqual({ esValido: true, id: 42, mensaje: "Publicación creada correctamente." });
-        expect(mocks.ejecutar).toHaveBeenCalledExactlyOnceWith("bloqueo del productor");
-        expect(mocks.ejecutar.mock.invocationCallOrder[0]).toBeLessThan(mocks.relaciones.mock.invocationCallOrder[0]);
+        expect(mocks.ejecutar).toHaveBeenCalledTimes(2);
+        expect(mocks.ejecutar.mock.calls[0][0].texto).toContain("pg_advisory_xact_lock_shared");
+        expect(mocks.ejecutar.mock.calls[1][0]).toMatchObject({ texto: expect.stringContaining("pg_advisory_xact_lock(1720, ?)"), valores: [1] });
+        expect(mocks.ejecutar.mock.invocationCallOrder[0]).toBeLessThan(mocks.consultarConfig.mock.invocationCallOrder[0]);
+        expect(mocks.consultarConfig.mock.invocationCallOrder.at(-1)).toBeLessThan(mocks.ejecutar.mock.invocationCallOrder[1]);
+        expect(mocks.ejecutar.mock.invocationCallOrder[1]).toBeLessThan(mocks.relaciones.mock.invocationCallOrder[0]);
         expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith({ tipoPublicacion: "PRODUCTOR", publicacionDisponible: true, precio: null, foto: null, cantidadUnidades: null, comentario: null, especieId: 2, variedadId: 3, envaseId: 4, kilosId: null, categoriaId: 5, calibreId: 6, fechaVigencia: null });
         expect(mocks.crearRelacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 42, productorId: 1, paisId: 7 });
         expect(mocks.crearUbicacion).toHaveBeenCalledExactlyOnceWith({ publicacionId: 74, nombreUbicacion: "Montevideo", urlMaps: "https://www.google.com/maps?q=-34.9%2C-56.2", departamento: "Montevideo" });
@@ -129,6 +135,57 @@ describe("altaPublicacionProductor", () => {
         await altaPublicacionProductor({ ...datos, comentario: "  Cosecha de esta semana  " });
 
         expect(mocks.crearPublicacion).toHaveBeenCalledWith(expect.objectContaining({ comentario: "Cosecha de esta semana" }));
+    });
+
+    it.each([undefined, null, ""])("asigna el tope de Montevideo cuando la fecha está vacía (%j)", async (fechaVigencia) => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : "3" }));
+
+        await expect(altaPublicacionProductor({ ...datos, fechaVigencia })).resolves.toMatchObject({ esValido: true });
+
+        expect(mocks.crearPublicacion.mock.calls[0][0].fechaVigencia.toString()).toBe("2026-11-10T02:59:59Z");
+        expect(Temporal.Now.plainDateISO).toHaveBeenCalledWith("America/Montevideo");
+        expect(mocks.transaccion.mock.invocationCallOrder[0]).toBeLessThan(mocks.consultarConfig.mock.invocationCallOrder[0]);
+    });
+
+    it.each(["2026-11-08", "2026-11-09"])("conserva una fecha anterior o igual al tope: %s", async (fechaVigencia) => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : "3" }));
+
+        await expect(altaPublicacionProductor({ ...datos, fechaVigencia })).resolves.toMatchObject({ esValido: true });
+
+        expect(mocks.crearPublicacion.mock.calls[0][0].fechaVigencia.toZonedDateTimeISO("America/Montevideo").toPlainDate().toString()).toBe(fechaVigencia);
+    });
+
+    it("rechaza una fecha posterior al tope y limpia la imagen preparada", async () => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : "3" }));
+
+        await expect(altaPublicacionProductor({ ...datos, fechaVigencia: "2026-11-10", fotografia })).resolves.toEqual({
+            esValido: false, errores: ["La fecha de vigencia no puede superar el 2026-11-09."],
+        });
+
+        expect(mocks.crearPublicacion).not.toHaveBeenCalled();
+        expect(mocks.crearRelacion).not.toHaveBeenCalled();
+        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(urlFoto, 42);
+    });
+
+    it.each([undefined, null, "", "2026-11-20"])("no impone un tope cuando la vigencia está desactivada: %j", async (fechaVigencia) => {
+        await expect(altaPublicacionProductor({ ...datos, fechaVigencia })).resolves.toMatchObject({ esValido: true });
+
+        const guardada = mocks.crearPublicacion.mock.calls[0][0].fechaVigencia;
+        expect(guardada?.toString() ?? null).toBe(fechaVigencia ? "2026-11-21T02:59:59Z" : null);
+    });
+
+    it.each(["vigencia_publicaciones_productor_habilitada", "vigencia_publicaciones_productor"])("no crea una publicación si falta la configuración %s", async (faltante) => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => nombre === faltante ? null : { valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : "3" });
+
+        await expect(altaPublicacionProductor(datos)).rejects.toThrow("No se pudo consultar la configuración de vigencia de publicaciones.");
+        expect(mocks.crearPublicacion).not.toHaveBeenCalled();
+    });
+
+    it.each(["0", "-1", "1.5", "inválido"])("no crea una publicación si la vigencia activa tiene días inválidos: %s", async (dias) => {
+        mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : dias }));
+
+        await expect(altaPublicacionProductor(datos)).rejects.toThrow("La configuración de vigencia de publicaciones no es válida.");
+        expect(mocks.crearPublicacion).not.toHaveBeenCalled();
     });
 
     it("guarda los departamentos normalizados y permite puntos anteriores sin departamento en la misma transacción", async () => {

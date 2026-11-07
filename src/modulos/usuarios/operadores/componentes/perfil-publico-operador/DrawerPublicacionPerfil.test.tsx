@@ -183,13 +183,13 @@ vi.mock("next/image", async () => {
     };
 });
 
-vi.mock("@mui/icons-material/ImageOutlined", async () => {
+vi.mock("@mui/icons-material/HideImageOutlined", async () => {
     const { createElement } = await import("react");
 
     return {
         default: () =>
             createElement("span", {
-                "data-testid": "ImageOutlinedIcon",
+                "data-testid": "HideImageOutlinedIcon",
             }),
     };
 });
@@ -629,9 +629,9 @@ describe("DrawerPublicacionPerfil con operadores", () => {
             />,
         );
 
-        expect(screen.getByTestId("ImageOutlinedIcon")).toBeInTheDocument();
-        expect(screen.getByText("Foto")).toBeInTheDocument();
-        expect(screen.queryByRole("img")).not.toBeInTheDocument();
+        expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Foto de Tomate" })).not.toBeInTheDocument();
 
         expect(
             screen.getByRole("dialog", {
@@ -699,7 +699,7 @@ describe("DrawerPublicacionPerfil con operadores", () => {
             }),
         ).toBeInTheDocument();
 
-        expect(screen.getByText("Foto")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
     });
 
     it.each([
@@ -1411,7 +1411,7 @@ describe("DrawerPublicacionPerfil con productores", () => {
             }),
         ).toBeInTheDocument();
 
-        expect(screen.getByText("Foto")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
     });
 
     it("amplía la foto y permite cerrarla sin cerrar el detalle", async () => {

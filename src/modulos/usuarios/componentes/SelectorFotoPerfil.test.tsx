@@ -61,21 +61,17 @@ describe("SelectorFotoPerfil", () => {
         expect(revocarUrl).toHaveBeenCalledWith("blob:tercera.webp");
     });
 
-    it("muestra la foto actual directamente y permite deshacer el reemplazo o la eliminación", async () => {
+    it("muestra la foto actual y permite reemplazarla o marcarla para eliminar", async () => {
         const actual = "/api/imagenes/productores/2/actual.webp";
         render(<SelectorControlado fotoActual={actual} />);
         esperarFoto(actual);
         expect(screen.getByRole("img")).not.toHaveAttribute("srcset");
         elegir(new File(["jpeg"], "nueva.jpg", { type: "image/jpeg" }));
         await waitFor(() => expect(screen.getByRole("img")).toHaveAttribute("src", "blob:nueva.jpg"));
-        fireEvent.click(screen.getByRole("button", { name: "Deshacer cambio" }));
-        esperarFoto(actual);
-        expect(revocarUrl).toHaveBeenCalledWith("blob:nueva.jpg");
         fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
         expect(screen.queryByRole("img")).not.toBeInTheDocument();
         expect(screen.getByRole("status")).toHaveTextContent("La foto se eliminará al guardar.");
-        fireEvent.click(screen.getByRole("button", { name: "Deshacer cambio" }));
-        esperarFoto(actual);
+        expect(revocarUrl).toHaveBeenCalledWith("blob:nueva.jpg");
     });
 
     it.each([

@@ -47,7 +47,7 @@ describe("TarjetaPublicacion", () => {
         render(<TarjetaPublicacion publicacion={{ ...publicacion, variedad: "-", precio: null, foto: null}}/>);
         expect(screen.getByText("Tomate")).toBeInTheDocument();
         expect(screen.queryByText("Tomate - Perita")).not.toBeInTheDocument();
-        expect(screen.getByText("Foto")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
         expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
         expect(screen.getByText("Consultar precio")).toBeInTheDocument();
         expect(screen.getByText("por Cajón")).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe("TarjetaPublicacion", () => {
         render(<TarjetaPublicacion publicacion={{ ...publicacion, foto: "/tomate.jpg" }}/>);
         fireEvent.load(screen.getByAltText("Foto de Tomate - Perita"));
         expect(screen.getByRole("img", { name: "Foto de Tomate - Perita" })).toHaveAttribute("src", "/tomate.jpg");
-        expect(screen.queryByText("Foto")).not.toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Sin foto disponible" })).not.toBeInTheDocument();
         expect(screen.queryByText("Sin foto disponible")).not.toBeInTheDocument();
     });
 

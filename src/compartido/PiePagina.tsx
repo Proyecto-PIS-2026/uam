@@ -2,6 +2,8 @@
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import styles from "./PiePagina.module.css";
 
 export default function PiePagina() {
@@ -23,14 +25,25 @@ export default function PiePagina() {
                     </a>
                 </address>
                 <section className={styles.avisosLegales} aria-label="Avisos legales">
-                    <p className={styles.avisoLegal}>
-                        Las fotos y precios son responsabilidad de los operadores. La UAM no se responsabiliza ni interviene en su contenido o publicación.
-                    </p>
-                    <p className={styles.avisoLegal}>
-                        Las operaciones de compraventa se realizan exclusivamente entre operadores y compradores. La UAM no participa ni interviene en dichas transacciones, ni asume responsabilidad por los acuerdos comerciales entre las partes.
-                    </p>
+                    <div className={styles.bloqueAviso}>
+                        <h2 className={styles.tituloAviso}>
+                            <InfoOutlinedIcon className={styles.iconoAviso} aria-hidden="true" />
+                            Fotos y precios
+                        </h2>
+                        <p className={styles.avisoLegal}>
+                            Las fotos y precios son responsabilidad de los operadores. La UAM no se responsabiliza ni interviene en su contenido o publicación.
+                        </p>
+                    </div>
+                    <div className={styles.bloqueAviso}>
+                        <h2 className={styles.tituloAviso}>
+                            <StorefrontOutlinedIcon className={styles.iconoAviso} aria-hidden="true" />
+                            Operaciones comerciales
+                        </h2>
+                        <p className={styles.avisoLegal}>
+                            Las operaciones de compraventa se realizan exclusivamente entre operadores y compradores. La UAM no participa ni interviene en dichas transacciones, ni asume responsabilidad por los acuerdos comerciales entre las partes.
+                        </p>
+                    </div>
                 </section>
-                <p className={styles.derechos}>© UAM. Todos los derechos reservados.</p>
             </div>
         </footer>
     );

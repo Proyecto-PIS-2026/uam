@@ -52,7 +52,7 @@ describe("FormularioModificarProductor", () => {
     it("muestra los datos actuales del productor", () => {
         renderizar();
 
-        expect(valorDe(screen.getByLabelText("Nombre"))).toBe("Granja Los Álamos");
+        expect(valorDe(screen.getByLabelText(/^Nombre\s*\*$/))).toBe("Granja Los Álamos");
         expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598");
         expect(valorDe(screen.getByLabelText(/Teléfono/))).toBe("99200002");
         expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
@@ -63,7 +63,7 @@ describe("FormularioModificarProductor", () => {
         modificarProductorMock.mockResolvedValue({ esValido: true, id: 2 });
         renderizar();
 
-        fireEvent.change(screen.getByLabelText("Nombre"), {
+        fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), {
             target: { value: "Granja Los Álamos Hermanos" },
         });
         fireEvent.change(screen.getByLabelText(/Teléfono/), {

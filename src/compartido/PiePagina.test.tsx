@@ -40,9 +40,9 @@ describe("PiePagina", () => {
         expect(screen.getByRole("link", { name: "info@uam.com.uy" })).toHaveAttribute("href", "mailto:info@uam.com.uy");
     });
 
-    it("mantiene el texto de derechos reservados", () => {
+    it("no muestra el texto de derechos reservados", () => {
         render(<PiePagina />);
 
-        expect(screen.getByText("© UAM. Todos los derechos reservados.")).toBeInTheDocument();
+        expect(screen.queryByText("© UAM. Todos los derechos reservados.")).not.toBeInTheDocument();
     });
 });

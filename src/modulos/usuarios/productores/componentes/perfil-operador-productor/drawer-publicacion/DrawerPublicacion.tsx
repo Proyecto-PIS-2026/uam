@@ -2,7 +2,7 @@
 
 import EnlaceWhatsApp from "@/compartido/componentes/EnlaceWhatsApp";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "@/modulos/publicaciones/componentes/ImagenPublicacion";
 import Dialog from "@mui/material/Dialog";
@@ -110,9 +110,8 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPub
                                     <div className={styles.marcoImagen}>
                                         <div className={styles.contenedorImagen}>
                                             <ImagenPublicacion key={claveFoto} src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} loading="eager" onLoad={() => setFotoPreparada(claveFoto)} fill sizes="(min-width: 768px) 400px, 160px" className={styles.imagen} onError={() => setFotoPreparada(claveFoto)} reemplazo={
-                                                <div className={styles.sinFoto}>
-                                                    <ImageOutlinedIcon className={styles.iconoFoto} />
-                                                    Foto
+                                                <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
+                                                    <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
                                                 </div>
                                             } />
                                             {publicacion.foto && (
@@ -192,9 +191,8 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPub
                         </button>
                         <div className={styles.fotoAmpliada}>
                             <ImagenPublicacion loading="eager" key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="(min-width: 832px) 50rem, (min-width: 768px) calc(100vw - 2rem), (min-width: 536px) 32rem, calc(100vw - 1.5rem)" className={styles.imagenAmpliada}  reemplazo={
-                                <div className={styles.sinFoto}>
-                                    <ImageOutlinedIcon className={styles.iconoFoto} />
-                                    Foto
+                                <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
+                                    <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
                                 </div>
                             } />
                         </div>

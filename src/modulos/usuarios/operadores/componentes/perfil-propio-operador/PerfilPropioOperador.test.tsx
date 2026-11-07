@@ -36,8 +36,10 @@ describe("PerfilPropioOperador", () => {
     it("muestra los datos, locales, licencia y mensaje", () => {
         render(<PerfilPropioOperador perfil={perfil} cambioContrasenaHabilitado />);
         expect(screen.getByRole("heading", { name: "Frutas del Norte" })).toBeInTheDocument();
-        expect(screen.getByText("Usuario: frutas")).toBeInTheDocument();
-        expect(screen.getByText("Teléfono: +59899123456")).toBeInTheDocument();
+        expect(screen.getByText("Usuario:")).toBeInTheDocument();
+        expect(screen.getByText("frutas")).toBeInTheDocument();
+        expect(screen.getByText("Teléfono:")).toBeInTheDocument();
+        expect(screen.getByText("+59899123456")).toBeInTheDocument();
         expect(screen.getByText("Vence: 31/03/2029")).toBeInTheDocument();
         expect(screen.getByText("Sin fecha de fin")).toBeInTheDocument();
         expect(screen.getByText("Fecha: 05/11/2999 - 12/11/2999")).toBeInTheDocument();

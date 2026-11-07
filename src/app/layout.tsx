@@ -40,7 +40,7 @@ export default function RootLayout({
             <ProveedorNotificacionesToast>
               <EncabezadoOperador />
               <SeguimientoVisita />
-              {children}
+              <div className="contenido-aplicacion">{children}</div>
               <PiePagina />
             </ProveedorNotificacionesToast>
           </TemaAplicacion>
