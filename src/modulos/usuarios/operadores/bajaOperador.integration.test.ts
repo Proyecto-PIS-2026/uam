@@ -1,4 +1,3 @@
-
 import "temporal-polyfill/full/global";
 import "temporal-polyfill/types/global";
 
@@ -21,6 +20,7 @@ let navesCreadas: number[] = [];
 
 function obtenerFechaEstadisticaActual() {
     const fechaStr = new Date().toISOString().slice(0, 10);
+
     return Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
 }
 
@@ -82,11 +82,14 @@ async function crearPublicacionesDePrueba(
             precio: publicacionSemilla.precio,
             foto: null,
             cantidadUnidades: publicacionSemilla.cantidadUnidades ?? null,
+            comentario: publicacionSemilla.comentario ?? null,
             especieId: publicacionSemilla.especieId,
             variedadId: publicacionSemilla.variedadId,
-            presentacionId: publicacionSemilla.presentacionId,
+            envaseId: publicacionSemilla.envaseId,
+            kilosId: publicacionSemilla.kilosId,
             categoriaId: publicacionSemilla.categoriaId,
             calibreId: publicacionSemilla.calibreId,
+            fechaVigencia: publicacionSemilla.fechaVigencia,
         });
 
         await db.orm.public.PublicacionOperador.create({
@@ -247,7 +250,9 @@ describe("baja de operador", () => {
         );
 
         expect(
-            publicacionesRestantes.every((publicacion) => publicacion === null),
+            publicacionesRestantes.every(
+                (publicacion) => publicacion === null,
+            ),
         ).toBe(true);
 
         const relacionesRestantes = await db.orm.public.PublicacionOperador
@@ -280,8 +285,8 @@ describe("baja de operador", () => {
 
         const fecha = obtenerFechaEstadisticaActual();
 
-        const estadisticaInicial = await db.orm.public.EstadisticaCantidadPublicacion
-            .create({
+        const estadisticaInicial =
+            await db.orm.public.EstadisticaCantidadPublicacion.create({
                 fecha,
                 username: usuario.username,
                 cantidad: publicaciones.length,
