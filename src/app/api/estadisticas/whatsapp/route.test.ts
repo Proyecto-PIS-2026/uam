@@ -1,9 +1,45 @@
+import "temporal-polyfill/full/global";
+import "temporal-polyfill/types/global";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
-import { db } from "@/infraestructura/persistencia/prisma/db";
+
+const mocks = vi.hoisted(() => {
+    const consulta = () => {
+        const builder = {
+            where: vi.fn(),
+            select: vi.fn(),
+            include: vi.fn(),
+            first: vi.fn(),
+            update: vi.fn(),
+            create: vi.fn(),
+        };
+
+        builder.where.mockReturnValue(builder);
+        builder.select.mockReturnValue(builder);
+        builder.include.mockImplementation((_nombre, callback) => {
+            callback?.(builder);
+            return builder;
+        });
+
+        return builder;
+    };
+
+    return {
+        operador: consulta(),
+        productor: consulta(),
+        usuario: consulta(),
+        publicacionOperador: consulta(),
+        publicacionProductor: consulta(),
+        publicacion: consulta(),
+        estadisticaContacto: consulta(),
+        estadisticaContactoPublicacion: consulta(),
+    };
+});
 
 const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+
 vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
     registrarContacto: registrarEstadisticaMock,
     obtenerFechaEstadistica: () => "2026-11-06",
@@ -17,166 +53,336 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
     db: {
         orm: {
             public: {
-                Operador: { where: vi.fn() },
-                Productor: { where: vi.fn() },
-                Usuario: { select: vi.fn() },
-                EstadisticaContacto: { where: vi.fn(), create: vi.fn() },
+                Operador: mocks.operador,
+                Productor: mocks.productor,
+                Usuario: mocks.usuario,
+                PublicacionOperador: mocks.publicacionOperador,
+                PublicacionProductor: mocks.publicacionProductor,
+                Publicacion: mocks.publicacion,
+                EstadisticaContacto: mocks.estadisticaContacto,
+                EstadisticaContactoPublicacion: mocks.estadisticaContactoPublicacion,
             },
         },
     },
 }));
 
+function crearRequest(body: unknown) {
+    return new Request("http://localhost/api/estadisticas/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+}
+
+function configurarUsuario(
+    tipo: "OPERADOR" | "PRODUCTOR",
+    usuarioId: number,
+    username: string,
+) {
+    const entidad = tipo === "OPERADOR" ? mocks.operador : mocks.productor;
+
+    entidad.first.mockResolvedValue({ usuarioId });
+    mocks.usuario.first.mockResolvedValue({ username });
+}
+
 describe("POST /api/estadisticas/whatsapp", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
+
+        vi.mocked(obtenerSesion).mockResolvedValue(null);
+
+        mocks.operador.first.mockResolvedValue(null);
+        mocks.productor.first.mockResolvedValue(null);
+        mocks.usuario.first.mockResolvedValue(null);
+
+        mocks.publicacionOperador.first.mockResolvedValue(null);
+        mocks.publicacionProductor.first.mockResolvedValue(null);
+        mocks.publicacion.first.mockResolvedValue(null);
+
+        mocks.estadisticaContacto.first.mockResolvedValue(null);
+        mocks.estadisticaContactoPublicacion.first.mockResolvedValue(null);
+
+        registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
     });
 
-    it("debería omitir el registro si el usuario es administrador", async () => {
-        vi.mocked(obtenerSesion).mockResolvedValueOnce({ rol: "ADMINISTRADOR" } as unknown as Awaited<ReturnType<typeof obtenerSesion>>);
-        const req = new Request("http://localhost/api/estadisticas/whatsapp", {
-            method: "POST",
-            body: JSON.stringify({ tipo: "OPERADOR", entidadId: 1 }),
-        });
+    it("omite el registro si el usuario es administrador", async () => {
+        vi.mocked(obtenerSesion).mockResolvedValueOnce({
+            rol: "ADMINISTRADOR",
+        } as unknown as Awaited<ReturnType<typeof obtenerSesion>>);
 
-        const res = await POST(req);
-        const data = await res.json();
+        const res = await POST(crearRequest({
+            tipo: "OPERADOR",
+            entidadId: 1,
+        }));
+
         expect(res.status).toBe(200);
-        expect(data).toEqual({ ok: true });
+        expect(await res.json()).toEqual({ ok: true });
+
+        expect(mocks.operador.where).not.toHaveBeenCalled();
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+        expect(mocks.estadisticaContacto.create).not.toHaveBeenCalled();
+        expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
     });
 
-    it("debería retornar 400 si faltan datos en el body", async () => {
-        vi.mocked(obtenerSesion).mockResolvedValueOnce(null);
-        const req = new Request("http://localhost/api/estadisticas/whatsapp", {
-            method: "POST",
-            body: JSON.stringify({ tipo: "OPERADOR" }),
-        });
+    it.each([
+        { tipo: "OPERADOR" },
+        { tipo: "INVALIDO", entidadId: 1 },
+        { tipo: "OPERADOR", entidadId: 0 },
+        { tipo: "OPERADOR", entidadId: -1 },
+        { tipo: "OPERADOR", entidadId: 1.5 },
+        { tipo: "OPERADOR", entidadId: 1, publicacionId: 0 },
+        { tipo: "OPERADOR", entidadId: 1, publicacionId: -1 },
+        { tipo: "OPERADOR", entidadId: 1, publicacionId: 1.5 },
+    ])("retorna 400 si los datos son inválidos: %o", async (body) => {
+        const res = await POST(crearRequest(body));
 
-        const res = await POST(req);
-        const data = await res.json();
         expect(res.status).toBe(400);
-        expect(data).toEqual({ error: "Datos inválidos" });
+        expect(await res.json()).toEqual({ error: "Datos inválidos" });
+
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 
-    it("debería retornar 404 si la entidad no tiene usuarioId (Operador)", async () => {
-        vi.mocked(obtenerSesion).mockResolvedValueOnce(null);
-        const mockWhere = {
-            select: vi.fn().mockReturnThis(),
-            first: vi.fn().mockResolvedValue(null),
-        };
-        vi.mocked(db.orm.public.Operador.where).mockReturnValue(mockWhere as unknown as ReturnType<typeof db.orm.public.Operador.where>);
+    it("retorna 404 si el operador no tiene usuario asociado", async () => {
+        const res = await POST(crearRequest({
+            tipo: "OPERADOR",
+            entidadId: 99,
+        }));
 
-        const req = new Request("http://localhost/api/estadisticas/whatsapp", {
-            method: "POST",
-            body: JSON.stringify({ tipo: "OPERADOR", entidadId: 99 }),
-        });
-
-        const res = await POST(req);
-        const data = await res.json();
         expect(res.status).toBe(404);
-        expect(data).toEqual({ error: "Entidad no encontrada" });
+        expect(await res.json()).toEqual({ error: "Entidad no encontrada" });
+
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 
-    it("debería retornar 404 si la entidad no tiene usuarioId (Productor)", async () => {
-        vi.mocked(obtenerSesion).mockResolvedValueOnce(null);
-        const mockWhere = {
-            select: vi.fn().mockReturnThis(),
-            first: vi.fn().mockResolvedValue(null),
-        };
-        vi.mocked(db.orm.public.Productor.where).mockReturnValue(mockWhere as unknown as ReturnType<typeof db.orm.public.Productor.where>);
+    it("retorna 404 si el productor no tiene usuario asociado", async () => {
+        const res = await POST(crearRequest({
+            tipo: "PRODUCTOR",
+            entidadId: 99,
+        }));
 
-        const req = new Request("http://localhost/api/estadisticas/whatsapp", {
-            method: "POST",
-            body: JSON.stringify({ tipo: "PRODUCTOR", entidadId: 99 }),
-        });
-
-        const res = await POST(req);
-        const data = await res.json();
         expect(res.status).toBe(404);
-        expect(data).toEqual({ error: "Entidad no encontrada" });
+        expect(await res.json()).toEqual({ error: "Entidad no encontrada" });
+
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 
-    it("debería actualizar la estadística de contacto existente si ya existe para hoy (Operador)", async () => {
-        vi.mocked(obtenerSesion).mockResolvedValueOnce(null);
-        
-        const mockOperadorWhere = {
-            select: vi.fn().mockReturnThis(),
-            first: vi.fn().mockResolvedValue({ usuarioId: 10 }),
-        };
-        vi.mocked(db.orm.public.Operador.where).mockReturnValue(mockOperadorWhere as unknown as ReturnType<typeof db.orm.public.Operador.where>);
+    describe("contactos desde el perfil", () => {
+        it("registra el contacto general para un operador", async () => {
+            configurarUsuario("OPERADOR", 10, "operador1");
 
-        const mockUsuarioWhere = {
-            select: vi.fn().mockReturnThis(),
-            where: vi.fn().mockReturnThis(),
-            first: vi.fn().mockResolvedValue({ username: "operador1" }),
-        };
-        vi.mocked(db.orm.public.Usuario.select).mockReturnValue(mockUsuarioWhere as unknown as ReturnType<typeof db.orm.public.Usuario.select>);
+            const res = await POST(crearRequest({
+                tipo: "OPERADOR",
+                entidadId: 1,
+            }));
 
-        const mockEstadisticaWhere = {
-            where: vi.fn().mockReturnThis(),
-            first: vi.fn().mockResolvedValue({ id: 1, cantidad: 5 }),
-            update: vi.fn().mockResolvedValue({}),
-        };
-        vi.mocked(db.orm.public.EstadisticaContacto.where).mockReturnValue(mockEstadisticaWhere as unknown as ReturnType<typeof db.orm.public.EstadisticaContacto.where>);
+            expect(res.status).toBe(200);
+            expect(await res.json()).toEqual({ ok: true });
 
-        const req = new Request("http://localhost/api/estadisticas/whatsapp", {
-            method: "POST",
-            body: JSON.stringify({ tipo: "OPERADOR", entidadId: 1 }),
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1");
+
+            expect(mocks.publicacionOperador.where).not.toHaveBeenCalled();
+            expect(mocks.publicacionProductor.where).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContactoPublicacion.update).not.toHaveBeenCalled();
         });
 
-        const res = await POST(req);
-        const data = await res.json();
-        expect(res.status).toBe(200);
-        expect(data).toEqual({ ok: true });
-        expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1");
+        it("registra el contacto general para un productor", async () => {
+            configurarUsuario("PRODUCTOR", 20, "productor1");
+
+            const res = await POST(crearRequest({
+                tipo: "PRODUCTOR",
+                entidadId: 2,
+            }));
+
+            expect(res.status).toBe(200);
+            expect(await res.json()).toEqual({ ok: true });
+
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
+
+            expect(mocks.publicacionOperador.where).not.toHaveBeenCalled();
+            expect(mocks.publicacionProductor.where).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContactoPublicacion.update).not.toHaveBeenCalled();
+        });
     });
 
-    it("debería crear la estadística de contacto si no existe para hoy (Productor)", async () => {
-        vi.mocked(obtenerSesion).mockResolvedValueOnce(null);
-        
-        const mockProductorWhere = {
-            select: vi.fn().mockReturnThis(),
-            first: vi.fn().mockResolvedValue({ usuarioId: 20 }),
-        };
-        vi.mocked(db.orm.public.Productor.where).mockReturnValue(mockProductorWhere as unknown as ReturnType<typeof db.orm.public.Productor.where>);
+    describe("contactos desde el drawer de una publicación", () => {
+        it("incrementa la estadística existente por especie para un operador", async () => {
+            configurarUsuario("OPERADOR", 10, "operador1");
 
-        const mockUsuarioWhere = {
-            select: vi.fn().mockReturnThis(),
-            where: vi.fn().mockReturnThis(),
-            first: vi.fn().mockResolvedValue({ username: "productor1" }),
-        };
-        vi.mocked(db.orm.public.Usuario.select).mockReturnValue(mockUsuarioWhere as unknown as ReturnType<typeof db.orm.public.Usuario.select>);
+            mocks.publicacionOperador.first.mockResolvedValue({
+                id: 1,
+                operadorId: 1,
+                publicacionId: 20,
+            });
 
-        const mockEstadisticaWhere = {
-            where: vi.fn().mockReturnThis(),
-            first: vi.fn().mockResolvedValue(null),
-        };
-        vi.mocked(db.orm.public.EstadisticaContacto.where).mockReturnValue(mockEstadisticaWhere as unknown as ReturnType<typeof db.orm.public.EstadisticaContacto.where>);
-        vi.mocked(db.orm.public.EstadisticaContacto.create).mockResolvedValue({} as unknown as Awaited<ReturnType<typeof db.orm.public.EstadisticaContacto.create>>);
+            mocks.publicacion.first.mockResolvedValue({
+                especie: {
+                    nombreEspecie: "Tomate",
+                },
+            });
 
-        const req = new Request("http://localhost/api/estadisticas/whatsapp", {
-            method: "POST",
-            body: JSON.stringify({ tipo: "PRODUCTOR", entidadId: 2 }),
+            mocks.estadisticaContactoPublicacion.first.mockResolvedValue({
+                id: 5,
+                cantidad: 3,
+            });
+
+            const res = await POST(crearRequest({
+                tipo: "OPERADOR",
+                entidadId: 1,
+                publicacionId: 20,
+            }));
+
+            expect(res.status).toBe(200);
+            expect(await res.json()).toEqual({ ok: true });
+
+            expect(mocks.publicacionOperador.where).toHaveBeenCalledWith({
+                operadorId: 1,
+                publicacionId: 20,
+            });
+
+            expect(mocks.estadisticaContactoPublicacion.where).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    username: "operador1",
+                    especie: "Tomate",
+                    fecha: expect.anything(),
+                }),
+            );
+
+            expect(mocks.estadisticaContactoPublicacion.update).toHaveBeenCalledWith({
+                cantidad: 4,
+            });
+
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1");
+
+            expect(mocks.estadisticaContacto.create).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContacto.update).not.toHaveBeenCalled();
         });
 
-        const res = await POST(req);
-        const data = await res.json();
-        expect(res.status).toBe(200);
-        expect(data).toEqual({ ok: true });
-        expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
+        it("crea la estadística por especie para un productor si todavía no existe", async () => {
+            configurarUsuario("PRODUCTOR", 20, "productor1");
+
+            mocks.publicacionProductor.first.mockResolvedValue({
+                publicacionId: 30,
+                productorId: 2,
+            });
+
+            mocks.publicacion.first.mockResolvedValue({
+                especie: {
+                    nombreEspecie: "Manzana",
+                },
+            });
+
+            const res = await POST(crearRequest({
+                tipo: "PRODUCTOR",
+                entidadId: 2,
+                publicacionId: 30,
+            }));
+
+            expect(res.status).toBe(200);
+            expect(await res.json()).toEqual({ ok: true });
+
+            expect(mocks.publicacionProductor.where).toHaveBeenCalledWith({
+                publicacionId: 30,
+            });
+
+            expect(mocks.estadisticaContactoPublicacion.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    username: "productor1",
+                    especie: "Manzana",
+                    cantidad: 1,
+                    fecha: expect.anything(),
+                }),
+            );
+
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
+
+            expect(mocks.estadisticaContacto.create).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContacto.update).not.toHaveBeenCalled();
+        });
+
+        it("retorna 404 si la publicación no pertenece al operador", async () => {
+            configurarUsuario("OPERADOR", 10, "operador1");
+
+            mocks.publicacionOperador.first.mockResolvedValue(null);
+
+            const res = await POST(crearRequest({
+                tipo: "OPERADOR",
+                entidadId: 1,
+                publicacionId: 20,
+            }));
+
+            expect(res.status).toBe(404);
+            expect(await res.json()).toEqual({
+                error: "La publicación no pertenece a la entidad seleccionada",
+            });
+
+            expect(mocks.publicacion.first).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+        });
+
+        it("retorna 404 si la publicación no pertenece al productor", async () => {
+            configurarUsuario("PRODUCTOR", 20, "productor1");
+
+            mocks.publicacionProductor.first.mockResolvedValue(null);
+
+            const res = await POST(crearRequest({
+                tipo: "PRODUCTOR",
+                entidadId: 2,
+                publicacionId: 30,
+            }));
+
+            expect(res.status).toBe(404);
+            expect(await res.json()).toEqual({
+                error: "La publicación no pertenece a la entidad seleccionada",
+            });
+
+            expect(mocks.publicacion.first).not.toHaveBeenCalled();
+            expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+        });
+
+        it("retorna 404 si la publicación no tiene una especie asociada", async () => {
+            configurarUsuario("OPERADOR", 10, "operador1");
+
+            mocks.publicacionOperador.first.mockResolvedValue({
+                id: 1,
+                operadorId: 1,
+                publicacionId: 20,
+            });
+
+            mocks.publicacion.first.mockResolvedValue({
+                especie: null,
+            });
+
+            const res = await POST(crearRequest({
+                tipo: "OPERADOR",
+                entidadId: 1,
+                publicacionId: 20,
+            }));
+
+            expect(res.status).toBe(404);
+            expect(await res.json()).toEqual({
+                error: "No se encontró la especie de la publicación",
+            });
+
+            expect(mocks.estadisticaContactoPublicacion.create).not.toHaveBeenCalled();
+            expect(registrarEstadisticaMock).not.toHaveBeenCalled();
+        });
     });
 
-    it("debería retornar 500 si ocurre un error interno", async () => {
+    it("retorna 500 si ocurre un error interno", async () => {
         vi.mocked(obtenerSesion).mockRejectedValueOnce(new Error("DB Error"));
 
-        const req = new Request("http://localhost/api/estadisticas/whatsapp", {
-            method: "POST",
-            body: JSON.stringify({ tipo: "OPERADOR", entidadId: 1 }),
-        });
+        const res = await POST(crearRequest({
+            tipo: "OPERADOR",
+            entidadId: 1,
+        }));
 
-        const res = await POST(req);
-        const data = await res.json();
         expect(res.status).toBe(500);
-        expect(data).toEqual({ error: "Error interno" });
+        expect(await res.json()).toEqual({ error: "Error interno" });
+
+        expect(registrarEstadisticaMock).not.toHaveBeenCalled();
     });
 });

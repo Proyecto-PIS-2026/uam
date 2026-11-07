@@ -123,7 +123,7 @@ const operadores: OperadorDemo[] = [
   },
   {
     username: "guarino",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$SiPsuyJseyZYMDe8MB8tmw$19M1jlWHvnDhQtpbzObwIsCExx9abwy3U6jmQMfWhcY",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$SiPswhJseyZYMDe8MB8tmw$19M1jlWHvnDhQtpbzObwIsCExx9abwy3U6jmQMfWhcY",
     nombreFantasia: "Guarino",
     whatsApp: "+598908",
     locales: [{ nave: "D", numero: "104", finContrato: null }],
@@ -172,7 +172,7 @@ const operadores: OperadorDemo[] = [
   },
   {
     username: "citricola_salto_grande",
-    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$MlFfwYUza0xMHH2RQpnrzQ$b+DeIlmkKBgm63h6xbGXSXL2tMw9h8rYVevsmIBb6xk",
+    passwordHash: "$argon2id$v=19$m=65536,p=4,t=3$MlFfYUza0xMHH2RQpnrzQ$b+DeIlmkKBgm63h6xbGXSXL2tMw9h8rYVevsmIBb6xk",
     nombreFantasia: "Citricola Salto Grande",
     whatsApp: "+598915",
     locales: [{ nave: "A", numero: "025", finContrato: null }],
@@ -432,9 +432,14 @@ async function limpiarBase() {
   await prisma.orm.public.EjecucionTareaProgramada.where(() => all()).deleteAll();
   await prisma.orm.public.EstadisticaVisita.where(() => all()).deleteAll();
   await prisma.orm.public.EstadisticaContacto.where(() => all()).deleteAll();
+  await prisma.orm.public.EstadisticaContactoPublicacion.where(() => all()).deleteAll();
   await prisma.orm.public.EstadisticaPublicacion.where(() => all()).deleteAll();
+  await prisma.orm.public.EstadisticaCantidadPublicacion.where(() => all()).deleteAll();
+
   await prisma.orm.public.Imagen.where(() => all()).deleteAll();
   await prisma.orm.public.Notificacion.where(() => all()).deleteAll();
+  await prisma.orm.public.AvisoVencimientoLocal.where(() => all()).deleteAll();
+  await prisma.orm.public.SesionRevocada.where(() => all()).deleteAll();
   await prisma.orm.public.PublicacionOperador.where(() => all()).deleteAll();
   await prisma.orm.public.PublicacionProductor.where(() => all()).deleteAll();
   await prisma.orm.public.Ubicacion.where(() => all()).deleteAll();
@@ -872,7 +877,6 @@ async function main() {
     if (!oferta.active) inactivas++;
   }
 
-  
   const fotosAging = await crearPublicacionesAging(
     idRequerido(operadorIds, operadorAging.username, "operador de prueba de aging"), archivos,
   );
@@ -902,28 +906,28 @@ async function main() {
   const productoresPorUsername = new Map(productores.map((productor) => [productor.username, productor]));
   const ubicacionesDemo = [
     {
-        nombreUbicacion: "Depósito Central - Salto",
-        departamento: "Salto",
-        latitud: -31.388,
-        longitud: -57.960,
+      nombreUbicacion: "Depósito Central - Salto",
+      departamento: "Salto",
+      latitud: -31.388,
+      longitud: -57.960,
     },
     {
-        nombreUbicacion: "Chacra Los Naranjos - Zona Norte",
-        departamento: "Salto",
-        latitud: -31.365,
-        longitud: -57.955,
+      nombreUbicacion: "Chacra Los Naranjos - Zona Norte",
+      departamento: "Salto",
+      latitud: -31.365,
+      longitud: -57.955,
     },
     {
-        nombreUbicacion: "Empaque Las Quintas - Zona Este",
-        departamento: "Salto",
-        latitud: -31.390,
-        longitud: -57.930,
+      nombreUbicacion: "Empaque Las Quintas - Zona Este",
+      departamento: "Salto",
+      latitud: -31.390,
+      longitud: -57.930,
     },
     {
-        nombreUbicacion: "Depósito El Ombú - Zona Sur",
-        departamento: "Salto",
-        latitud: -31.410,
-        longitud: -57.950,
+      nombreUbicacion: "Depósito El Ombú - Zona Sur",
+      departamento: "Salto",
+      latitud: -31.410,
+      longitud: -57.950,
     },
   ];
 
@@ -941,6 +945,7 @@ async function main() {
     const precio = oferta.price === null
       ? null
       : oferta.price.toFixed(2) as unknown as PrecioPublicacion;
+
     let fechaVigencia: Temporal.Instant | null = null;
     if (!oferta.available) {
       fechaVigencia = Temporal.Instant.fromEpochMilliseconds(Date.now() - 3 * 86_400_000);
@@ -978,12 +983,13 @@ async function main() {
         paisId,
       });
       await guardarFotoPublicacionDemo(tx, publicacion, foto);
+
       for (const punto of ubicacionesDemo.slice(0, oferta.cantidadUbicaciones)) {
         await tx.orm.public.Ubicacion.create({
-            nombreUbicacion: punto.nombreUbicacion,
-            departamento: punto.departamento,
-            urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${punto.latitud},${punto.longitud}`)}`,
-            publicacionId: publicacionProductor.id,
+          nombreUbicacion: punto.nombreUbicacion,
+          departamento: punto.departamento,
+          urlMaps: `https://www.google.com/maps?q=${encodeURIComponent(`${punto.latitud},${punto.longitud}`)}`,
+          publicacionId: publicacionProductor.id,
         });
       }
     });
@@ -991,21 +997,20 @@ async function main() {
 
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "incremento_precio", valorConfiguracion: "10" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "fecha_consulta_catalogo", valorConfiguracion: consulta.survey_date });
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "ordenamiento_habilitado", valorConfiguracion: "true"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_landing_page_default", valorConfiguracion: "mas_vendidas"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_virtual_default", valorConfiguracion: "mas_vendidas"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_produccion_default", valorConfiguracion: "mas_vendidas"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "true"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "3"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "true"});
-  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "1"});
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "ordenamiento_habilitado", valorConfiguracion: "true" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_landing_page_default", valorConfiguracion: "mas_vendidas" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_virtual_default", valorConfiguracion: "mas_vendidas" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "orden_mercado_produccion_default", valorConfiguracion: "mas_vendidas" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "true" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "3" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "true" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "1" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor", valorConfiguracion: "30" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_publicaciones_productor", valorConfiguracion: "7" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "restablecimiento_contrasena_habilitado", valorConfiguracion: "true" });
-  
 
   const cantidadNotificaciones = await crearNotificacionesDemo(
     usuariosDb.filter((usuario) => usuario.username !== operadorAging.username && usuario.username !== operadorVigencia.username),
@@ -1110,7 +1115,7 @@ async function main() {
     }
   }
 
-  // Estadísticas de Publicaciones
+  // ESTADISTICAS DE PUBLICACIONES MODIFICADAS
   const publicacionesSeed = [
     { fecha: "2026-01-05", username: "jorge_ferias", cantidad: 3 },
     { fecha: "2026-02-14", username: "pablo_sappa", cantidad: 4 },
@@ -1149,6 +1154,255 @@ async function main() {
     }
   }
 
+  // ESTADISTICAS DE CONTACTOS POR PUBLICACIÓN Y ESPECIE
+  console.log("Poblando estadísticas de contactos por publicación...");
+
+  const especiesEstadisticaPool = Array.from(
+    new Set(
+      consulta.types.flatMap((tipo) =>
+        tipo.products.map((producto) => producto.species)
+      )
+    )
+  ).sort((a, b) => a.localeCompare(b, "es"));
+
+  if (especiesEstadisticaPool.length === 0) {
+    throw new Error("No hay especies disponibles para generar estadísticas de contactos.");
+  }
+
+  const contactosPorPublicacionSeed: Array<{
+    fecha: string;
+    username: string;
+    especie: string;
+    cantidad: number;
+  }> = [];
+
+  const combinacionesContactoPublicacion = new Set<string>();
+
+  function agregarContactoPublicacion(
+    fecha: string,
+    username: string,
+    especie: string,
+    cantidad: number,
+  ) {
+    const llave = clave(fecha, username, especie);
+
+    if (combinacionesContactoPublicacion.has(llave)) return;
+
+    combinacionesContactoPublicacion.add(llave);
+
+    contactosPorPublicacionSeed.push({
+      fecha,
+      username,
+      especie,
+      cantidad,
+    });
+  }
+
+  const fechasHistoricasContactos = [
+    "2026-01-18",
+    "2026-02-12",
+    "2026-03-14",
+    "2026-04-09",
+    "2026-05-11",
+    "2026-06-18",
+    "2026-07-04",
+    "2026-08-06",
+    "2026-09-11",
+    "2026-09-26",
+  ];
+
+  for (const [indice, fecha] of fechasHistoricasContactos.entries()) {
+    for (let variante = 0; variante < 3; variante++) {
+      const username =
+        usuariosPool[(indice * 3 + variante * 5) % usuariosPool.length];
+
+      const especie =
+        especiesEstadisticaPool[
+          (indice * 2 + variante * 7) % especiesEstadisticaPool.length
+        ];
+
+      agregarContactoPublicacion(
+        fecha,
+        username,
+        especie,
+        1 + ((indice + variante * 3) % 6),
+      );
+    }
+  }
+
+  for (let dia = 1; dia <= 31; dia++) {
+    const fecha = `2026-10-${String(dia).padStart(2, "0")}`;
+
+    for (let variante = 0; variante < 3; variante++) {
+      const username =
+        usuariosPool[(dia + variante * 6) % usuariosPool.length];
+
+      const especie =
+        especiesEstadisticaPool[
+          (dia * 2 + variante * 5) % especiesEstadisticaPool.length
+        ];
+
+      agregarContactoPublicacion(
+        fecha,
+        username,
+        especie,
+        1 + ((dia + variante * 2) % 7),
+      );
+    }
+  }
+
+  for (const contacto of contactosPorPublicacionSeed) {
+    await prisma.orm.public.EstadisticaContactoPublicacion.create({
+      fecha: Temporal.Instant.from(`${contacto.fecha}T00:00:00Z`),
+      username: contacto.username,
+      especie: contacto.especie,
+      cantidad: contacto.cantidad,
+    });
+  }
+
+  // ESTADISTICAS DE CANTIDAD DE PUBLICACIONES
+  console.log("Poblando estadísticas de cantidad de publicaciones...");
+
+  const fechaInicialCantidadPublicaciones = "2026-01-01";
+
+  const cambiosCantidadPublicacionesSeed = [
+    { fecha: "2026-01-12", username: "jorge_ferias", variacion: 2 },
+    { fecha: "2026-01-20", username: "pablo_sappa", variacion: 1 },
+    { fecha: "2026-01-25", username: "diego_figueroa", variacion: 2 },
+    { fecha: "2026-02-02", username: "jorge_ferias", variacion: -1 },
+    { fecha: "2026-02-08", username: "britos_hns", variacion: 1 },
+    { fecha: "2026-02-14", username: "ciro_gentile", variacion: 2 },
+    { fecha: "2026-02-21", username: "pablo_sappa", variacion: 2 },
+    { fecha: "2026-03-05", username: "diego_figueroa", variacion: -1 },
+    { fecha: "2026-03-12", username: "guarino", variacion: 2 },
+    { fecha: "2026-03-19", username: "pizzorno", variacion: 1 },
+    { fecha: "2026-03-26", username: "don_juan", variacion: 2 },
+    { fecha: "2026-04-04", username: "caporale", variacion: 1 },
+    { fecha: "2026-04-11", username: "punto_natural", variacion: 3 },
+    { fecha: "2026-04-18", username: "pepe", variacion: 2 },
+    { fecha: "2026-04-25", username: "sandias_de_rivera", variacion: 1 },
+    { fecha: "2026-05-02", username: "citricola_salto_grande", variacion: 2 },
+    { fecha: "2026-05-09", username: "productor_norte_salto", variacion: 2 },
+    { fecha: "2026-05-16", username: "productor_canelones_verde", variacion: 1 },
+    { fecha: "2026-05-23", username: "productor_san_jose_agro", variacion: 2 },
+    { fecha: "2026-05-30", username: "productor_tacuarembo_frut", variacion: 1 },
+    { fecha: "2026-06-06", username: "productor_maldonado_organico", variacion: 3 },
+    { fecha: "2026-06-13", username: "bananera_ecuatoriana_sa", variacion: 2 },
+    { fecha: "2026-07-04", username: "jorge_ferias", variacion: 1 },
+    { fecha: "2026-07-11", username: "pablo_sappa", variacion: -1 },
+    { fecha: "2026-07-18", username: "diego_figueroa", variacion: 1 },
+    { fecha: "2026-07-25", username: "guarino", variacion: -1 },
+    { fecha: "2026-08-01", username: "ciro_gentile", variacion: -1 },
+    { fecha: "2026-08-08", username: "pizzorno", variacion: 2 },
+    { fecha: "2026-08-15", username: "don_juan", variacion: -1 },
+    { fecha: "2026-08-22", username: "punto_natural", variacion: -1 },
+    { fecha: "2026-09-05", username: "pepe", variacion: -1 },
+    { fecha: "2026-09-12", username: "sandias_de_rivera", variacion: 2 },
+    { fecha: "2026-09-19", username: "citricola_salto_grande", variacion: -1 },
+    { fecha: "2026-09-26", username: "productor_norte_salto", variacion: 1 },
+    { fecha: "2026-10-03", username: "productor_canelones_verde", variacion: -1 },
+    { fecha: "2026-10-10", username: "productor_san_jose_agro", variacion: 1 },
+    { fecha: "2026-10-17", username: "productor_tacuarembo_frut", variacion: -1 },
+    { fecha: "2026-10-20", username: "productor_maldonado_organico", variacion: -1 },
+    { fecha: "2026-10-23", username: "bananera_ecuatoriana_sa", variacion: 1 },
+    { fecha: "2026-10-25", username: "usuario_eliminado_carlos", variacion: 2 },
+    { fecha: "2026-10-27", username: "ex_operador_roberto", variacion: 1 },
+    { fecha: "2026-10-30", username: "jorge_ferias", variacion: -1 },
+    { fecha: "2026-11-02", username: "pablo_sappa", variacion: -1 },
+  ];
+
+  const usuariosCantidadPublicacionesPool = [
+    ...usuariosPool,
+    ...productores
+      .map((productor) => productor.username)
+      .filter((username) => !usuariosPool.includes(username)),
+  ];
+
+  const combinacionesCantidadPublicaciones = new Set<string>();
+
+  for (const cambio of cambiosCantidadPublicacionesSeed) {
+    const llave = clave(cambio.fecha, cambio.username);
+
+    if (combinacionesCantidadPublicaciones.has(llave)) {
+      throw new Error(
+        `Hay más de un cambio de cantidad para ${cambio.username} el ${cambio.fecha}.`,
+      );
+    }
+
+    combinacionesCantidadPublicaciones.add(llave);
+
+    if (cambio.variacion === 0) {
+      throw new Error(
+        `El cambio de cantidad de ${cambio.username} el ${cambio.fecha} no modifica la cantidad.`,
+      );
+    }
+  }
+
+  const cambiosOrdenados = [...cambiosCantidadPublicacionesSeed].sort(
+    (a, b) =>
+      a.fecha.localeCompare(b.fecha) ||
+      a.username.localeCompare(b.username),
+  );
+
+  const cantidadesPorUsuario = new Map<string, number>();
+
+  for (const username of usuariosCantidadPublicacionesPool) {
+    const cantidadInicial = 1;
+
+    cantidadesPorUsuario.set(username, cantidadInicial);
+
+    await prisma.orm.public.EstadisticaCantidadPublicacion.create({
+      fecha: Temporal.Instant.from(
+        `${fechaInicialCantidadPublicaciones}T00:00:00Z`,
+      ),
+      username,
+      cantidad: cantidadInicial,
+    });
+  }
+
+  for (const cambio of cambiosOrdenados) {
+    const cantidadAnterior = cantidadesPorUsuario.get(cambio.username);
+
+    if (cantidadAnterior === undefined) {
+      throw new Error(
+        `No existe una cantidad inicial para ${cambio.username}.`,
+      );
+    }
+
+    const nuevaCantidad = cantidadAnterior + cambio.variacion;
+
+    if (nuevaCantidad < 0) {
+      throw new Error(
+        `La cantidad de publicaciones de ${cambio.username} no puede ser negativa.`,
+      );
+    }
+
+    cantidadesPorUsuario.set(cambio.username, nuevaCantidad);
+
+    await prisma.orm.public.EstadisticaCantidadPublicacion.create({
+      fecha: Temporal.Instant.from(`${cambio.fecha}T00:00:00Z`),
+      username: cambio.username,
+      cantidad: nuevaCantidad,
+    });
+  }
+
+  const variacionUltimaSemana = cambiosOrdenados
+    .filter(
+      (cambio) =>
+        cambio.fecha > "2026-10-28" &&
+        cambio.fecha <= "2026-11-04",
+    )
+    .reduce((total, cambio) => total + cambio.variacion, 0);
+
+  if (variacionUltimaSemana !== -2) {
+    throw new Error(
+      `La variación de publicaciones de la última semana debería ser -2, pero es ${variacionUltimaSemana}.`,
+    );
+  }
+
+  const cantidadRegistrosCantidadPublicaciones =
+    usuariosCantidadPublicacionesPool.length + cambiosOrdenados.length;
+
   console.table({
     especies: consulta.types.reduce((total, tipo) => total + tipo.products.length, 0),
     variedades: cantidadVariedades,
@@ -1168,6 +1422,8 @@ async function main() {
     sinPrecio,
     noDisponibles,
     inactivas,
+    contactosPorPublicacion: contactosPorPublicacionSeed.length,
+    registrosCantidadPublicaciones: cantidadRegistrosCantidadPublicaciones,
   });
   console.log(`Fotos para probar aging con ${operadorAging.username}:`);
   console.table(fotosAging);
