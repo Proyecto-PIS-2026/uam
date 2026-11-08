@@ -86,7 +86,8 @@ async function ingresar(page: Page, cuenta: Cuenta, contrasena = cuenta.contrase
     else if (cuenta.rol === "PRODUCTOR") await iniciarSesionProductor(page, credenciales);
     else {
         await enviarCredenciales(page, cuenta, contrasena);
-        await expect(page).toHaveURL(/\/mi-mercado(?:\/operador)?$/);
+        await expect(page).toHaveURL(`/mi-mercado/${encodeURIComponent(cuenta.usuario)}`);
+        await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible();
     }
 }
 

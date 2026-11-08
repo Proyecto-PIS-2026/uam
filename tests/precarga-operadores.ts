@@ -28,7 +28,7 @@ export type DatosOperadorPrecarga = {
   naveId: number;
   credenciales: Credenciales;
 };
-type PrecargaOperadores = {
+export type PrecargaOperadores = {
   db: ReturnType<typeof conectar>;
   administrador: Credenciales;
   productor: Credenciales;
