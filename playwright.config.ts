@@ -44,8 +44,25 @@ export default defineConfig({
     // Chrome de Escritorio como control base del motor Chromium
     {
       name: 'chromium',
-      testIgnore: /bp-(17|18|25|26)(?:[\\/]|\.spec\.ts)/,
+      // Estos BP se ejecutan en sus proyectos específicos.
+      testIgnore: /bp-(16-2|17|18|25|26)(?:[\\/]|\.spec\.ts)/,
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium-bp162',
+      testMatch: /bp-16-2\.spec\.ts/,
+      // Modifica la configuración global: ejecutar después del resto de casos del portal.
+      dependencies: ['chromium-administracion'],
+      fullyParallel: false,
+      workers: 1,
+      timeout: 90_000,
+      expect: { timeout: 15_000 },
+      use: {
+        ...devices['Desktop Chrome'],
+        trace: 'retain-on-failure',
+        screenshot: 'only-on-failure',
+        actionTimeout: 20_000,
+      },
     },
     {
       name: 'chromium-bp25',
