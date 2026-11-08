@@ -91,13 +91,12 @@ export default function UbicacionesEdicionProductor({ ubicaciones, deshabilitado
         <section className={styles.seccion} aria-labelledby={`${id}-titulo`}>
             <div className={styles.encabezado}>
                 <h3 className={styles.titulo} id={`${id}-titulo`}>Puntos de retiro</h3>
-                <span className={styles.opcional}>Opcional</span>
             </div>
             <p className={styles.ayuda}>Agregá los lugares donde se puede retirar el producto.</p>
             {ubicaciones.length === 0 ? (
                 <EstadoVacio
                     titulo="Sin puntos de retiro"
-                    descripcion="Podés agregar uno o continuar sin indicar una ubicación."
+                    descripcion="Podés agregar un punto de retiro desde el mapa."
                     icono={<LocationOnOutlinedIcon />}
                     compacto
                     anunciar={false}

@@ -3,6 +3,9 @@
 import EnlaceWhatsApp from "@/compartido/componentes/EnlaceWhatsApp";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
 import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 
@@ -82,30 +85,43 @@ export default function PerfilOperador({ operador,  hrefVolver = "/operadores", 
                 </header>
 
                 <div className={styles.tarjetaInformacion}>
-                    {operador.locales.length === 0 ? (
-                        <EstadoVacio titulo="Sin locales registrados" descripcion="El operador no tiene locales registrados." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
-                    ) : (
-                        <ul className={styles.listaLocales}>
-                            {Object.entries(localesPorNave).map(([nombreNave, locales]) => (
-                                <li key={nombreNave} className={styles.local}>
-                                    <span className={styles.nombreNave}>{nombreNave === "Tinglado" ? nombreNave : `Nave ${nombreNave}`}</span>
-                                    <span className={styles.separadorLocal} aria-hidden="true">-</span>
-                                    <span className={styles.numeroLocal}>{locales.length > 1 ? "Locales" : "Local"}{" "}{locales.join(", ")}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                    <div className={styles.contacto}>
+                        <span className={styles.iconoContacto} aria-hidden="true"><PhoneOutlinedIcon /></span>
+                        <div className={styles.datosContacto}>
+                            <span className={styles.etiquetaContacto}>Teléfono:</span>
+                            <span className={styles.valorContacto}>{operador.whatsApp || "Sin número de contacto"}</span>
+                        </div>
+                    </div>
+                    <section className={`${styles.seccionPerfil} ${styles.seccionLocales}`} aria-labelledby="locales-operador-publico">
+                        <h2 id="locales-operador-publico" className={styles.subtitulo}>
+                            <StorefrontOutlinedIcon aria-hidden="true" />Locales
+                        </h2>
+                        {operador.locales.length === 0 ? (
+                            <EstadoVacio titulo="Sin locales registrados" descripcion="El operador no tiene locales registrados." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
+                        ) : (
+                            <ul className={styles.listaLocales}>
+                                {Object.entries(localesPorNave).map(([nombreNave, locales]) => (
+                                    <li key={nombreNave} className={styles.local}>
+                                        <span className={styles.nombreNave}>{nombreNave === "Tinglado" ? nombreNave : `Nave ${nombreNave}`}</span>
+                                        <span className={styles.numeroLocal}>{locales.length > 1 ? "Locales" : "Local"}{" "}{locales.join(", ")}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
                     {operador.enLicencia && (
-                        <>
-                            <h2 className={styles.subtitulo}>
-                                <DescriptionOutlined aria-hidden="true" />
-                                Licencia
+                        <section className={`${styles.seccionPerfil} ${styles.seccionLicencia}`} aria-labelledby="licencia-operador-publico">
+                            <h2 id="licencia-operador-publico" className={styles.subtitulo}>
+                                <DescriptionOutlined aria-hidden="true" />Licencia
                             </h2>
                             <div className={styles.comentario} role="status">
-                                <p className={styles.fechasLicencia}>Fecha: {fechasLicencia}</p>
+                                <p className={styles.fechasLicencia}>
+                                    <EventOutlinedIcon fontSize="small" aria-hidden="true" />
+                                    <span>Fecha: {fechasLicencia}</span>
+                                </p>
                                 {licencia.comentario && <p>{licencia.comentario}</p>}
                             </div>
-                        </>
+                        </section>
                     )}
                 </div>
             </div>

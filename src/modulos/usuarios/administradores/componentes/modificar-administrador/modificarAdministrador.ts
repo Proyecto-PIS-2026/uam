@@ -40,14 +40,6 @@ export async function modificarAdministrador(valor: unknown): Promise<ResultadoM
             return "Tus propios datos se modifican desde Mi perfil.";
         }
 
-        const correoRepetido = await tx.orm.public.Administrador
-            .where({ email: datos.email })
-            .first();
-
-        if (correoRepetido && correoRepetido.id !== datos.administradorId) {
-            return "Ya existe un administrador con ese correo electrónico.";
-        }
-
         const nombreRepetido = await tx.orm.public.Usuario
             .where({ username: datos.nombreUsuario })
             .first();
@@ -55,10 +47,6 @@ export async function modificarAdministrador(valor: unknown): Promise<ResultadoM
         if (nombreRepetido && nombreRepetido.id !== administrador.usuarioId) {
             return "Ya existe un usuario con ese nombre.";
         }
-
-        await tx.orm.public.Administrador
-            .where({ id: datos.administradorId })
-            .update({ email: datos.email });
 
         await tx.orm.public.Usuario
             .where({ id: administrador.usuarioId })

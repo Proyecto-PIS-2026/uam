@@ -296,7 +296,6 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                                         }} disabled={deshabilitado}
                                     />
                                 </div>
-                                <small className={drawerStyles.ayuda}>Dejalo vacío si no quieres ingresar una cantidad.</small>
                             </div>
                         );
                     })()}
@@ -322,7 +321,6 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                             onChange={(evento) => actualizar({ fechaVigencia: evento.target.value })}
                             disabled={deshabilitado}
                         />
-                        <small className={drawerStyles.ayuda}>Dejalo vacío si no querés ingresar una fecha de vigencia.</small>
                     </div>
 
                     {errores.length > 0 && <div role="alert" className={drawerStyles.error}>{errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}

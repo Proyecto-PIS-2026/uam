@@ -60,7 +60,7 @@ describe("FormularioModificarAdministrador", () => {
         renderizar();
 
         expect(valorDe(screen.getByLabelText("Nombre de usuario"))).toBe("beto.admin");
-        expect(valorDe(screen.getByLabelText("Correo electrónico"))).toBe("beto@ejemplo.com");
+        expect(screen.queryByLabelText("Correo electrónico")).not.toBeInTheDocument();
         expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
         expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
     });
@@ -85,14 +85,12 @@ describe("FormularioModificarAdministrador", () => {
         renderizar();
 
         fireEvent.change(screen.getByLabelText("Nombre de usuario"), { target: { value: "beto.nuevo" } });
-        fireEvent.change(screen.getByLabelText("Correo electrónico"), { target: { value: "nuevo@ejemplo.com" } });
         apretarGuardar();
 
         await waitFor(() => expect(push).toHaveBeenCalledWith("/gestion-administradores/102"));
         expect(modificarMock).toHaveBeenCalledWith({
             administradorId: 102,
             nombreUsuario: "beto.nuevo",
-            email: "nuevo@ejemplo.com",
             contraseña: "",
             confirmacionContraseña: "",
         });
@@ -101,7 +99,7 @@ describe("FormularioModificarAdministrador", () => {
     it("muestra los errores de validación y no navega", async () => {
         modificarMock.mockResolvedValue({
             esValido: false,
-            errores: ["El nombre es obligatorio.", "El correo electrónico no es válido."],
+            errores: ["El nombre es obligatorio.", "Las contraseñas no coinciden."],
         });
         renderizar();
 
@@ -109,7 +107,7 @@ describe("FormularioModificarAdministrador", () => {
 
         const alerta = await screen.findByRole("alert");
         expect(alerta.textContent).toContain("El nombre es obligatorio.");
-        expect(alerta.textContent).toContain("El correo electrónico no es válido.");
+        expect(alerta.textContent).toContain("Las contraseñas no coinciden.");
         expect(push).not.toHaveBeenCalled();
     });
 
@@ -154,12 +152,12 @@ describe("FormularioModificarAdministrador en Mi perfil", () => {
         render(<FormularioModificarAdministrador administrador={administradorBase} perfilPropio />);
     }
 
-    it("muestra el nombre y el correo actuales, sin los campos de contraseña", () => {
+    it("muestra el nombre actual sin campos de correo ni contraseña", () => {
         renderizarPerfilPropio();
 
         expect(screen.getByRole("heading", { name: "Editar mi perfil" })).toBeInTheDocument();
         expect(valorDe(screen.getByLabelText("Nombre de usuario"))).toBe("beto.admin");
-        expect(valorDe(screen.getByLabelText("Correo electrónico"))).toBe("beto@ejemplo.com");
+        expect(screen.queryByLabelText("Correo electrónico")).not.toBeInTheDocument();
         expect(screen.queryByLabelText("Nueva contraseña")).not.toBeInTheDocument();
     });
 
@@ -168,21 +166,20 @@ describe("FormularioModificarAdministrador en Mi perfil", () => {
         renderizarPerfilPropio();
 
         fireEvent.change(screen.getByLabelText("Nombre de usuario"), { target: { value: "beto.nuevo" } });
-        fireEvent.change(screen.getByLabelText("Correo electrónico"), { target: { value: "nuevo@ejemplo.com" } });
         apretarGuardar();
 
         await waitFor(() => expect(push).toHaveBeenCalledWith("/mi-perfil"));
-        expect(modificarMiPerfilMock).toHaveBeenCalledWith({ nombreUsuario: "beto.nuevo", email: "nuevo@ejemplo.com" });
+        expect(modificarMiPerfilMock).toHaveBeenCalledWith({ nombreUsuario: "beto.nuevo" });
         expect(modificarMock).not.toHaveBeenCalled();
     });
 
     it("muestra el error del servidor y no navega", async () => {
-        modificarMiPerfilMock.mockResolvedValue({ esValido: false, errores: ["Ya existe un administrador con ese correo electrónico."] });
+        modificarMiPerfilMock.mockResolvedValue({ esValido: false, errores: ["Ya existe un usuario con ese nombre."] });
         renderizarPerfilPropio();
 
         apretarGuardar();
 
-        expect((await screen.findByRole("alert")).textContent).toContain("Ya existe un administrador con ese correo electrónico.");
+        expect((await screen.findByRole("alert")).textContent).toContain("Ya existe un usuario con ese nombre.");
         expect(push).not.toHaveBeenCalled();
     });
 

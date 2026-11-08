@@ -3,7 +3,6 @@
     flex-shrink: 0;
     width: 100%;
     margin-top: auto;
-    border-top: 1px solid var(--color-secondary-hover);
     background: var(--color-secondary);
     color: var(--color-surface);
 }
@@ -15,7 +14,7 @@
     margin: 0 auto;
     padding: var(--espacio-grupos) var(--padding-exterior-pagina);
     flex-direction: column;
-    gap: var(--espacio-secciones);
+    gap: var(--espacio-grupos);
 }
 
 .contacto {
@@ -62,33 +61,55 @@
 }
 
 .avisosLegales {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-secciones);
+}
+
+.bloqueAviso {
     display: flex;
+    min-width: 0;
     flex-direction: column;
+    gap: var(--espacio-controles);
+    padding: var(--padding-panel);
+    border-radius: var(--radio-panel);
+    background: rgb(255 255 255 / 8%);
+}
+
+.tituloAviso {
+    display: flex;
+    align-items: center;
     gap: var(--espacio-inline);
+    margin: 0;
+    font-size: var(--tamano-texto);
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+}
+
+.iconoAviso {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    color: var(--color-subtitulo-pagina);
 }
 
 .avisoLegal {
     margin: 0;
+    color: rgb(255 255 255 / 90%);
     font-size: var(--tamano-texto-secundario);
-    line-height: var(--interlineado-texto);
+    line-height: 1.65;
     text-align: left;
 }
 
-.derechos {
-    margin: 0;
-    padding-top: var(--espacio-secciones);
-    border-top: 1px solid rgb(255 255 255 / 25%);
-    font-size: var(--tamano-texto-auxiliar);
-    line-height: var(--interlineado-texto);
-    text-align: center;
+@media (max-width: 970px) {
+    .pie {
+        margin-top: 0;
+    }
 }
 
 @media (max-width: 767px) {
-    .contacto {
+    .contacto,
+    .avisosLegales {
         grid-template-columns: 1fr;
-    }
-
-    .derechos {
-        padding-inline: calc(var(--alto-control) + var(--espacio-secciones));
     }
 }

@@ -18,8 +18,8 @@ vi.mock("../ImagenPublicacion", () => ({
         : <>{reemplazo}</>,
 }));
 
-vi.mock("@mui/icons-material/ImageOutlined", () => ({
-    default: () => <span data-testid="image-outlined-icon" />,
+vi.mock("@mui/icons-material/HideImageOutlined", () => ({
+    default: () => <span data-testid="hide-image-outlined-icon" />,
 }));
 
 const crearPublicacion = (
@@ -100,9 +100,9 @@ describe("TarjetaPublicacionSinProductor", () => {
             />,
         );
 
-        expect(screen.getByText("Foto")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
         expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
-        expect(screen.getByTestId("image-outlined-icon")).toBeInTheDocument();
+        expect(screen.getByTestId("hide-image-outlined-icon")).toBeInTheDocument();
     });
 
     it("muestra calibre, código de calibre y categoría", () => {

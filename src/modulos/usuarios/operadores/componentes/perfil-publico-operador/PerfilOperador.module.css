@@ -16,7 +16,8 @@
 }
 
 .encabezado {
-    display: flex;
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
     position: relative;
     isolation: isolate;
     width: 100%;
@@ -78,17 +79,68 @@
 .tarjetaInformacion {
     display: flex;
     flex-direction: column;
-    gap: var(--espacio-controles);
+    gap: var(--espacio-secciones);
     width: 100%;
     padding: var(--padding-panel);
     background-color: var(--color-surface);
+}
+
+.contacto {
+    display: flex;
+    min-width: 0;
+    margin: 0;
+    align-items: center;
+    gap: var(--espacio-controles);
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radio-control);
+    background: var(--color-surface-muted);
+}
+
+.iconoContacto {
+    display: grid;
+    width: var(--alto-control);
+    height: var(--alto-control);
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: var(--radio-control);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
+}
+
+.datosContacto {
+    min-width: 0;
+}
+
+.etiquetaContacto {
+    display: block;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+}
+
+.valorContacto {
+    display: block;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+}
+
+.seccionPerfil {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radio-panel);
 }
 
 .listaLocales {
     display: grid;
     margin: 0;
     padding: 0;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--espacio-controles);
     list-style: none;
 }
@@ -96,26 +148,32 @@
 .local {
     display: flex;
     min-width: 0;
-    padding: var(--espacio-controles) 0.875rem;
+    padding: var(--espacio-controles);
     align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
     gap: var(--espacio-inline);
-    border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent);
+    border: 1px solid var(--color-border-soft);
     border-radius: var(--radio-control);
-    background-color: var(--color-secondary-soft);
+    background-color: var(--color-surface-muted);
     font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+    overflow-wrap: anywhere;
 }
 
 .nombreNave {
+    min-width: 0;
+    padding: 0.125rem var(--espacio-inline);
+    border-radius: var(--radio-control);
+    background: var(--color-secondary-soft);
     color: var(--color-secondary-hover);
     font-weight: 600;
 }
 
-.separadorLocal {
-    color: var(--color-muted);
-}
-
 .numeroLocal {
+    min-width: 0;
     color: var(--color-foreground);
+    font-weight: 600;
 }
 
 .botonWhatsApp {
@@ -159,8 +217,24 @@
 }
 
 @media (min-width: 768px) {
-    .listaLocales {
-        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    .tarjetaInformacion {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+    }
+
+    .seccionLocales {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .contacto {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .seccionLicencia {
+        grid-column: 1 / -1;
     }
 
     .botonWhatsApp {
@@ -202,9 +276,9 @@
     display: flex;
     align-items: center;
     gap: var(--espacio-inline);
-    margin: 0 0 0;
+    margin: 0;
     color: var(--color-secondary);
-    font-size: var(--tamano-titulo-panel);
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
 }
 
@@ -215,7 +289,6 @@
     gap: var(--espacio-inline);
     margin: 0;
     padding: var(--padding-panel);
-    border: 1px solid color-mix(in srgb, var(--color-secondary) 35%, var(--color-border));
     border-radius: var(--radio-control);
     background: var(--color-secondary-soft);
     color: var(--color-foreground);
@@ -225,10 +298,24 @@
 .comentario p {
     margin: 0;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .fechasLicencia {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-inline);
     color: var(--color-secondary-hover);
     font-size: var(--tamano-texto-secundario);
     font-weight: 600;
+}
+
+.fechasLicencia svg {
+    flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+    .encabezado {
+        padding: var(--padding-panel);
+    }
 }

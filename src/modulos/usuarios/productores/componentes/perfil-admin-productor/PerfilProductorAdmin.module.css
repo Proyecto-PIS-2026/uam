@@ -3,7 +3,6 @@
     max-width: var(--ancho-maximo-pagina);
     margin: 0 auto;
     padding: var(--padding-exterior-pagina);
-    padding-bottom: var(--espacio-grupos);
 }
 
 .volver {
@@ -63,9 +62,9 @@
     color: var(--color-subtitulo-pagina);
     font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
+    line-height: var(--interlineado-texto);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    line-height: var(--interlineado-texto);
 }
 
 .nombre {
@@ -77,55 +76,116 @@
     line-height: var(--interlineado-titulo-pagina);
 }
 
-.dato {
+.tarjetaInformacion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+    width: 100%;
+    padding: var(--padding-panel);
+    background-color: var(--color-surface);
+}
+
+.contacto {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-controles);
     margin: 0;
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radio-control);
+    background: var(--color-surface-muted);
+}
+
+.iconoContacto {
+    display: grid;
+    width: var(--alto-control);
+    height: var(--alto-control);
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: var(--radio-control);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
+}
+
+.datosContacto {
+    min-width: 0;
+}
+
+.etiquetaContacto {
+    display: block;
+    color: var(--color-muted);
     font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+}
+
+.valorContacto {
+    display: block;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+}
+
+.seccionPerfil {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radio-panel);
 }
 
 .departamentos {
-    position: relative;
-    z-index: 1;
-    grid-column: 1 / -1;
-    color: var(--color-surface);
-    display: flex;
-    align-items: flex-start;
-    gap: var(--espacio-inline);
-    margin-bottom: 0;
+    margin: 0;
+    padding: var(--padding-panel);
+    border-radius: var(--radio-control);
+    background: var(--color-surface-muted);
+    color: var(--color-foreground);
+    font-size: var(--tamano-texto-secundario);
     line-height: var(--interlineado-texto);
     overflow-wrap: anywhere;
 }
 
-.departamentos svg {
-    flex-shrink: 0;
-    color: inherit;
-}
-
-.etiqueta {
-    font-weight: 600;
-}
-
 .subtitulo {
-    margin: var(--espacio-secciones) 0 var(--espacio-controles);
-    color: var(--color-secondary);
-    font-size: var(--tamano-titulo-panel);
-    font-weight: 700;
-}
-
-.subtituloPublicaciones {
-    margin: var(--espacio-grupos) 0 var(--espacio-secciones);
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-inline);
+    margin: 0;
     color: var(--color-secondary);
     font-size: var(--tamano-titulo-seccion);
     font-weight: 700;
 }
 
-.lista {
-    display: grid;
+.subtituloPublicaciones {
     margin: 0;
-    padding: 0;
-    gap: var(--espacio-controles);
-    list-style: none;
+    color: var(--color-secondary);
+    font-size: var(--tamano-titulo-seccion);
+    font-weight: 700;
 }
 
+.filaPublicaciones {
+    display: flex;
+    width: 100%;
+    margin: var(--espacio-secciones) 0;
+    flex-direction: column;
+    gap: var(--espacio-controles);
+}
+
+.botonAlta {
+    background-color: var(--color-secondary) !important;
+    color: var(--color-surface) !important;
+    border-radius: var(--radio-control) !important;
+    padding: var(--padding-control) !important;
+    text-transform: none !important;
+    font-weight: 600 !important;
+    width: 100%;
+    height: var(--alto-control) !important;
+    flex-shrink: 0;
+}
+
+.botonAlta:hover {
+    background-color: var(--color-secondary-hover) !important;
+}
 
 .imagenAvatar {
     display: block;
@@ -134,11 +194,14 @@
     object-fit: cover;
 }
 
+.accionesPerfil {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .botonEditar {
     display: inline-flex;
-    position: relative;
-    z-index: 1;
-    justify-self: end;
+    min-width: 10rem;
     min-height: var(--alto-control);
     align-items: center;
     justify-content: center;
@@ -164,68 +227,35 @@
 }
 
 .botonEditar:hover {
-    background-color: var(--color-secondary-soft);
+    background: var(--color-secondary-soft);
 }
 
 .botonEditar:focus-visible {
-    outline: 2px solid var(--color-surface);
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
 }
 
-.filaPublicaciones {
-    display: flex;
-    width: 100%;
-    margin: var(--espacio-grupos) 0 var(--espacio-secciones);
-    flex-direction: column;
-    gap: var(--espacio-controles);
-}
-
-.filaPublicaciones .subtituloPublicaciones {
-    margin: 0;
-}
-
-.botonAlta {
-    background-color: var(--color-secondary) !important;
-    color: var(--color-surface) !important;
-    border-radius: var(--radio-control) !important;
-    padding: var(--padding-control) !important;
-    text-transform: none !important;
-    font-weight: 600 !important;
-    width: 100%;
-    height: var(--alto-control) !important;
-    flex-shrink: 0;
-}
-
-.botonAlta:hover {
-    background-color: var(--color-secondary-hover) !important;
-}
-
-@media (min-width: 701px) {
-    .encabezado {
-        grid-template-columns: 6rem minmax(0, 1fr) auto;
-    }
-
-    .botonEditar {
-        grid-column: auto;
-    }
-}
-
 @media (min-width: 768px) {
-    .lista {
-        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-        gap: var(--espacio-controles);
+    .tarjetaInformacion {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "departamentos contacto"
+            "acciones acciones";
+        align-items: start;
     }
 
-    .local {
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: flex-start;
-        gap: 0.125rem;
-        padding: 0.625rem 0.875rem;
+    .contacto {
+        grid-area: contacto;
+        min-width: 0;
     }
 
-    .finContrato {
-        margin-left: 0;
+    .seccionPerfil {
+        grid-area: departamentos;
+    }
+
+    .accionesPerfil {
+        grid-area: acciones;
     }
 
     .filaPublicaciones {
@@ -238,32 +268,6 @@
         width: auto;
         height: var(--alto-control) !important;
     }
-}
-
-.accionesEncabezado {
-    display: grid;
-    position: relative;
-    z-index: 1;
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--espacio-controles);
-}
-
-.contacto {
-    display: flex;
-    min-width: 0;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--espacio-inline);
-    margin: 0;
-    color: var(--color-surface);
-    font-size: var(--tamano-texto-secundario);
-    overflow-wrap: anywhere;
-}
-
-.contacto svg {
-    flex-shrink: 0;
 }
 
 @media (max-width: 700px) {

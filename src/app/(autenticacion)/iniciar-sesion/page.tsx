@@ -1,6 +1,7 @@
 import FormularioInicioSesion from "./formularioInicioSesion";
 import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import { requerirSinSesion } from "@/modulos/identidad-acceso/autorizacion/controles";
+import styles from "./page.module.css";
 
 export const metadata = {
     title: "Iniciar sesión | UAM",
@@ -18,7 +19,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
     const recuperacionHabilitada = await estaHabilitadoCambioContrasena();
     const mensaje = segundoFactor ? mensajesSegundoFactor[segundoFactor] : undefined;
     return (
-        <main className="contenedor-pagina flex flex-1 items-start justify-center">
+        <main className={`contenedor-pagina ${styles.pagina}`}>
             <section className="w-full max-w-md secciones-pagina">
                 <h1 className="titulo-pagina-plano">Iniciar sesión</h1>
                 {mensaje && <p role="status" className="text-sm">{mensaje}</p>}

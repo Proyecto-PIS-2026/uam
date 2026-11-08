@@ -16,14 +16,14 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 
 import { modificarMiPerfilAdministrador } from "./modificar-mi-perfil";
 
-const datos = { nombre: "mi_admin", correo: "mi@uam.com" };
+const datos = { nombre: "mi_admin" };
 
 describe("edición propia vinculada a BP-11.1", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.exigir.mockResolvedValue({ usuarioId: 7, rol: "ADMINISTRADOR" });
         mocks.tx.mockImplementation((cb: (tx: unknown) => unknown) => cb({ orm: { public: { Administrador: mocks.administrador, Usuario: mocks.usuario } } }));
-        mocks.administrador.first.mockResolvedValueOnce({ id: 14 }).mockResolvedValueOnce(null);
+        mocks.administrador.first.mockReset().mockResolvedValue({ id: 14 });
         mocks.usuario.first.mockResolvedValue(null);
     });
 
@@ -34,7 +34,7 @@ describe("edición propia vinculada a BP-11.1", () => {
     });
 
     it("rechaza datos inválidos sin usar la base", async () => {
-        expect(await modificarMiPerfilAdministrador({ nombre: "a", correo: "no-es-mail" })).toMatchObject({ esValido: false });
+        expect(await modificarMiPerfilAdministrador({ nombre: "a" })).toMatchObject({ esValido: false });
         expect(mocks.tx).not.toHaveBeenCalled();
     });
 
@@ -42,16 +42,24 @@ describe("edición propia vinculada a BP-11.1", () => {
         const resultado = await modificarMiPerfilAdministrador({ ...datos, usuarioId: 99, administradorId: 123, rol: "OPERADOR", passwordHash: "malicioso" });
         expect(resultado).toEqual({ esValido: true, mensaje: "Perfil actualizado correctamente." });
         expect(mocks.administrador.where).toHaveBeenCalledWith({ usuarioId: 7 });
-        expect(mocks.administrador.update).toHaveBeenCalledWith({ email: datos.correo });
+        expect(mocks.administrador.update).not.toHaveBeenCalled();
         expect(mocks.usuario.where).toHaveBeenCalledWith({ id: 7 });
         expect(mocks.usuario.update).toHaveBeenCalledWith({ username: datos.nombre });
         expect(mocks.usuario.update).not.toHaveBeenCalledWith(expect.objectContaining({ passwordHash: "malicioso" }));
         expect(mocks.revalidate).toHaveBeenCalledWith("/mi-perfil");
     });
 
-    it("rechaza correos duplicados", async () => {
-        mocks.administrador.first.mockReset().mockResolvedValueOnce({ id: 14 }).mockResolvedValueOnce({ id: 50 });
-        expect(await modificarMiPerfilAdministrador(datos)).toEqual({ esValido: false, errores: ["Ya existe un administrador con ese correo electrónico."] });
+    it.each(["otro@uam.com", "", "no-es-mail", null])("no modifica el correo aunque se inyecte %j", async (correo) => {
+        expect(await modificarMiPerfilAdministrador({ ...datos, correo, email: correo })).toEqual({ esValido: true, mensaje: "Perfil actualizado correctamente." });
+        expect(mocks.administrador.where).toHaveBeenCalledExactlyOnceWith({ usuarioId: 7 });
+        expect(mocks.administrador.update).not.toHaveBeenCalled();
+        expect(mocks.usuario.update).toHaveBeenCalledExactlyOnceWith({ username: datos.nombre });
+    });
+
+    it("informa si no encuentra el perfil sin guardar cambios", async () => {
+        mocks.administrador.first.mockResolvedValueOnce(null);
+        expect(await modificarMiPerfilAdministrador(datos)).toEqual({ esValido: false, errores: ["No se pudo encontrar tu perfil."] });
+        expect(mocks.usuario.update).not.toHaveBeenCalled();
         expect(mocks.administrador.update).not.toHaveBeenCalled();
     });
 

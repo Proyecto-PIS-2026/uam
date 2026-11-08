@@ -50,7 +50,6 @@
     font-weight: 600;
 }
 
-.opcional,
 .ayuda {
     color: var(--color-muted);
     font-size: var(--tamano-texto-secundario);

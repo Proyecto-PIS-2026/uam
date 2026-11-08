@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { guardarConfiguraciones } from "./guardar-configuracion";
 
 const mocks = vi.hoisted(() => ({
@@ -7,7 +7,11 @@ const mocks = vi.hoisted(() => ({
     where: vi.fn(),
     select: vi.fn(),
     update: vi.fn(),
+    rawSql: vi.fn(),
+    execute: vi.fn(),
 }));
+
+type PlanSql = { texto: string; valores: unknown[] };
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({ controlarSesionEnAccion: (control: () => Promise<unknown>) => control() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
@@ -15,7 +19,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
 }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
-    db: { transaction: mocks.transaction },
+    db: { transaction: mocks.transaction, raw: { sql: mocks.rawSql } },
 }));
 
 const gruposVigencia = [
@@ -54,10 +58,25 @@ beforeEach(() => {
     mocks.update.mockResolvedValue({ nombreConfiguracion: "configuracion" });
     mocks.exigirAdministrador.mockResolvedValue(undefined);
 
-    const tx = { orm: { public: { Configuracion: consulta } } };
+    mocks.rawSql.mockImplementation((partes: TemplateStringsArray, ...valores: unknown[]) => {
+        const plan: PlanSql = { texto: partes.join("?").replace(/\s+/g, " ").trim(), valores };
+        const constructor = {
+            returnsRow: () => constructor,
+            affectedCount: () => constructor,
+            build: () => plan,
+        };
+        return constructor;
+    });
+    mocks.execute.mockResolvedValue(0);
+
+    const tx = { orm: { public: { Configuracion: consulta } }, execute: mocks.execute };
     mocks.transaction.mockImplementation(async (operacion: (cliente: typeof tx) => Promise<void>) => {
         await operacion(tx);
     });
+});
+
+afterEach(() => {
+    vi.useRealTimers();
 });
 
 describe("guardarConfiguraciones", () => {
@@ -318,6 +337,120 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
     it.each([grupo.habilitado, grupo.avisos])("rechaza un booleano inválido en %s", async (clave) => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [clave]: "si" }))).rejects.toThrow("El estado de la configuración no es válido.");
         expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+});
+
+describe("aplicación del límite a publicaciones existentes", () => {
+    function configuracionPublicaciones(dias = "3", habilitada = true): Record<string, string> {
+        return {
+            vigencia_publicaciones_productor_habilitada: String(habilitada),
+            vigencia_publicaciones_productor: habilitada ? dias : "",
+            aviso_vencimiento_publicaciones_productor_habilitado: "false",
+            anticipacion_aviso_publicaciones_productor: "",
+        };
+    }
+
+    function planesEjecutados(): PlanSql[] {
+        return mocks.execute.mock.calls.map(([plan]) => plan as PlanSql);
+    }
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        // Todavía es el 6 de noviembre en Montevideo, aunque en UTC ya es el 7.
+        vi.setSystemTime(new Date("2026-11-07T02:00:00Z"));
+    });
+
+    it("guarda las opciones y aplica el tope al final del día local dentro de la misma transacción", async () => {
+        await guardarConfiguraciones(configuracionPublicaciones());
+
+        expect(mocks.transaction).toHaveBeenCalledOnce();
+        expect(mocks.update).toHaveBeenCalledTimes(4);
+        const [bloqueo, recorte] = planesEjecutados();
+        expect(planesEjecutados()).toHaveLength(2);
+        expect(bloqueo.texto).toContain("pg_advisory_xact_lock(");
+        expect(bloqueo.texto).not.toContain("pg_advisory_xact_lock_shared");
+        expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.update.mock.invocationCallOrder[0]);
+        expect(mocks.update.mock.invocationCallOrder[3]).toBeLessThan(mocks.execute.mock.invocationCallOrder[1]);
+        expect(recorte.valores.map(String)).toEqual(["2026-11-10T02:59:59Z", "2026-11-10T02:59:59Z"]);
+    });
+
+    it("limita únicamente fechas vacías o posteriores de productores, sin cambiar otros campos", async () => {
+        await guardarConfiguraciones(configuracionPublicaciones());
+
+        const recorte = planesEjecutados()[1];
+        expect(recorte.texto).toMatch(/^UPDATE publicacion SET "fechaVigencia" = \?::timestamptz WHERE /);
+        expect(recorte.texto).toMatch(/"tipoPublicacion" = 'PRODUCTOR'/);
+        expect(recorte.texto).toMatch(/AND \("fechaVigencia" IS NULL OR "fechaVigencia" > \?::timestamptz\)$/);
+        expect(recorte.texto).not.toMatch(/publicacionDisponible|publicacionActiva|\bversion\b|"fecha"/);
+    });
+
+    it("al ampliar el plazo conserva la condición que impide extender fechas ya anteriores al nuevo tope", async () => {
+        await guardarConfiguraciones(configuracionPublicaciones("3"));
+        await guardarConfiguraciones(configuracionPublicaciones("10"));
+
+        const recorte = planesEjecutados()[3];
+        expect(recorte.valores.map(String)).toEqual(["2026-11-17T02:59:59Z", "2026-11-17T02:59:59Z"]);
+        expect(recorte.texto).toMatch(/"fechaVigencia" IS NULL OR "fechaVigencia" > \?::timestamptz/);
+    });
+
+    it("desactiva la configuración sin actualizar ninguna fecha existente", async () => {
+        await guardarConfiguraciones(configuracionPublicaciones("", false));
+
+        expect(mocks.update).toHaveBeenCalledTimes(4);
+        expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: "false" });
+        expect(planesEjecutados()).toHaveLength(1);
+        expect(planesEjecutados()[0].texto).toContain("pg_advisory_xact_lock(");
+        expect(planesEjecutados().some((plan) => /^UPDATE /i.test(plan.texto))).toBe(false);
+    });
+
+    it("no modifica publicaciones al guardar otra configuración", async () => {
+        await guardarConfiguraciones({
+            aging_fotos_habilitado: "true",
+            vigencia_fotos: "30",
+            aviso_vencimiento_fotos_habilitado: "false",
+            anticipacion_aviso_fotos: "",
+        });
+
+        expect(mocks.update).toHaveBeenCalledTimes(4);
+        expect(mocks.execute).not.toHaveBeenCalled();
+    });
+
+    it("no escribe configuraciones si no puede obtener el bloqueo", async () => {
+        mocks.execute.mockRejectedValueOnce(new Error("No se pudo bloquear la configuración"));
+
+        await expect(guardarConfiguraciones(configuracionPublicaciones())).rejects.toThrow("No se pudo bloquear la configuración");
+        expect(mocks.update).not.toHaveBeenCalled();
+        expect(mocks.execute).toHaveBeenCalledOnce();
+    });
+
+    it("no recorta fechas si falla el guardado de las opciones", async () => {
+        mocks.update.mockResolvedValueOnce({ nombreConfiguracion: "primera" }).mockRejectedValueOnce(new Error("No se pudo guardar"));
+
+        await expect(guardarConfiguraciones(configuracionPublicaciones())).rejects.toThrow("No se pudo guardar");
+        expect(mocks.update).toHaveBeenCalledTimes(2);
+        expect(mocks.execute).toHaveBeenCalledOnce();
+    });
+
+    it("propaga el fallo del recorte para impedir confirmar el guardado de la configuración", async () => {
+        const ejecutarTransaccion = mocks.transaction.getMockImplementation()!;
+        let confirmada = false;
+        mocks.transaction.mockImplementation(async (...argumentos) => {
+            await ejecutarTransaccion(...argumentos);
+            confirmada = true;
+        });
+        mocks.execute.mockResolvedValueOnce(0).mockRejectedValueOnce(new Error("No se pudieron actualizar las fechas"));
+
+        await expect(guardarConfiguraciones(configuracionPublicaciones())).rejects.toThrow("No se pudieron actualizar las fechas");
+        expect(mocks.update).toHaveBeenCalledTimes(4);
+        expect(confirmada).toBe(false);
+    });
+
+    it("propaga el error de un plazo que desborda el rango de fechas sin ejecutar el recorte", async () => {
+        await expect(guardarConfiguraciones(configuracionPublicaciones("9007199254740991"))).rejects.toThrow();
+
+        expect(mocks.transaction).toHaveBeenCalledOnce();
+        expect(mocks.update).toHaveBeenCalledTimes(4);
+        expect(mocks.execute).toHaveBeenCalledOnce();
     });
 });
 

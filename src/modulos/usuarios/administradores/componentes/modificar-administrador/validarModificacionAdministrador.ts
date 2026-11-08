@@ -1,15 +1,12 @@
 export type DatosModificacionAdministrador = {
     administradorId: number;
     nombreUsuario: string;
-    email: string;
     contraseña: string | null;
 };
 
 export type ResultadoValidacionModificacionAdministrador =
     | { esValido: true; datos: DatosModificacionAdministrador }
     | { esValido: false; errores: string[] };
-
-const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const texto = (valor: unknown) => (typeof valor === "string" ? valor.trim() : "");
 
@@ -23,7 +20,6 @@ export function validarModificacionAdministrador(valor: unknown): ResultadoValid
 
     const administradorId = datos.administradorId;
     const nombreUsuario = texto(datos.nombreUsuario);
-    const email = texto(datos.email);
     const contraseña = typeof datos.contraseña === "string" ? datos.contraseña : "";
     const confirmacion = typeof datos.confirmacionContraseña === "string" ? datos.confirmacionContraseña : "";
 
@@ -35,12 +31,6 @@ export function validarModificacionAdministrador(valor: unknown): ResultadoValid
         errores.push("El nombre es obligatorio.");
     } else if (nombreUsuario.length < 3) {
         errores.push("El nombre de usuario debe tener al menos 3 caracteres.");
-    }
-
-    if (!email) {
-        errores.push("El correo electrónico es obligatorio.");
-    } else if (!FORMATO_CORREO.test(email)) {
-        errores.push("El correo electrónico no es válido.");
     }
 
     if (contraseña || confirmacion) {
@@ -57,7 +47,6 @@ export function validarModificacionAdministrador(valor: unknown): ResultadoValid
         datos: {
             administradorId: administradorId as number,
             nombreUsuario,
-            email,
             contraseña: contraseña || null,
         },
     };

@@ -9,6 +9,7 @@ import { limpiarImagenPublicacionNoReferenciada } from "../operadores/limpiar-im
 import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
 import { validarUbicacionesProductor, type UbicacionPublicacionProductor } from "./ubicaciones-productor";
 import { validarFechaVigencia, convertirFechaVigenciaAInstant } from "../vigencia-publicacion";
+import { obtenerFechaMaximaVigenciaProductor } from "../configuracion-vigencia-publicaciones";
 import { validarComentario } from "../validarComentario";
 
 type Cliente = Pick<typeof db, "orm">;
@@ -55,9 +56,11 @@ function validarCambios(entrada: unknown): CambiosPublicacionProductor {
     if (datos.foto !== undefined && datos.foto !== null && typeof datos.foto !== "string") datosInvalidos("La fotografía no es válida.");
     const ubicaciones = validarUbicacionesProductor(datos.ubicaciones);
     if (!ubicaciones.esValido) datosInvalidos(ubicaciones.error);
-    const vigencia = validarFechaVigencia(datos.fechaVigencia);
-    if (!vigencia.esValido) {
-        datosInvalidos(vigencia.error);
+    let fechaVigencia: string | null | undefined;
+    if (datos.fechaVigencia !== undefined) {
+        const vigencia = validarFechaVigencia(datos.fechaVigencia);
+        if (!vigencia.esValido) datosInvalidos(vigencia.error);
+        fechaVigencia = vigencia.fechaVigencia;
     }
     let comentario: string | null | undefined;
     if (datos.comentario !== undefined) {
@@ -65,7 +68,7 @@ function validarCambios(entrada: unknown): CambiosPublicacionProductor {
         if (!resultadoComentario.esValido) datosInvalidos(resultadoComentario.error);
         comentario = resultadoComentario.comentario;
     }
-    return { ...seleccion.seleccion, fechaVigencia: vigencia.fechaVigencia, paisId: datos.paisId === undefined ? undefined : seleccion.seleccion.paisId, precio: normalizarPrecioPublicacion(datos.precio as string | null | undefined), foto: datos.foto as string | null | undefined,
+    return { ...seleccion.seleccion, fechaVigencia, paisId: datos.paisId === undefined ? undefined : seleccion.seleccion.paisId, precio: normalizarPrecioPublicacion(datos.precio as string | null | undefined), foto: datos.foto as string | null | undefined,
         cantidadUnidades: datos.cantidadUnidades as number | null | undefined, comentario,
         disponible: datos.disponible as boolean | undefined, ubicaciones: ubicaciones.ubicaciones };
 }
@@ -101,25 +104,11 @@ export async function obtenerPublicacionProductorEditable(sesion: DatosSesion, p
 export async function modificarPublicacionProductor(sesion: DatosSesion, publicacionProductorId: number, entrada: unknown, fotoNueva?: File | null) {
     if (!Number.isSafeInteger(publicacionProductorId) || publicacionProductorId <= 0 || publicacionProductorId > 2147483647) datosInvalidos("La publicación no es válida.");
     const cambios = validarCambios(entrada);
-    const [configHabilitada, configDias] = await Promise.all([
-    db.orm.public.Configuracion
-        .where({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada" })
-        .select("valorConfiguracion")
-        .first(),
-
-    db.orm.public.Configuracion
-        .where({ nombreConfiguracion: "vigencia_publicaciones_productor" })
-        .select("valorConfiguracion")
-        .first(),
-    ]);
-
-    if (!configHabilitada || !configDias) {
-        throw new Error("No se pudo consultar la configuración de vigencia de publicaciones.");
-    }
     let imagenCreada: { url: string; publicacionId: number } | null = null;
     let resultado;
     try {
         resultado = await db.transaction(async (tx) => {
+            const fechaMaxima = await obtenerFechaMaximaVigenciaProductor(tx);
             const objetivo = await tx.orm.public.PublicacionProductor.where({ id: publicacionProductorId }).select("productorId").first();
             if (!objetivo) throw new ErrorEdicionPublicacionProductor("NO_ENCONTRADA", "La publicación no existe.");
             await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1720, ${objetivo.productorId})`
@@ -128,25 +117,9 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
                 .returnsRow({ id: "pg/int4@1" }).build());
             const relacion = await obtenerPublicacionProductorEditable(sesion, publicacionProductorId, tx);
             const publicacion = relacion.publicacion;
-            let fechaVigencia = cambios.fechaVigencia;
-
-            if (configHabilitada.valorConfiguracion === "true") {
-                const dias = Number(configDias.valorConfiguracion);
-
-                if (!Number.isSafeInteger(dias) || dias <= 0) {
-                    throw new Error("La configuración de vigencia de publicaciones no es válida.");
-                }
-
-                const fechaMaxima = Temporal.Now
-                    .plainDateISO("America/Montevideo")
-                    .add({ days: dias })
-                    .toString();
-
-                if (fechaVigencia === null) {
-                    fechaVigencia = fechaMaxima;
-                } else if (fechaVigencia !== undefined && fechaVigencia > fechaMaxima) {
-                    datosInvalidos(`La fecha de vigencia no puede superar el ${fechaMaxima}.`);
-                }
+            const fechaVigencia = cambios.fechaVigencia === null ? fechaMaxima : cambios.fechaVigencia;
+            if (fechaMaxima !== null && fechaVigencia !== undefined && fechaVigencia !== null && fechaVigencia > fechaMaxima) {
+                datosInvalidos(`La fecha de vigencia no puede superar el ${fechaMaxima}.`);
             }
             const seleccionActual = { ...cambios, paisId: cambios.paisId === undefined ? relacion.paisId : cambios.paisId };
             if (!await validarCatalogosSeleccion(tx, seleccionActual)) {

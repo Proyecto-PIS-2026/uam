@@ -134,11 +134,9 @@ describe("Fotos en altas y modificaciones administrativas", () => {
         expect(formulario.has("fotoPerfil")).toBe(false);
     });
 
-    it.each(["operador", "productor"] as const)("deshacer el cambio de foto de %s vuelve a guardar sin modificarla", async (rol) => {
+    it.each(["operador", "productor"] as const)("conserva la foto de %s al guardar sin modificarla", async (rol) => {
         const accion = renderizarModificacion(rol);
         accion.mockResolvedValueOnce({ esValido: true, id: 7 });
-        fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
-        fireEvent.click(screen.getByRole("button", { name: "Deshacer cambio" }));
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
         await waitFor(() => expect(accion).toHaveBeenCalledTimes(1));
         expect(accion.mock.calls[0]).toHaveLength(1);

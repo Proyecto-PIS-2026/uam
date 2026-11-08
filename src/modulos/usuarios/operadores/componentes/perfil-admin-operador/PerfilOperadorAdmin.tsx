@@ -23,6 +23,7 @@ import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import EditIcon from "@mui/icons-material/Edit";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 
 type PerfilOperadorAdminProps = {
     operador: PerfilAdminOperador;
@@ -80,12 +81,60 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                         <p className={styles.tipoPerfil}>Perfil Operador</p>
                         <h1 id="nombre-operador" className={styles.nombre}>{operador.nombreFantasia}</h1>
                     </div>
-                    <div className={styles.accionesEncabezado}>
-                        <p className={styles.contacto}>
-                            <PhoneOutlinedIcon aria-hidden="true" />
-                            <span className={styles.etiqueta}>Teléfono:</span>
-                            <span>{operador.whatsApp || "Sin número de contacto"}</span>
-                        </p>
+                </header>
+
+                <div className={styles.tarjetaInformacion}>
+                    <div className={styles.contacto}>
+                        <span className={styles.iconoContacto} aria-hidden="true"><PhoneOutlinedIcon /></span>
+                        <div className={styles.datosContacto}>
+                            <span className={styles.etiquetaContacto}>Teléfono:</span>
+                            <span className={styles.valorContacto}>{operador.whatsApp || "Sin número de contacto"}</span>
+                        </div>
+                    </div>
+                    <div className={styles.seccionesPerfil}>
+                        <section className={styles.seccionPerfil} aria-labelledby="locales-operador-admin">
+                            <h2 id="locales-operador-admin" className={styles.subtitulo}>
+                                <StorefrontOutlinedIcon aria-hidden="true" />Locales
+                            </h2>
+                            {operador.locales.length === 0 ? (
+                                <EstadoVacio titulo="Sin locales registrados" descripcion="El operador no tiene locales registrados." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
+                            ) : (
+                                <ul className={styles.lista}>
+                                    {operador.locales.map((local) => (
+                                        <li key={`${local.nombreNave}-${local.numeroLocal}`} className={styles.local}>
+                                            <div className={styles.identidadLocal}>
+                                                <span className={styles.nombreNave}>Nave {local.nombreNave}</span>
+                                                <span className={styles.numeroLocal}>Local {local.numeroLocal}</span>
+                                            </div>
+                                            <p className={styles.finContrato}>
+                                                <EventOutlinedIcon fontSize="small" aria-hidden="true" />
+                                                <span>{local.finContrato
+                                                    ? `Vence: ${formatearFecha(local.finContrato)}`
+                                                    : "Sin fecha de fin"}</span>
+                                            </p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </section>
+                        <section className={styles.seccionPerfil} aria-labelledby="licencia-operador-admin">
+                            <h2 id="licencia-operador-admin" className={styles.subtitulo}>
+                                <DescriptionOutlined aria-hidden="true" />Licencia
+                            </h2>
+                            {operador.enLicencia ? (
+                                <div className={styles.comentario}>
+                                    <p className={styles.fechasLicencia}>
+                                        <EventOutlinedIcon fontSize="small" aria-hidden="true" />
+                                        <span>Fecha: {fechasLicencia}</span>
+                                    </p>
+                                    {licencia.comentario && <p>{licencia.comentario}</p>}
+                                </div>
+                            ) : (
+                                <p className={styles.licenciaInactiva}>No hay licencia registrada.</p>
+                            )}
+                        </section>
+                    </div>
+                    <div className={styles.accionesPerfil}>
                         <Link
                             href={`/gestion-operadores/${operador.id}/editar`}
                             className={styles.botonEditar}
@@ -96,43 +145,8 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                             <span>Editar</span>
                         </Link>
                     </div>
-                </header>
-
-                <div className={styles.tarjetaInformacion}>
-                    <h2 className={styles.subtitulo}><StorefrontOutlinedIcon aria-hidden="true" />Locales</h2>
-                    {operador.locales.length === 0 ? (
-                        <EstadoVacio titulo="Sin locales registrados" descripcion="El operador no tiene locales registrados." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
-                    ) : (
-                        <ul className={styles.lista}>
-                            {operador.locales.map((local) => (
-                                <li key={`${local.nombreNave}-${local.numeroLocal}`} className={styles.local}>
-                                    <span>
-                                        <span className={styles.nombreNave}>Nave {local.nombreNave}</span>
-                                        {" · "}Local {local.numeroLocal}                                    
-                                    </span>
-                                    
-                                    <span className={styles.finContrato}>
-                                        {local.finContrato
-                                            ? `Vence: ${formatearFecha(local.finContrato)}`
-                                            : "Sin fecha de fin"
-                                        }
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    <h2 className={styles.subtitulo}><DescriptionOutlined aria-hidden="true" />Licencia</h2>
-                    {operador.enLicencia ? (
-                        <div className={styles.comentario}>
-                            <p className={styles.fechasLicencia}>Fecha: {fechasLicencia}</p>
-                            {licencia.comentario && <p>{licencia.comentario}</p>}
-                        </div>
-                    ) : (
-                        <p className={styles.licenciaInactiva}>No hay licencia registrada.</p>
-                    )}
                 </div>
             </div>
-
 
             <div className={styles.filaPublicaciones}>
                 <h2 className={styles.subtituloPublicaciones}>Publicaciones ({operador.publicaciones.length})</h2>

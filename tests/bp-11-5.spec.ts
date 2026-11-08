@@ -46,7 +46,7 @@ async function completarLicencia(page: Page, inicio: string, fin: string, mensaj
   await expect(page.getByRole("switch", { name: "En licencia", exact: true })).toBeChecked();
   await page.getByLabel("Inicio de licencia", { exact: true }).fill(inicio);
   await page.getByLabel("Fin de licencia", { exact: true }).fill(fin);
-  await page.getByLabel("Mensaje de recomendación (opcional)", { exact: true }).fill(mensaje);
+  await page.getByLabel("Mensaje de recomendación", { exact: true }).fill(mensaje);
 }
 
 test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
@@ -67,7 +67,7 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
     await expect(page.getByRole("alertdialog", { name: "Aviso de licencia", exact: true })).toHaveCount(0);
     await expect(page.getByLabel("Inicio de licencia", { exact: true })).toHaveValue(inicio);
     await expect(page.getByLabel("Fin de licencia", { exact: true })).toHaveValue(fin);
-    await expect(page.getByLabel("Mensaje de recomendación (opcional)")).toHaveValue("Compren en el puesto de al lado.");
+    await expect(page.getByLabel("Mensaje de recomendación")).toHaveValue("Compren en el puesto de al lado.");
   });
 
   for (const caso of [
@@ -82,24 +82,28 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
       await page.getByLabel(/^Teléfono(?:\s*\*)?$/).fill(caso.nuevo);
       await guardar(page);
       await page.reload();
-      await expect(page.getByText(`Teléfono: +598${caso.guardado}`, { exact: true })).toBeVisible();
+      await expect(page.getByText("Teléfono:", { exact: true })).toBeVisible();
+      await expect(page.getByText(`+598${caso.guardado}`, { exact: true })).toBeVisible();
       await editar(page);
       await expect(page.getByLabel(/^Teléfono(?:\s*\*)?$/)).toHaveValue(caso.guardado);
     });
   }
 
-  test("CP-04 CA-2, CA-11: rechazar contacto vacío y conservar el registrado", async ({ page, operador, precargaOperadores: { db } }) => {
+  test("CP-04 CA-2, CA-4, CA-12: el contacto es obligatorio, borrarlo se rechaza y conserva el registrado", async ({ page, operador, precargaOperadores: { db } }) => {
     await db.orm.public.Operador.where({ id: operador.id }).update({ whatsApp: "+59899999999" });
     await page.reload();
     await editar(page);
     const contacto = page.getByLabel(/^Teléfono(?:\s*\*)?$/);
+    await expect(contacto).toHaveValue("99999999");
     await expect(contacto).toHaveAttribute("required", "");
-    await contacto.fill("");
+    await contacto.clear();
     await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
     await expect(page.getByRole("main").getByRole("alert")).toContainText("El número de contacto no es válido.");
+    await expect(page.getByRole("status").filter({ hasText: "Perfil actualizado correctamente." })).toHaveCount(0);
     expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.whatsApp).toBe("+59899999999");
+    await page.goto("/mi-perfil");
     await page.reload();
-    await expect(page.getByText("Teléfono: +59899999999", { exact: true })).toBeVisible();
+    await expect(page.getByText("+59899999999", { exact: true })).toBeVisible();
     await editar(page);
     await expect(page.getByLabel(/^Teléfono(?:\s*\*)?$/)).toHaveValue("99999999");
   });
@@ -112,9 +116,12 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
       await page.getByLabel(/^Teléfono(?:\s*\*)?$/).fill(numero);
       await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
       await expect(page.getByRole("main").getByRole("alert")).toContainText("El número de contacto no es válido.");
+      await expect(page.getByRole("status").filter({ hasText: "Perfil actualizado correctamente." })).toHaveCount(0);
+      expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.whatsApp).toBe("+59899999999");
       await page.goto("/mi-perfil");
       await page.reload();
-      await expect(page.getByText("Teléfono: +59899999999", { exact: true })).toBeVisible();
+      await expect(page.getByText("Teléfono:", { exact: true })).toBeVisible();
+      await expect(page.getByText("+59899999999", { exact: true })).toBeVisible();
       await editar(page);
       await expect(page.getByLabel(/^Teléfono(?:\s*\*)?$/)).toHaveValue("99999999");
     });
@@ -190,11 +197,14 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
   test("CP-09 CA-8: activar la licencia requiere aceptar el aviso de solicitud formal", async ({ page, operador, precargaOperadores: { db } }) => {
     await expect(page.getByRole("heading", { name: operador.nombre, exact: true })).toBeVisible();
     await editar(page);
+    const textoAviso = "La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.";
+    // El aviso se ve en la propia edición, junto al control de licencia.
+    await expect(page.getByRole("main").getByText(textoAviso, { exact: true })).toBeVisible();
     const licencia = page.getByRole("switch", { name: "En licencia", exact: true });
     await licencia.click();
     const aviso = page.getByRole("alertdialog", { name: "Aviso de licencia", exact: true });
     await expect(aviso).toBeVisible();
-    await expect(aviso.getByText("La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.", { exact: true })).toBeVisible();
+    await expect(aviso).toHaveAccessibleDescription(textoAviso);
 
     await aviso.getByRole("button", { name: "Cancelar", exact: true }).click();
     await expect(aviso).not.toBeVisible();
@@ -250,7 +260,7 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
       await expect(page.getByRole("switch", { name: "En licencia", exact: true })).toBeChecked();
       await expect(page.getByLabel("Inicio de licencia", { exact: true })).toHaveValue(inicio);
       await expect(page.getByLabel("Fin de licencia", { exact: true })).toHaveValue(fin);
-      await expect(page.getByLabel("Mensaje de recomendación (opcional)")).toHaveValue(mensaje);
+      await expect(page.getByLabel("Mensaje de recomendación")).toHaveValue(mensaje);
     });
   }
 
@@ -275,7 +285,8 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
     await page.context().clearCookies();
     await page.goto(`/publicaciones?especie=${encodeURIComponent(especie!.nombreEspecie)}`);
     await page.getByRole("searchbox", { name: "Buscar publicaciones" }).fill(operador.nombre);
-    await expect.soft(page.getByRole("button", { name: /^Ver detalles de/ }).filter({ hasText: operador.nombre }), "Las publicaciones del operador de licencia deben desaparecer del listado público").toHaveCount(0);
+    await expect(page.getByText(operador.nombre, { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Ver detalles de/ }).filter({ hasText: operador.nombre })).toHaveCount(0);
     await page.goto(ruta);
     await expect(page.getByRole("heading", { name: operador.nombre, exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Ver detalles de/ })).toHaveCount(0);

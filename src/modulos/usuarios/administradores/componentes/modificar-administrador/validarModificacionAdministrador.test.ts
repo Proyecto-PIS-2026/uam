@@ -5,7 +5,6 @@ import { validarModificacionAdministrador } from "./validarModificacionAdministr
 const datosValidos = {
     administradorId: 102,
     nombreUsuario: "beto.admin",
-    email: "beto@ejemplo.com",
     contraseña: "",
     confirmacionContraseña: "",
 };
@@ -21,9 +20,9 @@ function erroresDe(cambios: Record<string, unknown> = {}): string[] {
 
 describe("validarModificacionAdministrador", () => {
     it("acepta datos correctos, quita los espacios sobrantes y no cambia la contraseña", () => {
-        expect(validar({ nombreUsuario: "  beto.admin  ", email: "  beto@ejemplo.com " })).toEqual({
+        expect(validar({ nombreUsuario: "  beto.admin  " })).toEqual({
             esValido: true,
-            datos: { administradorId: 102, nombreUsuario: "beto.admin", email: "beto@ejemplo.com", contraseña: null },
+            datos: { administradorId: 102, nombreUsuario: "beto.admin", contraseña: null },
         });
     });
 
@@ -46,12 +45,11 @@ describe("validarModificacionAdministrador", () => {
         expect(erroresDe({ nombreUsuario: "ab" })).toEqual(["El nombre de usuario debe tener al menos 3 caracteres."]);
     });
 
-    it.each(["", "   "])("rechaza el correo vacío %j", (email) => {
-        expect(erroresDe({ email })).toEqual(["El correo electrónico es obligatorio."]);
-    });
-
-    it.each(["beto", "beto@", "@ejemplo.com", "beto@ejemplo", "beto @ejemplo.com"])("rechaza el correo inválido %j", (email) => {
-        expect(erroresDe({ email })).toEqual(["El correo electrónico no es válido."]);
+    it.each([undefined, null, "", "correo-invalido", "otro@ejemplo.com", 123])("descarta el correo no editable %j", (email) => {
+        expect(validar({ email, correo: email })).toEqual({
+            esValido: true,
+            datos: { administradorId: 102, nombreUsuario: "beto.admin", contraseña: null },
+        });
     });
 
     describe("contraseña", () => {
@@ -82,9 +80,8 @@ describe("validarModificacionAdministrador", () => {
     });
 
     it("devuelve todos los errores encontrados, en orden", () => {
-        expect(erroresDe({ nombreUsuario: "", email: "beto", contraseña: "corta" })).toEqual([
+        expect(erroresDe({ nombreUsuario: "", contraseña: "corta" })).toEqual([
             "El nombre es obligatorio.",
-            "El correo electrónico no es válido.",
             "La contraseña debe tener al menos 8 caracteres.",
             "Las contraseñas no coinciden.",
         ]);

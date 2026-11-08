@@ -63,16 +63,22 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                         <p className={styles.tipoPerfil}>Perfil Productor</p>
                         <h1 id="nombre-productor" className={styles.nombre}>{productor.nombreFantasia}</h1>
                     </div>
-                    <p className={`${styles.dato} ${styles.departamentos}`}>
-                        <LocationOnOutlinedIcon fontSize="small" aria-hidden="true" />
-                        <span><span className={styles.etiqueta}>Departamentos:</span> {departamentos.join(" · ") || "-"}</span>
-                    </p>
-                    <div className={styles.accionesEncabezado}>
-                        <p className={styles.contacto}>
-                            <PhoneOutlinedIcon aria-hidden="true" />
-                            <span className={styles.etiqueta}>Teléfono:</span>
-                            <span>{productor.whatsApp || "Sin número de contacto"}</span>
-                        </p>
+                </header>
+                <div className={styles.tarjetaInformacion}>
+                    <div className={styles.contacto}>
+                        <span className={styles.iconoContacto} aria-hidden="true"><PhoneOutlinedIcon /></span>
+                        <div className={styles.datosContacto}>
+                            <span className={styles.etiquetaContacto}>Teléfono:</span>
+                            <span className={styles.valorContacto}>{productor.whatsApp || "Sin número de contacto"}</span>
+                        </div>
+                    </div>
+                    <section className={styles.seccionPerfil} aria-labelledby="departamentos-productor-admin">
+                        <h2 id="departamentos-productor-admin" className={styles.subtitulo}>
+                            <LocationOnOutlinedIcon aria-hidden="true" />Departamentos
+                        </h2>
+                        <p className={styles.departamentos}>{departamentos.join(" · ") || "-"}</p>
+                    </section>
+                    <div className={styles.accionesPerfil}>
                         <Link
                             href={`/gestion-productores/${productor.id}/editar`}
                             className={styles.botonEditar}
@@ -83,9 +89,8 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                             <span>Editar</span>
                         </Link>
                     </div>
-                </header>
+                </div>
             </div>
-
 
             <div className={styles.filaPublicaciones}>
                 <h2 className={styles.subtituloPublicaciones}>Publicaciones ({productor.publicaciones.length})</h2>

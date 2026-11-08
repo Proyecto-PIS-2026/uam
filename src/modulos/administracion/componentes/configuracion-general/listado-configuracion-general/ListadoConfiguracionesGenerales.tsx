@@ -175,9 +175,9 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
             <TarjetaVigencia
                 titulo="Vigencia de publicaciones de productores"
-                descripcion="Configurá la vigencia de las publicaciones de productores y sus avisos de próximo vencimiento."
+                descripcion="Configurá el plazo predeterminado y máximo de las publicaciones de productores y sus avisos de próximo vencimiento."
                 etiquetaVencimiento="Vencimiento de publicaciones"
-                ayudaVencimiento="Aplicar un período de vigencia a las publicaciones de productores."
+                ayudaVencimiento="Al guardar, las publicaciones sin fecha reciben el plazo y las fechas posteriores se acortan. Las fechas anteriores se conservan. Desactivar mantiene las fechas existentes."
                 ayudaAvisos="Notificar a los productores."
                 configuracion={configuracionVigenciaPublicaciones}
                 onGuardar={guardarVigenciaPublicaciones}

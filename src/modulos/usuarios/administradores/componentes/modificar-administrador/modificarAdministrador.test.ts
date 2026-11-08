@@ -40,13 +40,11 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 
 type EstadoBase = {
     administrador: { id: number; usuarioId: number } | null;
-    administradorConEseCorreo: { id: number } | null;
     usuarioConEseNombre: { id: number } | null;
 };
 
 const estadoPorDefecto: EstadoBase = {
     administrador: { id: 102, usuarioId: 2 },
-    administradorConEseCorreo: null,
     usuarioConEseNombre: null,
 };
 
@@ -55,15 +53,13 @@ function prepararBase(cambios: Partial<EstadoBase> = {}) {
 
     mockDb.administrador.first
         .mockReset()
-        .mockResolvedValueOnce(estado.administrador)
-        .mockResolvedValueOnce(estado.administradorConEseCorreo);
+        .mockResolvedValue(estado.administrador);
     mockDb.usuario.first.mockReset().mockResolvedValue(estado.usuarioConEseNombre);
 }
 
 const datosValidos = {
     administradorId: 102,
     nombreUsuario: "beto.admin",
-    email: "beto@ejemplo.com",
     contraseña: "",
     confirmacionContraseña: "",
 };
@@ -88,9 +84,9 @@ describe("modificarAdministrador", () => {
     });
 
     it("devuelve los errores de validación sin tocar la base", async () => {
-        expect(await modificarAdministrador({ ...datosValidos, email: "" })).toEqual({
+        expect(await modificarAdministrador({ ...datosValidos, nombreUsuario: "" })).toEqual({
             esValido: false,
-            errores: ["El correo electrónico es obligatorio."],
+            errores: ["El nombre es obligatorio."],
         });
         expect(mockDb.transaction).not.toHaveBeenCalled();
     });
@@ -112,14 +108,15 @@ describe("modificarAdministrador", () => {
         expect(mockDb.administrador.update).not.toHaveBeenCalled();
     });
 
-    it("rechaza un correo que ya usa otro administrador", async () => {
-        prepararBase({ administradorConEseCorreo: { id: 103 } });
-
-        expect(await modificarAdministrador(datosValidos)).toEqual({
-            esValido: false,
-            errores: ["Ya existe un administrador con ese correo electrónico."],
+    it.each(["otro@uam.com", "", "correo-invalido", null])("no modifica el correo de otro administrador aunque se inyecte %j", async (email) => {
+        expect(await modificarAdministrador({ ...datosValidos, email, correo: email })).toEqual({
+            esValido: true,
+            id: 102,
+            mensaje: "Administrador modificado correctamente.",
         });
+        expect(mockDb.administrador.where).toHaveBeenCalledExactlyOnceWith({ id: 102 });
         expect(mockDb.administrador.update).not.toHaveBeenCalled();
+        expect(mockDb.usuario.update).toHaveBeenCalledExactlyOnceWith({ username: "beto.admin" });
     });
 
     it("rechaza un nombre que ya usa otro usuario", async () => {
@@ -132,8 +129,8 @@ describe("modificarAdministrador", () => {
         expect(mockDb.usuario.update).not.toHaveBeenCalled();
     });
 
-    it("permite guardar sin cambiar el correo ni el nombre", async () => {
-        prepararBase({ administradorConEseCorreo: { id: 102 }, usuarioConEseNombre: { id: 2 } });
+    it("permite guardar sin cambiar el nombre", async () => {
+        prepararBase({ usuarioConEseNombre: { id: 2 } });
 
         expect(await modificarAdministrador(datosValidos)).toEqual({
             esValido: true,
@@ -142,28 +139,31 @@ describe("modificarAdministrador", () => {
         });
     });
 
-    it("guarda el correo y el nombre sin tocar la contraseña ni el segundo factor", async () => {
+    it("guarda el nombre sin tocar el correo, la contraseña ni el segundo factor", async () => {
         expect(await modificarAdministrador(datosValidos)).toEqual({
             esValido: true,
             id: 102,
             mensaje: "Administrador modificado correctamente.",
         });
 
-        expect(mockDb.administrador.update).toHaveBeenCalledWith({ email: "beto@ejemplo.com" });
+        expect(mockDb.administrador.update).not.toHaveBeenCalled();
         expect(mockDb.usuario.where).toHaveBeenLastCalledWith({ id: 2 });
         expect(mockDb.usuario.update).toHaveBeenCalledWith({ username: "beto.admin" });
         expect(mockArgon2.hash).not.toHaveBeenCalled();
     });
 
-    it("restablece la contraseña, limpia la solicitud pendiente y conserva el segundo factor", async () => {
+    it("restablece la contraseña y limpia la solicitud pendiente sin modificar el correo ni el segundo factor", async () => {
         await modificarAdministrador({
             ...datosValidos,
+            email: "otro@uam.com",
+            correo: "otro@uam.com",
             contraseña: "contraseña123",
             confirmacionContraseña: "contraseña123",
         });
 
         expect(mockArgon2.hash).toHaveBeenCalledWith("contraseña123", { type: 2 });
         expect(mockDb.usuario.update).toHaveBeenCalledWith({ username: "beto.admin", passwordHash: "hash-falso", solicitoRestablecimiento: false });
+        expect(mockDb.administrador.update).not.toHaveBeenCalled();
     });
 
     it("refresca el panel y el perfil después de guardar", async () => {
@@ -174,7 +174,7 @@ describe("modificarAdministrador", () => {
     });
 
     it("no refresca ninguna página si no se guardó nada", async () => {
-        prepararBase({ administradorConEseCorreo: { id: 103 } });
+        prepararBase({ usuarioConEseNombre: { id: 30 } });
 
         await modificarAdministrador(datosValidos);
 

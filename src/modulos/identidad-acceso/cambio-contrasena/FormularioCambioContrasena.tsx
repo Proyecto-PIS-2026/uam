@@ -61,7 +61,7 @@ export default function FormularioCambioContrasena({ volver }: { volver: string 
         {errores.length > 0 && <Alert severity="error">{errores.join(" ")}</Alert>}
         {mensaje && <Alert severity="success" role="status">{mensaje}</Alert>}
         <section className={styles.seccion}>
-            {campo("actual", "Contraseña", "current-password", actual, setActual)}
+            {campo("actual", "Contraseña actual", "current-password", actual, setActual)}
             {campo("nueva", "Nueva contraseña", "new-password", nueva, setNueva, "Al menos 8 caracteres.")}
             {campo("confirmacion", "Confirmar nueva contraseña", "new-password", confirmacion, setConfirmacion)}
         </section>
