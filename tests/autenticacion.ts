@@ -12,9 +12,9 @@ async function enviarCredenciales(page: Page, usuario: string, contrasena: strin
   await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 }
 
-export async function iniciarSesionAdministrador(page: Page, credenciales: Credenciales) {
+export async function iniciarSesionAdministrador(page: Page, credenciales: Credenciales, timeout = 30_000) {
   await enviarCredenciales(page, credenciales.usuario, credenciales.contrasena);
-  await expect(page).toHaveURL(/\/iniciar-sesion\/segundo-factor$/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/iniciar-sesion\/segundo-factor$/, { timeout });
   const claveManual = page.getByTestId("clave-segundo-factor");
   const anterior = secretosVinculados.get(credenciales.usuario);
   const secreto = await claveManual.count() ? await claveManual.textContent() : credenciales.secretoSegundoFactor ?? anterior?.secreto ?? process.env.E2E_ADMINISTRADOR_TOTP_SECRET;
@@ -27,7 +27,7 @@ export async function iniciarSesionAdministrador(page: Page, credenciales: Crede
   const codigo = new TOTP({ secret: Secret.fromBase32(secreto), digits: 6, period: 30, algorithm: "SHA1" }).generate();
   await page.getByLabel("Código de verificación").fill(codigo);
   await page.getByRole("button", { name: /^(Confirmar|Verificar) e ingresar$/ }).click();
-  await expect(page).toHaveURL(/\/inicio$/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/inicio$/, { timeout });
   secretosVinculados.set(credenciales.usuario, { secreto, ultimoPaso });
 
   const enlace = page.getByRole("link", { name: "Administración", exact: true });
