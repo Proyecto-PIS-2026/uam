@@ -1,6 +1,8 @@
-import { expect, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { iniciarSesionAdministrador } from "../autenticacion";
-import { test, abrirSeccion, ingresar } from "./fixtures";
+import { test, expect, abrirSeccion, ingresar } from "./fixtures";
+
+test.setTimeout(120_000);
 
 async function buscarUsuario(page: Page, username: string) {
     await page.getByRole("searchbox", { name: "Buscar usuarios", exact: true }).fill(username);

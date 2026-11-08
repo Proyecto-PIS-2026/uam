@@ -88,8 +88,6 @@ export default defineConfig({
       dependencies: ['chromium'],
       fullyParallel: false,
       workers: 1,
-      timeout: 120_000,
-      expect: { timeout: 15_000 },
       use: { ...devices['Desktop Chrome'] },
     },
 

@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { expect, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { iniciarSesionAdministrador } from "../autenticacion";
-import { test, abrirSeccion, imagenPrueba, comprobarImagen } from "./fixtures";
+import { test, expect, abrirSeccion, imagenPrueba, comprobarImagen } from "./fixtures";
+
+test.setTimeout(120_000);
 
 const tarjeta = (page: Page) => page.getByText("Fotos de especies", { exact: true }).locator("..");
 const guardar = (page: Page) => tarjeta(page).getByRole("button", { name: "Guardar cambios", exact: true });

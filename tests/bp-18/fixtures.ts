@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
-import { expect, type Locator, type Page } from "@playwright/test";
+import { expect as baseExpect, type Locator, type Page } from "@playwright/test";
 import { test as base } from "../precarga-operadores";
 import type { Credenciales } from "../autenticacion";
+
+export const expect = baseExpect.configure({ timeout: 15_000 });
 
 type Especie = { id: number; nombre: string };
 type Catalogo = {

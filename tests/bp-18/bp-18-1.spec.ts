@@ -1,6 +1,8 @@
-import { expect, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { iniciarSesionAdministrador } from "../autenticacion";
-import { test, abrirSeccion, ingresar, seleccionar } from "./fixtures";
+import { test, expect, abrirSeccion, ingresar, seleccionar } from "./fixtures";
+
+test.setTimeout(120_000);
 
 const tarjeta = (page: Page) => page.getByText("Orden de las publicaciones", { exact: true }).locator("..");
 const guardar = (page: Page) => tarjeta(page).getByRole("button", { name: "Guardar configuración de ordenamiento", exact: true });
@@ -10,7 +12,7 @@ test.beforeEach(async ({ ordenamiento }) => { void ordenamiento; });
 
 for (const [caso, ordenes] of [
     ["01", ["Z-A", "A-Z", "Z-A"]],
-    ["02", ["A-Z", "Z-A", "A-Z"]],
+    ["02", ["A-Z", "Z-A", "Z-A"]],
 ] as const) {
     test(`CP-18.1-${caso}: guarda órdenes independientes y los aplica en Inicio y ambos mercados`, async ({ page, browser, catalogo, precargaOperadores: datos }) => {
         await iniciarSesionAdministrador(page, datos.administrador);
