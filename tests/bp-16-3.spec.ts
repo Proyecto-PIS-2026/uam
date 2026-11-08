@@ -1,7 +1,5 @@
-import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
-
 import { expect, type Page } from "@playwright/test";
-import { test } from "./usuarios-administrativos";
+import { test } from "./restablecimiento-contrasena-fixtures";
 import { iniciarSesionAdministrador } from "./autenticacion";
 
 test.use({
@@ -11,32 +9,30 @@ test.use({
 });
 
 async function solicitarRestablecimiento(page: Page, username: string) {
-  return conRestablecimientoHabilitado(async () => {
-    await page.goto("/iniciar-sesion");
+  await page.goto("/iniciar-sesion");
 
-    await page.getByRole("button", {
-      name: "Solicitar recuperación de contraseña",
-    }).click();
+  await page.getByRole("button", {
+    name: "Solicitar recuperación de contraseña",
+  }).click();
 
-    const dialogo = page.getByRole("dialog", {
-      name: "Solicitar recuperación de contraseña",
-    });
-
-    await dialogo.getByRole("textbox", {
-      name: "Nombre de usuario",
-    }).fill(username);
-
-    await dialogo.getByRole("button", {
-      name: "Aceptar",
-      exact: true,
-    }).click();
-
-    await expect(
-      page.getByRole("status").filter({
-        hasText: "La solicitud de recuperación fue realizada correctamente.",
-      }),
-    ).toBeVisible();
+  const dialogo = page.getByRole("dialog", {
+    name: "Solicitar recuperación de contraseña",
   });
+
+  await dialogo.getByRole("textbox", {
+    name: "Nombre de usuario",
+  }).fill(username);
+
+  await dialogo.getByRole("button", {
+    name: "Aceptar",
+    exact: true,
+  }).click();
+
+  await expect(
+    page.getByRole("status").filter({
+      hasText: "La solicitud de recuperación fue realizada correctamente.",
+    }),
+  ).toBeVisible();
 }
 
 async function seleccionarFiltro(
@@ -79,12 +75,14 @@ function filaUsuario(page: Page, username: string) {
 
 test("BP-16.3: visualizar y filtrar solicitudes de restablecimiento", async ({
   page,
-  usuariosAdministrativos,
+  crearCuenta,
 }, testInfo) => {
   test.slow();
 
-  const productor = usuariosAdministrativos.productor.usuario;
-  const administrador = usuariosAdministrativos.administrador.usuario.split("@")[0];
+  const cuentaProductor = await crearCuenta("PRODUCTOR");
+  const cuentaAdministrador = await crearCuenta("ADMINISTRADOR");
+  const productor = cuentaProductor.username;
+  const administrador = cuentaAdministrador.username;
 
   await test.step("CP-01: generar una solicitud real", async () => {
     await solicitarRestablecimiento(page, productor);
@@ -92,7 +90,7 @@ test("BP-16.3: visualizar y filtrar solicitudes de restablecimiento", async ({
 
   await iniciarSesionAdministrador(
     page,
-    usuariosAdministrativos.administrador,
+    cuentaAdministrador,
   );
 
   await abrirGestionUsuarios(page);
@@ -166,18 +164,20 @@ test("BP-16.3: visualizar y filtrar solicitudes de restablecimiento", async ({
 
 test("BP-16.3: filtro de restablecimiento en pantalla móvil", async ({
   page,
-  usuariosAdministrativos,
+  crearCuenta,
 }, testInfo) => {
   test.slow();
 
-  const productor = usuariosAdministrativos.productor.usuario;
-  const administrador = usuariosAdministrativos.administrador.usuario.split("@")[0];
+  const cuentaProductor = await crearCuenta("PRODUCTOR");
+  const cuentaAdministrador = await crearCuenta("ADMINISTRADOR");
+  const productor = cuentaProductor.username;
+  const administrador = cuentaAdministrador.username;
 
   await solicitarRestablecimiento(page, productor);
 
   await iniciarSesionAdministrador(
     page,
-    usuariosAdministrativos.administrador,
+    cuentaAdministrador,
   );
 
   await page.setViewportSize({
