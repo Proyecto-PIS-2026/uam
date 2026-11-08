@@ -32,7 +32,16 @@ for (const [indice, rol] of ["OPERADOR", "PRODUCTOR"].entries()) {
                 const perfil = consulta.getByRole("link").filter({ has: consulta.getByText(cuenta.nombre, { exact: true }) });
                 await expect(perfil).toHaveCount(visible ? 1 : 0);
                 await consulta.goto(rutaPublicaciones);
-                await consulta.getByRole("searchbox", { name: "Buscar publicaciones", exact: true }).fill(catalogo.prefijo);
+                const buscador = consulta.getByRole("searchbox", { name: "Buscar publicaciones", exact: true });
+                await buscador.fill(catalogo.prefijo);
+                if (rol === "OPERADOR") {
+                    const resultado = consulta.locator("[aria-busy]").filter({ has: buscador });
+                    await expect(resultado).toHaveAttribute("aria-busy", "false");
+                    await expect(resultado.getByRole("alert")).toHaveCount(0);
+                }
+                if (!visible) {
+                    await expect(consulta.getByText(/^(No hay publicaciones que coincidan con la búsqueda\.|Todavía no hay publicaciones disponibles)$/)).toBeVisible();
+                }
                 await expect(consulta.getByRole("button", { name: /^Ver detalles de BP18 / })).toHaveCount(visible ? 2 : 0);
             }
             await comprobarListado(true);
