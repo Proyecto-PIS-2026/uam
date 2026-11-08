@@ -1,9 +1,10 @@
-import { test } from "./restablecimiento-contrasena-fixtures";
-import { expect } from "@playwright/test";
+import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
+import { expect, test } from "@playwright/test";
+
+export const USUARIO_OPERADOR_EXISTENTE = process.env.E2E_OPERADOR_USU ?? "lucas_blanco";
 
 test.describe("BP-16-1: Solicitar restablecimiento de contraseña", () => {
-  test("BP-16.1: Solicitar restablecimiento con usuario existente", async ({ page, crearCuenta }) => {
-    const cuenta = await crearCuenta("OPERADOR");
+  test("BP-16.1: Solicitar restablecimiento con usuario existente", async ({ page }) => conRestablecimientoHabilitado(async () => {
     test.slow();
 
     await page.goto("/iniciar-sesion");
@@ -15,7 +16,7 @@ test.describe("BP-16-1: Solicitar restablecimiento de contraseña", () => {
     const dialogo = page.getByRole("dialog", { name: "Solicitar recuperación de contraseña", exact: true });
     const campoUsuario = dialogo.getByRole("textbox", { name: "Nombre de usuario", exact: true });
     await expect(campoUsuario).toBeVisible();
-    await campoUsuario.fill(cuenta.username);
+    await campoUsuario.fill(USUARIO_OPERADOR_EXISTENTE);
 
     const botonAceptar = dialogo.getByRole("button", { name: "Aceptar", exact: true });
     await expect(botonAceptar).toBeVisible();
@@ -23,10 +24,9 @@ test.describe("BP-16-1: Solicitar restablecimiento de contraseña", () => {
 
     const mensajeExito = page.getByRole("status").filter({ hasText: "La solicitud de recuperación fue realizada correctamente." });
     await expect(mensajeExito).toBeVisible();
-  });
+  }));
 
-  test("BP-16.1: Notifica error si el usuario ingresado no existe", async ({ page, crearCuenta }) => {
-    const cuenta = await crearCuenta("OPERADOR");
+  test("BP-16.1: Notifica error si el usuario ingresado no existe", async ({ page }) => conRestablecimientoHabilitado(async () => {
     test.slow();
     await page.goto("/iniciar-sesion");
     const botonRecuperar = page.getByRole("button", {name: "Solicitar recuperación de contraseña",});
@@ -36,13 +36,13 @@ test.describe("BP-16-1: Solicitar restablecimiento de contraseña", () => {
     const dialogo = page.getByRole("dialog", { name: "Solicitar recuperación de contraseña", exact: true });
     const campoUsuario = dialogo.getByRole("textbox", { name: "Nombre de usuario", exact: true });
     await expect(campoUsuario).toBeVisible();
-    await campoUsuario.fill(`inexistente_${cuenta.username}`);
+    await campoUsuario.fill("usuarioquenoexisteeeeee");
 
     const botonAceptar = dialogo.getByRole("button", { name: "Aceptar", exact: true });
     await expect(botonAceptar).toBeVisible();
     await botonAceptar.click();
 
     await expect(dialogo.getByRole("alert")).toHaveText("No existe ningún usuario con ese nombre.");
-  });
+  }));
 
 });

@@ -1,5 +1,114 @@
-import { expect } from "@playwright/test";
-import { test, roles, cp, perfil, rutaCambio, ingresar, salir, abrirCambio, completar, enviarCredenciales } from "./restablecimiento-contrasena-fixtures";
+import { randomUUID } from "node:crypto";
+import argon2 from "argon2";
+import { Client } from "pg";
+import { test as base, expect, type Page } from "@playwright/test";
+import { iniciarSesionAdministrador, iniciarSesionProductor } from "./autenticacion";
+
+type Rol = "OPERADOR" | "PRODUCTOR" | "ADMINISTRADOR";
+type Cuenta = { id: number; usuario: string; contrasena: string; rol: Rol };
+type Datos = { db: Client; crearCuenta: (rol: Rol) => Promise<Cuenta> };
+
+const test = base.extend<Datos>({
+    db: async ({}, usar) => {
+        const connectionString = process.env.DATABASE_URL?.trim();
+        if (!connectionString) throw new Error("Configure DATABASE_URL con la base utilizada por el servidor E2E.");
+        const db = new Client({ connectionString });
+        await db.connect();
+        try {
+            await db.query("SELECT pg_advisory_lock(1752, 1)");
+            const { rows: [original] } = await db.query(
+                'SELECT "valorConfiguracion" FROM configuracion WHERE "nombreConfiguracion" = $1',
+                ["restablecimiento_contrasena_habilitado"],
+            );
+            if (!original) throw new Error("Falta la configuración de cambio de contraseña en la seed.");
+            try {
+                await db.query('UPDATE configuracion SET "valorConfiguracion" = $1 WHERE "nombreConfiguracion" = $2',
+                    ["true", "restablecimiento_contrasena_habilitado"]);
+                await usar(db);
+            } finally {
+                await db.query('UPDATE configuracion SET "valorConfiguracion" = $1 WHERE "nombreConfiguracion" = $2',
+                    [original.valorConfiguracion, "restablecimiento_contrasena_habilitado"]);
+            }
+        } finally {
+            await db.end();
+        }
+    },
+    crearCuenta: async ({ db }, usar) => {
+        const ids: number[] = [];
+        try {
+            await usar(async (rol) => {
+                const username = `e2e_bp162_${randomUUID()}`;
+                const contrasena = `Actual_${randomUUID()}`;
+                const { rows: [usuario] } = await db.query<{ id: number }>(
+                    'INSERT INTO usuario (username, "passwordHash", rol) VALUES ($1, $2, $3) RETURNING id',
+                    [username, await argon2.hash(contrasena), rol],
+                );
+                ids.push(usuario.id);
+                if (rol === "ADMINISTRADOR") {
+                    const email = `${username}@example.com`;
+                    await db.query('INSERT INTO administrador ("usuarioId", email) VALUES ($1, $2)', [usuario.id, email]);
+                    return { id: usuario.id, usuario: email, contrasena, rol };
+                }
+                const tabla = rol === "OPERADOR" ? "operador" : "productor";
+                const { rows: [perfil] } = await db.query<{ id: number }>(
+                    `INSERT INTO ${tabla} ("usuarioId", "nombreFantasia", "whatsApp") VALUES ($1, $2, $3) RETURNING id`,
+                    [usuario.id, username, "+59890000000"],
+                );
+                if (rol === "OPERADOR") {
+                    await db.query('INSERT INTO local ("numeroLocal", "operadorId", "naveId", "finContrato") SELECT $1, $2, id, NULL FROM nave ORDER BY id LIMIT 1',
+                        [username, perfil.id]);
+                }
+                return { id: usuario.id, usuario: username, contrasena, rol };
+            });
+        } finally {
+            await db.query('DELETE FROM local WHERE "operadorId" IN (SELECT id FROM operador WHERE "usuarioId" = ANY($1::int[]))', [ids]);
+            await db.query('DELETE FROM usuario WHERE id = ANY($1::int[])', [ids]);
+        }
+    },
+});
+
+
+const rutaCambio = "/mi-perfil/cambiar-contrasena";
+const roles: Rol[] = ["OPERADOR", "PRODUCTOR", "ADMINISTRADOR"];
+const perfil = (cuenta: Cuenta) => cuenta.rol === "PRODUCTOR" ? "/mi-perfil/productor" : "/mi-perfil";
+const cp = (numero: number) => `CP-${String(numero).padStart(2, "0")}`;
+
+async function enviarCredenciales(page: Page, cuenta: Cuenta, contrasena = cuenta.contrasena) {
+    await page.goto("/iniciar-sesion");
+    await page.getByLabel("Correo electrónico o nombre de usuario").fill(cuenta.usuario);
+    await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
+}
+
+async function ingresar(page: Page, cuenta: Cuenta, contrasena = cuenta.contrasena) {
+    const credenciales = { usuario: cuenta.usuario, contrasena };
+    if (cuenta.rol === "ADMINISTRADOR") await iniciarSesionAdministrador(page, credenciales);
+    else if (cuenta.rol === "PRODUCTOR") await iniciarSesionProductor(page, credenciales);
+    else {
+        await enviarCredenciales(page, cuenta, contrasena);
+        await expect(page).toHaveURL(/\/mi-mercado(?:\/operador)?$/);
+    }
+}
+
+async function salir(page: Page) {
+    await page.getByRole("button", { name: "Abrir menú de usuario", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Cerrar sesión", exact: true }).click();
+    await expect(page).not.toHaveURL(/\/mi-perfil/);
+    await page.goto(rutaCambio);
+    await expect(page).toHaveURL(/\/(?:sesion-finalizada|iniciar-sesion)(?:\?.*)?$/);
+}
+
+async function abrirCambio(page: Page, cuenta: Cuenta) {
+    await page.goto(perfil(cuenta));
+    await page.getByRole("link", { name: "Cambiar contraseña", exact: true }).click();
+    await expect(page.getByRole("form", { name: "Cambio de contraseña" })).toBeVisible();
+}
+
+async function completar(page: Page, actual: string, nueva: string, confirmacion = nueva) {
+    await page.getByLabel("Contraseña actual", { exact: true }).fill(actual);
+    await page.getByLabel("Nueva contraseña", { exact: true }).fill(nueva);
+    await page.getByLabel("Confirmar nueva contraseña", { exact: true }).fill(confirmacion);
+}
 
 test.describe("BP-16.2 — matriz de cambio de contraseña", () => {
     for (const [indice, rol] of roles.entries()) {
