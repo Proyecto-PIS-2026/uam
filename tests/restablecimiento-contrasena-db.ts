@@ -1,7 +1,7 @@
 import { Client } from "pg";
 
 /** Configuración explícita de los casos que prueban recuperación/cambio habilitados. */
-export async function conRestablecimientoHabilitado<T>(ejecutar: () => Promise<T>): Promise<T> {
+export async function conRestablecimientoHabilitado<T>(ejecutar: (cliente: Client) => Promise<T>): Promise<T> {
     const connectionString = process.env.DATABASE_URL?.trim();
     if (!connectionString) throw new Error("Configure DATABASE_URL con la base utilizada por el servidor E2E.");
     const cliente = new Client({ connectionString });
@@ -17,7 +17,7 @@ export async function conRestablecimientoHabilitado<T>(ejecutar: () => Promise<T
         const original = rows[0].valorConfiguracion;
         try {
             await cliente.query('UPDATE configuracion SET "valorConfiguracion" = $1 WHERE "nombreConfiguracion" = $2', ["true", nombre]);
-            return await ejecutar();
+            return await ejecutar(cliente);
         } finally {
             await cliente.query('UPDATE configuracion SET "valorConfiguracion" = $1 WHERE "nombreConfiguracion" = $2', [original, nombre]);
         }
