@@ -90,6 +90,9 @@ const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
             const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/procesar-vencimientos-fotos");
             const configuracion = await obtenerConfiguracionAgingFotos();
             return db.transaction(async (tx) => {
+              if (!configuracion.habilitado) {
+                return procesarVencimientosFotos({ tx, limite, fecha: limite.slice(0, 10) }, configuracion);
+              }
               await tx.execute(db.raw.sql`LOCK TABLE imagen, publicacion IN SHARE ROW EXCLUSIVE MODE`.affectedCount().build());
               for (const id of publicaciones) {
                 const publicacion = await tx.orm.public.Publicacion.where({ id }).select("foto").first();
@@ -268,6 +271,7 @@ for (const [caso, rol] of [["06", "OPERADOR"], ["07", "PRODUCTOR"]] as const) {
     const antesDeGuardar = Date.now();
     await edicion.getByLabel(rol === "OPERADOR" ? "Seleccionar foto del producto" : "Fotografía", { exact: true })
       .setInputFiles({ name: "foto-renovada.png", mimeType: "image/png", buffer });
+    await expect(edicion.locator('img[src^="blob:"]'), "La edición debe mostrar la foto nueva antes de guardar").toBeVisible();
     const guardar = edicion.getByRole("button", { name: rol === "OPERADOR" ? "Guardar" : "Confirmar", exact: true });
     await expect(guardar).toBeEnabled();
     const [respuesta] = await Promise.all([
