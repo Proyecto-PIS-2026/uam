@@ -45,12 +45,12 @@ export default defineConfig({
     {
       name: 'chromium',
       // Estos BP se ejecutan en sus proyectos específicos.
-      testIgnore: /bp-(16-2|17|18|25|26)(?:[\\/]|\.spec\.ts)/,
+      testIgnore: /bp-(16(?:-[123])?|17|18|25|26)(?:[\\/]|\.spec\.ts)/,
       use: { ...devices['Desktop Chrome'] },
     },
     {
-      name: 'chromium-bp162',
-      testMatch: /bp-16-2\.spec\.ts/,
+      name: 'chromium-bp16',
+      testMatch: /bp-16(?:-[123])?\.spec\.ts/,
       // Modifica la configuración global: ejecutar después del resto de casos del portal.
       dependencies: ['chromium-administracion'],
       fullyParallel: false,
