@@ -1,11 +1,22 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import HojasDecorativas from "@/compartido/HojasDecorativas";
 
-import { modificarOperador } from "./modificarOperador";
+import { useId, useRef, useState, type FormEvent } from "react";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Switch from "@mui/material/Switch";
+import { useRouter } from "next/navigation";
+import BotonVolver from "@/compartido/BotonVolver";
+
+import { modificarOperador } from "../../acciones/modificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
-import type { OperadorParaModificar } from "./obtenerOperadorParaModificar";
+import type { OperadorParaModificar } from "../../tipos";
+import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
+import ConfirmacionLicencia from "@/modulos/usuarios/operadores/componentes/ConfirmacionLicencia";
 
 import styles from "./FormularioModificarOperador.module.css";
 
@@ -20,19 +31,41 @@ type LocalFormulario = {
     contrato: string;
 };
 
-const CODIGOS_PAIS = ["+598", "+54", "+55", "+56", "+595"];
+const CODIGOS_PAIS = [
+    { codigo: "+598", pais: "Uruguay" },
+    { codigo: "+54", pais: "Argentina" },
+    { codigo: "+55", pais: "Brasil" },
+    { codigo: "+56", pais: "Chile" },
+    { codigo: "+595", pais: "Paraguay" },
+];
+
+function extraerLicencia(comentario: string | null | undefined) {
+    const coincidencia = comentario?.match(/^Licencia:\s*(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})\s*(?:\r?\n\r?\n)?([\s\S]*)$/);
+    return {
+        inicio: coincidencia?.[1] ?? "",
+        fin: coincidencia?.[2] ?? "",
+        comentario: coincidencia?.[3] ?? comentario ?? "",
+    };
+}
 
 export default function FormularioModificarOperador({
     operador,
     naves,
 }: Props) {
     const router = useRouter();
+    const idFormulario = useId();
 
     const [nombre, setNombre] = useState(operador.nombre);
     const [codigoPais, setCodigoPais] = useState(
         operador.codigoPais,
     );
     const [telefono, setTelefono] = useState(operador.telefono);
+    const licencia = extraerLicencia(operador.comentario);
+    const [enLicencia, setEnLicencia] = useState(operador.enLicencia ?? false);
+    const [confirmandoLicencia, setConfirmandoLicencia] = useState(false);
+    const [inicioLicencia, setInicioLicencia] = useState(licencia.inicio);
+    const [finLicencia, setFinLicencia] = useState(licencia.fin);
+    const [comentario, setComentario] = useState(licencia.comentario);
 
     const [contraseña, setContraseña] = useState("");
     const [confirmacionContraseña, setConfirmacionContraseña] =
@@ -47,13 +80,17 @@ export default function FormularioModificarOperador({
     );
 
     const [errores, setErrores] = useState<string[]>([]);
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
+    const guardadoEnCurso = useRef(false);
+    const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
 
     function actualizarLocal(
         indice: number,
         campo: keyof LocalFormulario,
         valor: string | number,
     ) {
+        if (campo === "nombre" && (typeof valor !== "string" || !/^[0-9]*$/.test(valor))) return;
         setLocales((actuales) =>
             actuales.map((local, i) =>
                 i === indice
@@ -79,7 +116,7 @@ export default function FormularioModificarOperador({
 
     function eliminarLocal(indice: number) {
         if (locales.length === 1) {
-            setErrores(["Debe haber al menos un local."]);
+            notificar("Debe haber al menos un local.", "warning");
             return;
         }
 
@@ -99,7 +136,8 @@ export default function FormularioModificarOperador({
     ) {
         evento.preventDefault();
 
-        if (guardando) return;
+        if (guardadoEnCurso.current) return;
+        guardadoEnCurso.current = true;
 
         setErrores([]);
         setGuardando(true);
@@ -110,10 +148,14 @@ export default function FormularioModificarOperador({
                 nombre,
                 codigoPais,
                 telefono,
+                enLicencia,
+                inicioLicencia,
+                finLicencia,
+                comentario,
                 contraseña,
                 confirmacionContraseña,
                 locales,
-            });
+            }, ...argumentosFotoPerfil(foto));
 
             if (!resultado.esValido) {
                 setErrores(resultado.errores);
@@ -127,10 +169,12 @@ export default function FormularioModificarOperador({
                 error,
             );
 
-            setErrores([
+            notificar(
                 "No se pudieron guardar los cambios. Intentá de nuevo.",
-            ]);
+                "error",
+            );
         } finally {
+            guardadoEnCurso.current = false;
             setGuardando(false);
         }
     }
@@ -138,16 +182,16 @@ export default function FormularioModificarOperador({
     return (
         <div className={styles.pagina}>
             <div className={styles.contenedor}>
-                <button
-                    type="button"
+                <BotonVolver
                     className={styles.volver}
                     onClick={cancelar}
                     disabled={guardando}
                 >
-                    ← Volver al perfil
-                </button>
+                    Volver al perfil
+                </BotonVolver>
 
                 <header className={styles.encabezado}>
+                    <HojasDecorativas />
                     <h1 className={styles.titulo}>
                         Modificar operador
                     </h1>
@@ -164,76 +208,50 @@ export default function FormularioModificarOperador({
                     noValidate
                 >
                     <section className={styles.seccion}>
-                        <h2 className={styles.subtitulo}>
-                            Datos del operador
-                        </h2>
+                        <SelectorFotoPerfil nombre={nombre} fotoActual={operador.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
 
-                        <label className={styles.campo}>
-                            <span className={styles.etiqueta}>
-                                Nombre
-                            </span>
-
-                            <input
-                                className={styles.entrada}
-                                value={nombre}
-                                onChange={(evento) =>
-                                    setNombre(
-                                        evento.target.value,
-                                    )
-                                }
-                                disabled={guardando}
-                            />
-                        </label>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            className={styles.control}
+                            label="Nombre"
+                            value={nombre}
+                            onChange={(evento) => setNombre(evento.target.value)}
+                            disabled={guardando}
+                        />
 
                         <div className={styles.filaTelefono}>
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Código
-                                </span>
+                            <TextField
+                                select
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                id={`${idFormulario}-codigo`}
+                                label="Código de país"
+                                value={codigoPais}
+                                onChange={(evento) => setCodigoPais(evento.target.value)}
+                                disabled={guardando}
+                            >
+                                {CODIGOS_PAIS.map(({ codigo, pais }) => (
+                                    <MenuItem key={codigo} value={codigo}>{codigo} ({pais})</MenuItem>
+                                ))}
+                            </TextField>
 
-                                <select
-                                    className={styles.entrada}
-                                    value={codigoPais}
-                                    onChange={(evento) =>
-                                        setCodigoPais(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    disabled={guardando}
-                                >
-                                    {CODIGOS_PAIS.map(
-                                        (codigo) => (
-                                            <option
-                                                key={codigo}
-                                                value={codigo}
-                                            >
-                                                {codigo}
-                                            </option>
-                                        ),
-                                    )}
-                                </select>
-                            </label>
-
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    WhatsApp
-                                </span>
-
-                                <input
-                                    className={styles.entrada}
-                                    value={telefono}
-                                    onChange={(evento) =>
-                                        setTelefono(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    disabled={guardando}
-                                />
-                            </label>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Teléfono"
+                                required
+                                type="tel"
+                                value={telefono}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
+                                onChange={(evento) => {
+                                    const nuevoTelefono = evento.target.value;
+                                    if (/^[0-9]*$/.test(nuevoTelefono)) setTelefono(nuevoTelefono);
+                                }}
+                                disabled={guardando}
+                            />
                         </div>
                     </section>
 
@@ -274,6 +292,9 @@ export default function FormularioModificarOperador({
                         <div
                             className={styles.listaLocales}
                         >
+                            {locales.length === 0 && (
+                                <EstadoVacio titulo="Sin locales registrados" descripcion="Agregá un local para completar la información del operador." icono={<LocationOnOutlinedIcon />} compacto anunciar={false} />
+                            )}
                             {locales.map(
                                 (local, indice) => (
                                     <div
@@ -300,11 +321,7 @@ export default function FormularioModificarOperador({
                                                         indice,
                                                     )
                                                 }
-                                                /*disabled={
-                                                    guardando ||
-                                                    locales.length ===
-                                                        1
-                                                }*/
+                                                disabled={guardando}
                                             >
                                                 Eliminar
                                             </button>
@@ -315,145 +332,78 @@ export default function FormularioModificarOperador({
                                                 styles.grillaLocal
                                             }
                                         >
-                                            <label
-                                                className={
-                                                    styles.campo
-                                                }
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                size="small"
+                                                className={styles.control}
+                                                id={`${idFormulario}-nave-${indice}`}
+                                                label="Nave"
+                                                value={local.naveId}
+                                                onChange={(evento) => actualizarLocal(indice, "naveId", Number(evento.target.value))}
+                                                disabled={guardando}
                                             >
-                                                <span
-                                                    className={
-                                                        styles.etiqueta
-                                                    }
-                                                >
-                                                    Nave
-                                                </span>
+                                                {naves.map((nave) => (
+                                                    <MenuItem key={nave.id} value={nave.id}>{nave.nombre}</MenuItem>
+                                                ))}
+                                            </TextField>
 
-                                                <select
-                                                    className={
-                                                        styles.entrada
-                                                    }
-                                                    value={
-                                                        local.naveId
-                                                    }
-                                                    onChange={(
-                                                        evento,
-                                                    ) =>
-                                                        actualizarLocal(
-                                                            indice,
-                                                            "naveId",
-                                                            Number(
-                                                                evento
-                                                                    .target
-                                                                    .value,
-                                                            ),
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        guardando
-                                                    }
-                                                >
-                                                    {naves.map(
-                                                        (
-                                                            nave,
-                                                        ) => (
-                                                            <option
-                                                                key={
-                                                                    nave.id
-                                                                }
-                                                                value={
-                                                                    nave.id
-                                                                }
-                                                            >
-                                                                {
-                                                                    nave.nombre
-                                                                }
-                                                            </option>
-                                                        ),
-                                                    )}
-                                                </select>
-                                            </label>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                className={styles.control}
+                                                label="Número de local"
+                                                required
+                                                type="text"
+                                                value={local.nombre}
+                                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
+                                                onChange={(evento) => actualizarLocal(indice, "nombre", evento.target.value)}
+                                                disabled={guardando}
+                                            />
 
-                                            <label
-                                                className={
-                                                    styles.campo
-                                                }
-                                            >
-                                                <span
-                                                    className={
-                                                        styles.etiqueta
-                                                    }
-                                                >
-                                                    Número de
-                                                    local
-                                                </span>
-
-                                                <input
-                                                    className={
-                                                        styles.entrada
-                                                    }
-                                                    value={
-                                                        local.nombre
-                                                    }
-                                                    onChange={(
-                                                        evento,
-                                                    ) =>
-                                                        actualizarLocal(
-                                                            indice,
-                                                            "nombre",
-                                                            evento
-                                                                .target
-                                                                .value,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        guardando
-                                                    }
-                                                />
-                                            </label>
-
-                                            <label
-                                                className={
-                                                    styles.campo
-                                                }
-                                            >
-                                                <span
-                                                    className={
-                                                        styles.etiqueta
-                                                    }
-                                                >
-                                                    Fin de
-                                                    contrato
-                                                </span>
-
-                                                <input
-                                                    className={
-                                                        styles.entrada
-                                                    }
-                                                    type="date"
-                                                    value={
-                                                        local.contrato
-                                                    }
-                                                    onChange={(
-                                                        evento,
-                                                    ) =>
-                                                        actualizarLocal(
-                                                            indice,
-                                                            "contrato",
-                                                            evento
-                                                                .target
-                                                                .value,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        guardando
-                                                    }
-                                                />
-                                            </label>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                className={styles.control}
+                                                label="Fin de contrato"
+                                                type="date"
+                                                value={local.contrato}
+                                                slotProps={{ inputLabel: { shrink: true } }}
+                                                onChange={(evento) => actualizarLocal(indice, "contrato", evento.target.value)}
+                                                disabled={guardando}
+                                            />
                                         </div>
                                     </div>
                                 ),
                             )}
                         </div>
+                    </section>
+
+                    <section className={styles.seccion}>
+                        <label className={styles.licencia} htmlFor={`${idFormulario}-licencia`} data-activa={enLicencia}>
+                            <span className={styles.textoLicencia}>
+                                <span className={styles.etiquetaLicencia}>En licencia</span>
+                                <span className={styles.estadoLicencia}>{enLicencia ? "Sí" : "No"}</span>
+                            </span>
+                            <Switch
+                                checked={enLicencia}
+                                onChange={(_, valor) => {
+                                    if (valor) setConfirmandoLicencia(true);
+                                    else setEnLicencia(false);
+                                }}
+                                disabled={guardando}
+                                slotProps={{ input: { id: `${idFormulario}-licencia`, role: "switch", "aria-label": "En licencia" } }}
+                            />
+                        </label>
+                        {enLicencia && (
+                            <>
+                                <div className={styles.fechasLicencia}>
+                                    <TextField label="Inicio de licencia" type="date" value={inicioLicencia} onChange={(evento) => setInicioLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
+                                    <TextField label="Fin de licencia" type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: inicioLicencia || new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
+                                </div>
+                                <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(evento) => setComentario(evento.target.value)} disabled={guardando} fullWidth />
+                            </>
+                        )}
                     </section>
 
                     <section className={styles.seccion}>
@@ -471,49 +421,29 @@ export default function FormularioModificarOperador({
                                 styles.grillaContraseña
                             }
                         >
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Nueva contraseña
-                                </span>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Nueva contraseña"
+                                type="password"
+                                value={contraseña}
+                                onChange={(evento) => setContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
 
-                                <input
-                                    className={styles.entrada}
-                                    type="password"
-                                    value={contraseña}
-                                    onChange={(evento) =>
-                                        setContraseña(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    autoComplete="new-password"
-                                    disabled={guardando}
-                                />
-                            </label>
-
-                            <label className={styles.campo}>
-                                <span
-                                    className={styles.etiqueta}
-                                >
-                                    Confirmar contraseña
-                                </span>
-
-                                <input
-                                    className={styles.entrada}
-                                    type="password"
-                                    value={
-                                        confirmacionContraseña
-                                    }
-                                    onChange={(evento) =>
-                                        setConfirmacionContraseña(
-                                            evento.target.value,
-                                        )
-                                    }
-                                    autoComplete="new-password"
-                                    disabled={guardando}
-                                />
-                            </label>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                className={styles.control}
+                                label="Confirmar contraseña"
+                                type="password"
+                                value={confirmacionContraseña}
+                                onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
+                                autoComplete="new-password"
+                                disabled={guardando}
+                            />
                         </div>
                     </section>
 
@@ -550,6 +480,14 @@ export default function FormularioModificarOperador({
                     </div>
                 </form>
             </div>
+            <ConfirmacionLicencia
+                abierto={confirmandoLicencia}
+                alAceptar={() => {
+                    setEnLicencia(true);
+                    setConfirmandoLicencia(false);
+                }}
+                alCancelar={() => setConfirmandoLicencia(false)}
+            />
         </div>
     );
 }

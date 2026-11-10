@@ -1,0 +1,98 @@
+.contenedor {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    right: calc(var(--toast-derecha, 0px) + var(--espacio-secciones) + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--toast-inferior, 0px) + var(--espacio-secciones) + env(safe-area-inset-bottom, 0px));
+    width: calc(var(--toast-ancho-visible, 100vw) - 2 * var(--espacio-secciones) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-width: 28rem;
+    max-height: calc(var(--toast-alto-visible, 100dvh) - 2 * var(--espacio-secciones) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    pointer-events: none;
+    z-index: 1400;
+}
+
+.pila {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-inline);
+    padding: 4px;
+}
+
+.elemento {
+    flex-shrink: 0;
+    pointer-events: auto;
+}
+
+.antigua {
+    opacity: 0.5;
+}
+
+.antigua:focus-within,
+.antigua:hover {
+    opacity: 1;
+}
+
+.alerta:global(.MuiAlert-root) {
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    padding: var(--espacio-controles) var(--padding-panel);
+    border-radius: var(--radio-panel);
+    color: var(--color-surface);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 18%);
+}
+
+.alerta :global(.MuiAlert-message) {
+    min-width: 0;
+    padding: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.alerta :global(.MuiAlert-icon) {
+    margin-right: var(--espacio-inline);
+    padding: 0;
+    color: inherit;
+}
+
+.alerta :global(.MuiAlert-action) {
+    align-self: center;
+    align-items: center;
+    flex-shrink: 0;
+    margin: 0 0 0 auto;
+    padding: 0 0 0 var(--espacio-inline);
+}
+
+.alerta :global(.MuiIconButton-root) {
+    color: inherit;
+}
+
+.alerta :global(.MuiIconButton-root:focus-visible) {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+.success:global(.MuiAlert-root) {
+    background-color: var(--color-secondary);
+}
+
+.error:global(.MuiAlert-root) {
+    background-color: var(--color-danger);
+}
+
+.warning:global(.MuiAlert-root) {
+    background-color: var(--color-warning);
+}
+
+.info:global(.MuiAlert-root) {
+    background-color: var(--color-secondary);
+}

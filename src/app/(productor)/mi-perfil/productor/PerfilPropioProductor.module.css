@@ -1,0 +1,157 @@
+.pagina {
+    width: 100%;
+    max-width: var(--ancho-maximo-pagina);
+    margin: 0 auto;
+    padding: var(--padding-exterior-pagina);
+    color: var(--color-foreground);
+}
+
+.volver {
+    margin-bottom: var(--espacio-secciones);
+}
+
+.tarjeta {
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
+    box-shadow: var(--sombra-panel);
+}
+
+.encabezado {
+    display: grid;
+    position: relative;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    align-items: center;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-titulo-pagina);
+    overflow: hidden;
+    isolation: isolate;
+    background-color: var(--color-secondary);
+    color: var(--color-titulo-pagina);
+}
+
+.fotoProductor {
+    display: flex;
+    position: relative;
+    z-index: 1;
+    width: 6rem;
+    height: 6rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid rgb(255 255 255 / 65%);
+    border-radius: var(--radio-panel);
+    background-color: var(--color-secondary-soft);
+    color: var(--color-secondary);
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.foto {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.identidad {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+}
+
+.tipo {
+    margin: 0;
+    color: var(--color-subtitulo-pagina);
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: var(--interlineado-texto);
+    text-transform: uppercase;
+}
+
+.nombre {
+    margin: var(--espacio-textos) 0 0;
+    overflow-wrap: anywhere;
+    color: var(--color-titulo-pagina);
+    font-size: var(--tamano-titulo-pagina);
+    font-weight: 700;
+    line-height: var(--interlineado-titulo-pagina);
+}
+
+.contenido {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
+}
+
+.datoCuenta {
+    display: flex;
+    min-width: 0;
+    margin: 0;
+    padding: var(--padding-panel);
+    align-items: center;
+    gap: var(--espacio-controles);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radio-control);
+    background: var(--color-surface-muted);
+    color: var(--color-foreground);
+    line-height: var(--interlineado-texto);
+}
+
+.iconoDato {
+    display: grid;
+    width: var(--alto-control);
+    height: var(--alto-control);
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: var(--radio-control);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
+}
+
+.contenidoDato {
+    min-width: 0;
+}
+
+.etiquetaDato {
+    display: block;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+}
+
+.valorDato {
+    display: block;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.acciones {
+    margin-top: var(--espacio-secciones);
+}
+
+.accion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+}
+
+@media (max-width: 700px) {
+    .contenido {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pagina {
+        padding: var(--espacio-secciones);
+    }
+
+    .encabezado {
+        padding: var(--padding-panel);
+    }
+
+}

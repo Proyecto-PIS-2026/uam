@@ -7,6 +7,8 @@ export interface UsuarioBase {
     id: number;
     username: string;
     rol: TipoUsuario;
+    solicitoRestablecimiento?: boolean;
+    habilitado?: boolean;
 }
 
 export interface AdministradorParaModificar extends UsuarioBase {
@@ -24,6 +26,7 @@ export interface OperadorParaModificar extends UsuarioBase {
 export interface ProductorParaModificar extends UsuarioBase {
     rol: "PRODUCTOR";
     productorId: number;
+    nombreFantasia: string;
 }
 
 export type UsuarioParaModificar =
@@ -33,4 +36,5 @@ export type UsuarioParaModificar =
 
 export interface DatosModificarUsuarios {
     usuarios: UsuarioParaModificar[];
+    usuarioActualId?: number;
 }

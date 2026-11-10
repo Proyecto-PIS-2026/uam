@@ -1,6 +1,9 @@
 import { expect, type Page } from "@playwright/test";
+import { Secret, TOTP } from "otpauth";
 
-export type Credenciales = { usuario: string; contrasena: string };
+export type Credenciales = { usuario: string; contrasena: string; secretoSegundoFactor?: string };
+
+const secretosVinculados = new Map<string, { secreto: string; ultimoPaso: number }>();
 
 async function enviarCredenciales(page: Page, usuario: string, contrasena: string) {
   await page.goto("/iniciar-sesion");
@@ -9,19 +12,36 @@ async function enviarCredenciales(page: Page, usuario: string, contrasena: strin
   await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 }
 
-export async function iniciarSesionAdministrador(page: Page, credenciales: Credenciales) {
+export async function iniciarSesionAdministrador(page: Page, credenciales: Credenciales, timeout = 30_000) {
   await enviarCredenciales(page, credenciales.usuario, credenciales.contrasena);
-  await expect(page).toHaveURL(/\/inicio$/, { timeout: 30_000 });
-  await page.getByRole("link", { name: "Administración", exact: true }).click();
+  await expect(page).toHaveURL(/\/iniciar-sesion\/segundo-factor$/, { timeout });
+  const claveManual = page.getByTestId("clave-segundo-factor");
+  const anterior = secretosVinculados.get(credenciales.usuario);
+  const secreto = await claveManual.count() ? await claveManual.textContent() : credenciales.secretoSegundoFactor ?? anterior?.secreto ?? process.env.E2E_ADMINISTRADOR_TOTP_SECRET;
+  if (!secreto) throw new Error("Configurá E2E_ADMINISTRADOR_TOTP_SECRET con la clave de la cuenta administrativa ya vinculada.");
+  // Un código aceptado no puede reutilizarse en otro ingreso de la misma cuenta.
+  if (anterior && anterior.ultimoPaso >= Math.floor(Date.now() / 30_000)) {
+    await page.waitForTimeout((anterior.ultimoPaso + 1) * 30_000 - Date.now() + 100);
+  }
+  const ultimoPaso = Math.floor(Date.now() / 30_000);
+  const codigo = new TOTP({ secret: Secret.fromBase32(secreto), digits: 6, period: 30, algorithm: "SHA1" }).generate();
+  await page.getByLabel("Código de verificación").fill(codigo);
+  await page.getByRole("button", { name: /^(Confirmar|Verificar) e ingresar$/ }).click();
+  await expect(page).toHaveURL(/\/inicio$/, { timeout });
+  secretosVinculados.set(credenciales.usuario, { secreto, ultimoPaso });
+
+  const enlace = page.getByRole("link", { name: "Administración", exact: true });
+  await expect(enlace).toHaveAttribute("href", "/administracion");
+
+  const respuesta = await page.goto("/administracion");
+  expect(respuesta?.status(), "Administración debe responder correctamente").toBe(200);
   await expect(page).toHaveURL(/\/administracion$/);
-  await expect(
-    page.getByRole("heading", { name: "Panel Administrativo", exact: true, level: 1 }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Panel Administrativo", exact: true, level: 1 })).toBeVisible();
 }
 
 export async function iniciarSesionProductor(page: Page, credenciales: Credenciales) {
   await enviarCredenciales(page, credenciales.usuario, credenciales.contrasena);
-  await expect(page).toHaveURL(/\/inicio$/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/mi-mercado\/productor$/, { timeout: 30_000 });
   await expect(page.getByRole("link", { name: "Mi mercado", exact: true }))
     .toHaveAttribute("href", "/mi-mercado/productor");
 }

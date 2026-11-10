@@ -1,6 +1,7 @@
 
 import { randomUUID } from "node:crypto";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+import { test } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador } from "./autenticacion";
 
 // Este archivo crea, modifica y elimina un operador de prueba
@@ -12,15 +13,6 @@ test.use({
   screenshot: "only-on-failure",
   trace: "retain-on-failure",
 });
-
-async function entrarComoAdmin(page: Page) {
-  const usuario = process.env.E2E_ADMINISTRADOR_USU || process.env.E2E_ADMIN_USU;
-  const contrasena = process.env.E2E_ADMINISTRADOR_PASS || process.env.E2E_ADMIN_PASS;
-  if (!usuario || !contrasena) {
-    throw new Error("Configurá E2E_ADMIN_USU y E2E_ADMIN_PASS antes de ejecutar BP-01.");
-  }
-  await iniciarSesionAdministrador(page, { usuario, contrasena });
-}
 
 async function abrirGestionUsuarios(page: Page) {
   await page.goto("/administracion#usuarios");
@@ -36,24 +28,35 @@ async function buscarUsuario(page: Page, username: string) {
 
 async function completarAlta(
   page: Page,
-  datos: { usuario: string; nombre: string; local: string; naveId: string; telefono?: string },
+  datos: { usuario: string; nombre: string; local: string; nave: string; telefono?: string },
 ) {
-  await page.locator("#rol").selectOption("operador");
+  await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Rol del usuario/ }), "Operador");
   await page.locator("#nombreUsuario").fill(datos.usuario);
   await page.locator("#contraseña").fill(CLAVE_INICIAL);
   await page.locator("#confirmacionContraseña").fill(CLAVE_INICIAL);
   await page.locator("#nombre").fill(datos.nombre);
   await page.locator("#numero").fill(datos.telefono ?? "99123456");
   await page.getByPlaceholder("Número de local").first().fill(datos.local);
-  await page.locator("select").filter({ hasText: "Seleccionar nave" }).first()
-    .selectOption(datos.naveId);
+  await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Nave/ }).first(), datos.nave);
 }
 
-async function primerIdNave(page: Page): Promise<string> {
-  const id = await page.locator("select").filter({ hasText: "Seleccionar nave" })
-    .first().locator('option:not([value=""])').first().getAttribute("value");
-  expect(id, "No hay naves disponibles para las pruebas").toBeTruthy();
-  return id!;
+async function seleccionarOpcion(page: Page, campo: Locator, nombre: string) {
+  await campo.click();
+  const lista = page.getByRole("listbox");
+  await lista.getByRole("option", { name: nombre, exact: true }).click();
+  await expect(lista).not.toBeVisible();
+  await expect(campo).toHaveText(nombre);
+}
+
+async function nombresNaves(page: Page): Promise<string[]> {
+  await page.getByRole("combobox", { name: /^Nave/ }).first().click();
+  const lista = page.getByRole("listbox");
+  await expect(lista).toBeVisible();
+  const nombres = await lista.locator('[role="option"]:not([aria-disabled="true"])').allTextContents();
+  await page.keyboard.press("Escape");
+  await expect(lista).not.toBeVisible();
+  expect(nombres.length, "No hay naves disponibles para las pruebas").toBeGreaterThan(0);
+  return nombres.map((nombre) => nombre.trim());
 }
 
 async function iniciarSesionOperador(page: Page, usuario: string, clave: string) {
@@ -81,18 +84,18 @@ test("CP-01.1-25: sin sesión no se puede acceder al alta", async ({ page }) => 
   await expect(page).toHaveURL(/\/iniciar-sesion(?:\?.*)?$/);
 });
 
-test("BP-01.1: validaciones de alta y controles del formulario", async ({ page }, info) => {
+test("BP-01.1: validaciones de alta y controles del formulario", async ({ page, usuariosAdministrativos }, info) => {
   test.setTimeout(120_000);
-  await entrarComoAdmin(page);
+  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
   await page.goto("/alta-usuario");
-  await page.locator("#rol").selectOption("operador");
+  await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Rol del usuario/ }), "Operador");
   const sufijo = randomUUID().slice(0, 8);
-  const nave = await primerIdNave(page);
+  const [nave] = await nombresNaves(page);
   await completarAlta(page, {
     usuario: `e2e_val_${sufijo}`,
     nombre: `Validación E2E ${sufijo}`,
     local: `9${Date.now().toString().slice(-8)}`,
-    naveId: nave,
+    nave,
   });
 
   // 4 5 6 9 10 12 y 13
@@ -149,7 +152,7 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page }
   // Cp 20
   await page.getByRole("button", { name: "Agregar local" }).click();
   await page.getByPlaceholder("Número de local").last().fill(numeroOriginal);
-  await page.locator("select").filter({ hasText: "Seleccionar nave" }).last().selectOption(nave);
+  await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Nave/ }).last(), nave);
   await page.getByRole("button", { name: "Registrar usuario" }).click();
   await expect(page.getByText(/Local 2: está repetido en el formulario/)).toBeVisible();
   await info.attach("CP-01.1-20-locales-duplicados", {
@@ -164,9 +167,9 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page }
   await expect(page.getByPlaceholder("Número de local").first()).toHaveValue("");
 });
 
-test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, browser }, info) => {
+test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, browser, usuariosAdministrativos }, info) => {
   test.setTimeout(240_000);
-  await entrarComoAdmin(page);
+  await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
 
   const sufijo = randomUUID().slice(0, 8);
   const usuario = `e2e_${sufijo}`;
@@ -181,39 +184,37 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
   try {
     await test.step("BP-01.1: registrar con dos locales en naves distintas", async () => {
       await page.goto("/alta-usuario");
-      await page.locator("#rol").selectOption("operador");
-      const opciones = await page.locator("select").filter({ hasText: "Seleccionar nave" })
-        .first().locator('option:not([value=""])').evaluateAll((elementos) =>
-          elementos.map((opcion) => (opcion as HTMLOptionElement).value));
+      await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Rol del usuario/ }), "Operador");
+      const opciones = await nombresNaves(page);
       expect(opciones.length, "Se necesitan al menos dos naves para este caso").toBeGreaterThanOrEqual(2);
 
-      await completarAlta(page, { usuario, nombre, local, naveId: opciones[0] });
+      await completarAlta(page, { usuario, nombre, local, nave: opciones[0] });
       await page.getByRole("button", { name: "Agregar fin de contrato" }).click();
       await page.locator('input[type="date"]').fill("2027-12-31");
       await page.getByRole("button", { name: "Agregar local" }).click();
       await page.getByPlaceholder("Número de local").last().fill(local);
-      await page.locator("select").filter({ hasText: "Seleccionar nave" }).last().selectOption(opciones[1]);
+      await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Nave/ }).last(), opciones[1]);
 
       await page.getByRole("button", { name: "Registrar usuario" }).click();
       await expect(page.getByRole("heading", { name: "Operador creado satisfactoriamente" })).toBeVisible();
       creado = true;
       await expect(page.getByRole("link", { name: "Precargar productos" }))
-        .toHaveAttribute("href", "/precargar-productos");
+        .toHaveAttribute("href", /^\/gestion-operadores\/\d+$/);
       await info.attach("BP-01.1-alta-exitosa", {
         body: await page.screenshot({ fullPage: true }), contentType: "image/png",
       });
       await page.getByRole("button", { name: "Ahora no" }).click();
 
       // CP-14: username repetido; CP-15: nombre repetido; CP-16: local+nave ocupado.
-      await completarAlta(page, { usuario, nombre: `Otro ${sufijo}`, local: `${local}2`, naveId: opciones[0] });
+      await completarAlta(page, { usuario, nombre: `Otro ${sufijo}`, local: `${local}2`, nave: opciones[0] });
       await page.getByRole("button", { name: "Registrar usuario" }).click();
       await expect(page.getByText("Ya existe un usuario con ese nombre de usuario.")).toBeVisible();
 
-      await completarAlta(page, { usuario: `${usuario}_n`, nombre, local: `${local}2`, naveId: opciones[0] });
+      await completarAlta(page, { usuario: `${usuario}_n`, nombre, local: `${local}2`, nave: opciones[0] });
       await page.getByRole("button", { name: "Registrar usuario" }).click();
       await expect(page.getByText("Ya existe un operador con ese nombre.")).toBeVisible();
 
-      await completarAlta(page, { usuario: `${usuario}_l`, nombre: `Otro Local ${sufijo}`, local, naveId: opciones[0] });
+      await completarAlta(page, { usuario: `${usuario}_l`, nombre: `Otro Local ${sufijo}`, local, nave: opciones[0] });
       await page.getByRole("button", { name: "Registrar usuario" }).click();
       await expect(page.getByText(`El local ${local} ya existe en la nave seleccionada.`)).toBeVisible();
     });
@@ -261,7 +262,7 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       await page.getByRole("link", { name: "Editar operador" }).click();
       await expect(page.getByRole("heading", { name: "Modificar operador" })).toBeVisible();
       const campoNombre = page.getByRole("textbox", { name: "Nombre", exact: true });
-      const campoTelefono = page.getByRole("textbox", { name: "WhatsApp" });
+      const campoTelefono = page.getByRole("textbox", { name: "Teléfono" });
       await expect(campoNombre).toHaveValue(nombre);
       await expect(campoTelefono).toHaveValue("99123456");
 
@@ -272,10 +273,10 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       await page.getByRole("link", { name: "Editar operador" }).click();
 
       // CP-08/09/10: entradas inválidas.
-      await page.getByRole("textbox", { name: "WhatsApp" }).fill("abc");
+      await page.getByRole("textbox", { name: "Teléfono" }).fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
       await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("El teléfono no es válido.");
-      await page.getByRole("textbox", { name: "WhatsApp" }).fill("99234567");
+      await page.getByRole("textbox", { name: "Teléfono" }).fill("99234567");
 
       await page.getByLabel("Nueva contraseña").fill("123");
       await page.getByLabel("Confirmar contraseña").fill("123");
@@ -323,7 +324,8 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       await eliminarOperadorCreado(page, usuario);
       eliminado = true;
       await page.goto(`/gestion-operadores/${operadorId}`);
-      await expect(page.getByText("404", { exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Error", exact: true })).toBeVisible();
+      await expect(page.getByText("404: Página no encontrada. La dirección no existe o el contenido ya no está disponible.", { exact: true })).toBeVisible();
     });
   } finally {
     if (creado && !eliminado) {

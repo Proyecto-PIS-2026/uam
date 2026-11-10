@@ -1,23 +1,28 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-
+import { convertirInstantAFechaVigencia } from "../../publicaciones/vigencia-publicacion";
 // Datos de una publicación tal como los ve el administrador
 export type PublicacionPerfilAdmin = {
     id: number;
+    version: number;
     publicacionOperadorId: number;
     especieId: number;
-    variedadId: number;
-    presentacionId: number;
-    categoriaId: number;
-    calibreId: number;
-    paisId: number;
+    variedadId: number | null;
+    envaseId: number | null;
+    kilosId: number | null;
+    categoriaId: number | null;
+    calibreId: number | null;
+    paisId: number | null;
     foto: string | null;
     precio: string | null;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     fecha: string;
+    fechaVigencia: string | null;
     disponible: boolean; // El admin ve también las publicaciones no disponibles
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     categoria: string;
     calibre: string;
     codigoCalibre: string;
@@ -30,6 +35,9 @@ export type PerfilAdminOperador = {
     nombreFantasia: string;
     fotoPerfil: string | null;
     whatsApp: string;
+    solicitoRestablecimiento: boolean;
+    enLicencia?: boolean;
+    comentario?: string | null;
     locales: {
         numeroLocal: string;
         nombreNave: string;
@@ -45,7 +53,8 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
 
     // await porque la consulta a la base de datos es asíncrona pero quiero esperar a la respuesta antes de seguir
     const operador = await db.orm.public.Operador
-        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp") // Que columnas quiero recuperar de la tabla de operador
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp", "enLicencia", "comentario") // Que columnas quiero recuperar de la tabla de operador
+        .include("usuario", (usuario) => usuario.select("solicitoRestablecimiento"))
         .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
             .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
             .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
@@ -86,26 +95,22 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         .include("publicacion", (consultaPublicacion) => {
             const camposPublicacion = consultaPublicacion.select(
                 "id",
+                "version",
                 "foto",
                 "precio",
                 "cantidadUnidades",
+                "comentario",
                 "fecha",
+                "fechaVigencia",
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion",
-                "presentacionId",
+                "envaseId", "kilosId",
                 "categoriaId",
                 "calibreId"
             );
-            const conPresentacion = camposPublicacion.include(
-                "presentacion",
-                (consultaPresentacion) =>
-                    consultaPresentacion.include(
-                        "variedad",
-                        (consultaVariedad) => consultaVariedad.include("especie")
-                    )
-            );
-            const conCategoria = conPresentacion.include("categoria");
+            const conEnvase = camposPublicacion.include("especie").include("variedad").include("envase").include("kilos");
+            const conCategoria = conEnvase.include("categoria");
             const completo = conCategoria.include("calibre");
 
             return completo;
@@ -120,25 +125,31 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,
+                version: publicacion.version,
                 publicacionOperadorId: completa.id,
-                especieId: publicacion.presentacion.variedad.especieId,
-                variedadId: publicacion.presentacion.variedad.id,
-                presentacionId: publicacion.presentacionId,
+                especieId: publicacion.especie.id,
+                variedadId: publicacion.variedad?.id ?? null,
+                envaseId: publicacion.envaseId,
+                kilosId: publicacion.kilosId,
                 categoriaId: publicacion.categoriaId,
                 calibreId: publicacion.calibreId,
                 paisId: completa.paisId,
                 foto: publicacion.foto,
                 precio: publicacion.precio,
                 cantidadUnidades: publicacion.cantidadUnidades,
+                comentario: publicacion.comentario,
                 fecha: publicacion.fecha.toString(),
+                fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
                 disponible: publicacion.publicacionDisponible,
-                especie: publicacion.presentacion.variedad.especie.nombreEspecie,
-                variedad: publicacion.presentacion.variedad.nombreVariedad,
-                presentacion: publicacion.presentacion.nombrePresentacion,
-                categoria: publicacion.categoria.nombreCategoria,
-                calibre: publicacion.calibre.codigoCalibre,
-                codigoCalibre: publicacion.calibre.codigoCalibre,
-                pais: completa.pais.nombrePais,
+                especie: publicacion.especie.nombreEspecie,
+                variedad: publicacion.variedad?.nombreVariedad ?? "",
+                envase: publicacion.envase?.nombreEnvase ?? "",
+                kilos: publicacion.kilos?.valor ?? "",
+                categoria: publicacion.categoria?.nombreCategoria ?? "",
+                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
+                pais: completa.pais?.nombrePais ?? "",
+                
             });
         }
     }
@@ -148,8 +159,11 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         nombreFantasia: operador.nombreFantasia,
         fotoPerfil: operador.fotoPerfil,
         whatsApp: operador.whatsApp,
+        solicitoRestablecimiento: operador.usuario.solicitoRestablecimiento,
+        enLicencia: operador.enLicencia,
         locales,
         publicaciones,
+        ...(operador.comentario ? { comentario: operador.comentario } : {}),
     };
 
     return operadorResultante;

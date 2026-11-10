@@ -1,5 +1,5 @@
 // Orden de las especies con mayor volumen de venta solicitado por la UAM.
-const especiesPrioritarias = [
+export const especiesPrioritarias = [
     "Papa",
     "Banana",
     "Naranja",

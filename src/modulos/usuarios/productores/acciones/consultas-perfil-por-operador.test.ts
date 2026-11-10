@@ -1,0 +1,356 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { obtenerPerfilProductorPorOperador } from "./consultas-perfil-por-operador";
+import "temporal-polyfill/full/global";
+
+const mocks = vi.hoisted(() => ({
+    obtenerSesion: vi.fn(),
+    productorSelect: vi.fn(),
+    productorWhere: vi.fn(),
+    first: vi.fn(),
+    where: vi.fn(),
+    all: vi.fn(),
+}));
+
+vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
+    obtenerSesion: mocks.obtenerSesion,
+}));
+
+vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
+    db: {
+        orm: {
+            public: {
+                Productor: {
+                    where: mocks.productorWhere,
+                    select: mocks.productorSelect,
+                },
+                PublicacionProductor: {
+                    where: mocks.where,
+                },
+            },
+        },
+    },
+}));
+
+type Constructor = {
+    select: (...campos: string[]) => Constructor;
+    include: (
+        relacion: string,
+        callback?: (consulta: Constructor) => unknown
+    ) => Constructor;
+    all: typeof mocks.all;
+};
+
+function crearConstructor(): Constructor {
+    const constructor: Constructor = {
+        select: () => constructor,
+        include: (_relacion, callback) => {
+            callback?.(constructor);
+            return constructor;
+        },
+        all: mocks.all,
+    };
+    return constructor;
+}
+
+const productor = {
+    id: 10,
+    nombreFantasia: "Huerta Norte",
+    fotoPerfil: null,
+    whatsApp: "099123456",
+};
+
+function crearFila() {
+    return {
+        pais: { nombrePais: "Uruguay" },
+        ubicaciones: [
+            {
+                id: 3,
+                nombreUbicacion: "Depósito central",
+                urlMaps: "https://maps.example/central",
+                departamento: "Salto",
+            },
+        ],
+        publicacion: {
+            id: 20,
+            foto: "/tomate.jpg",
+            precio: "150",
+            fecha: new Date("2026-10-18T12:00:00Z"),
+            cantidadUnidades: 25,
+            publicacionActiva: true,
+            publicacionDisponible: true,
+            tipoPublicacion: "PRODUCTOR",
+            especie: { nombreEspecie: "Tomate" },
+            variedad: { nombreVariedad: "Perita" },
+            envase: { nombreEnvase: "Caja" },
+            kilos: null,
+            categoria: { nombreCategoria: "Primera" },
+            calibre: { codigoCalibre: "M" },
+        },
+    };
+}
+
+describe("obtenerPerfilProductorPorOperador", () => {
+    beforeEach(() => {
+        vi.resetAllMocks();
+        mocks.obtenerSesion.mockResolvedValue({usuarioId: 5, rol: "OPERADOR", expiraEn: 2000000000});
+        mocks.productorSelect.mockReturnValue({first: mocks.first});
+        mocks.productorWhere.mockReturnValue({ select: mocks.productorSelect });
+        mocks.first.mockResolvedValue(productor);
+        mocks.where.mockReturnValue(crearConstructor());
+        mocks.all.mockResolvedValue([]);
+    });
+
+    it("excluye perfiles de productores deshabilitados", async () => {
+        mocks.first.mockResolvedValue(null);
+        await expect(obtenerPerfilProductorPorOperador(productor.nombreFantasia)).resolves.toBeNull();
+        const predicado = mocks.productorWhere.mock.calls[0][0];
+        const evaluar = (estado: boolean) => predicado({
+            usuario: { some: (condicion: (usuario: { habilitado: { eq: (valor: boolean) => boolean } }) => boolean) =>
+                condicion({ habilitado: { eq: (valor) => estado === valor } }) },
+        });
+
+        expect(evaluar(false)).toBe(false);
+        expect(evaluar(true)).toBe(true);
+        expect(mocks.where).not.toHaveBeenCalled();
+    });
+
+    it.each([null, "PRODUCTOR"] as const)("rechaza la consulta con sesión %s antes de acceder a datos", async (rol) => {
+        mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
+        await expect(obtenerPerfilProductorPorOperador("Huerta Norte")).rejects.toThrow("No tiene permisos para consultar las publicaciones del productor.");
+        expect(mocks.productorSelect).not.toHaveBeenCalled();
+        expect(mocks.where).not.toHaveBeenCalled();
+    });
+
+    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite consultar el perfil y sus publicaciones al rol %s", async (rol) => {
+        mocks.obtenerSesion.mockResolvedValue({usuarioId: 5, rol, expiraEn: 2000000000});
+        const fila = crearFila();
+        mocks.all.mockResolvedValue([fila]);
+        await expect(obtenerPerfilProductorPorOperador(productor.nombreFantasia)).
+            resolves.toEqual({
+                ...productor,
+                departamentos: ["Salto"],
+                publicaciones: [
+                    {
+                        id: 20,
+                        foto: "/tomate.jpg",
+                        precio: "150",
+                        fecha: fila.publicacion.fecha.toString(),
+                        cantidadUnidades: 25,
+                        especie: "Tomate",
+                        variedad: "Perita",
+                        envase: "Caja",
+                        kilos: "",
+                        categoria: "Primera",
+                        calibre: "M",
+                        pais: "Uruguay",
+                        ubicaciones: fila.ubicaciones,
+                    },
+                ],
+        });
+        expect(mocks.first).toHaveBeenCalledWith({nombreFantasia: productor.nombreFantasia});
+        expect(mocks.where).toHaveBeenCalledWith({productorId: productor.id});
+    });
+
+    it.each(["", "   "])("devuelve null cuando el nombre está vacío: %s",
+        async (nombre) => {
+            await expect(obtenerPerfilProductorPorOperador(nombre)).resolves.toBeNull();
+            expect(mocks.productorSelect).not.toHaveBeenCalled();
+        }
+    );
+
+    it("devuelve null cuando el productor no existe", async () => {
+        mocks.first.mockResolvedValue(null);
+        await expect( obtenerPerfilProductorPorOperador("Inexistente")).resolves.toBeNull();
+        expect(mocks.first).toHaveBeenCalledWith({nombreFantasia: "Inexistente"});
+        expect(mocks.where).not.toHaveBeenCalled();
+    });
+
+    it("devuelve el perfil sin publicaciones cuando no tiene ninguna", async () => {
+        await expect(
+            obtenerPerfilProductorPorOperador("Huerta Norte")
+        ).resolves.toEqual({
+            ...productor,
+            departamentos: [],
+            publicaciones: [],
+        });
+        expect(mocks.where).toHaveBeenCalledWith({productorId: productor.id});
+    });
+
+    it("transforma los datos de las publicaciones y sus ubicaciones", async () => {
+        const fila = crearFila();
+        mocks.all.mockResolvedValue([fila]);
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado).toEqual({
+            ...productor,
+            departamentos: ["Salto"],
+            publicaciones: [
+                {
+                    id: 20,
+                    foto: "/tomate.jpg",
+                    precio: "150",
+                    fecha: fila.publicacion.fecha.toString(),
+                    cantidadUnidades: 25,
+                    especie: "Tomate",
+                    variedad: "Perita",
+                    envase: "Caja",
+                    kilos: "",
+                    categoria: "Primera",
+                    calibre: "M",
+                    pais: "Uruguay",
+                    ubicaciones: fila.ubicaciones,
+                },
+            ],
+        });
+    });
+
+    it("excluye publicaciones inactivas, no disponibles o de otro tipo", async () => {
+        const valida = crearFila();
+        mocks.all.mockResolvedValue([
+            valida,
+            {
+                ...crearFila(),
+                publicacion: {
+                    ...crearFila().publicacion,
+                    publicacionActiva: false,
+                },
+            },
+            {
+                ...crearFila(),
+                publicacion: {
+                    ...crearFila().publicacion,
+                    publicacionDisponible: false,
+                },
+            },
+            {
+                ...crearFila(),
+                publicacion: {
+                    ...crearFila().publicacion,
+                    tipoPublicacion: "OPERADOR",
+                },
+            },
+        ]);
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+        expect(resultado?.publicaciones).toHaveLength(1);
+        expect(resultado?.publicaciones[0].id).toBe(valida.publicacion.id);
+    });
+
+    it("deduplica departamentos visibles y conserva el desconocido sin inferirlo del nombre", async () => {
+        const base = crearFila();
+        mocks.all.mockResolvedValue([
+            base,
+            { ...base, ubicaciones: [base.ubicaciones[0], { ...base.ubicaciones[0], departamento: "Canelones" }] },
+            { ...base, ubicaciones: [{ ...base.ubicaciones[0], nombreUbicacion: "Maldonado", departamento: null }] },
+            { ...base, publicacion: { ...base.publicacion, publicacionDisponible: false }, ubicaciones: [{ ...base.ubicaciones[0], departamento: "Montevideo" }] },
+            { ...base, publicacion: { ...base.publicacion, publicacionActiva: false }, ubicaciones: [{ ...base.ubicaciones[0], departamento: "Artigas" }] },
+        ]);
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+        expect(resultado?.departamentos).toEqual(["Canelones", "Salto"]);
+        expect(resultado?.publicaciones[2].ubicaciones[0]).toMatchObject({ nombreUbicacion: "Maldonado", departamento: null });
+    });
+
+    it("conserva valores nulos y ubicaciones vacías", async () => {
+        const fila = crearFila();
+        mocks.all.mockResolvedValue([
+            {
+                ...fila,
+                ubicaciones: [],
+                publicacion: {
+                    ...fila.publicacion,
+                    precio: null,
+                    foto: null,
+                    cantidadUnidades: null,
+                },
+            },
+        ]);
+        const resultado = await obtenerPerfilProductorPorOperador(
+            "Huerta Norte"
+        );
+        expect(resultado?.publicaciones[0]).toMatchObject({
+            precio: null,
+            foto: null,
+            cantidadUnidades: null,
+            ubicaciones: [],
+        });
+    });
+
+    it("propaga errores al consultar el perfil", async () => {
+        mocks.first.mockRejectedValue(new Error("Error de perfil"));
+        await expect(obtenerPerfilProductorPorOperador("Huerta Norte")).rejects.toThrow("Error de perfil");
+    });
+
+    it("propaga errores al consultar las publicaciones", async () => {
+        mocks.all.mockRejectedValue(new Error("Error de publicaciones"));
+        await expect(obtenerPerfilProductorPorOperador("Huerta Norte")).rejects.toThrow("Error de publicaciones");
+    });
+
+     describe("vigencia de las publicaciones", () => {
+    const DIA = 86_400_000;
+    const enDias = (dias: number) =>
+        Temporal.Instant.fromEpochMilliseconds(Date.now() + dias * DIA);
+
+    const filaConVigencia = (id: number, fechaVigencia: Temporal.Instant | null) => {
+        const fila = crearFila();
+        return { ...fila, publicacion: { ...fila.publicacion, id, fechaVigencia } };
+    };
+
+    it("no muestra publicaciones vencidas en el perfil del productor visto por operador", async () => {
+        mocks.all.mockResolvedValue([filaConVigencia(20, enDias(-3))]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.publicaciones).toEqual([]);
+    });
+
+    it("muestra publicaciones con fechaVigencia futura", async () => {
+        mocks.all.mockResolvedValue([filaConVigencia(20, enDias(15))]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.publicaciones.map((p) => p.id)).toEqual([20]);
+    });
+
+    it("muestra publicaciones sin fechaVigencia", async () => {
+        mocks.all.mockResolvedValue([filaConVigencia(20, null)]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.publicaciones.map((p) => p.id)).toEqual([20]);
+    });
+
+    it("conserva las vigentes cuando conviven con una vencida", async () => {
+        mocks.all.mockResolvedValue([
+            filaConVigencia(20, enDias(-3)),
+            filaConVigencia(21, enDias(15)),
+            filaConVigencia(22, null),
+        ]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.publicaciones.map((p) => p.id)).toEqual([21, 22]);
+    });
+
+    it("no revela los departamentos de publicaciones vencidas", async () => {
+        const vencida = filaConVigencia(20, enDias(-3));
+        mocks.all.mockResolvedValue([
+            {
+                ...vencida,
+                ubicaciones: [{ ...vencida.ubicaciones[0], departamento: "Artigas" }],
+            },
+            filaConVigencia(21, enDias(15)),
+        ]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado?.departamentos).toEqual(["Salto"]);
+    });
+
+    it("devuelve el perfil sin publicaciones ni departamentos cuando todas están vencidas", async () => {
+        mocks.all.mockResolvedValue([filaConVigencia(20, enDias(-1))]);
+
+        const resultado = await obtenerPerfilProductorPorOperador("Huerta Norte");
+
+        expect(resultado).toEqual({ ...productor, departamentos: [], publicaciones: [] });
+    });
+});
+});

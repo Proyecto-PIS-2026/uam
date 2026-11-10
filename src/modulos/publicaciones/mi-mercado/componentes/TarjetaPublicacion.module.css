@@ -3,9 +3,23 @@
     min-height: 7rem;
     overflow: hidden;
     border: 1px solid var(--color-border);
-    border-radius: 1rem;
+    border-radius: var(--radio-panel);
     background: var(--color-surface);
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    box-shadow: var(--sombra-panel);
+}
+
+.tarjetaConsulta {
+    width: 100%;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tarjetaConsulta:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 2px;
 }
 
 .botonFoto {
@@ -13,7 +27,7 @@
     width: 7rem;
     flex-shrink: 0;
     overflow: hidden;
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
     text-align: left;
 }
 
@@ -29,10 +43,10 @@
     justify-content: center;
     height: 100%;
     min-height: 7rem;
-    padding-inline: 0.5rem;
-    background: var(--color-primary-soft);
+    padding-inline: var(--espacio-inline);
+    background: var(--color-secondary-soft);
     color: var(--color-secondary);
-    font-size: 0.75rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 500;
     text-align: center;
 }
@@ -52,7 +66,7 @@
 }
 
 .botonInformacion:hover {
-    background: color-mix(in srgb, var(--color-primary-soft) 30%, transparent);
+    background: color-mix(in srgb, var(--color-secondary-soft) 30%, transparent);
 }
 
 .informacion {
@@ -60,20 +74,20 @@
     min-width: 0;
     flex: 1;
     flex-direction: column;
-    padding: 0.75rem;
+    padding: var(--espacio-controles);
 }
 
 .encabezadoProducto {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
 }
 
 .nombreProducto {
     min-width: 0;
     flex: 1;
     color: var(--color-foreground);
-    font-size: 1rem;
+    font-size: var(--tamano-titulo-panel);
     font-weight: 700;
     line-height: 1.25;
 }
@@ -82,25 +96,25 @@
     width: fit-content;
     flex-shrink: 0;
     border-radius: 9999px;
-    padding: 0.25rem 0.5rem;
-    font-size: 10px;
+    padding: var(--espacio-textos) var(--espacio-inline);
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
 }
 
 .disponible {
-    background: var(--color-primary-soft);
+    background: var(--color-secondary-soft);
     color: var(--color-secondary);
 }
 
 .noDisponible {
-    background: #f3f4f6;
+    background: var(--color-surface-muted);
     color: var(--color-muted);
 }
 
 .datos {
-    margin-top: 0.5rem;
+    margin-top: var(--espacio-inline);
     color: var(--color-muted);
-    font-size: 0.75rem;
+    font-size: var(--tamano-texto-auxiliar);
     line-height: 1.25rem;
 }
 
@@ -108,14 +122,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.625rem 0.75rem;
+    padding: var(--espacio-controles) var(--espacio-controles);
     border-top: 1px solid var(--color-border);
 }
 
 .controlesPrecio {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--espacio-inline);
 }
 
 .botonPrecio {
@@ -124,47 +138,52 @@
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: 0.5rem;
+    border-radius: var(--radio-control);
     background: var(--color-secondary);
-    color: white;
+    color: var(--color-surface);
     font-size: 1.25rem;
     font-weight: 700;
     transition: background-color 150ms ease, color 150ms ease;
 }
 
 .botonPrecio:hover {
-    background: var(--color-primary-hover);
+    background: var(--color-secondary-hover);
 }
 
-.inputPrecio {
-    box-sizing: border-box;
+.inputPrecio:global(.MuiOutlinedInput-root) {
+    --alto-control: 2rem;
     width: 5rem;
-    height: 2rem;
-    padding-inline: 0.5rem;
-    border: 1px solid var(--color-primary);
-    border-radius: 0.5rem;
-    background: var(--color-surface);
-    color: var(--color-foreground);
-    font-size: 1.125rem;
+    font-size: var(--tamano-texto);
     font-weight: 800;
-    text-align: center;
-    outline: none;
 }
 
-.inputPrecio:focus {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+.inputPrecio :global(.MuiOutlinedInput-input) {
+    padding-inline: var(--espacio-textos);
+    text-align: center;
+}
+
+.inputPrecio :global(.MuiOutlinedInput-input)::placeholder {
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 500;
+}
+
+.inputPrecio:global(.Mui-focused) {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-secondary) 20%, transparent);
 }
 
 .precio {
     min-width: 4rem;
-    cursor: text;
-    color: var(--color-foreground);
-    font-size: 1.25rem;
+    color: var(--color-secondary);
+    font-size: var(--tamano-titulo-seccion);
     font-weight: 800;
-    text-align: center;
+    text-align: left;
 }
 
-.precio:hover {
+.precio:enabled {
+    cursor: text;
+}
+
+.precio:enabled:hover {
     text-decoration: underline;
 }
 
@@ -173,19 +192,22 @@
 }
 
 .botonDetalle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--color-secondary);
     font-size: 1.25rem;
     font-weight: 700;
 }
 
 .botonDetalle:hover {
-    color: var(--color-primary);
+    color: var(--color-secondary);
 }
 
 .errorPrecio {
-    padding: 0 0.75rem 0.75rem;
-    color: #991b1b;
-    font-size: 0.875rem;
+    padding: 0 var(--espacio-controles) var(--espacio-controles);
+    color: var(--color-danger);
+    font-size: var(--tamano-texto-secundario);
 }
 
 @media (min-width: 640px) {
@@ -194,7 +216,7 @@
     }
 
     .informacion {
-        padding: 1rem;
+        padding: var(--espacio-secciones);
     }
 
     .encabezadoProducto {
@@ -204,7 +226,7 @@
     }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 701px) {
     .tarjeta {
         min-height: 0;
         flex-direction: column;
@@ -213,7 +235,7 @@
 
     .tarjeta:hover {
         transform: translateY(-0.125rem);
-        border-color: var(--color-primary);
+        border-color: var(--color-secondary);
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     }
 
@@ -223,6 +245,6 @@
     }
 
     .informacion {
-        padding: 0.75rem;
+        padding: var(--espacio-controles);
     }
 }

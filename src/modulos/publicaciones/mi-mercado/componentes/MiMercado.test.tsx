@@ -1,26 +1,20 @@
-import {
-  render,
-  act,
-  screen,
-  fireEvent,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { render, act, screen, fireEvent, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
-import type { PublicacionParaEditar } from "../../operadores/componentes/DrawerEditarPublicacion";
-import type { CambiosPublicacionOperador } from "../../operadores/modificar-publicacion";
-import MiMercado, {
-  type Publicacion,
-} from "./MiMercado";
+import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../../operadores/tipos";
+import MiMercado from "./MiMercado";
+import type { Publicacion } from "../tipos";
 
 type DrawerMockProps = {
   abierto: boolean;
   alCerrar: () => void;
   alEliminar?: () => void;
+  alCompartir?: () => void;
+  compartiendo?: boolean;
   alGuardar: (publicacionOperadorId: number, cambios: CambiosPublicacionOperador, fotoNueva: File | null) => void | Promise<void>;
   publicacion: PublicacionParaEditar | null;
   modoInicial?: "consulta" | "edicion";
+  mostrarAvisoFoto?: boolean;
   eliminando?: boolean;
   actualizando?: boolean;
   errorConsulta?: string;
@@ -31,12 +25,15 @@ const mocks = vi.hoisted(() => ({
   refrescar: vi.fn(),
   reemplazar: vi.fn(),
   solicitud: vi.fn(),
+  abrirWhatsApp: vi.fn(),
   drawer: vi.fn<(props: DrawerMockProps) => void>(),
   cargarPublicaciones: vi.fn(),
+  suscribirActualizaciones: vi.fn<(actualizar: () => Promise<unknown>, operadorId: number) => void>(),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refrescar, replace: mocks.reemplazar }) }));
 vi.mock("../acciones", () => ({ cargarPublicacionesMiMercado: mocks.cargarPublicaciones }));
+vi.mock("../../tiempo-real/use-actualizaciones-publicaciones", () => ({ useActualizacionesPublicaciones: mocks.suscribirActualizaciones }));
 
 vi.mock("../../operadores/componentes/DrawerEditarPublicacion", () => ({
   default: (props: DrawerMockProps) => {
@@ -49,6 +46,7 @@ vi.mock("../../operadores/componentes/DrawerEditarPublicacion", () => ({
         {props.errorConsulta && <p role="alert">{props.errorConsulta}</p>}
         <button type="button" onClick={props.alCerrar}>Cerrar consulta</button>
         {props.alEliminar && <button type="button" onClick={props.alEliminar} disabled={props.eliminando}>Eliminar desde consulta</button>}
+        {props.alCompartir && <button type="button" onClick={props.alCompartir} disabled={props.compartiendo}>Compartir en WhatsApp</button>}
         {props.children}
       </div>
     );
@@ -100,16 +98,17 @@ vi.mock("./TarjetaPublicacion", () => ({
     operadorId: number;
     incrementoPrecio: number;
     alConsultar?: (publicacion: Publicacion) => void;
-    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number, fecha?: string) => void;
+    alPrecioActualizado?: (publicacionId: number, nuevoPrecio: number | null, fecha?: string) => void;
   }) => (
     <div
       data-testid={`publicacion-${pub.id}`}
       data-operador={operadorId}
       data-incremento={incrementoPrecio}
     >
-      {pub.presentacion.variedad.nombreVariedad}
+      {pub.variedad?.nombreVariedad}
       <button type="button" onClick={() => alConsultar?.(pub)}>Consultar publicación {pub.id}</button>
       <button type="button" onClick={() => alPrecioActualizado?.(pub.id, Number(pub.precio) + incrementoPrecio, "2026-10-10T16:30:00Z")}>Confirmar precio rápido {pub.id}</button>
+      <button type="button" onClick={() => alPrecioActualizado?.(pub.id, null, "2026-10-10T16:30:00Z")}>Quitar precio {pub.id}</button>
     </div>
   ),
 }));
@@ -122,25 +121,21 @@ function crearPublicacion(
   return {
     id,
     publicacionOperadorId: id,
+    version: 1,
     paisId: 44,
     foto: null,
     precio: "100",
     fecha: "2026-10-03T15:00:00.000Z",
+    fechaVigencia: "2026-10-10T15:00:00.000Z",
     publicacionActiva: true,
     publicacionDisponible: true,
-    presentacion: {
-      id,
-      nombrePresentacion: "Cajón",
-      variedad: {
-        id,
-        nombreVariedad: `Variedad ${id}`,
-        especie: {
+    especie: {
           id: especieId,
           nombreEspecie,
           fotoEspecie: null,
         },
-      },
-    },
+        variedad: { id, nombreVariedad: `Variedad ${id}` },
+        envase: { id, nombreEnvase: "Cajon" }, kilos: null,
     categoria: {
       id: 1,
       nombreCategoria: "Primera",
@@ -167,14 +162,18 @@ function crearPublicacionConPrecio(
 function renderMiMercado(
   publicaciones: Publicacion[],
   incrementoPrecio = 5,
+  nombreOperador = "",
+  enLicencia = false,
 ) {
   return render(
     <MiMercado
       puedeCrear={true} puedeModificar={true} puedeEliminar={true}
       operadorId={9}
+      nombreOperador={nombreOperador}
+      enLicencia={enLicencia}
       publicaciones={publicaciones}
       incrementoPrecio={incrementoPrecio}
-      opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
+      opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }}
     />,
   );
 }
@@ -185,13 +184,19 @@ function obtenerPropsDrawer(): DrawerMockProps {
   return props;
 }
 
+function mercadoDesdeAviso(publicaciones: Publicacion[], publicacionInicialId: number) {
+  return <MiMercado operadorId={9} publicaciones={publicaciones} publicacionInicialId={publicacionInicialId}
+    puedeCrear={true} puedeModificar={true} puedeEliminar={true} incrementoPrecio={5}
+    opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }} />;
+}
+
 function idsTarjetas() {
   return screen.getAllByTestId(/^publicacion-/).map((tarjeta) => tarjeta.getAttribute("data-testid"));
 }
 
 function elegirOrden(nombre: "A-Z" | "Z-A" | "Menor Precio" | "Mayor Precio") {
-  fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
-  fireEvent.click(screen.getByRole("button", { name: nombre }));
+    fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: nombre }));
 }
 
 describe("MiMercado", () => {
@@ -200,10 +205,121 @@ describe("MiMercado", () => {
     mocks.solicitud.mockReset();
     mocks.cargarPublicaciones.mockReset();
     vi.stubGlobal("fetch", mocks.solicitud);
+    vi.stubGlobal("open", mocks.abrirWhatsApp);
+  });
+
+  it("abre desde el aviso la consulta de la publicación propia por su id base", () => {
+    const publicacion = { ...crearPublicacion(23, 1, "Pera"), publicacionOperadorId: 987, estadoFoto: "eliminada" as const };
+
+    render(mercadoDesdeAviso([publicacion], 23));
+
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-modo", "consulta");
+    expect(obtenerPropsDrawer().publicacion).toMatchObject({ publicacionId: 23, publicacionOperadorId: 987, estadoFoto: "eliminada" });
+    expect(obtenerPropsDrawer().mostrarAvisoFoto).toBe(true);
+    expect(mocks.solicitud).not.toHaveBeenCalled();
+    expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
+  });
+
+  it("actualiza el aviso del drawer cuando la foto vence o se reemplaza", async () => {
+    const publicacion: Publicacion = { ...crearPublicacion(23, 1, "Pera"), foto: "/foto-original.webp", estadoFoto: "por-vencer" };
+    render(mercadoDesdeAviso([publicacion], 23));
+    expect(obtenerPropsDrawer().publicacion?.estadoFoto).toBe("por-vencer");
+
+    mocks.cargarPublicaciones.mockResolvedValue([{ ...publicacion, foto: null, estadoFoto: "eliminada", version: 2 }]);
+    await act(async () => { await mocks.suscribirActualizaciones.mock.lastCall?.[0](); });
+    expect(obtenerPropsDrawer().publicacion).toMatchObject({ foto: null, estadoFoto: "eliminada" });
+
+    mocks.cargarPublicaciones.mockResolvedValue([{ ...publicacion, foto: "/foto-nueva.webp", estadoFoto: null, version: 3 }]);
+    await act(async () => { await mocks.suscribirActualizaciones.mock.lastCall?.[0](); });
+    expect(obtenerPropsDrawer().publicacion).toMatchObject({ foto: "/foto-nueva.webp", estadoFoto: null });
+  });
+
+  it.each([999, 987])("informa el aviso ajeno, eliminado o con id de relación %s sin buscarlo externamente", (publicacionInicialId) => {
+    const publicacion = { ...crearPublicacion(23, 1, "Pera"), publicacionOperadorId: 987 };
+
+    render(mercadoDesdeAviso([publicacion], publicacionInicialId));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+    expect(mocks.solicitud).not.toHaveBeenCalled();
+    expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
+  });
+
+  it("conserva el cierre después de refresh y tiempo real, y abre otro aviso sin perder los filtros", async () => {
+    const publicaciones = [crearPublicacion(1, 1, "Pera"), crearPublicacion(2, 2, "Manzana")];
+    const { rerender } = render(mercadoDesdeAviso(publicaciones, 1));
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar consulta" }));
+    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar publicaciones" }), { target: { value: "Pera" } });
+
+    rerender(mercadoDesdeAviso([...publicaciones], 1));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    mocks.cargarPublicaciones.mockResolvedValue(publicaciones);
+    await act(async () => { await mocks.suscribirActualizaciones.mock.lastCall?.[0](); });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    rerender(mercadoDesdeAviso(publicaciones, 2));
+    expect(obtenerPropsDrawer().publicacion?.publicacionId).toBe(2);
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveTextContent("Manzana");
+    expect(screen.getByRole("searchbox", { name: "Buscar publicaciones" })).toHaveValue("Pera");
+    expect(screen.queryByTestId("publicacion-2")).not.toBeInTheDocument();
+  });
+
+  it("cierra la consulta del aviso y avisa si desaparece del listado propio", () => {
+    const { rerender } = render(mercadoDesdeAviso([crearPublicacion(1, 1, "Pera")], 1));
+
+    rerender(mercadoDesdeAviso([], 1));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ["Confirmar precio rápido 52", "💰 Precio: $105"],
+    ["Quitar precio 52", "💰 Precio: Consultar"],
+  ])("abre WhatsApp directamente con los datos actuales después de %s", (accion, precioEsperado) => {
+    const publicacion = crearPublicacion(52, 10, "Manzana");
+    publicacion.foto = "/api/imagenes/publicaciones/52";
+    renderMiMercado([publicacion], 5, "Mercado Pérez & Hijos");
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+    fireEvent.click(screen.getByRole("button", { name: accion }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Compartir en WhatsApp" }));
+
+    expect(mocks.abrirWhatsApp).toHaveBeenCalledOnce();
+    const [destino, ventana, opciones] = mocks.abrirWhatsApp.mock.calls[0];
+    const enlace = new URL(destino);
+    expect(enlace.origin).toBe("https://web.whatsapp.com");
+    expect(enlace.searchParams.get("text")).toContain(precioEsperado);
+    expect(enlace.searchParams.get("text")).toContain(`${window.location.origin}/operadores/Mercado%20P%C3%A9rez%20%26%20Hijos`);
+    expect(ventana).toBe("_blank");
+    expect(opciones).toBe("noopener,noreferrer");
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toBeInTheDocument();
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    expect(mocks.solicitud).not.toHaveBeenCalled();
+    expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
+  });
+
+  it("informa el fallo al abrir WhatsApp y mantiene el detalle abierto para reintentar", () => {
+    mocks.abrirWhatsApp.mockImplementationOnce(() => { throw new Error("No se pudo abrir WhatsApp"); });
+    renderMiMercado([crearPublicacion(52, 10, "Manzana")], 5, "Mercado Pérez & Hijos");
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Compartir en WhatsApp" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("No se pudo abrir WhatsApp.");
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toBeInTheDocument();
+    expect(mocks.abrirWhatsApp).toHaveBeenCalledOnce();
+    expect(mocks.solicitud).not.toHaveBeenCalled();
+    expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+    fireEvent.click(screen.getByRole("button", { name: "Compartir en WhatsApp" }));
+    expect(mocks.abrirWhatsApp).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toBeInTheDocument();
   });
 
   it("actualiza la fecha del detalle abierto con la fecha guardada por el precio rápido", () => {
@@ -226,7 +342,7 @@ describe("MiMercado", () => {
         abrirAltaInicial={true}
         publicaciones={[]}
         incrementoPrecio={5}
-        opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
+        opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }}
       />,
     );
 
@@ -254,7 +370,7 @@ describe("MiMercado", () => {
         publicacionOperadorId: 13,
         especieId: 10,
         variedadId: 52,
-        presentacionId: 52,
+        envaseId: 52, kilosId: null,
         categoriaId: 1,
         calibreId: 1,
         paisId: 44,
@@ -266,6 +382,14 @@ describe("MiMercado", () => {
     expect(screen.queryByRole("dialog", { name: "Publicación seleccionada" })).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toHaveAttribute("data-operador", "9");
+  });
+
+  it("conserva null al quitar el precio desde la tarjeta y abrir el detalle", () => {
+    renderMiMercado([crearPublicacion(52, 10, "Manzana")]);
+    fireEvent.click(screen.getByRole("button", { name: "Quitar precio 52" }));
+    fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+
+    expect(obtenerPropsDrawer().publicacion).toEqual(expect.objectContaining({ precio: null }));
   });
 
   it("permite cancelar la baja sin cerrar la consulta ni enviar una solicitud", () => {
@@ -294,9 +418,11 @@ describe("MiMercado", () => {
       json: async () => ({ mensaje: "Publicación actualizada.", publicacionId: 52, publicacionOperadorId: 13 }),
     });
     const cambios: CambiosPublicacionOperador = {
+      version: 1,
+      especieId: 20, variedadId: 23,
       precio: "150",
       foto: null,
-      presentacionId: 22,
+      envaseId: 22, kilosId: null,
       categoriaId: 2,
       calibreId: 2,
       paisId: 55,
@@ -311,9 +437,8 @@ describe("MiMercado", () => {
     actualizada.foto = "/api/publicaciones/imagenes/52/pera.webp";
     actualizada.paisId = 55;
     actualizada.publicacionDisponible = false;
-    actualizada.presentacion.id = 22;
-    actualizada.presentacion.variedad.id = 23;
-    actualizada.presentacion.variedad.nombreVariedad = "Williams";
+    actualizada.envase = { id: 22, nombreEnvase: "Cajon" };
+    actualizada.variedad = { id: 23, nombreVariedad: "Williams" };
     actualizada.categoria = { id: 2, nombreCategoria: "II" };
     actualizada.calibre = { id: 2, codigoCalibre: "G", nombreCalibre: "Grande" };
     mocks.cargarPublicaciones.mockResolvedValue([actualizada]);
@@ -335,7 +460,7 @@ describe("MiMercado", () => {
     expect(screen.getByTestId("publicacion-52")).toHaveTextContent("Williams");
     expect(obtenerPropsDrawer().publicacion).toEqual(expect.objectContaining({ especie: "Pera", precio: "150.00", paisId: 55 }));
 
-    rerender(<MiMercado puedeCrear={true} puedeModificar={true} puedeEliminar={true} operadorId={9} publicaciones={[actualizada]} incrementoPrecio={5} opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }} />);
+    rerender(<MiMercado puedeCrear={true} puedeModificar={true} puedeEliminar={true} operadorId={9} publicaciones={[actualizada]} incrementoPrecio={5} opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }} />);
 
     const consultaActualizada = screen.getByRole("dialog", { name: "Publicación seleccionada" });
     expect(consultaActualizada).toHaveAttribute("data-actualizando", "false");
@@ -349,7 +474,7 @@ describe("MiMercado", () => {
       variedad: "Williams",
       precio: "150.00",
       foto: "/api/publicaciones/imagenes/52/pera.webp",
-      presentacionId: 22,
+      envaseId: 22, kilosId: null,
       categoriaId: 2,
       calibreId: 2,
       paisId: 55,
@@ -368,7 +493,8 @@ describe("MiMercado", () => {
       json: async () => ({ errores: ["No se pudieron guardar los cambios."] }),
     });
     const cambios: CambiosPublicacionOperador = {
-      precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+      version: 1,
+      especieId: 10, variedadId: 52, precio: "150", foto: null, envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
     };
     const propsIniciales = obtenerPropsDrawer();
 
@@ -393,8 +519,8 @@ describe("MiMercado", () => {
     mocks.cargarPublicaciones.mockResolvedValue([]);
 
     await act(async () => {
-      await obtenerPropsDrawer().alGuardar(52, {
-        precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+      await obtenerPropsDrawer().alGuardar(52, { version: 1,
+        especieId: 10, variedadId: 52, precio: "150", foto: null, envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 
@@ -411,8 +537,8 @@ describe("MiMercado", () => {
     mocks.cargarPublicaciones.mockResolvedValue([]);
 
     await act(async () => {
-      await obtenerPropsDrawer().alGuardar(52, {
-        precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+      await obtenerPropsDrawer().alGuardar(52, { version: 1,
+        especieId: 10, variedadId: 52, precio: "150", foto: null, envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 
@@ -429,13 +555,13 @@ describe("MiMercado", () => {
     mocks.cargarPublicaciones.mockRejectedValue(new Error("No se pudo consultar la base de datos"));
 
     await act(async () => {
-      await obtenerPropsDrawer().alGuardar(52, {
-        precio: "150", foto: null, presentacionId: 52, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+      await obtenerPropsDrawer().alGuardar(52, { version: 1,
+        especieId: 10, variedadId: 52, precio: "150", foto: null, envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
       }, null);
     });
 
-    expect(screen.getAllByText("Los cambios se guardaron, pero no se pudo actualizar el listado. Recargá la página.").length).toBeGreaterThan(0);
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getAllByText("No se pudo actualizar el listado. Recargá la página.").length).toBeGreaterThan(0);
+    expect(screen.getByRole("status")).toHaveTextContent("Publicación actualizada.");
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Publicación seleccionada" })).toHaveAttribute("data-actualizando", "false");
     expect(mocks.refrescar).not.toHaveBeenCalled();
@@ -496,9 +622,9 @@ describe("MiMercado", () => {
     fireEvent.click(screen.getByRole("button", { name: "Eliminar desde consulta" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
 
-    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Los cambios se guardaron, pero no se pudo actualizar el listado."));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo actualizar el listado."));
     expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent("Publicación eliminada.");
     expect(mocks.cargarPublicaciones).toHaveBeenCalledExactlyOnceWith(9);
   });
 
@@ -512,7 +638,10 @@ describe("MiMercado", () => {
     fireEvent.click(screen.getByRole("button", { name: "Eliminar desde consulta" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
 
-    await waitFor(() => expect(within(screen.getByRole("dialog", { name: "Publicación seleccionada" })).getByRole("alert")).toHaveTextContent("No se pudo eliminar la publicación."));
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo eliminar la publicación.");
+    expect(within(screen.getByRole("dialog", { name: "Publicación seleccionada" })).queryByRole("alert")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByTestId("publicacion-52")).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog", { name: "Confirmar eliminación" })).not.toBeInTheDocument();
     expect(mocks.refrescar).not.toHaveBeenCalled();
@@ -554,6 +683,103 @@ describe("MiMercado", () => {
     expect(mocks.refrescar).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["alta", "Publicación creada correctamente."],
+    ["edición", "Publicación actualizada."],
+    ["baja", "Publicación eliminada."],
+  ])("conserva el aviso de %s y los datos más nuevos si se adelanta una recarga en tiempo real", async (operacion, mensaje) => {
+    const inicial = crearPublicacion(52, 10, "Manzana");
+    const nueva = crearPublicacion(53, 20, "Pera");
+    const actualizada = { ...inicial, precio: "150", version: 2 };
+    const datosNuevos = operacion === "baja" ? [nueva] : [actualizada, nueva];
+    let completarRecarga!: (datos: Publicacion[]) => void;
+    let completarTiempoReal!: (datos: Publicacion[]) => void;
+    mocks.cargarPublicaciones
+      .mockReturnValueOnce(new Promise<Publicacion[]>((resolve) => { completarRecarga = resolve; }))
+      .mockReturnValueOnce(new Promise<Publicacion[]>((resolve) => { completarTiempoReal = resolve; }));
+    mocks.solicitud.mockResolvedValue({ ok: true, json: async () => ({ mensaje }) });
+    renderMiMercado([inicial]);
+
+    let guardado: void | Promise<void> = undefined;
+    if (operacion === "alta") {
+      fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+      fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+    } else {
+      fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+      if (operacion === "edición") {
+        act(() => {
+          guardado = obtenerPropsDrawer().alGuardar(52, {
+            version: 1, especieId: 10, variedadId: 52, precio: "150", foto: null,
+            envaseId: 52, kilosId: null, categoriaId: 1, calibreId: 1, paisId: 44, disponible: true,
+          }, null);
+        });
+      } else {
+        fireEvent.click(screen.getByRole("button", { name: "Eliminar desde consulta" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
+      }
+    }
+    await waitFor(() => expect(mocks.cargarPublicaciones).toHaveBeenCalledTimes(1));
+
+    let recargaTiempoReal!: Promise<unknown>;
+    act(() => {
+      recargaTiempoReal = mocks.suscribirActualizaciones.mock.lastCall![0]();
+    });
+    expect(mocks.cargarPublicaciones).toHaveBeenCalledTimes(2);
+    await act(async () => { completarTiempoReal(datosNuevos); await recargaTiempoReal; });
+    await act(async () => { completarRecarga([inicial]); await guardado; });
+
+    expect(screen.getByRole("status")).toHaveTextContent(mensaje);
+    expect(screen.getByTestId("publicacion-53")).toBeInTheDocument();
+    if (operacion === "baja") {
+      expect(screen.queryByTestId("publicacion-52")).not.toBeInTheDocument();
+    } else {
+      if (operacion === "alta") fireEvent.click(screen.getByRole("button", { name: "Consultar publicación 52" }));
+      expect(obtenerPropsDrawer().publicacion?.precio).toBe("150");
+    }
+  });
+
+  it("conserva el aviso del alta al navegar desde la página de nueva publicación", async () => {
+    let completarRecarga!: (datos: Publicacion[]) => void;
+    mocks.cargarPublicaciones.mockReturnValue(new Promise<Publicacion[]>((resolve) => { completarRecarga = resolve; }));
+    const { rerender } = render(
+      <MiMercado puedeCrear={true} puedeModificar={true} puedeEliminar={true} operadorId={9}
+        abrirAltaInicial publicaciones={[]} incrementoPrecio={5}
+        opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }} />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+    expect(mocks.reemplazar).toHaveBeenCalledWith("/mi-mercado", { scroll: false });
+    rerender(<main>Destino de la navegación</main>);
+    await act(async () => { completarRecarga([crearPublicacion(52, 10, "Manzana")]); });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+  });
+
+  it("conserva la confirmación del alta aunque falle la recarga posterior", async () => {
+    mocks.cargarPublicaciones.mockRejectedValue(new Error("No se pudo consultar la base de datos"));
+    renderMiMercado([]);
+    fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo actualizar el listado.");
+    expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+  });
+
+  it("acumula los avisos de dos altas consecutivas sin borrar el primero al abrir otra acción", async () => {
+    mocks.cargarPublicaciones.mockResolvedValue([]);
+    renderMiMercado([]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+    await waitFor(() => expect(screen.getAllByRole("status")).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+    fireEvent.click(screen.getByRole("button", { name: "Guardar alta simulada" }));
+    await waitFor(() => expect(screen.getAllByRole("status")).toHaveLength(2));
+    expect(screen.getAllByRole("status").every((aviso) => aviso.textContent?.includes("Publicación creada correctamente."))).toBe(true);
+  });
+
   it("muestra el listado de publicaciones del operador", () => {
     renderMiMercado([
       crearPublicacion(1, 10, "Manzana"),
@@ -569,7 +795,7 @@ describe("MiMercado", () => {
     ).toBeInTheDocument();
   });
 
-  it("agrupa inicialmente por prioridad sin mostrar especies sin publicaciones", () => {
+  it("ordena inicialmente por prioridad y ofrece solo especies con publicaciones", () => {
     renderMiMercado([
       crearPublicacion(1, 20, "Pera"),
       crearPublicacion(2, 30, "Sandía"),
@@ -582,13 +808,12 @@ describe("MiMercado", () => {
     expect(screen.getByRole("textbox", { name: "Precio Máximo" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Más filtros" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ordenar por" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Desagrupar" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Manzana", "Sandía", "Pera"]);
+    expect(idsTarjetas()).toEqual(["publicacion-3", "publicacion-2", "publicacion-1"]);
     fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
     expect(screen.getAllByRole("option").map((opcion) => opcion.textContent)).toEqual(["Todas", "Manzana", "Sandía", "Pera"]);
   });
 
-  it("mantiene la prioridad al desagrupar y respeta A-Z cuando se elige", () => {
+  it("mantiene la prioridad inicial y respeta A-Z cuando se elige", () => {
     renderMiMercado([
       crearPublicacion(1, 20, "Pera"),
       crearPublicacion(2, 30, "Manzana"),
@@ -596,14 +821,10 @@ describe("MiMercado", () => {
       crearPublicacion(4, 50, "Acelga"),
     ]);
 
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Papa", "Manzana", "Acelga", "Pera"]);
-    fireEvent.click(screen.getByRole("button", { name: "Desagrupar" }));
     expect(idsTarjetas()).toEqual(["publicacion-3", "publicacion-2", "publicacion-4", "publicacion-1"]);
 
     elegirOrden("A-Z");
     expect(idsTarjetas()).toEqual(["publicacion-4", "publicacion-2", "publicacion-3", "publicacion-1"]);
-    fireEvent.click(screen.getByRole("button", { name: "Agrupar por especie" }));
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Acelga", "Manzana", "Papa", "Pera"]);
   });
 
   it("filtra al escribir sin distinguir mayúsculas ni tildes y restaura las tarjetas al limpiar", () => {
@@ -616,7 +837,6 @@ describe("MiMercado", () => {
 
     fireEvent.change(buscador, { target: { value: "SANDIA" } });
     expect(idsTarjetas()).toEqual(["publicacion-2"]);
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía"]);
 
     fireEvent.change(buscador, { target: { value: "sin coincidencias" } });
     expect(screen.queryAllByTestId(/^publicacion-/)).toHaveLength(0);
@@ -625,6 +845,13 @@ describe("MiMercado", () => {
     fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
     expect(buscador).toHaveValue("");
     expect(idsTarjetas()).toEqual(["publicacion-1", "publicacion-2", "publicacion-3"]);
+  });
+
+  it("muestra el aviso de licencia sin ocultar las publicaciones propias", () => {
+    renderMiMercado([crearPublicacion(1, 10, "Manzana")], 5, "Mercado Pérez", true);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Estás de licencia, productos ocultos al público");
+    expect(screen.getByTestId("publicacion-1")).toBeInTheDocument();
   });
 
   it("combina especie con precio mínimo y máximo sobre las tarjetas del operador", () => {
@@ -645,27 +872,9 @@ describe("MiMercado", () => {
 
     fireEvent.change(screen.getByRole("textbox", { name: "Precio Máximo" }), { target: { value: "90" } });
     expect(idsTarjetas()).toEqual(["publicacion-1"]);
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Pera"]);
   });
 
-  it("ordena por precio dentro de cada especie y conserva la prioridad entre grupos", () => {
-    renderMiMercado([
-      crearPublicacionConPrecio(1, 20, "Pera", "80"),
-      crearPublicacionConPrecio(2, 10, "Sandía", "70"),
-      crearPublicacionConPrecio(3, 20, "Pera", "20"),
-      crearPublicacionConPrecio(4, 10, "Sandía", "150"),
-    ]);
-
-    elegirOrden("Menor Precio");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía", "Pera"]);
-    expect(idsTarjetas()).toEqual(["publicacion-2", "publicacion-4", "publicacion-3", "publicacion-1"]);
-
-    elegirOrden("Mayor Precio");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía", "Pera"]);
-    expect(idsTarjetas()).toEqual(["publicacion-4", "publicacion-2", "publicacion-1", "publicacion-3"]);
-  });
-
-  it("invierte el orden de los grupos al elegir Z-A", () => {
+  it("ordena las tarjetas por especie al elegir Z-A", () => {
     renderMiMercado([
       crearPublicacion(1, 20, "Pera"),
       crearPublicacion(2, 30, "Sandía"),
@@ -673,10 +882,10 @@ describe("MiMercado", () => {
     ]);
 
     elegirOrden("Z-A");
-    expect(screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent)).toEqual(["Sandía", "Pera", "Manzana"]);
+    expect(idsTarjetas()).toEqual(["publicacion-2", "publicacion-1", "publicacion-3"]);
   });
 
-  it("ordena globalmente las tarjetas desagrupadas por especie o precio", () => {
+  it("ordena globalmente por precio las tarjetas de distintas especies", () => {
     renderMiMercado([
       crearPublicacionConPrecio(1, 20, "Pera", "80"),
       crearPublicacionConPrecio(2, 10, "Manzana", "70"),
@@ -684,8 +893,6 @@ describe("MiMercado", () => {
       crearPublicacionConPrecio(4, 10, "Manzana", "150"),
     ]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Desagrupar" }));
-    expect(screen.getByRole("button", { name: "Agrupar por especie" })).toHaveAttribute("aria-pressed", "false");
     expect(idsTarjetas()).toEqual(["publicacion-2", "publicacion-4", "publicacion-1", "publicacion-3"]);
 
     elegirOrden("Menor Precio");
@@ -696,148 +903,16 @@ describe("MiMercado", () => {
   });
 
 
-  it("muestra las tarjetas directamente cuando no está agrupado", () => {
-    renderMiMercado([
-      crearPublicacion(1, 10, "Manzana"),
-      crearPublicacion(2, 20, "Pera"),
-    ]);
-
-    const boton = screen.getByRole(
-      "button",
-      {
-        name: "Desagrupar",
-      },
-    );
-
-    fireEvent.click(boton);
-
-    expect(
-      screen.getByTestId("publicacion-1"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByTestId("publicacion-2"),
-    ).toBeInTheDocument();
-  });
-
-
-  it("agrupa las publicaciones por especie", () => {
+  it("conserva todas las tarjetas sin controles de agrupación, incluso cuando comparten especie", () => {
     renderMiMercado([
       crearPublicacion(1, 10, "Manzana"),
       crearPublicacion(2, 10, "Manzana"),
       crearPublicacion(3, 20, "Pera"),
     ]);
 
-    expect(
-      screen.getAllByText("Manzana"),
-    ).toHaveLength(1);
-
-    expect(
-      screen.getAllByText("Pera"),
-    ).toHaveLength(1);
-
-    expect(
-      screen.getByText("· 2 publicaciones"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText("· 1 publicación"),
-    ).toBeInTheDocument();
-  });
-
-
-  it("permite desagrupar y volver a agrupar publicaciones por especie", () => {
-    renderMiMercado([
-      crearPublicacion(1, 10, "Manzana"),
-      crearPublicacion(2, 10, "Manzana"),
-      crearPublicacion(3, 20, "Pera"),
-    ]);
-
-    const botonDesagrupar =
-      screen.getByRole(
-        "button",
-        {
-          name: "Desagrupar",
-        },
-      );
-
-    expect(
-      botonDesagrupar,
-    ).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-
-    fireEvent.click(
-      botonDesagrupar,
-    );
-
-
-    const botonAgrupar =
-      screen.getByRole(
-        "button",
-        {
-          name: "Agrupar por especie",
-        },
-      );
-
-    expect(
-      botonAgrupar,
-    ).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-
-    fireEvent.click(
-      botonAgrupar,
-    );
-
-
-    expect(
-      screen.getByRole(
-        "button",
-        {
-          name: "Desagrupar",
-        },
-      ),
-    ).toBeInTheDocument();
-  });
-
-
-  it("mantiene todas las publicaciones al agrupar por especie", () => {
-    renderMiMercado([
-      crearPublicacion(1, 10, "Manzana"),
-      crearPublicacion(2, 10, "Manzana"),
-      crearPublicacion(3, 20, "Pera"),
-    ]);
-
-    expect(
-      screen.getByTestId("publicacion-1"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByTestId("publicacion-2"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByTestId("publicacion-3"),
-    ).toBeInTheDocument();
-  });
-
-
-  it("mantiene grupos separados cuando las especies son diferentes", () => {
-    renderMiMercado([
-      crearPublicacion(1, 10, "Manzana"),
-      crearPublicacion(2, 20, "Pera"),
-    ]);
-
-    expect(
-      screen.getByText("Manzana"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText("Pera"),
-    ).toBeInTheDocument();
+    expect(idsTarjetas()).toEqual(["publicacion-1", "publicacion-2", "publicacion-3"]);
+    expect(screen.queryByRole("button", { name: "Desagrupar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Agrupar por especie" })).not.toBeInTheDocument();
   });
 
 
@@ -952,7 +1027,7 @@ describe("MiMercado", () => {
           crearPublicacion(1, 10, "Manzana"),
         ]}
         incrementoPrecio={5}
-        opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
+        opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }}
       />,
     );
 
@@ -968,7 +1043,7 @@ describe("MiMercado", () => {
           crearPublicacion(2, 20, "Pera"),
         ]}
         incrementoPrecio={5}
-        opcionesEdicion={{ especies: [], variedades: [], presentaciones: [], categorias: [], calibres: [], paises: [] }}
+        opcionesEdicion={{ especies: [], variedades: [], envases: [], kilos: [], categorias: [], calibres: [], paises: [] }}
       />,
     );
 

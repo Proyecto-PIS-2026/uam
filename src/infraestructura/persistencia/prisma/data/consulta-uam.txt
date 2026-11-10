@@ -818,7 +818,7 @@
                                 },
                                 {
                                     "caliber": "M",
-                                    "country": "PERU",
+                                    "country": "PERÚ",
                                     "measure_unit": "DOC",
                                     "prices": [
                                         {
@@ -1725,7 +1725,7 @@
                 },
                 {
                     "species_id": 21,
-                    "species": "Rucula",
+                    "species": "Rúcula",
                     "varieties": [
                         {
                             "variety": "-",
@@ -2059,7 +2059,7 @@
                 },
                 {
                     "species_id": 64,
-                    "species": "Mamon",
+                    "species": "Mamón",
                     "varieties": [
                         {
                             "variety": "-",
@@ -2187,7 +2187,7 @@
                             "presentations": [
                                 {
                                     "caliber": "G",
-                                    "country": "PERU",
+                                    "country": "PERÚ",
                                     "measure_unit": "KG",
                                     "prices": [
                                         {
@@ -2202,7 +2202,7 @@
                                 },
                                 {
                                     "caliber": "M",
-                                    "country": "PERU",
+                                    "country": "PERÚ",
                                     "measure_unit": "KG",
                                     "prices": [
                                         {
@@ -2351,7 +2351,7 @@
                             "presentations": [
                                 {
                                     "caliber": "SV",
-                                    "country": "PERU",
+                                    "country": "PERÚ",
                                     "measure_unit": "KG",
                                     "prices": [
                                         {
@@ -3616,7 +3616,7 @@
                             ]
                         },
                         {
-                            "variety": "Sanguinea",
+                            "variety": "Sanguínea",
                             "presentations": [
                                 {
                                     "caliber": "G",
@@ -6063,7 +6063,7 @@
                             "presentations": [
                                 {
                                     "caliber": "SV",
-                                    "country": "PERU",
+                                    "country": "PERÚ",
                                     "measure_unit": "Unidad",
                                     "prices": [
                                         {

@@ -22,11 +22,28 @@ model Usuario {
   passwordHash     String
   twoFactorSecret  String?
   twoFactorEnabled Boolean        @default(false)
+  twoFactorChallengeHash String?   @unique
+  twoFactorPendingSecret String?
+  twoFactorExpiresAt Int?
+  twoFactorFailedAttempts Int      @default(0)
+  twoFactorLockedUntil Int?
+  twoFactorLastStep Int?
+  solicitoRestablecimiento Boolean        @default(false)
+  habilitado       Boolean        @default(true)
   rol              RolUsuario
 
   notificaciones   Notificacion[]
 
   @@map("usuario")
+}
+
+// Tokens cerrados: la revocación se comparte entre instancias hasta su vencimiento.
+model SesionRevocada {
+  tokenHash String @id
+  expiraEn  Timestamptz(3)
+
+  @@index([expiraEn])
+  @@map("sesionRevocada")
 }
 
 // ADMINISTRADORES
@@ -51,6 +68,7 @@ model Operador {
   whatsApp              String
 
   locales               Local[]
+  avisosVencimientoLocales AvisoVencimientoLocal[]
   publicacionesOperador PublicacionOperador[]
 
   @@map("operador")
@@ -61,6 +79,8 @@ model Productor {
   id                     Int                    @id @default(autoincrement())
   usuarioId              Int                    @unique
   usuario                Usuario                @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
+  nombreFantasia         String                 @unique
+  fotoPerfil             String?
   whatsApp               String
 
   publicacionesProductor PublicacionProductor[]
@@ -91,6 +111,21 @@ model Local {
   @@map("local")
 }
 
+// Conserva los avisos aunque se borren las notificaciones o se recreen los locales al editar un operador.
+model AvisoVencimientoLocal {
+  id          Int       @id @default(autoincrement())
+  operadorId  Int
+  operador    Operador  @relation(fields:[operadorId], references:[id], onDelete: Cascade)
+  naveId      Int
+  numeroLocal String
+  finContrato Date
+  tipo        String
+  fecha       Timestamptz(3) @default(now())
+
+  @@unique([operadorId, naveId, numeroLocal, finContrato, tipo], map: "avisoVencimientoLocal_contrato_tipo_key")
+  @@map("avisoVencimientoLocal")
+}
+
 // ESPECIES
 model Especie {
   id            Int         @id @default(autoincrement())
@@ -100,6 +135,8 @@ model Especie {
   fotoEspecie   String?
   variedades    Variedad[]
   categorias    Categoria[]
+  historicoPrecios HistoricoPrecios?
+  publicaciones Publicacion[]
 
   @@map("especie")
 }
@@ -113,6 +150,7 @@ model Variedad {
   especieId      Int
   especie        Especie        @relation(fields:[especieId], references:[id])
   presentaciones Presentacion[]
+  publicaciones Publicacion[]
 
   @@map("variedad")
 }
@@ -127,9 +165,24 @@ model Presentacion {
   presentacionDefault Boolean         @default(false)
   variedadId          Int
   variedad            Variedad        @relation(fields:[variedadId], references:[id])
-  publicaciones       Publicacion[]
 
   @@map("presentacion")
+}
+
+model Envase {
+  id           Int           @id @default(autoincrement())
+  nombreEnvase String        @unique
+  publicaciones Publicacion[]
+
+  @@map("envase")
+}
+
+model KilosEmpaquetado {
+  id           Int           @id @default(autoincrement())
+  valor        String        @unique
+  publicaciones Publicacion[]
+
+  @@map("kilosEmpaquetado")
 }
 
 // CATEGORIAS
@@ -155,40 +208,73 @@ model Calibre {
 
 // PAISES
 model Pais {
-  id                  Int                   @id @default(autoincrement())
-  codigoPais          String                @unique
-  nombrePais          String                @unique
-  publicacionesOrigen PublicacionOperador[]
+  id                     Int                    @id @default(autoincrement())
+  codigoPais             String                 @unique
+  nombrePais             String                 @unique
+  publicacionesOperador  PublicacionOperador[]  @relation("PaisOperador")
+  publicacionesProductor PublicacionProductor[] @relation("PaisProductor")
 
   @@map("pais")
 }
 
-// DEPARTAMENTOS
-model Departamento {
-  id                   Int                    @id @default(autoincrement())
-  codigoDepartamento   String                 @unique
-  nombreDepartamento   String                 @unique
-  publicacionesVendido PublicacionProductor[]
+// UBICACIONES
+model Ubicacion {
+  id              Int                  @id @default(autoincrement())
+  nombreUbicacion String
+  departamento    String?
+  urlMaps         String
+  publicacionId   Int
+  publicacion     PublicacionProductor @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
 
-  @@map("departamento")
+  @@map("ubicacion")
+}
+
+model Imagen {
+  clave     String @id
+  contenido Bytes
+  cargadaEn DateTime?
+  avisoVencimientoEn DateTime?
+
+  @@map("imagen")
+}
+
+model EjecucionTareaProgramada {
+  nombre              String   @id
+  fecha               Date
+  completadaEn        DateTime
+  elementosProcesados Int
+
+  @@map("ejecucionTareaProgramada")
 }
 
 // PUBLICACIONES ABSTRACTAS
 model Publicacion {
-  id                    Int                   @id @default(autoincrement())
+  id                    Int                  @id @default(autoincrement())
+  version               Int                  @default(1)
   fecha                 temporal.updatedAt()
-  publicacionDisponible Boolean               @default(true)
-  publicacionActiva     Boolean               @default(true)
+  fechaVigencia         DateTime?
+  avisoProximoVencimientoEn DateTime?
+  avisoVencimientoEn    DateTime?
+  publicacionDisponible Boolean              @default(true)
+  publicacionActiva     Boolean              @default(true)
   precio                Numeric(12, 2)?
+  comentario            String?
   cantidadUnidades      Int?
   foto                  String?
+  fotoEliminadaPorVencimientoEn DateTime?
   tipoPublicacion       TipoPublicacion
-  presentacionId        Int
-  presentacion          Presentacion          @relation(fields:[presentacionId], references:[id])
-  categoriaId           Int
-  categoria             Categoria             @relation(fields:[categoriaId], references:[id])
-  calibreId             Int
-  calibre               Calibre               @relation(fields:[calibreId], references:[id])
+  especieId             Int
+  especie               Especie              @relation(fields:[especieId], references:[id])
+  variedadId            Int?
+  variedad              Variedad?            @relation(fields:[variedadId], references:[id])
+  envaseId              Int?
+  envase                Envase?              @relation(fields:[envaseId], references:[id])
+  kilosId               Int?
+  kilos                 KilosEmpaquetado?     @relation(fields:[kilosId], references:[id])
+  categoriaId           Int?
+  categoria             Categoria?           @relation(fields:[categoriaId], references:[id])
+  calibreId             Int?
+  calibre               Calibre?             @relation(fields:[calibreId], references:[id])
 
   @@map("publicacion")
 }
@@ -200,36 +286,40 @@ model PublicacionOperador {
   publicacion   Publicacion @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
   operadorId    Int
   operador      Operador    @relation(fields:[operadorId], references:[id])
-  paisId        Int
-  pais          Pais        @relation(fields:[paisId], references:[id])
+  paisId        Int?
+  pais          Pais?       @relation("PaisOperador", fields:[paisId], references:[id])
 
   @@map("publicacionOperador")
 }
 
 // PUBLICACIONES DE PRODUCTORES
 model PublicacionProductor {
-  id             Int          @id @default(autoincrement())
-  publicacionId  Int          @unique
-  publicacion    Publicacion  @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
+  id             Int         @id @default(autoincrement())
+  publicacionId  Int         @unique
+  publicacion    Publicacion @relation(fields:[publicacionId], references:[id], onDelete: Cascade)
   productorId    Int
-  productor      Productor    @relation(fields:[productorId], references:[id])
-  departamentoId Int
-  departamento   Departamento @relation(fields:[departamentoId], references:[id])
-  direccion      String
+  productor      Productor   @relation(fields:[productorId], references:[id])
+  paisId         Int?
+  pais           Pais?       @relation("PaisProductor", fields:[paisId], references:[id])
+  ubicaciones    Ubicacion[]
 
   @@map("publicacionProductor")
 }
 
 // NOTIFICACIONES
 model Notificacion {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   titulo      String
   descripcion String
-  vista       Boolean  @default(false)
+  vista       Boolean @default(false)
+  url         String?
+  fecha       Timestamptz(3) @default(now())
 
   usuarioId   Int
-  usuario     Usuario  @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
+  usuario     Usuario @relation(fields:[usuarioId], references:[id], onDelete: Cascade)
 
+  @@index([usuarioId, vista])
+  @@index([usuarioId, fecha, id])
   @@map("notificacion")
 }
 
@@ -249,4 +339,71 @@ model CachePreciosReferencia {
   estadoCache String
 
   @@map("cachePreciosReferencia")
+}
+
+model HistoricoPrecios {
+  especieId                Int     @id
+  especie                  Especie @relation(fields:[especieId], references:[id])
+  historico                Jsonb
+  fechaDesde               Date
+  fechaHasta               Date
+  fechaUltimaActualizacion Date
+
+  @@map("historicoPrecios")
+}
+
+// ESTADISTICA DE VISITAS
+model EstadisticaVisita {
+  id             Int      @id @default(autoincrement())
+  fecha          DateTime 
+  tipoVisitante  String   
+  cantidad       Int      @default(0)
+
+  @@unique([fecha, tipoVisitante])
+  @@map("estadisticaVisita")
+}
+
+// ESTADISTICA DE CONTACTOS POR PERFIL
+model EstadisticaContacto {
+  id           Int      @id @default(autoincrement())
+  fecha        DateTime 
+  username     String   
+  cantidad     Int      @default(0)
+
+  @@unique([fecha, username])
+  @@map("estadisticaContacto")
+}
+
+// ESTADISTICA DE CONTACTOS POR PUBLICACION
+model EstadisticaContactoPublicacion {
+  id       Int      @id @default(autoincrement())
+  fecha    DateTime
+  username String
+  especie  String
+  cantidad Int      @default(0)
+
+  @@unique([fecha, username, especie])
+  @@map("estadisticaContactoPublicacion")
+}
+
+// ESTADISTICA DE PUBLICACIONES MODIFICADAS
+model EstadisticaPublicacion {
+  id           Int      @id @default(autoincrement())
+  fecha        DateTime 
+  username     String   
+  cantidad     Int      @default(0)
+
+  @@unique([fecha, username])
+  @@map("estadisticaPublicacion")
+}
+
+// ESTADISTICA DE  CANTIDAD DE PUBLICACIONES EN EL SISTEMA
+model EstadisticaCantidadPublicacion {
+  id       Int      @id @default(autoincrement())
+  fecha    DateTime
+  username String
+  cantidad Int      @default(0)
+
+  @@unique([fecha, username])
+  @@map("estadisticaCantidadPublicacion")
 }

@@ -1,0 +1,245 @@
+[
+  {
+    "id": "table.estadisticaContacto",
+    "label": "Create table \"estadisticaContacto\"",
+    "summary": "Creates table \"estadisticaContacto\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "estadisticaContacto"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"estadisticaContacto\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"estadisticaContacto\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"estadisticaContacto\"",
+        "sql": "CREATE TABLE \"public\".\"estadisticaContacto\" (\n  \"cantidad\" int4 DEFAULT 0 NOT NULL,\n  \"fecha\" timestamptz NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"username\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"estadisticaContacto\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"estadisticaContacto\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.estadisticaPublicacion",
+    "label": "Create table \"estadisticaPublicacion\"",
+    "summary": "Creates table \"estadisticaPublicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "estadisticaPublicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"estadisticaPublicacion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"estadisticaPublicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"estadisticaPublicacion\"",
+        "sql": "CREATE TABLE \"public\".\"estadisticaPublicacion\" (\n  \"cantidad\" int4 DEFAULT 0 NOT NULL,\n  \"fecha\" timestamptz NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"username\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"estadisticaPublicacion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"estadisticaPublicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.estadisticaVisita",
+    "label": "Create table \"estadisticaVisita\"",
+    "summary": "Creates table \"estadisticaVisita\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "estadisticaVisita"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"estadisticaVisita\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"estadisticaVisita\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"estadisticaVisita\"",
+        "sql": "CREATE TABLE \"public\".\"estadisticaVisita\" (\n  \"cantidad\" int4 DEFAULT 0 NOT NULL,\n  \"fecha\" timestamptz NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"tipoVisitante\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"estadisticaVisita\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"estadisticaVisita\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.estadisticaContacto.estadisticaContacto_fecha_username_key",
+    "label": "Add unique constraint on \"estadisticaContacto\" (fecha, username)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "estadisticaContacto_fecha_username_key",
+        "table": "estadisticaContacto"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"estadisticaContacto_fecha_username_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "estadisticaContacto_fecha_username_key",
+          "public",
+          "\"public\".\"estadisticaContacto\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"estadisticaContacto_fecha_username_key\"",
+        "sql": "ALTER TABLE \"public\".\"estadisticaContacto\" ADD CONSTRAINT \"estadisticaContacto_fecha_username_key\" UNIQUE (\"fecha\", \"username\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"estadisticaContacto_fecha_username_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "estadisticaContacto_fecha_username_key",
+          "public",
+          "\"public\".\"estadisticaContacto\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.estadisticaPublicacion.estadisticaPublicacion_fecha_username_key",
+    "label": "Add unique constraint on \"estadisticaPublicacion\" (fecha, username)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "estadisticaPublicacion_fecha_username_key",
+        "table": "estadisticaPublicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"estadisticaPublicacion_fecha_username_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "estadisticaPublicacion_fecha_username_key",
+          "public",
+          "\"public\".\"estadisticaPublicacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"estadisticaPublicacion_fecha_username_key\"",
+        "sql": "ALTER TABLE \"public\".\"estadisticaPublicacion\" ADD CONSTRAINT \"estadisticaPublicacion_fecha_username_key\" UNIQUE (\"fecha\", \"username\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"estadisticaPublicacion_fecha_username_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "estadisticaPublicacion_fecha_username_key",
+          "public",
+          "\"public\".\"estadisticaPublicacion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.estadisticaVisita.estadisticaVisita_fecha_tipoVisitante_key",
+    "label": "Add unique constraint on \"estadisticaVisita\" (fecha, tipoVisitante)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "estadisticaVisita_fecha_tipoVisitante_key",
+        "table": "estadisticaVisita"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"estadisticaVisita_fecha_tipoVisitante_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "estadisticaVisita_fecha_tipoVisitante_key",
+          "public",
+          "\"public\".\"estadisticaVisita\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"estadisticaVisita_fecha_tipoVisitante_key\"",
+        "sql": "ALTER TABLE \"public\".\"estadisticaVisita\" ADD CONSTRAINT \"estadisticaVisita_fecha_tipoVisitante_key\" UNIQUE (\"fecha\", \"tipoVisitante\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"estadisticaVisita_fecha_tipoVisitante_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "estadisticaVisita_fecha_tipoVisitante_key",
+          "public",
+          "\"public\".\"estadisticaVisita\""
+        ]
+      }
+    ]
+  }
+]

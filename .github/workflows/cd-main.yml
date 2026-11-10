@@ -51,9 +51,10 @@ jobs:
           registryPassword: ${{ secrets.REGISTRY_PASSWORD }}
           containerAppName: uam-production
           resourceGroup: Proyecto-PIS-2026
-          environmentVariables: >-
-            DATABASE_URL=${{ secrets.TESTING_DATABASE_URL }}
+          environmentVariables: |
+            DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+            TWO_FACTOR_ENCRYPTION_KEY=${{ secrets.TWO_FACTOR_ENCRYPTION_KEY }}
             PRECIOS_REFERENCIA_FUENTE=${{ secrets.PRECIOS_REFERENCIA_FUENTE }}
             PRECIOS_REFERENCIA_WEBSERVICE_BASE_URL=${{ secrets.PRECIOS_REFERENCIA_WEBSERVICE_BASE_URL }}
             PRECIOS_REFERENCIA_JWT_TOKEN=${{ secrets.PRECIOS_REFERENCIA_JWT_TOKEN }}

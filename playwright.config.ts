@@ -3,10 +3,15 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: ['.env.local', '.env'], quiet: true });
 
+process.env.DISABLE_VISIT_TRACKING = "true";
+
 // Las cuentas de la seed usan username + "123"; el administrador ingresa con su correo.
 for (const rol of ['OPERADOR', 'PRODUCTOR', 'INHABILITADO', 'ADMINISTRADOR', 'ADMIN']) {
   const usuario = process.env[`E2E_${rol}_USU`];
-  if (usuario) process.env[`E2E_${rol}_PASS`] = `${rol.startsWith('ADMIN') ? 'admin' : usuario}123`;
+  if (usuario) {
+    const username = rol.startsWith('ADMIN') ? usuario.split('@')[0] : usuario;
+    process.env[`E2E_${rol}_PASS`] = `${username}123`;
+  }
 }
 
 export default defineConfig({
@@ -42,8 +47,37 @@ export default defineConfig({
     // Chrome de Escritorio como control base del motor Chromium
     {
       name: 'chromium',
-      testIgnore: /bp-(17|18)(?:[\\/]|\.spec\.ts)/,
+      // Estos BP se ejecutan en sus proyectos específicos.
+      testIgnore: /bp-(16(?:-[123])?|17|18|25|26)(?:[\\/]|\.spec\.ts)/,
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium-bp16',
+      testMatch: /bp-16(?:-[123])?\.spec\.ts/,
+      // Modifica la configuración global: ejecutar después del resto de casos del portal.
+      dependencies: ['chromium-administracion'],
+      fullyParallel: false,
+      workers: 1,
+      timeout: 90_000,
+      expect: { timeout: 15_000 },
+      use: {
+        ...devices['Desktop Chrome'],
+        trace: 'retain-on-failure',
+        screenshot: 'only-on-failure',
+        actionTimeout: 20_000,
+      },
+    },
+    {
+      name: 'chromium-bp25',
+      testMatch: /bp-25[\\/]bp-25\.1\.spec\.ts/,
+      fullyParallel: false,
+      workers: 1,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3200' },
+    },
+    {
+      name: 'chromium-bp26',
+      testMatch: /bp-26\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3100' },
     },
     {
       name: 'chromium-bp17',
@@ -52,8 +86,8 @@ export default defineConfig({
     },
     {
       name: 'chromium-administracion',
-      testMatch: /bp-18\.spec\.ts/,
-      // El importe es global: estos tests corren después de BP-06 y BP-07.
+      testMatch: /bp-18(?:\.spec\.ts|[\\/].*\.spec\.ts)/,
+      // Importe y ordenamiento son globales: estos tests corren después del resto del portal.
       dependencies: ['chromium'],
       fullyParallel: false,
       workers: 1,

@@ -1,20 +1,25 @@
 "use server"
 
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { guardarOperadorAtomico } from "./guardar-operador-atomico";
 import { validarAltaOperador } from "./validarAltaOperador";
 import argon2 from "argon2";
 import { revalidatePath } from "next/cache";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
+import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "../fotos-perfil";
 
 export type ResultadoAltaOperador =
 	| { esValido: false; errores: string[] }
 	| { esValido: true; id: number; mensaje: string };
 
-export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperador> {
-	await exigirAdministrador();
+export async function altaOperador(valor: unknown, foto?: FormData): Promise<ResultadoAltaOperador> {
+	await controlarSesionEnAccion(exigirAdministrador);
 
 	const validacion = validarAltaOperador(valor);
 	if (!validacion.esValido) return validacion;
+	const validacionFoto = validarCambioFotoPerfil(foto, false);
+	if (!validacionFoto.esValido) return validacionFoto;
 
 	const datos = validacion.datos;
 
@@ -25,11 +30,7 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
 	}
 
 	const passwordHash = await argon2.hash(datos.contraseña, { type: argon2.argon2id });
-	const resultadoTx  = await db.transaction(async (tx) => {
-		// Serializar altas con el mismo nombre de usuario para que dos envíos
-		// simultáneos no pasen ambos la comprobación antes de insertar.
-		await tx.execute(db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1720, hashtext(${datos.nombreUsuario}))`
-			.returnsRow({ locked: "pg/int4@1" }).build());
+	const resultadoTx = await controlarErrorFotoPerfil(() => guardarOperadorAtomico(async (tx) => {
 
 		const existente = await tx.orm.public.Usuario.where({ username: datos.nombreUsuario }).first();
         if (existente) return "Ya existe un usuario con ese nombre de usuario.";
@@ -70,8 +71,10 @@ export async function altaOperador(valor: unknown): Promise<ResultadoAltaOperado
                 : null,
 	    });
 		}
+		const fotoPerfil = await guardarCambioFotoPerfil(tx, "operadores", operador.id, null, validacionFoto.cambio);
+		if (fotoPerfil !== undefined) await tx.orm.public.Operador.where({ id: operador.id }).update({ fotoPerfil });
 		return operador.id;
-	});
+	}));
 
 	if (typeof resultadoTx === "string") {
 	    return { esValido: false, errores: [resultadoTx] };

@@ -21,7 +21,7 @@ describe("GET /api/especies", () => {
         mocks.obtenerEspecies.mockResolvedValue([]);
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("devuelve las especies del mercado para %s", async (rol) => {
+    it.each([null, "ADMINISTRADOR"] as const)("devuelve las especies del mercado para %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
         const especies = [{ id: 1, nombre: "Manzana", cantidadOperadores: 2 }];
         mocks.obtenerEspecies.mockResolvedValue(especies);
@@ -33,13 +33,16 @@ describe("GET /api/especies", () => {
         expect(mocks.obtenerEspecies).toHaveBeenCalledOnce();
     });
 
-    it("devuelve 403 para operadores sin consultar datos del mercado ajeno", async () => {
-        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
+    it.each([
+        { rol: "OPERADOR", error: "Los operadores sólo pueden consultar su propio mercado." },
+        { rol: "PRODUCTOR", error: "Los productores sólo pueden consultar su propio mercado." },
+    ] as const)("devuelve 403 para $rol sin consultar datos del mercado ajeno", async ({ rol, error }) => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol, expiraEn: 2000000000 });
 
         const respuesta = await GET();
 
         expect(respuesta.status).toBe(403);
-        expect(await respuesta.json()).toEqual({ error: "Los operadores sólo pueden consultar su propio mercado." });
+        expect(await respuesta.json()).toEqual({ error });
         expect(mocks.obtenerEspecies).not.toHaveBeenCalled();
     });
 

@@ -1,11 +1,13 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { DatosModificarUsuarios, TipoUsuario, UsuarioParaModificar } from "../Tipos";
+import type { FiltroRestablecimiento } from "./BuscadorUsuario";
 import ModificarUsuario from "./ModificarUsuario";
 
 const mocks = vi.hoisted(() => ({
     bajaOperador: vi.fn(),
     refresh: vi.fn(),
     lista: vi.fn(),
+    cambiarHabilitacion: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -16,11 +18,17 @@ vi.mock("@/modulos/usuarios/operadores/bajaOperador", () => ({
     bajaOperador: mocks.bajaOperador,
 }));
 
+vi.mock("../acciones/cambiarHabilitacionUsuario", () => ({
+    cambiarHabilitacionUsuario: mocks.cambiarHabilitacion,
+}));
+
 interface BuscadorMockProps {
     busqueda: string;
     tipoUsuario: TipoUsuario | "TODOS";
     onBusquedaChange: (busqueda: string) => void;
-    onTipoUsuarioChange: (tipo: TipoUsuario | "TODOS") => void;
+    onTipoUsuarioChange: (tipoUsuario: TipoUsuario | "TODOS") => void;
+    restablecimiento: FiltroRestablecimiento;
+    onRestablecimientoChange: (valor: FiltroRestablecimiento) => void;
 }
 
 interface ListaMockProps {
@@ -28,6 +36,8 @@ interface ListaMockProps {
     usuarioSeleccionadoId: number | null;
     onSeleccionar: (usuario: UsuarioParaModificar) => void;
     onEliminar: (usuario: UsuarioParaModificar) => Promise<void>;
+    usuarioActualId?: number;
+    onCambiarHabilitacion: (usuario: UsuarioParaModificar) => Promise<void>;
 }
 
 vi.mock("./BuscadorUsuario", () => ({
@@ -36,6 +46,8 @@ vi.mock("./BuscadorUsuario", () => ({
         tipoUsuario,
         onBusquedaChange,
         onTipoUsuarioChange,
+        restablecimiento,
+        onRestablecimientoChange,
     }: BuscadorMockProps) => (
         <div data-testid="buscador">
             <input
@@ -43,17 +55,33 @@ vi.mock("./BuscadorUsuario", () => ({
                 value={busqueda}
                 onChange={(event) => onBusquedaChange(event.target.value)}
             />
+
             <select
                 aria-label="Tipo de usuario"
                 value={tipoUsuario}
                 onChange={(event) =>
-                    onTipoUsuarioChange(event.target.value as TipoUsuario | "TODOS")
+                    onTipoUsuarioChange(
+                        event.target.value as TipoUsuario | "TODOS",
+                    )
                 }
             >
                 <option value="TODOS">Todos</option>
                 <option value="ADMINISTRADOR">Administrador</option>
                 <option value="OPERADOR">Operador</option>
                 <option value="PRODUCTOR">Productor</option>
+            </select>
+
+            <select
+                aria-label="Restablecimiento"
+                value={restablecimiento}
+                onChange={(event) =>
+                    onRestablecimientoChange(
+                        event.target.value as FiltroRestablecimiento,
+                    )
+                }
+            >
+                <option value="TODOS">Todos</option>
+                <option value="SOLICITADO">Solicitado</option>
             </select>
         </div>
     ),
@@ -93,6 +121,7 @@ const usuarios: UsuarioParaModificar[] = [
         rol: "ADMINISTRADOR",
         administradorId: 101,
         email: "ana@example.com",
+        solicitoRestablecimiento: false,
     },
     {
         id: 2,
@@ -100,15 +129,17 @@ const usuarios: UsuarioParaModificar[] = [
         rol: "OPERADOR",
         operadorId: 201,
         nombreFantasia: "La Huerta",
+        solicitoRestablecimiento: true,
     },
     {
         id: 3,
         username: "carla.productor",
         rol: "PRODUCTOR",
         productorId: 301,
+        nombreFantasia: "Granja Carla",
+        solicitoRestablecimiento: false,
     },
 ];
-
 const datos: DatosModificarUsuarios = {
     usuarios,
 };
@@ -117,6 +148,29 @@ describe("ModificarUsuario", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.bajaOperador.mockResolvedValue({ esValido: true, mensaje: "Operador eliminado correctamente." });
+        mocks.cambiarHabilitacion.mockResolvedValue({ esValido: true });
+    });
+
+    it.each([true, false])("guarda el cambio inverso al estado habilitado=%s y actualiza el listado", async (habilitado) => {
+        const usuario = { ...usuarios[1], habilitado };
+        render(<ModificarUsuario datos={{ usuarios: [usuario], usuarioActualId: 1 }} />);
+        const props = mocks.lista.mock.lastCall?.[0] as ListaMockProps;
+
+        expect(props.usuarioActualId).toBe(1);
+        expect(props.usuarios).toEqual([usuario]);
+        await act(() => props.onCambiarHabilitacion(usuario));
+
+        expect(mocks.cambiarHabilitacion).toHaveBeenCalledWith({ usuarioId: 2, habilitado: !habilitado });
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("propaga el rechazo del cambio de estado sin recargar el listado", async () => {
+        mocks.cambiarHabilitacion.mockResolvedValue({ esValido: false, errores: ["No se pudo cambiar el estado."] });
+        render(<ModificarUsuario datos={datos} />);
+        const props = mocks.lista.mock.lastCall?.[0] as ListaMockProps;
+
+        await expect(props.onCambiarHabilitacion(usuarios[1])).rejects.toThrow("No se pudo cambiar el estado.");
+        expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
     it("conecta la baja real con el id del operador y recarga los datos después del éxito", async () => {
@@ -151,7 +205,7 @@ describe("ModificarUsuario", () => {
 
         expect(screen.getByRole("link", { name: /Nuevo Usuario/ })).toHaveAttribute(
             "href",
-            "/alta-usuario?rol=operador",
+            "/alta-usuario",
         );
 
         expect(screen.getByTestId("usuario-seleccionado")).toHaveTextContent("ninguno");
@@ -237,7 +291,7 @@ describe("ModificarUsuario", () => {
         expect(screen.getByRole("button", { name: "ana.admin" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "beto.operador" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "carla.productor" })).toBeInTheDocument();
-        expect(enlaceAlta).toHaveAttribute("href", "/alta-usuario?rol=operador");
+        expect(enlaceAlta).toHaveAttribute("href", "/alta-usuario");
     });
 
     it("limpia la búsqueda y la selección al cambiar el rol", () => {
@@ -280,4 +334,93 @@ describe("ModificarUsuario", () => {
         expect(buscador).toHaveValue("");
         expect(screen.getByRole("button", { name: "carla.productor" })).toBeInTheDocument();
     });
+
+    
+    it("filtra los usuarios que solicitaron restablecimiento y permite volver a mostrar todos", () => {
+        render(<ModificarUsuario datos={datos} />);
+
+        const selector = screen.getByRole("combobox", {
+            name: "Restablecimiento",
+        });
+
+        fireEvent.change(selector, {
+            target: { value: "SOLICITADO" },
+        });
+
+        expect(
+            screen.getByRole("button", { name: "beto.operador" }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.queryByRole("button", { name: "ana.admin" }),
+        ).not.toBeInTheDocument();
+
+        expect(
+            screen.queryByRole("button", { name: "carla.productor" }),
+        ).not.toBeInTheDocument();
+
+        fireEvent.change(selector, {
+            target: { value: "TODOS" },
+        });
+
+        expect(
+            screen.getByRole("button", { name: "ana.admin" }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("button", { name: "beto.operador" }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("button", { name: "carla.productor" }),
+        ).toBeInTheDocument();
+    });
+
+    it("combina el filtro de restablecimiento con el filtro por rol", () => {
+        render(<ModificarUsuario datos={datos} />);
+
+        fireEvent.change(
+            screen.getByRole("combobox", { name: "Restablecimiento" }),
+            { target: { value: "SOLICITADO" } },
+        );
+
+        fireEvent.change(
+            screen.getByRole("combobox", { name: "Tipo de usuario" }),
+            { target: { value: "OPERADOR" } },
+        );
+
+        expect(
+            screen.getByRole("button", { name: "beto.operador" }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.queryByRole("button", { name: "ana.admin" }),
+        ).not.toBeInTheDocument();
+
+        expect(
+            screen.queryByRole("button", { name: "carla.productor" }),
+        ).not.toBeInTheDocument();
+    });
+
+    it("limpia la selección al cambiar el filtro de restablecimiento", () => {
+        render(<ModificarUsuario datos={datos} />);
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "beto.operador" }),
+        );
+
+        expect(
+            screen.getByTestId("usuario-seleccionado"),
+        ).toHaveTextContent("2");
+
+        fireEvent.change(
+            screen.getByRole("combobox", { name: "Restablecimiento" }),
+            { target: { value: "SOLICITADO" } },
+        );
+
+        expect(
+            screen.getByTestId("usuario-seleccionado"),
+        ).toHaveTextContent("ninguno");
+    });
+
 });

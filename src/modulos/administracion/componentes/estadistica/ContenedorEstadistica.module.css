@@ -1,0 +1,76 @@
+.contenedorEstadisticas {
+    --margenSeparador: 1rem;
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+}
+
+.encabezadoSeccion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem 1rem;
+    position: relative;
+    border-bottom: none;
+}
+
+.encabezadoSeccion h2 {
+    margin: 0;
+    color: var(--color-secondary);
+    font-size: var(--tamano-titulo-seccion, 1.5rem);
+    font-weight: 700;
+}
+
+.encabezadoSeccion p {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario, 0.875rem);
+}
+
+.rejillaBloques {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+}
+
+.rejillaBloques > *:not(:last-child) {
+    position: relative;
+    border-bottom: none;
+}
+
+/* Separadores del encabezado y de las secciones */
+.encabezadoSeccion::after,
+.rejillaBloques > *:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: var(--margenSeparador);
+    right: var(--margenSeparador);
+    height: 1px;
+    background-color: var(--color-border, #e5e7eb);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.rejillaBloques > div > p {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario, 0.875rem);
+    font-weight: 400;
+}
+
+@media (max-width: 768px) {
+    .panelContenedor {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        min-width: 0;
+        background-color: var(--color-surface, #ffffff);
+        border: 1px solid var(--color-border, #e5e7eb);
+        border-radius: var(--radio-panel, 12px);
+        box-shadow: var(--sombra-panel, 0 4px 6px -1px rgba(0,0,0,0.1));
+        overflow: hidden;
+    }
+}

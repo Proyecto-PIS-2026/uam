@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import type { ChangeEvent, MouseEvent, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UsuarioParaModificar } from "../Tipos";
@@ -22,7 +22,7 @@ vi.mock("react", async (importOriginal) => {
         ) => {
             if (estadoTest.simularServidor) {
                 const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
-                let desuscribir = () => {};
+                let desuscribir = () => { };
 
                 try {
                     Object.defineProperty(globalThis, "window", {
@@ -30,7 +30,7 @@ vi.mock("react", async (importOriginal) => {
                         writable: true,
                         value: undefined,
                     });
-                    desuscribir = subscribe(() => {});
+                    desuscribir = subscribe(() => { });
                 } finally {
                     if (descriptor) {
                         Object.defineProperty(globalThis, "window", descriptor);
@@ -43,7 +43,7 @@ vi.mock("react", async (importOriginal) => {
                 return getServerSnapshot();
             }
 
-            const desuscribir = subscribe(() => {});
+            const desuscribir = subscribe(() => { });
             desuscribir();
             return getSnapshot();
         },
@@ -83,35 +83,19 @@ vi.mock("@mui/material/Pagination", () => ({
     ),
 }));
 
-vi.mock("@mui/material/IconButton", () => ({
-    default: ({
-        children,
-        title,
-        onClick,
-        disabled,
-    }: {
-        children?: ReactNode;
-        title?: string;
-        onClick?: (evento: MouseEvent<HTMLButtonElement>) => void;
-        disabled?: boolean;
-    }) => (
-        <button type="button" title={title} onClick={onClick} disabled={disabled}>
-            {children}
-        </button>
-    ),
-}));
-
 vi.mock("@mui/material/Dialog", () => ({
     default: ({
         open,
         onClose,
         children,
+        "aria-labelledby": tituloId,
     }: {
         open: boolean;
         onClose: () => void;
         children?: ReactNode;
-    }) => (
-        <div data-testid="dialog" hidden={!open}>
+        "aria-labelledby"?: string;
+    }) => tituloId && !open ? null : (
+        <div data-testid={tituloId ? "dialog-habilitacion" : "dialog"} hidden={!open}>
             {children}
             <button type="button" data-testid="cerrar-dialogo" onClick={onClose}>
                 Cerrar diálogo
@@ -150,44 +134,6 @@ vi.mock("@mui/material/Button", () => ({
     ),
 }));
 
-vi.mock("@mui/material/Snackbar", () => ({
-    default: ({
-        open,
-        onClose,
-        children,
-    }: {
-        open: boolean;
-        onClose: () => void;
-        children?: ReactNode;
-    }) => (
-        <div data-testid="snackbar" hidden={!open}>
-            {open ? children : undefined}
-            <button type="button" aria-label="Cerrar snackbar" onClick={onClose}>
-                Cerrar
-            </button>
-        </div>
-    ),
-}));
-
-vi.mock("@mui/material/Alert", () => ({
-    default: ({
-        severity,
-        onClose,
-        children,
-    }: {
-        severity: "error" | "success";
-        onClose: () => void;
-        children?: ReactNode;
-    }) => (
-        <div role="alert" data-severity={severity}>
-            {children}
-            <button type="button" aria-label="Cerrar alerta" onClick={onClose}>
-                Cerrar
-            </button>
-        </div>
-    ),
-}));
-
 vi.mock("@mui/icons-material/Edit", () => ({
     default: () => <span data-testid="icono-editar" />,
 }));
@@ -216,6 +162,7 @@ const usuarios: UsuarioParaModificar[] = [
         username: "carla.productor",
         rol: "PRODUCTOR",
         productorId: 301,
+        nombreFantasia: "Granja Carla",
     },
 ];
 
@@ -235,6 +182,8 @@ interface PropsTest {
     usuarioSeleccionadoId: number | null;
     onSeleccionar?: (usuario: UsuarioParaModificar) => void;
     onEliminar?: (usuario: UsuarioParaModificar) => void;
+    usuarioActualId?: number;
+    onCambiarHabilitacion?: (usuario: UsuarioParaModificar) => Promise<void>;
 }
 
 function renderLista(props: Partial<PropsTest> = {}) {
@@ -293,6 +242,111 @@ describe("ListaUsuarios", () => {
         });
     });
 
+    it("permite ver usuarios deshabilitados y bloquea la deshabilitación del administrador actual", () => {
+        const onCambiarHabilitacion = vi.fn();
+        const onSeleccionar = vi.fn();
+        renderLista({
+            usuarios: [{ ...usuarios[0], habilitado: true }, { ...usuarios[1], habilitado: false }],
+            usuarioActualId: 1,
+            onCambiarHabilitacion,
+            onSeleccionar,
+        });
+
+        expect(within(obtenerFila("ana.admin")).getByText("Habilitado")).toBeInTheDocument();
+        const botonDeshabilitarPropio = within(obtenerFila("ana.admin")).getByRole("button", { name: "Deshabilitar usuario" });
+        expect(botonDeshabilitarPropio).toBeDisabled();
+        expect(within(obtenerFila("beto.operador")).getByText("Deshabilitado")).toBeInTheDocument();
+        expect(within(obtenerFila("beto.operador")).getByRole("button", { name: "Habilitar usuario" })).toBeEnabled();
+
+        fireEvent.click(botonDeshabilitarPropio);
+        // MUI deja pasar el clic al contenedor cuando el botón está deshabilitado.
+        fireEvent.click(botonDeshabilitarPropio.parentElement!);
+
+        expect(screen.queryByTestId("dialog-habilitacion")).not.toBeInTheDocument();
+        expect(onCambiarHabilitacion).not.toHaveBeenCalled();
+        expect(onSeleccionar).not.toHaveBeenCalled();
+        expect(estadoTest.routerPush).not.toHaveBeenCalled();
+    });
+
+    it("solicita confirmación y permite cancelar sin cambiar el estado ni seleccionar la fila", () => {
+        const onCambiarHabilitacion = vi.fn();
+        const onSeleccionar = vi.fn();
+        renderLista({ onCambiarHabilitacion, onSeleccionar });
+
+        hacerClickEnAccion("beto.operador", "Deshabilitar usuario");
+        const dialogo = screen.getByTestId("dialog-habilitacion");
+        expect(within(dialogo).getByText("¿Deshabilitar usuario?")).toBeVisible();
+        expect(within(dialogo).getByText("@beto.operador")).toBeVisible();
+        expect(onCambiarHabilitacion).not.toHaveBeenCalled();
+        expect(onSeleccionar).not.toHaveBeenCalled();
+        expect(estadoTest.routerPush).not.toHaveBeenCalled();
+
+        fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" }));
+
+        expect(screen.queryByTestId("dialog-habilitacion")).not.toBeInTheDocument();
+        expect(onCambiarHabilitacion).not.toHaveBeenCalled();
+    });
+
+    it.each([true, false])("confirma el cambio del usuario habilitado=%s y conserva su fila", async (habilitado) => {
+        const usuario = { ...usuarios[1], habilitado };
+        const onCambiarHabilitacion = vi.fn().mockResolvedValue(undefined);
+        renderLista({ usuarios: [usuario], onCambiarHabilitacion });
+
+        hacerClickEnAccion(usuario.username, habilitado ? "Deshabilitar usuario" : "Habilitar usuario");
+        fireEvent.click(within(screen.getByTestId("dialog-habilitacion")).getByRole("button", { name: habilitado ? "Deshabilitar" : "Habilitar" }));
+
+        await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(
+            `El usuario beto.operador fue ${habilitado ? "deshabilitado" : "habilitado"} correctamente.`,
+        ));
+        expect(onCambiarHabilitacion).toHaveBeenCalledExactlyOnceWith(usuario);
+        expect(screen.queryByTestId("dialog-habilitacion")).not.toBeInTheDocument();
+        expect(obtenerFila(usuario.username)).toBeInTheDocument();
+    });
+
+    it("bloquea acciones y cierre mientras se guarda y no duplica la confirmación", async () => {
+        const pendiente = Promise.withResolvers<void>();
+        const onCambiarHabilitacion = vi.fn(() => pendiente.promise);
+        renderLista({ onCambiarHabilitacion, onEliminar: vi.fn() });
+        hacerClickEnAccion("beto.operador", "Deshabilitar usuario");
+        const dialogo = screen.getByTestId("dialog-habilitacion");
+
+        fireEvent.click(within(dialogo).getByRole("button", { name: "Deshabilitar" }));
+        const confirmar = within(dialogo).getByRole("button", { name: "Guardando..." });
+        expect(confirmar).toBeDisabled();
+        expect(within(dialogo).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+        expect(within(obtenerFila("beto.operador")).getByTitle("Editar perfil")).toBeDisabled();
+        expect(within(obtenerFila("beto.operador")).getByTitle("Eliminar usuario")).toBeDisabled();
+        fireEvent.click(confirmar);
+        fireEvent.click(within(dialogo).getByTestId("cerrar-dialogo"));
+        expect(dialogo).toBeVisible();
+        expect(onCambiarHabilitacion).toHaveBeenCalledOnce();
+
+        await act(async () => pendiente.resolve());
+        expect(screen.queryByTestId("dialog-habilitacion")).not.toBeInTheDocument();
+    });
+
+    it("mantiene la confirmación y el estado previo cuando falla el guardado", async () => {
+        renderLista({ onCambiarHabilitacion: vi.fn().mockRejectedValue(new Error("No se pudo guardar el estado.")) });
+        hacerClickEnAccion("beto.operador", "Deshabilitar usuario");
+        const dialogo = screen.getByTestId("dialog-habilitacion");
+        fireEvent.click(within(dialogo).getByRole("button", { name: "Deshabilitar" }));
+
+        await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("No se pudo guardar el estado."));
+        expect(dialogo).toBeVisible();
+        expect(within(obtenerFila("beto.operador")).getByText("Habilitado")).toBeInTheDocument();
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    it("permite accionar con teclado sin navegar al perfil del usuario", () => {
+        renderLista({ onCambiarHabilitacion: vi.fn() });
+        const boton = within(obtenerFila("beto.operador")).getByRole("button", { name: "Deshabilitar usuario" });
+        fireEvent.keyDown(boton, { key: "Enter" });
+        fireEvent.click(boton);
+
+        expect(estadoTest.routerPush).not.toHaveBeenCalled();
+        expect(screen.getByTestId("dialog-habilitacion")).toBeVisible();
+    });
+
     it("muestra el mensaje vacío y cubre la confirmación sin un usuario seleccionado", () => {
         estadoTest.simularServidor = true;
 
@@ -317,6 +371,7 @@ describe("ListaUsuarios", () => {
         renderLista({
             usuarios,
             usuarioSeleccionadoId: 2,
+            usuarioActualId: 7,
             onSeleccionar,
         });
 
@@ -330,7 +385,7 @@ describe("ListaUsuarios", () => {
         expect(within(filaOperador).getByText("La Huerta")).toBeInTheDocument();
         expect(within(filaOperador).getByText("Operador")).toBeInTheDocument();
 
-        expect(within(filaProductor).getByText("-")).toBeInTheDocument();
+        expect(within(filaProductor).getByText("Granja Carla")).toBeInTheDocument();
         expect(within(filaProductor).getByText("Productor")).toBeInTheDocument();
 
         // Una tecla diferente no selecciona al usuario.
@@ -346,22 +401,39 @@ describe("ListaUsuarios", () => {
         expect(onSeleccionar).toHaveBeenNthCalledWith(2, usuarios[1]);
         expect(onSeleccionar).toHaveBeenNthCalledWith(3, usuarios[2]);
 
-        expect(estadoTest.routerPush).toHaveBeenCalledOnce();
-        expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-operadores/201");
+        expect(estadoTest.routerPush).toHaveBeenCalledTimes(3);
+        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(1, "/gestion-administradores/101");
+        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(2, "/gestion-operadores/201");
+        expect(estadoTest.routerPush).toHaveBeenNthCalledWith(3, "/gestion-productores/301");
+
     });
 
-    it("navega a la edición del operador y deshabilita las acciones todavía no disponibles", () => {
+    it.each(["click", "Enter", " "])("abre Mi perfil al seleccionar la propia cuenta con %s", (accion) => {
+        const onSeleccionar = vi.fn();
+        renderLista({ usuarioActualId: 1, onSeleccionar });
+        const fila = obtenerFila("ana.admin");
+
+        if (accion === "click") fireEvent.click(fila);
+        else fireEvent.keyDown(fila, { key: accion });
+
+        expect(onSeleccionar).toHaveBeenCalledExactlyOnceWith(usuarios[0]);
+        expect(estadoTest.routerPush).toHaveBeenCalledExactlyOnceWith("/mi-perfil");
+    });
+
+    it("navega a la edición de cada rol", () => {
         renderLista();
 
-        expect(within(obtenerFila("ana.admin")).getByTitle("Edición todavía no disponible")).toBeDisabled();
+        hacerClickEnAccion("ana.admin", "Editar perfil");
         hacerClickEnAccion("beto.operador", "Editar perfil");
-        expect(within(obtenerFila("carla.productor")).getByTitle("Edición todavía no disponible")).toBeDisabled();
-
+        hacerClickEnAccion("carla.productor", "Editar perfil");
         expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-operadores/201/editar");
+        expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-productores/301/editar");
+        expect(estadoTest.routerPush).toHaveBeenCalledWith("/gestion-administradores/101/editar");
 
         fireEvent.click(obtenerFila("ana.admin"));
 
-        expect(estadoTest.routerPush).toHaveBeenCalledOnce();
+        expect(estadoTest.routerPush).toHaveBeenCalledTimes(4);
+        expect(estadoTest.routerPush).toHaveBeenLastCalledWith("/gestion-administradores/101");
     });
 
     it("navega a editar sin propagar el click a la fila", () => {
@@ -437,7 +509,7 @@ describe("ListaUsuarios", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
-    it("espera a onEliminar antes de mostrar el éxito y permite cerrar el snackbar", async () => {
+    it("espera a onEliminar antes de mostrar el éxito y permite cerrar la notificación", async () => {
         const onEliminar = vi.fn().mockResolvedValue(undefined);
 
         renderLista({ onEliminar });
@@ -447,7 +519,7 @@ describe("ListaUsuarios", () => {
 
         await waitFor(() => {
             expect(onEliminar).toHaveBeenCalledWith(usuarios[1]);
-            expect(screen.getByRole("alert")).toHaveTextContent(
+            expect(screen.getByRole("status")).toHaveTextContent(
                 "El usuario beto.operador fue eliminado correctamente.",
             );
         });
@@ -455,9 +527,9 @@ describe("ListaUsuarios", () => {
         expect(screen.queryByText("beto.operador")).not.toBeInTheDocument();
         expect(screen.getByTestId("dialog")).not.toBeVisible();
 
-        fireEvent.click(screen.getByRole("button", { name: "Cerrar snackbar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
 
-        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
     it("mantiene al usuario y muestra un error cuando onEliminar falla", async () => {
@@ -474,12 +546,27 @@ describe("ListaUsuarios", () => {
             );
         });
 
-        expect(screen.getByRole("alert")).toHaveAttribute("data-severity", "error");
         expect(screen.getByText("beto.operador")).toBeInTheDocument();
         expect(screen.getByTestId("dialog")).not.toBeVisible();
 
-        fireEvent.click(screen.getByRole("button", { name: "Cerrar snackbar" }));
+        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
 
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+    it("muestra el indicador solo a usuarios que solicitaron restablecimiento", () => {
+        renderLista({
+            usuarios: [
+                { ...usuarios[1], solicitoRestablecimiento: true },
+                { ...usuarios[2], solicitoRestablecimiento: false },
+            ],
+        });
+
+        expect(
+            within(obtenerFila("beto.operador")).getByText("Restablecimiento solicitado")
+        ).toBeInTheDocument();
+
+        expect(
+            within(obtenerFila("carla.productor")).queryByText("Restablecimiento solicitado")
+        ).not.toBeInTheDocument();
     });
 });

@@ -4,17 +4,19 @@ import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import SearchIcon from "@mui/icons-material/Search";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
-import Alert from "@mui/material/Alert";
-import Snackbar from "@mui/material/Snackbar";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
+import type { OrdenLanding } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
 import ProductoCard from "./tarjetaProducto";
 import styles from "./inicio.module.css";
 
@@ -26,7 +28,9 @@ type EspecieInicio = {
 
 type Props = {
     especies: EspecieInicio[];
-    urlListaInteligente: string | null; 
+    urlListaInteligente: string | null;
+    ordenamientoHabilitado: boolean;
+    ordenPredeterminado: OrdenLanding;
 };
 
 const especiesPorPagina = 20;
@@ -35,25 +39,29 @@ function normalizarTexto(texto: string) {
     return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-export default function Inicio({ especies, urlListaInteligente }: Props) {
+export default function Inicio({ especies, urlListaInteligente, ordenamientoHabilitado, ordenPredeterminado }: Props) {
     const [busqueda, setBusqueda] = useState("");
-    const [orden, setOrden] = useState<"prioridad" | "a-z" | "z-a">("prioridad");
+    const [ordenElegido, setOrdenElegido] = useState<OrdenLanding | "predeterminado">("predeterminado");
     const [paginaActual, setPaginaActual] = useState(1);
-    const [mostrarAvisoLista, setMostrarAvisoLista] = useState(false);
 
+    const orden = ordenamientoHabilitado && ordenElegido !== "predeterminado" ? ordenElegido : ordenPredeterminado;
+
+    const { notificar } = useNotificacionToast();
+    
     const textoBuscado = normalizarTexto(busqueda.trim());
     const especiesFiltradas = especies.filter((especie) =>
         normalizarTexto(especie.nombreEspecie).includes(textoBuscado)
     );
 
     especiesFiltradas.sort((primera, segunda) => {
-        if (orden === "prioridad") {
+        if (orden === "mas_vendidas") {
             return compararEspeciesPorPrioridad(primera.nombreEspecie, segunda.nombreEspecie);
         }
         const comparacion = primera.nombreEspecie.localeCompare(segunda.nombreEspecie, "es", { sensitivity: "base" });
-        return orden === "z-a" ? -comparacion : comparacion;
-    });
 
+        return orden === "nombre_desc" ? -comparacion : comparacion;
+    });
+    
     const totalPaginas = Math.ceil(especiesFiltradas.length / especiesPorPagina);
     const paginaVisible = Math.min(paginaActual, Math.max(1, totalPaginas));
     const indiceInicial = (paginaVisible - 1) * especiesPorPagina;
@@ -61,8 +69,6 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
 
     const contenido = (
         <main className={styles.pagina}>
-
-
             <h1 className={styles.tituloMobile}>Mercado de hoy</h1>
             <section className={styles.hero} aria-labelledby="titulo-home">
                 <div className={styles.heroTexto}>
@@ -73,40 +79,37 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                     <Image src="/generico/slider1-scaled.jpg" alt="Vista aérea del Mercado Agroalimentario" fill sizes="100vw" className={styles.heroFoto} />
                 </div>
             </section>
-
             <div className={styles.contenedor}>
                 <nav className={styles.accesos} aria-label="Accesos principales">
-                    {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver publicaciones</span></Link>}
+                    {autorizado("operador.publicacion.consultar") && <Link href="/publicaciones" className={styles.acceso}><ShoppingBasketOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver Mercado Virtual</span></Link>}
                     {autorizado("operador.catalogo.consultar") && <Link href="/operadores" className={styles.acceso}><StorefrontOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Ver operadores</span></Link>}
                     {autorizado("listaInteligente.consultar") && (urlListaInteligente ? (
                         <a href={urlListaInteligente} target="_blank" rel="noopener noreferrer" className={styles.acceso}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></a>
                     ) : (
-                        <button type="button" className={styles.acceso} onClick={() => {setMostrarAvisoLista(true)}}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
+                        <button type="button" className={styles.acceso} onClick={() => notificar("La Lista Inteligente no está disponible", "warning")}><ChecklistOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Lista inteligente</span></button>
                     ))}
                     {autorizado("preciosReferencia.consultar") && <Link href="/precios-referencia" className={styles.acceso}><PriceCheckOutlinedIcon aria-hidden="true" className={styles.accesoIcono} /><span>Precios de referencia</span></Link>}
                 </nav>
-                <Snackbar className={styles.avisoSnackbar}open={mostrarAvisoLista} autoHideDuration={700} transitionDuration={{ enter: 250, exit: 900 }} onClose={() => setMostrarAvisoLista(false)}anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-                    <Alert className={styles.avisoAlerta} severity="warning" variant="filled" onClose={() => setMostrarAvisoLista(false)}><span>La Lista Inteligente no está disponible</span></Alert>
-                </Snackbar>
                 <section className={styles.especies} aria-labelledby="titulo-especies">
                     <div className={styles.tituloContenedor}>
                         <HojasDecorativas />
                         <h2 className={styles.titulo} id="titulo-especies">Especies</h2>
-                        <p className={styles.subtitulo}>{especies.length} especies con operadores</p>
+                        <p className={styles.subtitulo}>{especies.length} {especies.length === 1 ? "especie" : "especies"} con operadores</p>
                     </div>
-
-                    <div className={styles.controles}>
+                    <div className={styles.controles} data-ordenamiento={ordenamientoHabilitado}>
                         <TextField fullWidth size="small" label="Buscar especies" type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }} className={`${styles.selectMui} ${styles.filtroBuscador}`}
                             slotProps={{input: {startAdornment: <SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }} />}}}
                         />
-                        <TextField select label="Ordenar por" value={orden === "prioridad" ? "" : orden} onChange={(evento) => { setOrden(evento.target.value as "a-z" | "z-a"); setPaginaActual(1); }} size="small" className={`${styles.selectMui} ${styles.filtroOrden}`}>
-                            <MenuItem value="a-z" className={styles.opcionSelect}>A-Z</MenuItem>
-                            <MenuItem value="z-a" className={styles.opcionSelect}>Z-A</MenuItem>
-                        </TextField>
+                        {ordenamientoHabilitado && (
+                            <BotonOrdenar<OrdenLanding | "predeterminado"> valor={ordenElegido} opciones={[{ valor: "predeterminado", etiqueta: "Por defecto" }, { valor: "nombre_asc", etiqueta: "A-Z" }, { valor: "nombre_desc", etiqueta: "Z-A" }]} alCambiar={(nuevoOrden) => {setOrdenElegido(nuevoOrden); setPaginaActual(1)}} className={styles.filtroOrden}/>
+                        )}
                     </div>
-
                     {especiesPagina.length === 0 ? (
-                        <p className={styles.sinResultados}>No hay especies que coincidan con la búsqueda.</p>
+                        <EstadoVacio
+                            titulo={especies.length === 0 ? "Todavía no hay especies disponibles" : "No hay especies que coincidan con la búsqueda."}
+                            descripcion={especies.length === 0 ? "Las especies aparecerán aquí cuando los operadores publiquen sus productos." : "Probá con otro nombre para encontrar la especie que buscás."}
+                            icono={especies.length === 0 ? <ShoppingBasketOutlinedIcon /> : <SearchOffOutlinedIcon />}
+                        />
                     ) : (
                         <>
                             <div className={styles.lista}>
@@ -114,7 +117,6 @@ export default function Inicio({ especies, urlListaInteligente }: Props) {
                                     <ProductoCard key={especie.nombreEspecie} nombre={especie.nombreEspecie} operadores={especie.cantidadOperadores} imagen={especie.fotoGenerica} />
                                 ))}
                             </div>
-
                             {totalPaginas > 1 && (
                                 <nav className={styles.paginacion} aria-label="Páginas de especies">
                                     <button className={styles.botonPagina} type="button" onClick={() => setPaginaActual(paginaVisible - 1)} disabled={paginaVisible === 1}>Anterior</button>

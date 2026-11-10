@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef } from "react";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import Dialog from "@mui/material/Dialog";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import estilos from "./ConfirmModal.module.css";
 
 type ConfirmModalProps = {
 	abierto: boolean;
@@ -23,56 +27,53 @@ export function ConfirmModal({
 	alConfirmar,
 	alCancelar,
 }: ConfirmModalProps) {
-	const dialogoRef = useRef<HTMLDialogElement>(null);
 	const cancelarRef = useRef<HTMLButtonElement>(null);
-	const [visible, setVisible] = useState(false);
+	const reducirMovimiento = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const tituloId = useId();
 	const descripcionId = useId();
 
-	useEffect(() => {
-		const dialogo = dialogoRef.current;
-		if (!dialogo) return;
-
-		if (abierto) {
-			if (!dialogo.open) dialogo.showModal();
-			const frame = requestAnimationFrame(() => {
-				setVisible(true);
-				cancelarRef.current?.focus();
-			});
-			return () => cancelAnimationFrame(frame);
-		}
-
-		if (dialogo.open) {
-			setVisible(false);
-			const duracion = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 220;
-			const temporizador = window.setTimeout(() => dialogo.close(), duracion);
-			return () => window.clearTimeout(temporizador);
-		}
-	}, [abierto]);
-
 	return (
-		<dialog
-			ref={dialogoRef}
-			className="confirm-modal fixed inset-0 m-auto w-[min(90vw,28rem)] max-w-none rounded-2xl border border-[#deded7] bg-white p-0 text-[#1a1a1a] shadow-2xl"
-			data-state={visible ? "open" : "closed"}
+		<Dialog
+			open={abierto}
+			maxWidth={false}
 			role="alertdialog"
 			aria-labelledby={tituloId}
 			aria-describedby={descripcionId}
-			aria-modal="true"
-			onCancel={(evento) => { evento.preventDefault(); if (!procesando) alCancelar(); }}
-			onClick={(evento) => { if (evento.target === evento.currentTarget && !procesando) alCancelar(); }}
+			transitionDuration={reducirMovimiento ? 0 : 220}
+			onClose={() => { if (!procesando) alCancelar() }}
+			onKeyDown={(evento) => { if (evento.key === "Escape") evento.stopPropagation() }}
+			onClick={(evento) => evento.stopPropagation()}
+			slotProps={{
+				paper: {
+					className: "shadow-2xl",
+					sx: {
+						m: 2,
+						width: "28rem",
+						maxWidth: "calc(100% - 32px)",
+						maxHeight: "calc(100% - 32px)",
+						borderRadius: "var(--radio-panel)",
+						border: "1px solid var(--color-border)",
+						backgroundColor: "var(--color-surface)",
+						color: "var(--color-foreground)",
+					},
+				},
+				backdrop: { sx: { backgroundColor: "rgb(15 23 42 / 48%)" } },
+				transition: { onEntered: () => cancelarRef.current?.focus() },
+			}}
 		>
-			<div className="p-6 sm:p-7">
-				<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-700" aria-hidden="true">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6" /></svg>
+			<div className={estilos.contenido}>
+				<div className={estilos.encabezado}>
+					<div className={estilos.icono} aria-hidden="true">
+						<DeleteOutlinedIcon aria-hidden="true" fontSize="small" />
+					</div>
+					<h2 id={tituloId} className={`titulo-seccion ${estilos.titulo}`}>{titulo}</h2>
 				</div>
-				<h2 id={tituloId} className="text-xl font-bold tracking-tight">{titulo}</h2>
-				<p id={descripcionId} className="mt-2 text-sm leading-6 text-[#5e665f]">{descripcion}</p>
-				<div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-					<button ref={cancelarRef} type="button" onClick={alCancelar} disabled={procesando} className="min-h-11 rounded-lg border border-[#deded7] bg-white px-5 py-2 font-semibold text-[#465047] hover:bg-[#f6f5f0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#008332] disabled:opacity-50">{textoCancelar}</button>
-					<button type="button" onClick={alConfirmar} disabled={procesando} className="min-h-11 rounded-lg bg-red-700 px-5 py-2 font-semibold text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:opacity-50">{procesando ? "Eliminando..." : textoConfirmar}</button>
+				<p id={descripcionId} className={estilos.descripcion}>{descripcion}</p>
+				<div className={estilos.acciones}>
+					<button ref={cancelarRef} type="button" onClick={alCancelar} disabled={procesando} className="boton-secundario">{textoCancelar}</button>
+					<button type="button" onClick={alConfirmar} disabled={procesando} className="boton-peligro">{procesando ? "Eliminando..." : textoConfirmar}</button>
 				</div>
 			</div>
-		</dialog>
+		</Dialog>
 	);
 }

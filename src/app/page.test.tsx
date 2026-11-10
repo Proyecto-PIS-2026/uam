@@ -7,21 +7,26 @@ import Home from "./page";
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: vi.fn() }));
 vi.mock("next/navigation", () => ({
-    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
+    redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT") }),
 }));
 
 describe("entrada principal", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR", "OPERADOR"] as const)(
+    it.each([
+        [null, "/inicio"],
+        ["ADMINISTRADOR", "/inicio"],
+        ["PRODUCTOR", "/mi-mercado/productor"],
+        ["OPERADOR", "/mi-mercado"],
+    ] as const)(
         "envía %s a su página principal",
-        async (rol) => {
+        async (rol, destino) => {
             vi.mocked(obtenerSesion).mockResolvedValue(rol === null ? null : {
                 usuarioId: 10, rol, expiraEn: 2000000000,
             });
 
             await expect(Home()).rejects.toThrow("NEXT_REDIRECT");
-            expect(redirect).toHaveBeenCalledExactlyOnceWith(rol === "OPERADOR" ? "/mi-mercado" : "/inicio");
+            expect(redirect).toHaveBeenCalledExactlyOnceWith(destino);
         },
     );
 

@@ -1,12 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@/test-utils";
 
 import PerfilOperadorAdmin from "./PerfilOperadorAdmin";
 import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
-import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/operadores/consultas-edicion-publicacion";
+import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/operadores/tipos";
 
 const mocks = vi.hoisted(() => ({
     propsCatalogo: vi.fn(),
+    propsNuevaPublicacion: vi.fn(),
+    refresh: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
 vi.mock("./CatalogoOperadorAdmin", () => ({
@@ -16,10 +22,23 @@ vi.mock("./CatalogoOperadorAdmin", () => ({
     },
 }));
 
+// Reemplaza el drawer de alta por botones que simulan crear o cerrar
+vi.mock("@/modulos/publicaciones/operadores/componentes/NuevaPublicacion", () => ({
+    default: (props: { operadorId: number; abierto: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void }) => {
+        mocks.propsNuevaPublicacion(props);
+        return (
+            <div data-testid="nueva-publicacion">
+                <button type="button" onClick={() => props.alCrear("Publicación creada correctamente.")}>Simular alta</button>
+                <button type="button" onClick={props.alCerrar}>Simular cierre</button>
+            </div>
+        );
+    },
+}));
+
 const opciones: OpcionesEdicionPublicacion = {
     especies: [],
     variedades: [],
-    presentaciones: [],
+    envases: [], kilos: [],
     categorias: [],
     calibres: [],
     paises: [],
@@ -30,6 +49,7 @@ const operadorBase: PerfilAdminOperador = {
     nombreFantasia: "Mercado Rural Los Olivos",
     fotoPerfil: null,
     whatsApp: "+59899100012",
+    solicitoRestablecimiento: false,
     locales: [
         { numeroLocal: "180", nombreNave: "A", finContrato: "2029-03-31" },
         { numeroLocal: "160", nombreNave: "D", finContrato: null },
@@ -47,11 +67,11 @@ describe("PerfilOperadorAdmin", () => {
     });
 
     // Muestra la identidad del operador
-    it("muestra el nombre, la inicial y el WhatsApp del operador", () => {
+    it("muestra el nombre, las iniciales y el WhatsApp del operador", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
         expect(screen.getByRole("heading", { level: 1, name: "Mercado Rural Los Olivos" })).toBeInTheDocument();
-        expect(screen.getByText("M")).toBeInTheDocument();
+        expect(screen.getByText("MR")).toBeInTheDocument();
         expect(screen.getByText("+59899100012")).toBeInTheDocument();
     });
 
@@ -76,7 +96,7 @@ describe("PerfilOperadorAdmin", () => {
     it("ofrece volver al listado de operadores", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
-        expect(screen.getByRole("link", { name: /Volver al listado de operadores/ })).toHaveAttribute("href", "/administracion");
+        expect(screen.getByRole("link", { name: /Volver al listado de operadores/ })).toHaveAttribute("href", "/administracion#usuarios");
     });
 
     it("ofrece editar el operador", () => {
@@ -88,6 +108,68 @@ describe("PerfilOperadorAdmin", () => {
         );
     });
 
+    it("ofrece agregar un producto para el operador", () => {
+        render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
+
+        expect(screen.getByRole("button", { name: "Agregar Producto" })).toBeInTheDocument();
+    });
+
+    // El drawer de alta solo aparece al tocar el botón, y para este operador
+    it("abre el alta de publicación del operador al tocar Agregar Producto", () => {
+        render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
+
+        expect(screen.queryByTestId("nueva-publicacion")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+
+        expect(screen.getByTestId("nueva-publicacion")).toBeInTheDocument();
+        expect(mocks.propsNuevaPublicacion).toHaveBeenLastCalledWith(
+            expect.objectContaining({ operadorId: operadorBase.id, abierto: true, disponibilidadInicial: false }),
+        );
+    });
+
+    // Al crear se cierra el drawer, se muestra el aviso y se refrescan los datos
+    it("cierra el alta, muestra el aviso y refresca la página al crear una publicación", () => {
+        render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
+
+        expect(screen.queryByTestId("nueva-publicacion")).not.toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    // Al cerrar sin crear no hay aviso ni refresco
+    it("cierra el alta sin aviso ni refresco cuando se cancela", () => {
+        render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Simular cierre" }));
+
+        expect(screen.queryByTestId("nueva-publicacion")).not.toBeInTheDocument();
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(mocks.refresh).not.toHaveBeenCalled();
+    });
+
+    it("conserva y apila los avisos al abrir otra alta y permite cerrarlos por separado", () => {
+        render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
+        expect(screen.getByRole("status")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        expect(screen.getByTestId("nueva-publicacion")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
+        const avisos = screen.getAllByRole("status");
+        expect(avisos).toHaveLength(2);
+        fireEvent.click(within(avisos[0]).getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.getAllByRole("status")).toEqual([avisos[1]]);
+    });
+
     // Muestra la cantidad de publicaciones y le pasa los datos al catálogo
     it("muestra la cantidad de publicaciones y le pasa publicaciones y opciones al catálogo", () => {
         const publicaciones = [{ id: 101 }, { id: 102 }] as PerfilAdminOperador["publicaciones"];
@@ -95,6 +177,6 @@ describe("PerfilOperadorAdmin", () => {
 
         expect(screen.getByRole("heading", { name: "Publicaciones (2)" })).toBeInTheDocument();
         expect(screen.getByTestId("catalogo")).toBeInTheDocument();
-        expect(mocks.propsCatalogo).toHaveBeenLastCalledWith({ publicaciones, opciones });
+        expect(mocks.propsCatalogo).toHaveBeenLastCalledWith({ operadorId: operadorBase.id, publicaciones, opciones });
     });
 });

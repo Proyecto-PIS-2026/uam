@@ -1,10 +1,12 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPerfilPublicoOperador } from "./consultas-perfil-publico";
+import "temporal-polyfill/full/global";
 
 // Sirve para construir una base de datos falsa, metodos falsos y simular las consultas
 const mockDb = vi.hoisted(() => ({
     operador: {
+        where: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         include: vi.fn().mockReturnThis(),
         first: vi.fn(),
@@ -65,6 +67,19 @@ describe("obtenerPerfilPublicoOperador", () => {
                 return mockDb.publicaciones;
             }
         );
+    });
+
+    it("oculta el perfil cuando el usuario está deshabilitado", async () => {
+        await obtenerPerfilPublicoOperador("Frutas del Norte");
+        const predicado = mockDb.operador.where.mock.calls[0][0];
+        const evaluar = (estado: boolean) => predicado({
+            usuario: { some: (condicion: (usuario: { habilitado: { eq: (valor: boolean) => boolean } }) => boolean) =>
+                condicion({ habilitado: { eq: (valor) => estado === valor } }) },
+        });
+
+        expect(evaluar(false)).toBe(false);
+        expect(evaluar(true)).toBe(true);
+        expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
     });
 
     // Verifica que nombres vacíos sean rechazados sin consultar la base de datos
@@ -167,6 +182,28 @@ describe("obtenerPerfilPublicoOperador", () => {
         ]);
     });
 
+    it("devuelve el perfil sin consultar publicaciones cuando el operador está de licencia", async () => {
+        mockDb.operador.first.mockResolvedValue({
+            ...operadorConLocal,
+            enLicencia: true,
+            comentario: "Licencia: 2026-11-05 - 2026-11-12",
+        });
+
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
+
+        expect(resultado).toEqual({
+            id: 13,
+            nombreFantasia: "Frutas del Norte",
+            fotoPerfil: "/operadores/frutas-del-norte.jpg",
+            whatsApp: "+59899100001",
+            enLicencia: true,
+            comentario: "Licencia: 2026-11-05 - 2026-11-12",
+            locales: [{ numeroLocal: "18", nombreNave: "B" }],
+            publicaciones: [],
+        });
+        expect(mockDb.publicaciones.all).not.toHaveBeenCalled();
+    });
+
     // Verifica que solo se devuelvan publicaciones activas, disponibles y de tipo OPERADOR
     it("devuelve solo las publicaciones visibles con sus datos", async () => {
         const fechaPublicacion = new Date("2026-10-03T15:00:00.000Z");
@@ -179,13 +216,10 @@ describe("obtenerPerfilPublicoOperador", () => {
             publicacionActiva: true,
             publicacionDisponible: true,
             tipoPublicacion: "OPERADOR",
-            presentacion: {
-                nombrePresentacion: "Cajón",
-                variedad: {
-                    nombreVariedad: "Perita",
-                    especie: { nombreEspecie: "Tomate" },
-                },
-            },
+            especie: { nombreEspecie: "Tomate" },
+            variedad: { nombreVariedad: "Perita" },
+            envase: { nombreEnvase: "Cajón" },
+            kilos: null,
             categoria: { nombreCategoria: "Extra" },
             calibre: { codigoCalibre: "A" },
         };
@@ -209,7 +243,8 @@ describe("obtenerPerfilPublicoOperador", () => {
                 cantidadUnidades: null,
                 especie: "Tomate",
                 variedad: "Perita",
-                presentacion: "Cajón",
+                envase: "Cajón",
+                kilos: "",
                 categoria: "Extra",
                 calibre: "A",
                 pais: "URUGUAY",
@@ -229,13 +264,10 @@ describe("obtenerPerfilPublicoOperador", () => {
             publicacionActiva: true,
             publicacionDisponible: true,
             tipoPublicacion: "OPERADOR",
-            presentacion: {
-                nombrePresentacion: "Cajón",
-                variedad: {
-                    nombreVariedad: "Perita",
-                    especie: { nombreEspecie: "Tomate" },
-                },
-            },
+            especie: { nombreEspecie: "Tomate" },
+            variedad: { nombreVariedad: "Perita" },
+            envase: { nombreEnvase: "Cajón" },
+            kilos: null,
             categoria: { nombreCategoria: "Extra" },
             calibre: { codigoCalibre: "A" },
         };
@@ -259,7 +291,8 @@ describe("obtenerPerfilPublicoOperador", () => {
                 cantidadUnidades: 5,
                 especie: "Tomate",
                 variedad: "Perita",
-                presentacion: "Cajón",
+                envase: "Cajón",
+                kilos: "",
                 categoria: "Extra",
                 calibre: "A",
                 pais: "URUGUAY",
@@ -267,4 +300,85 @@ describe("obtenerPerfilPublicoOperador", () => {
         ]);
         expect(mockDb.publicaciones.include).toHaveBeenCalledWith("pais", expect.any(Function));
     });
+
+
+describe("vigencia de las publicaciones", () => {
+    const DIA = 86_400_000;
+
+    const publicacionBase = {
+        id: 101,
+        foto: "/publicaciones/tomate.jpg",
+        precio: "120.00",
+        fecha: new Date("2026-10-03T15:00:00.000Z"),
+        cantidadUnidades: null,
+        publicacionActiva: true,
+        publicacionDisponible: true,
+        tipoPublicacion: "OPERADOR",
+        especie: { nombreEspecie: "Tomate" },
+        variedad: { nombreVariedad: "Perita" },
+        presentacion: { nombrePresentacion: "Cajón" },
+        categoria: { nombreCategoria: "Extra" },
+        calibre: { codigoCalibre: "A" },
+    };
+
+    const conVigencia = (id: number, fechaVigencia: Temporal.Instant | null) => ({
+        publicacion: { ...publicacionBase, id, fechaVigencia },
+        pais: { nombrePais: "URUGUAY" },
+    });
+
+    const enDias = (dias: number) =>
+        Temporal.Instant.fromEpochMilliseconds(Date.now() + dias * DIA);
+
+    beforeEach(() => {
+        mockDb.operador.first.mockResolvedValue(operadorConLocal);
+    });
+
+    it("no incluye publicaciones con fechaVigencia vencida en el perfil público del operador", async () => {
+        mockDb.publicaciones.all.mockResolvedValue([conVigencia(101, enDias(-3))]);
+
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
+
+        expect(resultado?.publicaciones).toEqual([]);
+    });
+
+    it("incluye publicaciones con fechaVigencia futura", async () => {
+        mockDb.publicaciones.all.mockResolvedValue([conVigencia(101, enDias(15))]);
+
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
+
+        expect(resultado?.publicaciones.map((p) => p.id)).toEqual([101]);
+    });
+
+    it("incluye publicaciones sin fechaVigencia", async () => {
+        mockDb.publicaciones.all.mockResolvedValue([conVigencia(101, null)]);
+
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
+
+        expect(resultado?.publicaciones.map((p) => p.id)).toEqual([101]);
+    });
+
+    it("conserva las vigentes cuando conviven con una vencida", async () => {
+        mockDb.publicaciones.all.mockResolvedValue([
+            conVigencia(101, enDias(-3)),
+            conVigencia(102, enDias(15)),
+            conVigencia(103, null),
+        ]);
+
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
+
+        expect(resultado?.publicaciones.map((p) => p.id)).toEqual([102, 103]);
+    });
+
+    it("sigue devolviendo el perfil con locales cuando todas las publicaciones están vencidas", async () => {
+        mockDb.publicaciones.all.mockResolvedValue([conVigencia(101, enDias(-1))]);
+
+        const resultado = await obtenerPerfilPublicoOperador("Frutas del Norte");
+
+        expect(resultado).toMatchObject({
+            nombreFantasia: "Frutas del Norte",
+            locales: [{ numeroLocal: "18", nombreNave: "B" }],
+            publicaciones: [],
+        });
+    });
+  });
 });

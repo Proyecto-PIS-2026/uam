@@ -1,31 +1,43 @@
 .contenedor {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--espacio-secciones);
     width: 100%;
+}
+
+.leyendaRestablecimiento {
+    display: none;
 }
 
 .lista {
-    --columnas-usuarios: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 5rem;
-    display: flex;
-    flex-direction: column;
+    --columnas-usuarios: minmax(0, 1fr) minmax(0, 1fr) max-content 7.5rem;
+    --padding-lista-usuarios: var(--padding-panel);
+    display: grid;
+    grid-template-columns: var(--columnas-usuarios);
+    column-gap: var(--espacio-secciones);
     width: 100%;
+    padding-inline: var(--padding-lista-usuarios);
     border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radio-panel);
     overflow: hidden;
-    background-color: white;
+    background-color: var(--color-surface);
+}
+
+.encabezado,
+.fila {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    margin-inline: calc(-1 * var(--padding-lista-usuarios));
 }
 
 .encabezado {
-    display: grid;
-    grid-template-columns: var(--columnas-usuarios);
-    gap: 1rem;
     align-items: center;
-    padding: 0.8rem 1rem;
-    border-bottom: 2px solid var(--color-primary);
-    background-color: var(--color-primary-soft);
+    padding: var(--espacio-controles) var(--padding-lista-usuarios);
+    border-bottom: 2px solid var(--color-secondary);
+    background-color: var(--color-secondary-soft);
     color: var(--color-secondary);
-    font-size: 0.8rem;
+    font-size: var(--tamano-texto-auxiliar);
     font-weight: 700;
     box-sizing: border-box;
 }
@@ -35,19 +47,15 @@
 }
 
 .fila {
-    display: grid;
-    grid-template-columns: var(--columnas-usuarios);
     align-items: center;
-    gap: 1rem;
-    width: 100%;
     min-height: 3.25rem;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem var(--padding-lista-usuarios);
     border: 0;
     border-bottom: 1px solid var(--color-border);
-    background-color: white;
+    background-color: var(--color-surface);
     color: var(--color-foreground);
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: var(--tamano-texto-secundario);
     text-align: left;
     cursor: pointer;
     box-sizing: border-box;
@@ -58,12 +66,12 @@
 }
 
 .fila:hover {
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
 }
 
 .fila.seleccionada {
-    background-color: var(--color-primary-soft);
-    box-shadow: inset 3px 0 0 var(--color-primary);
+    background-color: var(--color-secondary-soft);
+    box-shadow: inset 3px 0 0 var(--color-secondary);
 }
 
 .username {
@@ -72,6 +80,23 @@
     font-weight: 600;
     white-space: normal;
     overflow-wrap: anywhere;
+}
+
+.iconoRestablecimiento {
+    margin-left: var(--espacio-textos);
+    color: var(--color-warning);
+    vertical-align: middle;
+}
+
+.estadoUsuario {
+    display: block;
+    color: var(--color-secondary);
+    font-size: var(--tamano-texto-auxiliar);
+    font-weight: 500;
+}
+
+.estadoUsuario[data-habilitado="false"] {
+    color: var(--color-danger);
 }
 
 .encabezado span:nth-child(2),
@@ -96,6 +121,11 @@
     white-space: nowrap;
 }
 
+.encabezado span:nth-child(3),
+.rol {
+    padding-inline: var(--espacio-inline);
+}
+
 .rol {
     min-width: 0;
     color: var(--color-foreground);
@@ -108,34 +138,37 @@
     text-align: left;
 }
 
+.rol abbr {
+    text-decoration: none;
+}
+
 .acciones {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.25rem;
+    gap: var(--espacio-textos);
 }
 
 .botonEditar {
-    color: var(--color-primary) !important;
+    color: var(--color-secondary) !important;
+}
+
+.botonHabilitacion {
+    color: var(--color-secondary) !important;
+}
+
+.botonHabilitacion:disabled {
+    opacity: 0.4;
 }
 
 .botonEliminar {
-    color: #d32f2f !important;
-}
-
-.sinResultados {
-    margin: 0;
-    padding: 1.5rem 0;
-    color: var(--color-muted);
-    font-size: 0.9rem;
-    text-align: center;
+    color: var(--color-danger) !important;
 }
 
 .paginacion {
     display: flex;
     justify-content: center;
     width: 100%;
-    padding-top: 0.25rem;
 }
 
 .paginacion :global(.MuiPaginationItem-root) {
@@ -143,30 +176,39 @@
 }
 
 .paginacion :global(.MuiPaginationItem-root.Mui-selected) {
-    background-color: var(--color-primary);
-    color: white;
+    background-color: var(--color-secondary);
+    color: var(--color-surface);
 }
 
 .paginacion :global(.MuiPaginationItem-root.Mui-selected:hover) {
-    background-color: var(--color-primary-hover);
+    background-color: var(--color-secondary-hover);
 }
 
 .paginacion :global(.MuiPaginationItem-root:hover) {
-    background-color: var(--color-primary-soft);
+    background-color: var(--color-secondary-soft);
+}
+
+.modal:global(.MuiDialog-paper) {
+    margin: var(--padding-exterior-pagina);
 }
 
 .modalTitulo {
+    padding: var(--padding-panel) !important;
     color: var(--color-secondary);
-    font-size: 1.1rem !important;
+    font-size: var(--tamano-titulo-seccion) !important;
+}
+
+.modalContenido {
+    padding: 0 var(--padding-panel) !important;
 }
 
 .modalAcciones {
-    padding: 1rem 1.5rem !important;
+    padding: var(--padding-panel) !important;
 }
 
 .botonCancelarModal {
-    border-color: var(--color-primary) !important;
-    color: var(--color-primary) !important;
+    border-color: var(--color-secondary) !important;
+    color: var(--color-secondary) !important;
     text-transform: none !important;
     font-weight: 600 !important;
 }
@@ -179,19 +221,71 @@
 .textoConfirmacion {
     margin: 0;
     color: var(--color-foreground);
-    font-size: 0.9rem;
+    font-size: var(--tamano-texto-secundario);
     line-height: 1.4;
 }
 
-@media (max-width: 900px) {
+@media (min-width: 901px) {
+    .contenedor {
+        container-type: inline-size;
+    }
+
     .lista {
-        --columnas-usuarios: minmax(0, 1fr) minmax(0, 1fr) 5rem;
+        --columnas-usuarios: minmax(auto, 1fr) minmax(8rem, 1fr) max-content 7.5rem;
+    }
+
+    .fila.restablecimientoSolicitado .username {
+        min-width: auto;
+        width: max-content;
+        max-width: min(100%, calc(100cqw - 27.5rem));
+    }
+}
+
+@media (max-width: 900px) {
+    .leyendaRestablecimiento {
+        display: flex;
+        align-self: flex-start;
+        align-items: center;
+        gap: var(--espacio-inline);
+        margin: 0;
+        padding: var(--espacio-inline) var(--espacio-controles);
+        border-radius: var(--radio-control);
+        background-color: var(--color-warning-soft);
+        color: var(--color-warning);
+        font-size: var(--tamano-texto-auxiliar);
+        font-weight: 600;
+        line-height: var(--interlineado-texto);
+    }
+
+    .leyendaRestablecimiento > svg {
+        flex-shrink: 0;
+    }
+
+    .fila.restablecimientoSolicitado {
+        background-color: var(--color-warning-soft);
+    }
+
+    .indicadorRestablecimiento {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .lista {
+        --columnas-usuarios: minmax(0, 1fr) max-content 7.5rem;
+        --padding-lista-usuarios: var(--espacio-controles);
+        column-gap: var(--espacio-controles);
     }
 
     .encabezado {
-        gap: 0.75rem;
-        padding: 0.65rem 0.75rem;
-        font-size: 0.75rem;
+        padding: var(--espacio-controles);
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .encabezado span:nth-child(2),
@@ -204,10 +298,9 @@
     }
 
     .fila {
-        gap: 0.75rem;
         min-height: 3rem;
-        padding: 0.65rem 0.75rem;
-        font-size: 0.8rem;
+        padding: var(--espacio-controles);
+        font-size: var(--tamano-texto-auxiliar);
     }
 
     .username {
@@ -223,10 +316,6 @@
 }
 
 @media (max-width: 500px) {
-    .lista {
-        --columnas-usuarios: minmax(0, 1fr) max-content 5rem;
-    }
-
     .encabezado span:nth-child(3) {
         text-align: right;
     }
@@ -234,4 +323,23 @@
     .rol {
         text-align: right;
     }
+}
+
+.fila[data-habilitado="false"] {
+    background-color: var(--color-surface-muted);
+}
+
+.fila[data-habilitado="false"].seleccionada {
+    box-shadow: inset 3px 0 0 var(--color-muted);
+}
+
+.fila[data-habilitado="false"] > :not(.acciones),
+.fila[data-habilitado="false"] .estadoUsuario,
+.fila[data-habilitado="false"] .iconoRestablecimiento,
+.fila[data-habilitado="false"] .indicadorRestablecimiento {
+    color: var(--color-muted);
+}
+
+.fila[data-habilitado="false"] .indicadorRestablecimiento {
+    background-color: var(--color-border);
 }

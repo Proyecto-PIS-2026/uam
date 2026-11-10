@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
+import Dialog from "@mui/material/Dialog";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
@@ -11,46 +13,57 @@ import {
 
 const estadoInicial: EstadoInicioSesion = {};
 
-export default function FormularioInicioSesion() {
+export default function FormularioInicioSesion({ recuperacionHabilitada = true }: { recuperacionHabilitada?: boolean }) {
     const [estado, accion, pendiente] = useActionState(iniciarSesion, estadoInicial);
     const [identificador, cambiarIdentificador] = useState("");
     const [mostrarContrasena, cambiarMostrarContrasena] = useState(false);
     const [modalRecuperacionAbierto, cambiarModalRecuperacionAbierto] = useState(false);
     const [usuarioRecuperacion, cambiarUsuarioRecuperacion] = useState("");
+    const usuarioRecuperacionRef = useRef<HTMLInputElement>(null);
     const [errorRecuperacion, cambiarErrorRecuperacion] = useState("");
-    const [mensajeRecuperacion, cambiarMensajeRecuperacion] = useState("");
+    const { notificar } = useNotificacionToast();
     const [solicitudPendiente, cambiarSolicitudPendiente] = useState(false);
 
     function abrirModalRecuperacion() {
         cambiarErrorRecuperacion("");
-        cambiarMensajeRecuperacion("");
         cambiarModalRecuperacionAbierto(true);
     }
 
     function cerrarModalRecuperacion() {
+        if (solicitudPendiente) return;
         cambiarErrorRecuperacion("");
-        cambiarMensajeRecuperacion("");
         cambiarModalRecuperacionAbierto(false);
     }
 
     async function aceptarSolicitudRecuperacion() {
+        if (solicitudPendiente) return;
         if (!usuarioRecuperacion.trim()) {
             cambiarErrorRecuperacion("Ingresá tu nombre de usuario para solicitar la recuperación.");
             return;
         }
 
         cambiarSolicitudPendiente(true);
-        const resultado = await solicitarRecuperacion(usuarioRecuperacion);
-        cambiarSolicitudPendiente(false);
-        cambiarErrorRecuperacion(resultado.error ?? "");
-        cambiarMensajeRecuperacion(resultado.exito ?? "");
+        cambiarErrorRecuperacion("");
+        try {
+            const resultado = await solicitarRecuperacion(usuarioRecuperacion);
+            if (resultado.tipoError === "operacion" && resultado.error) {
+                notificar(resultado.error, "error");
+            } else {
+                cambiarErrorRecuperacion(resultado.error ?? "");
+            }
+            if (resultado.exito) notificar(resultado.exito, "success");
+        } catch {
+            notificar("No se pudo registrar la solicitud. Intentá nuevamente.", "error");
+        } finally {
+            cambiarSolicitudPendiente(false);
+        }
     }
 
     return (
         <>
             <form
                 action={accion}
-                className="w-full max-w-md space-y-5 rounded-lg bg-[var(--color-surface)] p-6 shadow-sm"
+                className="w-full max-w-md secciones-pagina rounded-[var(--radio-panel)] border border-border bg-surface p-[var(--padding-panel)] shadow-[var(--sombra-panel)]"
             >
                 <div>
                     <label htmlFor="identificador" className="mb-2 block text-sm font-medium">
@@ -64,7 +77,7 @@ export default function FormularioInicioSesion() {
                         autoComplete="username"
                         value={identificador}
                         onChange={(evento) => cambiarIdentificador(evento.target.value)}
-                        className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2"
+                        className="campo-formulario"
                     />
                 </div>
                 <div>
@@ -78,102 +91,96 @@ export default function FormularioInicioSesion() {
                             type={mostrarContrasena ? "text" : "password"}
                             required
                             autoComplete="current-password"
-                            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 pr-11"
+                            className="campo-formulario campo-formulario-con-icono"
                         />
                         <button
                             type="button"
                             aria-label={mostrarContrasena ? "Ocultar contraseña" : "Mostrar contraseña"}
                             onClick={() => cambiarMostrarContrasena((mostrar) => !mostrar)}
-                            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-black"
+                            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground"
                         >
                             {mostrarContrasena ? <VisibilityIcon /> : <VisibilityOffIcon />}
                         </button>
                     </div>
                 </div>
                 {estado.error && (
-                    <p role="alert" className="text-sm text-red-700">
+                    <p role="alert" className="text-sm text-danger">
                         {estado.error}
                     </p>
                 )}
                 <button
                     type="submit"
                     disabled={pendiente}
-                    className="w-full rounded-md bg-[var(--color-primary)] px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    className="boton-primario w-full"
                 >
                     {pendiente ? "Ingresando..." : "Iniciar sesión"}
                 </button>
-                <button
+                {recuperacionHabilitada && <button
                     type="button"
                     onClick={abrirModalRecuperacion}
-                    className="w-full text-center text-sm text-[var(--color-primary)] underline underline-offset-2 hover:opacity-80"
+                    className="w-full text-center text-sm text-[var(--color-secondary)] underline underline-offset-2 hover:opacity-80"
                 >
                     Solicitar recuperación de contraseña
-                </button>
+                </button>}
             </form>
-            {modalRecuperacionAbierto && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm"
-                    role="presentation"
-                    onMouseDown={(evento) => {
-                        if (evento.target === evento.currentTarget) cerrarModalRecuperacion();
+            <Dialog
+                open={modalRecuperacionAbierto}
+                onClose={cerrarModalRecuperacion}
+                maxWidth={false}
+                aria-labelledby="titulo-recuperacion-contrasena"
+                aria-describedby="descripcion-recuperacion-contrasena"
+                slotProps={{
+                    paper: { sx: { m: 2, width: "calc(100% - 32px)", maxWidth: "28rem", p: "var(--padding-panel)" } },
+                    transition: { onEntered: () => usuarioRecuperacionRef.current?.focus() },
+                }}
+            >
+                <h2 id="titulo-recuperacion-contrasena" className="titulo-seccion mb-[var(--espacio-controles)]">
+                    Solicitar recuperación de contraseña
+                </h2>
+                <p id="descripcion-recuperacion-contrasena" className="mb-4 text-sm text-[var(--color-foreground)]">
+                    Ingresá tu nombre de usuario y confirmá si estás seguro de solicitar la recuperación.
+                </p>
+                <label htmlFor="usuarioRecuperacion" className="mb-2 block text-sm font-medium">
+                    Nombre de usuario
+                </label>
+                <input
+                    ref={usuarioRecuperacionRef}
+                    id="usuarioRecuperacion"
+                    type="text"
+                    autoFocus
+                    autoComplete="username"
+                    disabled={solicitudPendiente}
+                    value={usuarioRecuperacion}
+                    onChange={(evento) => {
+                        cambiarUsuarioRecuperacion(evento.target.value);
+                        if (errorRecuperacion) cambiarErrorRecuperacion("");
                     }}
-                >
-                    <div
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="titulo-recuperacion-contrasena"
-                        className="w-full max-w-md rounded-lg bg-[var(--color-surface)] p-6 shadow-xl"
+                    className="mb-2 campo-formulario"
+                />
+                {errorRecuperacion && (
+                    <p role="alert" className="mb-4 text-sm text-danger">
+                        {errorRecuperacion}
+                    </p>
+                )}
+                <div className="flex w-full items-center justify-end gap-[var(--espacio-controles)]">
+                    <button
+                        type="button"
+                        onClick={cerrarModalRecuperacion}
+                        disabled={solicitudPendiente}
+                        className="boton-secundario"
                     >
-                        <h2 id="titulo-recuperacion-contrasena" className="mb-3 text-xl font-semibold">
-                            Solicitar recuperación de contraseña
-                        </h2>
-                        <p className="mb-4 text-sm text-[var(--color-foreground)]">
-                            Ingresá tu nombre de usuario y confirmá si estás seguro de solicitar la recuperación.
-                        </p>
-                        <label htmlFor="usuarioRecuperacion" className="mb-2 block text-sm font-medium">
-                            Nombre de usuario
-                        </label>
-                        <input
-                            id="usuarioRecuperacion"
-                            type="text"
-                            autoComplete="username"
-                            value={usuarioRecuperacion}
-                            onChange={(evento) => {
-                                cambiarUsuarioRecuperacion(evento.target.value);
-                                if (errorRecuperacion) cambiarErrorRecuperacion("");
-                            }}
-                            className="mb-2 w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2"
-                        />
-                        {errorRecuperacion && (
-                            <p role="alert" className="mb-4 text-sm text-red-700">
-                                {errorRecuperacion}
-                            </p>
-                        )}
-                        {mensajeRecuperacion && (
-                            <p role="status" className="mb-4 text-sm text-[var(--color-primary)]">
-                                {mensajeRecuperacion}
-                            </p>
-                        )}
-                        <div className="mx-auto flex w-full max-w-[15rem] items-center justify-between">
-                            <button
-                                type="button"
-                                onClick={cerrarModalRecuperacion}
-                                className="rounded-md border border-[var(--color-border)] px-4 py-2 font-medium"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="button"
-                                onClick={aceptarSolicitudRecuperacion}
-                                disabled={solicitudPendiente}
-                                className="rounded-md bg-[var(--color-primary)] px-4 py-2 font-medium text-white"
-                            >
-                                {solicitudPendiente ? "Enviando..." : "Aceptar"}
-                            </button>
-                        </div>
-                    </div>
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        onClick={aceptarSolicitudRecuperacion}
+                        disabled={solicitudPendiente}
+                        className="boton-primario"
+                    >
+                        {solicitudPendiente ? "Enviando..." : "Aceptar"}
+                    </button>
                 </div>
-            )}
+            </Dialog>
         </>
     );
 }

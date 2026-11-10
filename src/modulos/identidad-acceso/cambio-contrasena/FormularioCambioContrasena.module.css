@@ -1,0 +1,141 @@
+.pagina {
+    width: 100%;
+    max-width: var(--ancho-maximo-pagina);
+    margin: 0 auto;
+    padding: var(--padding-exterior-pagina);
+    background: var(--color-background);
+    color: var(--color-foreground);
+}
+
+.contenedor {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.volver {
+    margin-bottom: var(--espacio-secciones);
+}
+
+.encabezado {
+    margin-bottom: var(--espacio-secciones);
+}
+
+.formulario {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+}
+
+.seccion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-controles);
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-panel);
+    background: var(--color-surface);
+    box-shadow: var(--sombra-panel);
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.campo label {
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
+}
+
+.entrada {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
+}
+
+.entrada:focus-within {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 1px;
+}
+
+.entrada input {
+    width: 100%;
+    min-width: 0;
+    padding: var(--padding-control);
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--color-foreground);
+    font: inherit;
+}
+
+.mostrar {
+    display: flex;
+    width: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    border: 0;
+    background: transparent;
+    color: var(--color-foreground);
+    cursor: pointer;
+}
+
+.ayuda {
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-auxiliar);
+}
+
+.acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--espacio-controles);
+}
+
+.cancelar,
+.guardar {
+    min-width: 10rem;
+    min-height: var(--alto-control);
+    padding: var(--padding-control);
+    border-radius: var(--radio-control);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cancelar {
+    border: 1px solid var(--color-secondary);
+    background: var(--color-surface);
+    color: var(--color-secondary);
+}
+
+.guardar {
+    border: 1px solid var(--color-secondary);
+    background: var(--color-secondary);
+    color: var(--color-surface);
+}
+
+.cancelar:disabled,
+.guardar:disabled,
+.mostrar:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+    .pagina {
+        padding: var(--espacio-secciones);
+    }
+
+    .acciones {
+        flex-direction: column-reverse;
+    }
+
+    .cancelar,
+    .guardar {
+        width: 100%;
+    }
+}

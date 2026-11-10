@@ -1,45 +1,58 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { LIMITE_JSON_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
+const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
+    registrarPublicacion: registrarEstadisticaMock,
+    obtenerFechaEstadistica: () => "2026-11-06",
+}));
 
 const mocks = vi.hoisted(() => ({
-  operadores: vi.fn(),
-  especies: vi.fn(),
-  variedades: vi.fn(),
-  presentaciones: vi.fn(),
-  categorias: vi.fn(),
-  calibres: vi.fn(),
-  paises: vi.fn(),
-  altaPublicacionOperador: vi.fn(),
-  obtenerOperadorAutorizado: vi.fn(),
-  obtenerSesion: vi.fn(),
+    operadores: vi.fn(),
+    especies: vi.fn(),
+    variedades: vi.fn(),
+    envases: vi.fn(),
+    kilos: vi.fn(),
+    categorias: vi.fn(),
+    calibres: vi.fn(),
+    paises: vi.fn(),
+    altaPublicacionOperador: vi.fn(),
+    obtenerOperadorAutorizado: vi.fn(),
+    obtenerSesion: vi.fn(),
+    usuarioSelect: vi.fn(),
+    estadisticaWhere: vi.fn(),
+    estadisticaCreate: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
-  obtenerSesion: mocks.obtenerSesion,
+    obtenerSesion: mocks.obtenerSesion,
 }));
 vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
-  obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado,
+    obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado,
 }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
-  db: {
-    orm: {
-      public: {
-        Operador: { all: mocks.operadores },
-        Especie: { all: mocks.especies },
-        Variedad: { all: mocks.variedades },
-        Presentacion: { all: mocks.presentaciones },
-        Categoria: { all: mocks.categorias },
-        Calibre: { all: mocks.calibres },
-        Pais: { all: mocks.paises },
-      },
+    db: {
+        orm: {
+            public: {
+                Operador: { all: mocks.operadores },
+                Especie: { all: mocks.especies },
+                Variedad: { all: mocks.variedades },
+                Envase: { orderBy: vi.fn(() => ({ all: mocks.envases })) },
+                KilosEmpaquetado: { orderBy: vi.fn(() => ({ all: mocks.kilos })) },
+                Categoria: { all: mocks.categorias },
+                Calibre: { all: mocks.calibres },
+                Pais: { all: mocks.paises },
+                Usuario: { select: mocks.usuarioSelect },
+                EstadisticaPublicacion: { where: mocks.estadisticaWhere, create: mocks.estadisticaCreate },
+            },
+        },
     },
-  },
 }));
 
 vi.mock("@/modulos/publicaciones/altaPublicacionOperador", () => ({
-  altaPublicacionOperador: mocks.altaPublicacionOperador,
+    altaPublicacionOperador: mocks.altaPublicacionOperador,
 }));
 
 import { GET, POST } from "./route";
@@ -49,29 +62,32 @@ import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/contr
 describe("GET /api/publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerSesion.mockResolvedValue(null);
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador propio" });
         mocks.operadores.mockResolvedValue([]);
         mocks.especies.mockResolvedValue([]);
         mocks.variedades.mockResolvedValue([]);
-        mocks.presentaciones.mockResolvedValue([]);
+        mocks.envases.mockResolvedValue([]);
+        mocks.kilos.mockResolvedValue([]);
         mocks.categorias.mockResolvedValue([]);
         mocks.calibres.mockResolvedValue([]);
         mocks.paises.mockResolvedValue([]);
     });
 
-    it.each([null, "ADMINISTRADOR", "PRODUCTOR"] as const)("devuelve los catálogos de publicaciones para %s", async (rol) => {
+    it.each([null, "ADMINISTRADOR"] as const)("devuelve los catálogos de publicaciones para %s", async (rol) => {
         mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
         mocks.operadores.mockResolvedValue([
-        { id: 1, nombreFantasia: "Operador 1" },
+            { id: 1, nombreFantasia: "Operador 1" },
         ]);
 
         mocks.especies.mockResolvedValue([
-        { id: 1, nombreEspecie: "Manzana", especieActiva: true },
+            { id: 1, nombreEspecie: "Manzana", especieActiva: true },
         ]);
 
         mocks.variedades.mockResolvedValue([]);
-        mocks.presentaciones.mockResolvedValue([]);
+        mocks.envases.mockResolvedValue([]);
+        mocks.kilos.mockResolvedValue([]);
         mocks.categorias.mockResolvedValue([]);
         mocks.calibres.mockResolvedValue([]);
         mocks.paises.mockResolvedValue([]);
@@ -82,14 +98,26 @@ describe("GET /api/publicaciones", () => {
         expect(respuesta.status).toBe(200);
 
         expect(cuerpo.operadores).toEqual([
-        { id: 1, nombre: "Operador 1" },
+            { id: 1, nombre: "Operador 1" },
         ]);
 
         expect(cuerpo.especies).toEqual([
-        { id: 1, nombre: "Manzana" },
+            { id: 1, nombre: "Manzana" },
         ]);
         expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
         expect(mocks.operadores).toHaveBeenCalledOnce();
+    });
+
+    it("rechaza al productor antes de consultar los catálogos de operadores", async () => {
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 });
+
+        const respuesta = await GET();
+
+        expect(respuesta.status).toBe(403);
+        expect(await respuesta.json()).toEqual({ errores: ["No tiene permisos para consultar el catálogo de Operadores."] });
+        for (const consulta of [mocks.operadores, mocks.especies, mocks.variedades, mocks.envases, mocks.categorias, mocks.calibres, mocks.paises, mocks.obtenerOperadorAutorizado]) {
+            expect(consulta).not.toHaveBeenCalled();
+        }
     });
 
     it("mantiene los catálogos del alta y devuelve solamente el operador propio", async () => {
@@ -100,7 +128,8 @@ describe("GET /api/publicaciones", () => {
             { id: 2, nombreEspecie: "Pera", especieActiva: false },
         ]);
         mocks.variedades.mockResolvedValue([{ id: 3, especieId: 1, nombreVariedad: "Roja", variedadActiva: true }]);
-        mocks.presentaciones.mockResolvedValue([{ id: 4, variedadId: 3, nombrePresentacion: "Caja", presentacionActiva: true }]);
+        mocks.envases.mockResolvedValue([{ id: 4, nombreEnvase: "Cajon" }]);
+        mocks.kilos.mockResolvedValue([{ id: 1, valor: "20" }]);
         mocks.categorias.mockResolvedValue([{ id: 5, especieId: 1, nombreCategoria: "Primera" }]);
         mocks.calibres.mockResolvedValue([{ id: 6, nombreCalibre: "Mediano" }]);
         mocks.paises.mockResolvedValue([{ id: 7, nombrePais: "Uruguay" }]);
@@ -112,7 +141,8 @@ describe("GET /api/publicaciones", () => {
             operadores: [{ id: 1, nombre: "Operador propio" }],
             especies: [{ id: 1, nombre: "Manzana" }],
             variedades: [{ id: 3, especieId: 1, nombre: "Roja" }],
-            presentaciones: [{ id: 4, variedadId: 3, nombre: "Caja" }],
+            envases: [{ id: 4, nombre: "Cajon" }],
+            kilos: [{ id: 1, nombre: "20" }],
             categorias: [{ id: 5, especieId: 1, nombre: "Primera" }],
             calibres: [{ id: 6, nombre: "Mediano" }],
             paises: [{ id: 7, nombre: "Uruguay" }],
@@ -132,7 +162,7 @@ describe("GET /api/publicaciones", () => {
         expect(mocks.operadores).not.toHaveBeenCalled();
         expect(mocks.especies).not.toHaveBeenCalled();
     });
-  
+ 
     it("devuelve 500 si ocurre un error al cargar los catálogos", async () => {
         mocks.operadores.mockRejectedValue(new Error("Error de base de datos"));
 
@@ -151,8 +181,28 @@ describe("GET /api/publicaciones", () => {
 describe("POST /api/publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerSesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 });
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Operador 1" });
+        mocks.usuarioSelect.mockReturnValue({
+            where: vi.fn().mockReturnValue({
+                first: vi.fn().mockResolvedValue({ username: "op1" }),
+            }),
+        });
+        mocks.estadisticaWhere.mockReturnValue({
+            first: vi.fn().mockResolvedValue(null),
+        });
+        mocks.estadisticaCreate.mockResolvedValue({});
+    });
+
+    it("devuelve 413 sin guardar una solicitud demasiado grande", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST", body: "{}", headers: { "content-length": String(LIMITE_JSON_PUBLICACION + 1) },
+        });
+        const respuesta = await POST(solicitud);
+        expect(respuesta.status).toBe(413);
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
     });
 
     it.each([401, 403] as const)("devuelve %s sin crear publicaciones cuando falla la autorización", async (status) => {
@@ -224,7 +274,7 @@ describe("POST /api/publicaciones", () => {
     it("confirma la creacion aunque falle una revalidacion posterior", async () => {
         const resultado = { esValido: true, id: 15, errores: [] };
         mocks.altaPublicacionOperador.mockResolvedValue(resultado);
-        vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache"); });
+        vi.mocked(revalidatePath).mockImplementationOnce(() => { throw new Error("Fallo de cache") });
         const registrarError = vi.spyOn(console, "error").mockImplementation(() => {});
 
         try {
@@ -379,10 +429,20 @@ describe("POST /api/publicaciones", () => {
 describe("autorización de alta de publicaciones", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
         mocks.obtenerOperadorAutorizado.mockResolvedValue({ id: 1, usuarioId: 10, nombreFantasia: "Propio" });
+        mocks.usuarioSelect.mockReturnValue({
+            where: vi.fn().mockReturnValue({
+                first: vi.fn().mockResolvedValue({ username: "propio" }),
+            }),
+        });
+        mocks.estadisticaWhere.mockReturnValue({
+            first: vi.fn().mockResolvedValue({ id: 1, cantidad: 2 }),
+            update: vi.fn().mockResolvedValue({}),
+        });
     });
 
-    it.each([null, "PRODUCTOR", "ADMINISTRADOR"] as const)(
+    it.each([null, "PRODUCTOR"] as const)(
         "rechaza el alta con sesión %s antes de escribir",
         async (rol) => {
             mocks.obtenerSesion.mockResolvedValue(rol ? { usuarioId: 10, rol, expiraEn: 2000000000 } : null);
@@ -404,6 +464,74 @@ describe("autorización de alta de publicaciones", () => {
             method: "POST", body: JSON.stringify({ operadorId: 7 }),
         }));
         expect(respuesta.status).toBe(403);
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+        expect(revalidatePath).not.toHaveBeenCalled();
+    });
+});
+
+describe("alta de publicaciones como administrador", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
+        mocks.obtenerSesion.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR", expiraEn: 2000000000 });
+        mocks.operadores.mockResolvedValue([
+            { id: 7, usuarioId: 70, nombreFantasia: "Operador 7" },
+            { id: 8, usuarioId: 80, nombreFantasia: "Operador 8" },
+        ]);
+        mocks.usuarioSelect.mockReturnValue({
+            where: vi.fn().mockReturnValue({
+                first: vi.fn().mockResolvedValue({ username: "op7" }),
+            }),
+        });
+        mocks.estadisticaWhere.mockReturnValue({
+            first: vi.fn().mockResolvedValue(null),
+        });
+        mocks.estadisticaCreate.mockResolvedValue({});
+    });
+
+    it("crea la publicación para el operador indicado sin buscar el operador de la sesión", async () => {
+        mocks.altaPublicacionOperador.mockResolvedValue({ esValido: true, id: 15, mensaje: "Creada" });
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST",
+            body: JSON.stringify({ especieId: 4, operadorId: 7 }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const respuesta = await POST(solicitud);
+
+        expect(respuesta.status).toBe(201);
+        expect(mocks.obtenerOperadorAutorizado).not.toHaveBeenCalled();
+        expect(mocks.altaPublicacionOperador).toHaveBeenCalledExactlyOnceWith({ especieId: 4, operadorId: 7 });
+        expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
+        expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
+    });
+
+    it("devuelve 400 si el administrador no indica el operador", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST",
+            body: JSON.stringify({ especieId: 4 }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const respuesta = await POST(solicitud);
+
+        expect(respuesta.status).toBe(400);
+        expect(await respuesta.json()).toEqual({ errores: ["Debe seleccionar un operador."] });
+        expect(mocks.operadores).not.toHaveBeenCalled();
+        expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
+    });
+
+    it("devuelve 404 si el operador indicado no existe", async () => {
+        const solicitud = new Request("http://localhost/api/publicaciones", {
+            method: "POST",
+            body: JSON.stringify({ especieId: 4, operadorId: 99 }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const respuesta = await POST(solicitud);
+
+        expect(respuesta.status).toBe(404);
+        expect(await respuesta.json()).toEqual({ errores: ["El operador no existe."] });
         expect(mocks.altaPublicacionOperador).not.toHaveBeenCalled();
         expect(revalidatePath).not.toHaveBeenCalled();
     });

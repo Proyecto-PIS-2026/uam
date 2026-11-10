@@ -1,3 +1,4 @@
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import consultarDatosModificarUsuarios from "./ConsultaUsuarios";
 
@@ -86,7 +87,7 @@ describe("consultarDatosModificarUsuarios", () => {
         );
     });
 
-    it("consulta las tres entidades y transforma los resultados correctamente", async () => {
+    it("incluye usuarios habilitados y deshabilitados de los tres roles y el administrador actual", async () => {
         mocks.administradorAll.mockResolvedValue([
             {
                 id: 101,
@@ -95,6 +96,8 @@ describe("consultarDatosModificarUsuarios", () => {
                     id: 1,
                     username: "ana.admin",
                     rol: "ADMINISTRADOR",
+                    solicitoRestablecimiento: false,
+                    habilitado: false,
                 },
             },
         ]);
@@ -107,6 +110,8 @@ describe("consultarDatosModificarUsuarios", () => {
                     id: 2,
                     username: "beto.operador",
                     rol: "OPERADOR",
+                    solicitoRestablecimiento: true,
+                    habilitado: true,
                 },
             },
         ]);
@@ -114,15 +119,18 @@ describe("consultarDatosModificarUsuarios", () => {
         mocks.productorAll.mockResolvedValue([
             {
                 id: 301,
+                nombreFantasia: "Granja Carla",
                 usuario: {
                     id: 3,
                     username: "carla.productor",
                     rol: "PRODUCTOR",
+                    solicitoRestablecimiento: false,
+                    habilitado: false,
                 },
             },
         ]);
 
-        const resultado = await consultarDatosModificarUsuarios();
+        const resultado = await consultarDatosModificarUsuarios(1);
 
         expect(mocks.administradorSelect).toHaveBeenCalledTimes(1);
         expect(mocks.administradorSelect).toHaveBeenCalledWith("id", "email");
@@ -134,7 +142,7 @@ describe("consultarDatosModificarUsuarios", () => {
         );
 
         expect(mocks.productorSelect).toHaveBeenCalledTimes(1);
-        expect(mocks.productorSelect).toHaveBeenCalledWith("id");
+        expect(mocks.productorSelect).toHaveBeenCalledWith("id", "nombreFantasia");
 
         expect(mocks.administradorInclude).toHaveBeenCalledWith(
             "usuario",
@@ -152,23 +160,32 @@ describe("consultarDatosModificarUsuarios", () => {
         );
 
         expect(mocks.usuarioSelect).toHaveBeenCalledTimes(3);
+
         expect(mocks.usuarioSelect).toHaveBeenNthCalledWith(
             1,
             "id",
             "username",
             "rol",
+            "solicitoRestablecimiento",
+            "habilitado",
         );
+
         expect(mocks.usuarioSelect).toHaveBeenNthCalledWith(
             2,
             "id",
             "username",
             "rol",
+            "solicitoRestablecimiento",
+            "habilitado",
         );
+
         expect(mocks.usuarioSelect).toHaveBeenNthCalledWith(
             3,
             "id",
             "username",
             "rol",
+            "solicitoRestablecimiento",
+            "habilitado",
         );
 
         expect(mocks.administradorAll).toHaveBeenCalledTimes(1);
@@ -176,6 +193,7 @@ describe("consultarDatosModificarUsuarios", () => {
         expect(mocks.productorAll).toHaveBeenCalledTimes(1);
 
         expect(resultado).toEqual({
+            usuarioActualId: 1,
             usuarios: [
                 {
                     id: 1,
@@ -183,6 +201,8 @@ describe("consultarDatosModificarUsuarios", () => {
                     rol: "ADMINISTRADOR",
                     administradorId: 101,
                     email: "ana@example.com",
+                    solicitoRestablecimiento: false,
+                    habilitado: false,
                 },
                 {
                     id: 2,
@@ -190,12 +210,17 @@ describe("consultarDatosModificarUsuarios", () => {
                     rol: "OPERADOR",
                     operadorId: 201,
                     nombreFantasia: "La Huerta",
+                    solicitoRestablecimiento: true,
+                    habilitado: true,
                 },
                 {
                     id: 3,
                     username: "carla.productor",
                     rol: "PRODUCTOR",
                     productorId: 301,
+                    nombreFantasia: "Granja Carla",
+                    solicitoRestablecimiento: false,
+                    habilitado: false,
                 },
             ],
         });

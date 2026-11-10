@@ -30,7 +30,7 @@ const PLAN_OFERTAS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["lucas_blanco", ["Lechuga", "Acelga", "Zapallo", "Sandía"]],
   ["don_juan", ["Banana", "Papa", "Pera", "Uva", "Naranja", "Cebolla", "Morrón", "Tomate", "Huevos"]],
   ["caporale", ["Banana", "Manzana", "Zanahoria", "Lechuga", "Mandarina", "Frutilla", "Hongos"]],
-  ["punto_natural", ["Banana", "Sandía", "Pomelo", "Rucula", "Tomate", "Boniato"]],
+  ["punto_natural", ["Banana", "Sandía", "Pomelo", "Rúcula", "Tomate", "Boniato"]],
   ["britos_hns", ["Papa", "Papa", "Papa", "Papa"]],
   ["ciro_gentile", ["Banana", "Banana", "Banana"]],
   ["guarino", ["Limón", "Mandarina", "Naranja", "Pomelo"]],

@@ -1,172 +1,307 @@
-// Eliminar comentarios luego de integrar los filtros
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-//import { useEffect } from "react";
-
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Publicaciones";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useEffect } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { FiltrosConsulta } from "../../../consulta-mercado/acciones/filtros-consulta";
+import type { ResultadoPublicaciones } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import ContenedorPublicaciones from "./ContenedorPublicaciones";
 
-type PropsListadoPublicaciones = {
-  publicaciones: PublicacionListado[];
-};
-
-/*type PropsFiltrosPublicaciones = {
-	publicaciones: PublicacionListado[];
-	especieFiltro: string;
-	alFiltrar?: (publicaciones: PublicacionListado[]) => void;
-};*/
-
-const { mockListadoPublicaciones } = vi.hoisted(() => ({
-  mockListadoPublicaciones: vi.fn<(props: PropsListadoPublicaciones) => null>(() => null),
+const { cargar, escuchar } = vi.hoisted(() => ({
+    cargar: vi.fn(),
+    escuchar: vi.fn(),
 }));
 
-/*const { mockFiltrosPublicaciones } = vi.hoisted(() => ({
-	mockFiltrosPublicaciones: vi.fn(({publicaciones, alFiltrar}: PropsFiltrosPublicaciones) => {
-		useEffect(() => {
-			alFiltrar?.(publicaciones) }, [publicaciones, alFiltrar]);
-			return null;
-	})
-}));*/
+vi.mock("../../../consulta-mercado/acciones/ConsultarPublicacionOperador.action", () => ({
+    default: cargar,
+}));
 
-vi.mock("../listado-publicaciones/ListadoPublicacionesUnificado", () => ({ default: mockListadoPublicaciones }));
+vi.mock("../../tiempo-real/use-actualizaciones-publicaciones", () => ({
+    useActualizacionesPublicaciones: escuchar,
+}));
 
-//vi.mock("../../filtros/FiltrosPublicaciones", () => ({ default: mockFiltrosPublicaciones }));
+vi.mock("../listado-publicaciones/ListadoPublicaciones", () => ({
+    default: ({ publicaciones }: Pick<ResultadoPublicaciones, "publicaciones">) => (
+        <div data-testid="listado">
+            {publicaciones.map((publicacion) => <span key={publicacion.id} data-id={publicacion.id}>{publicacion.especie} {publicacion.precio}</span>)}
+        </div>
+    ),
+}));
 
-function crearPublicacion(id: number): PublicacionListado {
-	return {
-		id,
-		especie: `Producto ${id}`,
-		variedad: "-",
-		precio: 150,
-		fecha: "2026-10-03T15:00:00.000Z",
-		foto: null,
-		presentacion: "Cajón",
-		categoria: "Primera",
-		calibre: "Mediano",
-		codigoCalibre: "M",
-		pais: "Uruguay",
-		operador: {
-			id: 10,
-			nombreFantasia: "Huerta Sur",
-			whatsApp: "099123456",
-		},
-	};
+vi.mock("../../filtros/FiltrosPublicaciones", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../filtros/FiltrosPublicaciones")>()),
+    default: function FiltrosSimulados({ alConsultar, especieFiltro, navesDisponibles, ordenInicial = "prioridad", ordenamientoHabilitado = true }: {
+        alConsultar: (consulta: FiltrosConsulta) => void;
+        especieFiltro: string;
+        navesDisponibles: string[];
+        ordenInicial?: FiltrosConsulta["orden"];
+        ordenamientoHabilitado?: boolean;
+    }) {
+        useEffect(() => {
+            alConsultar({ especie: especieFiltro, orden: ordenInicial });
+        }, [alConsultar, especieFiltro, ordenInicial]);
+
+        return (
+            <>
+                <button onClick={() => alConsultar({ especie: "Limón", orden: ordenamientoHabilitado ? "precioAsc" : ordenInicial })}>Filtrar limón</button>
+                <button onClick={() => alConsultar({ especie: "Limón", nave: "A", orden: ordenamientoHabilitado ? "precioAsc" : ordenInicial })}>Filtrar nave A</button>
+                <button onClick={() => alConsultar({ especie: especieFiltro, orden: ordenamientoHabilitado ? "fechaDesc" : ordenInicial })}>Más actualizadas</button>
+                <span data-testid="naves">{navesDisponibles.join(", ")}</span>
+                <span data-testid="orden-inicial">{ordenInicial}</span>
+                <span data-testid="ordenamiento-habilitado">{String(ordenamientoHabilitado)}</span>
+            </>
+        );
+    },
+}));
+
+function resultado(precio = 100, cantidad = 1): ResultadoPublicaciones {
+    return {
+        publicaciones: Array.from({ length: cantidad }, (_, indice) => ({
+            id: indice + 1,
+            especie: "Tomate",
+            precio,
+            fecha: "2026-10-16T10:00:00Z",
+            foto: null,
+            variedad: "Perita",
+            envase: "KG", kilos: "",
+            categoria: "I",
+            calibre: "M",
+            codigoCalibre: "M",
+            pais: "Uruguay",
+            tipoPublicacion: "OPERADOR",
+            operador: { id: 1, nombreFantasia: "Huerta", whatsApp: "" },
+        })),
+        opciones: [],
+        naves: ["A", "B"],
+        total: cantidad,
+        totalCatalogo: cantidad,
+    };
 }
 
-function publicacionesDelListado(): PublicacionListado[] | undefined {
-	return mockListadoPublicaciones.mock.calls.at(-1)?.[0]?.publicaciones;
-}
+beforeEach(() => {
+    vi.clearAllMocks();
+    cargar.mockResolvedValue(resultado());
+});
 
-/*function especieDelFiltro(): string | undefined {
-	return mockFiltrosPublicaciones.mock.calls.at(-1)?.[0]?.especieFiltro;
-}*/
+afterEach(cleanup);
 
-describe("ContenedorPublicaciones", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
+describe("ContenedorPublicaciones remoto", () => {
+    it("muestra todas las publicaciones sin paginación ni una consulta adicional al montar", () => {
+        render(<ContenedorPublicaciones resultado={resultado(100, 35)} />);
+        expect(screen.getByTestId("listado").children).toHaveLength(35);
+        expect(screen.queryByRole("navigation", { name: "Páginas de publicaciones" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Anterior" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Siguiente" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(cargar).not.toHaveBeenCalled();
+    });
 
-	it("entrega primero las especies prioritarias y luego las demás en orden alfabético", () => {
-		const publicaciones = [
-			{...crearPublicacion(1), especie: "Pera"},
-			{...crearPublicacion(2), especie: "Manzana"},
-			{...crearPublicacion(3), especie: "Acelga"},
-			{...crearPublicacion(4), especie: "Papa"},
-		];
-		render(<ContenedorPublicaciones publicaciones={publicaciones}/>);
-		expect(publicacionesDelListado()).toEqual([publicaciones[3], publicaciones[1], publicaciones[2], publicaciones[0]]);
-	});
+    it("consulta los filtros y muestra todos los resultados coincidentes", async () => {
+        let resolver!: (dato: ResultadoPublicaciones) => void;
+        cargar.mockImplementationOnce(() => new Promise<ResultadoPublicaciones>((resolve) => { resolver = resolve }));
+        render(<ContenedorPublicaciones resultado={resultado(100, 40)} />);
+        fireEvent.click(screen.getByText("Filtrar limón"));
+        expect(screen.getByRole("status")).toHaveTextContent("Cargando publicaciones...");
+        expect(screen.getByTestId("listado").children).toHaveLength(40);
+        await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc" }));
+        expect(screen.getByRole("status")).toBeVisible();
+        await act(async () => { resolver(resultado(200, 36)) });
+        await waitFor(() => expect(screen.getByTestId("listado").children).toHaveLength(36));
+        expect(screen.getByTestId("listado")).toHaveTextContent("200");
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
 
-	it("entrega una lista vacía cuando no hay publicaciones", () => {
-		render(<ContenedorPublicaciones publicaciones={[]}/>);
-		expect(publicacionesDelListado()).toEqual([]);
-	});
+    it("agrupa las notificaciones de tiempo real en una sola recarga", async () => {
+        cargar.mockResolvedValue(resultado(250, 35));
+        render(<ContenedorPublicaciones resultado={resultado()} />);
+        act(() => {
+            void escuchar.mock.calls.at(-1)![0]();
+            void escuchar.mock.calls.at(-1)![0]();
+            void escuchar.mock.calls.at(-1)![0]();
+        });
+        await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("250"));
+        expect(screen.getByTestId("listado").children).toHaveLength(35);
+        expect(cargar).toHaveBeenCalledOnce();
+    });
 
-	it("actualiza el listado cuando recibe nuevas publicaciones", () => {
-		const { rerender } = render(<ContenedorPublicaciones publicaciones={[crearPublicacion(7)]}/>);
-		const publicaciones = [crearPublicacion(2), crearPublicacion(9)];
-		rerender(<ContenedorPublicaciones publicaciones={publicaciones}/>);
-		expect(publicacionesDelListado()).toEqual(publicaciones);
-	});
+    it("mantiene la nave y los demás filtros al actualizar por tiempo real después de un resultado vacío", async () => {
+        cargar.mockResolvedValueOnce(resultado(100, 0)).mockResolvedValue(resultado(250, 3));
+        render(<ContenedorPublicaciones resultado={resultado()} />);
+        expect(screen.getByTestId("naves")).toHaveTextContent("A, B");
+        fireEvent.click(screen.getByText("Filtrar nave A"));
+        await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Limón", nave: "A", orden: "precioAsc" }));
+        await waitFor(() => expect(screen.getByTestId("listado").children).toHaveLength(0));
+        expect(screen.getByTestId("naves")).toHaveTextContent("A, B");
 
-	it("actualiza los datos aunque la publicación conserve el mismo ID", () => {
-		const publicacion = crearPublicacion(7);
-		const { rerender } = render(<ContenedorPublicaciones publicaciones={[publicacion]}/>);
-		const actualizada = {...publicacion, precio: 80, foto: "/tomate.jpg"};
-		rerender(<ContenedorPublicaciones publicaciones={[actualizada]}/>);
-		expect(publicacionesDelListado()).toEqual([actualizada]);
-	});
+        act(() => { void escuchar.mock.calls.at(-1)![0]() });
 
+        await waitFor(() => expect(screen.getByTestId("listado").children).toHaveLength(3));
+        expect(cargar).toHaveBeenLastCalledWith({ especie: "Limón", nave: "A", orden: "precioAsc" });
+        expect(cargar).toHaveBeenCalledTimes(2);
+    });
 
-	it("quita la especie de la URL al limpiar filtros y conserva los demás parámetros", async () => {
-		const urlAnterior = window.location.href;
-		window.history.replaceState(window.history.state, "", "/publicaciones?especie=Manzana&orden=asc#lista");
+    it("no reemplaza datos nuevos con una respuesta vieja", async () => {
+        let resolverAntigua!: (dato: ResultadoPublicaciones) => void;
+        cargar.mockImplementationOnce(() => new Promise<ResultadoPublicaciones>((resolve) => { resolverAntigua = resolve })).mockResolvedValue(resultado(400));
+        render(<ContenedorPublicaciones resultado={resultado()} />);
+        act(() => { void escuchar.mock.calls.at(-1)![0]() });
+        await waitFor(() => expect(cargar).toHaveBeenCalledOnce());
+        fireEvent.click(screen.getByText("Filtrar limón"));
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)) });
+        expect(cargar).toHaveBeenCalledOnce();
+        await act(async () => { resolverAntigua(resultado(99)) });
+        await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("400"));
+        expect(cargar).toHaveBeenLastCalledWith({ especie: "Limón", orden: "precioAsc" });
+    });
 
-		try {
-			const publicaciones = [
-				{ ...crearPublicacion(1), especie: "Manzana" },
-				{ ...crearPublicacion(2), especie: "Pera" },
-			];
-			render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana" />);
-			expect(publicacionesDelListado()).toEqual([publicaciones[0]]);
+    it("reconsulta los filtros vigentes cuando cambia la respuesta del servidor", async () => {
+        const vista = render(<ContenedorPublicaciones resultado={resultado()} />);
+        fireEvent.click(screen.getByText("Filtrar limón"));
+        await waitFor(() => expect(cargar).toHaveBeenCalledOnce());
+        cargar.mockClear();
+        vista.rerender(<ContenedorPublicaciones resultado={resultado(999)} />);
+        await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc" }));
+    });
 
-			fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    it("mantiene los datos disponibles y permite reintentar un error", async () => {
+        cargar.mockRejectedValueOnce(new Error("sin red")).mockResolvedValue(resultado(300));
+        render(<ContenedorPublicaciones resultado={resultado()} />);
+        act(() => { void escuchar.mock.calls.at(-1)![0]() });
+        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron actualizar");
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(screen.getByTestId("listado")).toHaveTextContent("100");
+        fireEvent.click(screen.getByText("Reintentar"));
+        expect(screen.getByRole("status")).toHaveTextContent("Cargando publicaciones...");
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("300"));
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
 
-			await waitFor(() => expect(publicacionesDelListado()).toEqual(publicaciones));
-			expect(window.location.pathname).toBe("/publicaciones");
-			expect(window.location.search).toBe("?orden=asc");
-			expect(window.location.hash).toBe("#lista");
-		} finally {
-			window.history.replaceState(window.history.state, "", urlAnterior);
-		}
-	});
+    it("cancela la recarga pendiente al desmontarse", async () => {
+        const vista = render(<ContenedorPublicaciones resultado={resultado()} />);
+        act(() => { void escuchar.mock.calls.at(-1)![0]() });
+        vista.unmount();
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        expect(cargar).not.toHaveBeenCalled();
+    });
 
-	it("sincroniza la especie elegida en la URL y permite volver a todas", async () => {
-		const urlAnterior = window.location.href;
-		window.history.replaceState(window.history.state, "", "/publicaciones?especie=Manzana&orden=asc#lista");
-		try {
-			const publicaciones = [
-				{ ...crearPublicacion(1), especie: "Manzana" },
-				{ ...crearPublicacion(2), especie: "Pera" },
-			];
-			render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana" />);
-			fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
-			fireEvent.click(screen.getByRole("option", { name: "Pera" }));
-			await waitFor(() => expect(publicacionesDelListado()).toEqual([publicaciones[1]]));
-			expect(new URL(window.location.href).searchParams.get("especie")).toBe("Pera");
-			expect(new URL(window.location.href).searchParams.get("orden")).toBe("asc");
-			expect(window.location.hash).toBe("#lista");
-			fireEvent.mouseDown(screen.getByRole("combobox", { name: "Especie" }));
-			fireEvent.click(screen.getByRole("option", { name: "Todas" }));
-			await waitFor(() => expect(publicacionesDelListado()).toEqual(publicaciones));
-			expect(window.location.search).toBe("?orden=asc");
-		} finally {
-			window.history.replaceState(window.history.state, "", urlAnterior);
-		}
-	});
+    it("confirma la actualización de tiempo real después de recibir los datos", async () => {
+        let resolver!: (dato: ResultadoPublicaciones) => void;
+        cargar.mockImplementationOnce(() => new Promise<ResultadoPublicaciones>((resolve) => { resolver = resolve }));
+        render(<ContenedorPublicaciones resultado={resultado()} />);
+        const confirmado = vi.fn();
+        let finalizacion!: Promise<boolean>;
 
-	/* Tests nuevos
-	it("vacía el listado cuando se quitan las publicaciones", () => {
-		const { rerender } = render(<ContenedorPublicaciones publicaciones={[crearPublicacion(7)]}/>);
-		rerender(<ContenedorPublicaciones publicaciones={[]}/>);
-		expect(publicacionesDelListado()).toEqual([]);
-	});
+        act(() => {
+            finalizacion = escuchar.mock.calls.at(-1)![0]();
+            void finalizacion.then(confirmado);
+        });
 
-	it("muestra los resultados que llegan después de una lista vacía", () => {
-		const { rerender } = render(<ContenedorPublicaciones publicaciones={[]}/>);
-		const publicaciones = [crearPublicacion(7)];
-		rerender(<ContenedorPublicaciones publicaciones={publicaciones}/>);
-		expect(publicacionesDelListado()).toEqual(publicaciones);
-	});
-	
-	it("pasa la especie válida al filtro", () => {
-		const publicaciones = [{ ...crearPublicacion(1), especie: "Manzana" }];
-		render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Manzana"/>);
-		expect(especieDelFiltro()).toBe("Manzana");
-	});
+        await waitFor(() => expect(cargar).toHaveBeenCalledOnce());
+        expect(confirmado).not.toHaveBeenCalled();
 
-	it("pasa una especie vacía al filtro cuando la especie no es válida", () => {
-		const publicaciones = [{ ...crearPublicacion(1), especie: "Manzana" }];
-		render(<ContenedorPublicaciones publicaciones={publicaciones} especie="Error"/>);
-		expect(especieDelFiltro()).toBe("");
-	});*/
+        await act(async () => {
+            resolver(resultado(500));
+            await expect(finalizacion).resolves.toBe(true);
+        });
+
+        expect(confirmado).toHaveBeenCalledExactlyOnceWith(true);
+        expect(screen.getByTestId("listado")).toHaveTextContent("500");
+    });
+
+    it("informa el fallo al suscriptor para que pueda reintentar la misma versión", async () => {
+        cargar.mockRejectedValueOnce(new Error("sin red"));
+        render(<ContenedorPublicaciones resultado={resultado()} />);
+        let finalizacion!: Promise<boolean>;
+        act(() => { finalizacion = escuchar.mock.calls.at(-1)![0]() });
+        await act(async () => { await expect(finalizacion).resolves.toBe(false) });
+        expect(screen.getByRole("alert")).toHaveTextContent("No se pudieron actualizar");
+        expect(screen.getByTestId("listado")).toHaveTextContent("100");
+    });
+
+    it("espera la consulta vigente si los filtros cambian durante una actualización", async () => {
+        let resolverAntigua!: (dato: ResultadoPublicaciones) => void;
+        let resolverVigente!: (dato: ResultadoPublicaciones) => void;
+        cargar.mockImplementationOnce(() => new Promise<ResultadoPublicaciones>((resolve) => { resolverAntigua = resolve }))
+            .mockImplementationOnce(() => new Promise<ResultadoPublicaciones>((resolve) => { resolverVigente = resolve }));
+        render(<ContenedorPublicaciones resultado={resultado()} />);
+        const confirmado = vi.fn();
+        let finalizacion!: Promise<boolean>;
+
+        act(() => {
+            finalizacion = escuchar.mock.calls.at(-1)![0]();
+            void finalizacion.then(confirmado);
+        });
+
+        await waitFor(() => expect(cargar).toHaveBeenCalledOnce());
+        fireEvent.click(screen.getByText("Filtrar nave A"));
+        await act(async () => { resolverAntigua(resultado(99)) });
+        expect(confirmado).not.toHaveBeenCalled();
+        expect(screen.getByRole("status")).toHaveTextContent("Cargando publicaciones...");
+        expect(screen.getByTestId("listado")).toHaveTextContent("100");
+        await waitFor(() => expect(cargar).toHaveBeenCalledTimes(2));
+        expect(cargar).toHaveBeenLastCalledWith({ especie: "Limón", nave: "A", orden: "precioAsc" });
+
+        await act(async () => {
+            resolverVigente(resultado(600));
+            await expect(finalizacion).resolves.toBe(true);
+        });
+
+        expect(confirmado).toHaveBeenCalledExactlyOnceWith(true);
+        expect(screen.getByTestId("listado")).toHaveTextContent("600");
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    it.each(["alfabeticoDesc", "fechaDesc"] as const)("entrega el orden configurado %s a los filtros sin consultar nuevamente al montar", (ordenInicial) => {
+        render(<ContenedorPublicaciones resultado={resultado()} ordenInicial={ordenInicial} ordenamientoHabilitado={false} />);
+        expect(screen.getByTestId("orden-inicial")).toHaveTextContent(ordenInicial);
+        expect(screen.getByTestId("ordenamiento-habilitado")).toHaveTextContent("false");
+        expect(cargar).not.toHaveBeenCalled();
+    });
+
+    it.each(["alfabeticoDesc", "fechaDesc"] as const)("conserva el orden configurado %s en las actualizaciones de tiempo real", async (ordenInicial) => {
+        render(<ContenedorPublicaciones resultado={resultado()} especie="Tomate" ordenInicial={ordenInicial} ordenamientoHabilitado={false} />);
+        act(() => { void escuchar.mock.calls.at(-1)![0]() });
+        await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Tomate", orden: ordenInicial }));
+    });
+
+    it.each(["alfabeticoDesc", "fechaDesc"] as const)("mantiene el predeterminado %s al filtrar con el ordenamiento deshabilitado", async (ordenInicial) => {
+        render(<ContenedorPublicaciones resultado={resultado()} ordenInicial={ordenInicial} ordenamientoHabilitado={false} />);
+        fireEvent.click(screen.getByText("Filtrar limón"));
+        await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Limón", orden: ordenInicial }));
+    });
+
+    it("permite enviar otro orden cuando el ordenamiento está habilitado", async () => {
+        render(<ContenedorPublicaciones resultado={resultado()} ordenInicial="alfabeticoDesc" ordenamientoHabilitado />);
+        expect(screen.getByTestId("ordenamiento-habilitado")).toHaveTextContent("true");
+        fireEvent.click(screen.getByText("Filtrar limón"));
+        await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Limón", orden: "precioAsc" }));
+    });
+
+    it.each(["alfabeticoAsc", "fechaDesc"] as const)("conserva el orden configurado %s al filtrar por nave con el switch apagado", async (ordenInicial) => {
+        render(<ContenedorPublicaciones resultado={resultado()} ordenInicial={ordenInicial} ordenamientoHabilitado={false} />);
+        fireEvent.click(screen.getByText("Filtrar nave A"));
+        await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Limón", nave: "A", orden: ordenInicial }));
+    });
+
+    it("envía el orden por actualización cuando el usuario selecciona Más actualizadas", async () => {
+        render(<ContenedorPublicaciones resultado={resultado()} especie="Papa" ordenInicial="precioAsc" ordenamientoHabilitado />);
+        fireEvent.click(screen.getByRole("button", { name: "Más actualizadas" }));
+        await waitFor(() => expect(cargar).toHaveBeenCalledExactlyOnceWith({ especie: "Papa", orden: "fechaDesc" }));
+    });
+
+    it("mantiene el orden por actualización elegido al recibir una notificación de tiempo real", async () => {
+        render(<ContenedorPublicaciones resultado={resultado()} especie="Papa" ordenInicial="precioAsc" ordenamientoHabilitado />);
+        fireEvent.click(screen.getByRole("button", { name: "Más actualizadas" }));
+        await waitFor(() => expect(cargar).toHaveBeenCalledOnce());
+        act(() => { void escuchar.mock.calls.at(-1)![0]() });
+        await waitFor(() => expect(cargar).toHaveBeenCalledTimes(2));
+        expect(cargar).toHaveBeenLastCalledWith({ especie: "Papa", orden: "fechaDesc" });
+    });
+
+    it("conserva el orden de publicaciones recibido del servidor", () => {
+        const datos = resultado(100, 3);
+        datos.publicaciones = [datos.publicaciones[2], datos.publicaciones[0], datos.publicaciones[1]];
+        render(<ContenedorPublicaciones resultado={datos} ordenInicial="fechaDesc" />);
+        const ids = Array.from(screen.getByTestId("listado").children).map((elemento) => elemento.getAttribute("data-id"));
+        expect(ids).toEqual(["3", "1", "2"]);
+    });
 });

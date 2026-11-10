@@ -1,22 +1,23 @@
+
 .header {
     position: relative;
     z-index: 100;
     width: 100%;
     border-bottom: 1px solid var(--color-border);
     background-color: var(--color-surface);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+    box-shadow: var(--sombra-panel);
 }
 
 .contenido {
     display: flex;
     width: 100%;
     max-width: var(--ancho-maximo-pagina);
-    min-height: 4.5rem;
+    min-height: var(--alto-contenido-header);
     margin: 0 auto;
     padding: 0 var(--padding-exterior-pagina);
     align-items: center;
     justify-content: flex-start;
-    gap: 2rem;
+    gap: var(--espacio-amplio);
 }
 
 .marca {
@@ -35,7 +36,7 @@
 .navegacion {
     display: flex;
     align-items: stretch;
-    gap: 1.75rem;
+    gap: var(--espacio-textos);
     align-self: stretch;
     margin-left: auto;
 }
@@ -50,6 +51,7 @@
 
 .botonOperador {
     display: flex;
+    position: relative;
     width: 2.5rem;
     height: 2.5rem;
     padding: 0;
@@ -57,15 +59,15 @@
     justify-content: center;
     border: 1px solid var(--color-border);
     border-radius: 999px;
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
     cursor: pointer;
     transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 .botonOperador:hover,
 .botonOperador:focus-visible {
-    border-color: var(--color-primary);
+    border-color: var(--color-secondary);
     background: var(--color-surface);
     outline: none;
 }
@@ -80,6 +82,25 @@
     object-fit: cover;
 }
 
+.inicialesPerfil {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    border-radius: 50%;
+    background-color: var(--color-secondary-soft);
+    color: var(--color-secondary);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.inicialesPerfilMobile {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: var(--tamano-texto-auxiliar);
+}
+
 .desplegableOperador {
     display: flex;
     position: absolute;
@@ -90,15 +111,17 @@
     padding: 0.35rem;
     flex-direction: column;
     border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
+    border-radius: var(--radio-control);
     background: var(--color-surface);
     box-shadow: 0 8px 20px rgb(0 0 0 / 12%);
 }
 
 .desplegableOperador a,
 .desplegableOperador button {
-    display: block;
+    display: flex;
     padding: 0.6rem 0.75rem;
+    align-items: center;
+    gap: var(--espacio-inline);
     border: 0;
     background: transparent;
     color: var(--color-foreground);
@@ -110,9 +133,11 @@
 }
 
 .opcionDesplegable {
-    display: block;
+    display: flex;
     width: 100%;
     padding: 0.6rem 0.75rem;
+    align-items: center;
+    gap: var(--espacio-inline);
     border: none;
     background: none;
     color: var(--color-muted);
@@ -126,35 +151,36 @@
 .desplegableOperador button:hover,
 .opcionDesplegable:hover {
     border-radius: 0.25rem;
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
 }
 
 .enlace {
     display: flex;
     position: relative;
     align-items: center;
+    padding-inline: 0.75rem;
     color: var(--color-muted-foreground);
-    font-size: 0.875rem;
+    font-size: var(--tamano-texto-secundario);
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
 }
 
 .enlaceActivo {
-    color: var(--color-primary);
+    color: var(--color-secondary);
     font-weight: 600;
 }
 
 .enlaceActivo::after {
     content: "";
     position: absolute;
-    right: 0;
+    right: 0.75rem;
     bottom: 0;
-    left: 0;
+    left: 0.75rem;
     height: 2px;
     border-radius: 2px 2px 0 0;
-    background-color: var(--color-primary);
+    background-color: var(--color-secondary);
 }
 
 .menuMobile {
@@ -170,6 +196,11 @@
     background: none;
     color: var(--color-foreground);
     cursor: pointer;
+}
+
+.menuMobile > :global(.MuiBadge-root) {
+    right: 2px;
+    bottom: 2px;
 }
 
 .iconoMenu {
@@ -204,6 +235,39 @@
     display: none;
 }
 
+.iconoMenuMobile {
+    flex-shrink: 0;
+    margin-right: var(--espacio-inline);
+}
+
+.iconoMenuDesplegable {
+    flex-shrink: 0;
+}
+
+.etiquetaMenuMobile {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+}
+
+.desplegableOperador .enlaceNotificaciones,
+.enlaceNotificaciones {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-inline);
+}
+
+.descripcionNotificaciones {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 .overlayMenu {
     display: none;
     position: fixed;
@@ -212,7 +276,7 @@
     background: transparent;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 970px) {
     .overlayMenu {
         display: block;
     }
@@ -224,7 +288,6 @@
     }
 
     .contenido {
-        min-height: 4rem;
         padding: 0 var(--padding-exterior-pagina);
     }
 
@@ -258,6 +321,7 @@
         padding: 0 1rem;
         flex-direction: column;
         overflow: hidden;
+        scrollbar-gutter: stable;
         visibility: hidden;
         opacity: 0;
         transform: translateY(-0.5rem);
@@ -273,8 +337,10 @@
     }
 
     .navegacionMobileAbierta {
-        max-height: 30rem;
-        padding: 0.5rem 1rem 1rem;
+        max-height: calc(100dvh - 4rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0 0.2rem 0.5rem;
         visibility: visible;
         opacity: 1;
         transform: translateY(0);
@@ -284,11 +350,12 @@
 
     .enlaceMobile {
         display: flex;
+        position: relative;
         width: 100%;
         padding: 0.75rem;
         align-items: center;
         color: var(--color-foreground);
-        font-size: 0.9rem;
+        font-size: var(--tamano-texto-secundario);
         font-weight: 500;
         text-decoration: none;
         transition:
@@ -297,24 +364,23 @@
         border-top: 1px solid var(--color-border);
     }
 
+    .enlaceActivo::after {
+        display: none;
+    }
+
     .enlaceMobile:hover {
-        background-color: var(--color-primary-soft);
-        color: var(--color-primary);
+        background-color: var(--color-secondary-soft);
+        color: var(--color-secondary);
     }
 
         .perfilMobile {
             justify-content: space-between;
             background: transparent;
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: var(--tamano-texto-secundario);
             font-weight: 500;
             text-align: left;
             cursor: pointer;
-        }
-
-        .iconoPerfilMobile {
-            color: var(--color-primary);
-            font-size: 1.5rem !important;
         }
 
         .fotoPerfilMobile {
@@ -324,11 +390,20 @@
 
         .cerrarSesionMobile {
             width: 100%;
+            padding: 0.75rem;
+            border: 0;
+            border-top: 1px solid var(--color-border);
             background: transparent;
             font: inherit;
+            font-size: var(--tamano-texto-secundario);
+            font-weight: 500;
             text-align: left;
             cursor: pointer;
             color: var(--color-foreground);
+        }
+
+        form:has(.cerrarSesionMobile) {
+            width: 100%;
         }
     }
 
@@ -336,4 +411,121 @@
     .logo {
         width: 9.4rem;
     }
+}
+
+.botonGrupoMenu {
+    width: 100%;
+    gap: var(--espacio-inline);
+    justify-content: space-between;
+    padding: 0 0.75rem;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.botonGrupoMenu:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: -2px;
+}
+
+@media (max-width: 970px) {
+    .botonGrupoMenu {
+        justify-content: space-between;
+        border-top: 1px solid var(--color-border);
+    }
+}
+
+.iconoExpandir {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.grupoMenu {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    margin: 0;
+}
+
+.listaGrupoMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: auto;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    max-height: 0;
+    padding: 0;
+    overflow: hidden;
+    visibility: hidden;
+    opacity: 0;
+    border-radius: 0 0 0.5rem 0.5rem;
+    background: var(--color-surface);
+    transition:
+        max-height 0.25s ease,
+        opacity 0.2s ease,
+        visibility 0.2s ease;
+}
+
+.listaGrupoMenuAbierta {
+    max-height: 15rem;
+    visibility: visible;
+    opacity: 1;
+    box-shadow: 0 8px 12px rgb(0 0 0 / 10%);
+}
+
+.opcionGrupoMenu {
+    display: flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0.65rem 0.75rem;
+    color: var(--color-muted-foreground);
+    font-family: inherit;
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 500;
+    text-decoration: none;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
+}
+
+.opcionGrupoMenu:hover,
+.opcionGrupoMenu:focus-visible,
+.opcionGrupoMenuActiva {
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
+}
+
+.opcionGrupoMenuActiva {
+    font-weight: 600;
+}
+
+@media (max-width: 970px) {
+    .grupoMenu {
+        flex-direction: column;
+    }
+
+    .botonGrupoMenu {
+        padding: 0.75rem;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .listaGrupoMenuMobile {
+        position: static;
+        width: 100%;
+        flex-shrink: 0;
+    }
+
+    .listaGrupoMenuMobile .opcionGrupoMenu {
+        padding-left: 2.5rem;
+    }
+}
+
+.grupoMenu:has(.listaGrupoMenuAbierta)
+    .botonGrupoMenu::after {
+    display: none;
 }

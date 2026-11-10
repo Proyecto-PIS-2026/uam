@@ -5,20 +5,22 @@ import type { PublicacionPerfilAdmin } from '../../consultas-perfil-admin';
 
 const publicacionBase: PublicacionPerfilAdmin = {
     id: 101,
+    version: 7,
     publicacionOperadorId: 15,
     especieId: 1,
     variedadId: 11,
-    presentacionId: 111,
+    envaseId: 111, kilosId: null,
     categoriaId: 3,
     calibreId: 4,
     paisId: 44,
     foto: null,
     precio: "120.00",
     fecha: "2026-10-01T12:00:00Z",
+    fechaVigencia: "2026-10-10T15:00:00.000Z",
     disponible: true,
     especie: "Tomate",
     variedad: "Perita",
-    presentacion: "Cajón",
+    envase: "Cajón", kilos: "",
     categoria: "Extra",
     calibre: "Grande",
     codigoCalibre: "G",
@@ -38,7 +40,7 @@ describe ('TarjetaPublicacionAdmin', () => {
         expect(screen.getAllByText(/Grande/).length).toBeGreaterThan(0);
         expect(screen.getAllByText(/Extra/).length).toBeGreaterThan(0);
         expect(screen.getByText("por Cajón")).toBeInTheDocument();
-        expect(screen.getByText(/120/)).toBeInTheDocument();
+        expect(screen.getByText("$ 120")).toBeInTheDocument();
     });
 
 

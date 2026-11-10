@@ -1,0 +1,102 @@
+import { db } from "@/infraestructura/persistencia/prisma/db";
+import { exigirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
+import type { PublicacionPerfil } from "../../operadores/consultas-perfil-publico";
+import { obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
+
+export type ProductorListado = {
+    id: number;
+    nombreFantasia: string;
+    fotoPerfil: string | null;
+    cantidadProductos: number;
+    ubicaciones: string[];
+    departamentos: string[];
+};
+
+export type PerfilProductor = Omit<ProductorListado, "cantidadProductos"> & {
+    whatsApp: string;
+    publicaciones: PublicacionPerfil[];
+};
+
+function publicacionVisible(publicacion: {
+    publicacionActiva: boolean;
+    publicacionDisponible: boolean;
+    tipoPublicacion: string;
+    fechaVigencia?: { readonly epochNanoseconds: bigint } | null;
+}) {
+    const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+    return publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "PRODUCTOR";
+}
+
+export async function obtenerProductoresDisponibles(): Promise<ProductorListado[]> {
+    await exigirConsultaProductores("No tenés permiso para consultar productores.",);
+    const productores = await db.orm.public.Productor
+        .where((productor) => productor.usuario.some((usuario) => usuario.habilitado.eq(true)))
+        .select("id", "nombreFantasia", "fotoPerfil")
+        .include("usuario", (usuario) => usuario.select("rol"))
+        .include("publicacionesProductor", (publicaciones) => publicaciones
+            .include("publicacion", (publicacion) => publicacion.select("publicacionActiva", "publicacionDisponible", "tipoPublicacion", "fechaVigencia"))
+            .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion", "departamento")))
+        .all();
+
+    return productores.filter((productor) => productor.usuario.rol === "PRODUCTOR").map((productor) => {
+        const publicaciones = productor.publicacionesProductor.filter((relacion) => publicacionVisible(relacion.publicacion));
+        return {
+            id: productor.id,
+            nombreFantasia: productor.nombreFantasia,
+            fotoPerfil: productor.fotoPerfil,
+            cantidadProductos: publicaciones.length,
+            ubicaciones: Array.from(new Set(publicaciones.flatMap((relacion) => relacion.ubicaciones.map((ubicacion) => ubicacion.nombreUbicacion)))),
+            departamentos: obtenerDepartamentos(publicaciones.flatMap((relacion) => relacion.ubicaciones)),
+        };
+    }).filter((productor) => productor.cantidadProductos > 0)
+        .sort((primero, segundo) => primero.nombreFantasia.localeCompare(segundo.nombreFantasia, "es", { sensitivity: "base" }));
+}
+
+export async function obtenerPerfilProductor(nombreFantasia: string): Promise<PerfilProductor | null> {
+    await exigirConsultaProductores("No tenés permiso para consultar el perfil del productor.",);
+    if (!nombreFantasia.trim()) return null;
+
+    const productor = await db.orm.public.Productor
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp")
+        .include("usuario", (usuario) => usuario.select("rol"))
+        .include("publicacionesProductor", (publicaciones) => publicaciones
+            .include("pais", (pais) => pais.select("nombrePais"))
+            .include("ubicaciones", (ubicaciones) => ubicaciones.select("nombreUbicacion", "departamento"))
+            .include("publicacion", (publicacion) => publicacion
+                .select("id", "foto", "precio", "fecha", "fechaVigencia", "cantidadUnidades", "comentario", "publicacionActiva", "publicacionDisponible", "tipoPublicacion")
+                .include("especie").include("variedad").include("envase").include("kilos")
+                .include("categoria")
+                .include("calibre")))
+        .first({ nombreFantasia });
+
+    if (!productor || productor.usuario.rol !== "PRODUCTOR") return null;
+
+    const publicaciones = productor.publicacionesProductor.filter((relacion) => publicacionVisible(relacion.publicacion));
+    return {
+        id: productor.id,
+        nombreFantasia: productor.nombreFantasia,
+        fotoPerfil: productor.fotoPerfil,
+        whatsApp: productor.whatsApp,
+        ubicaciones: Array.from(new Set(publicaciones.flatMap((relacion) => relacion.ubicaciones.map((ubicacion) => ubicacion.nombreUbicacion)))),
+        departamentos: obtenerDepartamentos(publicaciones.flatMap((relacion) => relacion.ubicaciones)),
+        publicaciones: publicaciones.map((relacion) => {
+            const publicacion = relacion.publicacion;
+            return {
+                id: publicacion.id,
+                foto: publicacion.foto,
+                precio: publicacion.precio,
+                fecha: publicacion.fecha.toString(),
+                especie: publicacion.especie.nombreEspecie,
+                variedad: publicacion.variedad?.nombreVariedad ?? "",
+                envase: publicacion.envase?.nombreEnvase ?? "",
+                kilos: publicacion.kilos?.valor ?? "",
+                cantidadUnidades: publicacion.cantidadUnidades,
+                comentario: publicacion.comentario,
+                categoria: publicacion.categoria?.nombreCategoria ?? "",
+                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                pais: relacion.pais?.nombrePais ?? "",
+            };
+        }),
+    };
+}

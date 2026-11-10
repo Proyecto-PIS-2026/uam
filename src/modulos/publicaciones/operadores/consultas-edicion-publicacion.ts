@@ -1,18 +1,9 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import type { OpcionCategoria, OpcionEdicion, OpcionPresentacion, OpcionVariedad } from "./componentes/DrawerEditarPublicacion";
+import type { OpcionesEdicionPublicacion } from "./tipos";
 import { ordenarOpcionesPorNombre } from "./ordenar-opciones";
 
-export type OpcionesEdicionPublicacion = {
-    especies: OpcionEdicion[];
-    variedades: OpcionVariedad[];
-    presentaciones: OpcionPresentacion[];
-    categorias: OpcionCategoria[];
-    calibres: OpcionEdicion[];
-    paises: OpcionEdicion[];
-};
-
 export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdicionPublicacion> {
-    const [especies, variedades, presentaciones, categorias, calibres, paises] = await Promise.all([
+    const [especies, variedades, envases, kilos, categorias, calibres, paises] = await Promise.all([
         db.orm.public.Especie
             .select("id", "nombreEspecie")
             .where({ especieActiva: true })
@@ -23,11 +14,8 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
             .where({ variedadActiva: true })
             .orderBy((variedad) => variedad.nombreVariedad.asc())
             .all(),
-        db.orm.public.Presentacion
-            .select("id", "nombrePresentacion", "variedadId")
-            .where({ presentacionActiva: true })
-            .orderBy((presentacion) => presentacion.nombrePresentacion.asc())
-            .all(),
+        db.orm.public.Envase.select("id", "nombreEnvase").orderBy((envase) => envase.id.asc()).all(),
+        db.orm.public.KilosEmpaquetado.select("id", "valor").orderBy((peso) => peso.id.asc()).all(),
         db.orm.public.Categoria
             .select("id", "nombreCategoria", "especieId")
             .orderBy((categoria) => categoria.nombreCategoria.asc())
@@ -44,8 +32,6 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
 
     const especiesActivas = new Set(especies.map((especie) => especie.id));
     const variedadesDisponibles = variedades.filter((variedad) => especiesActivas.has(variedad.especieId));
-    const variedadesActivas = new Set(variedadesDisponibles.map((variedad) => variedad.id));
-    const presentacionesDisponibles = presentaciones.filter((presentacion) => variedadesActivas.has(presentacion.variedadId));
     const categoriasDisponibles = categorias.filter((categoria) => categoria.especieId === null || especiesActivas.has(categoria.especieId));
 
     return {
@@ -55,11 +41,8 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
             nombre: variedad.nombreVariedad,
             especieId: variedad.especieId,
         }))),
-        presentaciones: ordenarOpcionesPorNombre(presentacionesDisponibles.map((presentacion) => ({
-            id: presentacion.id,
-            nombre: presentacion.nombrePresentacion,
-            variedadId: presentacion.variedadId,
-        }))),
+        envases: envases.map((envase) => ({ id: envase.id, nombre: envase.nombreEnvase })),
+        kilos: kilos.map((peso) => ({ id: peso.id, nombre: peso.valor })),
         categorias: ordenarOpcionesPorNombre(categoriasDisponibles.map((categoria) => ({
             id: categoria.id,
             nombre: categoria.nombreCategoria,
@@ -67,7 +50,8 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
         }))),
         calibres: ordenarOpcionesPorNombre(calibres.map((calibre) => ({
             id: calibre.id,
-            nombre: `${calibre.codigoCalibre} - ${calibre.nombreCalibre}`,
+            nombre: calibre.codigoCalibre === calibre.nombreCalibre
+                ? calibre.nombreCalibre : `${calibre.codigoCalibre} - ${calibre.nombreCalibre}`,
         }))),
         paises: ordenarOpcionesPorNombre(paises.map((pais) => ({ id: pais.id, nombre: pais.nombrePais }))),
     };

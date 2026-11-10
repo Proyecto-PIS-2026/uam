@@ -3,7 +3,7 @@ import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/c
 
 import FormularioModificarOperador from "@/modulos/usuarios/operadores/componentes/modificar-operador-por-admin/FormularioModificarOperador";
 import { obtenerNaves } from "@/modulos/usuarios/operadores/consultas-naves";
-import { obtenerOperadorParaModificar } from "@/modulos/usuarios/operadores/componentes/modificar-operador-por-admin/obtenerOperadorParaModificar";
+import { obtenerOperadorParaModificar } from "@/modulos/usuarios/operadores/consultas-modificacion-operador";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ export default async function Page({ params }: PageProps) {
     }
 
     return (
-        <main>
+        <main className="flex-1">
             <FormularioModificarOperador
                 operador={operador}
                 naves={naves}

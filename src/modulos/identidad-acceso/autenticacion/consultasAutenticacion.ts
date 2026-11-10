@@ -2,14 +2,14 @@ import { db } from "../../../infraestructura/persistencia/prisma/db";
 
 export async function obtenerUsuarioOperadorPorNombre(nombreUsuario: string) {
     return db.orm.public.Usuario
-        .select("id", "passwordHash", "rol")
+        .select("id", "passwordHash", "rol", "habilitado")
         .where({ username: nombreUsuario, rol: "OPERADOR" })
         .first();
 }
 
 export async function obtenerUsuarioProductorPorNombre(nombreUsuario: string) {
     return db.orm.public.Usuario
-        .select("id", "passwordHash", "rol")
+        .select("id", "passwordHash", "rol", "habilitado")
         .where({ username: nombreUsuario, rol: "PRODUCTOR" })
         .first();
 }
@@ -32,16 +32,21 @@ export async function obtenerUsuarioAdministradorPorCorreo(correo: string) {
     if (!administrador) return null;
 
     return db.orm.public.Usuario
-        .select("id", "passwordHash", "rol")
+        .select("id", "passwordHash", "rol", "habilitado")
         .where({ id: administrador.usuarioId, rol: "ADMINISTRADOR" })
         .first();
 }
 
-export async function obtenerFotoPerfilOperadorPorUsuarioId(usuarioId: number) {
-    const operador = await db.orm.public.Operador
-        .select("fotoPerfil")
+export async function obtenerIdentidadOperadorPorUsuarioId(usuarioId: number) {
+    return db.orm.public.Operador
+        .select("nombreFantasia", "fotoPerfil")
         .where({ usuarioId })
         .first();
+}
 
-    return operador?.fotoPerfil ?? null;
+export async function obtenerIdentidadProductorPorUsuarioId(usuarioId: number) {
+    return db.orm.public.Productor
+        .select("nombreFantasia", "fotoPerfil")
+        .where({ usuarioId })
+        .first();
 }

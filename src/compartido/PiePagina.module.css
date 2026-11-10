@@ -1,0 +1,115 @@
+
+.pie {
+    flex-shrink: 0;
+    width: 100%;
+    margin-top: auto;
+    background: var(--color-secondary);
+    color: var(--color-surface);
+}
+
+.contenido {
+    display: flex;
+    width: 100%;
+    max-width: var(--ancho-maximo-pagina);
+    margin: 0 auto;
+    padding: var(--espacio-grupos) var(--padding-exterior-pagina);
+    flex-direction: column;
+    gap: var(--espacio-grupos);
+}
+
+.contacto {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    justify-items: center;
+    gap: var(--espacio-inline) var(--espacio-amplio);
+    font-size: var(--tamano-texto-secundario);
+    font-style: normal;
+    line-height: var(--interlineado-texto);
+}
+
+.dato {
+    display: inline-flex;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--alto-control);
+    margin: 0;
+    align-items: center;
+    justify-content: center;
+    gap: var(--espacio-inline);
+    color: inherit;
+    text-align: center;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.dato[href]:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.dato[href]:focus-visible {
+    border-radius: var(--radio-control);
+    outline: 2px solid var(--color-surface);
+    outline-offset: 4px;
+}
+
+.icono {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+.avisosLegales {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-secciones);
+}
+
+.bloqueAviso {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--espacio-controles);
+    padding: var(--padding-panel);
+    border-radius: var(--radio-panel);
+    background: rgb(255 255 255 / 8%);
+}
+
+.tituloAviso {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-inline);
+    margin: 0;
+    font-size: var(--tamano-texto);
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+}
+
+.iconoAviso {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    color: var(--color-subtitulo-pagina);
+}
+
+.avisoLegal {
+    margin: 0;
+    color: rgb(255 255 255 / 90%);
+    font-size: var(--tamano-texto-secundario);
+    line-height: 1.65;
+    text-align: left;
+}
+
+@media (max-width: 970px) {
+    .pie {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 767px) {
+    .contacto,
+    .avisosLegales {
+        grid-template-columns: 1fr;
+    }
+}

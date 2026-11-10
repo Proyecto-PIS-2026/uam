@@ -1,0 +1,17 @@
+.opcion.opcion {
+    gap: var(--espacio-controles);
+    min-height: var(--alto-control);
+}
+
+.textoOpcion {
+    flex: 1;
+}
+
+.marca {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+

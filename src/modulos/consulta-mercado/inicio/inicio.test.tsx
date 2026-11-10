@@ -1,138 +1,283 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import type { ComponentProps } from "react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Inicio from "./inicio";
 
-const especiesMock = [
-  { nombreEspecie: "Banana", fotoGenerica: null, cantidadOperadores: 3 },
-  { nombreEspecie: "Manzana", fotoGenerica: null, cantidadOperadores: 5 },
-  { nombreEspecie: "Sandía", fotoGenerica: null, cantidadOperadores: 1 },
-];
+type PropsInicio = ComponentProps<typeof Inicio>;
 
-const especiesOrdenMock = ["Berro", "Manzana", "Papa", "Acelga", "Banana"].map((nombreEspecie) => ({
-    nombreEspecie,
-    fotoGenerica: null,
-    cantidadOperadores: 1,
+const mocks = vi.hoisted(() => ({
+    autorizado: vi.fn(),
+    notificar: vi.fn(),
 }));
 
-function nombresEnPantalla() {
-    return screen.getAllByRole("heading", { level: 3 }).map((titulo) => titulo.textContent);
+vi.mock("@/modulos/identidad-acceso/autorizacion/permisos", () => ({
+    autorizado: mocks.autorizado,
+}));
+
+vi.mock("@/compartido/componentes/NotificacionToast", () => ({
+    useNotificacionToast: () => ({ notificar: mocks.notificar }),
+}));
+
+vi.mock("next/image", () => ({
+    default: () => null,
+}));
+
+vi.mock("@/compartido/HojasDecorativas", () => ({
+    default: () => null,
+}));
+
+vi.mock("./tarjetaProducto", () => ({
+    default: ({ nombre, operadores, imagen }: { nombre: string; operadores: number; imagen: string | null }) => (
+        <article data-testid="tarjeta-especie" data-operadores={operadores} data-imagen={imagen ?? ""}>{nombre}</article>
+    ),
+}));
+
+const especies = [
+    { nombreEspecie: "Tomate", fotoGenerica: "/tomate.webp", cantidadOperadores: 3 },
+    { nombreEspecie: "Ají", fotoGenerica: null, cantidadOperadores: 2 },
+    { nombreEspecie: "Papa", fotoGenerica: "/papa.webp", cantidadOperadores: 5 },
+    { nombreEspecie: "Banana", fotoGenerica: null, cantidadOperadores: 4 },
+];
+
+function preparar(cambios: Partial<PropsInicio> = {}) {
+    const props: PropsInicio = {
+        especies,
+        urlListaInteligente: "https://uam.com.uy/lista.pdf",
+        ordenamientoHabilitado: true,
+        ordenPredeterminado: "nombre_asc",
+        ...cambios,
+    };
+
+    return { ...render(<Inicio {...props} />), props };
 }
 
-describe("inicio", () => {
+function nombresVisibles() {
+    return screen.queryAllByTestId("tarjeta-especie").map((tarjeta) => tarjeta.textContent);
+}
 
-    it("muestra todas las especies cuando el campo de búsqueda está vacío", () => {
-        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
+function tarjetaEspecie(nombre: string) {
+    return screen.getAllByTestId("tarjeta-especie").find((tarjeta) => tarjeta.textContent === nombre);
+}
 
-        expect(screen.getByText("Banana")).toBeInTheDocument();
-        expect(screen.getByText("Manzana")).toBeInTheDocument();
-        expect(screen.getByText("Sandía")).toBeInTheDocument();
+function crearMuchasEspecies() {
+    return Array.from({ length: 25 }, (_, indice) => ({
+        nombreEspecie: `Especie ${String(indice + 1).padStart(2, "0")}`,
+        fotoGenerica: null,
+        cantidadOperadores: 1,
+    }));
+}
+
+async function elegirOrden(nombre: string) {
+    fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+    fireEvent.click(await screen.findByRole("menuitemradio", { name: nombre }));
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+}
+
+beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.autorizado.mockReturnValue(true);
+});
+
+afterEach(cleanup);
+
+describe("Inicio", () => {
+    it("muestra las especies ordenadas de A-Z por defecto", () => {
+        preparar();
+        expect(nombresVisibles()).toEqual(["Ají", "Banana", "Papa", "Tomate"]);
+        expect(screen.getByText("4 especies con operadores")).toBeInTheDocument();
     });
 
-    it("filtra las especies según el texto ingresado", async () => {
-        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
-        const input = screen.getByRole("searchbox", { name: "Buscar especies" })
-        fireEvent.change(input, { target: { value: "man" } });
-
-        expect(screen.getByText("Manzana")).toBeInTheDocument();
-        expect(screen.queryByText("Banana")).not.toBeInTheDocument();
-        expect(screen.queryByText("Sandía")).not.toBeInTheDocument();
-    })
-
-    it("ignora mayúsculas y tildes al buscar", () => {
-        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
-        const input = screen.getByRole("searchbox", { name: "Buscar especies" });
-        fireEvent.change(input, { target: { value: "SANDIA" } });
-
-        expect(screen.getByText("Sandía")).toBeInTheDocument();
-        expect(screen.queryByText("Banana")).not.toBeInTheDocument();
-        expect(screen.queryByText("Manzana")).not.toBeInTheDocument();
-    })
-
-    it("muestra el mensaje de 'sin resultados' cuando ninguna especie coincide", () => {
-        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
-        const input = screen.getByRole("searchbox", { name: "Buscar especies" });
-        fireEvent.change(input, { target: { value: "DSAFSADDSA" } });
-
-        expect(
-            screen.getByText("No hay especies que coincidan con la búsqueda.")
-        ).toBeInTheDocument();
-    })
-
-    it("muestra primero las especies prioritarias y después las restantes en orden alfabético", () => {
-        render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
-
-        expect(nombresEnPantalla()).toEqual(["Papa", "Banana", "Manzana", "Acelga", "Berro"]);
-        expect(screen.getByRole("combobox", { name: "Ordenar por" })).not.toHaveTextContent("A-Z");
+    it("aplica el orden predeterminado Z-A", () => {
+        preparar({ ordenPredeterminado: "nombre_desc" });
+        expect(nombresVisibles()).toEqual(["Tomate", "Papa", "Banana", "Ají"]);
     });
 
-    it("ordena todas las especies de forma ascendente al elegir A-Z", () => {
-        render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
-
-        const select = screen.getByRole("combobox");
-        fireEvent.mouseDown(select);
-        const opcion = screen.getByRole("option", { name: "A-Z" });
-        fireEvent.click(opcion);
-
-        expect(nombresEnPantalla()).toEqual(["Acelga", "Banana", "Berro", "Manzana", "Papa"]);
+    it("aplica la prioridad configurada como Más vendidas", () => {
+        preparar({ ordenPredeterminado: "mas_vendidas" });
+        expect(nombresVisibles()).toEqual(["Papa", "Banana", "Tomate", "Ají"]);
     });
 
-    it("recupera el orden prioritario al volver a entrar a la página", () => {
-        const vista = render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
-        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Ordenar por" }));
-        fireEvent.click(screen.getByRole("option", { name: "A-Z" }));
-        expect(nombresEnPantalla()).toEqual(["Acelga", "Banana", "Berro", "Manzana", "Papa"]);
-
-        vista.unmount();
-        render(<Inicio especies={especiesOrdenMock} urlListaInteligente={null} />);
-        expect(nombresEnPantalla()).toEqual(["Papa", "Banana", "Manzana", "Acelga", "Berro"]);
+    it("entrega las imágenes y cantidades a las tarjetas", () => {
+        preparar();
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-operadores", "3");
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-imagen", "/tomate.webp");
     });
 
-    
-    it("ordena las especies de forma descendente (Z-A)", () => {
-        render(<Inicio especies={especiesMock} urlListaInteligente={null} />);
-
-        const select = screen.getByRole("combobox");
-        fireEvent.mouseDown(select);
-        const opcion = screen.getByRole("option", { name: "Z-A" });
-        fireEvent.click(opcion);
-        const especies = screen.getAllByText(/Banana|Manzana|Sandía/);
-
-        expect(especies[0]).toHaveTextContent("Sandía");
-        expect(especies[1]).toHaveTextContent("Manzana");
-        expect(especies[2]).toHaveTextContent("Banana");
+    it("entrega a la tarjeta la imagen personalizada recibida", () => {
+        const actualizadas = especies.map((especie) => especie.nombreEspecie === "Tomate" ? { ...especie, fotoGenerica: "/imagenes/foto-personalizada.webp" } : especie);
+        preparar({ especies: actualizadas });
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-imagen", "/imagenes/foto-personalizada.webp");
     });
 
-    it("cambia a la siguiente página al presionar Siguiente y a la anterior al presionar anterior", () => {
-        const especies = Array.from({ length: 21 }, (_, i) => ({
-            nombreEspecie: `Especie ${String(i + 1).padStart(2, "0")}`,
-            fotoGenerica: null,
-            cantidadOperadores: 1,
-        }));
-        render(<Inicio especies={especies} urlListaInteligente={null} />);
-        expect(screen.getByText("Especie 01")).toBeInTheDocument();
-        expect(screen.queryByText("Especie 21")).not.toBeInTheDocument();
+    it("actualiza la imagen cuando recibe nuevos datos de la especie", () => {
+        const { rerender, props } = preparar();
+        const actualizadas = especies.map((especie) => especie.nombreEspecie === "Tomate" ? { ...especie, fotoGenerica: "/tomate-nuevo.webp" } : especie);
+        rerender(<Inicio {...props} especies={actualizadas} />);
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-imagen", "/tomate-nuevo.webp");
+    });
 
-        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-        expect(screen.queryByText("Especie 21")).toBeInTheDocument();
-        expect(screen.queryByText("Especie 01")).not.toBeInTheDocument();
+    it("deja de enviar una imagen cuando la foto recibida es nula", () => {
+        const { rerender, props } = preparar();
+        const actualizadas = especies.map((especie) => especie.nombreEspecie === "Tomate" ? { ...especie, fotoGenerica: null } : especie);
+        rerender(<Inicio {...props} especies={actualizadas} />);
+        expect(tarjetaEspecie("Tomate")).toHaveAttribute("data-imagen", "");
+    });
 
-        expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
+    it("no modifica el orden del arreglo recibido", () => {
+        const copia = especies.map((especie) => ({ ...especie }));
+        preparar({ especies: copia, ordenPredeterminado: "nombre_desc" });
+        expect(copia).toEqual(especies);
+    });
 
-        fireEvent.click(screen.getByRole("button", { name: "Anterior" }));
-        expect(screen.queryByText("Especie 21")).not.toBeInTheDocument();
-        expect(screen.queryByText("Especie 01")).toBeInTheDocument();
+    it("oculta Ordenar por cuando el switch está apagado", () => {
+        preparar({ ordenamientoHabilitado: false, ordenPredeterminado: "nombre_desc" });
+        expect(screen.queryByRole("button", { name: "Ordenar por" })).not.toBeInTheDocument();
+        expect(nombresVisibles()).toEqual(["Tomate", "Papa", "Banana", "Ají"]);
+    });
+
+    it("ofrece Por defecto, A-Z y Z-A en el menú público", async () => {
+        preparar({ ordenPredeterminado: "mas_vendidas" });
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        expect(await screen.findByRole("menuitemradio", { name: "A-Z" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Z-A" })).toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Más vendidas" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Menor Precio" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Mayor Precio" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("menuitemradio", { name: "Más actualizadas" })).not.toBeInTheDocument();
+        expect(screen.getByRole("menuitemradio", { name: "Por defecto" })).toHaveAttribute("aria-checked", "true");
+        expect(screen.getAllByRole("menuitemradio")).toHaveLength(3);
+    });
+
+    it("permite cambiar el orden de A-Z a Z-A", async () => {
+        preparar();
+        await elegirOrden("Z-A");
+        expect(nombresVisibles()).toEqual(["Tomate", "Papa", "Banana", "Ají"]);
+    });
+
+    it("permite cambiar desde Más vendidas a A-Z", async () => {
+        preparar({ ordenPredeterminado: "mas_vendidas" });
+        await elegirOrden("A-Z");
+        expect(nombresVisibles()).toEqual(["Ají", "Banana", "Papa", "Tomate"]);
+    });
+
+    it.each(["mas_vendidas", "nombre_desc"] as const)("Por defecto restaura el orden administrativo %s", async (ordenPredeterminado) => {
+        preparar({ ordenPredeterminado });
+        const iniciales = nombresVisibles();
+        await elegirOrden("A-Z");
+        expect(nombresVisibles()).not.toEqual(iniciales);
+        await elegirOrden("Por defecto");
+        expect(nombresVisibles()).toEqual(iniciales);
+    });
+
+    it("al deshabilitar el ordenamiento ignora la elección local y aplica el predeterminado", async () => {
+        const { rerender, props } = preparar();
+        await elegirOrden("Z-A");
+        rerender(<Inicio {...props} ordenamientoHabilitado={false} />);
+        expect(screen.queryByRole("button", { name: "Ordenar por" })).not.toBeInTheDocument();
+        expect(nombresVisibles()).toEqual(["Ají", "Banana", "Papa", "Tomate"]);
+    });
+
+    it("busca ignorando mayúsculas, tildes y espacios exteriores", () => {
+        preparar();
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar especies" }), { target: { value: "  AJI  " } });
+        expect(nombresVisibles()).toEqual(["Ají"]);
+    });
+
+    it("permite buscar por una parte del nombre", () => {
+        preparar();
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar especies" }), { target: { value: "mat" } });
+        expect(nombresVisibles()).toEqual(["Tomate"]);
+    });
+
+    it("restaura todas las especies al limpiar la búsqueda", () => {
+        preparar();
+        const buscador = screen.getByRole("searchbox", { name: "Buscar especies" });
+        fireEvent.change(buscador, { target: { value: "tom" } });
+        expect(nombresVisibles()).toEqual(["Tomate"]);
+        fireEvent.change(buscador, { target: { value: "" } });
+        expect(nombresVisibles()).toEqual(["Ají", "Banana", "Papa", "Tomate"]);
+    });
+
+    it("muestra un mensaje cuando no hay coincidencias", () => {
+        preparar();
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar especies" }), { target: { value: "inexistente" } });
+        expect(screen.getByText("No hay especies que coincidan con la búsqueda.")).toBeInTheDocument();
+        expect(nombresVisibles()).toEqual([]);
+    });
+
+    it("muestra el estado vacío cuando no existen especies", () => {
+        preparar({ especies: [] });
+        expect(screen.getByText("Todavía no hay especies disponibles")).toBeInTheDocument();
+        expect(screen.queryByRole("navigation", { name: "Páginas de especies" })).not.toBeInTheDocument();
+    });
+
+    it("pagina los resultados de 20 en 20", () => {
+        preparar({ especies: crearMuchasEspecies() });
+        expect(nombresVisibles()).toHaveLength(20);
         expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
-    })
-    it("muestra un enlace a la Lista Inteligente cuando hay una URL configurada", () => {
-        render(<Inicio especies={especiesMock} urlListaInteligente="https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf" />);
-        const enlace = screen.getByRole("link", { name: "Lista inteligente" });
-        expect(enlace).toHaveAttribute("href", "https://uam.com.uy/wp-content/uploads/2026/09/MGAP_Lista_Inteligente_PDF-1.pdf");
-        expect(enlace).toHaveAttribute("target", "_blank");
+        expect(screen.getByRole("button", { name: "Anterior" })).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        expect(nombresVisibles()).toHaveLength(5);
+        expect(nombresVisibles()[0]).toBe("Especie 21");
+        expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Siguiente" })).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Anterior" }));
+        expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+        expect(nombresVisibles()[0]).toBe("Especie 01");
     });
 
-    it("avisa cuando se selecciona Lista Inteligente y no hay URL configurada", async () => {
-        render(<Inicio especies={especiesMock} urlListaInteligente={null}/>);
-        fireEvent.click(screen.getByRole("button", { name: "Lista inteligente" }));
-        const aviso = await screen.findByRole("alert");
-        expect(aviso).toHaveTextContent("La Lista Inteligente no está disponible");
+    it("vuelve a la primera página al buscar", () => {
+        preparar({ especies: crearMuchasEspecies() });
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        fireEvent.change(screen.getByRole("searchbox", { name: "Buscar especies" }), { target: { value: "Especie" } });
+        expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+        expect(nombresVisibles()[0]).toBe("Especie 01");
     });
-})
+
+    it("vuelve a la primera página al cambiar el orden", async () => {
+        preparar({ especies: crearMuchasEspecies() });
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        await elegirOrden("Z-A");
+        expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+        expect(nombresVisibles()[0]).toBe("Especie 25");
+    });
+
+    it("ajusta la página visible si disminuye la cantidad de especies", () => {
+        const { rerender, props } = preparar({ especies: crearMuchasEspecies() });
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        rerender(<Inicio {...props} especies={especies} />);
+        expect(nombresVisibles()).toHaveLength(4);
+        expect(screen.queryByRole("navigation", { name: "Páginas de especies" })).not.toBeInTheDocument();
+    });
+
+    it("muestra los enlaces de acceso autorizados", () => {
+        preparar();
+        expect(screen.getByRole("link", { name: "Ver Mercado Virtual" })).toHaveAttribute("href", "/publicaciones");
+        expect(screen.getByRole("link", { name: "Ver operadores" })).toHaveAttribute("href", "/operadores");
+        expect(screen.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
+        expect(screen.getByRole("link", { name: "Lista inteligente" })).toHaveAttribute("href", "https://uam.com.uy/lista.pdf");
+    });
+
+    it("abre la Lista Inteligente en otra pestaña", () => {
+        preparar();
+        const enlace = screen.getByRole("link", { name: "Lista inteligente" });
+        expect(enlace).toHaveAttribute("target", "_blank");
+        expect(enlace).toHaveAttribute("rel", "noopener noreferrer");
+    });
+
+    it("avisa cuando la Lista Inteligente no está disponible", () => {
+        preparar({ urlListaInteligente: null });
+        fireEvent.click(screen.getByRole("button", { name: "Lista inteligente" }));
+        expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith("La Lista Inteligente no está disponible", "warning");
+    });
+
+    it("oculta los accesos que no están autorizados", () => {
+        mocks.autorizado.mockReturnValue(false);
+        preparar();
+        expect(screen.queryByRole("link", { name: "Ver Mercado Virtual" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Ver operadores" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Lista inteligente" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Lista inteligente" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Precios de referencia" })).not.toBeInTheDocument();
+    });
+});

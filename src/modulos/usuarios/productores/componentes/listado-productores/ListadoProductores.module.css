@@ -1,0 +1,17 @@
+.lista {
+    display: flex;
+    width: 100%;
+    max-width: 48rem;
+    margin: 0 auto;
+    flex-direction: column;
+    gap: var(--espacio-controles);
+}
+
+@media (min-width: 768px) {
+    .lista {
+        display: grid;
+        max-width: none;
+        grid-template-columns: var(--columnas-tarjetas);
+        gap: var(--espacio-secciones);
+    }
+}

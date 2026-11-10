@@ -6,6 +6,8 @@ import { altaPublicacionOperador } from "@/modulos/publicaciones/altaPublicacion
 import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { revalidatePath } from "next/cache";
+import { ErrorCuerpoDemasiadoGrande, leerJsonLimitado } from "@/infraestructura/http/cuerpo-limitado";
+import { registrarPublicacion } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
 
 export async function GET() {
 	if (!autorizado("operador.catalogo.consultar")) {
@@ -13,14 +15,18 @@ export async function GET() {
 	}
 	try {
 		const sesion = await obtenerSesion();
+		if (sesion?.rol === "PRODUCTOR") {
+			return NextResponse.json({ errores: ["No tiene permisos para consultar el catálogo de Operadores."] }, { status: 403 });
+		}
 		const operadoresAutorizados = sesion?.rol === "OPERADOR"
 			? [await obtenerOperadorAutorizado()]
 			: db.orm.public.Operador.all();
-		const [operadores, especies, variedades, presentaciones, categorias, calibres, paises] = await Promise.all([
+		const [operadores, especies, variedades, envases, kilos, categorias, calibres, paises] = await Promise.all([
 			operadoresAutorizados,
 			db.orm.public.Especie.all(),
 			db.orm.public.Variedad.all(),
-			db.orm.public.Presentacion.all(),
+			db.orm.public.Envase.orderBy((envase) => envase.id.asc()).all(),
+			db.orm.public.KilosEmpaquetado.orderBy((peso) => peso.id.asc()).all(),
 			db.orm.public.Categoria.all(),
 			db.orm.public.Calibre.all(),
 			db.orm.public.Pais.all(),
@@ -30,7 +36,8 @@ export async function GET() {
 			operadores: operadores.map(({ id, nombreFantasia }) => ({ id, nombre: nombreFantasia })),
 			especies: especies.filter((item) => item.especieActiva).map(({ id, nombreEspecie }) => ({ id, nombre: nombreEspecie })),
 			variedades: variedades.filter((item) => item.variedadActiva).map(({ id, especieId, nombreVariedad }) => ({ id, especieId, nombre: nombreVariedad })),
-			presentaciones: presentaciones.filter((item) => item.presentacionActiva).map(({ id, variedadId, nombrePresentacion }) => ({ id, variedadId, nombre: nombrePresentacion })),
+			envases: envases.map(({ id, nombreEnvase }) => ({ id, nombre: nombreEnvase })),
+			kilos: kilos.map(({ id, valor }) => ({ id, nombre: valor })),
 			categorias: categorias.map(({ id, especieId, nombreCategoria }) => ({ id, especieId, nombre: nombreCategoria })),
 			calibres: calibres.map(({ id, nombreCalibre }) => ({ id, nombre: nombreCalibre })),
 			paises: paises.map(({ id, nombrePais }) => ({ id, nombre: nombrePais })),
@@ -50,8 +57,11 @@ export async function POST(request: Request) {
 
 	let datos: unknown;
 	try {
-		datos = await request.json();
-	} catch {
+		datos = await leerJsonLimitado(request);
+	} catch (error) {
+		if (error instanceof ErrorCuerpoDemasiadoGrande) {
+			return NextResponse.json({ errores: [error.message] }, { status: 413 });
+		}
 		return NextResponse.json({ errores: ["El cuerpo de la solicitud no es un JSON válido."] }, { status: 400 });
 	}
 
@@ -65,15 +75,41 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const operador = await obtenerOperadorAutorizado(operadorId);
-		if (!autorizado("operador.publicacion.crear", sesion, operador)) {
-			return NextResponse.json({ errores: ["No tiene permisos para gestionar publicaciones de este Operador."] }, { status: 403 });
+		const esAdmin = autorizado("administracion.publicacion.crear", sesion);
+
+		let operador;
+
+		if (esAdmin) {
+			if (operadorId === undefined) {
+				return NextResponse.json({ errores: ["Debe seleccionar un operador."] },{ status: 400 });
+			}
+
+			const operadores = await db.orm.public.Operador.all();
+			operador = operadores.find((item) => item.id === operadorId);
+
+			if (!operador) {
+				return NextResponse.json({ errores: ["El operador no existe."] },{ status: 404 });
+			}
+		} else {
+			operador = await obtenerOperadorAutorizado(operadorId);
+			if (!autorizado("operador.publicacion.crear", sesion, operador)) {
+				return NextResponse.json({ errores: ["No tiene permisos para gestionar publicaciones de este Operador."] }, { status: 403 });
+			}
 		}
+		
 		const datosDelOperador = typeof datos === "object" && datos !== null && !Array.isArray(datos)
 			? { ...datos, operadorId: operador.id }
 			: datos;
 		const resultado = await altaPublicacionOperador(datosDelOperador);
 		if (resultado.esValido) {
+			try {
+				const usuarioVinculado = await db.orm.public.Usuario.select("username").where({ id: operador.usuarioId }).first();
+				if (usuarioVinculado?.username) {
+					await registrarPublicacion(usuarioVinculado.username);
+				}
+			} catch (errEst) {
+				console.error("Error al registrar estadística de publicación:", errEst);
+			}
 			const rutas = [
 				"/mi-mercado",
 				`/mi-mercado/${encodeURIComponent(operador.nombreFantasia)}`,

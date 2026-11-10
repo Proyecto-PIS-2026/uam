@@ -2,12 +2,19 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import SearchIcon from "@mui/icons-material/Search";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { MenuItem, TextField } from "@mui/material";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
+import { Checkbox, MenuItem, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
+import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
+import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
+import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 import type { PrecioReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
+import FuentePrecios from "../FuentePrecios";
 import styles from "./PreciosReferencia.module.css";
 
 type Props = { fechaRelevamiento: string; filas: PrecioReferencia[] };
@@ -70,7 +77,7 @@ function ajustarSeleccion(filas: PrecioReferencia[], seleccion: SeleccionFiltros
 
 function leerPrecio(valor: string): number | null {
     if (valor === "") return null;
-    const precio = Number(valor.replace(",", "."));
+    const precio = Number(valor);
     return Number.isFinite(precio) ? precio : null;
 }
 
@@ -83,7 +90,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     const [precioMinimo, setPrecioMinimo] = useState("");
     const [precioMaximo, setPrecioMaximo] = useState("");
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
-    const [soloReferencias, setSoloReferencias] = useState(false);
+    const [soloReferencias, setSoloReferencias] = useState(true);
     const [pagina, setPagina] = useState(1);
     const panelFiltrosRef = useRef<HTMLDivElement>(null);
     const contenidoFiltrosRef = useRef<HTMLDivElement>(null);
@@ -107,10 +114,10 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     }, []);
 
     const disponibles = useMemo(() => ({
-        especies: opciones(filas.map((fila) => fila.especie)),
+        especies: opciones(filas.map((fila) => fila.especie)).sort(compararEspeciesPorPrioridad),
         variedades: especie ? opciones(filasCompatibles(filas, seleccion, ["variedad", "unidad"]).map((fila) => fila.variedad)) : [],
         unidades: variedad ? opciones(filasCompatibles(filas, seleccion, ["unidad"]).map((fila) => fila.unidad)) : [],
-        paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)),
+        paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)).sort(compararPaisesPorPrioridad),
         categorias: opciones(filasCompatibles(filas, seleccion, ["categoria"]).map((fila) => fila.categoria)),
         calibres: opciones(filasCompatibles(filas, seleccion, ["calibre"]).map((fila) => fila.calibre)),
     }), [filas, seleccion, especie, variedad]);
@@ -154,7 +161,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     const visibles = filtradas.slice(desde, desde + LIMITE);
     const [anio, mes, dia] = fechaRelevamiento.split("-");
 
-    function abrirHistorico(fila: PrecioReferencia) {
+    function rutaHistorico(fila: PrecioReferencia) {
         const [, especie] = JSON.parse(fila.id);
         const parametros = new URLSearchParams({
             species_id: String(especie),
@@ -164,7 +171,11 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
             calibre: fila.calibre,
             categoria: fila.categoria,
         });
-        router.push(`/precios-historicos?${parametros}`);
+        return `/precios-historicos?${parametros}`;
+    }
+
+    function abrirHistorico(fila: PrecioReferencia) {
+        router.push(rutaHistorico(fila));
     }
 
     function cambiar(accion: () => void) {
@@ -185,7 +196,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     }
 
     function cambiarPrecio(valor: string, actualizar: (valor: string) => void) {
-        if (valor === "" || /^\d+(?:[.,]\d*)?$/.test(valor)) cambiar(() => actualizar(valor));
+        if (esEntradaPrecioPublicacion(valor)) cambiar(() => actualizar(valor));
     }
 
     function limpiar() {
@@ -200,7 +211,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
 
     return (
         <div className={styles.pagina}>
-            <EncabezadoPagina titulo="Precios de referencia" cantidad={filas.length} subtitulo="registros del relevamiento" />
+            <EncabezadoPagina titulo="Precios de referencia" cantidad={filas.length} subtitulo={filas.length === 1 ? "registro del relevamiento" : "registros del relevamiento"} />
 
             <div className={styles.contexto}>
                 <p>Relevamiento del <strong>{dia}/{mes}/{anio}</strong></p>
@@ -248,16 +259,14 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                             <MenuItem key={v} value={v} className={styles.opcionSelect}>{v}</MenuItem>
                         ))}
                     </TextField>
-                    <button
-                        type="button"
+                    <BotonDesplegable
                         className={styles.botonMasFiltros}
-                        aria-expanded={mostrarFiltros}
+                        abierto={mostrarFiltros}
                         aria-controls="filtros-adicionales-precios"
                         onClick={() => setMostrarFiltros((abiertos) => !abiertos)}
                     >
                         Más filtros
-                        {mostrarFiltros ? <KeyboardArrowUpIcon className={styles.iconoExpandir} /> : <KeyboardArrowDownIcon className={styles.iconoExpandir} />}
-                    </button>
+                    </BotonDesplegable>
                     <div ref={panelFiltrosRef} id="filtros-adicionales-precios" className={`${styles.filtrosAdicionales} ${mostrarFiltros ? styles.filtrosAbiertos : ""}`}>
                         <div ref={contenidoFiltrosRef} className={styles.contenidoAdicional}>
                             <TextField
@@ -330,7 +339,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 slotProps={menu}
                             >
                                 <MenuItem value="unidad" className={styles.opcionSelect}>Unidad</MenuItem>
-                                <MenuItem value="kg" className={styles.opcionSelect}>Kg</MenuItem>
+                                <MenuItem value="kg" className={styles.opcionSelect}>kg</MenuItem>
                             </TextField>
                             <TextField
                                 className={`${styles.campo} ${styles.filtroPrecioMinimo}`}
@@ -338,9 +347,9 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 type="text"
                                 size="small"
                                 value={precioMinimo}
-                                placeholder="$ 0"
+                                placeholder="Sin mínimo"
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMinimo)}
-                                slotProps={{ htmlInput: { inputMode: "decimal", pattern: "[0-9]+([.,][0-9]*)?" } }}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                             />
                             <TextField
                                 className={`${styles.campo} ${styles.filtroPrecioMaximo}`}
@@ -348,10 +357,10 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 type="text"
                                 size="small"
                                 value={precioMaximo}
-                                placeholder="Sin límite"
+                                placeholder="Sin máximo"
                                 error={rangoPrecioInvalido}
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMaximo)}
-                                slotProps={{ htmlInput: { inputMode: "decimal", pattern: "[0-9]+([.,][0-9]*)?" } }}
+                                slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                             />
                             {rangoPrecioInvalido && <p className={styles.errorPrecio} role="alert">El precio máximo no puede ser menor al mínimo.</p>}
                         </div>
@@ -359,7 +368,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                 </div>
                 <div className={styles.barraOpciones}>
                     <label className={styles.soloReferencias}>
-                        <input type="checkbox" checked={soloReferencias} onChange={(e) => cambiar(() => setSoloReferencias(e.target.checked))} />
+                        <Checkbox size="small" checked={soloReferencias} onChange={(e) => cambiar(() => setSoloReferencias(e.target.checked))} sx={{ padding: 0 }} />
                         Solo registros de referencia
                     </label>
                 </div>
@@ -369,12 +378,16 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                 </div>
             </section>
 
-            <section className={styles.tablaPanel} aria-label="Precios relevados">
+            <section className={visibles.length === 0 ? styles.tablaVacia : styles.tablaPanel} aria-label="Precios relevados">
                 <div className={styles.tablaCabecera}>
                     <div><h2>Listado de Precios de referencia</h2></div>
                 </div>
                 {visibles.length === 0 ? (
-                    <p className={styles.vacio}>No hay registros que coincidan con los filtros.</p>
+                    <EstadoVacio
+                        titulo={filas.length === 0 ? "No hay precios de referencia disponibles en este momento." : "No hay registros que coincidan con los filtros."}
+                        descripcion={filas.length === 0 ? "Los valores aparecerán aquí cuando haya un relevamiento disponible." : "Probá cambiando o limpiando los filtros para consultar otros precios."}
+                        icono={filas.length === 0 ? <PriceCheckOutlinedIcon /> : <SearchOffOutlinedIcon />}
+                    />
                 ) : (
                     <>
                         <div className={styles.tablaContenedor}>
@@ -394,7 +407,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 <tbody>
                                     {visibles.map((fila) => (
                                         <tr key={fila.id} className={fila.esReferencia ? styles.filaReferencia : undefined} onClick={() => abrirHistorico(fila)} style={{ cursor: "pointer" }}>
-                                            <td className={styles.producto}><strong>{fila.especie}</strong></td>
+                                            <td className={styles.producto}><Link className={styles.enlaceHistorico} href={rutaHistorico(fila)} prefetch={false} onClick={(evento) => evento.stopPropagation()} aria-label={`Ver histórico de ${fila.especie}, ${fila.variedad}`}><strong>{fila.especie}</strong></Link></td>
                                             <td className={styles.variedad}>{fila.variedad}</td>
                                             <td className={styles.referencia}>
                                                 {fila.esReferencia ? (
@@ -432,7 +445,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 >
                                     <div className={styles.filaMobileCabecera}>
                                         <div className={styles.filaMobileProducto}>
-                                            <strong>{fila.especie}</strong>
+                                            <Link className={styles.enlaceHistorico} href={rutaHistorico(fila)} prefetch={false} onClick={(evento) => evento.stopPropagation()} aria-label={`Ver histórico de ${fila.especie}, ${fila.variedad}`}><strong>{fila.especie}</strong></Link>
                                             {fila.variedad !== "-" && <span>{fila.variedad}</span>}
                                         </div>
                                         {fila.esReferencia && <span className={styles.insignia}>Referencia</span>}
@@ -470,6 +483,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                     </nav>
                 )}
             </section>
+            <FuentePrecios />
         </div>
     );
 }

@@ -1,171 +1,1570 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicacionPerfil } from "../../consultas-perfil-publico";
-import DrawerPublicacionPerfil from "./DrawerPublicacionPerfil";
 
-const mocks = vi.hoisted(() => ({
-    useMediaQuery: vi.fn(),
-}));
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from "vitest";
+
+import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
+import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
+import { DrawerPublicacionPerfil } from "./DrawerPublicacionPerfil";
+
+const usarMediaQueryMock = vi.hoisted(() => vi.fn(() => true));
 
 vi.mock("@mui/material/useMediaQuery", () => ({
-    default: mocks.useMediaQuery,
+    default: usarMediaQueryMock,
 }));
 
-vi.mock("@mui/material/SwipeableDrawer", () => ({
-    default: ({anchor, open, onClose, onOpen, disableSwipeToOpen, children}: {anchor: "bottom" | "right"; open: boolean; onClose: () => void; onOpen: () => void; disableSwipeToOpen: boolean; children: React.ReactNode}) => (
-        <div data-testid="drawer" data-anchor={anchor} data-open={String(open)} data-swipe-open-disabled={String(disableSwipeToOpen)}>
-            <button type="button" onClick={onOpen}>Abrir drawer</button>
-            <button type="button" onClick={onClose}>Cerrar drawer</button>
-            {children}
-        </div>
-    ),
-}));
+vi.mock("@/compartido/componentes/DrawerDeslizable", async () => {
+    const React = await import("react");
+
+    type DrawerProps = {
+        open: boolean;
+        anchor: string;
+        onClose: () => void;
+        children?: ReactNode;
+        slotProps?: {
+            paper?: {
+                className?: string;
+                role?: string;
+                "aria-label"?: string;
+            };
+        };
+        ModalProps?: {
+            keepMounted?: boolean;
+            onTransitionEnter?: () => void;
+            onTransitionExited?: () => void;
+        };
+    };
+
+    return {
+        default: function DrawerDeslizableMock({
+            open,
+            anchor,
+            onClose,
+            children,
+            slotProps,
+            ModalProps,
+        }: DrawerProps) {
+            const abiertoAnterior = React.useRef(false);
+
+            const onTransitionEnter = ModalProps?.onTransitionEnter;
+            const onTransitionExited = ModalProps?.onTransitionExited;
+
+            React.useEffect(() => {
+                if (open && !abiertoAnterior.current) {
+                    onTransitionEnter?.();
+                }
+
+                if (!open && abiertoAnterior.current) {
+                    onTransitionExited?.();
+                }
+
+                abiertoAnterior.current = open;
+            }, [open, onTransitionEnter, onTransitionExited]);
+
+            if (!open && !ModalProps?.keepMounted) {
+                return null;
+            }
+
+            return React.createElement(
+                "div",
+                {
+                    role: slotProps?.paper?.role ?? "dialog",
+                    "aria-label":
+                        slotProps?.paper?.["aria-label"] ??
+                        "Detalle de publicación",
+                    className: slotProps?.paper?.className,
+                    "data-anchor": anchor,
+                    hidden: !open,
+                },
+                React.createElement(
+                    "button",
+                    {
+                        type: "button",
+                        onClick: onClose,
+                    },
+                    "Cerrar detalle",
+                ),
+                children,
+            );
+        },
+    };
+});
+
+vi.mock("@mui/material/Dialog", async () => {
+    const React = await import("react");
+
+    type DialogProps = {
+        open: boolean;
+        onClose?: (event: unknown, reason: string) => void;
+        children?: ReactNode;
+        "aria-label"?: string;
+        slotProps?: {
+            transition?: {
+                onExited?: () => void;
+            };
+        };
+    };
+
+    return {
+        default: function DialogMock({
+            open,
+            onClose,
+            children,
+            slotProps,
+            "aria-label": ariaLabel,
+        }: DialogProps) {
+            const abiertoAnterior = React.useRef(false);
+
+            const onExited = slotProps?.transition?.onExited;
+
+            React.useEffect(() => {
+                if (!open && abiertoAnterior.current) {
+                    onExited?.();
+                }
+
+                abiertoAnterior.current = open;
+            }, [open, onExited]);
+
+            if (!open) {
+                return null;
+            }
+
+            return React.createElement(
+                "div",
+                {
+                    role: "dialog",
+                    "aria-label": ariaLabel,
+                    onKeyDown: (event: { key: string }) => {
+                        if (event.key === "Escape") {
+                            onClose?.(event, "escapeKeyDown");
+                        }
+                    },
+                },
+                children,
+            );
+        },
+    };
+});
 
 vi.mock("next/image", async () => {
     const { createElement } = await import("react");
+
     return {
-        default: ({src, alt}: {src: string; alt: string}) => createElement("img", {src, alt}),
+        default: ({
+            src,
+            alt,
+            onLoad,
+            onError,
+            style,
+            className,
+        }: {
+            src?: string | null;
+            alt?: string;
+            onLoad?: React.ReactEventHandler<HTMLImageElement>;
+            onError?: React.ReactEventHandler<HTMLImageElement>;
+            style?: React.CSSProperties;
+            className?: string;
+        }) =>
+            createElement("img", {
+                src: src ?? undefined,
+                alt,
+                onLoad,
+                onError,
+                style,
+                className,
+            }),
+    };
+});
+
+vi.mock("@mui/icons-material/HideImageOutlined", async () => {
+    const { createElement } = await import("react");
+
+    return {
+        default: () =>
+            createElement("span", {
+                "data-testid": "HideImageOutlinedIcon",
+            }),
+    };
+});
+
+vi.mock("@mui/icons-material/WhatsApp", async () => {
+    const { createElement } = await import("react");
+
+    return {
+        default: () =>
+            createElement("span", {
+                "data-testid": "WhatsAppIcon",
+            }),
+    };
+});
+
+vi.mock("@mui/icons-material/Close", async () => {
+    const { createElement } = await import("react");
+
+    return {
+        default: () =>
+            createElement("span", {
+                "data-testid": "CloseIcon",
+            }),
     };
 });
 
 vi.mock("./TextoAjustable", () => ({
-    default: ({texto, className}: {texto: string; className?: string}) => <span className={className}>{texto}</span>,
+    default: ({
+        children,
+        className,
+    }: {
+        children: ReactNode;
+        className?: string;
+    }) => (
+        <span className={className}>
+            {children}
+        </span>
+    ),
 }));
 
-vi.mock("@mui/icons-material/ImageOutlined", () => ({
-    default: () => <span data-testid="icono-foto"/>,
-}));
+class ResizeObserverMock {
+    static instancias: ResizeObserverMock[] = [];
 
-vi.mock("@mui/icons-material/WhatsApp", () => ({
-    default: () => <span data-testid="icono-whatsapp"/>,
-}));
+    callback: ResizeObserverCallback;
+    observe = vi.fn();
+    disconnect = vi.fn();
 
-const publicacion: PublicacionPerfil = {
-    id: 101,
-    foto: "/tomate.jpg",
-    precio: "120",
-    fecha: "2026-10-03T15:00:00.000Z",
-    especie: "Tomate",
-    variedad: "Perita",
-    presentacion: "Cajón",
-    categoria: "Extra",
-    calibre: "A",
-    pais: "URUGUAY",
-};
+    constructor(callback: ResizeObserverCallback) {
+        this.callback = callback;
+        ResizeObserverMock.instancias.push(this);
+    }
 
-describe("DrawerPublicacionPerfil", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mocks.useMediaQuery.mockReturnValue(false);
+    notificar() {
+        this.callback([], this as unknown as ResizeObserver);
+    }
+}
+
+const mensajeWhatsApp =
+    "Hola, vi tu perfil en Mercado UAM y quisiera hacerte una consulta.";
+
+function crearPublicacion(): PublicacionListado {
+    return {
+        id: 7,
+        especie: "Tomate",
+        variedad: "Perita",
+        precio: 150,
+        fecha: "2026-10-03T15:00:00.000Z",
+        foto: null,
+        envase: "Cajón", kilos: "",
+        categoria: "Primera",
+        calibre: "Mediano",
+        codigoCalibre: "M",
+        pais: "Uruguay",
+        tipoPublicacion: "OPERADOR",
+        operador: {
+            id: 10,
+            nombreFantasia: "Huerta Sur",
+            whatsApp: "099123456",
+        },
+    };
+}
+
+function crearPublicacionProductor(): PublicacionProductorListado {
+    return {
+        id: 8,
+        especie: "Manzana",
+        variedad: "Gala",
+        precio: 120,
+        fecha: "2026-10-03T15:00:00.000Z",
+        foto: null,
+        envase: "Caja", kilos: "",
+        cantidadUnidades: 20,
+        categoria: "Primera",
+        calibre: "Grande",
+        codigoCalibre: "G",
+        pais: "Uruguay",
+        tipoPublicacion: "PRODUCTOR",
+        productor: {
+            id: 30,
+            nombreFantasia: "Huerta Productora",
+            fotoPerfil: null,
+            whatsApp: "+598 99 123 456",
+        },
+        ubicaciones: [
+            {
+                id: 1,
+                nombreUbicacion: "Local central",
+                urlMaps: "https://maps.example/central",
+            },
+            {
+                id: 2,
+                nombreUbicacion: "Depósito",
+                urlMaps: "https://maps.example/deposito",
+            },
+        ],
+    };
+}
+
+function obtenerElementoPorClase(
+    container: HTMLElement,
+    nombreClase: string,
+): HTMLElement {
+    const elemento = container.querySelector<HTMLElement>(
+        `[class*="${nombreClase}"]`,
+    );
+
+    if (!elemento) {
+        throw new Error(`No se encontró el elemento con la clase ${nombreClase}`);
+    }
+
+    return elemento;
+}
+
+beforeEach(() => {
+    vi.clearAllMocks();
+
+    usarMediaQueryMock.mockReturnValue(true);
+
+    ResizeObserverMock.instancias = [];
+
+    vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+
+    vi.stubGlobal(
+        "requestAnimationFrame",
+        (callback: FrameRequestCallback) => {
+            callback(0);
+            return 1;
+        },
+    );
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+});
+
+describe("DrawerPublicacionPerfil con operadores", () => {
+    it.each([
+        ["otra publicación", "cambia"],
+        ["otra foto", "cambia"],
+        ["sin publicación", "elimina"],
+    ])(
+        "vuelve a esperar la foto al regresar desde %s",
+        (_cambio, tipoCambio) => {
+            const original = {
+                ...crearPublicacion(),
+                foto: "/tomate.jpg",
+            };
+
+            const siguiente =
+                tipoCambio === "elimina"
+                    ? null
+                    : {
+                        ...original,
+                        id: _cambio === "otra publicación"
+                            ? original.id + 1
+                            : original.id,
+                        foto: "/tomate-nuevo.jpg",
+                    };
+
+            const onOpenChange = vi.fn();
+
+            const { rerender } = render(
+                <DrawerPublicacionPerfil
+                    publicacion={original}
+                    open
+                    onOpenChange={onOpenChange}
+                />,
+            );
+
+            fireEvent.load(screen.getByAltText("Foto de Tomate"));
+
+            expect(
+                screen.getByRole("dialog", {
+                    name: "Detalle de publicación",
+                }),
+            ).toBeInTheDocument();
+
+            rerender(
+                <DrawerPublicacionPerfil
+                    publicacion={siguiente}
+                    open
+                    onOpenChange={onOpenChange}
+                />,
+            );
+
+            expect(
+                screen.queryByRole("dialog", {
+                    name: "Detalle de publicación",
+                }),
+            ).not.toBeInTheDocument();
+
+            rerender(
+                <DrawerPublicacionPerfil
+                    publicacion={original}
+                    open
+                    onOpenChange={onOpenChange}
+                />,
+            );
+
+            expect(
+                screen.queryByRole("dialog", {
+                    name: "Detalle de publicación",
+                }),
+            ).not.toBeInTheDocument();
+
+            fireEvent.load(screen.getByAltText("Foto de Tomate"));
+
+            expect(
+                screen.getByRole("dialog", {
+                    name: "Detalle de publicación",
+                }),
+            ).toBeInTheDocument();
+        },
+    );
+
+    it.each(["cerrar", "cambiar"])(
+        "descarta la foto ampliada al %s la consulta",
+        async (cambio) => {
+            const original = {
+                ...crearPublicacion(),
+                foto: "/tomate.jpg",
+            };
+
+            const onOpenChange = vi.fn();
+
+            const { rerender } = render(
+                <DrawerPublicacionPerfil
+                    publicacion={original}
+                    open
+                    onOpenChange={onOpenChange}
+                />,
+            );
+
+            fireEvent.load(screen.getByAltText("Foto de Tomate"));
+
+            fireEvent.click(
+                screen.getByRole("button", {
+                    name: "Ampliar foto de Tomate",
+                }),
+            );
+
+            expect(
+                screen.getByRole("button", {
+                    name: "Cerrar foto ampliada",
+                }),
+            ).toBeInTheDocument();
+
+            const siguiente =
+                cambio === "cambiar"
+                    ? {
+                        ...original,
+                        foto: "/tomate-nuevo.jpg",
+                    }
+                    : original;
+
+            rerender(
+                <DrawerPublicacionPerfil
+                    publicacion={siguiente}
+                    open={cambio === "cambiar"}
+                    onOpenChange={onOpenChange}
+                />,
+            );
+
+            await waitFor(() => {
+                expect(
+                    screen.queryByRole("button", {
+                        name: "Cerrar foto ampliada",
+                    }),
+                ).not.toBeInTheDocument();
+            });
+
+            expect(
+                screen.queryByRole("dialog", {
+                    name: "Detalle de publicación",
+                }),
+            ).not.toBeInTheDocument();
+
+            if (cambio === "cerrar") {
+                rerender(
+                    <DrawerPublicacionPerfil
+                        publicacion={original}
+                        open
+                        onOpenChange={onOpenChange}
+                    />,
+                );
+            } else {
+                fireEvent.load(screen.getByAltText("Foto de Tomate"));
+            }
+
+            expect(
+                screen.getByRole("dialog", {
+                    name: "Detalle de publicación",
+                }),
+            ).toBeInTheDocument();
+
+            expect(
+                screen.queryByRole("button", {
+                    name: "Cerrar foto ampliada",
+                }),
+            ).not.toBeInTheDocument();
+        },
+    );
+
+    it("muestra los datos de la publicación y el enlace de contacto", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(
+            screen.getByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).toBeInTheDocument();
+
+        for (const texto of [
+            "Tomate",
+            "Perita",
+            "$150",
+            "Cajón",
+            "Mediano",
+            "Primera",
+            "Uruguay",
+        ]) {
+            expect(screen.getByText(texto)).toBeInTheDocument();
+        }
+
+        expect(
+            screen.getByRole("link", {
+                name: "Contactar a Huerta Sur por WhatsApp",
+            }),
+        ).toBeInTheDocument();
     });
 
-    it("usa el drawer inferior en mobile", () => {
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        expect(screen.getByTestId("drawer")).toHaveAttribute("data-anchor", "bottom");
-        expect(screen.getByTestId("drawer")).toHaveAttribute("data-swipe-open-disabled", "false");
+    it("muestra la fecha formateada y conserva su valor original en dateTime", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        const fecha = screen.getByText("Actualización").nextElementSibling;
+
+        expect(fecha).toHaveTextContent("03/10/2026");
+        expect(fecha).toHaveAttribute(
+            "dateTime",
+            "2026-10-03T15:00:00.000Z",
+        );
     });
 
-    it("usa un drawer lateral en web", () => {
-        mocks.useMediaQuery.mockReturnValue(true);
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        expect(screen.getByTestId("drawer")).toHaveAttribute("data-anchor", "right");
-        expect(screen.getByTestId("drawer")).toHaveAttribute("data-open", "true");
+    it("muestra guiones cuando los datos opcionales están vacíos o son nulos", () => {
+        const publicacion = {
+            ...crearPublicacion(),
+            variedad: "   ",
+            envase: " ", kilos: "",
+            calibre: " ",
+            categoria: " ",
+            pais: " ",
+            cantidadUnidades: null,
+        };
+
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={publicacion}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(screen.queryByText("Tomate")).toBeInTheDocument();
+        expect(screen.queryByText("   ")).not.toBeInTheDocument();
+
+        for (const etiqueta of [
+            "Empaquetado",
+            "Calibre",
+            "Categoría",
+            "País",
+        ]) {
+            expect(
+                screen.getByText(etiqueta).nextElementSibling,
+            ).toHaveTextContent("-");
+        }
+
+        expect(
+            screen.getByText(/^Unidades/).nextElementSibling,
+        ).toHaveTextContent("-");
     });
 
-    it("no muestra un botón de cierre en el contenido del drawer web", () => {
-        mocks.useMediaQuery.mockReturnValue(true);
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        expect(screen.queryByRole("button", {name: "Cerrar detalle de publicación"})).not.toBeInTheDocument();
-    });
-
-    it("cierra el drawer web mediante onClose", () => {
-        mocks.useMediaQuery.mockReturnValue(true);
-        const onOpenChange = vi.fn();
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={onOpenChange} whatsAppOperador="+598 99 123 456"/>);
-        fireEvent.click(screen.getByRole("button", {name: "Cerrar drawer"}));
-        expect(onOpenChange).toHaveBeenCalledTimes(1);
-        expect(onOpenChange).toHaveBeenCalledWith(false);
-    });
-
-    it("no se abre cuando no hay publicación seleccionada", () => {
-        const onOpenChange = vi.fn();
-        render(<DrawerPublicacionPerfil publicacion={null} open={true} onOpenChange={onOpenChange} whatsAppOperador="+598 99 123 456"/>);
-        expect(screen.getByTestId("drawer")).toHaveAttribute("data-open", "false");
-        expect(screen.getByTestId("drawer")).toHaveAttribute("data-swipe-open-disabled", "true");
-        fireEvent.click(screen.getByRole("button", {name: "Abrir drawer"}));
-        expect(onOpenChange).not.toHaveBeenCalled();
-        expect(screen.queryByText("Tomate")).not.toBeInTheDocument();
-        expect(screen.queryByRole("link", {name: /WhatsApp/i})).not.toBeInTheDocument();
-    });
-
-    it("muestra todos los datos de la publicación", () => {
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
+    it("oculta la variedad cuando es un guion", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacion(),
+                    variedad: "-",
+                }}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
         expect(screen.getByText("Tomate")).toBeInTheDocument();
-        expect(screen.getByText("Perita")).toBeInTheDocument();
-        expect(screen.getByText("$120")).toBeInTheDocument();
-        expect(screen.getByText("Presentación")).toBeInTheDocument();
-        expect(screen.getByText("Cajón")).toBeInTheDocument();
-        expect(screen.getByText("Calibre")).toBeInTheDocument();
-        expect(screen.getByText("A")).toBeInTheDocument();
-        expect(screen.getByText("Categoría")).toBeInTheDocument();
-        expect(screen.getByText("Extra")).toBeInTheDocument();
-        expect(screen.getByText("País")).toBeInTheDocument();
-        expect(screen.getByText("URUGUAY")).toBeInTheDocument();
+        expect(screen.getByText("Tomate").parentElement).not.toHaveTextContent("-");
+        expect(screen.getAllByText("-", { exact: true }).length).toBeGreaterThan(0);
     });
 
-    it("no muestra la variedad cuando es guion", () => {
-        render(<DrawerPublicacionPerfil publicacion={{...publicacion, variedad: "-"}} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        expect(screen.getByText("Tomate")).toBeInTheDocument();
-        expect(screen.queryByText("Perita")).not.toBeInTheDocument();
-        expect(screen.queryByText("-")).not.toBeInTheDocument();
+    it("muestra el reemplazo de imagen cuando no hay foto", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Foto de Tomate" })).not.toBeInTheDocument();
+
+        expect(
+            screen.getByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).toBeInTheDocument();
     });
 
-    it("muestra Consultar precio cuando la publicación no tiene precio", () => {
-        render(<DrawerPublicacionPerfil publicacion={{...publicacion, precio: null}} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
+    it("espera a que cargue la foto antes de mostrar el detalle", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacion(),
+                    foto: "/tomate.jpg",
+                }}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(
+            screen.queryByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).not.toBeInTheDocument();
+
+        fireEvent.load(screen.getByAltText("Foto de Tomate"));
+
+        expect(
+            screen.getByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("img", {
+                name: "Foto de Tomate",
+            }),
+        ).toHaveAttribute("src", "/tomate.jpg");
+    });
+
+    it("muestra el detalle y el reemplazo cuando falla la carga de la foto", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacion(),
+                    foto: "/foto-inexistente.jpg",
+                }}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(
+            screen.queryByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).not.toBeInTheDocument();
+
+        fireEvent.error(screen.getByAltText("Foto de Tomate"));
+
+        expect(
+            screen.getByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).toBeInTheDocument();
+
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+    });
+
+    it.each([
+        [150, "$150"],
+        [1234.5, "$1234.5"],
+        [0, "$0"],
+    ])("muestra el precio %s", (precio, esperado) => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacion(),
+                    precio,
+                }}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(screen.getByText(esperado)).toBeInTheDocument();
+        expect(screen.queryByText("Consultar precio")).not.toBeInTheDocument();
+    });
+
+    it("muestra Consultar precio cuando el precio es nulo", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacion(),
+                    precio: null,
+                }}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
         expect(screen.getByText("Consultar precio")).toBeInTheDocument();
-        expect(screen.queryByText("$120")).not.toBeInTheDocument();
+        expect(screen.queryByText("$0")).not.toBeInTheDocument();
     });
 
-    it("muestra la imagen de la publicación cuando tiene foto", () => {
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        expect(screen.getByRole("img", {name: "Foto de Tomate"})).toHaveAttribute("src", "/tomate.jpg");
-        expect(screen.queryByText("Foto")).not.toBeInTheDocument();
-    });
+    it.each([
+        [true, "right"],
+        [false, "bottom"],
+    ])(
+        "utiliza el anclaje %s según el tamaño de pantalla",
+        (esWeb, anchorEsperado) => {
+            usarMediaQueryMock.mockReturnValue(esWeb);
 
-    it("muestra el reemplazo de imagen cuando no tiene foto", () => {
-        render(<DrawerPublicacionPerfil publicacion={{...publicacion, foto: null}} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        expect(screen.getByText("Foto")).toBeInTheDocument();
-        expect(screen.getByTestId("icono-foto")).toBeInTheDocument();
-        expect(screen.queryByRole("img", {name: "Foto de Tomate"})).not.toBeInTheDocument();
-    });
+            render(
+                <DrawerPublicacionPerfil
+                    publicacion={crearPublicacion()}
+                    open
+                    onOpenChange={vi.fn()}
+                />,
+            );
 
-    it("genera correctamente el enlace personalizado de WhatsApp", () => {
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        const mensaje = "Hola, vi tu publicación de Tomate - Perita en Mercado UAM y quisiera hacerte una consulta.";
-        const enlaceEsperado = `https://wa.me/59899123456?text=${encodeURIComponent(mensaje)}`;
-        expect(screen.getByRole("link", {name: "Consultar por Tomate - Perita por WhatsApp"})).toHaveAttribute("href", enlaceEsperado);
-    });
+            expect(
+                screen.getByRole("dialog", {
+                    name: "Detalle de publicación",
+                }),
+            ).toHaveAttribute("data-anchor", anchorEsperado);
+        },
+    );
 
-    it("genera el mensaje de WhatsApp sin variedad cuando corresponde", () => {
-        render(<DrawerPublicacionPerfil publicacion={{...publicacion, variedad: "-"}} open={true} onOpenChange={vi.fn()} whatsAppOperador="+598 99 123 456"/>);
-        const mensaje = "Hola, vi tu publicación de Tomate en Mercado UAM y quisiera hacerte una consulta.";
-        const enlaceEsperado = `https://wa.me/59899123456?text=${encodeURIComponent(mensaje)}`;
-        expect(screen.getByRole("link", {name: "Consultar por Tomate por WhatsApp"})).toHaveAttribute("href", enlaceEsperado);
-    });
-
-    it("notifica cuando se abre el drawer", () => {
+    it("respeta la apertura controlada y notifica el cierre desde el botón del drawer", () => {
         const onOpenChange = vi.fn();
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={false} onOpenChange={onOpenChange} whatsAppOperador="+598 99 123 456"/>);
-        fireEvent.click(screen.getByRole("button", {name: "Abrir drawer"}));
-        expect(onOpenChange).toHaveBeenCalledTimes(1);
-        expect(onOpenChange).toHaveBeenCalledWith(true);
+        const publicacion = crearPublicacion();
+
+        const { rerender } = render(
+            <DrawerPublicacionPerfil
+                publicacion={publicacion}
+                open={false}
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        expect(onOpenChange).not.toHaveBeenCalled();
+
+        expect(
+            screen.queryByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).not.toBeInTheDocument();
+
+        rerender(
+            <DrawerPublicacionPerfil
+                publicacion={publicacion}
+                open
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Cerrar detalle",
+            }),
+        );
+
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+
+        rerender(
+            <DrawerPublicacionPerfil
+                publicacion={publicacion}
+                open={false}
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        expect(
+            screen.queryByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).not.toBeInTheDocument();
     });
 
-    it("notifica cuando se cierra el drawer", () => {
+    it("notifica el cierre desde el botón del encabezado", () => {
         const onOpenChange = vi.fn();
-        render(<DrawerPublicacionPerfil publicacion={publicacion} open={true} onOpenChange={onOpenChange} whatsAppOperador="+598 99 123 456"/>);
-        fireEvent.click(screen.getByRole("button", {name: "Cerrar drawer"}));
-        expect(onOpenChange).toHaveBeenCalledTimes(1);
-        expect(onOpenChange).toHaveBeenCalledWith(false);
+
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Detalle de consulta",
+            }),
+        );
+
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+    });
+
+    it("actualiza el detalle al seleccionar otra publicación y permite quitarla", () => {
+        const onOpenChange = vi.fn();
+
+        const { rerender } = render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        rerender(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacion(),
+                    id: 2,
+                    especie: "Manzana",
+                    variedad: "Gala",
+                    precio: 80,
+                    fecha: "2026-10-03T15:00:00.000Z",
+                    operador: {
+                        id: 20,
+                        nombreFantasia: "Frutas Norte",
+                        whatsApp: "098654321",
+                    },
+                }}
+                open
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        expect(screen.queryByText("Tomate")).not.toBeInTheDocument();
+        expect(screen.queryByText("Huerta Sur")).not.toBeInTheDocument();
+        expect(screen.getByText("Manzana")).toBeInTheDocument();
+        expect(screen.getByText("Gala")).toBeInTheDocument();
+        expect(screen.getByText("$80")).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("link", {
+                name: "Contactar a Frutas Norte por WhatsApp",
+            }),
+        ).toBeInTheDocument();
+
+        rerender(
+            <DrawerPublicacionPerfil
+                publicacion={null}
+                open
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        expect(screen.queryByText("Manzana")).not.toBeInTheDocument();
+        expect(screen.queryByText("Publicado por")).not.toBeInTheDocument();
+        expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it("reinicia la posición del scroll al cambiar la publicación", () => {
+        const publicacion = crearPublicacion();
+
+        const { container, rerender } = render(
+            <DrawerPublicacionPerfil
+                publicacion={publicacion}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        const contenido = obtenerElementoPorClase(
+            container,
+            "contenidoScrollable",
+        ) as HTMLDivElement;
+
+        contenido.scrollTop = 35;
+
+        rerender(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...publicacion,
+                    id: 9,
+                    especie: "Manzana",
+                }}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(contenido.scrollTop).toBe(0);
+    });
+
+    it("observa el contenido y sus hijos, actualiza el pie según el scroll y desconecta el observer", () => {
+        const { container, rerender, unmount } = render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        const contenido = obtenerElementoPorClase(
+            container,
+            "contenidoScrollable",
+        ) as HTMLDivElement;
+
+        const pie = obtenerElementoPorClase(container, "pie");
+
+        const observer = ResizeObserverMock.instancias.at(-1);
+
+        expect(observer).toBeDefined();
+
+        if (!observer) {
+            throw new Error("No se creó el ResizeObserver");
+        }
+
+        expect(observer.observe).toHaveBeenCalledTimes(
+            contenido.children.length + 1,
+        );
+
+        expect(observer.observe).toHaveBeenNthCalledWith(1, contenido);
+
+        Array.from(contenido.children).forEach((hijo, indice) => {
+            expect(observer.observe).toHaveBeenNthCalledWith(
+                indice + 2,
+                hijo,
+            );
+        });
+
+        Object.defineProperty(contenido, "scrollHeight", {
+            configurable: true,
+            value: 180,
+        });
+
+        Object.defineProperty(contenido, "clientHeight", {
+            configurable: true,
+            value: 100,
+        });
+
+        act(() => {
+            observer.notificar();
+        });
+
+        expect(pie.className).toContain("pieConScroll");
+
+        Object.defineProperty(contenido, "scrollHeight", {
+            configurable: true,
+            value: 100,
+        });
+
+        act(() => {
+            observer.notificar();
+        });
+
+        expect(pie.className).not.toContain("pieConScroll");
+
+        rerender(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open={false}
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(observer.disconnect).toHaveBeenCalled();
+
+        unmount();
+    });
+
+    it("restaura el foco al elemento que estaba activo antes de abrir el drawer", () => {
+        const publicacion = crearPublicacion();
+
+        const { rerender } = render(
+            <>
+                <button type="button">
+                    Volver al listado
+                </button>
+
+                <DrawerPublicacionPerfil
+                    publicacion={publicacion}
+                    open={false}
+                    onOpenChange={vi.fn()}
+                />
+            </>,
+        );
+
+        const botonOrigen = screen.getByRole("button", {
+            name: "Volver al listado",
+        });
+
+        botonOrigen.focus();
+
+        expect(botonOrigen).toHaveFocus();
+
+        rerender(
+            <>
+                <button type="button">
+                    Volver al listado
+                </button>
+
+                <DrawerPublicacionPerfil
+                    publicacion={publicacion}
+                    open
+                    onOpenChange={vi.fn()}
+                />
+            </>,
+        );
+
+        rerender(
+            <>
+                <button type="button">
+                    Volver al listado
+                </button>
+
+                <DrawerPublicacionPerfil
+                    publicacion={publicacion}
+                    open={false}
+                    onOpenChange={vi.fn()}
+                />
+            </>,
+        );
+
+        expect(botonOrigen).toHaveFocus();
+    });
+
+    it("no intenta restaurar el foco si el elemento anterior ya no está conectado", () => {
+        const publicacion = crearPublicacion();
+
+        const { rerender } = render(
+            <>
+                <button type="button">
+                    Volver al listado
+                </button>
+
+                <DrawerPublicacionPerfil
+                    publicacion={publicacion}
+                    open={false}
+                    onOpenChange={vi.fn()}
+                />
+            </>,
+        );
+
+        const botonOrigen = screen.getByRole("button", {
+            name: "Volver al listado",
+        });
+
+        botonOrigen.focus();
+
+        rerender(
+            <>
+                <button type="button">
+                    Volver al listado
+                </button>
+
+                <DrawerPublicacionPerfil
+                    publicacion={publicacion}
+                    open
+                    onOpenChange={vi.fn()}
+                />
+            </>,
+        );
+
+        const focoSpy = vi.spyOn(botonOrigen, "focus");
+        focoSpy.mockClear();
+
+        rerender(
+            <DrawerPublicacionPerfil
+                publicacion={publicacion}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(botonOrigen.isConnected).toBe(false);
+
+        rerender(
+            <DrawerPublicacionPerfil
+                publicacion={publicacion}
+                open={false}
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(focoSpy).not.toHaveBeenCalled();
+    });
+
+    it("prepara el enlace de WhatsApp con el teléfono normalizado y el mensaje", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        const enlace = screen.getByRole("link", {
+            name: "Contactar a Huerta Sur por WhatsApp",
+        });
+
+        const url = new URL(enlace.getAttribute("href")!);
+
+        expect(url.origin).toBe("https://web.whatsapp.com");
+        expect(url.pathname).toBe("/send");
+        expect(url.searchParams.get("phone")).toBe("099123456");
+        expect(url.searchParams.get("text")).toBe(mensajeWhatsApp);
+    });
+
+    it("registra el contacto de WhatsApp del operador", () => {
+        const fetchMock = vi.fn().mockResolvedValue({});
+        vi.stubGlobal("fetch", fetchMock);
+
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        fireEvent.click(
+            screen.getByRole("link", {
+                name: "Contactar a Huerta Sur por WhatsApp",
+            }),
+        );
+
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+            "/api/estadisticas/whatsapp",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    tipo: "OPERADOR",
+                    entidadId: 10,
+                }),
+                keepalive: true,
+            },
+        );
+    });
+
+    it("registra el error cuando falla el registro del contacto", async () => {
+        const error = new Error("Error de red");
+        const fetchMock = vi.fn().mockRejectedValue(error);
+        const errorSpy = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => undefined);
+
+        vi.stubGlobal("fetch", fetchMock);
+
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacion()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        fireEvent.click(
+            screen.getByRole("link", {
+                name: "Contactar a Huerta Sur por WhatsApp",
+            }),
+        );
+
+        await waitFor(() => {
+            expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+                "Error al registrar contacto:",
+                error,
+            );
+        });
+    });
+});
+
+describe("DrawerPublicacionPerfil con productores", () => {
+    it("muestra los datos de la publicación del productor", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacionProductor()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        for (const texto of [
+            "Manzana",
+            "Gala",
+            "$120",
+            "Caja",
+            "Grande",
+            "Primera",
+            "20",
+            "Uruguay",
+        ]) {
+            expect(
+                screen.getByText(texto, {
+                    exact: true,
+                }),
+            ).toBeInTheDocument();
+        }
+    });
+
+    it("construye el enlace de WhatsApp con el teléfono del productor", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacionProductor()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        const enlace = screen.getByRole("link", {
+            name: "Contactar a Huerta Productora por WhatsApp",
+        });
+
+        const url = new URL(enlace.getAttribute("href")!);
+
+        expect(url.origin).toBe("https://web.whatsapp.com");
+        expect(url.pathname).toBe("/send");
+        expect(url.searchParams.get("phone")).toBe("59899123456");
+        expect(url.searchParams.get("text")).toBe(mensajeWhatsApp);
+        expect(enlace).toHaveAttribute("target", "_blank");
+        expect(enlace).toHaveAttribute("rel", "noopener noreferrer");
+    });
+
+    it("no muestra el detalle del productor cuando está cerrado", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacionProductor()}
+                open={false}
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(
+            screen.queryByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).not.toBeInTheDocument();
+
+        expect(
+            screen.queryByRole("link", {
+                name: "Contactar a Huerta Productora por WhatsApp",
+            }),
+        ).not.toBeInTheDocument();
+    });
+
+    it("actualiza la publicación y el contacto del productor al cambiarla", () => {
+        const publicacion = crearPublicacionProductor();
+        const onOpenChange = vi.fn();
+
+        const { rerender } = render(
+            <DrawerPublicacionPerfil
+                publicacion={publicacion}
+                open
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        rerender(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...publicacion,
+                    id: 9,
+                    especie: "Pera",
+                    variedad: "Williams",
+                    productor: {
+                        ...publicacion.productor,
+                        id: 40,
+                        nombreFantasia: "Quinta Norte",
+                    },
+                    ubicaciones: [
+                        {
+                            id: 3,
+                            nombreUbicacion: "Quinta",
+                            urlMaps: "https://maps.example/quinta",
+                        },
+                    ],
+                }}
+                open
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        expect(screen.queryByText("Manzana")).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole("link", {
+                name: "Contactar a Huerta Productora por WhatsApp",
+            }),
+        ).not.toBeInTheDocument();
+
+        expect(screen.getByText("Pera")).toBeInTheDocument();
+        expect(screen.getByText("Williams")).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("link", {
+                name: "Contactar a Quinta Norte por WhatsApp",
+            }),
+        ).toBeInTheDocument();
+    });
+
+    it("registra el contacto de WhatsApp del productor", () => {
+        const fetchMock = vi.fn().mockResolvedValue({});
+        vi.stubGlobal("fetch", fetchMock);
+
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={crearPublicacionProductor()}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        fireEvent.click(
+            screen.getByRole("link", {
+                name: "Contactar a Huerta Productora por WhatsApp",
+            }),
+        );
+
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+            "/api/estadisticas/whatsapp",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    tipo: "PRODUCTOR",
+                    entidadId: 30,
+                }),
+                keepalive: true,
+            },
+        );
+    });
+
+    it("espera a que cargue la foto del productor antes de mostrar el detalle", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacionProductor(),
+                    foto: "/manzana.jpg",
+                }}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        expect(
+            screen.queryByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).not.toBeInTheDocument();
+
+        fireEvent.load(screen.getByAltText("Foto de Manzana"));
+
+        expect(
+            screen.getByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).toBeInTheDocument();
+    });
+
+    it("muestra el detalle y el reemplazo si falla la foto del productor", () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacionProductor(),
+                    foto: "/foto-inexistente.jpg",
+                }}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        fireEvent.error(screen.getByAltText("Foto de Manzana"));
+
+        expect(
+            screen.getByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).toBeInTheDocument();
+
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+    });
+
+    it("amplía la foto y permite cerrarla sin cerrar el detalle", async () => {
+        const onOpenChange = vi.fn();
+
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacionProductor(),
+                    foto: "/manzana.jpg",
+                }}
+                open
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        fireEvent.load(screen.getByAltText("Foto de Manzana"));
+
+        const botonAmpliar = screen.getByRole("button", {
+            name: "Ampliar foto de Manzana",
+        });
+
+        fireEvent.click(botonAmpliar);
+
+        const dialogoFoto = screen.getByRole("dialog", {
+            name: "Foto ampliada del producto",
+        });
+
+        expect(dialogoFoto).toContainElement(
+            screen.getByAltText("Foto ampliada de Manzana"),
+        );
+
+        expect(
+            screen.getByAltText("Foto ampliada de Manzana"),
+        ).toHaveAttribute("src", "/manzana.jpg");
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Cerrar foto ampliada",
+            }),
+        );
+
+        await waitFor(() => {
+            expect(
+                screen.queryByRole("dialog", {
+                    name: "Foto ampliada del producto",
+                }),
+            ).not.toBeInTheDocument();
+        });
+
+        expect(
+            screen.getByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).toBeInTheDocument();
+
+        expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it("restaura el foco al botón de ampliar la foto después de cerrar el diálogo", async () => {
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacionProductor(),
+                    foto: "/manzana.jpg",
+                }}
+                open
+                onOpenChange={vi.fn()}
+            />,
+        );
+
+        fireEvent.load(screen.getByAltText("Foto de Manzana"));
+
+        const botonAmpliar = screen.getByRole("button", {
+            name: "Ampliar foto de Manzana",
+        });
+
+        fireEvent.click(botonAmpliar);
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Cerrar foto ampliada",
+            }),
+        );
+
+        await waitFor(() => {
+            expect(botonAmpliar).toHaveFocus();
+        });
+    });
+
+    it("cierra la foto ampliada con Escape sin cerrar el detalle", async () => {
+        const onOpenChange = vi.fn();
+
+        render(
+            <DrawerPublicacionPerfil
+                publicacion={{
+                    ...crearPublicacionProductor(),
+                    foto: "/manzana.jpg",
+                }}
+                open
+                onOpenChange={onOpenChange}
+            />,
+        );
+
+        fireEvent.load(screen.getByAltText("Foto de Manzana"));
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Ampliar foto de Manzana",
+            }),
+        );
+
+        const dialogoFoto = screen.getByRole("dialog", {
+            name: "Foto ampliada del producto",
+        });
+
+        expect(dialogoFoto).toContainElement(
+            screen.getByAltText("Foto ampliada de Manzana"),
+        );
+
+        fireEvent.keyDown(dialogoFoto, {
+            key: "Escape",
+            code: "Escape",
+            keyCode: 27,
+        });
+
+        await waitFor(() => {
+            expect(
+                screen.queryByRole("dialog", {
+                    name: "Foto ampliada del producto",
+                }),
+            ).not.toBeInTheDocument();
+        });
+
+        expect(
+            screen.getByRole("dialog", {
+                name: "Detalle de publicación",
+            }),
+        ).toBeInTheDocument();
+
+        expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it("muestra el comentario del publicador", () => {
+        render(<DrawerPublicacionPerfil publicacion={{ ...crearPublicacion(), comentario: "Cosecha de esta semana" }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario")).toBeInTheDocument();
+        expect(screen.getByText("Cosecha de esta semana")).toBeInTheDocument();
+    });
+
+    it.each([null, undefined, "   "])("muestra un guion cuando el comentario es %j", (comentario) => {
+        render(<DrawerPublicacionPerfil publicacion={{ ...crearPublicacion(), comentario }} open onOpenChange={vi.fn()} />);
+
+        expect(screen.getByText("Comentario").nextElementSibling).toHaveTextContent("-");
     });
 });

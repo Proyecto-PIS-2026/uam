@@ -10,7 +10,7 @@ test("BP-20.1 muestra el listado público de operadores", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Operadores" })).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Buscar operadores" })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Nave" })).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Ordenar por" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ordenar por" })).toBeVisible();
 
   const tarjetasOperador = page.locator('a[href^="/operadores/"]');
   await expect(tarjetasOperador.first()).toBeVisible();
@@ -66,12 +66,12 @@ test("BP-20 y BP-20.2 muestra el perfil público y el detalle de sus productos",
 
     const detalle = page.getByRole("dialog", { name: "Detalle de publicación" });
     await expect(detalle).toBeVisible();
-    await expect(detalle.getByText("Presentación")).toBeVisible();
+    await expect(detalle.getByText("Empaquetado", { exact: true })).toBeVisible();
+    await expect(detalle.getByText("Kilos", { exact: true })).toBeVisible();
     await expect(detalle.getByText("Calibre")).toBeVisible();
     await expect(detalle.getByText("Categoría")).toBeVisible();
     await expect(detalle.getByText("País")).toBeVisible();
-    await expect(detalle.getByRole("link", { name: /Consultar por .* por WhatsApp/ })).toBeVisible();
-  } else {
+    await expect(detalle.getByRole("link", { name: `Contactar a ${nombreOperador} por WhatsApp`, exact: true })).toBeVisible();  } else {
     await expect(page.getByText("No hay publicaciones disponibles.")).toBeVisible();
   }
 });

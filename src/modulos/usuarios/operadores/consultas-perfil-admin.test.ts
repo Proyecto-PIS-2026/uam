@@ -1,5 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPerfilAdminOperador } from "./consultas-perfil-admin";
 
 // Sirve para construir una base de datos falsa, metodos falsos y simular las consultas
@@ -15,6 +15,11 @@ const mockDb = vi.hoisted(() => ({
         include: vi.fn().mockReturnThis(),
         all: vi.fn(),
     },
+    imagenes: {
+        select: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        all: vi.fn(),
+    },
 }));
 
 // En el archivo original se hace un import de db
@@ -25,6 +30,7 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
             public: {
                 Operador: mockDb.operador,
                 PublicacionOperador: mockDb.publicaciones,
+                Imagen: mockDb.imagenes,
             },
         },
     },
@@ -36,6 +42,7 @@ const operadorBase = {
     nombreFantasia: "Frutas del Norte",
     fotoPerfil: "/operadores/frutas-del-norte.jpg",
     whatsApp: "+59899100001",
+    usuario: { solicitoRestablecimiento: false },
     locales: [
         {
             numeroLocal: "18",
@@ -47,6 +54,7 @@ const operadorBase = {
 
 const publicacionBase = {
     id: 101,
+    version: 7,
     foto: null,
     precio: "120.00",
     cantidadUnidades: 20,
@@ -54,18 +62,19 @@ const publicacionBase = {
     publicacionActiva: true,
     publicacionDisponible: true,
     tipoPublicacion: "OPERADOR",
-    presentacion: {
-        nombrePresentacion: "Cajón",
-        variedad: {
-            nombreVariedad: "Perita",
-            especie: { nombreEspecie: "Tomate" },
-        },
-    },
+    especie: { nombreEspecie: "Tomate" },
+            variedad: { nombreVariedad: "Perita" },
+            envase: { nombreEnvase: "Cajón" },
+            kilos: null,
     categoria: { nombreCategoria: "Extra" },
     calibre: { codigoCalibre: "A" },
 };
 
 describe("obtenerPerfilAdminOperador", () => {
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -118,6 +127,7 @@ describe("obtenerPerfilAdminOperador", () => {
             nombreFantasia: "Frutas del Norte",
             fotoPerfil: "/operadores/frutas-del-norte.jpg",
             whatsApp: "+59899100001",
+            solicitoRestablecimiento: false,
             locales: [
                 {
                     numeroLocal: "18",
@@ -128,6 +138,19 @@ describe("obtenerPerfilAdminOperador", () => {
             publicaciones: [],
         });
         expect(mockDb.publicaciones.where).toHaveBeenCalledWith({ operadorId: 13 });
+    });
+
+    it.each([true, false])("incluye el estado de restablecimiento solicitado: %s", async (solicitoRestablecimiento) => {
+        mockDb.operador.first.mockResolvedValue({
+            ...operadorBase,
+            usuario: { solicitoRestablecimiento },
+        });
+
+        const resultado = await obtenerPerfilAdminOperador(13);
+
+        expect(resultado?.solicitoRestablecimiento).toBe(solicitoRestablecimiento);
+        expect(mockDb.operador.include).toHaveBeenCalledWith("usuario", expect.any(Function));
+        expect(mockDb.operador.select).toHaveBeenCalledWith("solicitoRestablecimiento");
     });
 
     // La fecha se convierte en la zona de Montevideo, no en UTC
@@ -186,6 +209,8 @@ describe("obtenerPerfilAdminOperador", () => {
             { id: 102, disponible: false },
         ]);
         expect(resultado?.publicaciones.map((p) => p.cantidadUnidades)).toEqual([20, 20]);
+        expect(resultado?.publicaciones.map((p) => p.version)).toEqual([7, 7]);
+        expect(mockDb.publicaciones.select.mock.calls.some((campos) => campos.includes("version"))).toBe(true);
     });
 
     // Los locales se ordenan por nave y, dentro de cada nave, por número de local
@@ -208,6 +233,34 @@ describe("obtenerPerfilAdminOperador", () => {
             "D-161",
             "D-180",
         ]);
+    });
+
+    it("conserva las fotos antiguas, la licencia y el comentario hasta que se eliminen las fotos", async () => {
+        vi.spyOn(Temporal.Now, "instant").mockReturnValue(Temporal.Instant.from("2026-11-04T03:00:00Z"));
+        const archivo = "12345678-1234-4123-8123-123456789abc.webp";
+        const fotoVencida = `/api/publicaciones/imagenes/101/${archivo}`;
+        const fotoVigente = `/api/publicaciones/imagenes/102/${archivo}`;
+        mockDb.operador.first.mockResolvedValue({ ...operadorBase, enLicencia: true, comentario: "Retoma la actividad la semana siguiente." });
+        mockDb.publicaciones.all.mockResolvedValue([
+            { publicacion: { ...publicacionBase, foto: fotoVencida }, pais: null },
+            { publicacion: { ...publicacionBase, id: 102, foto: fotoVigente }, pais: null },
+        ]);
+        mockDb.imagenes.all.mockResolvedValue([
+            { clave: `publicaciones/101/${archivo}`, cargadaEn: Temporal.Instant.from("2026-10-01T03:00:00Z") },
+            { clave: `publicaciones/102/${archivo}`, cargadaEn: Temporal.Instant.from("2026-11-03T03:00:00Z") },
+        ]);
+
+        const resultado = await obtenerPerfilAdminOperador(13);
+
+        expect(resultado).toMatchObject({
+            enLicencia: true,
+            comentario: "Retoma la actividad la semana siguiente.",
+            publicaciones: [
+                { id: 101, foto: fotoVencida, precio: "120.00" },
+                { id: 102, foto: fotoVigente, precio: "120.00" },
+            ],
+        });
+        expect(mockDb.imagenes.all).not.toHaveBeenCalled();
     });
 
 });

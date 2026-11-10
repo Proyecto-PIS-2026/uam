@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import relevamiento from "../src/modulos/informacion-uam/precios-referencia/consulta-referencia.json" with { type: "json" };
+import { relevamiento as datosPrueba } from "./fixtures/precios-referencia.mjs";
+import type { ConsultaPreciosReferencia } from "../src/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 
-// Ejecutar contra una aplicación iniciada con PRECIOS_REFERENCIA_FUENTE=local.
-// La consulta se realiza en el servidor: page.route no intercepta el webservice.
+test.use({ baseURL: "http://127.0.0.1:3100" });
+const relevamiento: ConsultaPreciosReferencia = datosPrueba;
 const registros = relevamiento.types.flatMap((tipo) => tipo.products.flatMap((producto) =>
   producto.varieties.flatMap((variedad) => variedad.presentations.flatMap((presentacion) =>
     presentacion.prices.map((precio) => ({
@@ -33,16 +34,25 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await expect(page.getByRole("heading", { name: "Precios de referencia", exact: true })).toBeVisible();
   });
 
+  test("abre el histórico del registro con teclado conservando sus filtros", async ({ page }) => {
+    const enlace = page.getByRole("table").getByRole("link", { name: /^Ver histórico de / }).first();
+    const destino = await enlace.getAttribute("href");
+    expect(destino).toContain("/precios-historicos?");
+    await enlace.focus();
+    await expect(enlace).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(new URL(destino!, "http://127.0.0.1:3100").href);
+    await expect(page.getByRole("heading", { name: /^Histórico de /, level: 1 })).toBeVisible();
+  });
+
   test("muestra la fecha, las columnas y los precios del relevamiento", async ({ page }) => {
-    // CP-19.1-01 y CP-19.1-12: acceso público desde la navegación.
-    await page.getByRole("link", { name: "Ir al inicio", exact: true }).click();
-    await expect(page).toHaveURL(/\/inicio$/);
     await page.getByRole("navigation", { name: "Navegación principal", exact: true })
       .getByRole("link", { name: "Precios de referencia", exact: true }).click();
     await expect(page).toHaveURL(/\/precios-referencia$/);
     await expect(page.getByRole("heading", { name: "Precios de referencia", exact: true })).toBeVisible();
     const [anio, mes, dia] = relevamiento.survey_date.split("-");
     await expect(page.getByText(`${dia}/${mes}/${anio}`, { exact: true })).toBeVisible();
+    await filtros(page).getByRole("checkbox").uncheck();
     await resultados(page, registros.length);
     for (const columna of ["Especie", "Variedad", "Referencia", "Precio por unidad", "Precio por kg", "País", "Calibre", "Categoría"]) {
       await expect(page.getByRole("columnheader", { name: columna, exact: true })).toBeVisible();
@@ -69,7 +79,7 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
   test("busca sin tildes y permite recuperar el listado desde un resultado vacío", async ({ page }) => {
     const buscador = filtros(page).getByRole("searchbox");
     await buscador.fill("BROCOLI");
-    const esperadas = registros.filter((registro) => normalizar(registro.especie).includes("brocoli"));
+    const esperadas = registros.filter((registro) => registro.is_reference && normalizar(registro.especie).includes("brocoli"));
     expect(esperadas.length).toBeGreaterThan(0);
     await resultados(page, esperadas.length);
     await expect(filas(page)).toHaveCount(esperadas.length);
@@ -83,8 +93,8 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await resultados(page, registros.length);
   });
 
-  test("filtra únicamente los registros marcados como referencia", async ({ page }) => {
-    await filtros(page).getByRole("checkbox").check();
+  test("muestra solo registros de referencia por defecto y permite consultar todos", async ({ page }) => {
+    await expect(filtros(page).getByRole("checkbox")).toBeChecked();
     const cantidad = registros.filter((registro) => registro.is_reference).length;
     await resultados(page, cantidad);
     await expect(filas(page)).toHaveCount(Math.min(40, cantidad));
@@ -94,6 +104,7 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
   });
 
   test("combina especie, variedad y presentación y reinicia los filtros dependientes", async ({ page }) => {
+    await filtros(page).getByRole("checkbox").uncheck();
     const variedad = filtros(page).getByRole("combobox", { name: "Variedad", exact: true });
     const presentacion = filtros(page).getByRole("combobox", { name: "Presentación", exact: true });
     await expect(variedad).toHaveAttribute("aria-disabled", "true");
@@ -122,6 +133,7 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     { caso: "CP-19.1-09", nombre: "Categoría", campo: "category", columna: 7, todas: "Todas las categorías" },
   ] as const) {
     test(`${caso}: filtra por ${nombre.toLowerCase()} y permite volver al listado completo`, async ({ page }) => {
+      await filtros(page).getByRole("checkbox").uncheck();
       // Elige un valor que excluya registros para detectar un filtro que no se aplica.
       const valor = registros.find((registro) => registro[campo] !== "-"
         && registros.some((otro) => otro[campo] !== registro[campo]))?.[campo];
@@ -140,13 +152,31 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
   }
 
   test("filtra rangos por unidad y kg, valida límites y permite limpiarlos", async ({ page }) => {
+    await filtros(page).getByRole("checkbox").uncheck();
     const minimo = filtros(page).getByRole("textbox", { name: "Precio mínimo", exact: true });
     const maximo = filtros(page).getByRole("textbox", { name: "Precio máximo", exact: true });
-    await minimo.fill("20,5");
+    for (const campo of [minimo, maximo]) {
+      for (const invalido of ["20,5", "20.5", "0", "-1", "texto"]) {
+        await campo.fill(invalido);
+        await expect(campo).toHaveValue("");
+        await resultados(page, registros.length);
+      }
+    }
+    await minimo.fill("20");
     await maximo.fill("100");
-    await resultados(page, registros.filter((fila) => fila.min_un >= 20.5 && fila.max_un <= 100).length);
-    await seleccionar(page, "Precio por", "Kg");
-    await resultados(page, registros.filter((fila) => fila.min_kg >= 20.5 && fila.max_kg <= 100).length);
+    await expect(minimo).toHaveValue("20");
+    await expect(maximo).toHaveValue("100");
+    const porUnidad = registros.filter((fila) => fila.min_un >= 20 && fila.max_un <= 100);
+    expect(porUnidad.length).toBeGreaterThan(0);
+    expect(porUnidad.length).toBeLessThan(registros.length);
+    await resultados(page, porUnidad.length);
+    await expect(filas(page)).toHaveCount(Math.min(40, porUnidad.length));
+    await seleccionar(page, "Precio por", "kg");
+    const porKg = registros.filter((fila) => fila.min_kg >= 20 && fila.max_kg <= 100);
+    expect(porKg.length).toBeGreaterThan(0);
+    expect(porKg.length).toBeLessThan(registros.length);
+    await resultados(page, porKg.length);
+    await expect(filas(page)).toHaveCount(Math.min(40, porKg.length));
     await maximo.fill("10");
     await expect(filtros(page).getByRole("alert")).toHaveText("El precio máximo no puede ser menor al mínimo.");
     await resultados(page, 0);
@@ -159,6 +189,7 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
   });
 
   test("pagina el listado y vuelve a la primera página al filtrar", async ({ page }) => {
+    await filtros(page).getByRole("checkbox").uncheck();
     const paginacion = page.getByRole("navigation", { name: "Páginas de precios de referencia" });
     const paginas = Math.ceil(registros.length / 40);
     await expect(paginacion.getByRole("button", { name: "Anterior" })).toBeDisabled();
@@ -185,7 +216,7 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await boton.click();
     await expect(boton).toHaveAttribute("aria-expanded", "true");
     await seleccionar(page, "País", "URUGUAY");
-    await filtros(page).getByRole("checkbox").check();
+    await expect(filtros(page).getByRole("checkbox")).toBeChecked();
     const cantidad = registros.filter((fila) => fila.country === "URUGUAY" && fila.is_reference).length;
     await resultados(page, cantidad);
     await expect(lista.getByRole("listitem")).toHaveCount(Math.min(40, cantidad));

@@ -41,7 +41,7 @@ export const test = base.extend<{ usuariosAdministrativos: UsuariosAdministrativ
           rol: "PRODUCTOR",
           twoFactorEnabled: false,
         });
-        await tx.orm.public.Productor.create({ usuarioId: productor.id, whatsApp: "+59890000000" });
+        await tx.orm.public.Productor.create({ usuarioId: productor.id, nombreFantasia: `Productor de prueba ${productor.id}`, whatsApp: "+59890000000" });
         return { administrador, productor, email };
       });
 

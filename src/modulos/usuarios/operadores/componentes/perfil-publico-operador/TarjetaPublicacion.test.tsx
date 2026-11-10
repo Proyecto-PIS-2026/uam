@@ -6,9 +6,13 @@ import TarjetaPublicacion from "./TarjetaPublicacion";
 // Reemplaza Image de Next por un img comun durante los tests
 vi.mock("next/image", async () => {
     const { createElement } = await import("react");
-
     return {
-        default: ({ src, alt }: { src: string; alt: string }) => createElement("img", { src, alt })
+        default: ({src, alt, onLoad, onError}: {
+            src: string;
+            alt: string;
+            onLoad?: React.ReactEventHandler<HTMLImageElement>;
+            onError?: React.ReactEventHandler<HTMLImageElement>;
+        }) => createElement("img", { src, alt, onLoad, onError }),
     };
 });
 
@@ -20,7 +24,7 @@ const publicacion: PublicacionPerfil = {
     fecha: "2026-10-03T15:00:00.000Z",
     especie: "Tomate",
     variedad: "Perita",
-    presentacion: "Cajón",
+    envase: "Cajón", kilos: "",
     categoria: "Extra",
     calibre: "A",
     pais: "URUGUAY",
@@ -42,7 +46,7 @@ describe("TarjetaPublicacion", () => {
         render(<TarjetaPublicacion publicacion={{ ...publicacion, variedad: "-", precio: null, foto: null}}/>);
         expect(screen.getByText("Tomate")).toBeInTheDocument();
         expect(screen.queryByText("Tomate - Perita")).not.toBeInTheDocument();
-        expect(screen.getByText("Foto")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
         expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
         expect(screen.getByText("Consultar precio")).toBeInTheDocument();
         expect(screen.getByText("por Cajón")).toBeInTheDocument();
@@ -51,8 +55,9 @@ describe("TarjetaPublicacion", () => {
     // Verifica que se muestre la imagen cuando la publicacion tiene foto
     it("muestra la imagen cuando la publicación tiene foto", () => {
         render(<TarjetaPublicacion publicacion={{...publicacion, foto: "/tomate.jpg"}}/>);
+        fireEvent.load(screen.getByAltText("Foto de Tomate - Perita"));
         expect(screen.getByRole("img", {name: "Foto de Tomate - Perita",})).toHaveAttribute("src", "/tomate.jpg");
-        expect(screen.queryByText("Foto")).not.toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Sin foto disponible" })).not.toBeInTheDocument();
         expect(screen.queryByText("Sin foto disponible")).not.toBeInTheDocument();
     });
 

@@ -1,5 +1,6 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { db } from "../../../infraestructura/persistencia/prisma/db";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -10,8 +11,10 @@ export type PublicacionPerfil = {
     fecha: string;
     especie: string;
     variedad: string;
-    presentacion: string;
+    envase: string;
+    kilos: string;
     cantidadUnidades?: number | null;
+    comentario?: string | null;
     categoria: string;
     calibre: string;
     pais: string;
@@ -22,6 +25,8 @@ export type PerfilPublicoOperador = {
     nombreFantasia: string;
     fotoPerfil: string | null;
     whatsApp: string;
+    enLicencia?: boolean;
+    comentario?: string | null;
     locales: {
         numeroLocal: string;
         nombreNave: string;
@@ -44,7 +49,8 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
 
     // await porque la consulta a la base de datos es asincrona pero quiero esperar a la respuesta antes de seguir
     const operador = await db.orm.public.Operador
-        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp") // Que columnas quiero recuperar de la tabla de operador
+        .where((operador) => operador.usuario.some((usuario) => usuario.habilitado.eq(true)))
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp", "enLicencia", "comentario") // Que columnas quiero recuperar de la tabla de operador
         .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
             .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
             .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
@@ -79,6 +85,19 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
         return null; // Si no tengo locales activos, deberia poder ver el perfil?
     }
 
+    if (operador.enLicencia) {
+        return {
+            id: operador.id,
+            nombreFantasia: operador.nombreFantasia,
+            fotoPerfil: operador.fotoPerfil,
+            whatsApp: operador.whatsApp,
+            enLicencia: true,
+            comentario: operador.comentario,
+            locales,
+            publicaciones: [],
+        };
+    }
+
     // Obtener las publicaciones
     const consultaCompleta = db.orm.public.PublicacionOperador // Solo armo la consulta sin ejecutarla
         .where({ operadorId: operador.id })
@@ -89,20 +108,15 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 "foto",
                 "precio",
                 "fecha",
+                "fechaVigencia", 
                 "cantidadUnidades",
+                "comentario",
                 "publicacionActiva",
                 "publicacionDisponible",
                 "tipoPublicacion"
             );
-            const conPresentacion = camposPublicacion.include(
-                "presentacion",
-                (consultaPresentacion) =>
-                    consultaPresentacion.include(
-                        "variedad",
-                        (consultaVariedad) => consultaVariedad.include("especie")
-                    )
-            );
-            const conCategoria = conPresentacion.include("categoria");
+            const conEnvase = camposPublicacion.include("especie").include("variedad").include("envase").include("kilos");
+            const conCategoria = conEnvase.include("categoria");
             const completo = conCategoria.include("calibre");
 
             return completo;
@@ -113,20 +127,23 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
     
     for (const completa of completas) {
         const publicacion = completa.publicacion;
-        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && publicacion.tipoPublicacion === "OPERADOR";
+        const estaVencida = esPublicacionVencida(publicacion.fechaVigencia);
+        const visible = publicacion.publicacionActiva && publicacion.publicacionDisponible && !estaVencida && publicacion.tipoPublicacion === "OPERADOR";
         if (visible) {
             publicaciones.push({
                 id: publicacion.id,
                 foto: publicacion.foto,
                 precio: publicacion.precio,
                 fecha: publicacion.fecha.toString(),
-                especie: publicacion.presentacion.variedad.especie.nombreEspecie,
-                variedad: publicacion.presentacion.variedad.nombreVariedad,
-                presentacion: publicacion.presentacion.nombrePresentacion,
+                especie: publicacion.especie.nombreEspecie,
+                variedad: publicacion.variedad?.nombreVariedad ?? "",
+                envase: publicacion.envase?.nombreEnvase ?? "",
+                kilos: publicacion.kilos?.valor ?? "",
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
-                categoria: publicacion.categoria.nombreCategoria,
-                calibre: publicacion.calibre.codigoCalibre,
-                pais: completa.pais.nombrePais,
+                comentario: publicacion.comentario,
+                categoria: publicacion.categoria?.nombreCategoria ?? "",
+                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                pais: completa.pais?.nombrePais ?? "",
             });
         }
     }

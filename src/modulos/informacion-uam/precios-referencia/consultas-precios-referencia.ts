@@ -1,5 +1,4 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
-import consultaLocal from "./consulta-referencia.json";
 
 export type ConsultaPreciosReferencia = {
     survey_date: string;
@@ -42,13 +41,6 @@ export type ResultadoPreciosReferencia = { fechaRelevamiento: string; filas: Pre
 export async function obtenerConsultaPreciosReferencia(): Promise<ConsultaPreciosReferencia> {
     if (!autorizado("preciosReferencia.consultar")) {
         throw new Error("No tiene permisos para consultar precios de referencia.");
-    }
-
-    const fuente = process.env.PRECIOS_REFERENCIA_FUENTE || "local";
-
-    if (fuente === "local") return consultaLocal;
-    if (fuente !== "webservice") {
-        throw new Error("PRECIOS_REFERENCIA_FUENTE debe ser local o webservice.");
     }
 
     const { obtenerConsultaDiariaWebservice } = await import("./cache-diario");

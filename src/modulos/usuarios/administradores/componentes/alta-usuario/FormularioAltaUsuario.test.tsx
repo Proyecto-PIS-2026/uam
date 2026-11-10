@@ -1,7 +1,9 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import FormularioAltaUsuario from "./FormularioAltaUsuario";
 import { altaOperador } from "@/modulos/usuarios/operadores/altaOperador";
+import { altaProductor } from "@/modulos/usuarios/productores/altaProductor";
+import { useSearchParams } from "next/navigation";
 
 vi.mock("next/navigation", () => ({
     useSearchParams: vi.fn(),
@@ -9,6 +11,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/modulos/usuarios/operadores/altaOperador", () => ({
     altaOperador: vi.fn(),
+}));
+
+vi.mock("@/modulos/usuarios/productores/altaProductor", () => ({
+    altaProductor: vi.fn(),
 }));
 
 vi.mock("@/compartido/EncabezadoPagina", () => ({
@@ -19,8 +25,6 @@ vi.mock("@/compartido/EncabezadoPagina", () => ({
         </div>
     ),
 }));
-
-import { useSearchParams } from "next/navigation";
 
 const naves = [
     { id: 1, nombre: "Nave Central" },
@@ -38,24 +42,29 @@ function configurarSearchParams(rol: string | null = null) {
     } as ReturnType<typeof useSearchParams>);
 }
 
+function seleccionarOpcion(campo: string, opcion: string) {
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: new RegExp(`^${campo}`) }));
+    fireEvent.click(screen.getByRole("option", { name: opcion }));
+}
+
 function completarFormulario() {
-    fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
+    fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
         target: { value: "usuario1" },
     });
 
-    fireEvent.change(screen.getByLabelText("Contraseña*"), {
+    fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
         target: { value: "clave12345" },
     });
 
-    fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
+    fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
         target: { value: "clave12345" },
     });
 
-    fireEvent.change(screen.getByLabelText("Nombre*"), {
+    fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), {
         target: { value: "Huerta Sur" },
     });
 
-    fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+    fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
         target: { value: "99123456" },
     });
 
@@ -63,15 +72,20 @@ function completarFormulario() {
         target: { value: "101" },
     });
 
-    fireEvent.change(screen.getAllByRole("combobox")[2], {
-        target: { value: "1" },
-    });
+    seleccionarOpcion("Nave", "Nave Central");
 }
 
 describe("FormularioAltaUsuario", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         configurarSearchParams();
+    });
+
+    it("vuelve a la lista de usuarios", () => {
+        render(<FormularioAltaUsuario naves={naves} />);
+
+        expect(screen.getByRole("link", { name: "Volver al panel administrativo" }))
+            .toHaveAttribute("href", "/administracion#usuarios");
     });
 
     it("muestra el formulario de alta de usuario", () => {
@@ -85,43 +99,44 @@ describe("FormularioAltaUsuario", () => {
             screen.getByText("Registrar un nuevo usuario en la plataforma"),
         ).toBeInTheDocument();
 
-        expect(screen.getByLabelText("Rol del usuario*")).toBeInTheDocument();
-        expect(screen.getByLabelText("Nombre de Usuario*")).toBeInTheDocument();
-        expect(screen.getByLabelText("Contraseña*")).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Rol del usuario\s*\*$/)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Nombre de Usuario\s*\*$/)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Contraseña\s*\*$/)).toBeInTheDocument();
         expect(
-            screen.getByLabelText("Confirmación de Contraseña*"),
+            screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/),
         ).toBeInTheDocument();
 
-        expect(screen.queryByLabelText("Nombre*")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Nombre\s*\*$/)).not.toBeInTheDocument();
         expect(
-            screen.queryByPlaceholderText("Ej: 99123456"),
+            screen.queryByPlaceholderText("Ej.: 99123456"),
         ).not.toBeInTheDocument();
     });
 
     it("selecciona el rol operador y muestra sus campos", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
-        expect(screen.getByLabelText("Nombre*")).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Nombre\s*\*$/)).toBeInTheDocument();
         expect(
             screen.getByLabelText("Código de país"),
         ).toBeInTheDocument();
 
         expect(
-            screen.getByPlaceholderText("Ej: 99123456"),
+            screen.getByPlaceholderText("Ej.: 99123456"),
         ).toBeInTheDocument();
 
         expect(
             screen.getByPlaceholderText("Número de local"),
         ).toBeInTheDocument();
 
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Nave/ }));
+
         expect(screen.getByText("Seleccionar nave")).toBeInTheDocument();
 
         expect(screen.getByText("Nave Central")).toBeInTheDocument();
         expect(screen.getByText("Nave Norte")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("option", { name: "Nave Central" }));
     });
 
     it("selecciona operador automáticamente cuando el rol viene en la URL", () => {
@@ -129,55 +144,88 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        expect(screen.getByLabelText("Rol del usuario*")).toHaveValue("operador");
-        expect(screen.getByLabelText("Nombre*")).toBeInTheDocument();
+        expect(screen.getByRole("combobox", { name: /^Rol del usuario/ })).toHaveTextContent("Operador");
+        expect(screen.getByLabelText(/^Nombre\s*\*$/)).toBeInTheDocument();
         expect(
             screen.getByPlaceholderText("Número de local"),
         ).toBeInTheDocument();
     });
 
+    it.each(["A22", "22B", "-22", "+22", "2.2", "2,2", "2e2"])(
+        "rechaza el número de local inválido %s sin cambiar lo escrito",
+        (valor) => {
+            configurarSearchParams("operador");
+            render(<FormularioAltaUsuario naves={naves} />);
+            const campo = screen.getByPlaceholderText("Número de local");
+
+            fireEvent.change(campo, { target: { value: "022" } });
+            fireEvent.change(campo, { target: { value: valor } });
+
+            expect(campo).toHaveValue("022");
+            expect(altaOperador).not.toHaveBeenCalled();
+        },
+    );
+
+    it("rechaza un pegado inválido y permite vaciar y reescribir el local con ceros iniciales", () => {
+        configurarSearchParams("operador");
+        render(<FormularioAltaUsuario naves={naves} />);
+        const campo = screen.getByPlaceholderText("Número de local") as HTMLInputElement;
+
+        expect(campo).toHaveAttribute("type", "text");
+        expect(campo).toHaveAttribute("inputmode", "numeric");
+        fireEvent.change(campo, { target: { value: "022" } });
+        fireEvent.input(campo, {
+            target: { value: "12 A34" },
+            inputType: "insertFromPaste",
+            data: "12 A34",
+        });
+        expect(campo).toHaveValue("022");
+
+        fireEvent.change(campo, { target: { value: "" } });
+        expect(campo).toHaveValue("");
+        expect(campo.validity.valueMissing).toBe(true);
+
+        fireEvent.input(campo, {
+            target: { value: "0022" },
+            inputType: "insertFromPaste",
+            data: "0022",
+        });
+        expect(campo).toHaveValue("0022");
+        expect(campo.checkValidity()).toBe(true);
+    });
+
     it("permite cambiar el código de país", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
-        const codigoPais = screen.getByLabelText("Código de país");
+        const codigoPais = screen.getByRole("combobox", { name: "Código de país" });
 
-        expect(codigoPais).toHaveValue("+598");
+        expect(codigoPais).toHaveTextContent("+598 (Uruguay)");
 
-        fireEvent.change(codigoPais, {
-            target: { value: "+54" },
-        });
+        seleccionarOpcion("Código de país", "+54 (Argentina)");
 
-        expect(codigoPais).toHaveValue("+54");
+        expect(codigoPais).toHaveTextContent("+54 (Argentina)");
     });
 
     it("permite seleccionar una nave", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         const selects = screen.getAllByRole("combobox");
 
         const nave = selects[2];
 
-        fireEvent.change(nave, {
-            target: { value: "2" },
-        });
+        seleccionarOpcion("Nave", "Nave Norte");
 
-        expect(nave).toHaveValue("2");
+        expect(nave).toHaveTextContent("Nave Norte");
     });
 
     it("permite agregar un segundo local", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         expect(
             screen.getAllByPlaceholderText("Número de local"),
@@ -195,9 +243,7 @@ describe("FormularioAltaUsuario", () => {
     it("no permite eliminar el primer local", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         const botonesEliminar = screen.getAllByRole("button", {
             name: "Eliminar local",
@@ -210,9 +256,7 @@ describe("FormularioAltaUsuario", () => {
     it("permite eliminar un local adicional", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         fireEvent.click(screen.getByRole("button", { name: "+ Agregar local" }));
 
@@ -271,27 +315,25 @@ describe("FormularioAltaUsuario", () => {
     it("limpia los datos del formulario", () => {
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
-        fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
+        fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
             target: { value: "usuario1" },
         });
 
-        fireEvent.change(screen.getByLabelText("Contraseña*"), {
+        fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
             target: { value: "clave12345" },
         });
 
-        fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
+        fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
             target: { value: "clave12345" },
         });
 
-        fireEvent.change(screen.getByLabelText("Nombre*"), {
+        fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), {
             target: { value: "Huerta Sur" },
         });
 
-        fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+        fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
             target: { value: "99123456" },
         });
 
@@ -299,57 +341,25 @@ describe("FormularioAltaUsuario", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Limpiar" }));
 
-        expect(screen.getByLabelText("Nombre de Usuario*")).toHaveValue("");
-        expect(screen.getByLabelText("Contraseña*")).toHaveValue("");
+        expect(screen.getByLabelText(/^Nombre de Usuario\s*\*$/)).toHaveValue("");
+        expect(screen.getByLabelText(/^Contraseña\s*\*$/)).toHaveValue("");
         expect(
-            screen.getByLabelText("Confirmación de Contraseña*"),
+            screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/),
         ).toHaveValue("");
 
-        expect(screen.getByLabelText("Nombre*")).toHaveValue("");
+        expect(screen.getByLabelText(/^Nombre\s*\*$/)).toHaveValue("");
         expect(
-            screen.getByPlaceholderText("Ej: 99123456"),
+            screen.getByPlaceholderText("Ej.: 99123456"),
         ).toHaveValue("");
 
-        expect(screen.getByLabelText("Código de país")).toHaveValue("+598");
+        expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598 (Uruguay)");
 
         expect(
             screen.getAllByPlaceholderText("Número de local"),
         ).toHaveLength(1);
     });
 
-    it("muestra error cuando se selecciona un rol todavía no disponible", async () => {
-        render(<FormularioAltaUsuario naves={naves} />);
-
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "productor" },
-        });
-
-        fireEvent.change(screen.getByLabelText("Nombre de Usuario*"), {
-            target: { value: "usuario1" },
-        });
-
-        fireEvent.change(screen.getByLabelText("Contraseña*"), {
-            target: { value: "clave12345" },
-        });
-
-        fireEvent.change(screen.getByLabelText("Confirmación de Contraseña*"), {
-            target: { value: "clave12345" },
-        });
-
-        fireEvent.click(
-            screen.getByRole("button", { name: "Registrar usuario" }),
-        );
-
-        expect(
-            await screen.findByText(
-                "Esta alta todavía no está disponible para el rol seleccionado.",
-            ),
-        ).toBeInTheDocument();
-
-        expect(altaOperador).not.toHaveBeenCalled();
-    });
-
-    it("envía correctamente el alta de un operador", async () => {
+    it("envía correctamente el alta de un operador conservando ceros iniciales del local", async () => {
         vi.mocked(altaOperador).mockResolvedValue({
             esValido: true,
             id: 25,
@@ -358,11 +368,13 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
+
+        fireEvent.change(screen.getByPlaceholderText("Número de local"), {
+            target: { value: "022" },
+        });
 
         fireEvent.submit(
             screen.getByRole("button", { name: "Registrar usuario" }),
@@ -382,7 +394,7 @@ describe("FormularioAltaUsuario", () => {
             telefono: "99123456",
             locales: [
                 {
-                    numeroLocal: "101",
+                    numeroLocal: "022",
                     naveId: 1,
                     contrato: "",
                 },
@@ -399,13 +411,84 @@ describe("FormularioAltaUsuario", () => {
 
         expect(
             screen.getByText(
-                "¿Desea precargar productos para este operador?",
+                "¿Desea precargar productos para este usuario?",
             ),
         ).toBeInTheDocument();
 
         expect(
             screen.getByRole("link", { name: "Precargar productos" }),
-        ).toHaveAttribute("href", "/precargar-productos");
+        ).toHaveAttribute("href", "/gestion-operadores/25");
+    });
+
+    it("envía correctamente el alta de un productor", async () => {
+        vi.mocked(altaProductor).mockResolvedValue({
+            esValido: true,
+            id: 30,
+            mensaje: "Productor creado correctamente.",
+        });
+
+        render(<FormularioAltaUsuario naves={naves} />);
+
+        seleccionarOpcion("Rol del usuario", "Productor");
+
+        fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
+            target: { value: "productor1" },
+        });
+
+        fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), {
+            target: { value: "Huerta Sur" },
+        });
+
+        expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598 (Uruguay)");
+        expect(screen.queryByPlaceholderText("Número de local")).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
+            target: { value: "99123456" },
+        });
+
+        fireEvent.submit(
+            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
+        );
+
+        await waitFor(() => {
+            expect(altaProductor).toHaveBeenCalledTimes(1);
+        });
+
+        expect(altaProductor).toHaveBeenCalledWith({
+            rol: "productor",
+            nombreUsuario: "productor1",
+            contraseña: "clave12345",
+            confirmacionContraseña: "clave12345",
+            nombre: "Huerta Sur",
+            codigoPais: "+598",
+            telefono: "99123456",
+        });
+
+        expect(
+            await screen.findByRole("status"),
+        ).toHaveTextContent("Productor creado correctamente.");
+
+        expect(
+            screen.getByText("Productor creado satisfactoriamente"),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByText("¿Desea precargar productos para este usuario?"),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("link", { name: "Precargar productos" }),
+        ).toHaveAttribute("href", "/gestion-productores/30");
+
+        expect(altaOperador).not.toHaveBeenCalled();
     });
 
     it("limpia el formulario después de un alta exitosa", async () => {
@@ -417,9 +500,7 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
 
@@ -431,14 +512,14 @@ describe("FormularioAltaUsuario", () => {
             expect(altaOperador).toHaveBeenCalled();
         });
 
-        expect(screen.getByLabelText("Nombre de Usuario*")).toHaveValue("");
-        expect(screen.getByLabelText("Contraseña*")).toHaveValue("");
+        expect(screen.getByLabelText(/^Nombre de Usuario\s*\*$/)).toHaveValue("");
+        expect(screen.getByLabelText(/^Contraseña\s*\*$/)).toHaveValue("");
         expect(
-            screen.getByLabelText("Confirmación de Contraseña*"),
+            screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/),
         ).toHaveValue("");
-        expect(screen.getByLabelText("Nombre*")).toHaveValue("");
+        expect(screen.getByLabelText(/^Nombre\s*\*$/)).toHaveValue("");
         expect(
-            screen.getByPlaceholderText("Ej: 99123456"),
+            screen.getByPlaceholderText("Ej.: 99123456"),
         ).toHaveValue("");
 
         expect(
@@ -457,9 +538,7 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
 
@@ -484,7 +563,54 @@ describe("FormularioAltaUsuario", () => {
         ).not.toBeInTheDocument();
     });
 
-    it("cierra el popup al seleccionar Ahora no", async () => {
+    it("muestra los errores devueltos por altaProductor", async () => {
+        vi.mocked(altaProductor).mockResolvedValue({
+            esValido: false,
+            errores: [
+                "Ya existe un usuario con ese nombre de usuario.",
+            ],
+        });
+
+        render(<FormularioAltaUsuario naves={naves} />);
+
+        seleccionarOpcion("Rol del usuario", "Productor");
+
+        fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
+            target: { value: "productor1" },
+        });
+
+        fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), {
+            target: { value: "Huerta Sur" },
+        });
+
+        fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
+            target: { value: "99123456" },
+        });
+
+        fireEvent.submit(
+            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
+        );
+
+        expect(
+            await screen.findByText(
+                "Ya existe un usuario con ese nombre de usuario.",
+            ),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.queryByText("Productor creado satisfactoriamente"),
+        ).not.toBeInTheDocument();
+    });
+
+    it.each(["Ahora no", "Escape"])("el diálogo de alta enfoca su acción inicial y cierra con %s", async (cierre) => {
         vi.mocked(altaOperador).mockResolvedValue({
             esValido: true,
             id: 25,
@@ -493,9 +619,7 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
 
@@ -507,13 +631,32 @@ describe("FormularioAltaUsuario", () => {
             await screen.findByText("Operador creado satisfactoriamente"),
         ).toBeInTheDocument();
 
-        fireEvent.click(
-            screen.getByRole("button", { name: "Ahora no" }),
-        );
+        expect(screen.getByRole("dialog", { name: "Operador creado satisfactoriamente" })).toHaveAttribute("aria-modal", "true");
+        expect(screen.getByRole("button", { name: "Ahora no" })).toHaveFocus();
+        if (cierre === "Escape") {
+            fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+            expect(screen.queryByRole("status")).not.toBeInTheDocument();
+            fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+        } else {
+            fireEvent.click(screen.getByRole("button", { name: "Ahora no" }));
+        }
 
-        expect(
-            screen.queryByText("Operador creado satisfactoriamente"),
-        ).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    });
+
+    it("avisa si falla el alta sin borrar los datos ni abrir la precarga", async () => {
+        vi.mocked(altaOperador).mockRejectedValueOnce(new Error("Sin conexión"));
+        render(<FormularioAltaUsuario naves={naves} />);
+        seleccionarOpcion("Rol del usuario", "Operador");
+        completarFormulario();
+
+        fireEvent.submit(screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!);
+
+        expect(await screen.findByRole("alert"))
+            .toHaveTextContent("No se pudo registrar el usuario. Intentá de nuevo.");
+        expect(screen.getByLabelText(/^Nombre de Usuario\s*\*$/)).toHaveValue("usuario1");
+        expect(screen.getByRole("button", { name: "Registrar usuario" })).not.toBeDisabled();
+        expect(screen.queryByText("Operador creado satisfactoriamente")).not.toBeInTheDocument();
     });
 
     it("muestra Registrando mientras el alta está en proceso", async () => {
@@ -533,9 +676,7 @@ describe("FormularioAltaUsuario", () => {
 
         render(<FormularioAltaUsuario naves={naves} />);
 
-        fireEvent.change(screen.getByLabelText("Rol del usuario*"), {
-            target: { value: "operador" },
-        });
+        seleccionarOpcion("Rol del usuario", "Operador");
 
         completarFormulario();
 
@@ -553,10 +694,50 @@ describe("FormularioAltaUsuario", () => {
             mensaje: "Operador creado correctamente.",
         });
 
+        fireEvent.click(await screen.findByRole("button", { name: "Ahora no" }));
         await waitFor(() => {
             expect(
                 screen.getByRole("button", { name: "Registrar usuario" }),
             ).not.toBeDisabled();
         });
+    });
+
+    it("muestra error cuando ya existe un productor con ese nombre", async () => {
+        vi.mocked(altaProductor).mockResolvedValue({
+            esValido: false,
+            errores: ["Ya existe un productor con ese nombre."],
+        });
+
+        render(<FormularioAltaUsuario naves={naves} />);
+
+        seleccionarOpcion("Rol del usuario", "Productor");
+
+        fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), {
+            target: { value: "productor1" },
+        });
+
+        fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), {
+            target: { value: "clave12345" },
+        });
+
+        fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), {
+            target: { value: "Huerta Sur" },
+        });
+
+        fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
+            target: { value: "99123456" },
+        });
+
+        fireEvent.submit(
+            screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!,
+        );
+
+        expect(
+            await screen.findByText("Ya existe un productor con ese nombre."),
+        ).toBeInTheDocument();
     });
 });

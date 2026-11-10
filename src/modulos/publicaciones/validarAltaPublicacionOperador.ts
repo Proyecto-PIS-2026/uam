@@ -1,15 +1,16 @@
-export type DatosAltaPublicacionOperador = {
+import { idCatalogoValido, normalizarSeleccionPublicacion, type SeleccionPublicacion } from "./seleccion-publicacion";
+import { PRECIO_PUBLICACION_INVALIDO, precioPublicacionValido } from "./precio-publicacion";
+import { validarFechaVigencia } from "./vigencia-publicacion";
+import { validarComentario } from "./validarComentario";
+
+export type DatosAltaPublicacionOperador = SeleccionPublicacion & {
 	operadorId: number;
-	especieId: number;
-	variedadId: number;
-	presentacionId: number;
-	calibreId: number;
-	categoriaId: number;
-	paisId: number;
 	disponibilidad: boolean;
-	precio?: string;
+	precio?: string | null;
 	cantidadUnidades?: number | null;
+	comentario?: string | null;
 	fotografia?: string;
+	fechaVigencia?: string | null;
 };
 
 export type ResultadoValidacion =
@@ -39,21 +40,16 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 
 	const datos = valor as Record<string, unknown>;
 	const errores: string[] = [];
-	const campos = ["operadorId", "especieId", "variedadId", "presentacionId", "calibreId", "categoriaId", "paisId"] as const;
+	const seleccion = normalizarSeleccionPublicacion(datos);
+	if (!seleccion.esValido) errores.push(...seleccion.errores);
+	if (!idCatalogoValido(datos.operadorId)) errores.push("El campo operadorId es obligatorio.");
 
-	for (const campo of campos) {
-		if (typeof datos[campo] !== "number" || !Number.isSafeInteger(datos[campo]) || datos[campo] <= 0) {
-			errores.push(`El campo ${campo} es obligatorio.`);
-		}
-	}
-
-	if (typeof datos.disponibilidad !== "boolean") {
+	if (datos.disponibilidad !== undefined && typeof datos.disponibilidad !== "boolean") {
 		errores.push("La disponibilidad no es válida.");
 	}
 
-	if (datos.precio !== undefined && (typeof datos.precio !== "string" ||
-		(datos.precio.trim() !== "" && !/^\d{1,10}$/.test(datos.precio.trim())))) {
-		errores.push("El precio debe ser un número entero.");
+	if (datos.precio !== undefined && !precioPublicacionValido(datos.precio)) {
+		errores.push(PRECIO_PUBLICACION_INVALIDO);
 	}
 
 	if (datos.fotografia !== undefined && (typeof datos.fotografia !== "string" || !fotografiaValida(datos.fotografia))) {
@@ -64,8 +60,22 @@ export function validarAltaPublicacionOperador(valor: unknown): ResultadoValidac
 		if (typeof datos.cantidadUnidades !== "number" || !Number.isSafeInteger(datos.cantidadUnidades) || datos.cantidadUnidades < 0 || datos.cantidadUnidades > 2147483647) {
 			errores.push("La cantidad de unidades debe ser un número entero entre 0 y 2147483647.");
 		}
-	}	
+	}
+	const resultadoComentario = validarComentario(datos.comentario);
+	if (!resultadoComentario.esValido) errores.push(resultadoComentario.error);
 
+	let fechaVigenciaNormalizada: string | null = null;
+	if (datos.fechaVigencia !== undefined) {
+		const resVigencia = validarFechaVigencia(datos.fechaVigencia);
+		if (!resVigencia.esValido) {
+			errores.push(resVigencia.error);
+		} else {
+			fechaVigenciaNormalizada = resVigencia.fechaVigencia;
+		}
+	}
 	if (errores.length > 0) return { esValido: false, errores };
-	return { esValido: true, datos: datos as DatosAltaPublicacionOperador };
+	if (!seleccion.esValido) return seleccion;
+	return { esValido: true, datos: { ...datos, ...seleccion.seleccion, disponibilidad: datos.disponibilidad ?? true,
+		fechaVigencia: fechaVigenciaNormalizada,
+		comentario: resultadoComentario.esValido ? resultadoComentario.comentario : null } as DatosAltaPublicacionOperador };
 }
