@@ -24,6 +24,7 @@ import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import PasswordOutlinedIcon from "@mui/icons-material/PasswordOutlined";
 
 type PerfilOperadorAdminProps = {
     operador: PerfilAdminOperador;
@@ -134,6 +135,15 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
                             )}
                         </section>
                     </div>
+                    <section className={`${styles.contacto} ${styles.restablecimiento}`} aria-labelledby="restablecimiento-operador-admin">
+                        <span className={styles.iconoContacto} aria-hidden="true"><PasswordOutlinedIcon /></span>
+                        <div className={styles.datosContacto}>
+                            <h2 id="restablecimiento-operador-admin" className={styles.etiquetaContacto}>Restablecimiento de contraseña</h2>
+                            <span className={`${styles.valorContacto} ${styles.estadoRestablecimiento}`} data-estado={operador.solicitoRestablecimiento ? "solicitado" : "neutro"}>
+                                {operador.solicitoRestablecimiento ? "Solicitado" : "No solicitado"}
+                            </span>
+                        </div>
+                    </section>
                     <div className={styles.accionesPerfil}>
                         <Link
                             href={`/gestion-operadores/${operador.id}/editar`}

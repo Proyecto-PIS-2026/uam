@@ -2,6 +2,48 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import { enviarNotificacion } from "@/modulos/notificaciones/notificaciones";
 import { Temporal } from "temporal-polyfill";
 
+async function registrarYEnviarAviso({
+    usuarioId, publicacionId, fechaVigencia, tipo, texto, url,
+}: {
+    usuarioId: number;
+    publicacionId: number;
+    fechaVigencia: Temporal.Instant;
+    tipo: "proximo" | "vencido";
+    texto: string;
+    url: string;
+}): Promise<void> {
+    await db.transaction(async (tx) => {
+        const [publicacion] = await tx.query(db.raw.sql`
+            SELECT id, "publicacionDisponible",
+                "avisoProximoVencimientoEn" IS NOT NULL AS "avisoProximoEnviado",
+                "avisoVencimientoEn" IS NOT NULL AS "avisoVencidoEnviado"
+            FROM publicacion
+            WHERE id = ${publicacionId} AND "fechaVigencia" = ${fechaVigencia.toString()}::timestamptz
+            FOR UPDATE
+        `.returnsRow({
+            id: "pg/int4@1", publicacionDisponible: "pg/bool@1",
+            avisoProximoEnviado: "pg/bool@1", avisoVencidoEnviado: "pg/bool@1",
+        }).build());
+        if (!publicacion) return;
+        if (tipo === "proximo" && Temporal.Instant.compare(fechaVigencia, Temporal.Now.instant()) < 0) return;
+
+        if (tipo === "vencido" && publicacion.publicacionDisponible) {
+            await tx.orm.public.Publicacion.where({ id: publicacionId }).update({ publicacionDisponible: false });
+        }
+
+        if (tipo === "proximo" ? publicacion.avisoProximoEnviado : publicacion.avisoVencidoEnviado) return;
+
+        const { enviadas } = await enviarNotificacion({ texto, usuarios: [usuarioId], url }, tx);
+        if (enviadas > 0) {
+            const enviadaEn = Temporal.Now.instant().toString();
+            const actualizarAviso = tipo === "proximo"
+                ? db.raw.sql`UPDATE publicacion SET "avisoProximoVencimientoEn" = ${enviadaEn}::timestamptz WHERE id = ${publicacionId} RETURNING id`
+                : db.raw.sql`UPDATE publicacion SET "avisoVencimientoEn" = ${enviadaEn}::timestamptz WHERE id = ${publicacionId} RETURNING id`;
+            await tx.execute(actualizarAviso.returnsRow({ id: "pg/int4@1" }).build());
+        }
+    });
+}
+
 export async function procesarVencimientosUsuario(usuarioId: number): Promise<void> {
     if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0) return;
 
@@ -33,15 +75,17 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
     let publicaciones: {
         id: number;
         fechaVigencia: { readonly epochNanoseconds: bigint } | null;
-        publicacionDisponible: boolean;
         especieNombre: string;
+        publicacionDisponible: boolean;
+        avisoProximoEnviado: boolean;
+        avisoVencidoEnviado: boolean;
     }[] = [];
 
     if (operador) {
         const pubs = await db.orm.public.PublicacionOperador
             .where({ operadorId: operador.id })
             .include("publicacion", (p) =>
-                p.select("id", "fechaVigencia", "publicacionDisponible")
+                p.select("id", "fechaVigencia", "publicacionDisponible", "avisoProximoVencimientoEn", "avisoVencimientoEn")
                  .include("especie", (e) => e.select("nombreEspecie"))
             )
             .all();
@@ -51,14 +95,16 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
             .map((rel) => ({
                 id: rel.publicacion.id,
                 fechaVigencia: rel.publicacion.fechaVigencia,
-                publicacionDisponible: rel.publicacion.publicacionDisponible,
                 especieNombre: rel.publicacion.especie.nombreEspecie,
+                publicacionDisponible: rel.publicacion.publicacionDisponible,
+                avisoProximoEnviado: rel.publicacion.avisoProximoVencimientoEn !== null,
+                avisoVencidoEnviado: rel.publicacion.avisoVencimientoEn !== null,
             }));
     } else if (productor) {
         const pubs = await db.orm.public.PublicacionProductor
             .where({ productorId: productor.id })
             .include("publicacion", (p) =>
-                p.select("id", "fechaVigencia", "publicacionDisponible")
+                p.select("id", "fechaVigencia", "publicacionDisponible", "avisoProximoVencimientoEn", "avisoVencimientoEn")
                  .include("especie", (e) => e.select("nombreEspecie"))
             )
             .all();
@@ -68,18 +114,14 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
             .map((rel) => ({
                 id: rel.publicacion.id,
                 fechaVigencia: rel.publicacion.fechaVigencia,
-                publicacionDisponible: rel.publicacion.publicacionDisponible,
                 especieNombre: rel.publicacion.especie.nombreEspecie,
+                publicacionDisponible: rel.publicacion.publicacionDisponible,
+                avisoProximoEnviado: rel.publicacion.avisoProximoVencimientoEn !== null,
+                avisoVencidoEnviado: rel.publicacion.avisoVencimientoEn !== null,
             }));
     }
 
     if (publicaciones.length === 0) return;
-
-    const notificacionesExistentes = await db.orm.public.Notificacion
-        .where({ usuarioId })
-        .select("descripcion")
-        .all();
-    const descripcionesSet = new Set(notificacionesExistentes.map((n) => n.descripcion));
 
     for (const pub of publicaciones) {
         if (!pub.fechaVigencia) continue;
@@ -91,33 +133,21 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
             .toString();
 
         const yaVencio = Temporal.Instant.compare(instantVigencia, ahora) < 0;
+        const urlPublicacion = `${rutaMercado}?publicacion=${pub.id}`;
 
         if (yaVencio) {
-            if (pub.publicacionDisponible) {
-                await db.orm.public.Publicacion.where({ id: pub.id }).update({
-                    publicacionDisponible: false,
-                });
-            }
-
-            const textoVencida = `Tu publicación de ${pub.especieNombre} (ID #${pub.id}) ha vencido el ${fechaVigenciaStr} y ya no está disponible.`;
-            if (!descripcionesSet.has(textoVencida)) {
-                await enviarNotificacion({
-                    texto: textoVencida,
-                    usuarios: [usuarioId],
-                    url: `${rutaMercado}?publicacion=${pub.id}`,
-                });
-                descripcionesSet.add(textoVencida);
-            }
-        } else if (avisosHabilitados && Temporal.Instant.compare(instantVigencia, limiteAviso) <= 0) {
-            const textoAviso = `Tu publicación de ${pub.especieNombre} (ID #${pub.id}) está próxima a vencer el ${fechaVigenciaStr}.`;
-            if (!descripcionesSet.has(textoAviso)) {
-                await enviarNotificacion({
-                    texto: textoAviso,
-                    usuarios: [usuarioId],
-                    url: `${rutaMercado}?publicacion=${pub.id}`,
-                });
-                descripcionesSet.add(textoAviso);
-            }
+            if (pub.avisoVencidoEnviado && !pub.publicacionDisponible) continue;
+            const textoVencida = `Tu publicación de ${pub.especieNombre} ha vencido el ${fechaVigenciaStr} y ya no está disponible.`;
+            await registrarYEnviarAviso({
+                usuarioId, publicacionId: pub.id, fechaVigencia: instantVigencia,
+                tipo: "vencido", texto: textoVencida, url: urlPublicacion,
+            });
+        } else if (avisosHabilitados && !pub.avisoProximoEnviado && Temporal.Instant.compare(instantVigencia, limiteAviso) <= 0) {
+            const textoAviso = `Tu publicación de ${pub.especieNombre} está próxima a vencer el ${fechaVigenciaStr}.`;
+            await registrarYEnviarAviso({
+                usuarioId, publicacionId: pub.id, fechaVigencia: instantVigencia,
+                tipo: "proximo", texto: textoAviso, url: urlPublicacion,
+            });
         }
     }
 }

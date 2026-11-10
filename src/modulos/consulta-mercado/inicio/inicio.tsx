@@ -94,7 +94,7 @@ export default function Inicio({ especies, urlListaInteligente, ordenamientoHabi
                     <div className={styles.tituloContenedor}>
                         <HojasDecorativas />
                         <h2 className={styles.titulo} id="titulo-especies">Especies</h2>
-                        <p className={styles.subtitulo}>{especies.length} especies con operadores</p>
+                        <p className={styles.subtitulo}>{especies.length} {especies.length === 1 ? "especie" : "especies"} con operadores</p>
                     </div>
                     <div className={styles.controles} data-ordenamiento={ordenamientoHabilitado}>
                         <TextField fullWidth size="small" label="Buscar especies" type="search" value={busqueda} onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }} className={`${styles.selectMui} ${styles.filtroBuscador}`}

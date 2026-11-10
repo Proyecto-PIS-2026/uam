@@ -64,7 +64,7 @@ function completarFormulario() {
         target: { value: "Huerta Sur" },
     });
 
-    fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+    fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
         target: { value: "99123456" },
     });
 
@@ -108,7 +108,7 @@ describe("FormularioAltaUsuario", () => {
 
         expect(screen.queryByLabelText(/^Nombre\s*\*$/)).not.toBeInTheDocument();
         expect(
-            screen.queryByPlaceholderText("Ej: 99123456"),
+            screen.queryByPlaceholderText("Ej.: 99123456"),
         ).not.toBeInTheDocument();
     });
 
@@ -123,7 +123,7 @@ describe("FormularioAltaUsuario", () => {
         ).toBeInTheDocument();
 
         expect(
-            screen.getByPlaceholderText("Ej: 99123456"),
+            screen.getByPlaceholderText("Ej.: 99123456"),
         ).toBeInTheDocument();
 
         expect(
@@ -333,7 +333,7 @@ describe("FormularioAltaUsuario", () => {
             target: { value: "Huerta Sur" },
         });
 
-        fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+        fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
             target: { value: "99123456" },
         });
 
@@ -349,7 +349,7 @@ describe("FormularioAltaUsuario", () => {
 
         expect(screen.getByLabelText(/^Nombre\s*\*$/)).toHaveValue("");
         expect(
-            screen.getByPlaceholderText("Ej: 99123456"),
+            screen.getByPlaceholderText("Ej.: 99123456"),
         ).toHaveValue("");
 
         expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598 (Uruguay)");
@@ -450,7 +450,7 @@ describe("FormularioAltaUsuario", () => {
         expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598 (Uruguay)");
         expect(screen.queryByPlaceholderText("Número de local")).not.toBeInTheDocument();
 
-        fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+        fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
             target: { value: "99123456" },
         });
 
@@ -519,7 +519,7 @@ describe("FormularioAltaUsuario", () => {
         ).toHaveValue("");
         expect(screen.getByLabelText(/^Nombre\s*\*$/)).toHaveValue("");
         expect(
-            screen.getByPlaceholderText("Ej: 99123456"),
+            screen.getByPlaceholderText("Ej.: 99123456"),
         ).toHaveValue("");
 
         expect(
@@ -591,7 +591,7 @@ describe("FormularioAltaUsuario", () => {
             target: { value: "Huerta Sur" },
         });
 
-        fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+        fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
             target: { value: "99123456" },
         });
 
@@ -728,7 +728,7 @@ describe("FormularioAltaUsuario", () => {
             target: { value: "Huerta Sur" },
         });
 
-        fireEvent.change(screen.getByPlaceholderText("Ej: 99123456"), {
+        fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), {
             target: { value: "99123456" },
         });
 

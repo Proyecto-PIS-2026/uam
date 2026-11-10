@@ -122,6 +122,13 @@ const opcionesMenu: OpcionMenu[] = [
     },
 
     {
+        nombre: "Histórico de precios",
+        ruta: "/precios-historicos",
+        icono: ShowChartOutlinedIcon,
+        permitido: () => autorizado("preciosReferencia.consultar"),
+    },
+
+    {
         nombre: "Mi mercado",
         ruta: "/mi-mercado",
         icono: Inventory2OutlinedIcon,
@@ -319,6 +326,7 @@ export default function HeaderPublico({ sesion, fotoPerfil = null, nombrePerfil 
     const esAdministrador = rolUsuario === "ADMINISTRADOR";
     const rutasMercadosAdmin = ["/publicaciones", "/publicaciones-productor"];
     const rutasUsuariosAdmin = ["/operadores", "/productores"];
+    const rutasPreciosAdmin = ["/precios-referencia", "/precios-historicos"];
     const opcionesMercadosAdmin = opcionesVisibles
         .filter((opcion) => rutasMercadosAdmin.includes(opcion.ruta))
         .map((opcion) => ({
@@ -334,9 +342,9 @@ export default function HeaderPublico({ sesion, fotoPerfil = null, nombrePerfil 
             !rutasUsuariosAdmin.includes(opcion.ruta) &&
             opcion.ruta !== "/inicio" &&
             opcion.ruta !== "/administracion" &&
-            opcion.ruta !== "/precios-referencia",
+            !rutasPreciosAdmin.includes(opcion.ruta),
     );
-    const opcionesPreciosAdmin = opcionesVisibles.filter((opcion) => opcion.ruta === "/precios-referencia");
+    const opcionesPreciosAdmin = opcionesVisibles.filter((opcion) => rutasPreciosAdmin.includes(opcion.ruta));
     const opcionesNavegacion = opcionesVisibles;
 
     useEffect(() => {

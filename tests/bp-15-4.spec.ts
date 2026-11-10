@@ -46,7 +46,7 @@ const test = base.extend<{ publicacionPrueba: { precio: string; cantidadInicial:
     expect(especie, "La seed debe incluir Uchuva").toBeDefined();
     const variedad = catalogos.variedades.find((opcion) => opcion.especieId === especie.id && opcion.nombre === "-")!;
     expect(variedad).toBeDefined();
-    const envase = catalogos.envases.find((opcion) => opcion.nombre === "Cajon")!;
+    const envase = catalogos.envases.find((opcion) => opcion.nombre === "Cajón")!;
     const kilos = catalogos.kilos.find((opcion) => opcion.nombre === "20")!;
     const categoria = catalogos.categorias.find((opcion) => opcion.nombre === "-"
       && (opcion.especieId === especie.id || opcion.especieId === null))!;

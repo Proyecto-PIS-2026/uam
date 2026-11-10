@@ -1841,6 +1841,20 @@
           },
           "Publicacion": {
             "fields": {
+              "avisoProximoVencimientoEn": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "avisoVencimientoEn": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "calibreId": {
                 "nullable": true,
                 "type": {
@@ -2072,6 +2086,12 @@
             },
             "storage": {
               "fields": {
+                "avisoProximoVencimientoEn": {
+                  "column": "avisoProximoVencimientoEn"
+                },
+                "avisoVencimientoEn": {
+                  "column": "avisoVencimientoEn"
+                },
                 "calibreId": {
                   "column": "calibreId"
                 },
@@ -4076,6 +4096,16 @@
                 }
               ],
               "columns": {
+                "avisoProximoVencimientoEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "avisoVencimientoEn": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "calibreId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -4894,7 +4924,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d79f1cd356b2a43f5bd3afc98fe6393e620060df81d4cdc92dea125dbdbbd1b6"
+    "storageHash": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

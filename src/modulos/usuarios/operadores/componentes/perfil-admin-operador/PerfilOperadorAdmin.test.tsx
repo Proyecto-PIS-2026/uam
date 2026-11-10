@@ -49,6 +49,7 @@ const operadorBase: PerfilAdminOperador = {
     nombreFantasia: "Mercado Rural Los Olivos",
     fotoPerfil: null,
     whatsApp: "+59899100012",
+    solicitoRestablecimiento: false,
     locales: [
         { numeroLocal: "180", nombreNave: "A", finContrato: "2029-03-31" },
         { numeroLocal: "160", nombreNave: "D", finContrato: null },

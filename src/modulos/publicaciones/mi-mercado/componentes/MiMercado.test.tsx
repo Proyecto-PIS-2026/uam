@@ -850,7 +850,7 @@ describe("MiMercado", () => {
   it("muestra el aviso de licencia sin ocultar las publicaciones propias", () => {
     renderMiMercado([crearPublicacion(1, 10, "Manzana")], 5, "Mercado Pérez", true);
 
-    expect(screen.getByRole("status")).toHaveTextContent("Estas de licencia, productos ocultos al publico");
+    expect(screen.getByRole("status")).toHaveTextContent("Estás de licencia, productos ocultos al público");
     expect(screen.getByTestId("publicacion-1")).toBeInTheDocument();
   });
 

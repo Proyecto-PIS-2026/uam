@@ -1,5 +1,5 @@
 export const ENVASES_PUBLICACION = [
-  "Plancha", "Cajon", "Cajita", "Bolsa", "Descartable", "Bing", "Bins",
+  "Plancha", "Cajón", "Cajita", "Bolsa", "Descartable", "Bing", "Bins",
 ] as const;
 
 export const KILOS_EMPAQUETADO = [

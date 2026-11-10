@@ -205,7 +205,7 @@ test("BP-16.3: filtro de restablecimiento en pantalla móvil", async ({
     );
 
     await expect(
-      page.getByText("Solicitaron reestablecimiento"),
+      page.getByText("Solicitaron restablecimiento"),
     ).toBeVisible();
 
     await seleccionarFiltro(

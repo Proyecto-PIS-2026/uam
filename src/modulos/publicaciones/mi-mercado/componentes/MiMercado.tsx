@@ -260,7 +260,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
                 {enLicencia && (
                     <p className={styles.avisoLicencia} role="status">
                         <WarningAmberOutlinedIcon aria-hidden="true" />
-                        <span>Estas de licencia, productos ocultos al publico</span>
+                        <span>Estás de licencia, productos ocultos al público</span>
                     </p>
                 )}
                 <div className={`${styles.encabezadoCatalogo} flex-wrap`}>

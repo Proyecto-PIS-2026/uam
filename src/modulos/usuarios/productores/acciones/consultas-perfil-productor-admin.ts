@@ -44,6 +44,7 @@ export type PerfilAdminProductor = {
     nombreFantasia: string;
     fotoPerfil: string | null;
     whatsApp: string;
+    solicitoRestablecimiento: boolean;
     departamentos: string[];
     publicaciones: PublicacionPerfilAdminProductor[];
 };
@@ -56,6 +57,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
     // await porque la consulta a la base de datos es asíncrona pero quiero esperar a la respuesta antes de seguir
     const productor = await db.orm.public.Productor
         .select("id", "nombreFantasia", "fotoPerfil", "whatsApp")
+        .include("usuario", (usuario) => usuario.select("solicitoRestablecimiento"))
         .first({ id });
 
     if (!productor) {
@@ -136,6 +138,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
         nombreFantasia: productor.nombreFantasia,
         fotoPerfil: productor.fotoPerfil,
         whatsApp: productor.whatsApp,
+        solicitoRestablecimiento: productor.usuario.solicitoRestablecimiento,
         departamentos: obtenerDepartamentos(publicaciones.flatMap((publicacion) => publicacion.ubicaciones)),
         publicaciones,
     };

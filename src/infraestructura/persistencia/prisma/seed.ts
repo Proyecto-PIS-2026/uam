@@ -33,7 +33,7 @@ const codigosPais: Record<string, string> = {
   EGIPTO: "EG",
   ESPAÑA: "ES",
   PARAGUAY: "PY",
-  PERU: "PE",
+  PERÚ: "PE",
   URUGUAY: "UY",
 };
 

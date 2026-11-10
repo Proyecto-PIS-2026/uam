@@ -253,6 +253,8 @@ model Publicacion {
   version               Int                  @default(1)
   fecha                 temporal.updatedAt()
   fechaVigencia         DateTime?
+  avisoProximoVencimientoEn DateTime?
+  avisoVencimientoEn    DateTime?
   publicacionDisponible Boolean              @default(true)
   publicacionActiva     Boolean              @default(true)
   precio                Numeric(12, 2)?

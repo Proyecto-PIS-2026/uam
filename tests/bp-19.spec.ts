@@ -171,7 +171,7 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     expect(porUnidad.length).toBeLessThan(registros.length);
     await resultados(page, porUnidad.length);
     await expect(filas(page)).toHaveCount(Math.min(40, porUnidad.length));
-    await seleccionar(page, "Precio por", "Kg");
+    await seleccionar(page, "Precio por", "kg");
     const porKg = registros.filter((fila) => fila.min_kg >= 20 && fila.max_kg <= 100);
     expect(porKg.length).toBeGreaterThan(0);
     expect(porKg.length).toBeLessThan(registros.length);

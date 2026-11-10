@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
     notFound: vi.fn(() => {
         throw new Error("NEXT_NOT_FOUND");
     }),
+    redirect: vi.fn(() => {
+        throw new Error("NEXT_REDIRECT");
+    }),
     propsPerfil: vi.fn(),
 }));
 
@@ -16,7 +19,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
     requerirAdministrador: mocks.requerirAdministrador,
 }));
 
-vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
+vi.mock("next/navigation", () => ({ notFound: mocks.notFound, redirect: mocks.redirect }));
 
 vi.mock("@/modulos/usuarios/administradores/acciones/consultas-perfil-administrador", () => ({
     obtenerPerfilAdministrador: mocks.obtenerPerfil,
@@ -60,14 +63,16 @@ describe("Página de perfil de un administrador", () => {
         expect(mocks.obtenerPerfil).toHaveBeenCalledWith(101);
         expect(screen.getByTestId("perfil")).toBeInTheDocument();
         expect(mocks.propsPerfil).toHaveBeenLastCalledWith({ administrador: perfil, esPropiaCuenta: false });
+        expect(mocks.redirect).not.toHaveBeenCalled();
     });
 
-    it("indica cuando el perfil consultado es la propia cuenta", async () => {
+    it("redirige a Mi perfil cuando se consulta la propia cuenta por URL", async () => {
         mocks.requerirAdministrador.mockResolvedValue({ usuarioId: 1, rol: "ADMINISTRADOR" });
 
-        render(await Page(props("101")));
+        await expect(Page(props("101"))).rejects.toThrow("NEXT_REDIRECT");
 
-        expect(mocks.propsPerfil).toHaveBeenLastCalledWith({ administrador: perfil, esPropiaCuenta: true });
+        expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/mi-perfil");
+        expect(mocks.propsPerfil).not.toHaveBeenCalled();
     });
 
     it("llama a notFound si el administrador no existe", async () => {

@@ -98,7 +98,7 @@ describe("CatalogoOperador", () => {
 
     it("muestra el estado vacío de licencia", () => {
         render(<CatalogoOperador publicaciones={[]} enLicencia />);
-        expect(screen.getByText("Sin publicaciones, esta de licencia")).toBeInTheDocument();
+        expect(screen.getByText("Sin publicaciones, está de licencia")).toBeInTheDocument();
     });
 
     it("muestra una tarjeta por cada publicación", () => {

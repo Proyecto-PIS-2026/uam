@@ -2,6 +2,7 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import type { DatosSesion, RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import type { NotificacionesUsuario } from "./tipos";
 import { urlInternaNotificacion } from "./validacion-url";
+import { textoVisibleNotificacion } from "./texto-visible";
 import { procesarVencimientosUsuario } from "@/modulos/publicaciones/procesar-vencimientos";
 
 export type DestinatariosNotificacion = {
@@ -89,7 +90,7 @@ export async function consultarNotificaciones(sesion: DatosSesion | null): Promi
         .orderBy([(notificacion) => notificacion.fecha.desc(), (notificacion) => notificacion.id.desc()]).all();
     const notificaciones = filas.map((fila) => ({
         id: fila.id,
-        texto: fila.descripcion.trim() || fila.titulo,
+        texto: textoVisibleNotificacion(fila.descripcion.trim() || fila.titulo),
         url: urlInternaNotificacion(fila.url),
         leida: fila.vista,
         fecha: fila.fecha.toString(),

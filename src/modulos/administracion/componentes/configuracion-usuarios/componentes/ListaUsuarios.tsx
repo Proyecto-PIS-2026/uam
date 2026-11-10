@@ -103,7 +103,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
             router.push(`/gestion-productores/${usuario.productorId}`);
         }
         if (usuario.rol === "ADMINISTRADOR") {
-            router.push(`/gestion-administradores/${usuario.administradorId}`);
+            router.push(usuario.id === usuarioActualId ? "/mi-perfil" : `/gestion-administradores/${usuario.administradorId}`);
         }
     }
 
@@ -178,7 +178,7 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
             {usuariosVisibles.some((usuario) => usuario.solicitoRestablecimiento) && (
                 <p className={styles.leyendaRestablecimiento}>
                     <WarningAmberIcon fontSize="small" />
-                    Solicitaron reestablecimiento
+                    Solicitaron restablecimiento
                 </p>
             )}
             {usuariosVisibles.length === 0 ? (

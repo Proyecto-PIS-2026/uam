@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { Temporal } from "temporal-polyfill";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { SeleccionPublicacion } from "./seleccion-publicacion";
 
@@ -36,17 +37,17 @@ async function crearValida(rol: Rol, datos: Record<string, unknown> = {}) {
     return resultado.id;
 }
 
-async function editar(rol: Rol, id: number, datos: SeleccionPublicacion) {
+async function editar(rol: Rol, id: number, datos: SeleccionPublicacion, cambios: { fechaVigencia?: string | null; disponible?: boolean } = {}) {
     if (rol === "OPERADOR") {
         const vinculo = await db.orm.public.PublicacionOperador.where({ publicacionId: id }).first();
         const publicacion = await db.orm.public.Publicacion.where({ id }).first();
         if (!vinculo || !publicacion) throw new Error("Falta la publicación del test.");
-        return editarOperador(operador.usuarioId, vinculo.id, { ...datos, version: publicacion.version, precio: null, disponible: true });
+        return editarOperador(operador.usuarioId, vinculo.id, { ...datos, version: publicacion.version, precio: null, disponible: true, ...cambios });
     }
     const vinculo = await db.orm.public.PublicacionProductor.where({ publicacionId: id }).first();
     if (!vinculo) throw new Error("Falta la publicación del test.");
     return editarProductor({ usuarioId: productor.usuarioId, rol: "PRODUCTOR", expiraEn: 2000000000 }, vinculo.id,
-        { ...datos, precio: null, disponible: true, ubicaciones: [] });
+        { ...datos, precio: null, disponible: true, ubicaciones: [], ...cambios });
 }
 
 beforeAll(async () => {
@@ -87,6 +88,31 @@ afterEach(async () => {
 });
 
 describe.each(["OPERADOR", "PRODUCTOR"] as const)("combinaciones opcionales de %s", (rol) => {
+    it("conserva los avisos al editar disponibilidad y los reinicia al renovar la vigencia", async () => {
+        const hoy = Temporal.Now.plainDateISO("America/Montevideo");
+        const id = await crearValida(rol, { fechaVigencia: hoy.toString() });
+        const enviadoEn = Temporal.Now.instant().round({ smallestUnit: "millisecond", roundingMode: "trunc" });
+        await db.orm.public.Publicacion.where({ id }).update({
+            avisoProximoVencimientoEn: enviadoEn, avisoVencimientoEn: enviadoEn,
+        });
+
+        await editar(rol, id, seleccion(), { disponible: false });
+        let actual = await db.orm.public.Publicacion.where({ id }).first();
+        expect(actual?.avisoProximoVencimientoEn?.equals(enviadoEn)).toBe(true);
+        expect(actual?.avisoVencimientoEn?.equals(enviadoEn)).toBe(true);
+
+        await editar(rol, id, seleccion(), { disponible: true, fechaVigencia: hoy.toString() });
+        actual = await db.orm.public.Publicacion.where({ id }).first();
+        expect(actual?.avisoProximoVencimientoEn?.equals(enviadoEn)).toBe(true);
+        expect(actual?.avisoVencimientoEn?.equals(enviadoEn)).toBe(true);
+
+        const renovada = hoy.add({ days: 1 }).toString();
+        await editar(rol, id, seleccion(), { fechaVigencia: renovada });
+        actual = await db.orm.public.Publicacion.where({ id }).first();
+        expect(actual).toMatchObject({ avisoProximoVencimientoEn: null, avisoVencimientoEn: null });
+        expect(actual?.fechaVigencia?.toZonedDateTimeISO("America/Montevideo").toPlainDate().toString()).toBe(renovada);
+    });
+
     it("crea solo con especie, sin ubicación, país, precio ni fotografía", async () => {
         const id = await crearValida(rol);
         expect(await db.orm.public.Publicacion.where({ id }).first()).toMatchObject({

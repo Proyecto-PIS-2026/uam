@@ -121,6 +121,7 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             if (fechaMaxima !== null && fechaVigencia !== undefined && fechaVigencia !== null && fechaVigencia > fechaMaxima) {
                 datosInvalidos(`La fecha de vigencia no puede superar el ${fechaMaxima}.`);
             }
+            const fechaVigenciaParaGuardar = fechaVigencia === undefined ? undefined : convertirFechaVigenciaAInstant(fechaVigencia);
             const seleccionActual = { ...cambios, paisId: cambios.paisId === undefined ? relacion.paisId : cambios.paisId };
             if (!await validarCatalogosSeleccion(tx, seleccionActual)) {
                 datosInvalidos("La selección contiene datos que ya no están disponibles o no corresponden a la especie.");
@@ -146,7 +147,10 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
                 precio: cambios.precio as PrecioDb, foto, especieId: cambios.especieId, variedadId: cambios.variedadId, envaseId: cambios.envaseId,
                 kilosId: cambios.kilosId,
                 categoriaId: cambios.categoriaId, calibreId: cambios.calibreId,
-                ...(fechaVigencia !== undefined ? { fechaVigencia: convertirFechaVigenciaAInstant(fechaVigencia) } : {}),
+                ...(fechaVigenciaParaGuardar !== undefined ? { fechaVigencia: fechaVigenciaParaGuardar } : {}),
+                ...(fechaVigenciaParaGuardar !== undefined &&
+                    publicacion.fechaVigencia?.epochNanoseconds !== fechaVigenciaParaGuardar?.epochNanoseconds
+                    ? { avisoProximoVencimientoEn: null, avisoVencimientoEn: null } : {}),
                 ...(fotoNueva || (cambios.foto === null && publicacion.foto !== null)
                     ? { fotoEliminadaPorVencimientoEn: null } : {}),
                 ...(cambios.cantidadUnidades !== undefined ? { cantidadUnidades: cambios.cantidadUnidades as CantidadUnidadesDb } : {}),

@@ -34,6 +34,7 @@ const productorBase = {
     nombreFantasia: "Granja Los Álamos",
     fotoPerfil: null,
     whatsApp: "+59899200002",
+    usuario: { solicitoRestablecimiento: false },
 };
 
 const publicacionBase = {
@@ -119,10 +120,24 @@ describe("obtenerPerfilAdminProductor", () => {
             nombreFantasia: "Granja Los Álamos",
             fotoPerfil: null,
             whatsApp: "+59899200002",
+            solicitoRestablecimiento: false,
             departamentos: [],
             publicaciones: [],
         });
         expect(mockDb.publicaciones.where).toHaveBeenCalledWith({ productorId: 2 });
+    });
+
+    it.each([true, false])("incluye el estado de restablecimiento solicitado: %s", async (solicitoRestablecimiento) => {
+        mockDb.productor.first.mockResolvedValue({
+            ...productorBase,
+            usuario: { solicitoRestablecimiento },
+        });
+
+        const resultado = await obtenerPerfilAdminProductor(2);
+
+        expect(resultado?.solicitoRestablecimiento).toBe(solicitoRestablecimiento);
+        expect(mockDb.productor.include).toHaveBeenCalledWith("usuario", expect.any(Function));
+        expect(mockDb.productor.select).toHaveBeenCalledWith("solicitoRestablecimiento");
     });
 
     it("devuelve cada publicación con su país y sus ubicaciones", async () => {

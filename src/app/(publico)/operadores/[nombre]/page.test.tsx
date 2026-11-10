@@ -131,7 +131,7 @@ describe("Página pública del operador", () => {
 
         expect(screen.getAllByRole("status")[0]).toHaveTextContent("Fecha: 05/11/2026 - 12/11/2026");
         expect(screen.getByText("Consultar disponibilidad.")).toBeInTheDocument();
-        expect(screen.getByText("Sin publicaciones, esta de licencia")).toBeInTheDocument();
+        expect(screen.getByText("Sin publicaciones, está de licencia")).toBeInTheDocument();
         expect(screen.queryByText("Tomate - Perita")).not.toBeInTheDocument();
     });
 

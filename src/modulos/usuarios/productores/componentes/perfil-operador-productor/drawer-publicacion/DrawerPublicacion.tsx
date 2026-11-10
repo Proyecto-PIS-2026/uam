@@ -5,6 +5,7 @@ import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "@/modulos/publicaciones/componentes/ImagenPublicacion";
+import ComentarioPublicacion from "@/modulos/publicaciones/componentes/drawer-publicacion/ComentarioPublicacion";
 import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -161,11 +162,8 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPub
                                     <span className={styles.nombreInformacion}>Actualización</span>
                                     <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
                                 </div>
-                                <div className={`${styles.informacionDetallada} ${publicacion.comentario?.trim() ? styles.filaComentario : ""}`}>
-                                    <span className={styles.nombreInformacion}>Comentario</span>
-                                    <p className={`${styles.valorInformacion} ${styles.textoComentario}`}>{publicacion.comentario?.trim() || "-"}</p>
-                                </div>
                             </div>
+                            <ComentarioPublicacion comentario={publicacion.comentario} />
                             {publicacion.tipoPublicacion === "PRODUCTOR" && (
                                 <UbicacionesRetiro ubicaciones={publicacion.ubicaciones} />
                             )}

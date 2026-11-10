@@ -106,7 +106,7 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
             const identificador = randomUUID();
             const especie = await tx.orm.public.Especie.create({ nombreEspecie: `Especie de edición ${identificador}` });
             const variedad = await tx.orm.public.Variedad.create({ nombreVariedad: "Variedad de edición", especieId: especie.id });
-            const envase = await tx.orm.public.Envase.where({ nombreEnvase: "Cajon" }).first();
+            const envase = await tx.orm.public.Envase.where({ nombreEnvase: "Cajón" }).first();
             const kilos = await tx.orm.public.KilosEmpaquetado.where({ valor: "20" }).first();
             if (!envase || !kilos) throw new Error("Faltan los catálogos de empaquetado del seed.");
             const categoria = await tx.orm.public.Categoria.create({ nombreCategoria: "Categoría de edición", especieId: especie.id });

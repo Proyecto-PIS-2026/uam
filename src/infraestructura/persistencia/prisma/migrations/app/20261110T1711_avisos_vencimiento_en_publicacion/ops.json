@@ -1,0 +1,102 @@
+[
+  {
+    "id": "column.public.publicacion.avisoProximoVencimientoEn",
+    "label": "Add column \"avisoProximoVencimientoEn\" to \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "avisoProximoVencimientoEn",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"avisoProximoVencimientoEn\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "avisoProximoVencimientoEn"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"avisoProximoVencimientoEn\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ADD COLUMN \"avisoProximoVencimientoEn\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"avisoProximoVencimientoEn\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "avisoProximoVencimientoEn"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.publicacion.avisoVencimientoEn",
+    "label": "Add column \"avisoVencimientoEn\" to \"publicacion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "avisoVencimientoEn",
+        "table": "publicacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"avisoVencimientoEn\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "avisoVencimientoEn"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"avisoVencimientoEn\"",
+        "sql": "ALTER TABLE \"public\".\"publicacion\" ADD COLUMN \"avisoVencimientoEn\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"avisoVencimientoEn\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "publicacion",
+          "avisoVencimientoEn"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.conservar_avisos_en_publicacion",
+    "label": "Conservar los avisos enviados de la vigencia actual en la publicación",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Registrar las fechas de envío de las notificaciones existentes",
+        "sql": "WITH propietarios AS (\n  SELECT po.\"publicacionId\", o.\"usuarioId\", '/mi-mercado?publicacion=' || po.\"publicacionId\" AS url\n  FROM \"public\".\"publicacionOperador\" po\n  JOIN \"public\".\"operador\" o ON o.id = po.\"operadorId\"\n  UNION ALL\n  SELECT pp.\"publicacionId\", p.\"usuarioId\", '/mi-mercado/productor?publicacion=' || pp.\"publicacionId\" AS url\n  FROM \"public\".\"publicacionProductor\" pp\n  JOIN \"public\".\"productor\" p ON p.id = pp.\"productorId\"\n), avisos AS (\n  SELECT p.id,\n    min(n.fecha) FILTER (WHERE aviso.tipo = 'proximo') AS proximo,\n    min(n.fecha) FILTER (WHERE aviso.tipo = 'vencido') AS vencido\n  FROM propietarios propietario\n  JOIN \"public\".\"publicacion\" p ON p.id = propietario.\"publicacionId\"\n  JOIN \"public\".\"notificacion\" n ON n.\"usuarioId\" = propietario.\"usuarioId\" AND n.url = propietario.url\n  CROSS JOIN LATERAL (\n    VALUES\n      ('proximo', ' está próxima a vencer el ' || to_char(p.\"fechaVigencia\" AT TIME ZONE 'America/Montevideo', 'YYYY-MM-DD') || '.'),\n      ('vencido', ' ha vencido el ' || to_char(p.\"fechaVigencia\" AT TIME ZONE 'America/Montevideo', 'YYYY-MM-DD') || ' y ya no está disponible.')\n  ) AS aviso(tipo, sufijo)\n  WHERE p.\"fechaVigencia\" IS NOT NULL\n    AND n.descripcion LIKE 'Tu publicación de %'\n    AND right(n.descripcion, length(aviso.sufijo)) = aviso.sufijo\n  GROUP BY p.id\n)\nUPDATE \"public\".\"publicacion\" p\nSET \"avisoProximoVencimientoEn\" = avisos.proximo,\n    \"avisoVencimientoEn\" = avisos.vencido\nFROM avisos\nWHERE p.id = avisos.id;"
+      }
+    ],
+    "postcheck": []
+  }
+]

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { Temporal } from "temporal-polyfill";
 import { ErrorImagenPublicacion } from "./imagenes-publicacion";
 import {
     ErrorEdicionPublicacion,
@@ -151,6 +152,46 @@ describe("modificarPublicacionOperador", () => {
     });
 
     afterEach(() => vi.restoreAllMocks());
+
+    describe("avisos de vencimiento al editar la vigencia", () => {
+        const fechaAnterior = Temporal.Instant.from("2026-11-10T02:59:59Z");
+        const avisoEnviado = Temporal.Instant.from("2026-11-06T12:00:00Z");
+
+        beforeEach(() => {
+            vi.spyOn(Temporal.Now, "plainDateISO").mockReturnValue(Temporal.PlainDate.from("2026-11-07"));
+            mocks.publicacion.first.mockResolvedValue({
+                version: 1, tipoPublicacion: "OPERADOR", foto: FOTO_ANTERIOR,
+                fechaVigencia: fechaAnterior,
+                avisoProximoVencimientoEn: avisoEnviado, avisoVencimientoEn: avisoEnviado,
+            });
+        });
+
+        it.each(["2026-11-12", null])("reinicia ambos avisos al cambiar la vigencia a %s", async (fechaVigencia) => {
+            await modificarPublicacionOperador(9, 12, { ...cambios, fechaVigencia });
+
+            expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({
+                avisoProximoVencimientoEn: null, avisoVencimientoEn: null,
+            }));
+            const escritura = mocks.publicacion.update.mock.calls[0][0] as Record<string, unknown>;
+            expect(escritura).toHaveProperty("fechaVigencia");
+        });
+
+        it.each([undefined, "2026-11-09"])("conserva los avisos si se omite o se reenvía la misma vigencia: %s", async (fechaVigencia) => {
+            await modificarPublicacionOperador(9, 12, { ...cambios, fechaVigencia });
+
+            const escritura = mocks.publicacion.update.mock.calls[0][0];
+            expect(escritura).not.toHaveProperty("avisoProximoVencimientoEn");
+            expect(escritura).not.toHaveProperty("avisoVencimientoEn");
+        });
+
+        it.each([true, false])("conserva los avisos al cambiar solo disponible a %s", async (disponible) => {
+            await modificarPublicacionOperador(9, 12, { ...cambios, disponible });
+
+            const escritura = mocks.publicacion.update.mock.calls[0][0];
+            expect(escritura).not.toHaveProperty("avisoProximoVencimientoEn");
+            expect(escritura).not.toHaveProperty("avisoVencimientoEn");
+        });
+    });
 
     it("rechaza un formulario antiguo antes de guardar imágenes o modificar datos", async () => {
         mocks.publicacion.first.mockResolvedValue({ tipoPublicacion: "OPERADOR", foto: FOTO_ANTERIOR, version: 2 });

@@ -21,7 +21,7 @@ async function obtenerSeleccion(request: APIRequestContext) {
   const especie = catalogos.especies.find((opcion) => opcion.nombre === "Uchuva");
   expect(especie, "La seed debe incluir Uchuva para distinguir los productos de prueba").toBeDefined();
   const variedad = catalogos.variedades.find((opcion) => opcion.especieId === especie!.id)!;
-  const envase = catalogos.envases.find((opcion) => opcion.nombre === "Cajon")!;
+  const envase = catalogos.envases.find((opcion) => opcion.nombre === "Cajón")!;
   const kilos = catalogos.kilos.find((opcion) => opcion.nombre === "20")!;
   const categoria = catalogos.categorias.find((opcion) => opcion.especieId === null || opcion.especieId === especie!.id)!;
   const pais = catalogos.paises.find((opcion) => opcion.nombre === "URUGUAY")!;

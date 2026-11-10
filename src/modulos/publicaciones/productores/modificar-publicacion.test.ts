@@ -65,6 +65,53 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("edición de publicaciones de productores", () => {
+    describe("avisos de vencimiento al editar la vigencia", () => {
+        const fechaAnterior = Temporal.Instant.from("2026-11-09T02:59:59Z");
+        const avisoEnviado = Temporal.Instant.from("2026-11-06T12:00:00Z");
+
+        beforeEach(() => {
+            const anterior = relacion();
+            mocks.vinculo.first.mockResolvedValue({ ...anterior, publicacion: {
+                ...anterior.publicacion, fechaVigencia: fechaAnterior,
+                avisoProximoVencimientoEn: avisoEnviado, avisoVencimientoEn: avisoEnviado,
+            } });
+        });
+
+        it.each(["2026-11-12", null])("reinicia ambos avisos al cambiar la vigencia a %s", async (fechaVigencia) => {
+            await modificarPublicacionProductor(sesion, 12, { ...cambios, fechaVigencia });
+
+            expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({
+                avisoProximoVencimientoEn: null, avisoVencimientoEn: null,
+            }));
+        });
+
+        it.each([undefined, "2026-11-08"])("conserva los avisos si se omite o se reenvía la misma vigencia: %s", async (fechaVigencia) => {
+            await modificarPublicacionProductor(sesion, 12, { ...cambios, fechaVigencia });
+
+            const escritura = mocks.publicacion.update.mock.calls[0][0];
+            expect(escritura).not.toHaveProperty("avisoProximoVencimientoEn");
+            expect(escritura).not.toHaveProperty("avisoVencimientoEn");
+        });
+
+        it.each([true, false])("conserva los avisos al cambiar solo disponible a %s", async (disponible) => {
+            await modificarPublicacionProductor(sesion, 12, { ...cambios, disponible });
+
+            const escritura = mocks.publicacion.update.mock.calls[0][0];
+            expect(escritura).not.toHaveProperty("avisoProximoVencimientoEn");
+            expect(escritura).not.toHaveProperty("avisoVencimientoEn");
+        });
+
+        it("reinicia los avisos cuando vaciar la fecha aplica un nuevo tope configurado", async () => {
+            mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "true" : "3" }));
+
+            await modificarPublicacionProductor(sesion, 12, { ...cambios, fechaVigencia: null });
+
+            const escritura = mocks.publicacion.update.mock.calls[0][0];
+            expect(escritura.fechaVigencia.toString()).toBe("2026-11-10T02:59:59Z");
+            expect(escritura).toMatchObject({ avisoProximoVencimientoEn: null, avisoVencimientoEn: null });
+        });
+    });
+
     it.each(["false", "true"])("conserva la fecha existente al omitirla, con vigencia habilitada=%s", async (habilitada) => {
         mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? habilitada : "3" }));
         const anterior = relacion();

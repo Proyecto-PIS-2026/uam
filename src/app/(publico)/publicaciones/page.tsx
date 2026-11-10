@@ -36,7 +36,7 @@ export default async function PaginaPublicaciones({searchParams}: Props) {
                     <EncabezadoPagina
                         titulo="Mercado Virtual"
                         cantidad={resultado.totalCatalogo}
-                        subtitulo="publicaciones en la plataforma"
+                        subtitulo={resultado.totalCatalogo === 1 ? "publicación en la plataforma" : "publicaciones en la plataforma"}
                     />
                     <ContenedorPublicaciones
                         key={`${especie}-${ordenInicial}-${configuracion.habilitado}`}

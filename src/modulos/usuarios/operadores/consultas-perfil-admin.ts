@@ -35,6 +35,7 @@ export type PerfilAdminOperador = {
     nombreFantasia: string;
     fotoPerfil: string | null;
     whatsApp: string;
+    solicitoRestablecimiento: boolean;
     enLicencia?: boolean;
     comentario?: string | null;
     locales: {
@@ -53,6 +54,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
     // await porque la consulta a la base de datos es asíncrona pero quiero esperar a la respuesta antes de seguir
     const operador = await db.orm.public.Operador
         .select("id", "nombreFantasia", "fotoPerfil", "whatsApp", "enLicencia", "comentario") // Que columnas quiero recuperar de la tabla de operador
+        .include("usuario", (usuario) => usuario.select("solicitoRestablecimiento"))
         .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
             .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
             .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
@@ -157,6 +159,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         nombreFantasia: operador.nombreFantasia,
         fotoPerfil: operador.fotoPerfil,
         whatsApp: operador.whatsApp,
+        solicitoRestablecimiento: operador.usuario.solicitoRestablecimiento,
         enLicencia: operador.enLicencia,
         locales,
         publicaciones,

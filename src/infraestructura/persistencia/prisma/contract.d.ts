@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'d79f1cd356b2a43f5bd3afc98fe6393e620060df81d4cdc92dea125dbdbbd1b6'>;
+  StorageHashBase<'847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -395,6 +395,8 @@ export type FieldOutputTypes = {
       readonly version: CodecTypes['pg/int4@1']['output'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly fechaVigencia: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly avisoProximoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly avisoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['output'];
       readonly publicacionActiva: CodecTypes['pg/bool@1']['output'];
       readonly precio: Numeric<12, 2> | null;
@@ -615,6 +617,8 @@ export type FieldInputTypes = {
       readonly version: CodecTypes['pg/int4@1']['input'];
       readonly fecha: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly fechaVigencia: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly avisoProximoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly avisoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly publicacionDisponible: CodecTypes['pg/bool@1']['input'];
       readonly publicacionActiva: CodecTypes['pg/bool@1']['input'];
       readonly precio: CodecTypes['pg/numeric@1']['input'] | null;
@@ -831,6 +835,8 @@ export type StorageColumnTypes = {
       readonly whatsApp: CodecTypes['pg/text@1']['output'];
     };
     readonly publicacion: {
+      readonly avisoProximoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly avisoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly calibreId: CodecTypes['pg/int4@1']['output'] | null;
       readonly cantidadUnidades: CodecTypes['pg/int4@1']['output'] | null;
       readonly categoriaId: CodecTypes['pg/int4@1']['output'] | null;
@@ -1051,6 +1057,8 @@ export type StorageColumnInputTypes = {
       readonly whatsApp: CodecTypes['pg/text@1']['input'];
     };
     readonly publicacion: {
+      readonly avisoProximoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly avisoVencimientoEn: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly calibreId: CodecTypes['pg/int4@1']['input'] | null;
       readonly cantidadUnidades: CodecTypes['pg/int4@1']['input'] | null;
       readonly categoriaId: CodecTypes['pg/int4@1']['input'] | null;
@@ -2194,6 +2202,16 @@ type ContractBase = Omit<
                   readonly nullable: false;
                 };
                 readonly fechaVigencia: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly avisoProximoVencimientoEn: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly avisoVencimientoEn: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-temporal@1';
                   readonly nullable: true;
@@ -4032,6 +4050,20 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-temporal@1';
                 };
               };
+              readonly avisoProximoVencimientoEn: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly avisoVencimientoEn: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
               readonly publicacionDisponible: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
@@ -4172,6 +4204,10 @@ type ContractBase = Omit<
                 readonly version: { readonly column: 'version' };
                 readonly fecha: { readonly column: 'fecha' };
                 readonly fechaVigencia: { readonly column: 'fechaVigencia' };
+                readonly avisoProximoVencimientoEn: {
+                  readonly column: 'avisoProximoVencimientoEn';
+                };
+                readonly avisoVencimientoEn: { readonly column: 'avisoVencimientoEn' };
                 readonly publicacionDisponible: { readonly column: 'publicacionDisponible' };
                 readonly publicacionActiva: { readonly column: 'publicacionActiva' };
                 readonly precio: { readonly column: 'precio' };

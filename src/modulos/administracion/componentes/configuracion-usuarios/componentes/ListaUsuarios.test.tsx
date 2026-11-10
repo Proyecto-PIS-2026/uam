@@ -371,6 +371,7 @@ describe("ListaUsuarios", () => {
         renderLista({
             usuarios,
             usuarioSeleccionadoId: 2,
+            usuarioActualId: 7,
             onSeleccionar,
         });
 
@@ -405,6 +406,18 @@ describe("ListaUsuarios", () => {
         expect(estadoTest.routerPush).toHaveBeenNthCalledWith(2, "/gestion-operadores/201");
         expect(estadoTest.routerPush).toHaveBeenNthCalledWith(3, "/gestion-productores/301");
 
+    });
+
+    it.each(["click", "Enter", " "])("abre Mi perfil al seleccionar la propia cuenta con %s", (accion) => {
+        const onSeleccionar = vi.fn();
+        renderLista({ usuarioActualId: 1, onSeleccionar });
+        const fila = obtenerFila("ana.admin");
+
+        if (accion === "click") fireEvent.click(fila);
+        else fireEvent.keyDown(fila, { key: accion });
+
+        expect(onSeleccionar).toHaveBeenCalledExactlyOnceWith(usuarios[0]);
+        expect(estadoTest.routerPush).toHaveBeenCalledExactlyOnceWith("/mi-perfil");
     });
 
     it("navega a la edición de cada rol", () => {

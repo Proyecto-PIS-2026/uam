@@ -35,7 +35,7 @@ const PLAN_OFERTAS: ReadonlyArray<readonly [string, string, readonly string[]]> 
     "Manzana", "Pera", "Manzana",
   ]],
   ["productor_maldonado_organico", "URUGUAY", [
-    "Lechuga", "Rucula", "Espinaca", "Kale", "Remolacha",
+    "Lechuga", "Rúcula", "Espinaca", "Kale", "Remolacha",
     "Rabanito", "Apio", "Cebolla Verdeo",
   ]],
   // El catálogo tiene dos bandas ecuatorianas de banana: categorías E e I.

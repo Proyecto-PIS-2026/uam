@@ -512,17 +512,4 @@
         height: min(38rem, 80dvh);
     }
 
-    .filaComentario {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.25rem;
-    }
-
-    .textoComentario {
-        margin: 0;
-        text-align: left;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-    }
 }

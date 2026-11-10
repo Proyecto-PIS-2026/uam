@@ -251,7 +251,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     return (
         <div className={styles.pagina}>
             <BotonVolver href="/precios-referencia">Volver a precios de referencia</BotonVolver>
-            <EncabezadoPagina titulo={idProducto ? `Histórico de ${producto.especie}` : "Histórico de precios"} cantidad={filas.length} subtitulo="registros históricos" />
+            <EncabezadoPagina titulo={idProducto ? `Histórico de ${producto.especie}` : "Histórico de precios"} cantidad={filas.length} subtitulo={filas.length === 1 ? "registro histórico" : "registros históricos"} />
 
             <section className={styles.filtrosPanel} aria-label="Filtros de precios históricos">
                 <form action="/precios-historicos" method="get" aria-label="Consultar período histórico" onSubmit={consultar}>

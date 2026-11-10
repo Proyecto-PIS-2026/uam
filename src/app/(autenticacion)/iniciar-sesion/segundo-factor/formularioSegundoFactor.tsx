@@ -60,7 +60,7 @@ export default function FormularioSegundoFactor({ vinculacion, correo, secreto, 
                     <label htmlFor="codigo" className="mb-2 block text-sm font-medium">Código de verificación</label>
                     <input id="codigo" name="codigo" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} required className="campo-formulario" />
                 </div>
-                {estado.error ? <p role="alert" className="text-sm text-danger">{estado.error}</p> : <p className="text-sm">Tenés {intentosRestantes} intentos disponibles.</p>}
+                {estado.error ? <p role="alert" className="text-sm text-danger">{estado.error}</p> : <p className="text-sm">Tenés {intentosRestantes} {intentosRestantes === 1 ? "intento disponible" : "intentos disponibles"}.</p>}
                 <button type="submit" disabled={pendiente || segundosRestantes === 0} className="boton-primario w-full">{pendiente ? "Verificando..." : vinculacion ? "Confirmar e ingresar" : "Verificar e ingresar"}</button>
                 <button type="submit" formAction={cancelarVerificacion} formNoValidate disabled={pendiente} className="boton-secundario w-full">Cancelar y volver al inicio de sesión</button>
             </form>

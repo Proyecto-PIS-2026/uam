@@ -39,6 +39,7 @@ const productorBase: PerfilAdminProductor = {
     nombreFantasia: "Granja Los Álamos",
     fotoPerfil: null,
     whatsApp: "+59899200002",
+    solicitoRestablecimiento: false,
     departamentos: ["Salto"],
     publicaciones: [],
 };

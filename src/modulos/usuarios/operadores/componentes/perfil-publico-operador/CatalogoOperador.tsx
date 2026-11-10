@@ -134,7 +134,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
                         )
                     ) : (
                         <EstadoVacio
-                            titulo={enLicencia && publicaciones.length === 0 ? "Sin publicaciones, esta de licencia" : publicaciones.length === 0 ? "Todavía no hay publicaciones" : "Sin resultados para estos filtros"}
+                            titulo={enLicencia && publicaciones.length === 0 ? "Sin publicaciones, está de licencia" : publicaciones.length === 0 ? "Todavía no hay publicaciones" : "Sin resultados para estos filtros"}
                             descripcion={enLicencia && publicaciones.length === 0 ? "" : publicaciones.length === 0 ? "No hay publicaciones disponibles." : "No hay publicaciones que coincidan con la búsqueda."}
                             icono={publicaciones.length === 0 ? <Inventory2OutlinedIcon /> : <SearchOffOutlinedIcon />}
                         />

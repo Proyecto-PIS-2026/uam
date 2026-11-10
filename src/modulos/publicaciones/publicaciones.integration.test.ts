@@ -60,7 +60,7 @@ async function crearFixture() {
 
         const especie = await tx.orm.public.Especie.create({ nombreEspecie: `${prefijo} Limón` });
         const variedad = await tx.orm.public.Variedad.create({ especieId: especie.id, nombreVariedad: "Criollo" });
-        const envase = await tx.orm.public.Envase.where({ nombreEnvase: "Cajon" }).first();
+        const envase = await tx.orm.public.Envase.where({ nombreEnvase: "Cajón" }).first();
         const kilos = await tx.orm.public.KilosEmpaquetado.where({ valor: "20" }).first();
         if (!envase || !kilos) throw new Error("Faltan los catálogos de empaquetado del seed.");
         const categoria = await tx.orm.public.Categoria.create({ especieId: especie.id, nombreCategoria: "Primera" });
@@ -196,7 +196,7 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
         expect(resultado).not.toHaveProperty("tamanoPagina");
         expect(resultado.totalCatalogo).toBeGreaterThanOrEqual(37);
         expect(resultado.publicaciones.every((publicacion) => publicacion.tipoPublicacion === "OPERADOR")).toBe(true);
-        expect(resultado.opciones).toContainEqual({ especie: fixture!.nombreEspecie, variedad: "Criollo", envase: "Cajon", kilos: "20", categoria: "Primera", calibre: "Mediano" });
+        expect(resultado.opciones).toContainEqual({ especie: fixture!.nombreEspecie, variedad: "Criollo", envase: "Cajón", kilos: "20", categoria: "Primera", calibre: "Mediano" });
     });
 
     it("ejecuta búsqueda sin tildes, filtros numéricos y orden descendente en SQL real", async () => {

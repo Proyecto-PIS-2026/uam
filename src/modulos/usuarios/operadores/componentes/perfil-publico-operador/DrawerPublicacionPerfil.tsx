@@ -12,6 +12,7 @@ import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/Pub
 import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
 import TextoAjustable from "./TextoAjustable";
 import styles from "./DrawerPublicacionPerfil.module.css";
+import ComentarioPublicacion from "@/modulos/publicaciones/componentes/drawer-publicacion/ComentarioPublicacion";
 
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useEffect, useRef, useState } from "react";
@@ -160,11 +161,8 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                                     <span className={styles.nombreInformacion}>Actualización</span>
                                     <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
                                 </div>
-                                <div className={`${styles.informacionDetallada} ${publicacion.comentario?.trim() ? styles.filaComentario : ""}`}>
-                                    <span className={styles.nombreInformacion}>Comentario</span>
-                                    <p className={`${styles.valorInformacion} ${styles.textoComentario}`}>{publicacion.comentario?.trim() || "-"}</p>
-                                </div>
                             </div>
+                            <ComentarioPublicacion comentario={publicacion.comentario} />
                         </div>
                         <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
                             <div className={styles.bloqueBotones}>

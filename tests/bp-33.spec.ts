@@ -110,7 +110,7 @@ test.describe("BP-33 — vista de la licencia de un Operador", () => {
                 await expect(publico.getByRole("heading", { name: datos.operadorA.nombre, exact: true })).toBeVisible();
                 await expect(seccionLicencia(publico)).toBeVisible();
                 await expect(seccionLicencia(publico).getByText(recomendacion, { exact: true })).toHaveCount(comentario ? 1 : 0);
-                await expect(publico.getByText("Sin publicaciones, esta de licencia", { exact: true })).toBeVisible();
+                await expect(publico.getByText("Sin publicaciones, está de licencia", { exact: true })).toBeVisible();
                 await expect(tarjetas(publico)).toHaveCount(0);
             });
         }
@@ -136,7 +136,7 @@ test.describe("BP-33 — vista de la licencia de un Operador", () => {
     test("CP-05 [CA-3] el propio mercado informa la licencia y los productos ocultos al público", async ({ page, precargaOperadores: datos }) => {
         await prepararLicencia(datos);
         await ingresarOperador(page, datos);
-        await expect(page.getByRole("status").filter({ hasText: "Estas de licencia, productos ocultos al publico" })).toBeVisible();
+        await expect(page.getByRole("status").filter({ hasText: "Estás de licencia, productos ocultos al público" })).toBeVisible();
     });
 
     test("CP-06 [CA-4] el administrador consulta la licencia con y sin comentario", async ({ page, precargaOperadores: datos }) => {

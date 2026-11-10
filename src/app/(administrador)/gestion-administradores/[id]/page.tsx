@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerPerfilAdministrador } from "@/modulos/usuarios/administradores/acciones/consultas-perfil-administrador";
 import PerfilAdministrador from "@/modulos/usuarios/administradores/componentes/perfil-administrador/PerfilAdministrador";
@@ -19,10 +19,13 @@ export default async function Page({ params }: PageProps) {
         notFound();
     }
 
+    if (administrador.usuarioId === sesion.usuarioId) {
+        redirect("/mi-perfil");
+    }
+
     return (
         <main>
-            {/* Su propia cuenta se modifica desde Mi Perfil, no desde acá */}
-            <PerfilAdministrador administrador={administrador} esPropiaCuenta={administrador.usuarioId === sesion.usuarioId} />
+            <PerfilAdministrador administrador={administrador} esPropiaCuenta={false} />
         </main>
     );
 }

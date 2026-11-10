@@ -150,7 +150,7 @@ test.describe("BP-31: empaquetado y kilos independientes", () => {
             await page.setViewportSize(viewport);
             await ingresar(page, datosBP31.cuentas[rol]);
             const opciones = await catalogos(page, rol);
-            expect(opciones.envases.map((opcion) => opcion.nombre)).toEqual(["Plancha", "Cajon", "Cajita", "Bolsa", "Descartable", "Bing", "Bins"]);
+            expect(opciones.envases.map((opcion) => opcion.nombre)).toEqual(["Plancha", "Cajón", "Cajita", "Bolsa", "Descartable", "Bing", "Bins"]);
             expect(opciones.kilos.map((opcion) => opcion.nombre)).toEqual(["2", "4", "8", "10", "18", "20", "22", "25", "250", "400", "10-12", "18-24"]);
             expect(opciones.calibres.map((opcion) => opcion.nombre)).toEqual(expect.arrayContaining(["Primera", "Segunda", "Tercera", "Cuarta", "Quinta", "Sexta", "0", "00", "Especial"]));
             await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
@@ -173,7 +173,7 @@ test.describe("BP-31: empaquetado y kilos independientes", () => {
 
             await tarjetasPropias(page).first().click();
             let formulario = await editar(page);
-            await seleccionar(page, formulario, "Empaquetado", "Cajon");
+            await seleccionar(page, formulario, "Empaquetado", "Cajón");
             await seleccionar(page, formulario, "Kilos del empaquetado", "20 kg");
             await seleccionar(page, formulario, "Calibre", "Especial");
             await comprobarDisposicion(formulario, "Empaquetado", "Kilos del empaquetado", viewport.width);
@@ -181,7 +181,7 @@ test.describe("BP-31: empaquetado y kilos independientes", () => {
             await formulario.getByRole("textbox", { name: "Precio en pesos", exact: true }).fill("500");
             await guardar(page, rol);
             const conAmbos = await datosBP31.db.orm.public.Publicacion.where({ id: publicacionId }).first();
-            expect(conAmbos).toMatchObject({ variedadId: null, envaseId: id(opciones.envases, "Cajon"), kilosId: id(opciones.kilos, "20"), calibreId: id(opciones.calibres, "Especial") });
+            expect(conAmbos).toMatchObject({ variedadId: null, envaseId: id(opciones.envases, "Cajón"), kilosId: id(opciones.kilos, "20"), calibreId: id(opciones.calibres, "Especial") });
             expect(Number(conAmbos!.precio)).toBe(500);
 
             formulario = await editar(page);
@@ -216,9 +216,9 @@ test.describe("BP-31: empaquetado y kilos independientes", () => {
             const baseProducto = { especieId: id(opciones.especies, "Papa"), variedadId: null, categoriaId: null, calibreId: null, paisId: null, disponibilidad: true };
             const variantes = [
                 { envaseId: null, kilosId: null, precio: "501", texto: null },
-                { envaseId: id(opciones.envases, "Cajon"), kilosId: null, precio: "502", texto: "por Cajon" },
+                { envaseId: id(opciones.envases, "Cajón"), kilosId: null, precio: "502", texto: "por Cajón" },
                 { envaseId: null, kilosId: id(opciones.kilos, "20"), precio: "503", texto: "por 20 kg" },
-                { envaseId: id(opciones.envases, "Cajon"), kilosId: id(opciones.kilos, "20"), precio: "504", texto: "por Cajon (20 kg)" },
+                { envaseId: id(opciones.envases, "Cajón"), kilosId: id(opciones.kilos, "20"), precio: "504", texto: "por Cajón (20 kg)" },
                 { envaseId: null, kilosId: id(opciones.kilos, "10-12"), precio: "505", texto: "por 10-12 kg" },
             ];
             const publicaciones: number[] = [];
@@ -252,7 +252,7 @@ test.describe("BP-31: empaquetado y kilos independientes", () => {
                 }
                 await expect(comprador.getByRole("combobox", { name: "Especie", exact: true })).toHaveText("Todas");
                 if (dispositivo === "mobile") await comprador.getByRole("button", { name: "Más filtros", exact: true }).click();
-                await seleccionar(comprador, comprador.locator("main"), "Empaquetado", "Cajon");
+                await seleccionar(comprador, comprador.locator("main"), "Empaquetado", "Cajón");
                 await comprobarDisposicion(comprador.locator("main"), "Empaquetado", "Kilos", viewport.width);
                 await test.info().attach("Filtros de empaquetado y kilos", { body: await comprador.screenshot(), contentType: "image/png" });
                 await expect(tarjetas).toHaveCount(2);

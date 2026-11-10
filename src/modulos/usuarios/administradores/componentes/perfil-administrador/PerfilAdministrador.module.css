@@ -83,6 +83,134 @@
     background-color: var(--color-surface);
 }
 
+.encabezado.encabezadoConsulta {
+    grid-template-columns: 6rem minmax(0, 1fr);
+}
+
+.contenidoConsulta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+}
+
+.contactoConsulta {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-controles);
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radio-control);
+    background: var(--color-surface-muted);
+}
+
+.iconoContactoConsulta {
+    display: grid;
+    width: var(--alto-control);
+    height: var(--alto-control);
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: var(--radio-control);
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
+}
+
+.datosContactoConsulta {
+    min-width: 0;
+}
+
+.etiquetaContactoConsulta {
+    display: block;
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    line-height: var(--interlineado-texto);
+}
+
+.valorContactoConsulta {
+    display: block;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+}
+
+.seccionesConsulta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: var(--espacio-secciones);
+}
+
+.seccionConsulta {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--espacio-secciones);
+    padding: var(--padding-panel);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radio-panel);
+}
+
+.tituloConsulta {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-inline);
+    margin: 0;
+    color: var(--color-secondary);
+    font-size: var(--tamano-titulo-seccion);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.tituloConsulta > svg {
+    flex-shrink: 0;
+}
+
+.estadoConsulta {
+    align-self: flex-start;
+    padding: var(--espacio-textos) var(--espacio-inline);
+    border-radius: var(--radio-control);
+    background: var(--color-surface-muted);
+    color: var(--color-muted);
+    font-size: var(--tamano-texto-secundario);
+    font-weight: 600;
+    line-height: var(--interlineado-texto);
+}
+
+.estadoConsulta[data-estado="activo"] {
+    background: var(--color-secondary-soft);
+    color: var(--color-secondary);
+}
+
+.estadoConsulta[data-estado="solicitado"] {
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
+}
+
+.accionesConsulta {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.accionConsulta {
+    align-self: flex-start;
+    max-width: 100%;
+}
+
+@media (min-width: 900px) {
+    .seccionesConsulta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .encabezadoConsulta {
+        padding: var(--padding-panel);
+    }
+
+    .accionConsulta {
+        width: 100%;
+    }
+}
+
 .dato {
     margin: 0;
     font-size: var(--tamano-texto-secundario);

@@ -42,6 +42,7 @@ const operadorBase = {
     nombreFantasia: "Frutas del Norte",
     fotoPerfil: "/operadores/frutas-del-norte.jpg",
     whatsApp: "+59899100001",
+    usuario: { solicitoRestablecimiento: false },
     locales: [
         {
             numeroLocal: "18",
@@ -126,6 +127,7 @@ describe("obtenerPerfilAdminOperador", () => {
             nombreFantasia: "Frutas del Norte",
             fotoPerfil: "/operadores/frutas-del-norte.jpg",
             whatsApp: "+59899100001",
+            solicitoRestablecimiento: false,
             locales: [
                 {
                     numeroLocal: "18",
@@ -136,6 +138,19 @@ describe("obtenerPerfilAdminOperador", () => {
             publicaciones: [],
         });
         expect(mockDb.publicaciones.where).toHaveBeenCalledWith({ operadorId: 13 });
+    });
+
+    it.each([true, false])("incluye el estado de restablecimiento solicitado: %s", async (solicitoRestablecimiento) => {
+        mockDb.operador.first.mockResolvedValue({
+            ...operadorBase,
+            usuario: { solicitoRestablecimiento },
+        });
+
+        const resultado = await obtenerPerfilAdminOperador(13);
+
+        expect(resultado?.solicitoRestablecimiento).toBe(solicitoRestablecimiento);
+        expect(mockDb.operador.include).toHaveBeenCalledWith("usuario", expect.any(Function));
+        expect(mockDb.operador.select).toHaveBeenCalledWith("solicitoRestablecimiento");
     });
 
     // La fecha se convierte en la zona de Montevideo, no en UTC

@@ -19,6 +19,7 @@ import Link from "next/link";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import PasswordOutlinedIcon from "@mui/icons-material/PasswordOutlined";
 
 type PerfilProductorAdminProps = {
     productor: PerfilAdminProductor;
@@ -77,6 +78,15 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
                             <LocationOnOutlinedIcon aria-hidden="true" />Departamentos
                         </h2>
                         <p className={styles.departamentos}>{departamentos.join(" · ") || "-"}</p>
+                    </section>
+                    <section className={`${styles.contacto} ${styles.restablecimiento}`} aria-labelledby="restablecimiento-productor-admin">
+                        <span className={styles.iconoContacto} aria-hidden="true"><PasswordOutlinedIcon /></span>
+                        <div className={styles.datosContacto}>
+                            <h2 id="restablecimiento-productor-admin" className={styles.etiquetaContacto}>Restablecimiento de contraseña</h2>
+                            <span className={`${styles.valorContacto} ${styles.estadoRestablecimiento}`} data-estado={productor.solicitoRestablecimiento ? "solicitado" : "neutro"}>
+                                {productor.solicitoRestablecimiento ? "Solicitado" : "No solicitado"}
+                            </span>
+                        </div>
                     </section>
                     <div className={styles.accionesPerfil}>
                         <Link

@@ -13,6 +13,7 @@ import type { PublicacionListado } from "../../../consulta-mercado/acciones/Publ
 import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
 import TextoAjustable from "./TextoAjustable";
 import UbicacionesRetiro from "./UbicacionesRetiro";
+import ComentarioPublicacion from "./ComentarioPublicacion";
 import styles from "./DrawerPublicacion.module.css";
 
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -171,11 +172,8 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                                     <span className={styles.nombreInformacion}>Actualización</span>
                                     <time dateTime={publicacion.fecha} className={styles.valorInformacion}>{fechaFormateada}</time>
                                 </div>
-                                <div className={`${styles.informacionDetallada} ${publicacion.comentario?.trim() ? styles.filaComentario : ""}`}>
-                                    <span className={styles.nombreInformacion}>Comentario</span>
-                                    <p className={`${styles.valorInformacion} ${styles.textoComentario}`}>{publicacion.comentario?.trim() || "-"}</p>
-                                </div>
                             </div>
+                            <ComentarioPublicacion comentario={publicacion.comentario} />
                             {publicacion.tipoPublicacion === "PRODUCTOR" && (
                                 <UbicacionesRetiro ubicaciones={publicacion.ubicaciones} />
                             )}

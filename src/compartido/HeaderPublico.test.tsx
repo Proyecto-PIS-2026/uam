@@ -119,6 +119,10 @@ describe("HeaderPublico", () => {
         const enlaces = screen.getAllByRole("link", { name: "Administración" });
         expect(enlaces).toHaveLength(2);
         for (const enlace of enlaces) expect(enlace).toHaveAttribute("href", "/administracion");
+        for (const nombre of ["Navegación principal", "Navegación móvil"]) {
+            expect(within(screen.getByRole("navigation", { name: nombre })).getByRole("link", { name: "Histórico de precios" }))
+                .toHaveAttribute("href", "/precios-historicos");
+        }
     });
 
     it("ordena las opciones del administrador y coloca Administración antes de Notificaciones en el hamburger", () => {
@@ -130,6 +134,7 @@ describe("HeaderPublico", () => {
             "Mercados",
             "Usuarios",
             "Precios de referencia",
+            "Histórico de precios",
             "Administración",
         ]);
 
@@ -141,6 +146,7 @@ describe("HeaderPublico", () => {
             "Mercados",
             "Usuarios",
             "Precios de referencia",
+            "Histórico de precios",
             "Administración",
             "Notificaciones",
             "Mi perfil",
@@ -190,17 +196,18 @@ describe("HeaderPublico", () => {
         expect(screen.queryByRole("link", { name: "Mi mercado" })).not.toBeInTheDocument();
     });
 
-    it("ofrece Mercado Producción, Mi mercado y Precios de referencia al operador en ambos menús", () => {
+    it("ofrece Mercado Producción, Mi mercado, Precios de referencia e Histórico al operador en ambos menús", () => {
         consultarRutaSimulada.mockReturnValue("/mi-mercado");
         render(<HeaderPublico sesion={{ usuarioId: 10, rol: "OPERADOR", expiraEn: 2000000000 }} />);
 
         for (const nombre of ["Navegación principal", "Navegación móvil"]) {
             const menu = within(screen.getByRole("navigation", { name: nombre }));
-            expect(menu.getAllByRole("link")).toHaveLength(nombre === "Navegación móvil" ? 6 : 4);
+            expect(menu.getAllByRole("link")).toHaveLength(nombre === "Navegación móvil" ? 7 : 5);
             expect(menu.getByRole("link", { name: "Productores" })).toHaveAttribute("href", "/productores");
             expect(menu.getByRole("link", { name: "Mercado Producción" })).toHaveAttribute("href", "/publicaciones-productor");
             expect(menu.getByRole("link", { name: "Mi mercado" })).toHaveAttribute("href", "/mi-mercado");
             expect(menu.getByRole("link", { name: "Precios de referencia" })).toHaveAttribute("href", "/precios-referencia");
+            expect(menu.getByRole("link", { name: "Histórico de precios" })).toHaveAttribute("href", "/precios-historicos");
 
             for (const opcion of ["Inicio", "Operadores"]) {
                 expect(menu.queryByRole("link", { name: opcion })).not.toBeInTheDocument();
@@ -219,6 +226,7 @@ describe("HeaderPublico", () => {
             expect(menu.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/inicio");
             expect(menu.getByRole("link", { name: "Mercado Virtual" })).toHaveAttribute("href", "/publicaciones");
             expect(menu.getByRole("link", { name: "Operadores" })).toHaveAttribute("href", "/operadores");
+            expect(menu.getByRole("link", { name: "Histórico de precios" })).toHaveAttribute("href", "/precios-historicos");
             expect(menu.queryByRole("link", { name: "Productores" })).not.toBeInTheDocument();
         }
         expect(screen.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/inicio");

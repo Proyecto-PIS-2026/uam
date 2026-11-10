@@ -10,7 +10,6 @@ import { validarComentario } from "../validarComentario";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
-type FechaVigenciaDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["fechaVigencia"];
 
 export class ErrorEdicionPublicacion extends Error {
     constructor(
@@ -69,7 +68,7 @@ export async function modificarPublicacionOperador(
             cantidadUnidadesParaGuardar = null;
         }
     }
-    let fechaVigenciaParaGuardar: FechaVigenciaDb = undefined;
+    let fechaVigenciaParaGuardar: ReturnType<typeof convertirFechaVigenciaAInstant> | undefined;
     if (cambios.fechaVigencia !== undefined) {
         const resVigencia = validarFechaVigencia(cambios.fechaVigencia);
         if (!resVigencia.esValido) {
@@ -138,7 +137,7 @@ export async function modificarPublicacionOperador(
             }
 
             const publicacion = await tx.orm.public.Publicacion
-                .select("tipoPublicacion", "foto", "version")
+                .select("tipoPublicacion", "foto", "version", "fechaVigencia")
                 .where({ id: vinculo.publicacionId })
                 .first();
 
@@ -195,6 +194,9 @@ export async function modificarPublicacionOperador(
                     kilosId: cambios.kilosId,
                     publicacionDisponible: cambios.disponible,
                     ...(fechaVigenciaParaGuardar !== undefined ? { fechaVigencia: fechaVigenciaParaGuardar } : {}),
+                    ...(fechaVigenciaParaGuardar !== undefined &&
+                        publicacion.fechaVigencia?.epochNanoseconds !== fechaVigenciaParaGuardar?.epochNanoseconds
+                        ? { avisoProximoVencimientoEn: null, avisoVencimientoEn: null } : {}),
                 });
 
             if (!actualizada) {

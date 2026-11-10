@@ -276,4 +276,20 @@ describe.sequential("notificaciones persistidas y aisladas por usuario", { timeo
             fecha: expect.any(String),
         }]);
     });
+
+    it.each(["operador", "productor"] as const)("oculta el identificador de los avisos guardados del %s y conserva el enlace", async (rol) => {
+        const sesion = rol === "operador" ? operador : productor;
+        const texto = "Tu publicación de Papa (ID #123) está próxima a vencer el 2026-11-11.";
+        const url = `${rol === "operador" ? "/mi-mercado" : "/mi-mercado/productor"}?publicacion=123`;
+        await servicio.enviarNotificacion({ texto, url, usuarios: [sesion.usuarioId] });
+
+        const resultado = await servicio.consultarNotificaciones(sesion);
+
+        expect(resultado.notificaciones).toEqual([expect.objectContaining({
+            texto: "Tu publicación de Papa está próxima a vencer el 2026-11-11.",
+            url,
+            leida: false,
+        })]);
+        expect(resultado.noLeidas).toBe(1);
+    });
 });

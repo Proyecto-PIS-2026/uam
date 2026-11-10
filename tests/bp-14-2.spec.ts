@@ -122,13 +122,13 @@ async function completarPrecarga(page: Page, calibre: string, precio: string) {
   await expect(alta).toBeVisible();
   await seleccionar(page, alta, "Especie", "Uchuva");
   await seleccionar(page, alta, "Variedad", "-");
-  await seleccionar(page, alta, "Empaquetado", "Cajon");
+  await seleccionar(page, alta, "Empaquetado", "Cajón");
   await seleccionar(page, alta, "Kilos del empaquetado", "20 kg");
   await seleccionar(page, alta, "Categoría", "-");
   await seleccionar(page, alta, "Calibre", calibre);
   await seleccionar(page, alta, "País de origen", "URUGUAY");
   await alta.getByLabel("Precio en pesos").fill(precio);
-  await alta.getByLabel("Unidades (Cajon)").fill("25");
+  await alta.getByLabel("Unidades (Cajón)").fill("25");
 
   await alta.getByRole("button", { name: "Agregar punto de retiro" }).click();
   const mapa = page.getByRole("dialog", { name: "Agregar punto de retiro", exact: true });

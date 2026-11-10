@@ -211,7 +211,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
 
     return (
         <div className={styles.pagina}>
-            <EncabezadoPagina titulo="Precios de referencia" cantidad={filas.length} subtitulo="registros del relevamiento" />
+            <EncabezadoPagina titulo="Precios de referencia" cantidad={filas.length} subtitulo={filas.length === 1 ? "registro del relevamiento" : "registros del relevamiento"} />
 
             <div className={styles.contexto}>
                 <p>Relevamiento del <strong>{dia}/{mes}/{anio}</strong></p>
@@ -339,7 +339,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 slotProps={menu}
                             >
                                 <MenuItem value="unidad" className={styles.opcionSelect}>Unidad</MenuItem>
-                                <MenuItem value="kg" className={styles.opcionSelect}>Kg</MenuItem>
+                                <MenuItem value="kg" className={styles.opcionSelect}>kg</MenuItem>
                             </TextField>
                             <TextField
                                 className={`${styles.campo} ${styles.filtroPrecioMinimo}`}

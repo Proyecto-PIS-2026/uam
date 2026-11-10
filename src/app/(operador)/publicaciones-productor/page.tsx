@@ -29,7 +29,7 @@ export default async function Page({ searchParams }: Props = {}) {
                     <EncabezadoPagina
                         titulo="Mercado Producción"
                         cantidad={publicaciones.length}
-                        subtitulo="publicaciones en la plataforma"
+                        subtitulo={publicaciones.length === 1 ? "publicación en la plataforma" : "publicaciones en la plataforma"}
                     />
                     <ContenedorPublicaciones
                         key={`${especie}-${ordenInicial}-${configuracion.habilitado}`}

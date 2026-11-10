@@ -299,7 +299,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 required
                                 onChange={(e) => settelefono(e.target.value.replace(/\D/g, ""))}
                                 slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
-                                placeholder="Ej: 99123456"
+                                placeholder="Ej.: 99123456"
                                 fullWidth
                                 size="small"
                                 className={styles.control}
