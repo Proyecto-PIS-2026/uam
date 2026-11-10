@@ -8,7 +8,10 @@ process.env.DISABLE_VISIT_TRACKING = "true";
 // Las cuentas de la seed usan username + "123"; el administrador ingresa con su correo.
 for (const rol of ['OPERADOR', 'PRODUCTOR', 'INHABILITADO', 'ADMINISTRADOR', 'ADMIN']) {
   const usuario = process.env[`E2E_${rol}_USU`];
-  if (usuario) process.env[`E2E_${rol}_PASS`] = `${rol.startsWith('ADMIN') ? 'admin' : usuario}123`;
+  if (usuario) {
+    const username = rol.startsWith('ADMIN') ? usuario.split('@')[0] : usuario;
+    process.env[`E2E_${rol}_PASS`] = `${username}123`;
+  }
 }
 
 export default defineConfig({
