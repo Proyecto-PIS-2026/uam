@@ -205,9 +205,6 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
                         >
                             <span className={styles.username}>
                                 {usuario.username}
-                                <span className={styles.estadoUsuario} data-habilitado={usuario.habilitado !== false}>
-                                    {usuario.habilitado === false ? "Deshabilitado" : "Habilitado"}
-                                </span>
                                 {usuario.solicitoRestablecimiento && (
                                     <WarningAmberIcon fontSize="small" className={styles.iconoRestablecimiento} aria-hidden="true" />
                                 )}
@@ -219,6 +216,9 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
                                         Restablecimiento solicitado
                                     </span>
                                 )}
+                                <span className={styles.estadoUsuario} data-habilitado={usuario.habilitado !== false}>
+                                    {usuario.habilitado === false ? "Deshabilitado" : "Habilitado"}
+                                </span>
                             </span>
                             <span className={styles.informacion}>{obtenerInformacion(usuario)}</span>
                             <span className={styles.rol}>
