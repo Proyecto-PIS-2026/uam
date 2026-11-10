@@ -83,8 +83,8 @@ export default defineConfig({
     },
     {
       name: 'chromium-administracion',
-      testMatch: /bp-18(?:\.spec\.ts|[\\/].*\.spec\.ts)/,
-      // Importe y ordenamiento son globales: estos tests corren después del resto del portal.
+      testMatch: /bp-18\.spec\.ts/,
+      // El importe es global: estos tests corren después de BP-06 y BP-07.
       dependencies: ['chromium'],
       fullyParallel: false,
       workers: 1,
