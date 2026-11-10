@@ -81,12 +81,23 @@ export default function PerfilAdministrador({ administrador, esPropiaCuenta }: P
                 </header>
 
                 <div className={`${styles.tarjetaInformacion} ${styles.contenidoConsulta}`}>
-                    <div className={styles.contactoConsulta}>
-                        <span className={styles.iconoContactoConsulta} aria-hidden="true"><EmailOutlinedIcon /></span>
-                        <div className={styles.datosContactoConsulta}>
-                            <span className={styles.etiquetaContactoConsulta}>Correo electrónico:</span>
-                            <span className={styles.valorContactoConsulta}>{administrador.email || "-"}</span>
+                    <div className={styles.filaContactoConsulta}>
+                        <div className={styles.contactoConsulta}>
+                            <span className={styles.iconoContactoConsulta} aria-hidden="true"><EmailOutlinedIcon /></span>
+                            <div className={styles.datosContactoConsulta}>
+                                <span className={styles.etiquetaContactoConsulta}>Correo electrónico:</span>
+                                <span className={styles.valorContactoConsulta}>{administrador.email || "-"}</span>
+                            </div>
                         </div>
+                        <section className={styles.contactoConsulta} aria-labelledby="restablecimiento-administrador">
+                            <span className={styles.iconoContactoConsulta} aria-hidden="true"><PasswordOutlinedIcon /></span>
+                            <div className={styles.datosContactoConsulta}>
+                                <h2 id="restablecimiento-administrador" className={styles.etiquetaContactoConsulta}>Restablecimiento de contraseña</h2>
+                                <span className={`${styles.valorContactoConsulta} ${styles.estadoRestablecimiento}`} data-estado={administrador.solicitoRestablecimiento ? "solicitado" : "neutro"}>
+                                    {administrador.solicitoRestablecimiento ? "Solicitado" : "No solicitado"}
+                                </span>
+                            </div>
+                        </section>
                     </div>
 
                     <div className={styles.seccionesConsulta}>
@@ -106,14 +117,6 @@ export default function PerfilAdministrador({ administrador, esPropiaCuenta }: P
                                     Restablecer segundo factor
                                 </Button>
                             )}
-                        </section>
-                        <section className={styles.seccionConsulta} aria-labelledby="restablecimiento-administrador">
-                            <h2 id="restablecimiento-administrador" className={styles.tituloConsulta}>
-                                <PasswordOutlinedIcon aria-hidden="true" />Restablecimiento de contraseña
-                            </h2>
-                            <span className={styles.estadoConsulta} data-estado={administrador.solicitoRestablecimiento ? "solicitado" : "neutro"}>
-                                {administrador.solicitoRestablecimiento ? "Solicitado" : "No solicitado"}
-                            </span>
                         </section>
                     </div>
 
