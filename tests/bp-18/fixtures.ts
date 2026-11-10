@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import sharp from "sharp";
 import { expect as baseExpect, type Locator, type Page } from "@playwright/test";
 import { test as base } from "../precarga-operadores";
 import type { Credenciales } from "../autenticacion";
@@ -11,7 +10,6 @@ type Catalogo = {
     prefijo: string;
     especies: Especie[];
     productor: { id: number; usuarioId: number; nombre: string; credenciales: Credenciales };
-    publicaciones: { operador: number[]; productor: number[] };
 };
 
 const clavesOrdenamiento = [
@@ -24,7 +22,7 @@ export const test = base.extend<{ catalogo: Catalogo; ordenamiento: void }>({
         const { db } = datos;
         const prefijo = `BP18 ${randomUUID().slice(0, 8)}`;
         const especies: Especie[] = [];
-        const publicaciones: Catalogo["publicaciones"] = { operador: [], productor: [] };
+        const publicaciones: { operador: number[]; productor: number[] } = { operador: [], productor: [] };
         try {
             const productor = await db.orm.public.Productor
                 .where((p) => p.usuario.some((u) => u.username.eq(datos.productor.usuario)))
@@ -48,19 +46,17 @@ export const test = base.extend<{ catalogo: Catalogo; ordenamiento: void }>({
                     }
                 }
             }
-            await usar({ prefijo, especies, publicaciones, productor: {
+            await usar({ prefijo, especies, productor: {
                 id: productor.id, usuarioId: productor.usuarioId, nombre: productor.nombreFantasia, credenciales: datos.productor,
             } });
         } finally {
-            // Sólo se eliminan publicaciones, imágenes y especies creadas por este caso.
+            // Sólo se eliminan publicaciones y especies creadas por este caso.
             await db.transaction(async (tx) => {
                 for (const id of [...publicaciones.operador, ...publicaciones.productor]) {
                     await tx.orm.public.Publicacion.where({ id }).delete();
-                    await tx.execute(db.raw.sql`DELETE FROM imagen WHERE clave LIKE ${`publicaciones/${id}/%`}`.affectedCount().build());
                 }
                 for (const especie of especies) {
                     await tx.orm.public.Especie.where({ id: especie.id }).delete();
-                    await tx.execute(db.raw.sql`DELETE FROM imagen WHERE clave LIKE ${`especies/${especie.id}/%`}`.affectedCount().build());
                 }
             });
         }
@@ -105,15 +101,4 @@ export async function ingresar(page: Page, credenciales: Credenciales) {
 export async function seleccionar(page: Page, contenedor: Locator, campo: string, valor: string) {
     await contenedor.getByRole("combobox", { name: campo, exact: true }).click();
     await page.getByRole("option", { name: valor, exact: true }).click();
-}
-
-export async function imagenPrueba(color: string) {
-    return sharp({ create: { width: 40, height: 40, channels: 3, background: color } }).png().toBuffer();
-}
-
-export async function comprobarImagen(imagen: Locator, url: string) {
-    await imagen.scrollIntoViewIfNeeded();
-    await expect.poll(() => imagen.evaluate((elemento: HTMLImageElement) => new URL(elemento.src, document.baseURI).pathname)).toBe(url);
-    await expect(imagen).toBeVisible();
-    await expect.poll(() => imagen.evaluate((elemento: HTMLImageElement) => elemento.complete && elemento.naturalWidth > 0)).toBe(true);
 }
