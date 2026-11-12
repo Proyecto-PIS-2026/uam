@@ -25,6 +25,11 @@ const mocks = vi.hoisted(() => ({
     notificar: vi.fn(),
     bloquear: vi.fn(),
     reservar: vi.fn(),
+    fechaMaxima: vi.fn(),
+}));
+
+vi.mock("./configuracion-vigencia-publicaciones", () => ({
+    obtenerFechaMaximaVigenciaOperador: mocks.fechaMaxima,
 }));
 
 vi.mock("./validarAltaPublicacionOperador", () => ({
@@ -219,6 +224,7 @@ beforeEach(() => {
     ]);
 
     mocks.bloquear.mockResolvedValue(undefined);
+    mocks.fechaMaxima.mockReset().mockResolvedValue(null);
     mocks.notificar.mockResolvedValue(undefined);
 
     mocks.transaccion.mockImplementation((callback) => callback());
@@ -227,6 +233,61 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("altaPublicacionOperador", () => {
+    describe("vigencia configurada para operadores", () => {
+        it.each([null, undefined])("aplica el máximo cuando la fecha validada es %s", async (fechaVigencia) => {
+            mocks.fechaMaxima.mockResolvedValue("2026-11-25");
+            mocks.validar.mockReturnValue({ esValido: true, datos: { ...DATOS, fechaVigencia } });
+
+            await expect(altaPublicacionOperador({})).resolves.toMatchObject({ esValido: true });
+
+            expect(mocks.crear.mock.calls[0][0].fechaVigencia.toString()).toBe("2026-11-26T02:59:59Z");
+            expect(mocks.fechaMaxima.mock.invocationCallOrder[0]).toBeLessThan(mocks.bloquear.mock.invocationCallOrder[0]);
+        });
+
+        it.each(["2026-11-24", "2026-11-25"])("admite la fecha %s dentro del máximo inclusive", async (fechaVigencia) => {
+            mocks.fechaMaxima.mockResolvedValue("2026-11-25");
+            mocks.validar.mockReturnValue({ esValido: true, datos: { ...DATOS, fechaVigencia } });
+
+            await expect(altaPublicacionOperador({})).resolves.toMatchObject({ esValido: true });
+
+            const fechaGuardada = mocks.crear.mock.calls[0][0].fechaVigencia as Temporal.Instant;
+            expect(fechaGuardada.toZonedDateTimeISO("America/Montevideo").toPlainDate().toString()).toBe(fechaVigencia);
+        });
+
+        it("rechaza fechas posteriores al máximo y elimina la imagen preparada", async () => {
+            mocks.fechaMaxima.mockResolvedValue("2026-11-19");
+
+            await expect(altaPublicacionOperador({})).resolves.toEqual({
+                esValido: false,
+                errores: ["La fecha de vigencia no puede superar el 2026-11-19."],
+            });
+
+            expect(mocks.bloquear).not.toHaveBeenCalled();
+            expect(mocks.crear).not.toHaveBeenCalled();
+            expect(mocks.crearRelacion).not.toHaveBeenCalled();
+            expect(mocks.notificar).not.toHaveBeenCalled();
+            expect(mocks.eliminar).toHaveBeenCalledExactlyOnceWith(URL, 777);
+        });
+
+        it("conserva la fecha explícita cuando la vigencia general está desactivada", async () => {
+            await expect(altaPublicacionOperador({})).resolves.toMatchObject({ esValido: true });
+
+            expect(mocks.crear.mock.calls[0][0].fechaVigencia.toString()).toBe("2026-11-21T02:59:59Z");
+        });
+
+        it("no crea la publicación y limpia la imagen si falta la configuración", async () => {
+            const error = new Error("No se pudo consultar la configuración de vigencia de publicaciones.");
+            mocks.fechaMaxima.mockRejectedValue(error);
+
+            await expect(altaPublicacionOperador({})).rejects.toBe(error);
+
+            expect(mocks.bloquear).not.toHaveBeenCalled();
+            expect(mocks.crear).not.toHaveBeenCalled();
+            expect(mocks.crearRelacion).not.toHaveBeenCalled();
+            expect(mocks.eliminar).toHaveBeenCalledExactlyOnceWith(URL, 777);
+        });
+    });
+
     it("devuelve los errores del validador sin consultar la base", async () => {
         mocks.validar.mockReturnValue({
             esValido: false,

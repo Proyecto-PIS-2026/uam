@@ -200,6 +200,54 @@ describe.sequential(
             });
         });
 
+        it.each([undefined, ""])("aplica la vigencia general al omitir o vaciar la fecha: %s", async (fechaVigencia) => {
+            const [habilitada, dias] = await Promise.all([
+                db.orm.public.Configuracion.where({ nombreConfiguracion: "vigencia_publicaciones_operador_habilitada" }).first(),
+                db.orm.public.Configuracion.where({ nombreConfiguracion: "vigencia_publicaciones_operador" }).first(),
+            ]);
+            if (!habilitada || !dias) throw new Error("Falta la configuración de vigencia de operadores en la base de pruebas.");
+            const { datos } = await obtenerDatosDePublicacionSemilla();
+            const usuario = await obtenerUsuarioOperador(datos.operadorId);
+            const fecha = obtenerFechaSnapshotActual();
+            const estadisticaAnterior = await obtenerEstadisticaActual(usuario.username, fecha);
+            let id: number | undefined;
+
+            try {
+                await db.orm.public.Configuracion.where({ nombreConfiguracion: dias.nombreConfiguracion })
+                    .update({ valorConfiguracion: "7" });
+                await db.orm.public.Configuracion.where({ nombreConfiguracion: habilitada.nombreConfiguracion })
+                    .update({ valorConfiguracion: "true" });
+                const fechaMaxima = Temporal.Now.plainDateISO("America/Montevideo").add({ days: 7 });
+
+                const resultado = await altaPublicacionOperador({ ...datos, fechaVigencia });
+                expect(resultado.esValido).toBe(true);
+                if (!resultado.esValido) return;
+                id = resultado.id;
+                const publicacion = await db.orm.public.Publicacion.where({ id }).first();
+                const fechaGuardada = publicacion?.fechaVigencia?.toZonedDateTimeISO("America/Montevideo");
+                expect(fechaGuardada?.toPlainDate().toString()).toBe(fechaMaxima.toString());
+                expect(fechaGuardada?.toPlainTime().toString()).toBe("23:59:59");
+
+                const fueraDelLimite = await altaPublicacionOperador({
+                    ...datos, fechaVigencia: fechaMaxima.add({ days: 1 }).toString(),
+                });
+                expect(fueraDelLimite).toEqual({
+                    esValido: false,
+                    errores: [`La fecha de vigencia no puede superar el ${fechaMaxima}.`],
+                });
+            } finally {
+                try {
+                    if (id !== undefined) await db.orm.public.Publicacion.where({ id }).delete();
+                    await restaurarEstadisticaAnterior(usuario.username, fecha, estadisticaAnterior);
+                } finally {
+                    await db.orm.public.Configuracion.where({ nombreConfiguracion: dias.nombreConfiguracion })
+                        .update({ valorConfiguracion: dias.valorConfiguracion });
+                    await db.orm.public.Configuracion.where({ nombreConfiguracion: habilitada.nombreConfiguracion })
+                        .update({ valorConfiguracion: habilitada.valorConfiguracion });
+                }
+            }
+        });
+
         it("rechaza catálogos inactivos", async () => {
             const { datos, variedad } =
                 await obtenerDatosDePublicacionSemilla();

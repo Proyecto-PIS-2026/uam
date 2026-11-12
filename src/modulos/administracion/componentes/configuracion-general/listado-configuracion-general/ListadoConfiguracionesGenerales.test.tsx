@@ -57,6 +57,10 @@ function crearConfiguracion(cambios: Record<string, string | null> = {}): Record
         vigencia_fotos: "30",
         aviso_vencimiento_fotos_habilitado: "true",
         anticipacion_aviso_fotos: "7",
+        vigencia_publicaciones_operador_habilitada: "true",
+        vigencia_publicaciones_operador: "20",
+        aviso_vencimiento_publicaciones_operador_habilitado: "true",
+        anticipacion_aviso_publicaciones_operador: "3",
         vigencia_publicaciones_productor_habilitada: "true",
         vigencia_publicaciones_productor: "15",
         aviso_vencimiento_publicaciones_productor_habilitado: "false",
@@ -124,6 +128,7 @@ describe("ListadoConfiguracionesGenerales", () => {
     it("entrega las configuraciones de vigencia por separado", () => {
         preparar();
         expect(propsVigencia("Vigencia de las fotos").configuracion).toEqual({ habilitado: true, diasVigencia: "30", avisosHabilitados: true, diasAnticipacion: "7" });
+        expect(propsVigencia("Vigencia de publicaciones de operadores").configuracion).toEqual({ habilitado: true, diasVigencia: "20", avisosHabilitados: true, diasAnticipacion: "3" });
         expect(propsVigencia("Vigencia de publicaciones de productores").configuracion).toEqual({ habilitado: true, diasVigencia: "15", avisosHabilitados: false, diasAnticipacion: "" });
     });
 
@@ -140,6 +145,7 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(propsInput("Importe de ajuste rápido de precios").valor).toBe("");
         expect(propsOrdenamiento().configuracion).toEqual({ habilitado: false, ordenLanding: "mas_vendidas", ordenMercadoVirtual: "mas_vendidas", ordenMercadoProduccion: "mas_vendidas" });
         expect(propsVigencia("Vigencia de las fotos").configuracion).toEqual({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" });
+        expect(propsVigencia("Vigencia de publicaciones de operadores").configuracion).toEqual({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" });
         expect(propsVigencia("Vigencia de publicaciones de productores").configuracion).toEqual({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" });
         expect(propsRestablecimiento().habilitado).toBe(false);
     });
@@ -238,7 +244,19 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(mocks.refresh).toHaveBeenCalledOnce();
     });
 
-    it("guarda la vigencia de publicaciones con sus propias claves", async () => {
+    it("guarda la vigencia de publicaciones de operadores con sus propias claves", async () => {
+        preparar();
+        await act(async () => { await propsVigencia("Vigencia de publicaciones de operadores").onGuardar({ habilitado: true, diasVigencia: "60", avisosHabilitados: true, diasAnticipacion: "10" }) });
+        expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({
+            vigencia_publicaciones_operador_habilitada: "true",
+            vigencia_publicaciones_operador: "60",
+            aviso_vencimiento_publicaciones_operador_habilitado: "true",
+            anticipacion_aviso_publicaciones_operador: "10",
+        });
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("guarda la vigencia de publicaciones de productores con sus propias claves", async () => {
         preparar();
         await act(async () => { await propsVigencia("Vigencia de publicaciones de productores").onGuardar({ habilitado: true, diasVigencia: "20", avisosHabilitados: true, diasAnticipacion: "3" }) });
         expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({
