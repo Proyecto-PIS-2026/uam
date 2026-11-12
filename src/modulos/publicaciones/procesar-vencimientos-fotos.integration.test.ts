@@ -135,7 +135,7 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
         ({ AlmacenamientoImagenesPostgres } = await import("@/infraestructura/imagenes/almacenamiento-postgres"));
     });
 
-    // El procesador recorre todas las fotos. Revertir cada caso evita persistir cambios
+    // El procesador recorre las fotos del rol indicado. Revertir cada caso evita persistir cambios
     // sobre cualquier dato ajeno que ya exista en DATABASE_URL_TEST.
     it("deshabilitado conserva fotos vencidas, próximas y anteriores sin inicializar marcas ni enviar avisos", async () => {
         await conRollback(async (tx) => {
@@ -148,10 +148,65 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
             }
             const antes = await Promise.all(fotos.map((foto) => leerFoto(tx, foto)));
 
-            expect(await procesar({ tx, fecha, limite }, { habilitado: false })).toBe(0);
+            for (const rol of roles) {
+                expect(await procesar({ tx, fecha, limite }, { habilitado: false }, rol)).toBe(0);
+            }
 
             expect(await Promise.all(fotos.map((foto) => leerFoto(tx, foto)))).toEqual(antes);
             expect(await avisosPropios(tx, entorno)).toEqual([]);
+        });
+    });
+
+    it.each(roles)("procesar %s no inicializa, avisa ni elimina fotos del otro rol deshabilitado", async (rol) => {
+        await conRollback(async (tx) => {
+            const entorno = await crearEntorno(tx);
+            const otroRol: Rol = rol === "OPERADOR" ? "PRODUCTOR" : "OPERADOR";
+            const propias: Foto[] = [];
+            const ajenas: Foto[] = [];
+            for (const cargadaEn of [inicioVencimiento, inicioAviso, null]) {
+                propias.push(await crearFoto(tx, entorno, rol, cargadaEn));
+                ajenas.push(await crearFoto(tx, entorno, otroRol, cargadaEn));
+            }
+            const ajenasAntes = await Promise.all(ajenas.map((foto) => leerFoto(tx, foto)));
+
+            expect(await procesar(contexto(tx), { habilitado: false }, otroRol)).toBe(0);
+            expect(await procesar(contexto(tx), configuracion, rol)).toBeGreaterThanOrEqual(2);
+
+            expect((await leerFoto(tx, propias[0])).imagen).toBeNull();
+            expect((await leerFoto(tx, propias[1])).imagen?.avisoVencimientoEn).toBe(limite);
+            expect((await leerFoto(tx, propias[2])).imagen?.cargadaEn).toBe(limite);
+            expect(await Promise.all(ajenas.map((foto) => leerFoto(tx, foto)))).toEqual(ajenasAntes);
+            const avisos = await avisosPropios(tx, entorno);
+            expect(avisos).toHaveLength(2);
+            expect(avisos.every((aviso) => aviso.usuarioId === entorno.propietarios[rol].usuarioId)).toBe(true);
+
+            expect(await procesar(contexto(tx), { habilitado: false }, otroRol)).toBe(0);
+            expect(await Promise.all(ajenas.map((foto) => leerFoto(tx, foto)))).toEqual(ajenasAntes);
+            expect(await avisosPropios(tx, entorno)).toEqual(avisos);
+        });
+    });
+
+    it("aplica vigencia y anticipación distintas a fotos de ambos roles cargadas el mismo día", async () => {
+        await conRollback(async (tx) => {
+            const entorno = await crearEntorno(tx);
+            const operador = await crearFoto(tx, entorno, "OPERADOR", inicioAviso);
+            const productor = await crearFoto(tx, entorno, "PRODUCTOR", inicioAviso);
+            const productorAntes = await leerFoto(tx, productor);
+
+            await procesar(contexto(tx), { ...configuracion, diasVigencia: 20, diasAnticipacionAviso: 3 }, "OPERADOR");
+
+            expect((await leerFoto(tx, operador)).imagen).toBeNull();
+            expect(await leerFoto(tx, productor)).toEqual(productorAntes);
+            await procesar(contexto(tx), { ...configuracion, diasVigencia: 60, diasAnticipacionAviso: 40 }, "PRODUCTOR");
+
+            expect(await leerFoto(tx, productor)).toEqual({
+                publicacion: productorAntes.publicacion,
+                imagen: { ...productorAntes.imagen, avisoVencimientoEn: limite },
+            });
+            const avisos = await avisosPropios(tx, entorno);
+            expect(avisos).toHaveLength(2);
+            expect(avisos.find((aviso) => aviso.usuarioId === operador.propietario.usuarioId)?.descripcion).toMatch(/venció.*eliminada/);
+            expect(avisos.find((aviso) => aviso.usuarioId === productor.propietario.usuarioId)?.descripcion).toContain("11/12/2026");
         });
     });
 
@@ -164,7 +219,7 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
             const antesProxima = await leerFoto(tx, proxima);
             const sinAvisos = { ...configuracion, avisosHabilitados: false, diasAnticipacionAviso: 0 };
 
-            expect(await procesar(contexto(tx), sinAvisos)).toBeGreaterThanOrEqual(1);
+            expect(await procesar(contexto(tx), sinAvisos, rol)).toBeGreaterThanOrEqual(1);
 
             const despuesVencida = await leerFoto(tx, vencida);
             expect(despuesVencida.imagen).toBeNull();
@@ -185,7 +240,7 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
             });
             expect(avisos[0].descripcion).toMatch(/venció.*eliminada/);
 
-            expect(await procesar(contexto(tx), sinAvisos)).toBe(0);
+            expect(await procesar(contexto(tx), sinAvisos, rol)).toBe(0);
             expect(await leerFoto(tx, proxima)).toEqual(antesProxima);
             expect(await avisosPropios(tx, entorno)).toEqual(avisos);
         });
@@ -206,7 +261,7 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
             for (const caso of casos) fotos.push(await crearFoto(tx, entorno, rol, caso.instante));
             const antes = await Promise.all(fotos.map((foto) => leerFoto(tx, foto)));
 
-            expect(await procesar(contexto(tx), configuracion)).toBeGreaterThanOrEqual(5);
+            expect(await procesar(contexto(tx), configuracion, rol)).toBeGreaterThanOrEqual(5);
 
             const avisos = await avisosPropios(tx, entorno);
             expect(avisos).toHaveLength(5);
@@ -251,7 +306,7 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
             for (const usuarioId of usuariosDelEntorno(entorno).filter((id) => id !== entorno.propietarios[rol].usuarioId)) {
                 expect(await tx.orm.public.Notificacion.where({ usuarioId }).all()).toEqual([]);
             }
-            expect(await procesar(contexto(tx), configuracion)).toBe(0);
+            expect(await procesar(contexto(tx), configuracion, rol)).toBe(0);
             expect(await avisosPropios(tx, entorno)).toEqual(avisos);
         });
     });
@@ -260,7 +315,7 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
         await conRollback(async (tx) => {
             const entorno = await crearEntorno(tx);
             const foto = await crearFoto(tx, entorno, rol, inicioVencimiento);
-            await procesar(contexto(tx), configuracion);
+            await procesar(contexto(tx), configuracion, rol);
             await tx.orm.public.Notificacion.where({ usuarioId: foto.propietario.usuarioId }).deleteAll();
             await tx.orm.public.Publicacion.where({ id: foto.publicacionId }).update({ cantidadUnidades: 25 });
 
@@ -269,7 +324,7 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
                 foto: null, cantidadUnidades: 25, fotoEliminadaPorVencimientoEn: limite,
             });
             expect(despues.imagen).toBeNull();
-            expect(await procesar(contexto(tx, "2026-11-05T15:00:00Z"), configuracion)).toBe(0);
+            expect(await procesar(contexto(tx, "2026-11-05T15:00:00Z"), configuracion, rol)).toBe(0);
             expect((await leerFoto(tx, foto)).publicacion.fotoEliminadaPorVencimientoEn).toBe(limite);
             expect(await avisosPropios(tx, entorno)).toEqual([]);
         });
@@ -279,13 +334,13 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
         await conRollback(async (tx) => {
             const entorno = await crearEntorno(tx);
             const foto = await crearFoto(tx, entorno, rol, inicioAviso);
-            await procesar(contexto(tx), configuracion);
+            await procesar(contexto(tx), configuracion, rol);
             const primerAviso = await avisosPropios(tx, entorno);
             expect(primerAviso).toHaveLength(1);
             expect((await leerFoto(tx, foto)).imagen?.avisoVencimientoEn).toBe(limite);
             await tx.orm.public.Notificacion.where({ usuarioId: foto.propietario.usuarioId }).deleteAll();
 
-            expect(await procesar(contexto(tx), configuracion)).toBe(0);
+            expect(await procesar(contexto(tx), configuracion, rol)).toBe(0);
             expect(await avisosPropios(tx, entorno)).toEqual([]);
 
             const archivo = `${randomUUID()}.webp`;
@@ -304,40 +359,45 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
             await tx.orm.public.Publicacion.where({ id: foto.publicacionId }).update({ foto: nueva.url });
             await almacenamiento.eliminar(foto.clave);
 
-            expect(await procesar(contexto(tx), configuracion)).toBe(0);
+            expect(await procesar(contexto(tx), configuracion, rol)).toBe(0);
             expect((await leerFoto(tx, nueva)).imagen?.avisoVencimientoEn).toBeNull();
             expect(await avisosPropios(tx, entorno)).toEqual([]);
             const siguienteAviso = "2026-11-27T15:00:00Z";
-            await procesar(contexto(tx, siguienteAviso), configuracion);
+            await procesar(contexto(tx, siguienteAviso), configuracion, rol);
             const avisosNuevos = await avisosPropios(tx, entorno);
             expect(avisosNuevos).toHaveLength(1);
             expect(avisosNuevos[0].id).not.toBe(primerAviso[0].id);
             expect(avisosNuevos[0].descripcion).toContain("04/12/2026");
             expect((await leerFoto(tx, nueva)).imagen?.avisoVencimientoEn).toBe(siguienteAviso);
-            expect(await procesar(contexto(tx, siguienteAviso), configuracion)).toBe(0);
+            expect(await procesar(contexto(tx, siguienteAviso), configuracion, rol)).toBe(0);
             expect(await avisosPropios(tx, entorno)).toEqual(avisosNuevos);
         });
     });
 
-    it("inicia la vigencia de fotos anteriores sin fecha una sola vez y conserva la publicación", async () => {
+    it("inicia las fotos anteriores de cada rol en su propia fecha una sola vez y conserva la publicación", async () => {
         await conRollback(async (tx) => {
             const entorno = await crearEntorno(tx);
             const fotos: Foto[] = [];
             for (const rol of roles) fotos.push(await crearFoto(tx, entorno, rol, null));
             const antes = await Promise.all(fotos.map((foto) => leerFoto(tx, foto)));
 
-            await procesar(contexto(tx), configuracion);
+            const inicioProductor = "2026-11-05T15:00:00Z";
+            await procesar(contexto(tx), configuracion, "OPERADOR");
+            expect(await leerFoto(tx, fotos[1])).toEqual(antes[1]);
+            await procesar(contexto(tx, inicioProductor), configuracion, "PRODUCTOR");
 
             for (const [indice, foto] of fotos.entries()) {
                 expect(await leerFoto(tx, foto)).toEqual({
                     publicacion: antes[indice].publicacion,
-                    imagen: { ...antes[indice].imagen, cargadaEn: limite },
+                    imagen: { ...antes[indice].imagen, cargadaEn: foto.propietario.rol === "OPERADOR" ? limite : inicioProductor },
                 });
             }
-            await procesar(contexto(tx, "2026-11-05T15:00:00Z"), configuracion);
+            for (const rol of roles) {
+                await procesar(contexto(tx, "2026-11-06T15:00:00Z"), configuracion, rol);
+            }
             for (const foto of fotos) {
                 const estado = await leerFoto(tx, foto);
-                expect(estado.imagen?.cargadaEn).toBe(limite);
+                expect(estado.imagen?.cargadaEn).toBe(foto.propietario.rol === "OPERADOR" ? limite : inicioProductor);
                 expect(estado.imagen?.avisoVencimientoEn).toBeNull();
                 expect(estado.publicacion.foto).toBe(foto.url);
             }
@@ -360,7 +420,7 @@ describe.sequential("aging transaccional de fotos y avisos al propietario", { ti
             const error = new Error("Fallo posterior al aging, antes del commit");
 
             await expect(db.transaction(async (tx) => {
-                await procesar(contexto(tx), configuracion);
+                for (const rol of roles) await procesar(contexto(tx), configuracion, rol);
                 expect((await leerFoto(tx, fotos[0])).publicacion.foto).toBeNull();
                 expect((await leerFoto(tx, fotos[0])).publicacion.fotoEliminadaPorVencimientoEn).toBe(limite);
                 expect((await leerFoto(tx, fotos[0])).imagen).toBeNull();

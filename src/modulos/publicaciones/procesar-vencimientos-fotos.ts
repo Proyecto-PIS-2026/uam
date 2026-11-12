@@ -5,13 +5,15 @@ import { ZONA_HORARIA_TAREAS, type ContextoTareaDiaria } from "../../infraestruc
 import { notificarCambioCatalogoOperador } from "../../infraestructura/tiempo-real/publicaciones";
 import { enviarNotificacion } from "../notificaciones/notificaciones";
 import { obtenerLimiteAntiguedadFotos, validarConfiguracionAgingFotos, type ConfiguracionAgingFotos } from "./vigencia-fotos";
+import type { TipoPropietarioFoto } from "./claves-aging-fotos";
 
-async function iniciarVigenciaFotosAnteriores({ tx, limite }: ContextoTareaDiaria): Promise<void> {
+async function iniciarVigenciaFotosAnteriores({ tx, limite }: ContextoTareaDiaria, tipo: TipoPropietarioFoto): Promise<void> {
     const anteriores = await tx.query(db.raw.sql`
         SELECT p.id, p.foto, i.clave
         FROM publicacion p
         JOIN imagen i ON i.clave = replace(p.foto, '/api/publicaciones/imagenes/', 'publicaciones/')
         WHERE i."cargadaEn" IS NULL
+            AND p."tipoPublicacion"::text = ${tipo}
             AND p.foto LIKE '/api/publicaciones/imagenes/' || p.id::text || '/%'
     `.returnsRow({ id: "pg/int4@1", foto: "pg/text@1", clave: "pg/text@1" }).build());
     const claves = anteriores
@@ -24,12 +26,19 @@ async function iniciarVigenciaFotosAnteriores({ tx, limite }: ContextoTareaDiari
         SET "cargadaEn" = ${limite}::timestamptz
         WHERE "cargadaEn" IS NULL
             AND clave IN (SELECT jsonb_array_elements_text(${JSON.stringify(claves)}::jsonb))
+            AND EXISTS (
+                SELECT 1 FROM publicacion p
+                WHERE p."tipoPublicacion"::text = ${tipo}
+                    AND p.foto LIKE '/api/publicaciones/imagenes/' || p.id::text || '/%'
+                    AND imagen.clave = replace(p.foto, '/api/publicaciones/imagenes/', 'publicaciones/')
+            )
     `.affectedCount().build());
 }
 
 export async function procesarVencimientosFotos(
     contexto: ContextoTareaDiaria,
     configuracion: ConfiguracionAgingFotos,
+    tipo: TipoPropietarioFoto,
 ): Promise<number> {
     const validada = validarConfiguracionAgingFotos(configuracion);
     if (!validada.habilitado) return 0;
@@ -37,7 +46,8 @@ export async function procesarVencimientosFotos(
     const { diasVigencia, avisosHabilitados, diasAnticipacionAviso } = validada;
     const vencidasHasta = obtenerLimiteAntiguedadFotos(diasVigencia, limite);
     const avisarHasta = avisosHabilitados ? obtenerLimiteAntiguedadFotos(diasVigencia - diasAnticipacionAviso, limite) : vencidasHasta;
-    await iniciarVigenciaFotosAnteriores(contexto);
+    const espacioPropietario = tipo === "OPERADOR" ? 1719 : 1720;
+    await iniciarVigenciaFotosAnteriores(contexto, tipo);
 
     const propietarios = await tx.query(db.raw.sql`
         WITH propietarios AS (
@@ -51,7 +61,9 @@ export async function procesarVencimientosFotos(
         FROM propietarios r
         JOIN publicacion p ON p.id = r."publicacionId"
         JOIN imagen i ON i.clave = replace(p.foto, '/api/publicaciones/imagenes/', 'publicaciones/')
-        WHERE p.foto LIKE '/api/publicaciones/imagenes/' || p.id::text || '/%'
+        WHERE r.espacio = ${espacioPropietario}
+            AND p."tipoPublicacion"::text = ${tipo}
+            AND p.foto LIKE '/api/publicaciones/imagenes/' || p.id::text || '/%'
             AND i."cargadaEn" <= ${avisarHasta}::timestamptz
             AND (i."cargadaEn" <= ${vencidasHasta}::timestamptz OR i."avisoVencimientoEn" IS NULL)
         ORDER BY r.espacio, r."propietarioId"
@@ -81,6 +93,7 @@ export async function procesarVencimientosFotos(
             JOIN especie e ON e.id = p."especieId"
             JOIN imagen i ON i.clave = replace(p.foto, '/api/publicaciones/imagenes/', 'publicaciones/')
             WHERE r.espacio = ${propietario.espacio} AND r."propietarioId" = ${propietario.propietarioId}
+                AND p."tipoPublicacion"::text = ${tipo}
                 AND p.foto LIKE '/api/publicaciones/imagenes/' || p.id::text || '/%'
                 AND i."cargadaEn" <= ${avisarHasta}::timestamptz
                 AND (i."cargadaEn" <= ${vencidasHasta}::timestamptz OR i."avisoVencimientoEn" IS NULL)
@@ -104,6 +117,7 @@ export async function procesarVencimientosFotos(
                         SET foto = NULL, "fotoEliminadaPorVencimientoEn" = ${limite}::timestamptz,
                             version = version + 1, fecha = CURRENT_TIMESTAMP
                         WHERE id = ${publicacion.id} AND foto = ${publicacion.foto}
+                            AND "tipoPublicacion"::text = ${tipo}
                         RETURNING id
                     ), imagen_eliminada AS (
                         DELETE FROM imagen
@@ -119,6 +133,11 @@ export async function procesarVencimientosFotos(
                 const [marcada] = await tx.query(db.raw.sql`
                     UPDATE imagen SET "avisoVencimientoEn" = ${limite}::timestamptz
                     WHERE clave = ${publicacion.clave} AND "avisoVencimientoEn" IS NULL
+                        AND EXISTS (
+                            SELECT 1 FROM publicacion p
+                            WHERE p.id = ${publicacion.id} AND p.foto = ${publicacion.foto}
+                                AND p."tipoPublicacion"::text = ${tipo}
+                        )
                     RETURNING clave
                 `.returnsRow({ clave: "pg/text@1" }).build());
                 if (!marcada) continue;

@@ -978,6 +978,10 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "3" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "1" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aging_fotos_productor_habilitado", valorConfiguracion: "true" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_fotos_productor", valorConfiguracion: "3" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_fotos_productor_habilitado", valorConfiguracion: "true" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_fotos_productor", valorConfiguracion: "1" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor_habilitada", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor", valorConfiguracion: "30" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado", valorConfiguracion: "true" });

@@ -5,6 +5,7 @@ import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/con
 import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { bloquearCambioVigenciaPublicaciones } from "@/modulos/publicaciones/configuracion-vigencia-publicaciones";
 import { calcularFechaMaximaVigencia, convertirFechaVigenciaAInstant } from "@/modulos/publicaciones/vigencia-publicacion";
+import { CLAVES_AGING_FOTOS } from "@/modulos/publicaciones/claves-aging-fotos";
 
 
 const clavesOrdenamiento = [
@@ -12,13 +13,6 @@ const clavesOrdenamiento = [
     "orden_landing_page_default",
     "orden_mercado_virtual_default",
     "orden_mercado_produccion_default",
-] as const;
-
-const clavesVigenciaFotos = [
-    "aging_fotos_habilitado",
-    "vigencia_fotos",
-    "aviso_vencimiento_fotos_habilitado",
-    "anticipacion_aviso_fotos",
 ] as const;
 
 const clavesVigenciaPublicacionesProductor = [
@@ -29,7 +23,8 @@ const clavesVigenciaPublicacionesProductor = [
 ] as const;
 
 const gruposVigencia = [
-    clavesVigenciaFotos,
+    CLAVES_AGING_FOTOS.OPERADOR,
+    CLAVES_AGING_FOTOS.PRODUCTOR,
     clavesVigenciaPublicacionesProductor,
 ] as const;
 
@@ -51,24 +46,19 @@ const clavesPermitidas = new Set<string>([
     "incremento_precio",
     "restablecimiento_contrasena_habilitado",
     ...clavesOrdenamiento,
-    ...clavesVigenciaFotos,
+    ...CLAVES_AGING_FOTOS.OPERADOR,
+    ...CLAVES_AGING_FOTOS.PRODUCTOR,
     ...clavesVigenciaPublicacionesProductor,
 ]);
 
 const clavesBooleanas = new Set<string>([
     "ordenamiento_habilitado",
-    "aging_fotos_habilitado",
-    "aviso_vencimiento_fotos_habilitado",
-    "vigencia_publicaciones_productor_habilitada",
-    "aviso_vencimiento_publicaciones_productor_habilitado",
+    ...gruposVigencia.flatMap(([habilitado, , avisos]) => [habilitado, avisos]),
     "restablecimiento_contrasena_habilitado",
 ]);
 
 const clavesDias = new Set<string>([
-    "vigencia_fotos",
-    "anticipacion_aviso_fotos",
-    "vigencia_publicaciones_productor",
-    "anticipacion_aviso_publicaciones_productor",
+    ...gruposVigencia.flatMap(([, vigencia, , anticipacion]) => [vigencia, anticipacion]),
 ]);
 
 function validarValor(nombre: string, valor: string): void {
@@ -145,7 +135,7 @@ function validarVigencia(cambios: Record<string, string>, claves: readonly [stri
     const avisosActivos = habilitado && cambios[claveAvisos] === "true";
     if (habilitado) {
         validarDias(cambios[claveVigencia], "vigencia");
-        if (claveVigencia === "vigencia_fotos" && Number(cambios[claveVigencia]) > 36500) {
+        if (Object.values(CLAVES_AGING_FOTOS).some((clavesFotos) => clavesFotos[1] === claveVigencia) && Number(cambios[claveVigencia]) > 36500) {
             throw new Error("La vigencia de las fotos no puede superar los 36500 días.");
         }
     }
