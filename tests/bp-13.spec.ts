@@ -13,7 +13,7 @@ type Foto = { id: number; clave: string; url: string; especie: string; rol: Rol;
 type Backend = typeof import("../src/infraestructura/persistencia/prisma/db").db;
 type Escenario = {
   crearFoto: (rol: Rol, cargadaEn?: string) => Promise<Foto>;
-  procesar: (limite: string) => Promise<number>;
+  procesar: (rol: Rol, limite: string) => Promise<number>;
   productorB: Credenciales;
 };
 
@@ -22,6 +22,10 @@ const configuracionInicial = {
   vigencia_fotos: "30",
   aviso_vencimiento_fotos_habilitado: "true",
   anticipacion_aviso_fotos: "7",
+  aging_fotos_productor_habilitado: "true",
+  vigencia_fotos_productor: "30",
+  aviso_vencimiento_fotos_productor_habilitado: "true",
+  anticipacion_aviso_fotos_productor: "7",
 };
 
 const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
@@ -42,7 +46,7 @@ const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
         'SELECT "nombreConfiguracion", "valorConfiguracion" FROM configuracion WHERE "nombreConfiguracion" = ANY($1::text[])',
         [Object.keys(configuracionInicial)],
       );
-      expect(originales).toHaveLength(4);
+      expect(originales).toHaveLength(8);
       try {
         for (const [nombre, valor] of Object.entries(configuracionInicial)) {
           await db.orm.public.Configuracion.where({ nombreConfiguracion: nombre }).update({ valorConfiguracion: valor });
@@ -84,19 +88,19 @@ const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
             await db.orm.public.Publicacion.where({ id: foto.id }).update({ foto: foto.url });
             return foto;
           },
-          procesar: async (limite) => {
+          procesar: async (rol, limite) => {
             const { obtenerConfiguracionAgingFotos } = await import("../src/modulos/publicaciones/configuracion-aging-fotos");
             const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/procesar-vencimientos-fotos");
-            const configuracion = await obtenerConfiguracionAgingFotos();
+            const configuracion = await obtenerConfiguracionAgingFotos(rol);
             return db.transaction(async (tx) => {
-              if (!configuracion.habilitado) return procesarVencimientosFotos({ tx, limite, fecha: limite.slice(0, 10) }, configuracion);
+              if (!configuracion.habilitado) return procesarVencimientosFotos({ tx, limite, fecha: limite.slice(0, 10) }, configuracion, rol);
               await tx.execute(db.raw.sql`LOCK TABLE imagen, publicacion IN SHARE ROW EXCLUSIVE MODE`.affectedCount().build());
               const historicas = await tx.query(db.raw.sql`SELECT clave FROM imagen WHERE "cargadaEn" <= ${limite}::timestamptz`.returnsRow({ clave: "pg/text@1" }).build());
               if (historicas.some(({ clave }) => !fotos.some((foto) => foto.clave === clave))) {
                 throw new Error("Hay fotos históricas ajenas a BP-13; se revierte el aging.");
               }
               const sinFecha = await tx.orm.public.Imagen.where({ cargadaEn: null }).select("clave").all();
-              const cantidad = await procesarVencimientosFotos({ tx, limite, fecha: limite.slice(0, 10) }, configuracion);
+              const cantidad = await procesarVencimientosFotos({ tx, limite, fecha: limite.slice(0, 10) }, configuracion, rol);
               for (const { clave } of sinFecha) await tx.orm.public.Imagen.where({ clave }).update({ cargadaEn: null });
               return cantidad;
             });
@@ -134,14 +138,15 @@ async function ingresar(page: Page, credenciales: Credenciales) {
   await expect(page.getByRole("button", { name: "Abrir menú de usuario", exact: true })).toBeVisible();
 }
 
-async function deshabilitarAging(page: Page) {
+async function deshabilitarAging(page: Page, rol: Rol) {
   await page.getByRole("button", { name: "General", exact: true }).click();
-  const tarjeta = page.getByText("Vigencia de las fotos", { exact: true }).locator("..");
+  const titulo = rol === "OPERADOR" ? "Vigencia de fotos de operadores" : "Vigencia de fotos de productores";
+  const tarjeta = page.getByText(titulo, { exact: true }).locator("..");
   await tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true }).setChecked(false);
   const [respuesta] = await Promise.all([
     page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === "/administracion"
       && respuesta.request().method() === "POST" && respuesta.request().headers()["next-action"] !== undefined),
-    tarjeta.getByRole("button", { name: "Guardar configuración: Vigencia de las fotos", exact: true }).click(),
+    tarjeta.getByRole("button", { name: `Guardar configuración: ${titulo}`, exact: true }).click(),
   ]);
   expect(respuesta.ok(), "El guardado de la vigencia debe responder correctamente").toBe(true);
   await expect(tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true })).toBeEnabled();
@@ -198,11 +203,11 @@ const roles = ["OPERADOR", "PRODUCTOR"] as const;
 for (const [caso, rol] of [["01", "OPERADOR"], ["02", "PRODUCTOR"]] as const) {
   test(`CP-13-${caso}: ciclo completo de la foto del ${rol.toLowerCase()}`, async ({ page, aging }) => {
     const foto = await aging.crearFoto(rol);
-    expect(await aging.procesar(fechaAviso)).toBe(1);
+    expect(await aging.procesar(rol, fechaAviso)).toBe(1);
     await ingresar(page, foto.credenciales);
     await verFoto(page, foto, false);
     await verAvisos(page, [{ foto, vencida: false }]);
-    expect(await aging.procesar(fechaVencimiento)).toBe(1);
+    expect(await aging.procesar(rol, fechaVencimiento)).toBe(1);
     await verFoto(page, foto, true);
     await verAvisos(page, [{ foto, vencida: false }, { foto, vencida: true }]);
   });
@@ -213,7 +218,7 @@ test("CP-13-03: cada dueño ve solo los avisos de sus publicaciones", async ({ p
     vigente: await aging.crearFoto(rol),
     vencida: await aging.crearFoto(rol, cargaVencida),
   })));
-  expect(await aging.procesar(fechaAviso)).toBe(4);
+  for (const rol of roles) expect(await aging.procesar(rol, fechaAviso)).toBe(2);
   for (const { vigente, vencida } of publicaciones) {
     await ingresar(page, vigente.credenciales);
     await verAvisos(page, [{ foto: vigente, vencida: false }, { foto: vencida, vencida: true }]);
@@ -226,12 +231,12 @@ test("CP-13-03: cada dueño ve solo los avisos de sus publicaciones", async ({ p
 
 test("CP-13-04: con aging deshabilitado se conservan las fotos y no hay avisos", async ({ page, aging, precargaOperadores }) => {
   await iniciarSesionAdministrador(page, precargaOperadores.administrador, tiempoServidor);
-  await deshabilitarAging(page);
+  for (const rol of roles) await deshabilitarAging(page, rol);
   const publicaciones = await Promise.all(roles.map(async (rol) => ({
     vigente: await aging.crearFoto(rol),
     vencida: await aging.crearFoto(rol, cargaVencida),
   })));
-  expect(await aging.procesar(fechaAviso)).toBe(0);
+  for (const rol of roles) expect(await aging.procesar(rol, fechaAviso)).toBe(0);
   for (const { vigente, vencida } of publicaciones) {
     await ingresar(page, vigente.credenciales);
     await verFoto(page, vigente, false);

@@ -78,7 +78,36 @@ describe("registro de tareas con aging opcional", () => {
         await expect(tarea.ejecutar(contexto)).resolves.toBe(7);
         expect(mocks.procesar).toHaveBeenCalledExactlyOnceWith(contexto, {
             habilitado: true, diasVigencia: 30, avisosHabilitados: true, diasAnticipacionAviso: 5,
+        }, "OPERADOR");
+    });
+
+    it.each(["OPERADOR", "PRODUCTOR"] as const)("ejecuta solo el aging habilitado de %s con sus propios plazos", async (tipo) => {
+        const activa = { habilitado: true, diasVigencia: tipo === "OPERADOR" ? 10 : 30, avisosHabilitados: true, diasAnticipacionAviso: tipo === "OPERADOR" ? 2 : 7 };
+        mocksConfiguracion.obtener.mockImplementation(async (rol) => rol === tipo ? activa : { habilitado: false });
+        const [operadores, productores] = obtenerTareasDiarias();
+
+        expect(operadores.nombre).not.toBe(productores.nombre);
+        expect(await operadores.habilitada?.()).toBe(tipo === "OPERADOR");
+        expect(await productores.habilitada?.()).toBe(tipo === "PRODUCTOR");
+        await operadores.ejecutar(contexto);
+        await productores.ejecutar(contexto);
+
+        expect(mocks.procesar).toHaveBeenCalledExactlyOnceWith(contexto, activa, tipo);
+    });
+
+    it("un error en la configuración de operadores no impide procesar productores", async () => {
+        const activa = { habilitado: true, diasVigencia: 15, avisosHabilitados: false, diasAnticipacionAviso: 0 };
+        mocksConfiguracion.obtener.mockImplementation(async (tipo) => {
+            if (tipo === "OPERADOR") throw new Error("Configuración de operadores inválida");
+            return activa;
         });
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+        const [operadores, productores] = obtenerTareasDiarias();
+
+        await expect(operadores.ejecutar(contexto)).rejects.toThrow("Configuración de operadores inválida");
+        await productores.ejecutar(contexto);
+
+        expect(mocks.procesar).toHaveBeenCalledExactlyOnceWith(contexto, activa, "PRODUCTOR");
     });
 
     it.each(["La vigencia de las fotos no es válida", "No se pudo conectar a la base de datos"])("no procesa fotos ante un error de configuración: %s", async (mensaje) => {

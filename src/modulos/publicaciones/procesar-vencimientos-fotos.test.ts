@@ -47,8 +47,8 @@ beforeEach(() => {
 });
 
 describe("procesamiento de fotos con avisos configurables", () => {
-    it("no accede a la base ni envía avisos si el aging está deshabilitado", async () => {
-        expect(await procesarVencimientosFotos(contexto, { habilitado: false })).toBe(0);
+    it.each(["OPERADOR", "PRODUCTOR"] as const)("no accede a la base ni envía avisos si el aging de %s está deshabilitado", async (tipo) => {
+        expect(await procesarVencimientosFotos(contexto, { habilitado: false }, tipo)).toBe(0);
         expect(mocks.query).not.toHaveBeenCalled();
         expect(mocks.execute).not.toHaveBeenCalled();
         expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
@@ -57,7 +57,7 @@ describe("procesamiento de fotos con avisos configurables", () => {
     it("rechaza una configuración inválida antes de modificar fotos o enviar avisos", async () => {
         await expect(procesarVencimientosFotos(contexto, {
             ...sinAvisos, avisosHabilitados: true, diasAnticipacionAviso: 30,
-        })).rejects.toThrow("anticipación");
+        }, "OPERADOR")).rejects.toThrow("anticipación");
         expect(mocks.query).not.toHaveBeenCalled();
         expect(mocks.execute).not.toHaveBeenCalled();
         expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
@@ -66,10 +66,10 @@ describe("procesamiento de fotos con avisos configurables", () => {
     it.each([
         ["OPERADOR", 1719, "/mi-mercado"],
         ["PRODUCTOR", 1720, "/mi-mercado/productor"],
-    ] as const)("mantiene el aviso de eliminación al dueño %s aunque los avisos previos estén apagados", async (_, espacio, ruta) => {
+    ] as const)("mantiene el aviso de eliminación al dueño %s aunque los avisos previos estén apagados", async (tipo, espacio, ruta) => {
         prepararVencida(espacio);
 
-        expect(await procesarVencimientosFotos(contexto, sinAvisos)).toBe(1);
+        expect(await procesarVencimientosFotos(contexto, sinAvisos, tipo)).toBe(1);
 
         expect(mocks.enviarNotificacion).toHaveBeenCalledExactlyOnceWith({
             texto: "La foto de tu publicación de Papa venció y fue eliminada. Podés cargar una nueva foto.",
@@ -87,7 +87,7 @@ describe("procesamiento de fotos con avisos configurables", () => {
         prepararVencida(1719);
         mocks.enviarNotificacion.mockResolvedValue({ enviadas: 0 });
 
-        await expect(procesarVencimientosFotos(contexto, sinAvisos)).rejects.toThrow("No se pudo guardar el aviso");
+        await expect(procesarVencimientosFotos(contexto, sinAvisos, "OPERADOR")).rejects.toThrow("No se pudo guardar el aviso");
         expect(mocks.notificarCambioCatalogoOperador).not.toHaveBeenCalled();
     });
 });

@@ -1,9 +1,7 @@
-import { Temporal } from "temporal-polyfill";
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { obtenerFechaEstadistica } from "./fechas-estadisticas";
 
-export function obtenerFechaEstadistica(): string {
-    return Temporal.Now.plainDateISO("America/Montevideo").toString();
-}
+export { obtenerFechaEstadistica } from "./fechas-estadisticas";
 
 // La fecha representa un día del negocio, almacenado a medianoche UTC.
 // ON CONFLICT cubre tanto el primer registro concurrente como los incrementos.

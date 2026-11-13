@@ -4,6 +4,7 @@ import { db } from "../../infraestructura/persistencia/prisma/db";
 import type { EstadoFotoPublicacion } from "./estado-foto-publicacion";
 import { obtenerConfiguracionAgingFotos } from "./configuracion-aging-fotos";
 import { obtenerLimiteAntiguedadFotos, type ConfiguracionAgingFotos } from "./vigencia-fotos";
+import type { TipoPropietarioFoto } from "./claves-aging-fotos";
 
 type FotoPropia = {
     foto: string | null;
@@ -11,7 +12,7 @@ type FotoPropia = {
     estadoFoto?: EstadoFotoPublicacion;
 };
 
-export async function agregarEstadoFotosPropias<T extends FotoPropia>(items: readonly T[]): Promise<(T & { estadoFoto: EstadoFotoPublicacion })[]> {
+export async function agregarEstadoFotosPropias<T extends FotoPropia>(items: readonly T[], tipo: TipoPropietarioFoto): Promise<(T & { estadoFoto: EstadoFotoPublicacion })[]> {
     const publicaciones = items.map((item) => ({
         ...item,
         estadoFoto: !item.foto && (item.fotoEliminadaPorVencimientoEn || item.estadoFoto === "eliminada")
@@ -19,7 +20,7 @@ export async function agregarEstadoFotosPropias<T extends FotoPropia>(items: rea
     }));
     let configuracion: ConfiguracionAgingFotos;
     try {
-        configuracion = await obtenerConfiguracionAgingFotos();
+        configuracion = await obtenerConfiguracionAgingFotos(tipo);
     } catch (error) {
         console.error("No se pudo consultar la vigencia de las fotos: no se pudo obtener una configuración válida.", error);
         return publicaciones;

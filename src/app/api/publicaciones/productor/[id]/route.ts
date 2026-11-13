@@ -84,7 +84,7 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
                 console.error(`No se pudo revalidar ${ruta} tras guardar la publicación:`, error);
             }
         }
-        const [publicacion] = await agregarEstadoFotosPropias([resultado.publicacion]);
+        const [publicacion] = await agregarEstadoFotosPropias([resultado.publicacion], "PRODUCTOR");
         return NextResponse.json({ publicacion });
     } catch (error) {
         return respuestaError(error);

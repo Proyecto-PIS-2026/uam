@@ -46,14 +46,9 @@ export async function obtenerEstadisticas() {
         db.orm.public.EstadisticaCantidadPublicacion.all(),
     ]);
 
+    // La medianoche UTC representa el día estadístico, no la hora de la operación.
     const fechaCalendario = (fechaDb: { toString(): string }) =>
         new Date(fechaDb.toString()).toISOString().slice(0, 10);
-
-    const corregirFechaLocal = (fechaDb: { toString(): string }) => {
-        const isoString = new Date(fechaDb.toString()).toISOString();
-        const [anio, mes, dia] = isoString.split("T")[0].split("-").map(Number);
-        return new Date(anio, mes - 1, dia);
-    };
 
     return {
         visitas: visitas.map((v) => ({
@@ -70,11 +65,11 @@ export async function obtenerEstadisticas() {
         })),
         contactosPorPublicacion: contactosPorPublicacion.map((c) => ({
             ...c,
-            fecha: corregirFechaLocal(c.fecha),
+            fecha: fechaCalendario(c.fecha),
         })),
         cantidadPublicaciones: cantidadPublicaciones.map((p) => ({
             ...p,
-            fecha: corregirFechaLocal(p.fecha),
+            fecha: fechaCalendario(p.fecha),
         })),
     };
 }

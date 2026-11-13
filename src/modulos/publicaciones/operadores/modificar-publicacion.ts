@@ -8,6 +8,7 @@ import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACIO
 import { validarFechaVigencia, convertirFechaVigenciaAInstant } from "../vigencia-publicacion";
 import { validarComentario } from "../validarComentario";
 import { obtenerFechaMaximaVigenciaOperador } from "../configuracion-vigencia-publicaciones";
+import { notificarEdicionAdministrativa } from "../notificar-edicion-administrativa";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
@@ -26,7 +27,8 @@ export async function modificarPublicacionOperador(
     usuarioIdAutenticado: number,
     publicacionOperadorId: number,
     cambios: CambiosPublicacionOperador,
-    fotoNueva?: File | null
+    fotoNueva?: File | null,
+    edicionAdministrativa = false,
 ): Promise<{ publicacionOperadorId: number; publicacionId: number }> {
 
     if (cambios === null || typeof cambios !== "object" || Array.isArray(cambios)) {
@@ -216,6 +218,10 @@ export async function modificarPublicacionOperador(
             await tx.orm.public.PublicacionOperador
                 .where({ id: vinculo.id })
                 .update({ paisId: cambios.paisId });
+
+            if (edicionAdministrativa) {
+                await notificarEdicionAdministrativa(tx, usuarioIdAutenticado, vinculo.publicacionId, "OPERADOR");
+            }
 
             await notificarCambioPublicacion(tx, { operadorId: operador.id, publicacionId: vinculo.publicacionId });
 

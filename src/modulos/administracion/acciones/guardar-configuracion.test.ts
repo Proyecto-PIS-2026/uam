@@ -24,11 +24,18 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 
 const gruposVigencia = [
     {
-        nombre: "fotos",
+        nombre: "fotos de operadores",
         habilitado: "aging_fotos_habilitado",
         vigencia: "vigencia_fotos",
         avisos: "aviso_vencimiento_fotos_habilitado",
         anticipacion: "anticipacion_aviso_fotos",
+    },
+    {
+        nombre: "fotos de productores",
+        habilitado: "aging_fotos_productor_habilitado",
+        vigencia: "vigencia_fotos_productor",
+        avisos: "aviso_vencimiento_fotos_productor_habilitado",
+        anticipacion: "anticipacion_aviso_fotos_productor",
     },
     {
         nombre: "publicaciones de operadores",
@@ -281,6 +288,10 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
         await guardarConfiguraciones(configuracionVigencia());
         expect(mocks.transaction).toHaveBeenCalledOnce();
         expect(mocks.update).toHaveBeenCalledTimes(4);
+        expect(mocks.where.mock.calls.map(([filtro]) => filtro.nombreConfiguracion)).toEqual([
+            grupo.habilitado, grupo.vigencia, grupo.avisos, grupo.anticipacion,
+        ]);
+        if (grupo.nombre.startsWith("fotos")) expect(mocks.execute).not.toHaveBeenCalled();
     });
 
     it("rechaza un grupo incompleto", async () => {
@@ -324,7 +335,7 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
         expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: "36500" });
     });
 
-    if (grupo.nombre === "fotos") {
+    if (grupo.nombre.startsWith("fotos")) {
         it("rechaza una vigencia de fotos mayor a 36500 días antes de guardar", async () => {
             await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "36501" }))).rejects.toThrow("La vigencia de las fotos no puede superar los 36500 días.");
             expect(mocks.transaction).not.toHaveBeenCalled();
@@ -343,6 +354,42 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
 
     it.each([grupo.habilitado, grupo.avisos])("rechaza un booleano inválido en %s", async (clave) => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [clave]: "si" }))).rejects.toThrow("El estado de la configuración no es válido.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+});
+
+describe("independencia de la vigencia de fotos por propietario", () => {
+    const fotosOperadores = {
+        aging_fotos_habilitado: "true",
+        vigencia_fotos: "30",
+        aviso_vencimiento_fotos_habilitado: "true",
+        anticipacion_aviso_fotos: "7",
+    };
+    const fotosProductores = {
+        aging_fotos_productor_habilitado: "true",
+        vigencia_fotos_productor: "10",
+        aviso_vencimiento_fotos_productor_habilitado: "true",
+        anticipacion_aviso_fotos_productor: "2",
+    };
+
+    it("permite guardar plazos y anticipaciones diferentes sin cruzar los grupos", async () => {
+        await guardarConfiguraciones({ ...fotosOperadores, ...fotosProductores });
+
+        expect(mocks.update.mock.calls.map(([cambio]) => cambio.valorConfiguracion)).toEqual([
+            "true", "30", "true", "7", "true", "10", "true", "2",
+        ]);
+        expect(mocks.execute).not.toHaveBeenCalled();
+    });
+
+    it("valida la anticipación del productor contra su propia vigencia", async () => {
+        await expect(guardarConfiguraciones({ ...fotosOperadores, ...fotosProductores, anticipacion_aviso_fotos_productor: "15" }))
+            .rejects.toThrow("La anticipación debe ser menor que la vigencia.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("un grupo completo no permite guardar el otro de forma parcial", async () => {
+        await expect(guardarConfiguraciones({ ...fotosOperadores, vigencia_fotos_productor: "10" }))
+            .rejects.toThrow("Las cuatro opciones de vigencia deben guardarse juntas.");
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 });

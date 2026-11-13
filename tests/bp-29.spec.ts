@@ -464,7 +464,7 @@ nuevos.describe(() => {
                 const ajenas = await tx.query(db.raw.sql`SELECT clave FROM imagen WHERE clave <> ${fotoPropia.clave} AND "cargadaEn" <= '1900-02-01T15:00:00Z'::timestamptz`.returnsRow({ clave: "pg/text@1" }).build());
                 if (ajenas.length) throw new Error("Hay fotos históricas ajenas al test; se revierte el aging.");
                 const anteriores = await tx.orm.public.Imagen.where({ cargadaEn: null }).select("clave").all();
-                const resultado = await procesarVencimientosFotos({ tx, limite: "1900-02-01T15:00:00Z", fecha: "1900-02-01" }, habilitado ? configuracionActiva : { habilitado: false });
+                const resultado = await procesarVencimientosFotos({ tx, limite: "1900-02-01T15:00:00Z", fecha: "1900-02-01" }, habilitado ? configuracionActiva : { habilitado: false }, "OPERADOR");
                 for (const { clave } of anteriores) await tx.orm.public.Imagen.where({ clave }).update({ cargadaEn: null });
                 return resultado;
             });
