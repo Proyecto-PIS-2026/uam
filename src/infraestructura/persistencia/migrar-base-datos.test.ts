@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ejecutarMigraciones } from "./migrar-base-datos";
@@ -11,14 +12,23 @@ const mocks = vi.hoisted(() => ({
     randomUUID: vi.fn(),
 }));
 
-vi.mock("node:fs", () => ({
-    readFileSync: mocks.readFileSync,
-    writeFileSync: mocks.writeFileSync,
-    renameSync: mocks.renameSync,
-    unlinkSync: mocks.unlinkSync,
-}));
-vi.mock("node:child_process", () => ({ spawnSync: mocks.spawnSync }));
-vi.mock("node:crypto", () => ({ randomUUID: mocks.randomUUID }));
+vi.mock("node:fs", () => {
+    const fs = {
+        readFileSync: mocks.readFileSync,
+        writeFileSync: mocks.writeFileSync,
+        renameSync: mocks.renameSync,
+        unlinkSync: mocks.unlinkSync,
+    };
+    return { ...fs, default: fs };
+});
+vi.mock("node:child_process", () => {
+    const childProcess = { spawnSync: mocks.spawnSync };
+    return { ...childProcess, default: childProcess };
+});
+vi.mock("node:crypto", () => {
+    const crypto = { randomUUID: mocks.randomUUID };
+    return { ...crypto, default: crypto };
+});
 
 const raiz = join("proyecto", "uam");
 const paquetePrisma = join(raiz, "node_modules", "prisma", "package.json");
