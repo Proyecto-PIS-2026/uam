@@ -199,7 +199,7 @@ for (const [caso, rol] of [["01", "OPERADOR"], ["02", "PRODUCTOR"]] as const) {
   test(`CP-13.1-${caso}: la foto vencida del ${rol.toLowerCase()} se elimina y se notifica`, async ({ page, aging, precargaOperadores }) => {
     const foto = await aging.crearFoto(rol);
     await iniciarSesionAdministrador(page, precargaOperadores.administrador, tiempoServidor);
-    await configurar(page, { dias: "10" });
+    await configurar(page, { dias: "10" }, rol);
     await ingresar(page, foto.credenciales);
     await verFoto(page, foto, false);
     expect(await aging.procesar(rol)).toBe(1);
@@ -240,7 +240,7 @@ for (const [caso, rol] of [["09", "OPERADOR"], ["10", "PRODUCTOR"]] as const) {
   test(`CP-13.1-${caso}: solo el dueño ${rol.toLowerCase()} ve el aviso de su foto`, async ({ page, aging, precargaOperadores: datos }) => {
     const foto = await aging.crearFoto(rol);
     await iniciarSesionAdministrador(page, datos.administrador, tiempoServidor);
-    await configurar(page, { dias: "10" });
+    await configurar(page, { dias: "10" }, rol);
     expect(await aging.procesar(rol)).toBe(1);
     await ingresar(page, foto.credenciales);
     await verAvisos(page, foto, true);

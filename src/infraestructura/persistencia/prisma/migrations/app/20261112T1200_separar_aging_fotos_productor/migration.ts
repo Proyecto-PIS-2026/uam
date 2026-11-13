@@ -3,9 +3,8 @@ import type { Contract } from '../../snapshots/847c7d232dcc4e51e10e6ed6a355e1a5e
 import contract from '../../snapshots/847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5/contract.json' with { type: 'json' };
 import { Migration, MigrationCLI, rawSql } from '@prisma/orm-postgres/migration';
 
-// Al incorporar este cambio: npm run db:migrate -- --to aging-fotos-por-rol
-// Al no cambiar el esquema, la referencia exige aplicar el invariant de datos.
-// La referencia apunta al contrato de esta versión; no revierte contratos posteriores.
+// npm run db:migrate exige este invariant de datos junto con el contrato emitido actual.
+// La referencia aging-fotos-por-rol también permite seleccionar esta migración explícitamente.
 export default class M extends Migration<Contract, Contract> {
   override readonly startContractJson = contract;
   override readonly endContractJson = contract;
