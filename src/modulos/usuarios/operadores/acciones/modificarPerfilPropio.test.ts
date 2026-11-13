@@ -99,6 +99,28 @@ describe("modificarPerfilPropio", () => {
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/inicio");
     });
 
+    it.each(["2000-11-02", "2000-11-12", "2999-11-12"])("guarda el perfil con inicio de licencia pasado y fin %s", async (finLicencia) => {
+        await expect(modificarPerfilPropio({
+            ...datos, enLicencia: true, inicioLicencia: "2000-11-02", finLicencia,
+            comentario: "Consultar disponibilidad.",
+        })).resolves.toMatchObject({ esValido: true });
+
+        expect(mocks.operador.update).toHaveBeenCalledWith(expect.objectContaining({
+            enLicencia: true,
+            comentario: `Licencia: 2000-11-02 - ${finLicencia}\n\nConsultar disponibilidad.`,
+        }));
+    });
+
+    it.each([
+        { inicioLicencia: "2000-11-12", finLicencia: "2000-11-05", error: "La fecha de inicio no puede ser posterior a la fecha de fin." },
+        { inicioLicencia: "2000-02-30", finLicencia: "2000-03-12", error: "Las fechas de licencia no son válidas." },
+        { inicioLicencia: "2000-11-02", finLicencia: "", error: "Ingresá las fechas de inicio y fin de la licencia." },
+    ])("rechaza una licencia inválida: $error", async ({ inicioLicencia, finLicencia, error }) => {
+        await expect(modificarPerfilPropio({ ...datos, enLicencia: true, inicioLicencia, finLicencia }))
+            .resolves.toEqual({ esValido: false, errores: [error] });
+        expect(mocks.guardarOperadorAtomico).not.toHaveBeenCalled();
+    });
+
     it("devuelve el conflicto de nombre sin actualizar", async () => {
         mocks.operador.first
             .mockReset()

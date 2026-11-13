@@ -173,7 +173,7 @@ vi.mock("recharts", () => ({
         tickFormatter?: (value: unknown) => string;
         ticks?: number[];
     }) => {
-        const fecha = new Date(2026, 9, 20).getTime();
+        const fecha = Date.UTC(2026, 9, 20);
 
         return (
             <div data-testid="eje-x">
@@ -201,7 +201,7 @@ vi.mock("recharts", () => ({
         labelFormatter?: (label: unknown) => string;
         formatter?: (value: unknown) => unknown;
     }) => {
-        const fecha = new Date(2026, 9, 20).getTime();
+        const fecha = Date.UTC(2026, 9, 20);
 
         return (
             <div data-testid="tooltip">
@@ -241,35 +241,35 @@ type DatoEstadistica = {
     especie?: string;
 };
 
-const fechaLocal = (
+const fechaEstadistica = (
     anio: number,
     mes: number,
     dia: number,
-) => new Date(anio, mes - 1, dia, 12);
+) => new Date(Date.UTC(anio, mes - 1, dia, 12));
 
 const datosVisitas: DatoEstadistica[] = [
     {
-        fecha: fechaLocal(2026, 9, 19),
+        fecha: fechaEstadistica(2026, 9, 19),
         cantidad: 100,
         tipoVisitante: "comprador",
     },
     {
-        fecha: fechaLocal(2026, 9, 20),
+        fecha: fechaEstadistica(2026, 9, 20),
         cantidad: 4,
         tipoVisitante: "comprador",
     },
     {
-        fecha: fechaLocal(2026, 10, 19),
+        fecha: fechaEstadistica(2026, 10, 19),
         cantidad: 2,
         tipoVisitante: "comprador",
     },
     {
-        fecha: fechaLocal(2026, 10, 20),
+        fecha: fechaEstadistica(2026, 10, 20),
         cantidad: 5,
         tipoVisitante: "comprador",
     },
     {
-        fecha: fechaLocal(2026, 10, 20),
+        fecha: fechaEstadistica(2026, 10, 20),
         cantidad: 3,
         tipoVisitante: "operador",
     },
@@ -328,11 +328,12 @@ function obtenerOpciones(filtro: string) {
 describe("BloqueEstadistica", () => {
     beforeEach(() => {
         vi.useFakeTimers();
-        vi.setSystemTime(fechaLocal(2026, 10, 20));
+        vi.setSystemTime(fechaEstadistica(2026, 10, 20));
     });
 
     afterEach(() => {
         vi.useRealTimers();
+        vi.unstubAllEnvs();
     });
 
     describe("visitas", () => {
@@ -397,7 +398,7 @@ describe("BloqueEstadistica", () => {
             expect(datos).toHaveLength(31);
 
             expect(datos[0]).toEqual({
-                fecha: fechaLocal(2026, 9, 20).setHours(0, 0, 0, 0),
+                fecha: fechaEstadistica(2026, 9, 20).setUTCHours(0, 0, 0, 0),
                 cantidad: 4,
             });
 
@@ -413,17 +414,17 @@ describe("BloqueEstadistica", () => {
         it("acumula los registros que pertenecen al mismo día", () => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 2,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 3,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 4,
                     tipoVisitante: "operador",
                 },
@@ -470,12 +471,12 @@ describe("BloqueEstadistica", () => {
         it("filtra el tipo de visitante sin distinguir mayúsculas y minúsculas", () => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 5,
                     tipoVisitante: "COMPRADOR",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 3,
                     tipoVisitante: "Operador",
                 },
@@ -525,19 +526,19 @@ describe("BloqueEstadistica", () => {
         it("conserva el usuario seleccionado al quitar el filtro de especie", () => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 2,
                     username: "usuario1",
                     especie: "Tomate",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 3,
                     username: "usuario1",
                     especie: "Manzana",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 4,
                     username: "usuario2",
                     especie: "Tomate",
@@ -584,32 +585,32 @@ describe("BloqueEstadistica", () => {
         ])("calcula correctamente el rango $rango", ({ rango, fecha }) => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2025, 10, 20),
+                    fecha: fechaEstadistica(2025, 10, 20),
                     cantidad: 1,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 4, 20),
+                    fecha: fechaEstadistica(2026, 4, 20),
                     cantidad: 2,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 7, 20),
+                    fecha: fechaEstadistica(2026, 7, 20),
                     cantidad: 3,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 9, 20),
+                    fecha: fechaEstadistica(2026, 9, 20),
                     cantidad: 4,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 13),
+                    fecha: fechaEstadistica(2026, 10, 13),
                     cantidad: 5,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 6,
                     tipoVisitante: "comprador",
                 },
@@ -625,7 +626,7 @@ describe("BloqueEstadistica", () => {
             );
 
             const fechaEsperada = new Date(
-                `${fecha}T00:00:00`,
+                `${fecha}T00:00:00Z`,
             ).getTime();
 
             expect(obtenerDatosGrafica()[0].fecha).toBe(fechaEsperada);
@@ -634,27 +635,27 @@ describe("BloqueEstadistica", () => {
         it("calcula correctamente los últimos siete días sin incluir registros anteriores", () => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 12),
+                    fecha: fechaEstadistica(2026, 10, 12),
                     cantidad: 90,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 13),
+                    fecha: fechaEstadistica(2026, 10, 13),
                     cantidad: 9,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 19),
+                    fecha: fechaEstadistica(2026, 10, 19),
                     cantidad: 2,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 5,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 3,
                     tipoVisitante: "operador",
                 },
@@ -911,7 +912,7 @@ describe("BloqueEstadistica", () => {
         });
 
         it("ajusta el día inicial al último día del mes anterior cuando no existe ese día", () => {
-            vi.setSystemTime(fechaLocal(2026, 3, 31));
+            vi.setSystemTime(fechaEstadistica(2026, 3, 31));
 
             renderizarBloque();
 
@@ -958,7 +959,7 @@ describe("BloqueEstadistica", () => {
 
             expect(datos).toHaveLength(30);
             expect(datos.at(-1)?.fecha).toBe(
-                fechaLocal(2026, 10, 19).setHours(0, 0, 0, 0),
+                fechaEstadistica(2026, 10, 19).setUTCHours(0, 0, 0, 0),
             );
         });
 
@@ -991,22 +992,22 @@ describe("BloqueEstadistica", () => {
         it("calcula el histórico desde el registro más antiguo independientemente del filtro", () => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2025, 1, 1),
+                    fecha: fechaEstadistica(2025, 1, 1),
                     cantidad: 90,
                     tipoVisitante: "operador",
                 },
                 {
-                    fecha: fechaLocal(2026, 6, 1),
+                    fecha: fechaEstadistica(2026, 6, 1),
                     cantidad: 6,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 5,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 3,
                     tipoVisitante: "operador",
                 },
@@ -1041,13 +1042,13 @@ describe("BloqueEstadistica", () => {
             const datosGrafica = obtenerDatosGrafica();
 
             expect(datosGrafica[0].fecha).toBe(
-                fechaLocal(2025, 1, 1).setHours(0, 0, 0, 0),
+                fechaEstadistica(2025, 1, 1).setUTCHours(0, 0, 0, 0),
             );
 
             expect(datosGrafica[0].cantidad).toBe(0);
 
             expect(datosGrafica.find((item) => item.cantidad > 0)).toEqual({
-                fecha: fechaLocal(2026, 6, 1).setHours(0, 0, 0, 0),
+                fecha: fechaEstadistica(2026, 6, 1).setUTCHours(0, 0, 0, 0),
                 cantidad: 6,
             });
 
@@ -1057,7 +1058,7 @@ describe("BloqueEstadistica", () => {
         it("utiliza la fecha de hoy cuando ningún registro cumple el filtro histórico", () => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 6, 1),
+                    fecha: fechaEstadistica(2026, 6, 1),
                     cantidad: 6,
                     tipoVisitante: "comprador",
                 },
@@ -1088,7 +1089,7 @@ describe("BloqueEstadistica", () => {
             const datosGrafica = obtenerDatosGrafica();
 
             expect(datosGrafica[0].fecha).toBe(
-                fechaLocal(2026, 6, 1).setHours(0, 0, 0, 0),
+                fechaEstadistica(2026, 6, 1).setUTCHours(0, 0, 0, 0),
             );
 
             expect(
@@ -1110,22 +1111,22 @@ describe("BloqueEstadistica", () => {
         ])("filtra $tipo por usuario", ({ tipo, titulo }) => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 9, 19),
+                    fecha: fechaEstadistica(2026, 9, 19),
                     cantidad: 50,
                     username: "usuario1",
                 },
                 {
-                    fecha: fechaLocal(2026, 9, 20),
+                    fecha: fechaEstadistica(2026, 9, 20),
                     cantidad: 3,
                     username: "usuario1",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 2,
                     username: "usuario1",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 7,
                     username: "usuario2",
                 },
@@ -1166,17 +1167,17 @@ describe("BloqueEstadistica", () => {
         it("obtiene únicamente los usuarios existentes y los ordena alfabéticamente", () => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 5,
                     username: "usuario2",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 3,
                     username: "usuario1",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 2,
                     username: "usuario2",
                 },
@@ -1198,12 +1199,12 @@ describe("BloqueEstadistica", () => {
         it("restablece el filtro de usuario al seleccionar Todos", () => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 2,
                     username: "usuario1",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 7,
                     username: "usuario2",
                 },
@@ -1235,17 +1236,17 @@ describe("BloqueEstadistica", () => {
         it("calcula el histórico desde el registro más antiguo independientemente del usuario seleccionado", () => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2025, 1, 1),
+                    fecha: fechaEstadistica(2025, 1, 1),
                     cantidad: 100,
                     username: "usuario2",
                 },
                 {
-                    fecha: fechaLocal(2026, 6, 1),
+                    fecha: fechaEstadistica(2026, 6, 1),
                     cantidad: 6,
                     username: "usuario1",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 5,
                     username: "usuario1",
                 },
@@ -1268,13 +1269,13 @@ describe("BloqueEstadistica", () => {
             const datosGrafica = obtenerDatosGrafica();
 
             expect(datosGrafica[0].fecha).toBe(
-                fechaLocal(2025, 1, 1).setHours(0, 0, 0, 0),
+                fechaEstadistica(2025, 1, 1).setUTCHours(0, 0, 0, 0),
             );
 
             expect(datosGrafica[0].cantidad).toBe(0);
 
             expect(datosGrafica.find((item) => item.cantidad > 0)).toEqual({
-                fecha: fechaLocal(2026, 6, 1).setHours(0, 0, 0, 0),
+                fecha: fechaEstadistica(2026, 6, 1).setUTCHours(0, 0, 0, 0),
                 cantidad: 6,
             });
 
@@ -1299,27 +1300,27 @@ describe("BloqueEstadistica", () => {
         ])("actualiza las opciones de usuarios según el período en $tipo", ({ tipo, titulo }) => {
             const datosPorPeriodo: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 8, 1),
+                    fecha: fechaEstadistica(2026, 8, 1),
                     cantidad: 10,
                     username: "usuario1",
                 },
                 {
-                    fecha: fechaLocal(2026, 9, 19),
+                    fecha: fechaEstadistica(2026, 9, 19),
                     cantidad: 5,
                     username: "usuario2",
                 },
                 {
-                    fecha: fechaLocal(2026, 9, 25),
+                    fecha: fechaEstadistica(2026, 9, 25),
                     cantidad: 3,
                     username: "usuario3",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 15),
+                    fecha: fechaEstadistica(2026, 10, 15),
                     cantidad: 7,
                     username: "usuario4",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 9,
                     username: "usuario5",
                 },
@@ -1370,17 +1371,17 @@ describe("BloqueEstadistica", () => {
         ])("restablece temporalmente el filtro cuando el usuario no tiene registros en el período de $tipo", ({ tipo, titulo }) => {
             const datosPorPeriodo: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 9, 25),
+                    fecha: fechaEstadistica(2026, 9, 25),
                     cantidad: 2,
                     username: "usuario3",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 7,
                     username: "usuario4",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 9,
                     username: "usuario5",
                 },
@@ -1421,25 +1422,25 @@ describe("BloqueEstadistica", () => {
     describe("contactos por publicación", () => {
         const datos: DatoEstadistica[] = [
             {
-                fecha: fechaLocal(2026, 10, 20),
+                fecha: fechaEstadistica(2026, 10, 20),
                 cantidad: 2,
                 username: "usuario1",
                 especie: "Tomate",
             },
             {
-                fecha: fechaLocal(2026, 10, 20),
+                fecha: fechaEstadistica(2026, 10, 20),
                 cantidad: 3,
                 username: "usuario1",
                 especie: "Manzana",
             },
             {
-                fecha: fechaLocal(2026, 10, 20),
+                fecha: fechaEstadistica(2026, 10, 20),
                 cantidad: 4,
                 username: "usuario2",
                 especie: "Tomate",
             },
             {
-                fecha: fechaLocal(2026, 10, 19),
+                fecha: fechaEstadistica(2026, 10, 19),
                 cantidad: 5,
                 username: "usuario3",
                 especie: "Pera",
@@ -1582,13 +1583,13 @@ describe("BloqueEstadistica", () => {
         it("mantiene la combinación compatible seleccionada aunque existan otras combinaciones", () => {
             const datosSinCoincidencia: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 5,
                     username: "usuario1",
                     especie: "Tomate",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 3,
                     username: "usuario2",
                     especie: "Manzana",
@@ -1619,13 +1620,13 @@ describe("BloqueEstadistica", () => {
         it("ignora especies vacías al generar las opciones", () => {
             const datosConEspecieVacia: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 2,
                     username: "usuario1",
                     especie: "Tomate",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 3,
                     username: "usuario2",
                     especie: "",
@@ -1647,25 +1648,25 @@ describe("BloqueEstadistica", () => {
         it("actualiza las opciones de ambos filtros al cambiar el período", () => {
             const datosPorPeriodo: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 2,
                     username: "usuario1",
                     especie: "Tomate",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 15),
+                    fecha: fechaEstadistica(2026, 10, 15),
                     cantidad: 3,
                     username: "usuario2",
                     especie: "Manzana",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 10),
+                    fecha: fechaEstadistica(2026, 10, 10),
                     cantidad: 5,
                     username: "usuario3",
                     especie: "Pera",
                 },
                 {
-                    fecha: fechaLocal(2026, 9, 1),
+                    fecha: fechaEstadistica(2026, 9, 1),
                     cantidad: 7,
                     username: "usuario4",
                     especie: "Naranja",
@@ -1732,19 +1733,19 @@ describe("BloqueEstadistica", () => {
         it("actualiza las opciones de usuario y especie al modificar las fechas personalizadas", () => {
             const datosPorPeriodo: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 9, 15),
+                    fecha: fechaEstadistica(2026, 9, 15),
                     cantidad: 7,
                     username: "usuario1",
                     especie: "Manzana",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 15),
+                    fecha: fechaEstadistica(2026, 10, 15),
                     cantidad: 3,
                     username: "usuario2",
                     especie: "Pera",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 2,
                     username: "usuario3",
                     especie: "Tomate",
@@ -1789,25 +1790,25 @@ describe("BloqueEstadistica", () => {
         it("deja de aplicar las selecciones que no existen en el nuevo período y las recupera al volver a un período compatible", () => {
             const datosPorPeriodo: DatoEstadistica[] = [
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 2,
                     username: "usuario1",
                     especie: "Tomate",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 15),
+                    fecha: fechaEstadistica(2026, 10, 15),
                     cantidad: 3,
                     username: "usuario2",
                     especie: "Manzana",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 10),
+                    fecha: fechaEstadistica(2026, 10, 10),
                     cantidad: 5,
                     username: "usuario3",
                     especie: "Pera",
                 },
                 {
-                    fecha: fechaLocal(2026, 9, 1),
+                    fecha: fechaEstadistica(2026, 9, 1),
                     cantidad: 7,
                     username: "usuario4",
                     especie: "Naranja",
@@ -2322,15 +2323,59 @@ describe("BloqueEstadistica", () => {
     });
 
     describe("fechas y formato", () => {
-        it("ignora los registros con fechas inválidas", () => {
+        it.each(["UTC", "America/Los_Angeles", "Asia/Tokyo"])("conserva el día de Uruguay con el navegador en %s", (zona) => {
+            vi.stubEnv("TZ", zona);
+            vi.setSystemTime(new Date("2026-11-13T01:00:00Z"));
+            renderizarBloque({ datos: [
+                { fecha: "2026-11-12", cantidad: 7, tipoVisitante: "comprador" },
+                { fecha: new Date("2026-11-12T00:00:00Z"), cantidad: 5, tipoVisitante: "comprador" },
+                { fecha: "2026-11-13", cantidad: 99, tipoVisitante: "comprador" },
+            ] });
+
+            expect(within(obtenerTarjeta("Total de Hoy")).getByText("12")).toBeInTheDocument();
+            expect(obtenerDatosGrafica().at(-1)).toEqual({ fecha: Date.UTC(2026, 10, 12), cantidad: 12 });
+            expect(screen.getByTestId("tick-numerico")).toHaveTextContent("20/10/26");
+            expect(screen.getByTestId("tooltip-fecha")).toHaveTextContent("20/10/2026");
+
+            fireEvent.change(screen.getByLabelText("Período"), { target: { value: "personalizado" } });
+            expect(screen.getByLabelText("Desde")).toHaveValue("2026-10-12");
+            expect(screen.getByLabelText("Hasta")).toHaveValue("2026-11-12");
+        });
+
+        it("cambia de día a medianoche de Uruguay", () => {
+            vi.setSystemTime(new Date("2026-11-13T03:00:00Z"));
+            renderizarBloque({ datos: [
+                { fecha: "2026-11-12", cantidad: 7, tipoVisitante: "comprador" },
+                { fecha: "2026-11-13", cantidad: 5, tipoVisitante: "comprador" },
+            ] });
+
+            expect(within(obtenerTarjeta("Total de Hoy")).getByText("5")).toBeInTheDocument();
+            expect(obtenerDatosGrafica().at(-1)).toEqual({ fecha: Date.UTC(2026, 10, 13), cantidad: 5 });
+        });
+
+        it.each([
+            { hoy: "2026-03-31", rango: "1m", inicio: "2026-02-28" },
+            { hoy: "2024-03-31", rango: "1m", inicio: "2024-02-29" },
+            { hoy: "2024-02-29", rango: "1y", inicio: "2023-02-28" },
+        ])("ajusta $rango desde $hoy al día válido $inicio", ({ hoy, rango, inicio }) => {
+            vi.setSystemTime(new Date(`${hoy}T12:00:00Z`));
+            renderizarBloque({ datos: [] });
+            fireEvent.change(screen.getByLabelText("Período"), { target: { value: rango } });
+
+            const grafica = obtenerDatosGrafica();
+            expect(grafica[0].fecha).toBe(Date.parse(`${inicio}T00:00:00Z`));
+            expect(grafica.at(-1)?.fecha).toBe(Date.parse(`${hoy}T00:00:00Z`));
+        });
+
+        it.each(["fecha-invalida", "2026-02-30"])("ignora los registros con fecha inválida %s", (fecha) => {
             const datos: DatoEstadistica[] = [
                 {
-                    fecha: "fecha-invalida",
+                    fecha,
                     cantidad: 100,
                     tipoVisitante: "comprador",
                 },
                 {
-                    fecha: fechaLocal(2026, 10, 20),
+                    fecha: fechaEstadistica(2026, 10, 20),
                     cantidad: 5,
                     tipoVisitante: "comprador",
                 },

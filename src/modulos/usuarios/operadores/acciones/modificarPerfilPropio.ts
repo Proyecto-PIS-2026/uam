@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Temporal } from "temporal-polyfill";
 import { exigirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { guardarOperadorAtomico } from "../guardar-operador-atomico";
@@ -58,10 +59,8 @@ function validarDatos(valor: unknown): { datos: { nombre: string; telefono: stri
     }
     if (enLicencia && inicioLicencia && finLicencia) {
         try {
-            const hoy = Temporal.Now.plainDateISO("America/Montevideo");
             const inicio = Temporal.PlainDate.from(inicioLicencia);
             const fin = Temporal.PlainDate.from(finLicencia);
-            if (Temporal.PlainDate.compare(inicio, hoy) < 0) errores.push("La fecha de inicio no puede ser anterior a hoy.");
             if (Temporal.PlainDate.compare(inicio, fin) > 0) errores.push("La fecha de inicio no puede ser posterior a la fecha de fin.");
         } catch {
             errores.push("Las fechas de licencia no son válidas.");

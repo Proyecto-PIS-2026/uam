@@ -2,6 +2,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Temporal } from "temporal-polyfill";
+import { obtenerFechaEstadistica } from "@/modulos/administracion/estadisticas/fechas-estadisticas";
 import { TextField, MenuItem, Autocomplete } from "@mui/material";
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line} from "recharts";
 import type { RangoTiempo, TipoSeccionEstadistica } from "./Tipos";
@@ -27,23 +29,20 @@ interface BloqueEstadisticaProps {
 }
 
 const formateadorNumero = new Intl.NumberFormat("es-UY");
-const obtenerFechaLocalStr = (date: Date) => {
-    const anio = date.getFullYear();
-    const mes = String(date.getMonth() + 1).padStart(2, "0");
-    const dia = String(date.getDate()).padStart(2, "0");
-    return `${anio}-${mes}-${dia}`;
-};
-const modificarFecha = (fecha: string, dias: number): string => {
-    const [anio, mes, dia] = fecha.split("-").map(Number);
-    const resultado = new Date(anio, mes - 1, dia);
-    resultado.setDate(resultado.getDate() + dias);
-    return obtenerFechaLocalStr(resultado);
-};
+const formateadorFechaEje = new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "UTC" });
+const formateadorFechaDetalle = new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+const modificarFecha = (fecha: string, dias: number): string => Temporal.PlainDate.from(fecha).add({ days: dias }).toString();
+// El eje usa medianoche UTC como marcador de un día, no como hora de una operación.
+const marcaTiempoFecha = (fecha: string): number => Date.parse(`${fecha}T00:00:00Z`);
 const obtenerFechaRegistroStr = (fecha: Date | string): string | null => {
-    if (typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
-    const fechaDate = new Date(fecha);
-    if (Number.isNaN(fechaDate.getTime())) return null;
-    return obtenerFechaLocalStr(fechaDate);
+    try {
+        if (typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) return Temporal.PlainDate.from(fecha).toString();
+        const fechaDate = new Date(fecha);
+        if (Number.isNaN(fechaDate.getTime())) return null;
+        return fechaDate.toISOString().slice(0, 10);
+    } catch {
+        return null;
+    }
 };
 const obtenerOpciones = (valores: string[]): OpcionFiltro[] => {
     return Array.from(new Set(valores)).filter(Boolean).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" })).map((valor) => ({ valor, etiqueta: valor }));
@@ -62,17 +61,9 @@ const calcularCantidadPublicacionesHasta = (datos: DatoEstadistica[], fechaLimit
 };
 
 export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisticaProps) {
-    const hoyStr = obtenerFechaLocalStr(new Date());
+    const hoyStr = obtenerFechaEstadistica();
     const [rango, setRango] = useState<RangoTiempo>("1m");
-    const [fechaDesde, setFechaDesde] = useState(() => {
-        const desde = new Date();
-        const dia = desde.getDate();
-        desde.setDate(1);
-        desde.setMonth(desde.getMonth() - 1);
-        const ultimoDiaMesAnterior = new Date(desde.getFullYear(), desde.getMonth() + 1, 0).getDate();
-        desde.setDate(Math.min(dia, ultimoDiaMesAnterior));
-        return obtenerFechaLocalStr(desde);
-    });
+    const [fechaDesde, setFechaDesde] = useState(() => Temporal.PlainDate.from(hoyStr).subtract({ months: 1 }).toString());
 
     const [fechaHasta, setFechaHasta] = useState(hoyStr);
     const [filtroEspecifico, setFiltroEspecifico] = useState("todos");
@@ -91,8 +82,8 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
     };
 
     const { desdeCalculado, hastaCalculado } = useMemo(() => {
-        const hasta = new Date();
-        const desde = new Date();
+        const hasta = Temporal.PlainDate.from(hoyStr);
+        let desde: Temporal.PlainDate;
         if (rango === "todo") {
             const fechaMasAntigua = datos.reduce<string | null>(
                 (masAntigua, item) => {
@@ -106,19 +97,19 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
         }
 
         if (rango === "1s") {
-            desde.setDate(hasta.getDate() - 7);
+            desde = hasta.subtract({ days: 7 });
         } else if (rango === "1m") {
-            desde.setMonth(hasta.getMonth() - 1);
+            desde = hasta.subtract({ months: 1 });
         } else if (rango === "3m") {
-            desde.setMonth(hasta.getMonth() - 3);
+            desde = hasta.subtract({ months: 3 });
         } else if (rango === "6m") {
-            desde.setMonth(hasta.getMonth() - 6);
+            desde = hasta.subtract({ months: 6 });
         } else if (rango === "1y") {
-            desde.setFullYear(hasta.getFullYear() - 1);
+            desde = hasta.subtract({ years: 1 });
         } else {
             return {desdeCalculado: fechaDesde, hastaCalculado: fechaHasta};
         }
-        return {desdeCalculado: obtenerFechaLocalStr(desde), hastaCalculado: obtenerFechaLocalStr(hasta)};
+        return {desdeCalculado: desde.toString(), hastaCalculado: hoyStr};
     }, [rango, fechaDesde, fechaHasta, datos, hoyStr]);
 
     const datosDelRango = useMemo(() => {
@@ -174,10 +165,8 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
     const datosFiltrados = useMemo(() => {
         if (desdeCalculado > hastaCalculado) return [];
         const resultado: Array<{ fecha: number; cantidad: number }> = [];
-        const [anioIni, mesIni, diaIni] = desdeCalculado.split("-").map(Number);
-        const [anioFin, mesFin, diaFin] = hastaCalculado.split("-").map(Number);
-        const current = new Date(anioIni, mesIni - 1, diaIni);
-        const end = new Date(anioFin, mesFin - 1, diaFin);
+        let fechaActual = Temporal.PlainDate.from(desdeCalculado);
+        const fechaFinal = Temporal.PlainDate.from(hastaCalculado);
 
         if (tipo === "cantidadPublicaciones") {
             const registrosPorUsuario = new Map<string, Array<{ fecha: string; cantidad: number }>>();
@@ -197,8 +186,8 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
             const ultimasCantidades = new Map<string, number>();
 
             usuarios.forEach((username) => { posiciones.set(username, 0); });
-            while (current <= end) {
-                const fechaStr = obtenerFechaLocalStr(current);
+            while (Temporal.PlainDate.compare(fechaActual, fechaFinal) <= 0) {
+                const fechaStr = fechaActual.toString();
                 let cantidadTotal = 0;
                 usuarios.forEach((username) => {
                     const registros = registrosPorUsuario.get(username)!;
@@ -210,8 +199,8 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
                     posiciones.set(username, posicion);
                     cantidadTotal += ultimasCantidades.get(username) ?? 0;
                 });
-                resultado.push({fecha: current.getTime(), cantidad: cantidadTotal});
-                current.setDate(current.getDate() + 1);
+                resultado.push({fecha: marcaTiempoFecha(fechaStr), cantidad: cantidadTotal});
+                fechaActual = fechaActual.add({ days: 1 });
             }
             return resultado;
         }
@@ -226,10 +215,10 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
             mapaCantidades.set(fechaItem, (mapaCantidades.get(fechaItem) ?? 0) + item.cantidad);
         });
 
-        while (current <= end) {
-            const fechaStr = obtenerFechaLocalStr(current);
-            resultado.push({fecha: current.getTime(), cantidad: mapaCantidades.get(fechaStr) ?? 0});
-            current.setDate(current.getDate() + 1);
+        while (Temporal.PlainDate.compare(fechaActual, fechaFinal) <= 0) {
+            const fechaStr = fechaActual.toString();
+            resultado.push({fecha: marcaTiempoFecha(fechaStr), cantidad: mapaCantidades.get(fechaStr) ?? 0});
+            fechaActual = fechaActual.add({ days: 1 });
         }
 
         return resultado;
@@ -343,14 +332,14 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis type="number" dataKey="fecha" domain={["dataMin", "dataMax"]} ticks={ticksEjeX} interval={0} minTickGap={0} tick={{ className: styles.etiquetaEje }} padding={{ left: 0, right: 0 }}
                             tickFormatter={(val: unknown) => {
-                                if (typeof val === "number") return new Date(val).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit", year: "2-digit" });
+                                if (typeof val === "number") return formateadorFechaEje.format(val);
                                 return "";
                             }}
                         />
                         <YAxis allowDecimals={false} domain={[0, "auto"]} tick={{ fontSize: 11 }}/>
                         <Tooltip trigger="hover" cursor={false} offset={10} isAnimationActive={false} separator=": "
                             labelFormatter={(label: unknown) => {
-                                if (typeof label === "number") return `Fecha: ${new Date(label).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit", year: "numeric"})}`;
+                                if (typeof label === "number") return `Fecha: ${formateadorFechaDetalle.format(label)}`;
                                 return "";
                             }}
                             formatter={(value) => [formateadorNumero.format(Number(value ?? 0)), "Cantidad"]}

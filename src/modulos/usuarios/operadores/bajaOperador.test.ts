@@ -196,7 +196,28 @@ describe("baja de operador con autorización y múltiples dependencias", () => {
         );
     });
 
-    afterEach(() => vi.restoreAllMocks());
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    it.each([
+        ["2026-11-13T00:00:00Z", "2026-11-12"],
+        ["2026-11-13T02:59:59Z", "2026-11-12"],
+        ["2026-11-13T03:00:00Z", "2026-11-13"],
+        ["2026-11-13T15:00:00Z", "2026-11-13"],
+    ])("registra la baja de %s en el día de Uruguay %s", async (instante, dia) => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(instante));
+
+        expect((await bajaOperador({ operadorId: 14 })).esValido).toBe(true);
+
+        const filtro = mocks.estadistica.where.mock.calls[0][0] as { fecha: Temporal.Instant; username: string };
+        expect(filtro.fecha.toString()).toBe(`${dia}T00:00:00Z`);
+        expect(filtro.username).toBe("operador1");
+        expect(mocks.estadistica.create.mock.calls[0][0].fecha.toString()).toBe(`${dia}T00:00:00Z`);
+        expect(mocks.estadistica.create.mock.calls[0][0].cantidad).toBe(0);
+    });
 
     it("impide comenzar la baja cuando falta el permiso administrativo", async () => {
         mocks.exigirAdministrador.mockRejectedValueOnce(
