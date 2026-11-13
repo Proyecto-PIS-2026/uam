@@ -217,6 +217,14 @@ describe("obtenerEstadisticas", () => {
             { id: 3, fecha, username: "productor", cantidad: 4 },
         ]);
 
+        mocks.contactosPorPublicacionAll.mockResolvedValue([
+            { id: 4, fecha, username: "productor", especie: "Tomate", cantidad: 5 },
+        ]);
+
+        mocks.cantidadPublicacionesAll.mockResolvedValue([
+            { id: 5, fecha, username: "operador", cantidad: 6 },
+        ]);
+
         const resultado = await obtenerEstadisticas();
 
         expect(resultado.visitas[0]).toMatchObject({
@@ -232,6 +240,16 @@ describe("obtenerEstadisticas", () => {
         expect(resultado.publicaciones[0]).toMatchObject({
             fecha: "2026-11-06",
             cantidad: 4,
+        });
+
+        expect(resultado.contactosPorPublicacion[0]).toMatchObject({
+            fecha: "2026-11-06",
+            cantidad: 5,
+        });
+
+        expect(resultado.cantidadPublicaciones[0]).toMatchObject({
+            fecha: "2026-11-06",
+            cantidad: 6,
         });
     });
 
@@ -267,7 +285,6 @@ describe("obtenerEstadisticas", () => {
         const resultado = await obtenerEstadisticas();
 
         const fechaCalendario = "2026-03-15";
-        const fechaLocal = new Date(2026, 2, 15);
 
         expect(resultado).toEqual({
             visitas: [
@@ -280,10 +297,10 @@ describe("obtenerEstadisticas", () => {
                 { ...publicaciones[0], fecha: fechaCalendario },
             ],
             contactosPorPublicacion: [
-                { ...contactosPorPublicacion[0], fecha: fechaLocal },
+                { ...contactosPorPublicacion[0], fecha: fechaCalendario },
             ],
             cantidadPublicaciones: [
-                { ...cantidadPublicaciones[0], fecha: fechaLocal },
+                { ...cantidadPublicaciones[0], fecha: fechaCalendario },
             ],
         });
     });
@@ -339,14 +356,14 @@ describe("obtenerEstadisticas", () => {
             username: "productor1",
             especie: "Manzana",
             cantidad: 3,
-            fecha: new Date(2026, 2, 15),
+            fecha: "2026-03-15",
         });
 
         expect(resultado.cantidadPublicaciones[0]).toMatchObject({
             id: 5,
             username: "operador1",
             cantidad: 15,
-            fecha: new Date(2026, 2, 15),
+            fecha: "2026-03-15",
         });
     });
 

@@ -1,7 +1,7 @@
 import "temporal-polyfill/full/global";
 import "temporal-polyfill/types/global";
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { POST } from "./route";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 
@@ -42,7 +42,6 @@ const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({
     registrarContacto: registrarEstadisticaMock,
-    obtenerFechaEstadistica: () => "2026-11-06",
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
@@ -88,6 +87,8 @@ function configurarUsuario(
 describe("POST /api/estadisticas/whatsapp", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-06T15:00:00Z"));
 
         vi.mocked(obtenerSesion).mockResolvedValue(null);
 
@@ -104,6 +105,8 @@ describe("POST /api/estadisticas/whatsapp", () => {
 
         registrarEstadisticaMock.mockReset().mockResolvedValue(undefined);
     });
+
+    afterEach(() => vi.useRealTimers());
 
     it("omite el registro si el usuario es administrador", async () => {
         vi.mocked(obtenerSesion).mockResolvedValueOnce({
@@ -178,7 +181,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
             expect(res.status).toBe(200);
             expect(await res.json()).toEqual({ ok: true });
 
-            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1");
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1", "2026-11-06");
 
             expect(mocks.publicacionOperador.where).not.toHaveBeenCalled();
             expect(mocks.publicacionProductor.where).not.toHaveBeenCalled();
@@ -197,7 +200,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
             expect(res.status).toBe(200);
             expect(await res.json()).toEqual({ ok: true });
 
-            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1", "2026-11-06");
 
             expect(mocks.publicacionOperador.where).not.toHaveBeenCalled();
             expect(mocks.publicacionProductor.where).not.toHaveBeenCalled();
@@ -207,6 +210,42 @@ describe("POST /api/estadisticas/whatsapp", () => {
     });
 
     describe("contactos desde el drawer de una publicación", () => {
+        it.each([
+            { tipo: "OPERADOR" as const, instante: "2026-11-13T00:00:00Z", dia: "2026-11-12" },
+            { tipo: "PRODUCTOR" as const, instante: "2026-11-13T02:59:59Z", dia: "2026-11-12" },
+            { tipo: "OPERADOR" as const, instante: "2026-11-13T03:00:00Z", dia: "2026-11-13" },
+            { tipo: "PRODUCTOR" as const, instante: "2026-11-13T15:00:00Z", dia: "2026-11-13" },
+        ])("registra ambos contactos de $tipo a las $instante en el día uruguayo $dia", async ({ tipo, instante, dia }) => {
+            vi.setSystemTime(new Date(instante));
+            configurarUsuario(tipo, 10, "usuario1");
+            mocks.publicacionOperador.first.mockResolvedValue({ publicacionId: 20 });
+            mocks.publicacionProductor.first.mockResolvedValue({ publicacionId: 20 });
+            mocks.publicacion.first.mockResolvedValue({ especie: { nombreEspecie: "Tomate" } });
+
+            const res = await POST(crearRequest({ tipo, entidadId: 1, publicacionId: 20 }));
+
+            expect(res.status).toBe(200);
+            expect(mocks.estadisticaContactoPublicacion.where.mock.calls[0][0].fecha.toString()).toBe(`${dia}T00:00:00Z`);
+            expect(mocks.estadisticaContactoPublicacion.create.mock.calls[0][0].fecha.toString()).toBe(`${dia}T00:00:00Z`);
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("usuario1", dia);
+        });
+
+        it("conserva el mismo día para ambos conteos si la operación cruza medianoche", async () => {
+            vi.setSystemTime(new Date("2026-11-13T02:59:59Z"));
+            configurarUsuario("OPERADOR", 10, "operador1");
+            mocks.publicacionOperador.first.mockResolvedValue({ publicacionId: 20 });
+            mocks.publicacion.first.mockResolvedValue({ especie: { nombreEspecie: "Tomate" } });
+            mocks.estadisticaContactoPublicacion.create.mockImplementationOnce(async () => {
+                vi.setSystemTime(new Date("2026-11-13T03:00:01Z"));
+            });
+
+            const res = await POST(crearRequest({ tipo: "OPERADOR", entidadId: 1, publicacionId: 20 }));
+
+            expect(res.status).toBe(200);
+            expect(mocks.estadisticaContactoPublicacion.create.mock.calls[0][0].fecha.toString()).toBe("2026-11-12T00:00:00Z");
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1", "2026-11-12");
+        });
+
         it("incrementa la estadística existente por especie para un operador", async () => {
             configurarUsuario("OPERADOR", 10, "operador1");
 
@@ -253,7 +292,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
                 cantidad: 4,
             });
 
-            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1");
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("operador1", "2026-11-06");
 
             expect(mocks.estadisticaContacto.create).not.toHaveBeenCalled();
             expect(mocks.estadisticaContacto.update).not.toHaveBeenCalled();
@@ -295,7 +334,7 @@ describe("POST /api/estadisticas/whatsapp", () => {
                 }),
             );
 
-            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1");
+            expect(registrarEstadisticaMock).toHaveBeenCalledExactlyOnceWith("productor1", "2026-11-06");
 
             expect(mocks.estadisticaContacto.create).not.toHaveBeenCalled();
             expect(mocks.estadisticaContacto.update).not.toHaveBeenCalled();
