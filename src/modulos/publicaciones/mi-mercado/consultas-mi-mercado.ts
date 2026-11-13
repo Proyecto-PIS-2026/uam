@@ -38,7 +38,7 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
         );
     
     const resultado = await publicaciones.all();
-    const vigentes = await agregarEstadoFotosPropias(resultado.map((relacion) => relacion.publicacion));
+    const vigentes = await agregarEstadoFotosPropias(resultado.map((relacion) => relacion.publicacion), "OPERADOR");
     return resultado.map((relacion, indice) => ({ ...relacion, publicacion: vigentes[indice] }));
 }
 

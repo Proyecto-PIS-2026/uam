@@ -31,6 +31,21 @@ afterEach(() => {
 });
 
 describe("estado privado de la foto de una publicación", () => {
+    it("calcula el aviso visual con los plazos propios de cada rol", async () => {
+        mocksConfiguracion.obtener.mockImplementation(async (tipo) => tipo === "OPERADOR" ? configuracion : {
+            habilitado: true, diasVigencia: 10, avisosHabilitados: true, diasAnticipacionAviso: 2,
+        });
+        mocks.listar.mockResolvedValue([{ clave: clave(1), cargadaEn: "2026-11-02T03:00:00Z" }]);
+
+        const [operador] = await agregarEstadoFotosPropias([{ foto: url(1) }], "OPERADOR");
+        const [productor] = await agregarEstadoFotosPropias([{ foto: url(1) }], "PRODUCTOR");
+
+        expect(operador.estadoFoto).toBe("por-vencer");
+        expect(productor.estadoFoto).toBeNull();
+        expect(mocksConfiguracion.obtener).toHaveBeenNthCalledWith(1, "OPERADOR");
+        expect(mocksConfiguracion.obtener).toHaveBeenNthCalledWith(2, "PRODUCTOR");
+    });
+
     it("conserva la foto y el aviso amarillo hasta su borrado, incluso al alcanzar o superar el vencimiento", async () => {
         const fechas = [
             "2026-11-02T03:00:00.001Z",
@@ -43,7 +58,7 @@ describe("estado privado de la foto de una publicación", () => {
         mocks.listar.mockResolvedValue(fechas.map((cargadaEn, indice) => ({ clave: clave(indice + 1), cargadaEn })));
         const publicaciones = fechas.map((_, indice) => ({ id: indice + 1, foto: url(indice + 1), precio: "25" }));
 
-        const resultado = await agregarEstadoFotosPropias(publicaciones);
+        const resultado = await agregarEstadoFotosPropias(publicaciones, "OPERADOR");
 
         expect(resultado.map(({ estadoFoto }) => estadoFoto)).toEqual([null, "por-vencer", "por-vencer", "por-vencer", "por-vencer", null]);
         expect(resultado.map(({ foto }) => foto)).toEqual(publicaciones.map(({ foto }) => foto));
@@ -59,7 +74,7 @@ describe("estado privado de la foto de una publicación", () => {
             { id: 2, foto: null, fotoEliminadaPorVencimientoEn: null },
             { id: 3, foto: null },
             { id: 4, foto: null, estadoFoto: "eliminada" },
-        ]);
+        ], "OPERADOR");
 
         expect(resultado.map(({ estadoFoto }) => estadoFoto)).toEqual(["eliminada", null, null, "eliminada"]);
         expect(mocks.seleccionar).not.toHaveBeenCalled();
@@ -70,7 +85,7 @@ describe("estado privado de la foto de una publicación", () => {
 
         const [publicacion] = await agregarEstadoFotosPropias([{
             foto: url(1), estadoFoto: "eliminada", fotoEliminadaPorVencimientoEn: "2026-11-02T03:00:00Z",
-        }]);
+        }], "OPERADOR");
 
         expect(publicacion).toMatchObject({ foto: url(1), estadoFoto: null });
         expect(mocks.listar).toHaveBeenCalledOnce();
@@ -79,13 +94,13 @@ describe("estado privado de la foto de una publicación", () => {
     it("no deduce aging de fotos sin fecha ni de imágenes estáticas anteriores", async () => {
         mocks.listar.mockResolvedValue([{ clave: clave(1), cargadaEn: null }]);
 
-        expect(await agregarEstadoFotosPropias([{ foto: url(1) }, { foto: "/publicaciones-demo/papa.webp" }])).toEqual([
+        expect(await agregarEstadoFotosPropias([{ foto: url(1) }, { foto: "/publicaciones-demo/papa.webp" }], "OPERADOR")).toEqual([
             { foto: url(1), estadoFoto: null }, { foto: "/publicaciones-demo/papa.webp", estadoFoto: null },
         ]);
     });
 
     it("no modifica la foto ni inventa un vencimiento si no encuentra su fecha de carga", async () => {
-        expect(await agregarEstadoFotosPropias([{ foto: url(1) }])).toEqual([{ foto: url(1), estadoFoto: null }]);
+        expect(await agregarEstadoFotosPropias([{ foto: url(1) }], "OPERADOR")).toEqual([{ foto: url(1), estadoFoto: null }]);
     });
 
     it("respeta deshabilitar aging y conserva el hecho de una eliminación anterior", async () => {
@@ -94,7 +109,7 @@ describe("estado privado de la foto de una publicación", () => {
         expect(await agregarEstadoFotosPropias([
             { foto: url(1), estadoFoto: "por-vencer" },
             { foto: null, fotoEliminadaPorVencimientoEn: "2026-11-01T03:00:00Z" },
-        ])).toEqual([
+        ], "OPERADOR")).toEqual([
             { foto: url(1), estadoFoto: null },
             { foto: null, fotoEliminadaPorVencimientoEn: "2026-11-01T03:00:00Z", estadoFoto: "eliminada" },
         ]);
@@ -105,7 +120,7 @@ describe("estado privado de la foto de una publicación", () => {
         mocksConfiguracion.obtener.mockRejectedValue(new Error(mensaje));
         const registrar = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        expect(await agregarEstadoFotosPropias([{ foto: url(1) }])).toEqual([{ foto: url(1), estadoFoto: null }]);
+        expect(await agregarEstadoFotosPropias([{ foto: url(1) }], "OPERADOR")).toEqual([{ foto: url(1), estadoFoto: null }]);
         expect(mocks.seleccionar).not.toHaveBeenCalled();
         expect(registrar).toHaveBeenCalledOnce();
     });
@@ -116,7 +131,7 @@ describe("estado privado de la foto de una publicación", () => {
         expect(await agregarEstadoFotosPropias([
             { foto: url(1), estadoFoto: "por-vencer" },
             { foto: null, fotoEliminadaPorVencimientoEn: "2026-11-01T03:00:00Z" },
-        ])).toEqual([
+        ], "OPERADOR")).toEqual([
             { foto: url(1), estadoFoto: null },
             { foto: null, fotoEliminadaPorVencimientoEn: "2026-11-01T03:00:00Z", estadoFoto: "eliminada" },
         ]);
@@ -131,7 +146,7 @@ describe("estado privado de la foto de una publicación", () => {
         });
         mocks.listar.mockResolvedValue([{ clave: clave(1), cargadaEn: null }]);
 
-        await agregarEstadoFotosPropias([{ foto: url(1) }, { foto: url(1) }, { foto: "/api/publicaciones/imagenes/0/archivo.webp" }]);
+        await agregarEstadoFotosPropias([{ foto: url(1) }, { foto: url(1) }, { foto: "/api/publicaciones/imagenes/0/archivo.webp" }], "OPERADOR");
 
         expect(incluir).toHaveBeenCalledExactlyOnceWith([clave(1)]);
         expect(mocks.listar).toHaveBeenCalledOnce();

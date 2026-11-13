@@ -13,7 +13,7 @@ type Foto = { id: number; clave: string; url: string; especie: string; rol: Rol;
 type Backend = typeof import("../src/infraestructura/persistencia/prisma/db").db;
 type Escenario = {
   crearFoto: (rol: Rol) => Promise<Foto>;
-  procesar: () => Promise<number>;
+  procesar: (rol: Rol) => Promise<number>;
   productorB: Credenciales;
 };
 
@@ -22,6 +22,10 @@ const configuracionInicial = {
   vigencia_fotos: "30",
   aviso_vencimiento_fotos_habilitado: "true",
   anticipacion_aviso_fotos: "1",
+  aging_fotos_productor_habilitado: "true",
+  vigencia_fotos_productor: "30",
+  aviso_vencimiento_fotos_productor_habilitado: "true",
+  anticipacion_aviso_fotos_productor: "1",
 };
 
 const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
@@ -42,7 +46,7 @@ const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
         'SELECT "nombreConfiguracion", "valorConfiguracion" FROM configuracion WHERE "nombreConfiguracion" = ANY($1::text[])',
         [Object.keys(configuracionInicial)],
       );
-      expect(originales).toHaveLength(4);
+      expect(originales).toHaveLength(8);
       try {
         for (const [nombre, valor] of Object.entries(configuracionInicial)) {
           await db.orm.public.Configuracion.where({ nombreConfiguracion: nombre }).update({ valorConfiguracion: valor });
@@ -85,10 +89,10 @@ const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
             await db.orm.public.Publicacion.where({ id: foto.id }).update({ foto: foto.url });
             return foto;
           },
-          procesar: async () => {
+          procesar: async (rol) => {
             const { obtenerConfiguracionAgingFotos } = await import("../src/modulos/publicaciones/configuracion-aging-fotos");
             const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/procesar-vencimientos-fotos");
-            const configuracion = await obtenerConfiguracionAgingFotos();
+            const configuracion = await obtenerConfiguracionAgingFotos(rol);
             return db.transaction(async (tx) => {
               await tx.execute(db.raw.sql`LOCK TABLE imagen, publicacion IN SHARE ROW EXCLUSIVE MODE`.affectedCount().build());
               const historicas = await tx.query(db.raw.sql`SELECT clave FROM imagen WHERE "cargadaEn" <= '1900-02-01T15:00:00Z'::timestamptz`.returnsRow({ clave: "pg/text@1" }).build());
@@ -96,7 +100,7 @@ const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
                 throw new Error("Hay fotos históricas ajenas a BP-13.1; se revierte el aging.");
               }
               const sinFecha = await tx.orm.public.Imagen.where({ cargadaEn: null }).select("clave").all();
-              const cantidad = await procesarVencimientosFotos({ tx, limite: "1900-02-01T15:00:00Z", fecha: "1900-02-01" }, configuracion);
+              const cantidad = await procesarVencimientosFotos({ tx, limite: "1900-02-01T15:00:00Z", fecha: "1900-02-01" }, configuracion, rol);
               for (const { clave } of sinFecha) await tx.orm.public.Imagen.where({ clave }).update({ cargadaEn: null });
               return cantidad;
             });
@@ -134,15 +138,16 @@ async function ingresar(page: Page, credenciales: Credenciales) {
   await expect(page.getByRole("button", { name: "Abrir menú de usuario", exact: true })).toBeVisible();
 }
 
-async function configurar(page: Page, valores: { dias?: string; habilitado?: boolean }) {
+async function configurar(page: Page, valores: { dias?: string; habilitado?: boolean }, rol: Rol = "OPERADOR") {
   await page.getByRole("button", { name: "General", exact: true }).click();
-  const tarjeta = page.getByText("Vigencia de las fotos", { exact: true }).locator("..");
+  const titulo = rol === "OPERADOR" ? "Vigencia de fotos de operadores" : "Vigencia de fotos de productores";
+  const tarjeta = page.getByText(titulo, { exact: true }).locator("..");
   if (valores.habilitado !== undefined) await tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true }).setChecked(valores.habilitado);
   if (valores.dias !== undefined) await tarjeta.getByRole("textbox", { name: "Días de vigencia", exact: true }).fill(valores.dias);
   const [respuesta] = await Promise.all([
     page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === "/administracion"
       && respuesta.request().method() === "POST" && respuesta.request().headers()["next-action"] !== undefined),
-    tarjeta.getByRole("button", { name: "Guardar configuración: Vigencia de las fotos", exact: true }).click(),
+    tarjeta.getByRole("button", { name: `Guardar configuración: ${titulo}`, exact: true }).click(),
   ]);
   expect(respuesta.ok(), "El guardado de la vigencia debe responder correctamente").toBe(true);
   await expect(tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true })).toBeEnabled();
@@ -194,10 +199,10 @@ for (const [caso, rol] of [["01", "OPERADOR"], ["02", "PRODUCTOR"]] as const) {
   test(`CP-13.1-${caso}: la foto vencida del ${rol.toLowerCase()} se elimina y se notifica`, async ({ page, aging, precargaOperadores }) => {
     const foto = await aging.crearFoto(rol);
     await iniciarSesionAdministrador(page, precargaOperadores.administrador, tiempoServidor);
-    await configurar(page, { dias: "10" });
+    await configurar(page, { dias: "10" }, rol);
     await ingresar(page, foto.credenciales);
     await verFoto(page, foto, false);
-    expect(await aging.procesar()).toBe(1);
+    expect(await aging.procesar(rol)).toBe(1);
     await verFoto(page, foto, true);
     await verAvisos(page, foto, true);
   });
@@ -205,14 +210,14 @@ for (const [caso, rol] of [["01", "OPERADOR"], ["02", "PRODUCTOR"]] as const) {
 
 test("CP-13.1-04: reducir la vigencia desde Administración aplica el nuevo plazo", async ({ page, aging, precargaOperadores }) => {
   const foto = await aging.crearFoto("OPERADOR");
-  expect(await aging.procesar()).toBe(0);
+  expect(await aging.procesar("OPERADOR")).toBe(0);
   await ingresar(page, foto.credenciales);
   await verFoto(page, foto, false);
   await verAvisos(page, foto, false);
   await page.context().clearCookies();
   await iniciarSesionAdministrador(page, precargaOperadores.administrador, tiempoServidor);
   await configurar(page, { dias: "10" });
-  expect(await aging.procesar()).toBe(1);
+  expect(await aging.procesar("OPERADOR")).toBe(1);
   await ingresar(page, foto.credenciales);
   await verFoto(page, foto, true);
   await verAvisos(page, foto, true);
@@ -221,9 +226,9 @@ test("CP-13.1-04: reducir la vigencia desde Administración aplica el nuevo plaz
 test("CP-13.1-05: deshabilitar aging conserva las fotos vencidas y no genera avisos", async ({ page, aging, precargaOperadores }) => {
   await iniciarSesionAdministrador(page, precargaOperadores.administrador, tiempoServidor);
   await configurar(page, { dias: "10" });
-  await configurar(page, { habilitado: false });
+  for (const rol of ["OPERADOR", "PRODUCTOR"] as const) await configurar(page, { habilitado: false }, rol);
   const fotos = [await aging.crearFoto("OPERADOR"), await aging.crearFoto("PRODUCTOR")];
-  expect(await aging.procesar()).toBe(0);
+  for (const rol of ["OPERADOR", "PRODUCTOR"] as const) expect(await aging.procesar(rol)).toBe(0);
   for (const foto of fotos) {
     await ingresar(page, foto.credenciales);
     await verFoto(page, foto, false);
@@ -235,8 +240,8 @@ for (const [caso, rol] of [["09", "OPERADOR"], ["10", "PRODUCTOR"]] as const) {
   test(`CP-13.1-${caso}: solo el dueño ${rol.toLowerCase()} ve el aviso de su foto`, async ({ page, aging, precargaOperadores: datos }) => {
     const foto = await aging.crearFoto(rol);
     await iniciarSesionAdministrador(page, datos.administrador, tiempoServidor);
-    await configurar(page, { dias: "10" });
-    expect(await aging.procesar()).toBe(1);
+    await configurar(page, { dias: "10" }, rol);
+    expect(await aging.procesar(rol)).toBe(1);
     await ingresar(page, foto.credenciales);
     await verAvisos(page, foto, true);
     const ajenos = rol === "OPERADOR" ? [datos.operadorB.credenciales, datos.productor] : [aging.productorB, datos.operadorA.credenciales];

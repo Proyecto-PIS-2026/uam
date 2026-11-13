@@ -1,0 +1,24 @@
+[
+  {
+    "id": "data_migration.separar_aging_fotos_productor",
+    "label": "Separar la configuración de aging de fotos de productores",
+    "operationClass": "data",
+    "invariantId": "uam:aging-fotos-productor-separado",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Copiar la configuración vigente sin sobrescribir valores propios de productores",
+        "sql": "INSERT INTO \"public\".\"configuracion\" (\"nombreConfiguracion\", \"valorConfiguracion\")\nSELECT claves.destino, COALESCE(actual.\"valorConfiguracion\", claves.predeterminado)\nFROM (VALUES\n  ('aging_fotos_habilitado', 'aging_fotos_productor_habilitado', 'false'),\n  ('vigencia_fotos', 'vigencia_fotos_productor', '3'),\n  ('aviso_vencimiento_fotos_habilitado', 'aviso_vencimiento_fotos_productor_habilitado', 'false'),\n  ('anticipacion_aviso_fotos', 'anticipacion_aviso_fotos_productor', '1')\n) AS claves(origen, destino, predeterminado)\nLEFT JOIN \"public\".\"configuracion\" actual ON actual.\"nombreConfiguracion\" = claves.origen\nON CONFLICT (\"nombreConfiguracion\") DO NOTHING;"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verificar que existen las cuatro opciones de aging de productores",
+        "sql": "SELECT count(*) = 4 AS result\nFROM \"public\".\"configuracion\"\nWHERE \"nombreConfiguracion\" IN (\n  'aging_fotos_productor_habilitado',\n  'vigencia_fotos_productor',\n  'aviso_vencimiento_fotos_productor_habilitado',\n  'anticipacion_aviso_fotos_productor'\n);"
+      }
+    ]
+  }
+]

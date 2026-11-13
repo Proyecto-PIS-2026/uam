@@ -1,5 +1,6 @@
 import obtenerConfiguraciones from "../administracion/acciones/consultas-configuracion";
 import { validarConfiguracionAgingFotos, type ConfiguracionAgingFotos } from "./vigencia-fotos";
+import { CLAVES_AGING_FOTOS, type TipoPropietarioFoto } from "./claves-aging-fotos";
 
 function leerHabilitacion(valor: string | null | undefined): boolean {
     if (valor == null || valor === "false") return false;
@@ -11,21 +12,18 @@ function leerDias(valor: string | null | undefined): number {
     return valor && /^[0-9]+$/.test(valor) ? Number(valor) : Number.NaN;
 }
 
-export async function obtenerConfiguracionAgingFotos(): Promise<ConfiguracionAgingFotos> {
-    const filas = await obtenerConfiguraciones([
-        "aging_fotos_habilitado",
-        "vigencia_fotos",
-        "aviso_vencimiento_fotos_habilitado",
-        "anticipacion_aviso_fotos",
-    ]);
+export async function obtenerConfiguracionAgingFotos(tipo: TipoPropietarioFoto): Promise<ConfiguracionAgingFotos> {
+    const claves = CLAVES_AGING_FOTOS[tipo];
+    const [claveHabilitado, claveVigencia, claveAvisos, claveAnticipacion] = claves;
+    const filas = await obtenerConfiguraciones(claves);
     const valores = new Map(filas.map(({ nombreConfiguracion, valorConfiguracion }) => [nombreConfiguracion, valorConfiguracion]));
-    if (!leerHabilitacion(valores.get("aging_fotos_habilitado"))) return { habilitado: false };
+    if (!leerHabilitacion(valores.get(claveHabilitado))) return { habilitado: false };
 
-    const avisosHabilitados = leerHabilitacion(valores.get("aviso_vencimiento_fotos_habilitado"));
+    const avisosHabilitados = leerHabilitacion(valores.get(claveAvisos));
     return validarConfiguracionAgingFotos({
         habilitado: true,
-        diasVigencia: leerDias(valores.get("vigencia_fotos")),
+        diasVigencia: leerDias(valores.get(claveVigencia)),
         avisosHabilitados,
-        diasAnticipacionAviso: avisosHabilitados ? leerDias(valores.get("anticipacion_aviso_fotos")) : 0,
+        diasAnticipacionAviso: avisosHabilitados ? leerDias(valores.get(claveAnticipacion)) : 0,
     });
 }
