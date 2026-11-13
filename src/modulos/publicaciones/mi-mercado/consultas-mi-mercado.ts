@@ -4,6 +4,7 @@ import type { Numeric } from "@prisma/orm-postgres/target/codec-types";
 import { MAXIMO_PRECIO_PUBLICACION } from "../precio-publicacion";
 import { Temporal } from "temporal-polyfill";
 import { agregarEstadoFotosPropias } from "../estado-fotos-propias";
+import { obtenerFechaEstadistica } from "@/modulos/administracion/estadisticas/fechas-estadisticas";
 
 export class PublicacionNoEncontradaError extends Error {
     constructor() {
@@ -73,8 +74,7 @@ async function registrarEstadisticaPublicacion(tx: Parameters<Parameters<typeof 
     if (!operador) throw new PublicacionNoEncontradaError(); 
     const usuario = await tx.orm.public.Usuario.select("username").where({ id: operador.usuarioId }).first();
     if (!usuario?.username) throw new Error("No se pudo obtener el usuario del operador.");
-    const ahora = new Date();
-    const fechaStr = [ahora.getFullYear(), String(ahora.getMonth() + 1).padStart(2, "0"), String(ahora.getDate()).padStart(2, "0")].join("-");
+    const fechaStr = obtenerFechaEstadistica();
     const fecha = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
     const existente = await tx.orm.public.EstadisticaPublicacion.where({ fecha, username: usuario.username }).first();
     if (existente) {

@@ -6,7 +6,7 @@ import { modificarPublicacionProductor, obtenerPublicacionProductorEditable } fr
 const mocks = vi.hoisted(() => {
     const consulta = () => ({ where: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(), include: vi.fn().mockReturnThis(), first: vi.fn(), all: vi.fn(), update: vi.fn(), deleteAll: vi.fn(), create: vi.fn() });
     return { especie: consulta(), variedad: consulta(), vinculo: consulta(), publicacion: consulta(), envase: consulta(), kilos: consulta(), categoria: consulta(), calibre: consulta(), pais: consulta(), ubicacion: consulta(),
-        transaction: vi.fn(), execute: vi.fn(), rawSql: vi.fn(), guardarImagen: vi.fn(), eliminarImagen: vi.fn(), consultarConfig: vi.fn() };
+        transaction: vi.fn(), execute: vi.fn(), rawSql: vi.fn(), guardarImagen: vi.fn(), eliminarImagen: vi.fn(), consultarConfig: vi.fn(), enviarNotificacion: vi.fn() };
 });
 const orm = { public: { Especie: mocks.especie, Variedad: mocks.variedad, PublicacionProductor: mocks.vinculo, Publicacion: mocks.publicacion, Envase: mocks.envase, KilosEmpaquetado: mocks.kilos,
     Categoria: mocks.categoria, Calibre: mocks.calibre, Pais: mocks.pais, Ubicacion: mocks.ubicacion,
@@ -20,6 +20,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: {
 vi.mock("../operadores/imagenes-publicacion", () => ({
     ErrorImagenPublicacion: class extends Error {}, guardarImagenPublicacion: mocks.guardarImagen, eliminarImagenPublicacionGestionada: mocks.eliminarImagen,
 }));
+vi.mock("@/modulos/notificaciones/notificaciones", () => ({ enviarNotificacion: mocks.enviarNotificacion }));
 
 const sesion: DatosSesion = { usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 };
 const cambios = { especieId: 6, variedadId: 7, precio: "125", foto: "foto-anterior.jpg", envaseId: 8, kilosId: null, categoriaId: 4, calibreId: 2,
@@ -56,6 +57,7 @@ beforeEach(() => {
     mocks.ubicacion.create.mockResolvedValue(undefined);
     mocks.guardarImagen.mockResolvedValue(fotoNueva);
     mocks.eliminarImagen.mockResolvedValue(undefined);
+    mocks.enviarNotificacion.mockResolvedValue({ enviadas: 1 });
     mocks.rawSql.mockReturnValue({ returnsRow: () => ({ build: () => ({}) }) });
     mocks.transaction.mockImplementation((callback) => callback({ orm, execute: mocks.execute }));
     mocks.consultarConfig.mockImplementation(async (nombre: string) => ({ valorConfiguracion: nombre.endsWith("_habilitada") ? "false" : "3" }));
@@ -65,6 +67,44 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("edición de publicaciones de productores", () => {
+    describe("aviso de edición administrativa", () => {
+        const administrador: DatosSesion = { usuarioId: 999, rol: "ADMINISTRADOR", expiraEn: 2000000000 };
+
+        it("avisa al productor propietario con el ID base dentro de la transacción", async () => {
+            await modificarPublicacionProductor(administrador, 12, cambios);
+
+            expect(mocks.enviarNotificacion).toHaveBeenCalledExactlyOnceWith({
+                texto: "Una de tus publicaciones fue modificada por la administración de la UAM. Comunicate con la administración de la UAM.",
+                usuarios: [10],
+                url: "/mi-mercado/productor?publicacion=20",
+            }, { orm, execute: mocks.execute });
+            expect(mocks.ubicacion.create.mock.invocationCallOrder[0]).toBeLessThan(mocks.enviarNotificacion.mock.invocationCallOrder[0]);
+        });
+
+        it("no avisa cuando el productor modifica su propia publicación", async () => {
+            await modificarPublicacionProductor(sesion, 12, cambios);
+
+            expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
+        });
+
+        it("no crea un aviso si falla el guardado de las ubicaciones", async () => {
+            const error = new Error("No se pudo guardar la ubicación.");
+            mocks.ubicacion.create.mockRejectedValueOnce(error);
+
+            await expect(modificarPublicacionProductor(administrador, 12, cambios)).rejects.toBe(error);
+            expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
+        });
+
+        it("rechaza la transacción si no se puede guardar el aviso", async () => {
+            const error = new Error("No se pudo guardar la notificación.");
+            mocks.enviarNotificacion.mockRejectedValueOnce(error);
+
+            await expect(modificarPublicacionProductor(administrador, 12, cambios)).rejects.toBe(error);
+            await expect(mocks.transaction.mock.results[0].value).rejects.toBe(error);
+            expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+        });
+    });
+
     describe("avisos de vencimiento al editar la vigencia", () => {
         const fechaAnterior = Temporal.Instant.from("2026-11-09T02:59:59Z");
         const avisoEnviado = Temporal.Instant.from("2026-11-06T12:00:00Z");

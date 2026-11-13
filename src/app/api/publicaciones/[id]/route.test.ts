@@ -288,6 +288,14 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		configurarMocksBase();
 	});
 
+	it("determina la edición administrativa por la sesión y no por el cuerpo enviado", async () => {
+		const cambios = { ...cambiosEdicion, edicionAdministrativa: true };
+		const respuesta = await PATCH(solicitudEdicion(cambios), contextoEdicion);
+
+		expect(respuesta.status).toBe(200);
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambios, null, false);
+	});
+
 	it("devuelve 413 sin modificar una solicitud demasiado grande", async () => {
 		const solicitud = new Request("http://localhost/api/publicaciones/20", {
 			method: "PATCH", body: "cuerpo demasiado grande",
@@ -390,7 +398,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 			mensaje: "Publicación modificada correctamente.",
 		});
 		expect(vinculoPublicacionMock.where).toHaveBeenCalledWith({ publicacionId: 20, operadorId: 3 });
-		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosEdicion, null);
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosEdicion, null, false);
 		expect(obtenerOperadorAutorizado).toHaveBeenCalledOnce();
 		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado");
 		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%203");
@@ -478,7 +486,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		const cambiosSinFoto = { especieId: 6, variedadId: 7, precio: "125", categoriaId: 4, calibreId: 2, envaseId: 8, kilosId: null, paisId: 218, disponible: true };
 		const respuesta = await PATCH(solicitudEdicion(cambiosSinFoto), contextoEdicion);
 		expect(respuesta.status).toBe(200);
-		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosSinFoto, null);
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosSinFoto, null, false);
 	});
 
 	it("modifica la publicación usando el ID del operador propio indicado", async () => {
@@ -489,7 +497,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		expect(respuesta.status).toBe(200);
 		expect(obtenerOperadorAutorizado).toHaveBeenCalledExactlyOnceWith(7);
 		expect(vinculoPublicacionMock.where).toHaveBeenCalledWith({ publicacionId: 20, operadorId: 7 });
-		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosEdicion, null);
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(10, 12, cambiosEdicion, null, false);
 		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
 		expect(revalidatePath).toHaveBeenCalledWith("/operadores/Operador%207");
 	});
@@ -522,7 +530,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 
 		expect(respuesta.status).toBe(200);
 		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(
-			10, 12, cambiosEdicion, expect.objectContaining({ name: "nueva.jpg", type: "image/jpeg", size: 13 }),
+			10, 12, cambiosEdicion, expect.objectContaining({ name: "nueva.jpg", type: "image/jpeg", size: 13 }), false,
 		);
 	});
 
@@ -544,7 +552,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 		const cambios = { ...cambiosEdicion, variedadId: vacio, envaseId: vacio, kilosId: null, categoriaId: vacio, calibreId: vacio, paisId: vacio };
 		const respuesta = await PATCH(solicitudEdicion(cambios), contextoEdicion);
 		expect(respuesta.status).toBe(200);
-		expect(modificarPublicacionOperador).toHaveBeenCalledWith(10, 12, expect.objectContaining({ especieId: 6 }), null);
+		expect(modificarPublicacionOperador).toHaveBeenCalledWith(10, 12, expect.objectContaining({ especieId: 6 }), null, false);
 	});
 
 	it("devuelve 400 cuando el país no existe", async () => {
@@ -563,7 +571,7 @@ describe("PATCH /api/publicaciones/[id]", () => {
 
 		expect(respuesta.status).toBe(400);
 		expect(await respuesta.json()).toEqual({ errores: [mensaje] });
-		expect(modificarPublicacionOperador).toHaveBeenCalledWith(10, 12, { ...cambiosEdicion, precio }, null);
+		expect(modificarPublicacionOperador).toHaveBeenCalledWith(10, 12, { ...cambiosEdicion, precio }, null, false);
 		expect(revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -669,7 +677,7 @@ describe("gestión de publicaciones como administrador", () => {
 		expect(obtenerOperadorPorIdMock).toHaveBeenCalledExactlyOnceWith(7);
 		expect(obtenerOperadorAutorizado).not.toHaveBeenCalled();
 		expect(vinculoPublicacionMock.where).toHaveBeenCalledWith({ publicacionId: 20, operadorId: 7 });
-		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(70, 12, cambiosEdicion, null);
+		expect(modificarPublicacionOperador).toHaveBeenCalledExactlyOnceWith(70, 12, cambiosEdicion, null, true);
 		expect(revalidatePath).toHaveBeenCalledWith("/mi-mercado/Operador%207");
 	});
 

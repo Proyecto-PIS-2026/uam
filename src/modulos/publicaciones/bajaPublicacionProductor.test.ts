@@ -54,7 +54,7 @@ const tx = {
                 where: () => ({ first: buscarUsuario }),
             },
             EstadisticaCantidadPublicacion: {
-                where: (filtro: { id?: number }) =>
+                where: (filtro: { id?: number; fecha?: Temporal.Instant; username?: string }) =>
                     filtro.id !== undefined
                         ? { update: actualizarEstadistica }
                         : { first: buscarEstadistica },
@@ -113,7 +113,29 @@ describe("bajaPublicacionProductor", () => {
         ejecutarSql.mockResolvedValue(undefined);
     });
 
-    afterEach(() => vi.restoreAllMocks());
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    it.each([
+        ["2026-11-13T00:00:00Z", "2026-11-12"],
+        ["2026-11-13T02:59:59Z", "2026-11-12"],
+        ["2026-11-13T03:00:00Z", "2026-11-13"],
+        ["2026-11-13T15:00:00Z", "2026-11-13"],
+    ])("registra la baja de %s en el día de Uruguay %s", async (instante, dia) => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(instante));
+        buscarRelacion.mockResolvedValue({ publicacionId: 15, productorId: 3 });
+        const consultar = vi.spyOn(tx.orm.public.EstadisticaCantidadPublicacion, "where");
+
+        expect(await bajaPublicacionProductor(15, 3)).toBe(true);
+
+        const filtro = consultar.mock.calls[0][0] as { fecha: Temporal.Instant; username: string };
+        expect(filtro.fecha.toString()).toBe(`${dia}T00:00:00Z`);
+        expect(filtro.username).toBe("productor1");
+        expect(crearEstadistica.mock.calls[0][0].fecha.toString()).toBe(`${dia}T00:00:00Z`);
+    });
 
     it("elimina una publicación que pertenece al productor bajo el bloqueo", async () => {
         buscarRelacion.mockResolvedValue({

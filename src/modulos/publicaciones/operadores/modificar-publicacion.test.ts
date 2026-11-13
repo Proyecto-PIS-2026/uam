@@ -51,6 +51,7 @@ const mocks = vi.hoisted(() => {
         execute: vi.fn(),
         guardarImagen: vi.fn(),
         eliminarImagen: vi.fn(),
+        enviarNotificacion: vi.fn(),
     };
 });
 
@@ -74,6 +75,7 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
 }));
 
 vi.mock("./limpiar-imagen-publicacion", () => ({ limpiarImagenPublicacionNoReferenciada: mocks.eliminarImagen }));
+vi.mock("@/modulos/notificaciones/notificaciones", () => ({ enviarNotificacion: mocks.enviarNotificacion }));
 
 vi.mock("./imagenes-publicacion", () => ({
     ErrorImagenPublicacion: class ErrorImagenPublicacion extends Error {},
@@ -143,6 +145,7 @@ function prepararTransaccion() {
     mocks.execute.mockResolvedValue(undefined);
     mocks.guardarImagen.mockResolvedValue(FOTO_NUEVA);
     mocks.eliminarImagen.mockResolvedValue(undefined);
+    mocks.enviarNotificacion.mockResolvedValue({ enviadas: 1 });
 }
 
 describe("modificarPublicacionOperador", () => {
@@ -152,6 +155,42 @@ describe("modificarPublicacionOperador", () => {
     });
 
     afterEach(() => vi.restoreAllMocks());
+
+    describe("aviso de edición administrativa", () => {
+        it("avisa al dueño con el ID base y dentro de la transacción de edición", async () => {
+            await modificarPublicacionOperador(9, 12, cambios, null, true);
+
+            expect(mocks.enviarNotificacion).toHaveBeenCalledExactlyOnceWith({
+                texto: "Una de tus publicaciones fue modificada por la administración de la UAM. Comunicate con la administración de la UAM.",
+                usuarios: [9],
+                url: "/mi-mercado?publicacion=20",
+            }, transaccion);
+            expect(mocks.vinculo.update.mock.invocationCallOrder[0]).toBeLessThan(mocks.enviarNotificacion.mock.invocationCallOrder[0]);
+        });
+
+        it("no avisa cuando el operador modifica su propia publicación", async () => {
+            await modificarPublicacionOperador(9, 12, cambios);
+
+            expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
+        });
+
+        it("no crea un aviso si la edición administrativa tiene un conflicto", async () => {
+            await expect(modificarPublicacionOperador(9, 12, { ...cambios, version: 0 }, null, true))
+                .rejects.toMatchObject({ codigo: "CONFLICTO" });
+
+            expect(mocks.publicacion.update).not.toHaveBeenCalled();
+            expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
+        });
+
+        it("rechaza la transacción si no se puede guardar el aviso", async () => {
+            const error = new Error("No se pudo guardar la notificación.");
+            mocks.enviarNotificacion.mockRejectedValueOnce(error);
+
+            await expect(modificarPublicacionOperador(9, 12, cambios, null, true)).rejects.toBe(error);
+            await expect(mocks.transaction.mock.results[0].value).rejects.toBe(error);
+            expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+        });
+    });
 
     describe("avisos de vencimiento al editar la vigencia", () => {
         const fechaAnterior = Temporal.Instant.from("2026-11-10T02:59:59Z");

@@ -154,7 +154,10 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
 		if (!vinculo) {
 			return NextResponse.json({ errores: ["La publicación no pertenece al operador seleccionado."] }, { status: 404 });
 		}
-		const resultado = await modificarPublicacionOperador(operador.usuarioId, vinculo.id, cambios as CambiosPublicacionOperador, fotoNueva);
+		const resultado = await modificarPublicacionOperador(
+			operador.usuarioId, vinculo.id, cambios as CambiosPublicacionOperador, fotoNueva,
+			sesion.rol === "ADMINISTRADOR",
+		);
 		try {
 			const usuarioVinculado = await db.orm.public.Usuario.select("username").where({ id: operador.usuarioId }).first();
 			if (usuarioVinculado?.username) {
