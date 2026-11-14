@@ -207,8 +207,9 @@ describe("CatalogoOperadorAdmin", () => {
         expect(cuerpo.get("cambios")).toBe(JSON.stringify(cambios));
         expect(cuerpo.get("fotografia")).toBeNull();
         expect(mocks.refresh).toHaveBeenCalledOnce();
-        expect(screen.getByRole("status")).toHaveTextContent("Publicación modificada correctamente.");
-        expect(screen.getByRole("status")).toHaveClass("MuiAlert-colorSuccess");
+        const aviso = await screen.findByRole("status");
+        expect(aviso).toHaveTextContent("Publicación modificada correctamente.");
+        expect(aviso).toHaveClass("MuiAlert-colorSuccess");
     });
 
     it("devuelve el error de la API al guardar sin refrescar la página", async () => {
@@ -243,8 +244,9 @@ describe("CatalogoOperadorAdmin", () => {
         await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
         expect(fetch).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/101?operadorId=12", { method: "DELETE" });
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("Publicación eliminada.");
-        expect(screen.getByRole("status")).toHaveClass("MuiAlert-colorSuccess");
+        const aviso = await screen.findByRole("status");
+        expect(aviso).toHaveTextContent("Publicación eliminada.");
+        expect(aviso).toHaveClass("MuiAlert-colorSuccess");
     });
 
     // Cancelar la confirmación no elimina nada

@@ -1365,13 +1365,13 @@ describe("PreciosHistoricos", () => {
         expect(screen.getByRole("button", { name: "Consultar" })).toBeDisabled();
     });
 
-    it("distingue el fallo de consulta de un período sin registros", () => {
+    it("distingue el fallo de consulta de un período sin registros", async () => {
         render(<PreciosHistoricos producto={producto} historico={null} {...fechas} error="No pudimos cargar los precios históricos." />);
 
-        expect(screen.getAllByRole("alert")).toHaveLength(2);
-        for (const aviso of screen.getAllByRole("alert")) {
-            expect(aviso).toHaveTextContent("No pudimos cargar los precios históricos.");
-        }
+        const aviso = await screen.findByRole("alert");
+        expect(aviso).toHaveTextContent("No pudimos cargar los precios históricos.");
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
         expect(screen.queryByText(/No hay registros históricos/)).not.toBeInTheDocument();
     });
 

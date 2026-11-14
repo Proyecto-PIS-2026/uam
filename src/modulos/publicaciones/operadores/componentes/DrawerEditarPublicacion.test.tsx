@@ -869,19 +869,19 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         expect(mocks.cerrar).toHaveBeenCalledOnce();
     });
 
-    it("muestra un error genérico, permite volver a guardar y cerrar el aviso", async () => {
+    it("muestra un error genérico y retira el aviso al volver a guardar", async () => {
         mocks.guardar.mockRejectedValueOnce(null);
         render(<DrawerEditarPublicacion {...props} />);
         fireEvent.change(screen.getByLabelText("Precio en pesos"), {target: { value: "101" }});
         guardarDesdeBoton();
         expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron guardar los cambios. Intentá de nuevo.");
         expect(screen.getByLabelText("Precio en pesos")).toBeEnabled();
+        expect(screen.getByLabelText("Precio en pesos")).toHaveValue("101");
         expect(mocks.cerrar).not.toHaveBeenCalled();
         guardarDesdeBoton();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledTimes(2));
         await waitFor(() => expect(mocks.cerrar).toHaveBeenCalledOnce());
-        expect(screen.getByRole("alert")).toHaveTextContent("No se pudieron guardar los cambios. Intentá de nuevo.");
-        fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 

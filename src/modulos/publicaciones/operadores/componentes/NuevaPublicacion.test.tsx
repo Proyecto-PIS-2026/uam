@@ -352,9 +352,12 @@ describe("NuevaPublicacion", () => {
         await waitFor(() => expect(boton).toBeEnabled());
         const formulario = boton.closest("form");
         if (!formulario) throw new Error("No se encontró el formulario de publicación.");
+        completarFormulario(formulario);
         fireEvent.submit(formulario);
         expect(await screen.findByRole("alert")).toHaveTextContent("La publicación no es válida.");
         expect(screen.getByRole("alert")).toHaveTextContent("Revisá la especie seleccionada.");
+        expect(fetch).toHaveBeenCalledWith("/api/publicaciones", expect.objectContaining({ method: "POST" }));
+        expect(mocks.alCrear).not.toHaveBeenCalled();
         expect(within(formulario).queryByRole("alert")).not.toBeInTheDocument();
         expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(screen.getByRole("alert"));
         expect(screen.getByRole("button", { name: "Cerrar notificación" })).toBeInTheDocument();

@@ -119,7 +119,7 @@ describe("FormularioAltaUsuario", () => {
 
         expect(screen.getByLabelText(/^Nombre\s*\*$/)).toBeInTheDocument();
         expect(
-            screen.getByLabelText("Código de país"),
+            screen.getByRole("combobox", { name: "Código de país" }),
         ).toBeInTheDocument();
 
         expect(

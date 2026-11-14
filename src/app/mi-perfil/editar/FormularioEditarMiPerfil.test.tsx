@@ -37,7 +37,9 @@ describe("FormularioEditarMiPerfil", () => {
         await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/mi-perfil"));
         expect(mocks.guardar).toHaveBeenCalledExactlyOnceWith({ nombre: "admin.nuevo" });
         expect(mocks.refresh).toHaveBeenCalledOnce();
-        expect(within(screen.getByRole("region", { name: "Notificaciones" })).getByRole("status")).toHaveTextContent("Perfil actualizado correctamente.");
+        const aviso = await screen.findByRole("status");
+        expect(aviso).toHaveTextContent("Perfil actualizado correctamente.");
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
         expect(within(screen.getByRole("form", { name: "Editar mi perfil" })).queryByRole("status")).not.toBeInTheDocument();
     });
 });

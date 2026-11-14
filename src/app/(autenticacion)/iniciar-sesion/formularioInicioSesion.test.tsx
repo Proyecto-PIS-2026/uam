@@ -210,9 +210,8 @@ describe("FormularioInicioSesion", () => {
         fireEvent.click(screen.getByRole("button", { name: "Aceptar" }));
         expect(await screen.findByRole("status")).toHaveTextContent("Solicitud enviada correctamente.");
         expect(solicitarRecuperacionSimulada).toHaveBeenCalledTimes(2);
-        expect(screen.getByRole("alert")).toHaveTextContent(error);
-        fireEvent.click(within(screen.getByRole("alert")).getByRole("button", { name: "Cerrar notificación" }));
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("Solicitud enviada correctamente.");
+        fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 });
