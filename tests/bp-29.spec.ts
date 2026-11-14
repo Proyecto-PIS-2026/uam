@@ -314,12 +314,9 @@ async function cargarBP29(page: Page, recargar = false) {
 nuevos.describe(() => {
     nuevos.beforeEach(() => nuevos.setTimeout(180_000));
 
-    nuevos("CP-29-02: cambiar de usuario después de salir no conserva avisos ajenos", async ({ page, precargaOperadores: datos, backendNotificaciones }) => {
-        const textoA = `Privado A ${randomUUID()}`;
-        const textoB = `Privado B ${randomUUID()}`;
-        for (const [texto, usuarioId] of [[textoA, datos.operadorA.usuarioId], [textoB, datos.operadorB.usuarioId]] as const) {
-            await backendNotificaciones.enviarNotificacion({ texto, usuarios: [usuarioId] });
-        }
+    nuevos("CP-29-02: cambiar de usuario después de salir no conserva avisos ajenos", async ({ page, precargaOperadores: datos, avisos }) => {
+        const { texto: textoA } = await avisos.enviar("Privado A", { usuarios: [datos.operadorA.usuarioId] });
+        const { texto: textoB } = await avisos.enviar("Privado B", { usuarios: [datos.operadorB.usuarioId] });
         await ingresarOperadorBP29(page, datos.operadorA.credenciales);
         await cargarBP29(page);
         await expect(fila(page, textoA)).toBeVisible();
@@ -332,11 +329,10 @@ nuevos.describe(() => {
         await expect(fila(page, textoA)).toHaveCount(0);
     });
 
-    nuevos("CP-29-03: el operador lee y borra avisos y persiste tras otro ingreso", async ({ page, precargaOperadores: datos, fotoPropia, backendNotificaciones }) => {
+    nuevos("CP-29-03: el operador lee y borra avisos y persiste tras otro ingreso", async ({ page, precargaOperadores: datos, fotoPropia, avisos }) => {
         expect(fotoPropia.id).toBeGreaterThan(0);
-        const leer = `Leer ${randomUUID()}`;
-        const borrar = `Borrar ${randomUUID()}`;
-        for (const texto of [leer, borrar]) await backendNotificaciones.enviarNotificacion({ texto, usuarios: [datos.operadorA.usuarioId] });
+        const { texto: leer } = await avisos.enviar("Leer", { usuarios: [datos.operadorA.usuarioId] });
+        const { texto: borrar } = await avisos.enviar("Borrar", { usuarios: [datos.operadorA.usuarioId] });
         await ingresarOperadorBP29(page, datos.operadorA.credenciales);
         await esperarContador(botonCuenta(page), 2);
         await cargarBP29(page);
@@ -356,9 +352,8 @@ nuevos.describe(() => {
         await expect(fila(page, leer)).toHaveAttribute("data-leida", "true");
     });
 
-    nuevos("CP-29-04: el operador accede desde el menú a sus notificaciones", async ({ page, precargaOperadores: datos, backendNotificaciones }) => {
-        const texto = `Acceso operador ${randomUUID()}`;
-        await backendNotificaciones.enviarNotificacion({ texto, usuarios: [datos.operadorA.usuarioId] });
+    nuevos("CP-29-04: el operador accede desde el menú a sus notificaciones", async ({ page, precargaOperadores: datos, avisos }) => {
+        const { texto } = await avisos.enviar("Acceso operador", { usuarios: [datos.operadorA.usuarioId] });
         await ingresarOperadorBP29(page, datos.operadorA.credenciales);
         await esperarContador(botonCuenta(page), 1);
         await botonCuenta(page).click();
@@ -368,10 +363,9 @@ nuevos.describe(() => {
         expect((await consultar(page)).notificaciones).toHaveLength(1);
     });
 
-    nuevos("CP-29-12: falla de lectura o borrado informa el error sin modificar datos", async ({ page, precargaOperadores: datos, fotoPropia, backendNotificaciones }) => {
+    nuevos("CP-29-12: falla de lectura o borrado informa el error sin modificar datos", async ({ page, precargaOperadores: datos, fotoPropia, avisos }) => {
         expect(fotoPropia.id).toBeGreaterThan(0);
-        const texto = `Error ${randomUUID()}`;
-        await backendNotificaciones.enviarNotificacion({ texto, usuarios: [datos.operadorA.usuarioId] });
+        const { texto } = await avisos.enviar("Error", { usuarios: [datos.operadorA.usuarioId] });
         await ingresarOperadorBP29(page, datos.operadorA.credenciales);
         await cargarBP29(page);
         const antes = await consultar(page);
