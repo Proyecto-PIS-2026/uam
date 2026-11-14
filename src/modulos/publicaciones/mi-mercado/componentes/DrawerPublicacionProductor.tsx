@@ -502,7 +502,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                         </div>
                         {borrador ? <UbicacionesEdicionProductor ubicaciones={borrador.ubicaciones} deshabilitado={ocupado} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} /> : <UbicacionesConsulta publicacion={publicacion} />}
                     </div>
-                    <div className={estilosAcciones.pie}>
+                    <div className={estilosAcciones.pie} data-acciones-modal>
                         {editando ? <>
                             <button className={estilosAcciones.cancelar} type="button" onClick={cancelarEdicion} disabled={ocupado}>Cancelar</button>
                             <button className={estilosAcciones.guardar} type="submit" disabled={ocupado}>{estado.guardando ? "Guardando..." : "Confirmar"}</button>

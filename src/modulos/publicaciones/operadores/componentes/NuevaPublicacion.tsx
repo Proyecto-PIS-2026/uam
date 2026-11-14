@@ -339,7 +339,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                         </div>
                     </div>
                 </div>
-                <div className={drawerStyles.pie}>
+                <div className={drawerStyles.pie} data-acciones-modal>
                     <button className={drawerStyles.cancelar} type="button" onClick={alCerrar} disabled={guardando}>Cancelar</button>
                     <button className={drawerStyles.guardar} type="submit" disabled={deshabilitado || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button>
                 </div>

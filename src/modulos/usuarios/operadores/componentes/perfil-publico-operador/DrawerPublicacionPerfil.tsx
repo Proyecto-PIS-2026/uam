@@ -13,6 +13,7 @@ import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acc
 import TextoAjustable from "./TextoAjustable";
 import styles from "./DrawerPublicacionPerfil.module.css";
 import ComentarioPublicacion from "@/modulos/publicaciones/componentes/drawer-publicacion/ComentarioPublicacion";
+import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-publicacion";
 
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useEffect, useRef, useState } from "react";
@@ -135,11 +136,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Empaquetado</span>
-                                    <span className={styles.valorInformacion}>{publicacion.envase?.trim() || "-"}</span>
-                                </div>
-                                <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Kilos</span>
-                                    <span className={styles.valorInformacion}>{publicacion.kilos?.trim() && publicacion.kilos !== "-" ? `${publicacion.kilos} kg` : "-"}</span>
+                                    <span className={styles.valorInformacion}>{formatearEmpaquetado(publicacion.envase, publicacion.kilos) || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Calibre</span>

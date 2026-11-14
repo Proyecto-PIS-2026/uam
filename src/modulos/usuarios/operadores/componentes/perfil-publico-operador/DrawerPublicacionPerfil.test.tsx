@@ -514,10 +514,14 @@ describe("DrawerPublicacionPerfil con operadores", () => {
         },
     );
 
-    it("muestra los datos de la publicación y el enlace de contacto", () => {
+    it.each([
+        { envase: "Cajón", kilos: "", empaquetado: "Cajón" },
+        { envase: "Cajón", kilos: "250", empaquetado: "Cajón (250 kg)" },
+        { envase: "", kilos: "10-12", empaquetado: "10-12 kg" },
+    ])("muestra los datos, el contacto y el empaquetado $empaquetado en una sola fila", ({ envase, kilos, empaquetado }) => {
         render(
             <DrawerPublicacionPerfil
-                publicacion={crearPublicacion()}
+                publicacion={{ ...crearPublicacion(), envase, kilos }}
                 open
                 onOpenChange={vi.fn()}
             />,
@@ -533,13 +537,14 @@ describe("DrawerPublicacionPerfil con operadores", () => {
             "Tomate",
             "Perita",
             "$150",
-            "Cajón",
+            empaquetado,
             "Mediano",
             "Primera",
             "Uruguay",
         ]) {
             expect(screen.getByText(texto)).toBeInTheDocument();
         }
+        expect(screen.queryByText("Kilos", { exact: true })).not.toBeInTheDocument();
 
         expect(
             screen.getByRole("link", {

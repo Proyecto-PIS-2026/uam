@@ -363,6 +363,39 @@ describe("NotificacionToast", () => {
         }
     });
 
+    it.each(["right", "bottom"] as const)("reserva las acciones del drawer %s y recupera el espacio al cerrarlo", async (anchor) => {
+        function Pantalla() {
+            const [abierto, setAbierto] = useState(true);
+            return <Drawer anchor={anchor} open={abierto} transitionDuration={0} slotProps={{ paper: { role: "dialog", "aria-label": "Panel" } }}>
+                <Ejemplo />
+                <div data-acciones-modal role="group" aria-label="Acciones del panel">
+                    <button onClick={() => setAbierto(false)}>Cancelar</button>
+                </div>
+            </Drawer>;
+        }
+        render(<Pantalla />);
+        const acciones = screen.getByRole("group", { name: "Acciones del panel" });
+        const medir = vi.spyOn(acciones, "getBoundingClientRect").mockReturnValue(new DOMRect(0, window.innerHeight - 88, 360, 88));
+        try {
+            fireEvent.click(screen.getByRole("button", { name: "Fallar" }));
+            expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar.");
+            const pila = screen.getByRole("region", { name: "Notificaciones" });
+            expect(pila.style.getPropertyValue("--toast-inferior")).toBe("88px");
+            expect(pila.style.getPropertyValue("--toast-alto-visible")).toBe(`${window.innerHeight - 88}px`);
+
+            medir.mockReturnValue(new DOMRect(0, window.innerHeight - 160, 360, 160));
+            fireEvent.transitionEnd(screen.getByRole("dialog", { name: "Panel" }));
+            expect(pila.style.getPropertyValue("--toast-inferior")).toBe("160px");
+            expect(pila.style.getPropertyValue("--toast-alto-visible")).toBe(`${window.innerHeight - 160}px`);
+
+            fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+            await waitFor(() => expect(screen.queryByRole("dialog", { name: "Panel" })).not.toBeInTheDocument());
+            await waitFor(() => expect(screen.getByRole("region", { name: "Notificaciones" }).style.getPropertyValue("--toast-inferior")).toBe("0px"));
+        } finally {
+            medir.mockRestore();
+        }
+    });
+
     it("adapta el espacio del aviso al viewport visible y sus desplazamientos", () => {
         const viewport = Object.assign(new EventTarget(), { width: 360, height: 400, offsetTop: 20, offsetLeft: 0 });
         vi.stubGlobal("visualViewport", viewport);

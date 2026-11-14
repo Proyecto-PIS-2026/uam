@@ -433,10 +433,14 @@ describe("DrawerPublicacion", () => {
         },
     );
 
-    it("muestra los datos de la publicación y los botones de contacto", () => {
+    it.each([
+        { envase: "Cajón", kilos: "", empaquetado: "Cajón" },
+        { envase: "Cajón", kilos: "250", empaquetado: "Cajón (250 kg)" },
+        { envase: "", kilos: "10-12", empaquetado: "10-12 kg" },
+    ])("muestra los datos, el contacto y el empaquetado $empaquetado en una sola fila", ({ envase, kilos, empaquetado }) => {
         render(
             <DrawerPublicacion
-                publicacion={crearPublicacion()}
+                publicacion={{ ...crearPublicacion(), envase, kilos }}
                 open
                 onOpenChange={vi.fn()}
             />,
@@ -446,9 +450,10 @@ describe("DrawerPublicacion", () => {
             name: "Detalle de publicación",
         })).toBeInTheDocument();
 
-        for (const texto of ["Tomate", "Perita", "Cajón", "Mediano", "Primera", "País", "Uruguay"]) {
+        for (const texto of ["Tomate", "Perita", empaquetado, "Mediano", "Primera", "País", "Uruguay"]) {
             expect(screen.getByText(texto)).toBeInTheDocument();
         }
+        expect(screen.queryByText("Kilos", { exact: true })).not.toBeInTheDocument();
 
         expect(screen.getByTestId("WhatsAppIcon")).toBeInTheDocument();
     });

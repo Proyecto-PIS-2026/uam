@@ -10,7 +10,7 @@
     bottom: calc(var(--toast-inferior, 0px) + var(--espacio-secciones) + env(safe-area-inset-bottom, 0px));
     width: calc(var(--toast-ancho-visible, 100vw) - 2 * var(--espacio-secciones) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     max-width: 28rem;
-    max-height: calc(var(--toast-alto-visible, 100dvh) - 2 * var(--espacio-secciones) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    max-height: max(0px, calc(var(--toast-alto-visible, 100dvh) - 2 * var(--espacio-secciones) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
     overflow-y: auto;
     overscroll-behavior: contain;
     pointer-events: none;

@@ -476,7 +476,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 <div className={styles.cuerpo}>
                     {[campoPrecio, campoUnidades, campoFechaVigencia, campoComentario, seccionFoto, accionesPublicacion, datosProducto]}
                 </div>
-                <div className={styles.pie}>
+                <div className={styles.pie} data-acciones-modal>
                     {editando ? (
                         <>
                             <button className={styles.cancelar} type="button" onClick={cancelarEdicion} disabled={ocupado}>Cancelar</button>

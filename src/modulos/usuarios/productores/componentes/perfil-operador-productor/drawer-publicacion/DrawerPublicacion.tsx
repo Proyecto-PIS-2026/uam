@@ -6,6 +6,7 @@ import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ImagenPublicacion from "@/modulos/publicaciones/componentes/ImagenPublicacion";
 import ComentarioPublicacion from "@/modulos/publicaciones/componentes/drawer-publicacion/ComentarioPublicacion";
+import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-publicacion";
 import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -136,11 +137,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange }: DrawerPub
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Empaquetado</span>
-                                    <span className={styles.valorInformacion}>{publicacion.envase?.trim() || "-"}</span>
-                                </div>
-                                <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Kilos</span>
-                                    <span className={styles.valorInformacion}>{publicacion.kilos?.trim() && publicacion.kilos !== "-" ? `${publicacion.kilos} kg` : "-"}</span>
+                                    <span className={styles.valorInformacion}>{formatearEmpaquetado(publicacion.envase, publicacion.kilos) || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Calibre</span>
