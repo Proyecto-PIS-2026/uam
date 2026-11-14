@@ -38,7 +38,7 @@ async function preparar() {
 
 async function seleccionarCatalogo(etiqueta: string) {
     fireEvent.mouseDown(screen.getByRole("combobox", { name: /Catálogo/ }));
-    fireEvent.click(await screen.findByRole("option", { name: etiqueta, exact: true }));
+    fireEvent.click(await screen.findByRole("option", { name: etiqueta }));
     await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
 }
 
