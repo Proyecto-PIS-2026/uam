@@ -5,6 +5,7 @@ import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/con
 import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { bloquearCambioVigenciaPublicaciones } from "@/modulos/publicaciones/configuracion-vigencia-publicaciones";
 import { calcularFechaMaximaVigencia, convertirFechaVigenciaAInstant } from "@/modulos/publicaciones/vigencia-publicacion";
+import { CLAVES_VIGENCIA_PUBLICACIONES } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
 import { CLAVES_AGING_FOTOS } from "@/modulos/publicaciones/claves-aging-fotos";
 
 
@@ -15,17 +16,11 @@ const clavesOrdenamiento = [
     "orden_mercado_produccion_default",
 ] as const;
 
-const clavesVigenciaPublicacionesProductor = [
-    "vigencia_publicaciones_productor_habilitada",
-    "vigencia_publicaciones_productor",
-    "aviso_vencimiento_publicaciones_productor_habilitado",
-    "anticipacion_aviso_publicaciones_productor",
-] as const;
-
 const gruposVigencia = [
     CLAVES_AGING_FOTOS.OPERADOR,
     CLAVES_AGING_FOTOS.PRODUCTOR,
-    clavesVigenciaPublicacionesProductor,
+    CLAVES_VIGENCIA_PUBLICACIONES.OPERADOR,
+    CLAVES_VIGENCIA_PUBLICACIONES.PRODUCTOR,
 ] as const;
 
 const ordenesLanding = [
@@ -48,7 +43,8 @@ const clavesPermitidas = new Set<string>([
     ...clavesOrdenamiento,
     ...CLAVES_AGING_FOTOS.OPERADOR,
     ...CLAVES_AGING_FOTOS.PRODUCTOR,
-    ...clavesVigenciaPublicacionesProductor,
+    ...CLAVES_VIGENCIA_PUBLICACIONES.OPERADOR,
+    ...CLAVES_VIGENCIA_PUBLICACIONES.PRODUCTOR,
 ]);
 
 const clavesBooleanas = new Set<string>([
@@ -176,13 +172,11 @@ export async function guardarConfiguraciones(cambios: Record<string, string>): P
         }
     }
 
-    const modificaVigenciaProductor = clavesVigenciaPublicacionesProductor.some((clave) => Object.hasOwn(cambios, clave));
-    const diasVigencia = cambios.vigencia_publicaciones_productor_habilitada === "true"
-        ? Number(cambios.vigencia_publicaciones_productor)
-        : null;
+    const politicasModificadas = Object.entries(CLAVES_VIGENCIA_PUBLICACIONES)
+        .filter(([, claves]) => claves.some((clave) => Object.hasOwn(cambios, clave)));
 
     await db.transaction(async (tx) => {
-        if (modificaVigenciaProductor) {
+        if (politicasModificadas.length > 0) {
             await bloquearCambioVigenciaPublicaciones(tx);
         }
         for (const [nombre, valor] of entradas) {
@@ -195,14 +189,16 @@ export async function guardarConfiguraciones(cambios: Record<string, string>): P
                 throw new Error(`No existe la configuración ${nombre}.`);
             }
         }
-        if (diasVigencia !== null) {
+        for (const [tipo, [claveHabilitada, claveDias]] of politicasModificadas) {
+            if (cambios[claveHabilitada] !== "true") continue;
+            const diasVigencia = Number(cambios[claveDias]);
             const fechaMaxima = calcularFechaMaximaVigencia(diasVigencia);
             const limite = convertirFechaVigenciaAInstant(fechaMaxima)!.toString();
             // El cambio de política no renueva la fecha de actualización ni la disponibilidad.
             await tx.execute(db.raw.sql`
                 UPDATE publicacion
                 SET "fechaVigencia" = ${limite}::timestamptz
-                WHERE "tipoPublicacion" = 'PRODUCTOR'
+                WHERE "tipoPublicacion"::text = ${tipo}
                     AND ("fechaVigencia" IS NULL OR "fechaVigencia" > ${limite}::timestamptz)
             `.affectedCount().build());
         }

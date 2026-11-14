@@ -1,6 +1,7 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { enviarNotificacion } from "@/modulos/notificaciones/notificaciones";
 import { Temporal } from "temporal-polyfill";
+import { CLAVES_VIGENCIA_PUBLICACIONES } from "./claves-vigencia-publicaciones";
 
 async function registrarYEnviarAviso({
     usuarioId, publicacionId, fechaVigencia, tipo, texto, url,
@@ -47,13 +48,21 @@ async function registrarYEnviarAviso({
 export async function procesarVencimientosUsuario(usuarioId: number): Promise<void> {
     if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0) return;
 
+    const [operador, productor] = await Promise.all([
+        db.orm.public.Operador.where({ usuarioId }).select("id").first(),
+        db.orm.public.Productor.where({ usuarioId }).select("id").first(),
+    ]);
+
+    if (!operador && !productor) return;
+    const tipo = operador ? "OPERADOR" : "PRODUCTOR";
+    const [, , claveAvisos, claveAnticipacion] = CLAVES_VIGENCIA_PUBLICACIONES[tipo];
     const [configAvisoHabilitado, configDiasAnticipacion] = await Promise.all([
         db.orm.public.Configuracion
-            .where({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado" })
+            .where({ nombreConfiguracion: claveAvisos })
             .select("valorConfiguracion")
             .first(),
         db.orm.public.Configuracion
-            .where({ nombreConfiguracion: "anticipacion_aviso_publicaciones_productor" })
+            .where({ nombreConfiguracion: claveAnticipacion })
             .select("valorConfiguracion")
             .first(),
     ]);
@@ -64,12 +73,6 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
     const ahora = Temporal.Now.instant();
     const limiteAviso = ahora.add({ hours: diasAnticipacion * 24 });
 
-    const [operador, productor] = await Promise.all([
-        db.orm.public.Operador.where({ usuarioId }).select("id").first(),
-        db.orm.public.Productor.where({ usuarioId }).select("id").first(),
-    ]);
-
-    if (!operador && !productor) return;
     const rutaMercado = operador ? "/mi-mercado" : "/mi-mercado/productor";
 
     let publicaciones: {
