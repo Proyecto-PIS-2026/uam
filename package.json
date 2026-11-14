@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --project unit --coverage",
     "test:vitest": "npm run test:integration && npm run test:coverage",
     "db:contract": "prisma contract emit",
-    "db:migrate": "prisma db migrate",
+    "db:migrate": "tsx scripts/db-migrate.ts",
     "db:imagenes:migrar": "tsx scripts/migrar-imagenes.ts",
     "db:seed": "tsx src/infraestructura/persistencia/prisma/seed.ts",
     "db:seed:test": "tsx scripts/db-seed-test.ts",

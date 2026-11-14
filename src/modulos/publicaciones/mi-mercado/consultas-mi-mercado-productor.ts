@@ -72,7 +72,7 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
 export async function obtenerPublicacionesMiMercadoProductor() {
     const productor = await obtenerProductorActual();
     const relaciones = await consultarPublicacionesProductor(productor.id);
-    const publicaciones = await agregarEstadoFotosPropias(relaciones.map(mapearPublicacionMiMercadoProductor));
+    const publicaciones = await agregarEstadoFotosPropias(relaciones.map(mapearPublicacionMiMercadoProductor), "PRODUCTOR");
 
     return { productor, publicaciones };
 }

@@ -92,7 +92,7 @@ const AHORA = Temporal.Instant.from("2026-11-04T15:00:00Z");
 const VENCIDA = AHORA.subtract({ hours: 48 }); // 2026-11-02 en Montevideo
 const PROXIMA = AHORA.add({ hours: 48 });      // 2026-11-06 en Montevideo
 
-const NOMBRE_AVISO = "aviso_vencimiento_publicaciones_productor_habilitado";
+const NOMBRES_AVISO = ["aviso_vencimiento_publicaciones_operador_habilitado", "aviso_vencimiento_publicaciones_productor_habilitado"];
 type EstadoPublicacion = {
     fechaVigencia: string | null;
     publicacionDisponible: boolean;
@@ -109,7 +109,7 @@ function registrarAviso(publicacionId: number, tipo: "proximo" | "vencido") {
 
 function configurar({ aviso = "true", dias = "7" }: { aviso?: string | null; dias?: string | null } = {}) {
     mocks.configFirst.mockImplementation(async (nombre: string) => {
-        const valor = nombre === NOMBRE_AVISO ? aviso : dias;
+        const valor = NOMBRES_AVISO.includes(nombre) ? aviso : dias;
         return valor === null ? null : { valorConfiguracion: valor };
     });
 }
@@ -201,6 +201,39 @@ describe("procesarVencimientosUsuario", () => {
     });
 
     describe("validación y rol del usuario", () => {
+        it.each(["operador", "productor"] as const)("consulta exclusivamente la política de avisos del %s", async (rol) => {
+            comoRol(rol, []);
+
+            await procesarVencimientosUsuario(USUARIO);
+
+            expect(mocks.configFirst.mock.calls.map(([nombre]) => nombre)).toEqual([
+                `aviso_vencimiento_publicaciones_${rol}_habilitado`,
+                `anticipacion_aviso_publicaciones_${rol}`,
+            ]);
+        });
+
+        it.each(["operador", "productor"] as const)("aplica el plazo propio del %s aunque el otro rol tenga otro", async (rol) => {
+            mocks.configFirst.mockImplementation(async (nombre: string) => ({
+                valorConfiguracion: NOMBRES_AVISO.includes(nombre) ? "true" : nombre.endsWith("_operador") ? "2" : "7",
+            }));
+            comoRol(rol, [relacion(1, AHORA.add({ hours: 4 * 24 }))]);
+
+            await procesarVencimientosUsuario(USUARIO);
+
+            expect(mocks.enviarNotificacion).toHaveBeenCalledTimes(rol === "operador" ? 0 : 1);
+        });
+
+        it.each(["operador", "productor"] as const)("desactivar avisos del operador respeta el estado propio del %s", async (rol) => {
+            mocks.configFirst.mockImplementation(async (nombre: string) => ({
+                valorConfiguracion: nombre === NOMBRES_AVISO[0] ? "false" : nombre === NOMBRES_AVISO[1] ? "true" : "7",
+            }));
+            comoRol(rol, [relacion(1, PROXIMA)]);
+
+            await procesarVencimientosUsuario(USUARIO);
+
+            expect(mocks.enviarNotificacion).toHaveBeenCalledTimes(rol === "operador" ? 0 : 1);
+        });
+
         it.each([0, -1, 1.5, Number.NaN])("ignora el usuarioId inválido %s sin consultar la base", async (id) => {
             await procesarVencimientosUsuario(id);
 

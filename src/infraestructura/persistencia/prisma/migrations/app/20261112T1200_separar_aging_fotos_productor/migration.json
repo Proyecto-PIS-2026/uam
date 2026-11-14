@@ -1,0 +1,9 @@
+{
+  "from": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "to": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "providedInvariants": [
+    "uam:aging-fotos-productor-separado"
+  ],
+  "createdAt": "2026-11-12T12:00:00.000Z",
+  "migrationHash": "b42ba5c400f71907070841c9fd3e06483a90e5846dc949c7436dee5580fda028"
+}

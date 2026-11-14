@@ -139,10 +139,10 @@ function configurarMocksBase() {
 
     mocks.modelos.EstadisticaPublicacion.first.mockResolvedValue(null);
     mocks.modelos.Configuracion.all.mockResolvedValue([
-        { nombreConfiguracion: "aging_fotos_habilitado", valorConfiguracion: "true" },
-        { nombreConfiguracion: "vigencia_fotos", valorConfiguracion: "3" },
-        { nombreConfiguracion: "aviso_vencimiento_fotos_habilitado", valorConfiguracion: "true" },
-        { nombreConfiguracion: "anticipacion_aviso_fotos", valorConfiguracion: "1" },
+        { nombreConfiguracion: "aging_fotos_productor_habilitado", valorConfiguracion: "true" },
+        { nombreConfiguracion: "vigencia_fotos_productor", valorConfiguracion: "3" },
+        { nombreConfiguracion: "aviso_vencimiento_fotos_productor_habilitado", valorConfiguracion: "true" },
+        { nombreConfiguracion: "anticipacion_aviso_fotos_productor", valorConfiguracion: "1" },
     ]);
 }
 
