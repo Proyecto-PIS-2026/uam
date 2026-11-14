@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@/test-utils";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 
 import FormularioModificarProductor from "./FormularioModificarProductor";
 import type { ProductorParaModificar } from "./obtenerProductorParaModificar";
@@ -55,12 +55,12 @@ describe("FormularioModificarProductor", () => {
         expect(valorDe(screen.getByLabelText(/^Nombre\s*\*$/))).toBe("Granja Los Álamos");
         expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598");
         expect(valorDe(screen.getByLabelText(/Teléfono/))).toBe("99200002");
-        expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
-        expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
+        expect(valorDe(screen.getByLabelText(/^Nueva contraseña\s*\*?$/))).toBe("");
+        expect(valorDe(screen.getByLabelText(/^Confirmar contraseña\s*\*?$/))).toBe("");
     });
 
     it("envía los datos modificados y vuelve al perfil cuando la modificación es válida", async () => {
-        modificarProductorMock.mockResolvedValue({ esValido: true, id: 2 });
+        modificarProductorMock.mockResolvedValue({ esValido: true, id: 2, mensaje: "Productor modificado correctamente." });
         renderizar();
 
         fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), {
@@ -78,6 +78,9 @@ describe("FormularioModificarProductor", () => {
             expect(push).toHaveBeenCalledWith("/gestion-productores/2");
         });
         expect(modificarProductorMock).toHaveBeenCalledTimes(1);
+        expect(within(screen.getByRole("region", { name: "Notificaciones" })).getByRole("status")).toHaveTextContent("Productor modificado correctamente.");
+        const formulario = screen.getByRole("button", { name: "Guardar cambios" }).closest("form")!;
+        expect(within(formulario).queryByRole("status")).not.toBeInTheDocument();
         expect(modificarProductorMock).toHaveBeenCalledWith({
             productorId: 2,
             nombre: "Granja Los Álamos Hermanos",
@@ -89,13 +92,13 @@ describe("FormularioModificarProductor", () => {
     });
 
     it("envía la nueva contraseña y su confirmación", async () => {
-        modificarProductorMock.mockResolvedValue({ esValido: true, id: 2 });
+        modificarProductorMock.mockResolvedValue({ esValido: true, id: 2, mensaje: "Productor modificado correctamente." });
         renderizar();
 
-        fireEvent.change(screen.getByLabelText("Nueva contraseña"), {
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña\s*\*?$/), {
             target: { value: "contraseña123" },
         });
-        fireEvent.change(screen.getByLabelText("Confirmar contraseña"), {
+        fireEvent.change(screen.getByLabelText(/^Confirmar contraseña\s*\*?$/), {
             target: { value: "contraseña123" },
         });
         apretarGuardar();
@@ -158,7 +161,7 @@ describe("FormularioModificarProductor", () => {
         fireEvent.mouseDown(codigoPais);
         expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 
-        resolver({ esValido: true, id: 2 });
+        resolver({ esValido: true, id: 2, mensaje: "Productor modificado correctamente." });
         await waitFor(() => {
             expect(push).toHaveBeenCalledWith("/gestion-productores/2");
         });

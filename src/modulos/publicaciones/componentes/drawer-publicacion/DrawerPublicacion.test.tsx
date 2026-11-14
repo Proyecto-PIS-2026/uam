@@ -282,11 +282,12 @@ describe("DrawerPublicacion con operadores", () => {
     });
 
     it("muestra los datos de la publicación y los enlaces de contacto y perfil", () => {
-        render(<DrawerPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} />);
+        render(<DrawerPublicacion publicacion={{ ...crearPublicacion(), kilos: "250" }} open onOpenChange={vi.fn()} />);
         expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
-        for (const texto of ["Tomate", "Perita", "$150", "Cajón", "Mediano", "Primera", "País", "Uruguay", "Huerta Sur", "Naves A, B y E"]) {
+        for (const texto of ["Tomate", "Perita", "$150", "Cajón (250 kg)", "Mediano", "Primera", "País", "Uruguay", "Huerta Sur", "Naves A, B y E"]) {
             expect(screen.getByText(texto)).toBeInTheDocument();
         }
+        expect(screen.queryByText("Kilos")).not.toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/operadores/Huerta%20Sur?origen=publicaciones");
         expect(screen.getByRole("link", { name: "Contactar a Huerta Sur por WhatsApp" })).toBeInTheDocument();
     });

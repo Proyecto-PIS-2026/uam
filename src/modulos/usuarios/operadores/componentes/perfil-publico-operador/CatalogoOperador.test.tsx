@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicacionPerfil } from "../../consultas-perfil-publico";
 import CatalogoOperador from "./CatalogoOperador";

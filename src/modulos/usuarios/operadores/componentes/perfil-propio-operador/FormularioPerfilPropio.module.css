@@ -161,22 +161,6 @@
     color: var(--color-muted);
 }
 
-.error {
-    padding: var(--padding-panel);
-    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-surface));
-    border-radius: var(--radio-panel);
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
-}
-
-.error p {
-    margin: 0;
-}
-
-.error p + p {
-    margin-top: var(--espacio-textos);
-}
-
 .acciones {
     display: flex;
     justify-content: flex-end;

@@ -105,7 +105,7 @@ export default function CatalogoProductorAdmin({ publicaciones, alCambiarDeparta
         });
     }
 
-    function eliminarPublicacion(aviso: string) {
+    function eliminarPublicacion(aviso: string, tipo: "success" | "info") {
         setActualizadas((anteriores) => {
             const actuales = anteriores?.origen === publicaciones ? anteriores.datos : publicacionesConsulta;
             return {
@@ -114,7 +114,7 @@ export default function CatalogoProductorAdmin({ publicaciones, alCambiarDeparta
             };
         });
         setSeleccionId((actual) => actual === seleccionId ? null : actual);
-        notificar(aviso, "success");
+        notificar(aviso, tipo);
         router.refresh();
     }
 

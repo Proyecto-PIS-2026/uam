@@ -65,7 +65,7 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         ]);
     });
 
-    it("mapea los IDs reales y conserva solo relaciones de especies y variedades activas", async () => {
+    it("filtra especies y variedades activas y ofrece todos los atributos globales", async () => {
         await expect(obtenerOpcionesEdicionPublicacion()).resolves.toEqual({
             especies: [{ id: 401, nombre: "Lechuga" }, { id: 909, nombre: "Manzana" }],
             variedades: [
@@ -75,6 +75,7 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
             envases: [{ id: 424, nombre: "Cajon" }, { id: 321, nombre: "Bolsa" }],
             kilos: [{ id: 1, nombre: "2" }, { id: 11, nombre: "10-12" }],
             categorias: [
+                { id: 5, nombre: "Categoría de especie inactiva", especieId: 777 },
                 { id: 3, nombre: "I", especieId: null },
                 { id: 4, nombre: "Primera", especieId: 909 },
             ],
@@ -153,14 +154,18 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         expect(opciones.paises.map((opcion) => opcion.id)).toEqual([117, 218]);
     });
 
-    it("mantiene categorías generales, calibres y países aunque no haya especies activas", async () => {
+    it("mantiene todas las categorías, calibres y países aunque no haya especies activas", async () => {
         mocks.especies.all.mockResolvedValue([]);
 
         await expect(obtenerOpcionesEdicionPublicacion()).resolves.toEqual({
             especies: [], variedades: [],
             envases: [{ id: 424, nombre: "Cajon" }, { id: 321, nombre: "Bolsa" }],
             kilos: [{ id: 1, nombre: "2" }, { id: 11, nombre: "10-12" }],
-            categorias: [{ id: 3, nombre: "I", especieId: null }],
+            categorias: [
+                { id: 5, nombre: "Categoría de especie inactiva", especieId: 777 },
+                { id: 3, nombre: "I", especieId: null },
+                { id: 4, nombre: "Primera", especieId: 909 },
+            ],
             calibres: [
                 { id: 501, nombre: "EX - EXTRA" },
                 { id: 502, nombre: "SV - SIN VARIACION" },

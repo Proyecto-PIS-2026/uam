@@ -158,6 +158,20 @@ body {
   padding-right: var(--alto-control);
 }
 
+/* La validación compartida marca solamente los campos revisados al intentar enviar. */
+:is(input, select, textarea)[data-error-validacion="true"]:not(.MuiInputBase-input) {
+  border-color: var(--color-danger) !important;
+  outline-color: var(--color-danger) !important;
+}
+
+.MuiFormControl-root:has([data-error-validacion="true"]) .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-danger) !important;
+}
+
+.MuiFormControl-root:has([data-error-validacion="true"]) :is(.MuiInputLabel-root, .MuiFormLabel-asterisk) {
+  color: var(--color-danger) !important;
+}
+
 .boton-primario,
 .boton-secundario,
 .boton-peligro {

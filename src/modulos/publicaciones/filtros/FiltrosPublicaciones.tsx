@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import SearchIcon from "@mui/icons-material/Search";
 import { MenuItem, TextField } from "@mui/material";
 import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
@@ -406,7 +407,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
 
     return (
         <div className={styles.contenedor}>
-            <div className={`${styles.layoutFiltros} ${mostrarFiltros ? styles.filtrosAbiertos : ""} ${rangoPrecioInvalido ? styles.rangoInvalido : ""} ${mostrarNave ? styles.conFiltroNave : ""}`}>
+            <AvisoErrorToast mensaje={rangoPrecioInvalido ? "El precio máximo no puede ser menor al mínimo." : null} />
+            <div className={`${styles.layoutFiltros} ${mostrarFiltros ? styles.filtrosAbiertos : ""} ${mostrarNave ? styles.conFiltroNave : ""}`}>
                 {/* Barra de busqueda */}
                 <TextField fullWidth size="small" label="Buscar publicaciones" type="search" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} className={`${styles.selectMui} ${styles.filtroBuscador}`}
                     slotProps={{input: {startAdornment: (<SearchIcon aria-hidden="true" sx={{ color: "var(--color-muted)" }}/>)}}}
@@ -464,11 +466,6 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                         }}
                     />
                 </div>
-                {rangoPrecioInvalido && (
-                    <span className={styles.mensajeError}>
-                        El precio máximo no puede ser menor al mínimo.
-                    </span>
-                )}
                 <div id={idFiltrosExtendidos} className={styles.filtrosExtendidos}>
                     <div className={styles.filtrosVariedadEnvase}>
                         {/* Variedad */}
@@ -541,7 +538,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                             alCambiar={cambiarOrden}
                             className={styles.botonOrdenar}
                             opciones={[
-                                { valor: "predeterminado", etiqueta: "Por defecto" },
+                                { valor: "predeterminado", etiqueta: "Por volumen" },
                                 { valor: "precioAsc", etiqueta: "Menor Precio" },
                                 { valor: "precioDesc", etiqueta: "Mayor Precio" },
                                 { valor: "alfabeticoAsc", etiqueta: "A-Z" },

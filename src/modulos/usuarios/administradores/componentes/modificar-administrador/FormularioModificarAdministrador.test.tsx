@@ -24,7 +24,7 @@ vi.mock("../../perfil-propio/modificarMiPerfilAdministrador", () => ({
 }));
 
 vi.mock("@/compartido/componentes/NotificacionToast", () => ({
-    useNotificacionToast: () => ({ notificar: notificarMock }),
+    useNotificacionToast: () => ({ notificar: notificarMock, cerrarNotificacion: vi.fn() }),
 }));
 
 const administradorBase: AdministradorParaModificar = {
@@ -59,18 +59,22 @@ describe("FormularioModificarAdministrador", () => {
     it("muestra los datos actuales del administrador", () => {
         renderizar();
 
-        expect(valorDe(screen.getByLabelText("Nombre de usuario"))).toBe("beto.admin");
+        expect(valorDe(screen.getByLabelText(/^Nombre de usuario\s*\*?$/))).toBe("beto.admin");
+        expect(screen.getByLabelText(/^Nombre de usuario\s*\*?$/)).toBeRequired();
         expect(screen.queryByLabelText("Correo electrónico")).not.toBeInTheDocument();
-        expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
-        expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
+        expect(valorDe(screen.getByLabelText(/^Nueva contraseña\s*\*?$/))).toBe("");
+        expect(valorDe(screen.getByLabelText(/^Confirmar contraseña\s*\*?$/))).toBe("");
+        expect(screen.getByLabelText(/^Nueva contraseña\s*\*?$/)).not.toBeRequired();
+        expect(screen.getByLabelText(/^Confirmar contraseña\s*\*?$/)).not.toBeRequired();
     });
 
     it("envía la nueva contraseña y su confirmación", async () => {
-        modificarMock.mockResolvedValue({ esValido: true, id: 102 });
+        modificarMock.mockResolvedValue({ esValido: true, id: 102, mensaje: "Administrador modificado correctamente." });
         renderizar();
 
-        fireEvent.change(screen.getByLabelText("Nueva contraseña"), { target: { value: "contraseña123" } });
-        fireEvent.change(screen.getByLabelText("Confirmar contraseña"), { target: { value: "contraseña123" } });
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña\s*\*?$/), { target: { value: "contraseña123" } });
+        expect(screen.getByLabelText(/^Confirmar contraseña\s*\*?$/)).toBeRequired();
+        fireEvent.change(screen.getByLabelText(/^Confirmar contraseña\s*\*?$/), { target: { value: "contraseña123" } });
         apretarGuardar();
 
         await waitFor(() =>
@@ -81,13 +85,14 @@ describe("FormularioModificarAdministrador", () => {
     });
 
     it("envía los datos modificados y vuelve al perfil cuando la modificación es válida", async () => {
-        modificarMock.mockResolvedValue({ esValido: true, id: 102 });
+        modificarMock.mockResolvedValue({ esValido: true, id: 102, mensaje: "Administrador modificado correctamente." });
         renderizar();
 
-        fireEvent.change(screen.getByLabelText("Nombre de usuario"), { target: { value: "beto.nuevo" } });
+        fireEvent.change(screen.getByLabelText(/^Nombre de usuario\s*\*?$/), { target: { value: "beto.nuevo" } });
         apretarGuardar();
 
         await waitFor(() => expect(push).toHaveBeenCalledWith("/gestion-administradores/102"));
+        expect(notificarMock).toHaveBeenCalledExactlyOnceWith("Administrador modificado correctamente.", "success");
         expect(modificarMock).toHaveBeenCalledWith({
             administradorId: 102,
             nombreUsuario: "beto.nuevo",
@@ -105,9 +110,8 @@ describe("FormularioModificarAdministrador", () => {
 
         apretarGuardar();
 
-        const alerta = await screen.findByRole("alert");
-        expect(alerta.textContent).toContain("El nombre es obligatorio.");
-        expect(alerta.textContent).toContain("Las contraseñas no coinciden.");
+        await waitFor(() => expect(notificarMock).toHaveBeenCalledWith("El nombre es obligatorio.\nLas contraseñas no coinciden.", "error"));
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         expect(push).not.toHaveBeenCalled();
     });
 
@@ -133,7 +137,7 @@ describe("FormularioModificarAdministrador", () => {
         apretarGuardar();
 
         expect(await screen.findByRole("button", { name: "Guardando..." })).toBeDisabled();
-        resolver({ esValido: true, id: 102 });
+        resolver({ esValido: true, id: 102, mensaje: "Administrador modificado correctamente." });
         await waitFor(() => expect(push).toHaveBeenCalledWith("/gestion-administradores/102"));
     });
 
@@ -156,19 +160,20 @@ describe("FormularioModificarAdministrador en Mi perfil", () => {
         renderizarPerfilPropio();
 
         expect(screen.getByRole("heading", { name: "Editar mi perfil" })).toBeInTheDocument();
-        expect(valorDe(screen.getByLabelText("Nombre de usuario"))).toBe("beto.admin");
+        expect(valorDe(screen.getByLabelText(/^Nombre de usuario\s*\*?$/))).toBe("beto.admin");
         expect(screen.queryByLabelText("Correo electrónico")).not.toBeInTheDocument();
-        expect(screen.queryByLabelText("Nueva contraseña")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Nueva contraseña\s*\*?$/)).not.toBeInTheDocument();
     });
 
     it("guarda con la acción de Mi perfil y vuelve a la consulta", async () => {
         modificarMiPerfilMock.mockResolvedValue({ esValido: true, id: 102, mensaje: "Tu perfil se actualizó correctamente." });
         renderizarPerfilPropio();
 
-        fireEvent.change(screen.getByLabelText("Nombre de usuario"), { target: { value: "beto.nuevo" } });
+        fireEvent.change(screen.getByLabelText(/^Nombre de usuario\s*\*?$/), { target: { value: "beto.nuevo" } });
         apretarGuardar();
 
         await waitFor(() => expect(push).toHaveBeenCalledWith("/mi-perfil"));
+        expect(notificarMock).toHaveBeenCalledExactlyOnceWith("Tu perfil se actualizó correctamente.", "success");
         expect(modificarMiPerfilMock).toHaveBeenCalledWith({ nombreUsuario: "beto.nuevo" });
         expect(modificarMock).not.toHaveBeenCalled();
     });
@@ -179,7 +184,7 @@ describe("FormularioModificarAdministrador en Mi perfil", () => {
 
         apretarGuardar();
 
-        expect((await screen.findByRole("alert")).textContent).toContain("Ya existe un usuario con ese nombre.");
+        await waitFor(() => expect(notificarMock).toHaveBeenCalledWith("Ya existe un usuario con ese nombre.", "error"));
         expect(push).not.toHaveBeenCalled();
     });
 

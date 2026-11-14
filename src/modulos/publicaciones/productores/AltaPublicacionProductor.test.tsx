@@ -67,9 +67,8 @@ function comprobarFormularioVacio() {
         const selector = screen.getByRole("combobox", { name: new RegExp(`^${campo}`) });
         expect(selector.parentElement!.querySelector("input")).toHaveValue("");
     }
-    for (const campo of ["Variedad", "Categoría"]) {
-        expect(screen.getByRole("combobox", { name: new RegExp(`^${campo}`) })).toHaveAttribute("aria-disabled", "true");
-    }
+    expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("combobox", { name: "Categoría" })).not.toHaveAttribute("aria-disabled", "true");
     expect(screen.getByLabelText("Precio en pesos")).toHaveValue("");
     expect(screen.getByLabelText(/^Unidades/)).toHaveValue("");
     expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
@@ -355,7 +354,8 @@ describe("AltaPublicacionProductor", () => {
         }
     });
 
-    it("reinicia variedad y categoría y conserva envase y kilos al cambiar de especie", async () => {
+    it("reinicia la variedad y conserva categoría, envase y kilos al cambiar de especie", async () => {
+        const fetchMock = prepararFetch();
         await abrirAlta(); completarFormulario();
         elegir("Kilos del empaquetado", "20 kg");
         elegir("Especie", "Pera");
@@ -363,11 +363,17 @@ describe("AltaPublicacionProductor", () => {
         expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).not.toHaveAttribute("aria-disabled", "true");
         expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).toHaveTextContent("Cajita");
         expect(screen.getByRole("combobox", { name: /^Kilos del empaquetado/ })).toHaveTextContent("20 kg");
-        expect(screen.getByRole("combobox", { name: /^Categoría/ })).not.toHaveTextContent("Primera");
+        expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent("Primera");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Variedad/ }));
         expect(screen.getByRole("option", { name: "Williams" })).toBeInTheDocument();
         expect(screen.queryByRole("option", { name: "Royal" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "Williams" }));
+        enviarFormulario();
+        expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
+        const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({
+            especieId: 8, variedadId: 9, envaseId: 4, kilosId: 301, categoriaId: 5, calibreId: 6,
+        });
     }, 500_000);
 
     it("publica para el Productor actual sin precio, cantidad ni fotografía", async () => {

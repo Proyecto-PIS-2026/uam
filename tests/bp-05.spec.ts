@@ -102,10 +102,10 @@ for (const pantalla of [
         await page.goto(rutaListado);
         await expect(tarjetas.first()).toBeVisible();
 
-        // Por defecto representa el orden configurado por el administrador.
+        // Por volumen representa el orden configurado por el administrador.
         await page.getByRole("button", { name: "Ordenar por" }).click();
         await expect(page.getByRole("menu")).toBeVisible();
-        await expect(page.getByRole("menuitemradio", { name: "Por defecto", exact: true })).toHaveAttribute("aria-checked", "true");
+        await expect(page.getByRole("menuitemradio", { name: "Por volumen", exact: true })).toHaveAttribute("aria-checked", "true");
         await page.keyboard.press("Escape");
         await expect(page.getByRole("menu")).not.toBeVisible();
 
@@ -120,7 +120,7 @@ for (const pantalla of [
 
         async function comprobarOrdenTrasLimpiar() {
             await page.getByRole("button", { name: "Ordenar por" }).click();
-            await expect(page.getByRole("menuitemradio", { name: "Por defecto", exact: true })).toHaveAttribute("aria-checked", "true");
+            await expect(page.getByRole("menuitemradio", { name: "Por volumen", exact: true })).toHaveAttribute("aria-checked", "true");
             await page.keyboard.press("Escape");
             await expect(page.getByRole("menu")).not.toBeVisible();
             await comprobarResultados(publicacionesIniciales);
@@ -285,7 +285,7 @@ for (const pantalla of [
                 await expect.poll(async () => (await leerPublicaciones()).map((publicacion) => publicacion.precio)).toEqual([...esperados, ...Array<null>(sinPrecio).fill(null)]);
             }
 
-            await ordenar("Por defecto");
+            await ordenar("Por volumen");
             await comprobarResultados(publicacionesIniciales);
 
             await ordenar("A-Z");

@@ -1,16 +1,26 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { cancelarVerificacion, verificarSegundoFactor, type EstadoSegundoFactor } from "./acciones";
 
 type Props = { vinculacion: boolean; correo: string; secreto: string | null; qr: string | null; expiraEn: number; intentosRestantes: number };
 const estadoInicial: EstadoSegundoFactor = {};
 
 export default function FormularioSegundoFactor({ vinculacion, correo, secreto, qr, expiraEn, intentosRestantes }: Props) {
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const estadoNotificado = useRef<EstadoSegundoFactor | null>(null);
     const [estado, accion, pendiente] = useActionState(verificarSegundoFactor, estadoInicial);
     const [segundosRestantes, cambiarSegundosRestantes] = useState<number | null>(null);
-    const [mensajeCopia, cambiarMensajeCopia] = useState("");
+    useEffect(() => {
+        if (estadoNotificado.current === estado) return;
+        estadoNotificado.current = estado;
+        if (estado.error) {
+            cerrarNotificacion();
+            notificar(estado.error, "error");
+        }
+    }, [estado, notificar, cerrarNotificacion]);
     useEffect(() => {
         function actualizarTiempo() {
             const segundos = Math.max(0, expiraEn - Math.floor(Date.now() / 1000));
@@ -23,11 +33,12 @@ export default function FormularioSegundoFactor({ vinculacion, correo, secreto, 
     }, [expiraEn]);
 
     async function copiarClave() {
+        cerrarNotificacion();
         try {
             await navigator.clipboard.writeText(secreto!);
-            cambiarMensajeCopia("Clave copiada.");
+            notificar("Clave copiada.", "success");
         } catch {
-            cambiarMensajeCopia("No pudimos copiar la clave. Podés seleccionarla y copiarla manualmente.");
+            notificar("No pudimos copiar la clave. Podés seleccionarla y copiarla manualmente.", "error");
         }
     }
 
@@ -47,7 +58,6 @@ export default function FormularioSegundoFactor({ vinculacion, correo, secreto, 
                             <p>Nombre de la cuenta: <strong>UAM — {correo}</strong></p>
                             <p>Clave: <code className="break-all" data-testid="clave-segundo-factor">{secreto}</code></p>
                             <button type="button" onClick={copiarClave} className="boton-secundario">Copiar clave</button>
-                            <p role="status">{mensajeCopia}</p>
                             <p>Tipo de clave: <strong>Basada en tiempo</strong></p>
                         </div>
                     </details>
@@ -60,7 +70,7 @@ export default function FormularioSegundoFactor({ vinculacion, correo, secreto, 
                     <label htmlFor="codigo" className="mb-2 block text-sm font-medium">Código de verificación</label>
                     <input id="codigo" name="codigo" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} required className="campo-formulario" />
                 </div>
-                {estado.error ? <p role="alert" className="text-sm text-danger">{estado.error}</p> : <p className="text-sm">Tenés {intentosRestantes} {intentosRestantes === 1 ? "intento disponible" : "intentos disponibles"}.</p>}
+                {!estado.error && <p className="text-sm">Tenés {intentosRestantes} {intentosRestantes === 1 ? "intento disponible" : "intentos disponibles"}.</p>}
                 <button type="submit" disabled={pendiente || segundosRestantes === 0} className="boton-primario w-full">{pendiente ? "Verificando..." : vinculacion ? "Confirmar e ingresar" : "Verificar e ingresar"}</button>
                 <button type="submit" formAction={cancelarVerificacion} formNoValidate disabled={pendiente} className="boton-secundario w-full">Cancelar y volver al inicio de sesión</button>
             </form>

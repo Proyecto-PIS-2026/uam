@@ -44,8 +44,8 @@ async function completarLicencia(page: Page, inicio: string, fin: string, mensaj
   await aviso.getByRole("button", { name: "Aceptar", exact: true }).click();
   await expect(aviso).not.toBeVisible();
   await expect(page.getByRole("switch", { name: "En licencia", exact: true })).toBeChecked();
-  await page.getByLabel("Inicio de licencia", { exact: true }).fill(inicio);
-  await page.getByLabel("Fin de licencia", { exact: true }).fill(fin);
+  await page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/).fill(inicio);
+  await page.getByLabel(/^Fin de licencia(?:\s*\*)?$/).fill(fin);
   await page.getByLabel("Mensaje de recomendación", { exact: true }).fill(mensaje);
 }
 
@@ -59,14 +59,14 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
     });
     await page.reload();
     await editar(page);
-    await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue(operador.nombre);
+    await expect(page.getByLabel(/^Nombre(?:\s*\*)?$/)).toHaveValue(operador.nombre);
     await expect(page.getByRole("combobox", { name: "Código de país" })).toContainText("+598 (Uruguay)");
     await expect(page.getByLabel(/^Teléfono(?:\s*\*)?$/)).toHaveValue("99123456");
     await expect(page.getByRole("img", { name: "Vista previa de la foto de perfil" })).toHaveAttribute("src", /\/Logo\.PNG$/);
     await expect(page.getByRole("switch", { name: "En licencia", exact: true })).toBeChecked();
     await expect(page.getByRole("alertdialog", { name: "Aviso de licencia", exact: true })).toHaveCount(0);
-    await expect(page.getByLabel("Inicio de licencia", { exact: true })).toHaveValue(inicio);
-    await expect(page.getByLabel("Fin de licencia", { exact: true })).toHaveValue(fin);
+    await expect(page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/)).toHaveValue(inicio);
+    await expect(page.getByLabel(/^Fin de licencia(?:\s*\*)?$/)).toHaveValue(fin);
     await expect(page.getByLabel("Mensaje de recomendación")).toHaveValue("Compren en el puesto de al lado.");
   });
 
@@ -98,7 +98,8 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
     await expect(contacto).toHaveAttribute("required", "");
     await contacto.clear();
     await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-    await expect(page.getByRole("main").getByRole("alert")).toContainText("El número de contacto no es válido.");
+    await expect(page.getByRole("alert").filter({ hasText: "Faltan completar campos obligatorios." })).toBeVisible();
+    await expect(contacto).toHaveAttribute("aria-invalid", "true");
     await expect(page.getByRole("status").filter({ hasText: "Perfil actualizado correctamente." })).toHaveCount(0);
     expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.whatsApp).toBe("+59899999999");
     await page.goto("/mi-perfil");
@@ -115,7 +116,7 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
       await editar(page);
       await page.getByLabel(/^Teléfono(?:\s*\*)?$/).fill(numero);
       await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-      await expect(page.getByRole("main").getByRole("alert")).toContainText("El número de contacto no es válido.");
+      await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toContainText("El número de contacto no es válido.");
       await expect(page.getByRole("status").filter({ hasText: "Perfil actualizado correctamente." })).toHaveCount(0);
       expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.whatsApp).toBe("+59899999999");
       await page.goto("/mi-perfil");
@@ -197,7 +198,7 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
   test("CP-09 CA-8: activar la licencia requiere aceptar el aviso de solicitud formal", async ({ page, operador, precargaOperadores: { db } }) => {
     await expect(page.getByRole("heading", { name: operador.nombre, exact: true })).toBeVisible();
     await editar(page);
-    const textoAviso = "La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.";
+    const textoAviso = "La gestión de licencias debe tramitarse exclusivamente a través de los mecanismos habituales de la UAM. La información exhibida en este sitio tiene carácter meramente informativo.";
     // El aviso se ve en la propia edición, junto al control de licencia.
     await expect(page.getByRole("main").getByText(textoAviso, { exact: true })).toBeVisible();
     const licencia = page.getByRole("switch", { name: "En licencia", exact: true });
@@ -209,14 +210,14 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
     await aviso.getByRole("button", { name: "Cancelar", exact: true }).click();
     await expect(aviso).not.toBeVisible();
     await expect(licencia).not.toBeChecked();
-    await expect(page.getByLabel("Inicio de licencia", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/)).toHaveCount(0);
     expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.enLicencia).toBe(false);
 
     await licencia.click();
     await aviso.getByRole("button", { name: "Aceptar", exact: true }).click();
     await expect(aviso).not.toBeVisible();
     await expect(licencia).toBeChecked();
-    await expect(page.getByLabel("Inicio de licencia", { exact: true })).toBeVisible();
+    await expect(page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/)).toBeVisible();
     // Aceptar sólo prepara la licencia: se persiste al guardar el formulario.
     expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.enLicencia).toBe(false);
   });
@@ -227,7 +228,8 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
       const { inicio, fin } = fechas();
       await completarLicencia(page, faltante === "inicio" ? "" : inicio, faltante === "fin" ? "" : fin);
       await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-      await expect(page.getByRole("main").getByRole("alert")).toContainText("Ingresá las fechas de inicio y fin de la licencia.");
+      await expect(page.getByRole("alert").filter({ hasText: "Faltan completar campos obligatorios." })).toBeVisible();
+      await expect(page.getByLabel(faltante === "inicio" ? /^Inicio de licencia/ : /^Fin de licencia/)).toHaveAttribute("aria-invalid", "true");
       await page.goto("/mi-perfil");
       await page.reload();
       await expect(page.getByText("No hay licencia registrada.", { exact: true })).toBeVisible();
@@ -239,7 +241,7 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
     const { inicio, fin } = fechas();
     await completarLicencia(page, fin, inicio);
     await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-    await expect(page.getByRole("main").getByRole("alert")).toContainText("La fecha de inicio no puede ser posterior a la fecha de fin.");
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toContainText("La fecha de inicio no puede ser posterior a la fecha de fin.");
     await page.goto("/mi-perfil");
     await page.reload();
     await expect(page.getByText("No hay licencia registrada.", { exact: true })).toBeVisible();
@@ -258,8 +260,8 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
       else await expect(page.getByRole("heading", { name: "Mensaje de recomendación", exact: true })).toHaveCount(0);
       await editar(page);
       await expect(page.getByRole("switch", { name: "En licencia", exact: true })).toBeChecked();
-      await expect(page.getByLabel("Inicio de licencia", { exact: true })).toHaveValue(inicio);
-      await expect(page.getByLabel("Fin de licencia", { exact: true })).toHaveValue(fin);
+      await expect(page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/)).toHaveValue(inicio);
+      await expect(page.getByLabel(/^Fin de licencia(?:\s*\*)?$/)).toHaveValue(fin);
       await expect(page.getByLabel("Mensaje de recomendación")).toHaveValue(mensaje);
     });
   }

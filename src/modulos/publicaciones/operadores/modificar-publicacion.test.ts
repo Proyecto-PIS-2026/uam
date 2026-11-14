@@ -590,11 +590,10 @@ describe("modificarPublicacionOperador", () => {
         expect(mocks.publicacion.update).not.toHaveBeenCalled();
     });
 
-    it("rechaza una categoría de otra especie", async () => {
+    it("permite una categoría que antes pertenecía a otra especie", async () => {
         mocks.categoria.first.mockResolvedValue({ id: 4, especieId: 77 });
-        await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
-        expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
-        expect(mocks.publicacion.update).not.toHaveBeenCalled();
+        await expect(modificarPublicacionOperador(9, 12, cambios)).resolves.toEqual(resultadoEsperado);
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ categoriaId: 4 }));
     });
 
     it("permite una categoría específica de la especie seleccionada", async () => {

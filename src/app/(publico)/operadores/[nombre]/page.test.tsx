@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PerfilPublicoOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-publico";
 import Page from "./page";

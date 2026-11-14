@@ -3,7 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import BotonVolver from "@/compartido/BotonVolver";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlined";
 import { MenuItem, TextField } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -344,9 +344,10 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                         </div>
                     </div>
                 </form>
-                {rangoInvalido && <p className={styles.vacio} role="alert">La fecha de inicio debe ser anterior o igual a la fecha de fin.</p>}
+                <AvisoErrorToast mensaje={rangoInvalido ? "La fecha de inicio debe ser anterior o igual a la fecha de fin." : null} />
             </section>
 
+            <AvisoErrorToast mensaje={cargandoTabla ? null : error} />
             <GraficaPreciosHistoricos
                 registros={filas}
                 desde={periodoVisible.desde}
@@ -373,9 +374,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </td></tr>
                             ) : error ? (
                                 <tr><td colSpan={8}>
-                                    <div className={`${styles.carga} ${styles.errorCarga}`} role="alert">
-                                        <WarningAmberIcon fontSize="large" />
-                                        <p>{error}</p>
+                                    <div className={styles.carga}>
+                                        <p>Consultá nuevamente para ver los precios.</p>
                                     </div>
                                 </td></tr>
                             ) : visibles.map(({ dia, presentacion, precio }, indice) => (
@@ -396,9 +396,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             <CircularProgress id={`${idCarga}-mobile`} size={36} color="inherit" aria-label="Cargando precios históricos" />
                         </div>
                     ) : error ? (
-                        <div className={`${styles.carga} ${styles.errorCarga}`} role="alert">
-                            <WarningAmberIcon fontSize="large" />
-                            <p>{error}</p>
+                        <div className={styles.carga}>
+                            <p>Consultá nuevamente para ver los precios.</p>
                         </div>
                     ) : visibles.map(({ dia, presentacion, precio }, indice) => {
                         const nombre = `${producto.especie} · ${textoValorHistorico(presentacion.variety)}`;

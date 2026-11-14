@@ -1,3 +1,8 @@
+.contenedor {
+    min-width: 0;
+    max-width: 100%;
+}
+
 .botones {
     display: flex;
     justify-content: center;
@@ -64,11 +69,24 @@
     background-color: var(--color-surface);
 }
 
-@media (max-width: 480px) {
+@media (max-width: 767px) {
+    .botones {
+        justify-content: flex-start;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: thin;
+    }
+
     .boton {
+        flex: 1 0 auto;
+        min-height: var(--alto-control);
         padding: 0.65rem 0.35rem;
         font-size: var(--tamano-texto-secundario);
-        overflow-wrap: anywhere;
+        white-space: nowrap;
+    }
+
+    .boton:focus-visible {
+        outline-offset: -3px;
     }
 
     .boton[aria-pressed="true"] {

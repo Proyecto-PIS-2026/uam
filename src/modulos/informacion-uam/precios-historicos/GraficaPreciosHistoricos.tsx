@@ -149,7 +149,7 @@ export default function GraficaPreciosHistoricos({ registros, desde, hasta, prod
                 {cargando ? (
                     <div className={styles.estado}><span className={styles.cargando} aria-hidden="true" /><p>Cargando la evolución del precio...</p></div>
                 ) : error ? (
-                    <div className={styles.estado}><p>La gráfica no está disponible porque no se pudieron consultar los precios.</p></div>
+                    <div className={styles.estado}><p>Consultá nuevamente para ver la gráfica.</p></div>
                 ) : !extremos ? (
                     <div className={`${styles.estado} ${styles.estadoVacio}`}>
                         <PlaylistRemoveOutlinedIcon className={styles.iconoVacio} aria-hidden="true" />

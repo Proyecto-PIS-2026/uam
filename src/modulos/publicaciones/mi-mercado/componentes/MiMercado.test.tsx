@@ -240,7 +240,7 @@ describe("MiMercado", () => {
     render(mercadoDesdeAviso([publicacion], publicacionInicialId));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+    expect(screen.getByRole("alert")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
     expect(mocks.solicitud).not.toHaveBeenCalled();
     expect(mocks.cargarPublicaciones).not.toHaveBeenCalled();
   });
@@ -270,7 +270,7 @@ describe("MiMercado", () => {
     rerender(mercadoDesdeAviso([], 1));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+    expect(screen.getByRole("alert")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
   });
 
   afterEach(() => {

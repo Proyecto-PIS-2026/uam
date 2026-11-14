@@ -68,7 +68,7 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
                 .select("tipoPublicacion", "especieId", "variedadId", "envaseId", "kilosId", "categoriaId", "calibreId")
                 .include("variedad", (variedad) => variedad.select("variedadActiva", "especieId")
                     .include("especie", (especie) => especie.select("especieActiva")))
-                .include("categoria", (categoria) => categoria.select("especieId"))).all(),
+                .include("categoria", (categoria) => categoria.select("id"))).all(),
             db.orm.public.Usuario.where({ rol: "ADMINISTRADOR" }).select("id").first(),
         ]);
         const semilla = relaciones.find((relacion) => {
@@ -76,8 +76,7 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
             if (!publicacion.variedad || !publicacion.categoria) return false;
             const variedad = publicacion.variedad;
             return publicacion.tipoPublicacion === "PRODUCTOR"
-                && variedad.variedadActiva && variedad.especie.especieActiva
-                && (publicacion.categoria.especieId === null || publicacion.categoria.especieId === variedad.especieId);
+                && variedad.variedadActiva && variedad.especie.especieActiva;
         });
         if (!semilla || !administrador) throw new Error("La base de pruebas necesita un administrador y una publicación de productor con catálogo activo.");
         const dueno = productores.find((productor) => productor.id === semilla.productorId);
@@ -334,15 +333,17 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         expect(resultado.publicacion).toMatchObject({ cantidadUnidades: null, publicacionDisponible: true, paisId: catalogoAlternativo.paisId });
     });
 
-    it("rechaza una categoría de otra especie sin guardar país, cantidad, disponibilidad ni ubicaciones", async () => {
-        const antes = await leer(elegida);
-
-        await expect(modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
+    it("admite una categoría creada para otra especie y guarda los demás cambios", async () => {
+        await modificarPublicacionProductor(sesionPropietario, elegida.publicacionProductorId, {
             ...cambiosIniciales, categoriaId: catalogoAlternativo.categoriaId,
             paisId: catalogoAlternativo.paisId, cantidadUnidades: 0, disponible: false, ubicaciones: [],
-        })).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
+        });
 
-        expect(await leer(elegida)).toEqual(antes);
+        expect(await leer(elegida)).toMatchObject({
+            paisId: catalogoAlternativo.paisId,
+            publicacion: { categoriaId: catalogoAlternativo.categoriaId, cantidadUnidades: 0, publicacionDisponible: false },
+            ubicaciones: [],
+        });
     });
 
     it("rechaza una combinación ya publicada por el mismo productor sin modificar ninguna", async () => {

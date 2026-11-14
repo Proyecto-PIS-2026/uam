@@ -1,6 +1,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@/test-utils";
 import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
 import PerfilOperador from "./PerfilOperador";
 

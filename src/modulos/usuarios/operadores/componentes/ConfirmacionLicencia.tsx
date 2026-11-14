@@ -27,7 +27,7 @@ export default function ConfirmacionLicencia({ abierto, alAceptar, alCancelar }:
             </DialogTitle>
             <DialogContent>
                 <DialogContentText id={avisoId}>
-                    La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.
+                    La gestión de licencias debe tramitarse exclusivamente a través de los mecanismos habituales de la UAM. La información exhibida en este sitio tiene carácter meramente informativo.
                 </DialogContentText>
             </DialogContent>
             <DialogActions>

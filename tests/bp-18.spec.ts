@@ -61,7 +61,7 @@ test("BP-18.6: muestra los paneles en el orden configurado y abre General", asyn
     test.slow();
     await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
 
-    await expect(secciones(page).getByRole("button")).toHaveText(["Estadísticas", "Usuarios", "General"]);
+    await expect(secciones(page).getByRole("button")).toHaveText(["Estadísticas", "Usuarios", "General", "Catálogos"]);
     await expect(secciones(page).getByRole("button", { name: "Estadísticas", exact: true })).toHaveAttribute("aria-pressed", "true");
 
     await abrirGeneral(page);

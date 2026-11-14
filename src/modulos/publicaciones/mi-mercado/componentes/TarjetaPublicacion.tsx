@@ -33,13 +33,12 @@ export default function TarjetaPublicacion({
     alPrecioActualizado,
     alPublicacionEliminada,
 }: Props) {
-    const { notificar } = useNotificacionToast();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const recibido = { precio: pub.precio === null ? null : Number(pub.precio), version: pub.version, fecha: pub.fecha };
     const [confirmado, setConfirmado] = useState(recibido);
     const actual = confirmado.version > recibido.version ? confirmado : recibido;
     const [optimista, setOptimista] = useState<number | null | undefined>(undefined);
     const precio = optimista === undefined ? actual.precio : optimista;
-    const [errorPrecio, setErrorPrecio] = useState("");
     const guardandoRef = useRef(false);
     const incrementosPendientesRef = useRef<number[]>([]);
     const precioVisibleRef = useRef(recibido.precio ?? 0);
@@ -51,16 +50,16 @@ export default function TarjetaPublicacion({
 
     async function guardar(valor: number | null) {
         if (guardandoRef.current) return;
+        cerrarNotificacion();
         const nuevoPrecio = valor;
         if (!precioPublicacionValido(nuevoPrecio === null ? null : String(nuevoPrecio))) {
-            setErrorPrecio(PRECIO_PUBLICACION_INVALIDO);
+            notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
         }
         guardandoRef.current = true;
         setGuardandoPrecio(true);
         setGuardandoManual(true);
         setOptimista(nuevoPrecio);
-        setErrorPrecio("");
         try {
             const resultado = await actualizarPrecio(pub.id, valor, operadorId, versionEdicionRef.current);
             if (resultado.publicacionEliminada) {
@@ -83,9 +82,9 @@ export default function TarjetaPublicacion({
 
     async function guardarIncrementos() {
         if (guardandoRef.current) return;
+        cerrarNotificacion();
         guardandoRef.current = true;
         setGuardandoPrecio(true);
-        setErrorPrecio("");
         try {
             while (incrementosPendientesRef.current.length > 0) {
                 const incremento = incrementosPendientesRef.current.shift()!;
@@ -159,7 +158,7 @@ export default function TarjetaPublicacion({
         if (!editandoPrecio) return;
         setEditandoPrecio(false);
         if (!precioPublicacionValido(precioTemporal)) {
-            setErrorPrecio(PRECIO_PUBLICACION_INVALIDO);
+            notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
         }
         const normalizado = normalizarPrecioPublicacion(precioTemporal);
@@ -250,7 +249,6 @@ export default function TarjetaPublicacion({
                         <ChevronRightIcon aria-hidden="true" fontSize="inherit" />
                     </button>
                 </div>
-                {errorPrecio && <div role="alert" className={styles.errorPrecio}>{errorPrecio}</div>}
             </div>
         </div>
     );

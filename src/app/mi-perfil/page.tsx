@@ -9,6 +9,7 @@ import { consultarMiPerfilAdministrador } from "@/modulos/usuarios/administrador
 import BotonVolver from "@/compartido/BotonVolver";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
@@ -40,9 +41,7 @@ export default async function PaginaMiPerfil() {
             {!perfil ? (
                 <div className="secciones-pagina">
                     <EncabezadoPagina titulo="Mi perfil" subtitulo="Administrador" />
-                    <section className={`${styles.tarjetaPerfil} ${styles.tarjetaInformacion}`} role="alert">
-                        No se pudieron encontrar los datos de tu perfil. Volvé a intentarlo más tarde.
-                    </section>
+                    <AvisoErrorToast mensaje="No se pudieron encontrar los datos de tu perfil. Volvé a intentarlo más tarde." />
                 </div>
             ) : (
                 <>

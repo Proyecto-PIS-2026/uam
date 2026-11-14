@@ -33,7 +33,10 @@ describe("formulario del segundo factor", () => {
         render(<FormularioSegundoFactor {...props} />);
         fireEvent.click(screen.getByText("¿No podés escanearlo?"));
         fireEvent.click(screen.getByRole("button", { name: "Copiar clave" }));
-        expect(await screen.findByText("Clave copiada.")).toBeInTheDocument();
+        const aviso = await screen.findByRole("status");
+        expect(aviso).toHaveTextContent("Clave copiada.");
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
+        expect(screen.getByText(props.secreto)).toBeVisible();
         expect(copiar).toHaveBeenCalledWith(props.secreto);
     });
 });

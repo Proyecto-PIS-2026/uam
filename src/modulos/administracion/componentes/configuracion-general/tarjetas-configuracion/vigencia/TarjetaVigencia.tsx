@@ -104,7 +104,7 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
     }
 
     const contenido = (
-        <div className={styles.tarjeta}>
+        <form className={styles.tarjeta} noValidate onSubmit={(evento) => { evento.preventDefault(); void guardar(); }}>
             {titulo && <span className={styles.titulo}>{titulo}</span>}
             {descripcion && <span className={styles.descripcion}>{descripcion}</span>}
             <div className={styles.filaEdicion}>
@@ -129,7 +129,7 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
                     </label>               
                     <Collapse in={valores.habilitado} timeout={300}>
                         <div className={styles.opcionesDesplegadas}>
-                            <TextField fullWidth size="small" label="Días de vigencia" value={valores.diasVigencia} disabled={guardando || !valores.habilitado}
+                            <TextField required={valores.habilitado} fullWidth size="small" label="Días de vigencia" value={valores.diasVigencia} disabled={guardando || !valores.habilitado}
                                 onChange={(evento) => cambiarDias("diasVigencia", evento.target.value)}
                                 className={styles.selectMui}
                                 slotProps={{htmlInput: {inputMode: "numeric", pattern: "[0-9]*"}}}
@@ -150,17 +150,17 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
                             </label>
                             <Collapse in={valores.avisosHabilitados} timeout={300}>
                                 <div className={styles.anticipacionDesplegada}>
-                                    <TextField fullWidth size="small" label="Días de anticipación del aviso" value={valores.diasAnticipacion} disabled={guardando || !valores.habilitado || !valores.avisosHabilitados} onChange={(evento) =>cambiarDias("diasAnticipacion", evento.target.value)} className={styles.selectMui} slotProps={{htmlInput: {inputMode: "numeric", pattern: "[0-9]*"}}}/>
+                                    <TextField required={valores.habilitado && valores.avisosHabilitados} fullWidth size="small" label="Días de anticipación del aviso" value={valores.diasAnticipacion} disabled={guardando || !valores.habilitado || !valores.avisosHabilitados} onChange={(evento) =>cambiarDias("diasAnticipacion", evento.target.value)} className={styles.selectMui} slotProps={{htmlInput: {inputMode: "numeric", pattern: "[0-9]*"}}}/>
                                 </div>
                             </Collapse>
                         </div>
                     </Collapse>
                 </div>
-                <IconButton aria-label={`Guardar configuración: ${titulo}`} disabled={guardando || !huboCambios} onClick={guardar} className={styles.botonGuardar}>
+                <IconButton type="submit" aria-label={`Guardar configuración: ${titulo}`} disabled={guardando || !huboCambios} className={styles.botonGuardar}>
                     <CheckOutlinedIcon />
                 </IconButton>
             </div>
-        </div>
+        </form>
     );
     return contenido; 
 }

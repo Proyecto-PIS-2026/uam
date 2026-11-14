@@ -11,6 +11,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
+import { formatearEmpaquetado } from "../../empaquetado-publicacion";
 import TextoAjustable from "./TextoAjustable";
 import UbicacionesRetiro from "./UbicacionesRetiro";
 import ComentarioPublicacion from "./ComentarioPublicacion";
@@ -146,11 +147,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Empaquetado</span>
-                                    <span className={styles.valorInformacion}>{publicacion.envase?.trim() || "-"}</span>
-                                </div>
-                                <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Kilos</span>
-                                    <span className={styles.valorInformacion}>{publicacion.kilos?.trim() && publicacion.kilos !== "-" ? `${publicacion.kilos} kg` : "-"}</span>
+                                    <span className={styles.valorInformacion}>{formatearEmpaquetado(publicacion.envase, publicacion.kilos) || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Calibre</span>

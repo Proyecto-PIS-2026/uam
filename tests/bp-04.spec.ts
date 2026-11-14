@@ -269,7 +269,7 @@ test.describe("BP-04 CA-3 CP-05 (propuesto): cuentas deshabilitadas", () => {
       await page.getByLabel("Correo electrónico o nombre de usuario").fill(cuenta.usuario);
       await page.getByLabel("Contraseña", { exact: true }).fill(cuenta.contrasena);
       await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
-      await expect(page.locator("form").getByRole("alert"))
+      await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert"))
         .toHaveText("La cuenta está deshabilitada. Comunicate con un administrador.");
       await expect(page).toHaveURL(/\/iniciar-sesion$/);
       expect(await cookieSesion(page)).toBeUndefined();

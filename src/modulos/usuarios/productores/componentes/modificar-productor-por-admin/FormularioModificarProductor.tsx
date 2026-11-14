@@ -43,8 +43,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
     const [confirmacionContraseña, setConfirmacionContraseña] =
         useState("");
 
-    const [errores, setErrores] = useState<string[]>([]);
-    const { notificar } = useNotificacionToast();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
@@ -61,7 +60,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
         if (guardadoEnCurso.current) return;
         guardadoEnCurso.current = true;
 
-        setErrores([]);
+        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -75,11 +74,11 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                 : await modificarProductor({ ...datos, productorId: productor.id, contraseña, confirmacionContraseña }, ...argumentosFotoPerfil(foto));
 
             if (!resultado.esValido) {
-                setErrores(resultado.errores);
+                notificar(resultado.errores.join("\n"), "error");
                 return;
             }
 
-            if (perfilPropio) notificar(resultado.mensaje, "success");
+            notificar(resultado.mensaje, "success");
             router.push(perfilPropio ? "/mi-perfil/productor" : `/gestion-productores/${resultado.id}`);
             if (perfilPropio) router.refresh();
         } catch (error) {
@@ -153,6 +152,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                                 className={styles.control}
                                 id={`${idFormulario}-codigo`}
                                 label="Código de país"
+                                required
                                 value={codigoPais}
                                 onChange={(evento) => setCodigoPais(evento.target.value)}
                                 disabled={guardando}
@@ -200,6 +200,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                                 size="small"
                                 className={styles.control}
                                 label="Nueva contraseña"
+                                required={Boolean(contraseña || confirmacionContraseña)}
                                 type="password"
                                 value={contraseña}
                                 onChange={(evento) => setContraseña(evento.target.value)}
@@ -212,6 +213,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                                 size="small"
                                 className={styles.control}
                                 label="Confirmar contraseña"
+                                required={Boolean(contraseña || confirmacionContraseña)}
                                 type="password"
                                 value={confirmacionContraseña}
                                 onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
@@ -220,17 +222,6 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                             />
                         </div>
                     </section>}
-
-                    {errores.length > 0 && (
-                        <div
-                            className={styles.error}
-                            role="alert"
-                        >
-                            {errores.map((error) => (
-                                <p key={error}>{error}</p>
-                            ))}
-                        </div>
-                    )}
 
                     <div className={styles.acciones}>
                         <button

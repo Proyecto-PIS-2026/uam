@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -97,9 +97,10 @@ describe("LeafletLocationPicker", () => {
         const campo = screen.getByLabelText(/^Nombre del punto de retiro/);
         fireEvent.change(campo, { target: { value: nombre } });
         fireEvent.blur(campo);
-        expect(screen.getByText("Escribí un nombre de hasta 200 caracteres.")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent(nombre.trim() ? "Escribí un nombre de hasta 200 caracteres." : "Faltan completar campos obligatorios.");
+        expect(campo).toHaveAttribute("aria-invalid", "true");
         expect(mocks.alConfirmar).not.toHaveBeenCalled();
     });
 
@@ -322,10 +323,10 @@ describe("LeafletLocationPicker", () => {
         expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
     });
 
-    it("buscar desde el mapa no envía el formulario de la publicación", async () => {
+    it("buscar y confirmar desde el mapa no envía el formulario de la publicación", async () => {
         const alGuardar = vi.fn();
         const vista = render(<form aria-label="Editar publicación" onSubmit={(evento) => { evento.preventDefault(); alGuardar(); }}>
-            <LeafletLocationPicker abierto coordenadas={null} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />
+            <LeafletLocationPicker abierto modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />
         </form>);
         await waitFor(() => expect(mocks.mapa.on).toHaveBeenCalledWith("click", expect.any(Function)));
         const formulario = vista.container.querySelector("form")!;
@@ -337,6 +338,9 @@ describe("LeafletLocationPicker", () => {
         await screen.findByRole("alert");
         expect(alGuardar).not.toHaveBeenCalled();
         expect(mocks.alConfirmar).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
+        expect(alGuardar).not.toHaveBeenCalled();
     });
 
     it("Escape cierra solamente el mapa y devuelve el foco al control que lo abrió", async () => {

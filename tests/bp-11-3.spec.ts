@@ -65,7 +65,8 @@ test.describe("BP-11.3 - Modificación de mi perfil como Productor", () => {
     await campoContacto(page).clear();
     await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
 
-    await expect(page.getByRole("alert").filter({ hasText: "El teléfono no es válido." })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "Faltan completar campos obligatorios." })).toBeVisible();
+    await expect(campoContacto(page)).toHaveAttribute("aria-invalid", "true");
     await expect(page).toHaveURL(new RegExp(`${RUTA_EDITAR}$`));
 
     await page.goto(RUTA_PERFIL);
@@ -93,10 +94,12 @@ test.describe("BP-11.3 - Modificación de mi perfil como Productor", () => {
     await abrirModificacion(page);
     await campoContacto(page).clear();
     await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-    await expect(page.getByRole("alert").filter({ hasText: "El teléfono no es válido." })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "Faltan completar campos obligatorios." })).toBeVisible();
+    await expect(campoContacto(page)).toHaveAttribute("aria-invalid", "true");
     await expect(page).toHaveURL(new RegExp(`${RUTA_EDITAR}$`));
 
     await campoContacto(page).fill("98765432");
+    await expect(campoContacto(page)).not.toHaveAttribute("aria-invalid", "true");
     await guardar(page);
     await page.reload();
 

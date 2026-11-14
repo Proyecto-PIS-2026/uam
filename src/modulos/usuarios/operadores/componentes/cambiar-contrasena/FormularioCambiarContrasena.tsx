@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import Link from "next/link";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
@@ -54,10 +55,19 @@ function CampoContrasena({
 }
 
 export default function FormularioCambiarContrasena() {
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const estadoNotificado = useRef<EstadoCambioContrasena | null>(null);
     const [estado, accion, pendiente] = useActionState(
         cambiarContrasena,
         estadoInicial,
     );
+    useEffect(() => {
+        if (estadoNotificado.current === estado) return;
+        estadoNotificado.current = estado;
+        if (estado.error || estado.exito) cerrarNotificacion();
+        if (estado.error) notificar(estado.error, "error");
+        else if (estado.exito) notificar(estado.exito, "success");
+    }, [estado, notificar, cerrarNotificacion]);
 
     return (
         <form
@@ -82,16 +92,6 @@ export default function FormularioCambiarContrasena() {
                 label="Repetir nueva contraseña"
                 autoComplete="new-password"
             />
-            {estado.error && (
-                <p role="alert" className="text-sm text-danger">
-                    {estado.error}
-                </p>
-            )}
-            {estado.exito && (
-                <p role="status" className="text-sm text-[var(--color-secondary)]">
-                    {estado.exito}
-                </p>
-            )}
             <button type="submit" disabled={pendiente} className="boton-primario w-full">
                 {pendiente ? "Cambiando..." : "Cambiar contraseña"}
             </button>

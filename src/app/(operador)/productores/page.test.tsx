@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@/test-utils";
 import Page from "./page";
 import PaginaPerfil from "./[nombre]/page";
 import ListadoProductores from "@/modulos/usuarios/productores/componentes/listado-productores/ListadoProductores";

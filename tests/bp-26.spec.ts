@@ -11,7 +11,7 @@ const precioVisible = (valor: number) => new Intl.NumberFormat("es-UY", { maximu
 async function esperarConsulta(page: Page) {
   await expect(consultar(page)).toBeEnabled({ timeout: 60_000 });
   await expect(grafica(page)).toHaveAttribute("aria-busy", "false");
-  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveCount(0);
 }
 
 async function cambiarRango(page: Page, desde: string, hasta: string) {

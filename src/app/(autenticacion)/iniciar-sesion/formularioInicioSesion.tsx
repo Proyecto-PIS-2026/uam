@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -13,44 +13,55 @@ import {
 
 const estadoInicial: EstadoInicioSesion = {};
 
-export default function FormularioInicioSesion({ recuperacionHabilitada = true }: { recuperacionHabilitada?: boolean }) {
+type Props = { recuperacionHabilitada?: boolean; avisoInicial?: string; tipoAviso?: "info" | "warning" };
+
+export default function FormularioInicioSesion({ recuperacionHabilitada = true, avisoInicial, tipoAviso = "warning" }: Props) {
     const [estado, accion, pendiente] = useActionState(iniciarSesion, estadoInicial);
     const [identificador, cambiarIdentificador] = useState("");
     const [mostrarContrasena, cambiarMostrarContrasena] = useState(false);
     const [modalRecuperacionAbierto, cambiarModalRecuperacionAbierto] = useState(false);
     const [usuarioRecuperacion, cambiarUsuarioRecuperacion] = useState("");
     const usuarioRecuperacionRef = useRef<HTMLInputElement>(null);
-    const [errorRecuperacion, cambiarErrorRecuperacion] = useState("");
-    const { notificar } = useNotificacionToast();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const estadoNotificado = useRef<EstadoInicioSesion | null>(null);
+    const avisoNotificado = useRef<string | undefined>(undefined);
     const [solicitudPendiente, cambiarSolicitudPendiente] = useState(false);
 
+    useEffect(() => {
+        if (estadoNotificado.current === estado) return;
+        estadoNotificado.current = estado;
+        if (estado.error) notificar(estado.error, "error");
+    }, [estado, notificar]);
+
+    useEffect(() => {
+        if (avisoNotificado.current === avisoInicial) return;
+        avisoNotificado.current = avisoInicial;
+        if (avisoInicial) notificar(avisoInicial, tipoAviso);
+    }, [avisoInicial, tipoAviso, notificar]);
+
     function abrirModalRecuperacion() {
-        cambiarErrorRecuperacion("");
+        cerrarNotificacion();
         cambiarModalRecuperacionAbierto(true);
     }
 
     function cerrarModalRecuperacion() {
         if (solicitudPendiente) return;
-        cambiarErrorRecuperacion("");
+        cerrarNotificacion();
         cambiarModalRecuperacionAbierto(false);
     }
 
     async function aceptarSolicitudRecuperacion() {
         if (solicitudPendiente) return;
         if (!usuarioRecuperacion.trim()) {
-            cambiarErrorRecuperacion("Ingresá tu nombre de usuario para solicitar la recuperación.");
+            notificar("Faltan completar campos obligatorios.", "error");
             return;
         }
 
         cambiarSolicitudPendiente(true);
-        cambiarErrorRecuperacion("");
+        cerrarNotificacion();
         try {
             const resultado = await solicitarRecuperacion(usuarioRecuperacion);
-            if (resultado.tipoError === "operacion" && resultado.error) {
-                notificar(resultado.error, "error");
-            } else {
-                cambiarErrorRecuperacion(resultado.error ?? "");
-            }
+            if (resultado.error) notificar(resultado.error, "error");
             if (resultado.exito) notificar(resultado.exito, "success");
         } catch {
             notificar("No se pudo registrar la solicitud. Intentá nuevamente.", "error");
@@ -103,11 +114,6 @@ export default function FormularioInicioSesion({ recuperacionHabilitada = true }
                         </button>
                     </div>
                 </div>
-                {estado.error && (
-                    <p role="alert" className="text-sm text-danger">
-                        {estado.error}
-                    </p>
-                )}
                 <button
                     type="submit"
                     disabled={pendiente}
@@ -134,52 +140,49 @@ export default function FormularioInicioSesion({ recuperacionHabilitada = true }
                     transition: { onEntered: () => usuarioRecuperacionRef.current?.focus() },
                 }}
             >
-                <h2 id="titulo-recuperacion-contrasena" className="titulo-seccion mb-[var(--espacio-controles)]">
-                    Solicitar recuperación de contraseña
-                </h2>
-                <p id="descripcion-recuperacion-contrasena" className="mb-4 text-sm text-[var(--color-foreground)]">
-                    Ingresá tu nombre de usuario y confirmá si estás seguro de solicitar la recuperación.
-                </p>
-                <label htmlFor="usuarioRecuperacion" className="mb-2 block text-sm font-medium">
-                    Nombre de usuario
-                </label>
-                <input
-                    ref={usuarioRecuperacionRef}
-                    id="usuarioRecuperacion"
-                    type="text"
-                    autoFocus
-                    autoComplete="username"
-                    disabled={solicitudPendiente}
-                    value={usuarioRecuperacion}
-                    onChange={(evento) => {
-                        cambiarUsuarioRecuperacion(evento.target.value);
-                        if (errorRecuperacion) cambiarErrorRecuperacion("");
-                    }}
-                    className="mb-2 campo-formulario"
-                />
-                {errorRecuperacion && (
-                    <p role="alert" className="mb-4 text-sm text-danger">
-                        {errorRecuperacion}
+                <form aria-label="Solicitar recuperación de contraseña" onSubmit={(evento) => { evento.preventDefault(); void aceptarSolicitudRecuperacion(); }}>
+                    <h2 id="titulo-recuperacion-contrasena" className="titulo-seccion mb-[var(--espacio-controles)]">
+                        Solicitar recuperación de contraseña
+                    </h2>
+                    <p id="descripcion-recuperacion-contrasena" className="mb-4 text-sm text-[var(--color-foreground)]">
+                        Ingresá tu nombre de usuario y confirmá si estás seguro de solicitar la recuperación.
                     </p>
-                )}
-                <div className="flex w-full items-center justify-end gap-[var(--espacio-controles)]">
-                    <button
-                        type="button"
-                        onClick={cerrarModalRecuperacion}
+                    <label htmlFor="usuarioRecuperacion" className="mb-2 block text-sm font-medium">
+                        Nombre de usuario
+                    </label>
+                    <input
+                        ref={usuarioRecuperacionRef}
+                        id="usuarioRecuperacion"
+                        type="text"
+                        required
+                        autoFocus
+                        autoComplete="username"
                         disabled={solicitudPendiente}
-                        className="boton-secundario"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        onClick={aceptarSolicitudRecuperacion}
-                        disabled={solicitudPendiente}
-                        className="boton-primario"
-                    >
-                        {solicitudPendiente ? "Enviando..." : "Aceptar"}
-                    </button>
-                </div>
+                        value={usuarioRecuperacion}
+                        onChange={(evento) => {
+                            cambiarUsuarioRecuperacion(evento.target.value);
+                            cerrarNotificacion();
+                        }}
+                        className="mb-2 campo-formulario"
+                    />
+                    <div className="flex w-full items-center justify-end gap-[var(--espacio-controles)]">
+                        <button
+                            type="button"
+                            onClick={cerrarModalRecuperacion}
+                            disabled={solicitudPendiente}
+                            className="boton-secundario"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={solicitudPendiente}
+                            className="boton-primario"
+                        >
+                            {solicitudPendiente ? "Enviando..." : "Aceptar"}
+                        </button>
+                    </div>
+                </form>
             </Dialog>
         </>
     );

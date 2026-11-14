@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
 import PreciosHistoricos from "./PreciosHistoricos";
@@ -1365,13 +1365,13 @@ describe("PreciosHistoricos", () => {
         expect(screen.getByRole("button", { name: "Consultar" })).toBeDisabled();
     });
 
-    it("distingue el fallo de consulta de un período sin registros", () => {
+    it("distingue el fallo de consulta de un período sin registros", async () => {
         render(<PreciosHistoricos producto={producto} historico={null} {...fechas} error="No pudimos cargar los precios históricos." />);
 
-        expect(screen.getAllByRole("alert")).toHaveLength(2);
-        for (const aviso of screen.getAllByRole("alert")) {
-            expect(aviso).toHaveTextContent("No pudimos cargar los precios históricos.");
-        }
+        const aviso = await screen.findByRole("alert");
+        expect(aviso).toHaveTextContent("No pudimos cargar los precios históricos.");
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
         expect(screen.queryByText(/No hay registros históricos/)).not.toBeInTheDocument();
     });
 
@@ -1398,22 +1398,16 @@ describe("PreciosHistoricos", () => {
     it.each([
         "No pudimos cargar los precios históricos.",
         "SyntaxError: Unexpected token al leer el JSON del histórico.",
-    ])("muestra un aviso con icono en tabla y móvil cuando falla la carga: %s", (error) => {
+    ])("muestra un único toast y conserva la consulta cuando falla la carga: %s", (error) => {
         render(<PreciosHistoricos producto={producto} historico={historico} {...fechas} error={error} />);
 
         const tabla = screen.getByRole("table");
         expect(tabla).toHaveAttribute("aria-busy", "false");
         expect(within(tabla).getAllByRole("columnheader")).toHaveLength(8);
-        const avisoTabla = within(tabla).getByRole("alert");
-        expect(avisoTabla).toHaveTextContent(error);
-        expect(within(avisoTabla).getByTestId("WarningAmberIcon")).toBeInTheDocument();
-        expect(avisoTabla.closest("td")).toHaveAttribute("colspan", "8");
-        const avisos = screen.getAllByRole("alert");
-        expect(avisos).toHaveLength(2);
-        const avisoMobile = avisos.find((aviso) => !tabla.contains(aviso));
-        expect(avisoMobile).toBeDefined();
-        expect(avisoMobile!).toHaveTextContent(error);
-        expect(within(avisoMobile!).getByTestId("WarningAmberIcon")).toBeInTheDocument();
+        expect(within(tabla).queryByRole("alert")).not.toBeInTheDocument();
+        expect(within(tabla).getByText("Consultá nuevamente para ver los precios.").closest("td")).toHaveAttribute("colspan", "8");
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
+        expect(within(screen.getByRole("region", { name: "Notificaciones" })).getByRole("alert")).toHaveTextContent(error);
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
         expect(within(tabla).queryByRole("cell", { name: "ECUADOR" })).not.toBeInTheDocument();
         expect(document.querySelectorAll("article")).toHaveLength(0);
@@ -1434,8 +1428,9 @@ describe("PreciosHistoricos", () => {
         rerender(<PreciosHistoricos producto={producto} historico={null} {...fechas} error={error} />);
         expect(propsGrafica()).toMatchObject({ cargando: false, error: true, registros: [] });
         expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-        expect(screen.getAllByRole("alert")).toHaveLength(2);
-        expect(screen.getAllByTestId("WarningAmberIcon")).toHaveLength(2);
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
+        expect(screen.getByRole("alert")).toHaveTextContent(error);
+        expect(within(screen.getByRole("region", { name: "Notificaciones" })).getByRole("alert")).toHaveTextContent(error);
         expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
     });
 

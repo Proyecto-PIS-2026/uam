@@ -459,20 +459,19 @@ describe("edición de publicaciones de productores", () => {
         expect(mocks.variedad.where).not.toHaveBeenCalled();
     });
 
-    it("rechaza conservar una categoría de la especie anterior al cambiar de especie", async () => {
+    it("conserva la categoría al cambiar de especie y guarda los demás datos", async () => {
         mocks.especie.first.mockResolvedValue({ id: 9, especieActiva: true });
         mocks.variedad.first.mockResolvedValue({ id: 70, especieId: 9, variedadActiva: true });
         mocks.envase.first.mockResolvedValue({ id: 80, nombreEnvase: "Cajon" });
 
         await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, especieId: 9, variedadId: 70, envaseId: 80, kilosId: null, paisId: 2, cantidadUnidades: 0, disponible: false }))
-            .rejects.toMatchObject({ codigo: "DATOS_INVALIDOS", message: "La selección contiene datos que ya no están disponibles o no corresponden a la especie." });
-        expect(mocks.publicacion.update).not.toHaveBeenCalled();
-        expect(mocks.vinculo.update).not.toHaveBeenCalled();
-        expect(mocks.ubicacion.deleteAll).not.toHaveBeenCalled();
+            .resolves.toMatchObject({ productorId: 3 });
+        expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({ especieId: 9, categoriaId: 4, cantidadUnidades: 0, publicacionDisponible: false }));
+        expect(mocks.vinculo.update).toHaveBeenCalledWith({ paisId: 2 });
     });
 
-    it("rechaza categorías de otra especie y calibres inexistentes", async () => {
-        mocks.categoria.first.mockResolvedValue({ id: 4, especieId: 99 });
+    it("rechaza categorías y calibres inexistentes", async () => {
+        mocks.categoria.first.mockResolvedValue(null);
         await expect(modificarPublicacionProductor(sesion, 12, cambios)).rejects.toMatchObject({ codigo: "DATOS_INVALIDOS" });
         mocks.categoria.first.mockResolvedValue({ id: 4, especieId: null });
         mocks.calibre.first.mockResolvedValue(null);

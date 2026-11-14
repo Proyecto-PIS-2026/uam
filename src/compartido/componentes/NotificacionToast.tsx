@@ -1,11 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import Alert from "@mui/material/Alert";
 import Fade from "@mui/material/Fade";
 import Portal from "@mui/material/Portal";
+import { useErroresValidacionNativa } from "./validacion-nativa-toast";
 import styles from "./NotificacionToast.module.css";
 
 type TipoNotificacion = "success" | "error" | "warning" | "info";
@@ -50,28 +51,56 @@ function useContenedorNotificaciones(activo: boolean) {
     return contenedor?.isConnected ? contenedor : null;
 }
 
-function useEspacioVisible() {
+function useEspacioVisible(contenedor: HTMLElement | null) {
     const [espacio, setEspacio] = useState<CSSProperties>({});
-    useEffect(() => {
+    useLayoutEffect(() => {
         const viewport = window.visualViewport;
+        let acciones: HTMLElement[] = [];
         const actualizar = () => {
-            setEspacio({
+            const alto = viewport?.height ?? window.innerHeight;
+            const superior = viewport?.offsetTop ?? 0;
+            const inferior = superior + alto;
+            const limites = acciones.map((elemento) => elemento.getBoundingClientRect())
+                .filter((rectangulo) => rectangulo.width > 0 && rectangulo.height > 0 && rectangulo.bottom > superior && rectangulo.top < inferior);
+            // El aviso queda sobre el pie del modal, sin tapar Guardar o Cancelar.
+            const espacioAcciones = limites.length > 0 ? Math.min(alto, inferior - Math.min(...limites.map(({ top }) => top))) : 0;
+            const siguiente = {
                 "--toast-ancho-visible": `${viewport?.width ?? window.innerWidth}px`,
-                "--toast-alto-visible": `${viewport?.height ?? window.innerHeight}px`,
-                "--toast-inferior": `${viewport ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop) : 0}px`,
+                "--toast-alto-visible": `${Math.max(0, alto - espacioAcciones)}px`,
+                "--toast-inferior": `${Math.max(0, window.innerHeight - inferior) + espacioAcciones}px`,
                 "--toast-derecha": `${viewport ? Math.max(0, window.innerWidth - viewport.width - viewport.offsetLeft) : 0}px`,
-            } as CSSProperties);
+            } as CSSProperties;
+            setEspacio((actual) => Object.entries(siguiente).every(([clave, valor]) => actual[clave as keyof CSSProperties] === valor) ? actual : siguiente);
         };
-        actualizar();
+        const observadorTamano = contenedor && contenedor !== document.body && typeof ResizeObserver === "function" ? new ResizeObserver(actualizar) : null;
+        const observarAcciones = () => {
+            acciones = contenedor && contenedor !== document.body
+                ? Array.from(contenedor.querySelectorAll<HTMLElement>("[data-acciones-modal], .MuiDialogActions-root, footer")) : [];
+            observadorTamano?.disconnect();
+            if (contenedor && contenedor !== document.body) observadorTamano?.observe(contenedor);
+            acciones.forEach((elemento) => observadorTamano?.observe(elemento));
+            actualizar();
+        };
+        observarAcciones();
+        const observadorContenido = new MutationObserver(observarAcciones);
+        if (contenedor && contenedor !== document.body) {
+            observadorContenido.observe(contenedor, { childList: true, subtree: true });
+            contenedor.addEventListener("scroll", actualizar, true);
+            contenedor.addEventListener("transitionend", actualizar);
+        }
         window.addEventListener("resize", actualizar);
         viewport?.addEventListener("resize", actualizar);
         viewport?.addEventListener("scroll", actualizar);
         return () => {
+            observadorTamano?.disconnect();
+            observadorContenido.disconnect();
+            contenedor?.removeEventListener("scroll", actualizar, true);
+            contenedor?.removeEventListener("transitionend", actualizar);
             window.removeEventListener("resize", actualizar);
             viewport?.removeEventListener("resize", actualizar);
             viewport?.removeEventListener("scroll", actualizar);
         };
-    }, []);
+    }, [contenedor]);
     return espacio;
 }
 
@@ -97,7 +126,7 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
         }
     }, []);
     const contenedor = useContenedorNotificaciones(notificaciones.length > 0);
-    const espacio = useEspacioVisible();
+    const espacio = useEspacioVisible(notificaciones.length > 0 ? contenedor : null);
 
     const cerrar = useCallback((id: number) => {
         setNotificaciones((actuales) => actuales.map((aviso) => aviso.id === id ? { ...aviso, cerrando: true } : aviso));
@@ -117,6 +146,11 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
     const cerrarOrigen = useCallback((origen: string) => {
         setNotificaciones((actuales) => actuales.map((aviso) => aviso.origen === origen ? { ...aviso, cerrando: true } : aviso));
     }, []);
+    const notificarValidacionNativa = useCallback((mensaje: string) => {
+        cerrarOrigen("validacion-nativa");
+        agregar("validacion-nativa", mensaje, "error");
+    }, [agregar, cerrarOrigen]);
+    useErroresValidacionNativa(notificarValidacionNativa);
     const servicio = useMemo(() => ({ agregar, cerrarOrigen }), [agregar, cerrarOrigen]);
     const pausar = useCallback((id: number, motivo: "puntero" | "foco", activa: boolean) => {
         const clave = `${id}:${motivo}`;
@@ -196,10 +230,10 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
                 <Portal container={contenedor}>
                     <div ref={asignarViewport} className={styles.contenedor} style={espacio} role="region" aria-label="Notificaciones">
                         <div className={styles.pila}>
-                            {notificaciones.map((aviso, indice) => {
+                            {notificaciones.map((aviso) => {
                                 const urgente = aviso.tipo === "error" || aviso.tipo === "warning";
                                 return (
-                                    <div key={aviso.id} className={`${styles.elemento} ${indice < notificaciones.length - 2 ? styles.antigua : ""}`} aria-hidden={aviso.cerrando || undefined} inert={aviso.cerrando || undefined}>
+                                    <div key={aviso.id} className={styles.elemento} aria-hidden={aviso.cerrando || undefined} inert={aviso.cerrando || undefined}>
                                         <Fade in={!aviso.cerrando} appear timeout={{ enter: 200, exit: DURACION_SALIDA }} onExited={() => retirar(aviso.id)}>
                                             <Alert
                                                 className={`${styles.alerta} ${styles[aviso.tipo]}`}

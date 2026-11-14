@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "@js-temporal/polyfill";
  
 import { validarModificacionOperador } from "./validarModificacionOperador";
  
@@ -37,6 +38,13 @@ function datosDe(cambios: Record<string, unknown> = {}) {
 }
  
 describe("validarModificacionOperador", () => {
+    beforeEach(() => {
+        vi.spyOn(Temporal.Now, "plainDateISO").mockImplementation((zona) =>
+            Temporal.Instant.from("2026-11-15T01:30:00Z").toZonedDateTimeISO(zona ?? "UTC").toPlainDate(),
+        );
+    });
+    afterEach(() => vi.restoreAllMocks());
+
     describe("datos válidos", () => {
         it("acepta datos correctos y los devuelve normalizados", () => {
             expect(datosDe()).toEqual({
@@ -72,12 +80,29 @@ describe("validarModificacionOperador", () => {
             ]);
         });
 
-        it.each(["2000-11-02", "2000-11-12", "2999-11-12"])("acepta un inicio pasado con fin igual o posterior: %s", (finLicencia) => {
+        it.each(["2026-11-14", "2026-11-15", "2999-11-12"])("acepta un inicio pasado con fin hoy o posterior: %s", (finLicencia) => {
             expect(datosDe({
                 enLicencia: true,
                 inicioLicencia: "2000-11-02",
                 finLicencia,
             })).toMatchObject({ inicioLicencia: "2000-11-02", finLicencia });
+            expect(Temporal.Now.plainDateISO).toHaveBeenCalledWith("America/Montevideo");
+        });
+
+        it("rechaza una licencia que termina antes de hoy en Uruguay", () => {
+            expect(erroresDe({
+                enLicencia: true,
+                inicioLicencia: "2000-11-02",
+                finLicencia: "2026-11-13",
+            })).toEqual(["La fecha de fin de la licencia no puede ser anterior a hoy."]);
+        });
+
+        it("permite desmarcar una licencia vencida", () => {
+            expect(datosDe({
+                enLicencia: false,
+                inicioLicencia: "2000-11-02",
+                finLicencia: "2000-11-12",
+            })).toMatchObject({ enLicencia: false, comentario: null });
         });
 
         it("rechaza una licencia que termina antes de empezar", () => {

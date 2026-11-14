@@ -135,7 +135,7 @@ describe("Inicio", () => {
         expect(nombresVisibles()).toEqual(["Tomate", "Papa", "Banana", "Ají"]);
     });
 
-    it("ofrece Por defecto, A-Z y Z-A en el menú público", async () => {
+    it("ofrece Por volumen, A-Z y Z-A en el menú público", async () => {
         preparar({ ordenPredeterminado: "mas_vendidas" });
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         expect(await screen.findByRole("menuitemradio", { name: "A-Z" })).toBeInTheDocument();
@@ -144,7 +144,7 @@ describe("Inicio", () => {
         expect(screen.queryByRole("menuitemradio", { name: "Menor Precio" })).not.toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Mayor Precio" })).not.toBeInTheDocument();
         expect(screen.queryByRole("menuitemradio", { name: "Más actualizadas" })).not.toBeInTheDocument();
-        expect(screen.getByRole("menuitemradio", { name: "Por defecto" })).toHaveAttribute("aria-checked", "true");
+        expect(screen.getByRole("menuitemradio", { name: "Por volumen" })).toHaveAttribute("aria-checked", "true");
         expect(screen.getAllByRole("menuitemradio")).toHaveLength(3);
     });
 
@@ -160,12 +160,12 @@ describe("Inicio", () => {
         expect(nombresVisibles()).toEqual(["Ají", "Banana", "Papa", "Tomate"]);
     });
 
-    it.each(["mas_vendidas", "nombre_desc"] as const)("Por defecto restaura el orden administrativo %s", async (ordenPredeterminado) => {
+    it.each(["mas_vendidas", "nombre_desc"] as const)("Por volumen restaura el orden administrativo %s", async (ordenPredeterminado) => {
         preparar({ ordenPredeterminado });
         const iniciales = nombresVisibles();
         await elegirOrden("A-Z");
         expect(nombresVisibles()).not.toEqual(iniciales);
-        await elegirOrden("Por defecto");
+        await elegirOrden("Por volumen");
         expect(nombresVisibles()).toEqual(iniciales);
     });
 

@@ -45,8 +45,8 @@ async function activarLicencia(page: Page, datos: Datos, comentario = recomendac
     await page.getByRole("switch", { name: "En licencia", exact: true }).click();
     await page.getByRole("alertdialog", { name: "Aviso de licencia", exact: true })
         .getByRole("button", { name: "Aceptar", exact: true }).click();
-    await page.getByLabel("Inicio de licencia", { exact: true }).fill(fecha(1));
-    await page.getByLabel("Fin de licencia", { exact: true }).fill(fecha(8));
+    await page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/).fill(fecha(1));
+    await page.getByLabel(/^Fin de licencia(?:\s*\*)?$/).fill(fecha(8));
     await page.getByLabel("Mensaje de recomendación", { exact: true }).fill(comentario);
     await guardar(page, datos);
 }

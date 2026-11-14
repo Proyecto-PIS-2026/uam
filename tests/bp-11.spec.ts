@@ -137,7 +137,7 @@ test.describe("BP-11 - Mi perfil de Administrador", () => {
       name: "Guardar cambios",
     }).click();
 
-    const alerta = formulario.getByRole("alert");
+    const alerta = page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert");
 
     await expect(alerta).toContainText(
       "El nombre de usuario debe tener al menos 3 caracteres."

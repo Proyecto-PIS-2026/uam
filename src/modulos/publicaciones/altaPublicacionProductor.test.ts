@@ -366,10 +366,6 @@ describe("altaPublicacionProductor", () => {
         },
         { consulta: "envase", valor: null },
         { consulta: "kilos", valor: null },
-        {
-            consulta: "categoria",
-            valor: { id: 5, especieId: 9 },
-        },
         { consulta: "categoria", valor: null },
         { consulta: "calibre", valor: null },
         { consulta: "pais", valor: null },
@@ -394,6 +390,18 @@ describe("altaPublicacionProductor", () => {
             expect(mocks.guardarImagen).not.toHaveBeenCalled();
         },
     );
+
+    it("permite una categoría existente aunque conserve otra especie de origen", async () => {
+        mocks.categoria.mockResolvedValue({ id: 5, especieId: 9 });
+
+        expect(await altaPublicacionProductor(datos)).toMatchObject({
+            esValido: true,
+            id: 42,
+        });
+        expect(mocks.crearPublicacion).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ especieId: 2, variedadId: 3, categoriaId: 5 }),
+        );
+    });
 
     it.each([
         { envaseId: 4, kilosId: null },

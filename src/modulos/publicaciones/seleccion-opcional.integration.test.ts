@@ -17,6 +17,8 @@ let variedadId: number;
 let paises: number[];
 let envases: number[];
 let kilos: number[];
+let categoriaId: number;
+let calibreId: number;
 const publicacionesCreadas: number[] = [];
 
 function seleccion(cambios: Partial<SeleccionPublicacion> = {}): SeleccionPublicacion {
@@ -59,19 +61,23 @@ beforeAll(async () => {
     ({ altaPublicacionProductor: altaProductor } = await import("./altaPublicacionProductor"));
     ({ modificarPublicacionOperador: editarOperador } = await import("./operadores/modificar-publicacion"));
     ({ modificarPublicacionProductor: editarProductor } = await import("./productores/modificar-publicacion"));
-    const [op, prod, origenes, empaquetados, cantidades] = await Promise.all([
+    const [op, prod, origenes, empaquetados, cantidades, categoria, calibre] = await Promise.all([
         db.orm.public.Operador.select("id", "usuarioId").first(),
         db.orm.public.Productor.select("id", "usuarioId").first(),
         db.orm.public.Pais.select("id").all(),
         db.orm.public.Envase.select("id").all(),
         db.orm.public.KilosEmpaquetado.select("id").all(),
+        db.orm.public.Categoria.select("id").first(),
+        db.orm.public.Calibre.select("id").first(),
     ]);
-    if (!op || !prod || origenes.length < 2 || empaquetados.length < 2 || cantidades.length < 2) throw new Error("Faltan dueños o catálogos en el seed de pruebas.");
+    if (!op || !prod || !categoria || !calibre || origenes.length < 2 || empaquetados.length < 2 || cantidades.length < 2) throw new Error("Faltan dueños o catálogos en el seed de pruebas.");
     operador = op;
     productor = prod;
     paises = origenes.map((pais) => pais.id);
     envases = empaquetados.map((envase) => envase.id);
     kilos = cantidades.map((cantidad) => cantidad.id);
+    categoriaId = categoria.id;
+    calibreId = calibre.id;
 });
 
 beforeEach(async () => {
@@ -88,6 +94,15 @@ afterEach(async () => {
 });
 
 describe.each(["OPERADOR", "PRODUCTOR"] as const)("combinaciones opcionales de %s", (rol) => {
+    it("crea y edita con los cuatro catálogos globales en una especie y variedad nuevas", async () => {
+        const atributos = { envaseId: envases[0], kilosId: kilos[0], categoriaId, calibreId };
+        const id = await crearValida(rol, atributos);
+        expect(await db.orm.public.Publicacion.where({ id }).first()).toMatchObject({ especieId, variedadId: null, ...atributos });
+
+        await editar(rol, id, seleccion({ variedadId, ...atributos }));
+        expect(await db.orm.public.Publicacion.where({ id }).first()).toMatchObject({ especieId, variedadId, ...atributos });
+    });
+
     it("conserva los avisos al editar disponibilidad y los reinicia al renovar la vigencia", async () => {
         const hoy = Temporal.Now.plainDateISO("America/Montevideo");
         const id = await crearValida(rol, { fechaVigencia: hoy.toString() });

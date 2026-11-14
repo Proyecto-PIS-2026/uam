@@ -5,7 +5,7 @@ import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
 import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
 import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
 
-const mocks = vi.hoisted(() => ({ refresh: vi.fn(), bajaPendiente: vi.fn<(completar: () => void) => void>() }));
+const mocks = vi.hoisted(() => ({ refresh: vi.fn(), bajaPendiente: vi.fn<(completar: () => void) => void>(), yaEliminada: false }));
 
 vi.mock("next/navigation", () => ({
     useRouter: () => ({ refresh: mocks.refresh }),
@@ -16,7 +16,7 @@ vi.mock("../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProdu
         publicacion: PublicacionMiMercadoProductor | null;
         alCerrar: () => void;
         alGuardar?: (publicacion: PublicacionMiMercadoProductor) => void;
-        alEliminada?: (mensaje: string) => void;
+        alEliminada?: (mensaje: string, tipo: "success" | "info") => void;
     }) => publicacion ? (
         <section role="dialog" aria-label="Detalle de publicación">
             <h2>{publicacion.especie.nombreEspecie}</h2>
@@ -25,9 +25,9 @@ vi.mock("../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProdu
             <button type="button" onClick={alCerrar}>Cerrar consulta</button>
             <button type="button" onClick={() => {
                 alCerrar();
-                alEliminada?.("Publicación eliminada correctamente.");
+                alEliminada?.(mocks.yaEliminada ? "La publicación ya había sido eliminada." : "Publicación eliminada correctamente.", mocks.yaEliminada ? "info" : "success");
             }}>Eliminar publicación</button>
-            <button type="button" onClick={() => mocks.bajaPendiente(() => alEliminada?.("Publicación eliminada correctamente."))}>Iniciar baja pendiente</button>
+            <button type="button" onClick={() => mocks.bajaPendiente(() => alEliminada?.("Publicación eliminada correctamente.", "success"))}>Iniciar baja pendiente</button>
             <button type="button" onClick={() => alGuardar?.({
                 ...publicacion,
                 precio: "125.50",
@@ -72,6 +72,7 @@ describe("CatalogoProductorAdmin", () => {
     beforeEach(() => {
         cleanup();
         vi.clearAllMocks();
+        mocks.yaEliminada = false;
     });
 
     afterEach(() => {
@@ -147,7 +148,8 @@ describe("CatalogoProductorAdmin", () => {
         expect(within(screen.getByRole("dialog")).getByText("Nuevo punto de retiro")).toBeInTheDocument();
     });
 
-    it("retira la publicación eliminada y conserva los cambios de las demás publicaciones", async () => {
+    it.each([false, true])("retira la publicación eliminada e informa su resultado sin afectar otras publicaciones (ya eliminada: %s)", async (yaEliminada) => {
+        mocks.yaEliminada = yaEliminada;
         render(<CatalogoProductorAdmin publicaciones={[
             publicacionBase,
             { ...publicacionBase, id: 202, publicacionProductorId: 302, especie: "Lechuga", variedad: "-" },
@@ -161,7 +163,8 @@ describe("CatalogoProductorAdmin", () => {
 
         expect(screen.queryByRole("article", { name: "Ver detalles de Lechuga" })).not.toBeInTheDocument();
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("Publicación eliminada correctamente.");
+        expect(screen.getByRole("status")).toHaveTextContent(yaEliminada ? "La publicación ya había sido eliminada." : "Publicación eliminada correctamente.");
+        expect(screen.getByRole("status")).toHaveClass(yaEliminada ? "MuiAlert-colorInfo" : "MuiAlert-colorSuccess");
         expect(mocks.refresh).toHaveBeenCalledOnce();
         const tarjeta = screen.getByRole("article", { name: "Ver detalles de Manzana - Red Delicious" });
         expect(within(tarjeta).getByText(/125,5/)).toBeInTheDocument();

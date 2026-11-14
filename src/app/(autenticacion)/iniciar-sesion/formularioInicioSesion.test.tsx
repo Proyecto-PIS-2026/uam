@@ -67,10 +67,13 @@ describe("FormularioInicioSesion", () => {
         render(<FormularioInicioSesion />);
         completarYEnviarFormulario();
 
-        expect(await screen.findByRole("alert"))
-            .toHaveTextContent("Las credenciales no son correctas.");
+        const aviso = await screen.findByRole("alert");
+        expect(aviso).toHaveTextContent("Las credenciales no son correctas.");
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
+        fireEvent.change(screen.getByLabelText("Correo electrónico o nombre de usuario"), { target: { value: "otro_usuario" } });
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
         expect(screen.getByLabelText("Correo electrónico o nombre de usuario"))
-            .toHaveValue("huerta_productora");
+            .toHaveValue("otro_usuario");
         expect(screen.getByRole("button", { name: "Iniciar sesión" })).toBeEnabled();
     });
 
@@ -137,14 +140,18 @@ describe("FormularioInicioSesion", () => {
         expect(screen.getByRole("button", { name: "Cancelar" })).toBeEnabled();
     });
 
-    it("muestra un error si se acepta la recuperación sin nombre de usuario", () => {
+    it("marca el nombre faltante y no solicita la recuperación hasta completarlo", async () => {
         render(<FormularioInicioSesion />);
         fireEvent.click(screen.getByRole("button", { name: "Solicitar recuperación de contraseña" }));
         fireEvent.click(screen.getByRole("button", { name: "Aceptar" }));
 
-        expect(screen.getByRole("alert"))
-            .toHaveTextContent("Ingresá tu nombre de usuario para solicitar la recuperación.");
+        expect(await screen.findByRole("alert"))
+            .toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(screen.getByLabelText("Nombre de usuario")).toHaveAttribute("aria-invalid", "true");
+        expect(solicitarRecuperacionSimulada).not.toHaveBeenCalled();
         expect(screen.getByRole("dialog")).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("Nombre de usuario"), { target: { value: "mercado_verde" } });
+        expect(screen.getByLabelText("Nombre de usuario")).not.toHaveAttribute("aria-invalid", "true");
     });
 
     it("muestra un error si el nombre de usuario no existe", async () => {
@@ -203,9 +210,8 @@ describe("FormularioInicioSesion", () => {
         fireEvent.click(screen.getByRole("button", { name: "Aceptar" }));
         expect(await screen.findByRole("status")).toHaveTextContent("Solicitud enviada correctamente.");
         expect(solicitarRecuperacionSimulada).toHaveBeenCalledTimes(2);
-        expect(screen.getByRole("alert")).toHaveTextContent(error);
-        fireEvent.click(within(screen.getByRole("alert")).getByRole("button", { name: "Cerrar notificación" }));
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("Solicitud enviada correctamente.");
+        fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Cerrar notificación" }));
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 });

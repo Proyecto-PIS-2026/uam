@@ -1,5 +1,6 @@
 import BotonVolver from "@/compartido/BotonVolver";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { consultarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/consultar-mi-perfil";
 import FormularioEditarMiPerfil from "./FormularioEditarMiPerfil";
@@ -19,7 +20,7 @@ export default async function PaginaEditarMiPerfilAdministrador() {
                 <h1 className={styles.titulo}>Editar mi perfil</h1>
             </header>
             {perfil ? <FormularioEditarMiPerfil perfil={perfil} /> : (
-                <p className={styles.error} role="alert">No se pudieron encontrar los datos de tu perfil. Intentá nuevamente.</p>
+                <AvisoErrorToast mensaje="No se pudieron encontrar los datos de tu perfil. Intentá nuevamente." />
             )}
         </main>
     );

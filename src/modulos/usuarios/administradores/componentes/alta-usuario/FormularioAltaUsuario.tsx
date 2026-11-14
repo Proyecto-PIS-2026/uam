@@ -32,8 +32,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
         { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
     ]);
     const [codigoPais, setCodigoPais] = useState("+598");
-    const { notificar } = useNotificacionToast();
-    const [errores, setErrores] = useState<string[]>([]);
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [enviando, setEnviando] = useState(false);
     const envioEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
@@ -55,14 +54,14 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
             { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
         ]);
         setEmail("");
-        setErrores([]);
+        cerrarNotificacion();
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (envioEnCurso.current) return;
         envioEnCurso.current = true;
-        setErrores([]);
+        cerrarNotificacion();
         setEnviando(true);
 
         try {
@@ -83,7 +82,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 }, ...argumentosFotoPerfil(foto));
 
                 if (!resultado.esValido) {
-                    setErrores(resultado.errores);
+                    notificar(resultado.errores.join("\n"), "error");
                     return;
                 }
 
@@ -107,7 +106,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 }, ...argumentosFotoPerfil(foto));
 
                 if (!resultado.esValido) {
-                    setErrores(resultado.errores);
+                    notificar(resultado.errores.join("\n"), "error");
                     return;
                 }
 
@@ -129,7 +128,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 });
 
                 if (!resultado.esValido) {
-                    setErrores(resultado.errores);
+                    notificar(resultado.errores.join("\n"), "error");
                     return;
                 }
 
@@ -277,6 +276,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                 id="codigoPais"
                                 select
                                 label="Código de país"
+                                required
                                 value={codigoPais}
                                 onChange={(e) => setCodigoPais(e.target.value)}
                                 fullWidth
@@ -408,11 +408,6 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     </>
                 )}
 
-                {errores.length > 0 && (
-                    <ul className={styles.errores} role="alert">
-                        {errores.map((error) => <li key={error}>{error}</li>)}
-                    </ul>
-                )}
                 <div className={styles.acciones}>
                     <button
                         type="button"

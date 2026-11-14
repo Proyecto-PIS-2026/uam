@@ -178,13 +178,13 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await resultados(page, porKg.length);
     await expect(filas(page)).toHaveCount(Math.min(40, porKg.length));
     await maximo.fill("10");
-    await expect(filtros(page).getByRole("alert")).toHaveText("El precio máximo no puede ser menor al mínimo.");
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveText("El precio máximo no puede ser menor al mínimo.");
     await resultados(page, 0);
     await filtros(page).getByRole("button", { name: "Limpiar filtros" }).click();
     await expect(minimo).toHaveValue("");
     await expect(maximo).toHaveValue("");
     await expect(filtros(page).getByRole("combobox", { name: "Precio por", exact: true })).toHaveText("Unidad");
-    await expect(filtros(page).getByRole("alert")).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveCount(0);
     await resultados(page, registros.length);
   });
 
