@@ -1,5 +1,7 @@
 export type TipoPropietarioPublicacion = "OPERADOR" | "PRODUCTOR";
 
+export const MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES = 36500;
+
 export const CLAVES_VIGENCIA_PUBLICACIONES = {
     OPERADOR: [
         "vigencia_publicaciones_operador_habilitada",

@@ -1252,6 +1252,53 @@ describe("PreciosHistoricos", () => {
         });
     });
 
+    it("reintenta un período totalmente anterior que quedó vacío cuando no se pudo ampliar el histórico", () => {
+        const periodoSolicitado = { desde: "2010-01-01", hasta: "2011-12-31" };
+        const datos: HistoricoProducto = {
+            ...historico, from: periodoSolicitado.desde, to: periodoSolicitado.hasta, series: [],
+        };
+        render(<PreciosHistoricos producto={producto} historico={datos} {...periodoSolicitado} />);
+
+        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+
+        expect(navegar).toHaveBeenCalledOnce();
+        const parametros = new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams;
+        expect(Object.fromEntries(parametros)).toMatchObject({
+            species_id: "60", from: periodoSolicitado.desde, to: periodoSolicitado.hasta,
+        });
+    });
+
+    it.each([
+        { from: "2025-11-03", to: "2025-11-08", desde: "2025-11-02", hasta: "2025-11-08" },
+        { from: "2025-11-01", to: "2025-11-05", desde: "2025-11-01", hasta: "2025-11-07" },
+    ])("reintenta en el backend un período solicitado dentro de las fechas originales pero fuera de la cobertura $from a $to", ({ from, to, desde, hasta }) => {
+        render(<PreciosHistoricos producto={producto} historico={{ ...historico, from, to }} {...fechas} />);
+        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: desde } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: hasta } });
+
+        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+
+        expect(navegar).toHaveBeenCalledOnce();
+        const parametros = new URL(navegar.mock.calls[0][0], "https://app.example.test").searchParams;
+        expect(Object.fromEntries(parametros)).toMatchObject({ species_id: "60", from: desde, to: hasta });
+    });
+
+    it("reutiliza localmente un período cubierto aunque la respuesta no abarque todas las fechas originales", () => {
+        const datos: HistoricoProducto = { ...historico, from: "2025-11-03", to: "2025-11-06" };
+        render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
+        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: datos.from } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: datos.to } });
+
+        fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
+
+        expect(navegar).not.toHaveBeenCalled();
+        expect(propsGrafica()).toMatchObject({ desde: datos.from, hasta: datos.to });
+        expect(propsGrafica().registros).toHaveLength(1);
+        expect(propsGrafica().registros[0].dia.date).toBe("2025-11-03");
+        const parametros = new URLSearchParams(window.location.search);
+        expect(Object.fromEntries(parametros)).toMatchObject({ from: datos.from, to: datos.to });
+    });
+
     it("aplica un período dentro del histórico cargado al consultar y sólo navega si se amplía más allá", () => {
         const registro = historicoConFiltros.series[0];
         const presentacion = registro.presentations[0];

@@ -5,8 +5,9 @@ import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/con
 import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { bloquearCambioVigenciaPublicaciones } from "@/modulos/publicaciones/configuracion-vigencia-publicaciones";
 import { calcularFechaMaximaVigencia, convertirFechaVigenciaAInstant } from "@/modulos/publicaciones/vigencia-publicacion";
-import { CLAVES_VIGENCIA_PUBLICACIONES } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
+import { CLAVES_VIGENCIA_PUBLICACIONES, MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
 import { CLAVES_AGING_FOTOS } from "@/modulos/publicaciones/claves-aging-fotos";
+import { CLAVE_ANTICIPACION_AVISO_LOCALES, validarAnticipacionAvisoLocales } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
 
 
 const clavesOrdenamiento = [
@@ -40,6 +41,7 @@ const clavesPermitidas = new Set<string>([
     "url_lista_inteligente",
     "incremento_precio",
     "restablecimiento_contrasena_habilitado",
+    CLAVE_ANTICIPACION_AVISO_LOCALES,
     ...clavesOrdenamiento,
     ...CLAVES_AGING_FOTOS.OPERADOR,
     ...CLAVES_AGING_FOTOS.PRODUCTOR,
@@ -58,6 +60,10 @@ const clavesDias = new Set<string>([
 ]);
 
 function validarValor(nombre: string, valor: string): void {
+    if (nombre === CLAVE_ANTICIPACION_AVISO_LOCALES) {
+        validarAnticipacionAvisoLocales(valor);
+        return;
+    }
     if (nombre === "url_lista_inteligente") {
         if (!valor.trim()) {
             throw new Error("La URL de la Lista Inteligente no puede estar vacía.");
@@ -128,17 +134,21 @@ function validarVigencia(cambios: Record<string, string>, claves: readonly [stri
         throw new Error("Las cuatro opciones de vigencia deben guardarse juntas.");
     }
     const habilitado = cambios[claveHabilitado] === "true";
-    const avisosActivos = habilitado && cambios[claveAvisos] === "true";
+    const esVigenciaFotos = Object.values(CLAVES_AGING_FOTOS).some((clavesFotos) => clavesFotos[1] === claveVigencia);
+    const avisosActivos = (!esVigenciaFotos || habilitado) && cambios[claveAvisos] === "true";
     if (habilitado) {
         validarDias(cambios[claveVigencia], "vigencia");
-        if (Object.values(CLAVES_AGING_FOTOS).some((clavesFotos) => clavesFotos[1] === claveVigencia) && Number(cambios[claveVigencia]) > 36500) {
+        if (esVigenciaFotos && Number(cambios[claveVigencia]) > 36500) {
             throw new Error("La vigencia de las fotos no puede superar los 36500 días.");
         }
     }
     if (avisosActivos) {
         validarDias(cambios[claveAnticipacion], "anticipación");
+        if (!esVigenciaFotos && Number(cambios[claveAnticipacion]) > MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES) {
+            throw new Error(`La anticipación no puede superar los ${MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES} días.`);
+        }
     }
-    if (avisosActivos && Number(cambios[claveAnticipacion]) >= Number(cambios[claveVigencia])) {
+    if (habilitado && avisosActivos && Number(cambios[claveAnticipacion]) >= Number(cambios[claveVigencia])) {
         throw new Error("La anticipación debe ser menor que la vigencia.");
     }
 }

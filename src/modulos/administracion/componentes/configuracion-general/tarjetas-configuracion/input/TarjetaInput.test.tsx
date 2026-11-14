@@ -2,6 +2,7 @@ import { useState } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TarjetaInput from "./TarjetaInput";
+import { validarAnticipacionAvisoLocales } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
 
 const mocks = vi.hoisted(() => ({
     notificar: vi.fn(),
@@ -17,12 +18,13 @@ interface PropsPrueba {
     tipo?: "numero" | "url";
     label?: string;
     mensajeExito?: string;
+    validarNumero?: (valor: string) => void;
     onGuardarValor?: (valor: string) => Promise<void>;
 }
 
-function ComponentePrueba({ valorInicial = "10", tipo = "numero", label, onGuardarValor, mensajeExito }: PropsPrueba) {
+function ComponentePrueba({ valorInicial = "10", tipo = "numero", label, onGuardarValor, mensajeExito, validarNumero }: PropsPrueba) {
     const [valor, setValor] = useState(valorInicial);
-    return <TarjetaInput titulo="Configuración de prueba" descripcion="Descripción de prueba" label={label} valor={valor} tipo={tipo} onChangeValor={setValor} onGuardarValor={onGuardarValor} mensajeExito={mensajeExito} />;
+    return <TarjetaInput titulo="Configuración de prueba" descripcion="Descripción de prueba" label={label} valor={valor} tipo={tipo} onChangeValor={setValor} onGuardarValor={onGuardarValor} mensajeExito={mensajeExito} validarNumero={validarNumero} />;
 }
 
 function campo() {
@@ -101,6 +103,36 @@ describe("TarjetaInput", () => {
         fireEvent.click(botonGuardar());
         expect(onGuardarValor).not.toHaveBeenCalled();
         expect(mocks.notificar).toHaveBeenCalledWith("El importe debe ser un número entero positivo.", "error");
+    });
+
+    it.each(["0", "365"])("permite guardar %s días con la validación de avisos de locales", async (valor) => {
+        const onGuardarValor = vi.fn().mockResolvedValue(undefined);
+        render(<ComponentePrueba validarNumero={validarAnticipacionAvisoLocales} onGuardarValor={onGuardarValor} />);
+        fireEvent.change(campo(), { target: { value: valor } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(onGuardarValor).toHaveBeenCalledExactlyOnceWith(valor));
+        await waitFor(() => expect(botonGuardar()).toBeDisabled());
+        expect(mocks.notificar).not.toHaveBeenCalledWith(expect.anything(), "error");
+    });
+
+    it("muestra en un toast el límite de la validación personalizada sin guardar", () => {
+        const onGuardarValor = vi.fn();
+        render(<ComponentePrueba validarNumero={validarAnticipacionAvisoLocales} onGuardarValor={onGuardarValor} />);
+        fireEvent.change(campo(), { target: { value: "366" } });
+        fireEvent.click(botonGuardar());
+        expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith("La anticipación de los avisos de locales debe ser un entero entre 0 y 365 días.", "error");
+        expect(onGuardarValor).not.toHaveBeenCalled();
+        expect(botonGuardar()).toBeEnabled();
+    });
+
+    it("mantiene el campo obligatorio al utilizar una validación personalizada", async () => {
+        const onGuardarValor = vi.fn();
+        render(<ComponentePrueba validarNumero={validarAnticipacionAvisoLocales} onGuardarValor={onGuardarValor} />);
+        fireEvent.change(campo(), { target: { value: "" } });
+        fireEvent.click(botonGuardar());
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(campo()).toHaveAttribute("aria-invalid", "true");
+        expect(onGuardarValor).not.toHaveBeenCalled();
     });
 
     it("configura el campo para URL y permite escribir una dirección", () => {

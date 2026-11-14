@@ -9,8 +9,9 @@ import { Divider } from "@mui/material";
 import type { Especie } from "../tarjetas-configuracion/fotos-especies/TarjetaUploadFotoEspecie";
 import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracion/acciones/foto-especie";
 import { guardarConfiguraciones } from "@/modulos/administracion/acciones/guardar-configuracion";
-import { CLAVES_VIGENCIA_PUBLICACIONES, type TipoPropietarioPublicacion } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
+import { CLAVES_VIGENCIA_PUBLICACIONES, MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES, type TipoPropietarioPublicacion } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
 import { CLAVES_AGING_FOTOS, type TipoPropietarioFoto } from "@/modulos/publicaciones/claves-aging-fotos";
+import { CLAVE_ANTICIPACION_AVISO_LOCALES, DIAS_ANTICIPACION_AVISO_LOCALES, validarAnticipacionAvisoLocales } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
 import TarjetaOrdenamientoPredeterminado, { type ConfiguracionOrdenamiento, type OrdenPublicaciones } from "../tarjetas-configuracion/ordenamiento-predeterminado/TarjetaOrdenamientoPredeterminado";
 import TarjetaVigencia, { type ConfiguracionVigenciaFotos } from "../tarjetas-configuracion/vigencia/TarjetaVigencia";
 import TarjetaRestablecimientoContraseña from "../tarjetas-configuracion/restablecimiento-contraseña/TarjetaRestablecimientoContraseña";
@@ -35,6 +36,15 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
     const importeServer = configuracion.incremento_precio ?? "";
     const [importe, setImporte] = useState(importeServer);
     const [importePropAnterior, setImportePropAnterior] = useState(importeServer);
+
+    const anticipacionLocalesServer = configuracion[CLAVE_ANTICIPACION_AVISO_LOCALES] ?? String(DIAS_ANTICIPACION_AVISO_LOCALES);
+    const [anticipacionLocales, setAnticipacionLocales] = useState(anticipacionLocalesServer);
+    const [anticipacionLocalesAnterior, setAnticipacionLocalesAnterior] = useState(anticipacionLocalesServer);
+
+    if (anticipacionLocalesAnterior !== anticipacionLocalesServer) {
+        setAnticipacionLocalesAnterior(anticipacionLocalesServer);
+        setAnticipacionLocales(anticipacionLocalesServer);
+    }
    
     if (importePropAnterior !== importeServer) {
         setImportePropAnterior(importeServer);
@@ -60,6 +70,12 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
     async function guardarImporte(valor: string): Promise<void> {
         await guardarConfiguraciones({incremento_precio: valor});
         setImporte(valor);
+        router.refresh();
+    }
+
+    async function guardarAnticipacionLocales(valor: string): Promise<void> {
+        await guardarConfiguraciones({ [CLAVE_ANTICIPACION_AVISO_LOCALES]: valor });
+        setAnticipacionLocales(valor);
         router.refresh();
     }
 
@@ -196,22 +212,37 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
             <TarjetaVigencia
                 titulo="Vigencia de publicaciones de operadores"
+                avisosIndependientes
+                maximoDiasAnticipacion={MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES}
                 descripcion="Configurá el plazo predeterminado y máximo de las publicaciones de operadores y sus avisos de próximo vencimiento."
                 etiquetaVencimiento="Vencimiento de publicaciones"
                 ayudaVencimiento="Al guardar, las publicaciones sin fecha reciben el plazo y las fechas posteriores se acortan. Las fechas anteriores se conservan. Desactivar mantiene las fechas existentes."
-                ayudaAvisos="Notificar a los operadores."
+                ayudaAvisos="Notificar según la fecha de cada publicación, aunque el vencimiento administrativo esté desactivado."
                 configuracion={obtenerVigenciaPublicaciones("OPERADOR")}
                 onGuardar={(valores) => guardarVigenciaPublicaciones("OPERADOR", valores)}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
             <TarjetaVigencia
                 titulo="Vigencia de publicaciones de productores"
+                avisosIndependientes
+                maximoDiasAnticipacion={MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES}
                 descripcion="Configurá el plazo predeterminado y máximo de las publicaciones de productores y sus avisos de próximo vencimiento."
                 etiquetaVencimiento="Vencimiento de publicaciones"
                 ayudaVencimiento="Al guardar, las publicaciones sin fecha reciben el plazo y las fechas posteriores se acortan. Las fechas anteriores se conservan. Desactivar mantiene las fechas existentes."
-                ayudaAvisos="Notificar a los productores."
+                ayudaAvisos="Notificar según la fecha de cada publicación, aunque el vencimiento administrativo esté desactivado."
                 configuracion={obtenerVigenciaPublicaciones("PRODUCTOR")}
                 onGuardar={(valores) => guardarVigenciaPublicaciones("PRODUCTOR", valores)}
+            />
+            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
+            <TarjetaInput
+                titulo="Avisos de vencimiento de locales"
+                descripcion="Días de anticipación para avisar a los administradores del vencimiento de un contrato de local. Entre 0 y 365. Con 0 se avisa el día del vencimiento."
+                label="Días de anticipación del aviso de locales"
+                valor={anticipacionLocales}
+                validarNumero={validarAnticipacionAvisoLocales}
+                mensajeExito="La anticipación de los avisos de locales se guardó correctamente."
+                onChangeValor={setAnticipacionLocales}
+                onGuardarValor={guardarAnticipacionLocales}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
             <TarjetaRestablecimientoContraseña

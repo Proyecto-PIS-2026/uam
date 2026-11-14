@@ -14,11 +14,18 @@ interface TarjetaInputProps {
     valor?: string;
     tipo?: "numero" | "url";
     mensajeExito?: string;
+    validarNumero?: (valor: string) => void;
     onChangeValor?: (valor: string) => void;
     onGuardarValor?: (valor: string) => Promise<void>;
 }
 
-export default function TarjetaInput({ titulo, descripcion, label, valor = "", tipo = "numero", mensajeExito = "", onChangeValor, onGuardarValor }: TarjetaInputProps) {
+function validarImporte(valor: string): void {
+    if (!/^[0-9]+$/.test(valor) || !Number.isSafeInteger(Number(valor)) || Number(valor) <= 0) {
+        throw new Error("El importe debe ser un número entero positivo.");
+    }
+}
+
+export default function TarjetaInput({ titulo, descripcion, label, valor = "", tipo = "numero", mensajeExito = "", validarNumero = validarImporte, onChangeValor, onGuardarValor }: TarjetaInputProps) {
     const id = useId();
     const [guardando, setGuardando] = useState(false);
     const [valorInicialGuardado, setValorInicialGuardado] = useState(valor);
@@ -38,9 +45,13 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
         if (guardando || !huboCambios) {
             return;
         }
-        if (tipo === "numero" && (!/^[0-9]+$/.test(valor) || !Number.isSafeInteger(Number(valor)) || Number(valor) <= 0)) {
-            notificar("El importe debe ser un número entero positivo.", "error");
-            return;
+        if (tipo === "numero") {
+            try {
+                validarNumero(valor);
+            } catch (error) {
+                notificar(error instanceof Error ? error.message : "El valor ingresado no es válido.", "error");
+                return;
+            }
         }
         if (tipo === "url") {
             if (!valor.trim()) {

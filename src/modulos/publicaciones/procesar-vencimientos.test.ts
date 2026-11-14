@@ -328,6 +328,30 @@ describe("procesarVencimientosUsuario", () => {
     });
 
     describe("publicaciones próximas a vencer", () => {
+        it.each(["operador", "productor"] as const)("avisa la fecha propia del %s aunque la vigencia administrativa esté desactivada", async (rol) => {
+            const configuracion: Record<string, string> = {
+                [`vigencia_publicaciones_${rol}_habilitada`]: "false",
+                [`vigencia_publicaciones_${rol}`]: "",
+                [`aviso_vencimiento_publicaciones_${rol}_habilitado`]: "true",
+                [`anticipacion_aviso_publicaciones_${rol}`]: "3",
+            };
+            mocks.configFirst.mockImplementation(async (nombre: string) => ({ valorConfiguracion: configuracion[nombre] }));
+            comoRol(rol, [relacion(1, PROXIMA), relacion(2, AHORA.add({ hours: 4 * 24 }))]);
+
+            await procesarVencimientosUsuario(USUARIO);
+
+            expect(mocks.enviarNotificacion).toHaveBeenCalledExactlyOnceWith({
+                texto: textoAviso("2026-11-06"),
+                usuarios: [USUARIO],
+                url: rol === "operador" ? "/mi-mercado?publicacion=1" : "/mi-mercado/productor?publicacion=1",
+            }, mocks.tx);
+            expect(publicacionesActuales.get(1)).toMatchObject({
+                fechaVigencia: PROXIMA.toString(), publicacionDisponible: true, avisoProximoVencimientoEn: AHORA,
+            });
+            expect(publicacionesActuales.get(2)?.avisoProximoVencimientoEn).toBeNull();
+            expect(mocks.publicacionUpdate).not.toHaveBeenCalled();
+        });
+
         it.each(["operador", "productor"] as const)(
             "notifica sin modificar la disponibilidad cuando la publicación de un %s está próxima a vencer",
             async (rol) => {
