@@ -43,7 +43,7 @@ describe("consultas del histórico persistido", () => {
         leer.mockImplementation(async () => { orden.push("leer"); return estado(); });
         const { historico: recibido } = await obtenerHistoricoPreciosConFiltros(consulta);
         expect(orden).toEqual(["actualizar", "leer"]);
-        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60);
+        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, consulta.desde);
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
         expect(recibido.series.map((dia) => dia.date)).toEqual(["2026-10-01", "2026-10-08"]);
         expect(recibido.from).toBe(consulta.desde);
@@ -56,7 +56,7 @@ describe("consultas del histórico persistido", () => {
 
         const pendiente = obtenerHistoricoPreciosConFiltros(consulta);
 
-        await vi.waitFor(() => expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60));
+        await vi.waitFor(() => expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, consulta.desde));
         expect(leer).not.toHaveBeenCalled();
         completarActualizacion();
         await expect(pendiente).resolves.toMatchObject({ historico: { species_id: 60 } });
@@ -74,7 +74,7 @@ describe("consultas del histórico persistido", () => {
 
         await expect(obtenerHistoricoPreciosConFiltros(consulta)).resolves.toMatchObject({ historico: { species_id: 60 } });
 
-        expect(actualizarEspecie.mock.calls).toEqual([[61], [60]]);
+        expect(actualizarEspecie.mock.calls).toEqual([[61, consulta.desde], [60, consulta.desde]]);
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
         completarOtraEspecie();
         await expect(otraConsulta).resolves.toMatchObject({ historico: { species_id: 61 } });
@@ -100,7 +100,52 @@ describe("consultas del histórico persistido", () => {
         expect(leer.mock.calls).toEqual([[60], [60]]);
     });
 
-    it("devuelve solamente la intersección disponible cuando el rango solicitado empieza antes de la cobertura guardada", async () => {
+    it("espera la ampliación hacia atrás y filtra los datos nuevos por el período y los atributos solicitados", async () => {
+        let guardado = estado();
+        const periodoSolicitado = { ...consulta, desde: "2018-01-01", hasta: "2019-12-31" };
+        let completarAmpliacion!: () => void;
+        const ampliacion = new Promise<void>((resolve) => { completarAmpliacion = resolve; });
+        actualizarEspecie.mockImplementation(async () => {
+            await ampliacion;
+            guardado = {
+                ...guardado,
+                historico: {
+                    ...guardado.historico,
+                    from: periodoSolicitado.desde,
+                    series: [
+                        { date: "2018-06-01", presentations: [presentacion()] },
+                        { date: "2019-06-01", presentations: [presentacion("Otra")] },
+                        { date: "2020-06-01", presentations: [presentacion()] },
+                        ...guardado.historico.series,
+                    ],
+                },
+            };
+        });
+        leer.mockImplementation(async () => guardado);
+
+        const pendiente = obtenerHistoricoPreciosConFiltros(periodoSolicitado, { variedad: "Cavendish", categoria: "I" });
+
+        try {
+            expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, periodoSolicitado.desde);
+            expect(leer).not.toHaveBeenCalled();
+            completarAmpliacion();
+            const recibido = await pendiente;
+
+            expect(recibido.historico.from).toBe(periodoSolicitado.desde);
+            expect(recibido.historico.to).toBe(periodoSolicitado.hasta);
+            expect(recibido.historico.series).toEqual([{
+                date: "2018-06-01",
+                presentations: [{ ...presentacion(), prices: [presentacion().prices[0]] }],
+            }]);
+            expect(recibido.opcionesFiltros.variedades).toEqual(["Cavendish", "Otra"]);
+            expect(leer).toHaveBeenCalledExactlyOnceWith(60);
+        } finally {
+            completarAmpliacion();
+            await Promise.allSettled([pendiente]);
+        }
+    });
+
+    it("devuelve la intersección disponible si la sincronización no pudo ampliar la cobertura guardada", async () => {
         const guardado = estado();
         guardado.historico.from = "2023-01-01";
         guardado.historico.series = [
@@ -121,11 +166,11 @@ describe("consultas del histórico persistido", () => {
             calibres: ["G", "M", "P"], categorias: ["I", "II"],
         });
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
-        expect(actualizarEspecie).toHaveBeenCalledOnce();
+        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, periodoSolicitado.desde);
         expect(guardado).toStrictEqual(original);
     });
 
-    it("devuelve un resultado vacío sin fallar cuando todo el rango solicitado es anterior a la cobertura guardada", async () => {
+    it("devuelve un resultado vacío si la sincronización no pudo ampliar un rango totalmente anterior a la cobertura guardada", async () => {
         const guardado = estado();
         guardado.historico.from = "2023-01-01";
         guardado.historico.series = guardado.historico.series.slice(1);
@@ -141,7 +186,7 @@ describe("consultas del histórico persistido", () => {
         });
 
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
-        expect(actualizarEspecie).toHaveBeenCalledOnce();
+        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, periodoSolicitado.desde);
         expect(guardado).toStrictEqual(original);
     });
 
@@ -162,7 +207,7 @@ describe("consultas del histórico persistido", () => {
             obtenerHistoricoPreciosConFiltros({ ...consulta, speciesId: 61 }),
         ]);
 
-        expect(actualizarEspecie.mock.calls).toEqual([[60], [61]]);
+        expect(actualizarEspecie.mock.calls).toEqual([[60, consulta.desde], [61, consulta.desde]]);
         expect(leer.mock.calls).toEqual([[60], [61]]);
         expect(resultados.map((resultado) => resultado.historico.species_id)).toEqual([60, 61]);
     });
@@ -170,7 +215,7 @@ describe("consultas del histórico persistido", () => {
     it("informa que no hay un histórico disponible si la carga automática no pudo crear el registro", async () => {
         leer.mockResolvedValue(null);
         await expect(obtenerHistoricoPreciosConFiltros(consulta)).rejects.toThrow("No se pudo obtener el histórico de esta especie");
-        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60);
+        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, consulta.desde);
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
     });
 

@@ -10,7 +10,7 @@ export async function obtenerHistoricoPreciosConFiltros(consulta: ConsultaHistor
     opcionesFiltros: OpcionesFiltrosHistoricos;
 }> {
     validarParametrosConsulta(consulta);
-    await actualizarHistoricoEspecie(consulta.speciesId);
+    await actualizarHistoricoEspecie(consulta.speciesId, consulta.desde);
     const estado = await leerHistorico(consulta.speciesId);
     if (!estado) throw new Error("No se pudo obtener el histórico de esta especie. Podés volver a intentar.");
     const periodo = filtrarHistorico(estado.historico, consulta);

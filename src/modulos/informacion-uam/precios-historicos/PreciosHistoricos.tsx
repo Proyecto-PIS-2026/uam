@@ -228,7 +228,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         if (cargandoTabla || rangoInvalido || !fechaDesde || !fechaHasta || !especieConsulta) return;
         const mismosFiltros = variedad === producto.variedad && pais === producto.pais
             && calibre === producto.calibre && categoria === producto.categoria;
-        if (!cambioEspecie && mismosFiltros && fechaDesde >= desde && fechaHasta <= hasta && historico && !error) {
+        if (!cambioEspecie && mismosFiltros && fechaDesde >= desde && fechaHasta <= hasta && historico && historico.series.length > 0 && !error
+            && fechaDesde >= historico.from && fechaHasta <= historico.to) {
             setPeriodoVisible({ desde: fechaDesde, hasta: fechaHasta });
             setPagina(1);
             actualizarUrl({ from: fechaDesde, to: fechaHasta });
