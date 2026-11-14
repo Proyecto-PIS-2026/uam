@@ -45,6 +45,8 @@ export async function bloquearElemento(tx: TransaccionCatalogo, tipo: TipoCatalo
 }
 
 export async function guardarValor(tx: TransaccionCatalogo, tipo: TipoCatalogo, datos: DatosCatalogo, id?: number): Promise<void> {
+    // Se edita solo el catálogo: las publicaciones muestran el valor por su referencia,
+    // conservando su fecha y versión, sin registrar una modificación estadística.
     switch (tipo) {
         case "empaquetados":
             if (id === undefined) await tx.orm.public.Envase.create({ nombreEnvase: datos.nombre });

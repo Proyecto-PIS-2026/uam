@@ -41,7 +41,7 @@ function extraerLicencia(comentario: string | null) {
 
 export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil: PerfilPropioOperador; alCancelar: () => void }) {
     const router = useRouter();
-    const { notificar } = useNotificacionToast();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const actual = separar(perfil.contacto);
     const [codigoPais, setCodigoPais] = useState(actual.codigo);
     const [telefono, setTelefono] = useState(actual.telefono);
@@ -55,7 +55,6 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
     const finLicenciaMinimo = inicioLicencia > hoy ? inicioLicencia : hoy;
     const [comentario, setComentario] = useState(licencia.comentario);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
-    const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
     const enCurso = useRef(false);
     async function guardar(evento: FormEvent<HTMLFormElement>) {
@@ -63,7 +62,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
         if (enCurso.current) return;
         enCurso.current = true;
         setGuardando(true);
-        setErrores([]);
+        cerrarNotificacion();
         try {
             const resultado = await modificarPerfilPropio({
                 nombre,
@@ -75,14 +74,14 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                 comentario,
             }, ...argumentosFotoPerfil(foto));
             if (!resultado.esValido) {
-                setErrores(resultado.errores);
+                notificar(resultado.errores.join("\n"), "error");
                 return;
             }
             notificar(resultado.mensaje, "success");
             alCancelar();
             router.refresh();
         } catch {
-            setErrores(["No se pudieron guardar los cambios. Intentá nuevamente."]);
+            notificar("No se pudieron guardar los cambios. Intentá nuevamente.", "error");
         } finally {
             enCurso.current = false;
             setGuardando(false);
@@ -102,11 +101,11 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                 </header>
                 <form className={styles.formulario} onSubmit={guardar} noValidate>
                     <section className={styles.seccion}>
-                        <SelectorFotoPerfil nombre={nombre} fotoActual={perfil.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => setErrores([mensaje])} deshabilitado={guardando} />
-                        <TextField label="Nombre" value={nombre} onChange={(event) => setNombre(event.target.value)} disabled={guardando} fullWidth />
+                        <SelectorFotoPerfil nombre={nombre} fotoActual={perfil.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
+                        <TextField label="Nombre" required value={nombre} onChange={(event) => setNombre(event.target.value)} disabled={guardando} fullWidth />
                         
                         <div className={styles.telefono}>
-                            <TextField select label="Código de país" value={codigoPais} onChange={(event) => setCodigoPais(event.target.value)} disabled={guardando}>
+                            <TextField select label="Código de país" required value={codigoPais} onChange={(event) => setCodigoPais(event.target.value)} disabled={guardando}>
                                 {CODIGOS_PAIS.map(({ codigo, pais }) => <MenuItem key={codigo} value={codigo}>{codigo} ({pais})</MenuItem>)}
                             </TextField>
                             <TextField label="Teléfono" required type="tel" value={telefono} onChange={(event) => { if (/^[0-9]*$/.test(event.target.value)) setTelefono(event.target.value); }} disabled={guardando} />
@@ -135,6 +134,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                                 <div className={styles.fechasLicencia}>
                                     <TextField
                                         label="Inicio de licencia"
+                                        required
                                         type="date"
                                         value={inicioLicencia}
                                         onChange={(event) => setInicioLicencia(event.target.value)}
@@ -144,6 +144,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                                     />
                                     <TextField
                                         label="Fin de licencia"
+                                        required
                                         type="date"
                                         value={finLicencia}
                                         onChange={(event) => setFinLicencia(event.target.value)}
@@ -156,7 +157,6 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                             </>
                         )}
                     </section>
-                    {errores.length > 0 && <div className={styles.error} role="alert">{errores.map((error) => <p key={error}>{error}</p>)}</div>}
                     <div className={styles.acciones}>
                         <button className={styles.cancelar} type="button" onClick={alCancelar} disabled={guardando}>Cancelar</button>
                         <button className={styles.guardar} type="submit" disabled={guardando}>{guardando ? "Guardando..." : "Guardar cambios"}</button>

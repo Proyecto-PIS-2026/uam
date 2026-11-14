@@ -18,7 +18,7 @@ test("BP-04.1: inicio de sesión de Operador y Productor", async ({ page }) => c
     contrasena: process.env.E2E_PRODUCTOR_PASS ?? "",
   };
 
-  const mensajeError = page.locator("form").getByRole("alert");
+  const mensajeError = page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert");
   const menuUsuario = page.getByRole("button", { name: "Abrir menú de usuario" });
 
   async function comprobarQueNoInicioSesion(mensaje: string) {

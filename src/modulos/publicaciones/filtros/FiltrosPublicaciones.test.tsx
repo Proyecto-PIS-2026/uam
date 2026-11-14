@@ -1,4 +1,4 @@
-import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, fireEvent, waitFor } from "@/test-utils";
 import styles from "./FiltrosPublicaciones.module.css";
 import FiltrosPublicaciones from "./FiltrosPublicaciones";
 import type { PublicacionListado } from "../../consulta-mercado/acciones/PublicacionesOperador";

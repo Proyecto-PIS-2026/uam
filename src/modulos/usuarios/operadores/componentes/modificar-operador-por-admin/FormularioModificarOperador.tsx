@@ -82,8 +82,7 @@ export default function FormularioModificarOperador({
         })),
     );
 
-    const [errores, setErrores] = useState<string[]>([]);
-    const { notificar } = useNotificacionToast();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
@@ -127,7 +126,7 @@ export default function FormularioModificarOperador({
             actuales.filter((_, i) => i !== indice),
         );
 
-        setErrores([]);
+        cerrarNotificacion();
     }
 
     function cancelar() {
@@ -142,7 +141,7 @@ export default function FormularioModificarOperador({
         if (guardadoEnCurso.current) return;
         guardadoEnCurso.current = true;
 
-        setErrores([]);
+        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -161,10 +160,11 @@ export default function FormularioModificarOperador({
             }, ...argumentosFotoPerfil(foto));
 
             if (!resultado.esValido) {
-                setErrores(resultado.errores);
+                notificar(resultado.errores.join("\n"), "error");
                 return;
             }
 
+            notificar(resultado.mensaje, "success");
             router.push(`/gestion-operadores/${resultado.id}`);
         } catch (error) {
             console.error(
@@ -218,6 +218,7 @@ export default function FormularioModificarOperador({
                             size="small"
                             className={styles.control}
                             label="Nombre"
+                            required
                             value={nombre}
                             onChange={(evento) => setNombre(evento.target.value)}
                             disabled={guardando}
@@ -231,6 +232,7 @@ export default function FormularioModificarOperador({
                                 className={styles.control}
                                 id={`${idFormulario}-codigo`}
                                 label="Código de país"
+                                required
                                 value={codigoPais}
                                 onChange={(evento) => setCodigoPais(evento.target.value)}
                                 disabled={guardando}
@@ -342,7 +344,8 @@ export default function FormularioModificarOperador({
                                                 className={styles.control}
                                                 id={`${idFormulario}-nave-${indice}`}
                                                 label="Nave"
-                                                value={local.naveId}
+                                                required
+                                                value={local.naveId || ""}
                                                 onChange={(evento) => actualizarLocal(indice, "naveId", Number(evento.target.value))}
                                                 disabled={guardando}
                                             >
@@ -401,8 +404,8 @@ export default function FormularioModificarOperador({
                         {enLicencia && (
                             <>
                                 <div className={styles.fechasLicencia}>
-                                    <TextField label="Inicio de licencia" type="date" value={inicioLicencia} onChange={(evento) => setInicioLicencia(evento.target.value)} disabled={guardando} slotProps={{ inputLabel: { shrink: true } }} size="small" />
-                                    <TextField label="Fin de licencia" type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: finLicenciaMinimo }, inputLabel: { shrink: true } }} size="small" />
+                                    <TextField label="Inicio de licencia" required type="date" value={inicioLicencia} onChange={(evento) => setInicioLicencia(evento.target.value)} disabled={guardando} slotProps={{ inputLabel: { shrink: true } }} size="small" />
+                                    <TextField label="Fin de licencia" required type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: finLicenciaMinimo }, inputLabel: { shrink: true } }} size="small" />
                                 </div>
                                 <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(evento) => setComentario(evento.target.value)} disabled={guardando} fullWidth />
                             </>
@@ -429,6 +432,7 @@ export default function FormularioModificarOperador({
                                 size="small"
                                 className={styles.control}
                                 label="Nueva contraseña"
+                                required={Boolean(contraseña || confirmacionContraseña)}
                                 type="password"
                                 value={contraseña}
                                 onChange={(evento) => setContraseña(evento.target.value)}
@@ -441,6 +445,7 @@ export default function FormularioModificarOperador({
                                 size="small"
                                 className={styles.control}
                                 label="Confirmar contraseña"
+                                required={Boolean(contraseña || confirmacionContraseña)}
                                 type="password"
                                 value={confirmacionContraseña}
                                 onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
@@ -449,17 +454,6 @@ export default function FormularioModificarOperador({
                             />
                         </div>
                     </section>
-
-                    {errores.length > 0 && (
-                        <div
-                            className={styles.error}
-                            role="alert"
-                        >
-                            {errores.map((error) => (
-                                <p key={error}>{error}</p>
-                            ))}
-                        </div>
-                    )}
 
                     <div className={styles.acciones}>
                         <button

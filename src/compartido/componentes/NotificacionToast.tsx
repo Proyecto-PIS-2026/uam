@@ -6,6 +6,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import Alert from "@mui/material/Alert";
 import Fade from "@mui/material/Fade";
 import Portal from "@mui/material/Portal";
+import { useErroresValidacionNativa } from "./validacion-nativa-toast";
 import styles from "./NotificacionToast.module.css";
 
 type TipoNotificacion = "success" | "error" | "warning" | "info";
@@ -117,6 +118,11 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
     const cerrarOrigen = useCallback((origen: string) => {
         setNotificaciones((actuales) => actuales.map((aviso) => aviso.origen === origen ? { ...aviso, cerrando: true } : aviso));
     }, []);
+    const notificarValidacionNativa = useCallback((mensaje: string) => {
+        cerrarOrigen("validacion-nativa");
+        agregar("validacion-nativa", mensaje, "error");
+    }, [agregar, cerrarOrigen]);
+    useErroresValidacionNativa(notificarValidacionNativa);
     const servicio = useMemo(() => ({ agregar, cerrarOrigen }), [agregar, cerrarOrigen]);
     const pausar = useCallback((id: number, motivo: "puntero" | "foco", activa: boolean) => {
         const clave = `${id}:${motivo}`;
@@ -196,10 +202,10 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
                 <Portal container={contenedor}>
                     <div ref={asignarViewport} className={styles.contenedor} style={espacio} role="region" aria-label="Notificaciones">
                         <div className={styles.pila}>
-                            {notificaciones.map((aviso, indice) => {
+                            {notificaciones.map((aviso) => {
                                 const urgente = aviso.tipo === "error" || aviso.tipo === "warning";
                                 return (
-                                    <div key={aviso.id} className={`${styles.elemento} ${indice < notificaciones.length - 2 ? styles.antigua : ""}`} aria-hidden={aviso.cerrando || undefined} inert={aviso.cerrando || undefined}>
+                                    <div key={aviso.id} className={styles.elemento} aria-hidden={aviso.cerrando || undefined} inert={aviso.cerrando || undefined}>
                                         <Fade in={!aviso.cerrando} appear timeout={{ enter: 200, exit: DURACION_SALIDA }} onExited={() => retirar(aviso.id)}>
                                             <Alert
                                                 className={`${styles.alerta} ${styles[aviso.tipo]}`}

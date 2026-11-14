@@ -51,8 +51,7 @@
     flex-shrink: 0;
 }
 
-.ayuda,
-.error {
+.ayuda {
     margin: 0;
     font-size: var(--tamano-texto-secundario);
     line-height: var(--interlineado-texto);
@@ -208,9 +207,6 @@
     color: var(--color-muted);
 }
 
-.error {
-    color: var(--color-danger);
-}
 
 .pie {
     justify-content: flex-end;

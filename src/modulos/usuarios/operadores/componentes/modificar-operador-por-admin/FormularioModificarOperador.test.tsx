@@ -82,18 +82,18 @@ describe("FormularioModificarOperador", () => {
     it("muestra los datos actuales del operador", () => {
         renderizar();
 
-        expect(valorDe(screen.getByLabelText("Nombre"))).toBe("Caporale");
+        expect(valorDe(screen.getByLabelText(/^Nombre\s*\*?$/))).toBe("Caporale");
         expect(screen.getByRole("combobox", { name: "Código de país" })).toHaveTextContent("+598");
         expect(valorDe(screen.getByLabelText(/Teléfono/))).toBe("99123456");
         expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
         expect(valorDe(screen.getByLabelText(/^Número de local/))).toBe("022");
         expect(valorDe(screen.getByLabelText("Fin de contrato"))).toBe("2026-12-31");
-        expect(valorDe(screen.getByLabelText("Nueva contraseña"))).toBe("");
-        expect(valorDe(screen.getByLabelText("Confirmar contraseña"))).toBe("");
+        expect(valorDe(screen.getByLabelText(/^Nueva contraseña\s*\*?$/))).toBe("");
+        expect(valorDe(screen.getByLabelText(/^Confirmar contraseña\s*\*?$/))).toBe("");
     });
 
     it("pide aceptar el aviso de UAM antes de marcar la licencia y sólo persiste al guardar", async () => {
-        modificarOperadorMock.mockResolvedValue({ esValido: true, id: 7 });
+        modificarOperadorMock.mockResolvedValue({ esValido: true, id: 7, mensaje: "Operador modificado correctamente." });
         renderizar();
         const licencia = screen.getByRole("switch", { name: "En licencia" });
 
@@ -108,13 +108,20 @@ describe("FormularioModificarOperador", () => {
         await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
         expect(licencia).toBeChecked();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
-        expect(screen.getByLabelText("Inicio de licencia")).not.toHaveAttribute("min");
-        expect(screen.getByLabelText("Fin de licencia")).toHaveAttribute("min", "2026-11-14");
-        fireEvent.change(screen.getByLabelText("Inicio de licencia"), { target: { value: "2999-11-05" } });
-        expect(screen.getByLabelText("Fin de licencia")).toHaveAttribute("min", "2999-11-05");
-        fireEvent.change(screen.getByLabelText("Inicio de licencia"), { target: { value: "2000-11-05" } });
-        expect(screen.getByLabelText("Fin de licencia")).toHaveAttribute("min", "2026-11-14");
-        fireEvent.change(screen.getByLabelText("Fin de licencia"), { target: { value: "2026-11-14" } });
+        apretarGuardar();
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/)).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("aria-invalid", "true");
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
+        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/)).not.toHaveAttribute("min");
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("min", "2026-11-14");
+        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/), { target: { value: "2999-11-05" } });
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("min", "2999-11-05");
+        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/), { target: { value: "2000-11-05" } });
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("min", "2026-11-14");
+        fireEvent.change(screen.getByLabelText(/^Fin de licencia\s*\*?$/), { target: { value: "2026-11-14" } });
+        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/)).not.toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).not.toHaveAttribute("aria-invalid", "true");
         apretarGuardar();
 
         await waitFor(() => expect(modificarOperadorMock).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
@@ -133,7 +140,7 @@ describe("FormularioModificarOperador", () => {
 
         await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
         expect(licencia).not.toBeChecked();
-        expect(screen.queryByLabelText("Inicio de licencia")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Inicio de licencia\s*\*?$/)).not.toBeInTheDocument();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
         expect(push).not.toHaveBeenCalled();
     });
@@ -148,7 +155,7 @@ describe("FormularioModificarOperador", () => {
 
         expect(licencia).not.toBeChecked();
         expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-        expect(screen.queryByLabelText("Inicio de licencia")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Inicio de licencia\s*\*?$/)).not.toBeInTheDocument();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
     });
 
@@ -245,10 +252,10 @@ describe("FormularioModificarOperador", () => {
     });
 
     it("envía los datos modificados y vuelve al perfil cuando la modificación es válida", async () => {
-        modificarOperadorMock.mockResolvedValue({ esValido: true, id: 7 });
+        modificarOperadorMock.mockResolvedValue({ esValido: true, id: 7, mensaje: "Operador modificado correctamente." });
         renderizar();
 
-        fireEvent.change(screen.getByLabelText("Nombre"), {
+        fireEvent.change(screen.getByLabelText(/^Nombre\s*\*?$/), {
             target: { value: "Caporale Hermanos" },
         });
         fireEvent.change(screen.getByLabelText(/Teléfono/), {
@@ -266,6 +273,9 @@ describe("FormularioModificarOperador", () => {
             expect(push).toHaveBeenCalledWith("/gestion-operadores/7");
         });
         expect(modificarOperadorMock).toHaveBeenCalledTimes(1);
+        expect(within(screen.getByRole("region", { name: "Notificaciones" })).getByRole("status")).toHaveTextContent("Operador modificado correctamente.");
+        const formulario = screen.getByRole("button", { name: "Guardar cambios" }).closest("form")!;
+        expect(within(formulario).queryByRole("status")).not.toBeInTheDocument();
         expect(modificarOperadorMock).toHaveBeenCalledWith({
             operadorId: 7,
             nombre: "Caporale Hermanos",
@@ -282,13 +292,13 @@ describe("FormularioModificarOperador", () => {
     });
 
     it("envía la nueva contraseña y su confirmación", async () => {
-        modificarOperadorMock.mockResolvedValue({ esValido: true, id: 7 });
+        modificarOperadorMock.mockResolvedValue({ esValido: true, id: 7, mensaje: "Operador modificado correctamente." });
         renderizar();
 
-        fireEvent.change(screen.getByLabelText("Nueva contraseña"), {
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña\s*\*?$/), {
             target: { value: "contraseña123" },
         });
-        fireEvent.change(screen.getByLabelText("Confirmar contraseña"), {
+        fireEvent.change(screen.getByLabelText(/^Confirmar contraseña\s*\*?$/), {
             target: { value: "contraseña123" },
         });
         apretarGuardar();
@@ -353,7 +363,7 @@ describe("FormularioModificarOperador", () => {
         }
         expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 
-        resolver({ esValido: true, id: 7 });
+        resolver({ esValido: true, id: 7, mensaje: "Operador modificado correctamente." });
         await waitFor(() => {
             expect(push).toHaveBeenCalledWith("/gestion-operadores/7");
         });

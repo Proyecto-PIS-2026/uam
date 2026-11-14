@@ -80,7 +80,7 @@ test.describe("BP-16: Restablecimiento de contraseña", () => {
             await abrirCambio(page, cuenta);
             await completar(page, cuenta.contrasena, nueva);
             await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-            await expect(page.getByRole("form", { name: "Cambio de contraseña" }).getByRole("status"))
+            await expect(page.getByRole("region", { name: "Notificaciones" }).getByRole("status"))
                 .toContainText("Tu contraseña se actualizó correctamente.");
             await salir(page);
             await enviarCredenciales(page, cuenta);
@@ -97,7 +97,7 @@ test.describe("BP-16: Restablecimiento de contraseña", () => {
             await abrirCambio(page, cuenta);
             await completar(page, "Actual_Incorrecta", "Nueva_BP16_2026");
             await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-            await expect(page.getByRole("form", { name: "Cambio de contraseña" }).getByRole("alert"))
+            await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert"))
                 .toContainText("La contraseña actual no es válida.");
             const { rows: [despues] } = await db.query('SELECT "passwordHash" FROM usuario WHERE id = $1', [cuenta.id]);
             expect(despues.passwordHash).toBe(antes.passwordHash);

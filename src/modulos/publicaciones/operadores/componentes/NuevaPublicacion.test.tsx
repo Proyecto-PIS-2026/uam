@@ -346,7 +346,7 @@ describe("NuevaPublicacion", () => {
     });
 
     it("muestra los errores devueltos al enviar", async () => {
-        prepararFetch({ errores: ["La publicación no es válida."] }, 400);
+        prepararFetch({ errores: ["La publicación no es válida.", "Revisá la especie seleccionada."] }, 400);
         renderDrawer();
         const boton = screen.getByRole("button", { name: "Confirmar" });
         await waitFor(() => expect(boton).toBeEnabled());
@@ -354,8 +354,10 @@ describe("NuevaPublicacion", () => {
         if (!formulario) throw new Error("No se encontró el formulario de publicación.");
         fireEvent.submit(formulario);
         expect(await screen.findByRole("alert")).toHaveTextContent("La publicación no es válida.");
-        expect(within(formulario).getByRole("alert")).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Cerrar notificación" })).not.toBeInTheDocument();
+        expect(screen.getByRole("alert")).toHaveTextContent("Revisá la especie seleccionada.");
+        expect(within(formulario).queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(screen.getByRole("alert"));
+        expect(screen.getByRole("button", { name: "Cerrar notificación" })).toBeInTheDocument();
     });
 
     it("muestra los fallos técnicos en un toast y conserva el formulario para reintentar", async () => {

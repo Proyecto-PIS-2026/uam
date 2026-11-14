@@ -72,7 +72,7 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
     }
 
     const contenido = (
-        <div className={styles.tarjeta}>
+        <form className={styles.tarjeta} noValidate onSubmit={(evento) => { evento.preventDefault(); void confirmar(); }}>
             <div id={`${id}-titulo`} className={styles.titulo}>
                 {titulo}
             </div>
@@ -80,7 +80,7 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
                 {descripcion}
             </div>
             <div className={styles.contenedorEdicion}>
-                <TextField  fullWidth size="small" label={label} type={tipo === "url" ? "url" : "text"}  value={valor}  disabled={guardando} className={styles.selectMui}
+                <TextField required fullWidth size="small" label={label} type={tipo === "url" ? "url" : "text"} value={valor} disabled={guardando} className={styles.selectMui}
                     slotProps={{htmlInput: {"aria-labelledby": label ? undefined : `${id}-titulo`, "aria-describedby": `${id}-descripcion`, inputMode: tipo === "url" ? "url" : "numeric", pattern: tipo === "url" ? undefined : "[0-9]*"}}}
                     onChange={(evento) => {
                         const nuevoValor = evento.target.value;
@@ -90,12 +90,12 @@ export default function TarjetaInput({ titulo, descripcion, label, valor = "", t
                     }}
                 />
                 <div className={styles.accionesEdicion}>
-                    <IconButton aria-label="Guardar cambios" className={`${styles.botonGuardar} ${huboCambios ? styles.botonGuardarActivo : ""}`} disabled={!huboCambios || guardando} onClick={confirmar}>
+                    <IconButton type="submit" aria-label="Guardar cambios" className={`${styles.botonGuardar} ${huboCambios ? styles.botonGuardarActivo : ""}`} disabled={!huboCambios || guardando}>
                         <CheckOutlinedIcon />
                     </IconButton>
                 </div>
             </div>
-        </div>
+        </form>
     );
     return contenido
 }

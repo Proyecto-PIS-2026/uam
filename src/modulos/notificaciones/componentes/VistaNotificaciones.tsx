@@ -10,7 +10,6 @@ import DoneAllIcon from "@mui/icons-material/DoneAll";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import CloudOffOutlinedIcon from "@mui/icons-material/CloudOffOutlined";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
@@ -36,7 +35,7 @@ function mensajeError(datos: unknown, alternativa: string): string {
     const respuesta = datos as { errores?: unknown; error?: unknown };
     if (Array.isArray(respuesta.errores)) {
         const mensajes = respuesta.errores.filter((mensaje): mensaje is string => typeof mensaje === "string" && mensaje.trim() !== "");
-        if (mensajes.length > 0) return mensajes.join(" ");
+        if (mensajes.length > 0) return mensajes.join("\n");
     }
     return typeof respuesta.error === "string" && respuesta.error.trim() ? respuesta.error : alternativa;
 }
@@ -52,7 +51,7 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
     const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [datos, setDatos] = useState<{ usuarioId: number; listado: NotificacionesUsuario } | null>(null);
     const [cargando, setCargando] = useState(true);
-    const [error, setError] = useState("");
+    const [cargaFallida, setCargaFallida] = useState(false);
     const [guardando, setGuardando] = useState<string | null>(null);
     const [confirmarBorrado, setConfirmarBorrado] = useState(false);
     const montado = useRef(false);
@@ -74,12 +73,12 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
                 throw new ErrorNotificaciones("La respuesta del servidor no es válida. Intentá nuevamente.");
             }
             setDatos({ usuarioId, listado: { notificaciones: (resultado as NotificacionesUsuario).notificaciones, noLeidas } });
-            setError("");
+            setCargaFallida(false);
             notificarCambioNotificaciones(usuarioId, noLeidas);
         } catch (razon) {
             if (!montado.current || carga.current !== solicitud || solicitud.signal.aborted) return;
             const mensaje = razon instanceof ErrorNotificaciones ? razon.message : "No se pudieron cargar las notificaciones. Intentá nuevamente.";
-            setError(mensaje);
+            setCargaFallida(true);
             notificar(mensaje, "error");
         } finally {
             if (carga.current === solicitud) {
@@ -197,9 +196,7 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
                         </button>
                     </div>
                 </div>
-                {error && <div className={styles.error}>
-                    <CloudOffOutlinedIcon aria-hidden="true" />
-                    <p>{error}</p>
+                {cargaFallida && <div className={styles.reintento}>
                     <button type="button" className="boton-secundario" onClick={() => { cerrarNotificacion(); setCargando(true); void cargar(); }} disabled={cargando || ocupado}>
                         <RefreshIcon fontSize="small" aria-hidden="true" />Reintentar
                     </button>

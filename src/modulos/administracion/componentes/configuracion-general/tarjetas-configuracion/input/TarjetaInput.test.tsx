@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TarjetaInput from "./TarjetaInput";
 
@@ -7,7 +7,8 @@ const mocks = vi.hoisted(() => ({
     notificar: vi.fn(),
 }));
 
-vi.mock("@/compartido/componentes/NotificacionToast", () => ({
+vi.mock("@/compartido/componentes/NotificacionToast", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@/compartido/componentes/NotificacionToast")>(),
     useNotificacionToast: () => ({ notificar: mocks.notificar }),
 }));
 
@@ -93,7 +94,7 @@ describe("TarjetaInput", () => {
         expect(botonGuardar()).toBeEnabled();
     });
 
-    it.each(["0", "00", "", "9007199254740992"])("no guarda el importe inválido %j", (valor) => {
+    it.each(["0", "00", "9007199254740992"])("no guarda el importe inválido %j", (valor) => {
         const onGuardarValor = vi.fn();
         render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
         fireEvent.change(campo(), { target: { value: valor } });
@@ -112,16 +113,28 @@ describe("TarjetaInput", () => {
         expect(botonGuardar()).toBeEnabled();
     });
 
-    it.each(["", "   ", "\t"])("no guarda una URL vacía %j y conserva la referencia guardada", (valor) => {
+    it.each(["", "   ", "\t"])("no guarda una URL vacía %j y conserva la referencia guardada", async (valor) => {
         const onGuardarValor = vi.fn();
         const urlGuardada = "https://uam.com.uy/lista.pdf";
         render(<ComponentePrueba tipo="url" valorInicial={urlGuardada} onGuardarValor={onGuardarValor} />);
         fireEvent.change(campo(), { target: { value: valor } });
         fireEvent.click(botonGuardar());
         expect(onGuardarValor).not.toHaveBeenCalled();
-        expect(mocks.notificar).toHaveBeenCalledWith("La URL de la Lista Inteligente no puede estar vacía.", "error");
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(campo()).toHaveAttribute("aria-invalid", "true");
         fireEvent.change(campo(), { target: { value: urlGuardada } });
+        expect(campo()).not.toHaveAttribute("aria-invalid", "true");
         expect(botonGuardar()).toBeDisabled();
+    });
+
+    it("marca el importe vacío y solicita completar los campos sin guardar", async () => {
+        const onGuardarValor = vi.fn();
+        render(<ComponentePrueba onGuardarValor={onGuardarValor} />);
+        fireEvent.change(campo(), { target: { value: "" } });
+        fireEvent.click(botonGuardar());
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(campo()).toHaveAttribute("aria-invalid", "true");
+        expect(onGuardarValor).not.toHaveBeenCalled();
     });
 
     it("guarda el valor editado y notifica el resultado", async () => {

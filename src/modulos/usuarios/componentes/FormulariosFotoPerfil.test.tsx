@@ -39,6 +39,19 @@ function renderizarModificacion(rol: "operador" | "productor") {
     return rol === "operador" ? mocks.modificarOperador : mocks.modificarProductor;
 }
 
+function completarAlta(rol: "operador" | "productor") {
+    fireEvent.change(screen.getByLabelText(/^Nombre de Usuario\s*\*$/), { target: { value: "huerta_sur" } });
+    fireEvent.change(screen.getByLabelText(/^Contraseña\s*\*$/), { target: { value: "Clave12345" } });
+    fireEvent.change(screen.getByLabelText(/^Confirmación de Contraseña\s*\*$/), { target: { value: "Clave12345" } });
+    fireEvent.change(screen.getByLabelText(/^Nombre\s*\*$/), { target: { value: datos.nombre } });
+    fireEvent.change(screen.getByPlaceholderText("Ej.: 99123456"), { target: { value: datos.telefono } });
+    if (rol === "operador") {
+        fireEvent.change(screen.getByPlaceholderText("Número de local"), { target: { value: "001" } });
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Nave/ }));
+        fireEvent.click(screen.getByRole("option", { name: "Nave A" }));
+    }
+}
+
 describe("Fotos en altas y modificaciones administrativas", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -60,6 +73,7 @@ describe("Fotos en altas y modificaciones administrativas", () => {
         let resolver!: (valor: unknown) => void;
         accion.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
         render(<FormularioAltaUsuario naves={naves} />);
+        completarAlta(rol);
         const archivo = elegirFoto();
         await screen.findByRole("img", { name: "Vista previa de la foto de perfil" });
         expect(accion).not.toHaveBeenCalled();
@@ -100,6 +114,7 @@ describe("Fotos en altas y modificaciones administrativas", () => {
         const accion = rol === "operador" ? mocks.altaOperador : mocks.altaProductor;
         accion.mockResolvedValueOnce({ esValido: false, errores: ["Ya existe ese usuario."] });
         render(<FormularioAltaUsuario naves={naves} />);
+        completarAlta(rol);
         elegirFoto();
         await screen.findByRole("img");
         fireEvent.submit(screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!);
@@ -123,7 +138,7 @@ describe("Fotos en altas y modificaciones administrativas", () => {
 
     it.each(["operador", "productor"] as const)("envía la eliminación explícita de la foto de %s sólo al guardar", async (rol) => {
         const accion = renderizarModificacion(rol);
-        accion.mockResolvedValueOnce({ esValido: true, id: 7 });
+        accion.mockResolvedValueOnce({ esValido: true, id: 7, mensaje: "Cambios guardados correctamente." });
         fireEvent.click(screen.getByRole("button", { name: "Quitar foto" }));
         expect(accion).not.toHaveBeenCalled();
         expect(screen.queryByRole("img")).not.toBeInTheDocument();
@@ -136,7 +151,7 @@ describe("Fotos en altas y modificaciones administrativas", () => {
 
     it.each(["operador", "productor"] as const)("conserva la foto de %s al guardar sin modificarla", async (rol) => {
         const accion = renderizarModificacion(rol);
-        accion.mockResolvedValueOnce({ esValido: true, id: 7 });
+        accion.mockResolvedValueOnce({ esValido: true, id: 7, mensaje: "Cambios guardados correctamente." });
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
         await waitFor(() => expect(accion).toHaveBeenCalledTimes(1));
         expect(accion.mock.calls[0]).toHaveLength(1);

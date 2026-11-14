@@ -5,6 +5,7 @@ import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlin
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import YardOutlinedIcon from "@mui/icons-material/YardOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import type { ResultadoPublicaciones } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import type { FiltrosConsulta } from "../../../consulta-mercado/acciones/filtros-consulta";
 import obtenerPublicaciones from "../../../consulta-mercado/acciones/ConsultarPublicacionOperador.action";
@@ -186,7 +187,8 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
         <div className="secciones-pagina" aria-busy={cargando}>
             <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} navesDisponibles={datos.naves} totalRemoto={datos.total} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
             {cargando && <IndicadorCargaPublicaciones />}
-            {error && <p role="alert">{error} <button type="button" onClick={() => void cargar()}>Reintentar</button></p>}
+            <AvisoErrorToast mensaje={error} />
+            {error && <button type="button" className="boton-secundario" onClick={() => void cargar()}>Reintentar</button>}
             <ListadoPublicaciones
                 publicaciones={datos.publicaciones}
                 esAdmin={esAdmin}

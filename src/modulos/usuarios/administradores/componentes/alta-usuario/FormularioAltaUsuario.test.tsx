@@ -546,17 +546,11 @@ describe("FormularioAltaUsuario", () => {
             screen.getByRole("button", { name: "Registrar usuario" }),
         );
 
-        expect(
-            await screen.findByText(
-                "Ya existe un usuario con ese nombre de usuario.",
-            ),
-        ).toBeInTheDocument();
-
-        expect(
-            screen.getByText(
-                "El local 101 ya existe en la nave seleccionada.",
-            ),
-        ).toBeInTheDocument();
+        const aviso = await screen.findByRole("alert");
+        expect(aviso).toHaveTextContent("Ya existe un usuario con ese nombre de usuario.");
+        expect(aviso).toHaveTextContent("El local 101 ya existe en la nave seleccionada.");
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
 
         expect(
             screen.queryByText("Operador creado satisfactoriamente"),

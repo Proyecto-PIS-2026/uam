@@ -37,7 +37,7 @@ import CampoComentario from "../../componentes/CampoComentario";
 type Props = {
     publicacion: PublicacionMiMercadoProductor | null;
     alCerrar: () => void;
-    alEliminada?: (mensaje: string) => void;
+    alEliminada?: (mensaje: string, tipo: "success" | "info") => void;
     alGuardar?: (publicacion: PublicacionMiMercadoProductor) => void;
     mostrarAvisoFoto?: boolean;
 };
@@ -72,14 +72,13 @@ type Estado = {
     eliminando: boolean;
     fotoPreparada: boolean;
     fotoAmpliada: boolean;
-    errores: string[];
 };
 
 function estadoInicial(publicacion: Props["publicacion"]): Estado {
     return {
         id: publicacion?.id ?? null, sesion: {}, guardada: null, edicion: null,
         cargaPara: null, confirmacionPara: null, guardando: false, eliminando: false,
-        fotoPreparada: !publicacion?.foto?.trim(), fotoAmpliada: false, errores: [],
+        fotoPreparada: !publicacion?.foto?.trim(), fotoAmpliada: false,
     };
 }
 
@@ -118,10 +117,10 @@ function Campo({ nombre, valor, opciones, nombreActual, cambiar, deshabilitado =
         : priorizarUruguay
             ? [...opciones].sort((a, b) => compararPaisesPorPrioridad(a.nombre, b.nombre))
             : ordenarOpcionesPorNombre(opciones);
-    return <TextField select label={nombre} value={valor} onChange={(evento) => cambiar?.(Number(evento.target.value))}
+    return <TextField select label={nombre} value={nombre === "Especie" && valor === 0 ? "" : valor} onChange={(evento) => cambiar?.(Number(evento.target.value))}
         size="small" fullWidth required={nombre === "Especie"} disabled={deshabilitado} className={estilosAcciones.selectMui}
         slotProps={{ select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } }}>
-        <MenuItem value={0} disabled={nombre === "Especie"} className={estilosAcciones.opcionSelect}>{nombre === "Especie" ? "Seleccioná especie" : enConsulta ? "-" : "Sin especificar"}</MenuItem>
+        <MenuItem value={nombre === "Especie" ? "" : 0} disabled={nombre === "Especie"} className={estilosAcciones.opcionSelect}>{nombre === "Especie" ? "Seleccioná especie" : enConsulta ? "-" : "Sin especificar"}</MenuItem>
         {valor !== 0 && !opciones.some((opcion) => opcion.id === valor) && <MenuItem value={valor} disabled className={estilosAcciones.opcionSelect}>{nombreActual?.trim() || "-"}</MenuItem>}
         {ordenadas.map((opcion) => <MenuItem key={opcion.id} value={opcion.id} className={estilosAcciones.opcionSelect}>{opcion.nombre}</MenuItem>)}
     </TextField>;
@@ -175,7 +174,7 @@ function UbicacionesConsulta({ publicacion }: { publicacion: PublicacionMiMercad
 export default function DrawerPublicacionProductor({ publicacion: recibida, alCerrar, alGuardar, alEliminada, mostrarAvisoFoto = false }: Props) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [estado, setEstado] = useState(() => estadoInicial(recibida));
-    const { notificar } = useNotificacionToast();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const sesionRef = useRef<object | null>(null);
     const operacionRef = useRef<object | null>(null);
     const solicitudOpcionesRef = useRef<object | null>(null);
@@ -263,8 +262,9 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
 
     function cambiar(cambios: Partial<Borrador>) {
         if (operacionRef.current === estado.sesion) return;
+        cerrarNotificacion();
         setEstado((actual) => actual.edicion ? {
-            ...actual, errores: [], edicion: { ...actual.edicion, borrador: { ...actual.edicion.borrador, ...cambios } },
+            ...actual, edicion: { ...actual.edicion, borrador: { ...actual.edicion.borrador, ...cambios } },
         } : actual);
     }
 
@@ -288,7 +288,8 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
 
     function cancelarEdicion() {
         if (operacionRef.current === estado.sesion) return;
-        setEstado((actual) => ({ ...actual, edicion: null, errores: [] }));
+        cerrarNotificacion();
+        setEstado((actual) => ({ ...actual, edicion: null }));
     }
 
     function seleccionarFoto(evento: ChangeEvent<HTMLInputElement>) {
@@ -296,7 +297,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         evento.target.value = "";
         if (!archivo || !editando || operacionRef.current === estado.sesion) return;
         if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
-            setEstado((actual) => ({ ...actual, errores: ["Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB."] }));
+            notificar("Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB.", "error");
             return;
         }
         cambiar({ archivo, vistaPrevia: URL.createObjectURL(archivo) });
@@ -304,6 +305,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
 
     async function comenzarEdicion() {
         if (!vigente || editando || cargando || operacionRef.current === estado.sesion || confirmando) return;
+        cerrarNotificacion();
         const solicitud = {};
         solicitudOpcionesRef.current = solicitud;
         setEstado((actual) => ({ ...actual, cargaPara: vigente }));
@@ -312,10 +314,10 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             const resultado = await respuesta.json();
             if (solicitud !== solicitudOpcionesRef.current) return;
             if (!respuesta.ok) {
-                notificar(resultado.errores?.join(" ") || "No se pudo cargar la edición.", "error");
+                notificar(resultado.errores?.join("\n") || "No se pudo cargar la edición.", "error");
                 return;
             }
-            setEstado((actual) => ({ ...actual, errores: [], fotoAmpliada: false, edicion: { base: vigente, opciones: resultado.opciones, borrador: crearBorrador(vigente) } }));
+            setEstado((actual) => ({ ...actual, fotoAmpliada: false, edicion: { base: vigente, opciones: resultado.opciones, borrador: crearBorrador(vigente) } }));
         } catch {
             if (solicitud === solicitudOpcionesRef.current) notificar("No se pudo cargar la edición. Intentá nuevamente.", "error");
         } finally {
@@ -326,12 +328,13 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     async function guardar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (!edicion || !borrador || operacionRef.current === estado.sesion) return;
+        cerrarNotificacion();
         if (!precioPublicacionValido(borrador.precio)) {
-            setEstado((actual) => ({ ...actual, errores: [PRECIO_PUBLICACION_INVALIDO] }));
+            notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
         }
         if (borrador.cantidadUnidades !== "" && (!/^(0|[1-9]\d{0,9})$/.test(borrador.cantidadUnidades) || Number(borrador.cantidadUnidades) > 2147483647)) {
-            setEstado((actual) => ({ ...actual, errores: ["La cantidad de unidades debe ser un número entero entre 0 y 2147483647."] }));
+            notificar("La cantidad de unidades debe ser un número entero entre 0 y 2147483647.", "error");
             return;
         }
         const opciones = edicion.opciones;
@@ -342,12 +345,12 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             || (borrador.categoriaId !== 0 && !categorias.some((opcion) => opcion.id === borrador.categoriaId))
             || (borrador.calibreId !== 0 && !opciones.calibres.some((opcion) => opcion.id === borrador.calibreId))
             || (borrador.paisId !== 0 && !opciones.paises.some((opcion) => opcion.id === borrador.paisId))) {
-            setEstado((actual) => ({ ...actual, errores: ["Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos."] }));
+            notificar("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.", "error");
             return;
         }
         const validacionUbicaciones = validarUbicacionesProductor(borrador.ubicaciones);
         if (!validacionUbicaciones.esValido) {
-            setEstado((actual) => ({ ...actual, errores: [validacionUbicaciones.error] }));
+            notificar(validacionUbicaciones.error, "error");
             return;
         }
         const formulario = new FormData();
@@ -366,20 +369,19 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         if (borrador.archivo) formulario.set("foto", borrador.archivo);
         const sesion = estado.sesion;
         operacionRef.current = sesion;
-        setEstado((actual) => ({ ...actual, guardando: true, errores: [] }));
+        setEstado((actual) => ({ ...actual, guardando: true }));
         try {
             const respuesta = await fetchConSesion(`/api/publicaciones/productor/${edicion.base.publicacionProductorId}`, { method: "PATCH", body: formulario });
             const resultado = await respuesta.json();
             if (sesionRef.current !== sesion) return;
             if (!respuesta.ok) {
                 const mensajes = resultado.errores?.length ? resultado.errores : ["No se pudieron guardar los cambios."];
-                if (respuesta.status === 400 || respuesta.status === 422) setEstado((actual) => ({ ...actual, errores: mensajes }));
-                else notificar(mensajes.join(" "), "error");
+                notificar(mensajes.join("\n"), "error");
                 return;
             }
             const original = recibidaRef.current;
             if (!original) return;
-            setEstado((actual) => ({ ...actual, guardada: { original, nueva: resultado.publicacion }, edicion: null, errores: [] }));
+            setEstado((actual) => ({ ...actual, guardada: { original, nueva: resultado.publicacion }, edicion: null }));
             notificar("Cambios guardados.", "success");
             alGuardarRef.current?.(resultado.publicacion);
         } catch {
@@ -398,10 +400,10 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
         try {
             const respuesta = await fetchConSesion(`/api/publicaciones/productor/${vigente.publicacionProductorId}`, { method: "DELETE" });
             const resultado = await respuesta.json().catch(() => ({}));
-            if (!respuesta.ok && respuesta.status !== 404) throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
+            if (!respuesta.ok && respuesta.status !== 404) throw new Error(resultado.errores?.join("\n") || "No se pudo eliminar la publicación.");
             const mensaje = respuesta.ok ? (resultado.mensaje ?? "Publicación eliminada correctamente.") : "La publicación ya había sido eliminada.";
             if (sesionRef.current === sesion) cerrar();
-            alEliminada?.(mensaje);
+            alEliminada?.(mensaje, respuesta.ok ? "success" : "info");
         } catch (error) {
             if (sesionRef.current === sesion) {
                 setEstado((actual) => ({ ...actual, confirmacionPara: null }));
@@ -499,7 +501,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                             <Campo nombre="Calibre" valor={borrador?.calibreId ?? publicacion.calibre?.id ?? 0} opciones={edicion?.opciones.calibres ?? []} nombreActual={publicacion.calibre?.nombreCalibre ?? ""} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={!editando || ocupado} enConsulta={!editando} />
                         </div>
                         {borrador ? <UbicacionesEdicionProductor ubicaciones={borrador.ubicaciones} deshabilitado={ocupado} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} /> : <UbicacionesConsulta publicacion={publicacion} />}
-                        {estado.errores.length > 0 && <div role="alert" className={estilosAcciones.error}>{estado.errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}
                     </div>
                     <div className={estilosAcciones.pie}>
                         {editando ? <>

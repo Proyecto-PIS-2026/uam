@@ -204,12 +204,6 @@
     color: var(--color-secondary);
 }
 
-.errorPrecio {
-    padding: 0 var(--espacio-controles) var(--espacio-controles);
-    color: var(--color-danger);
-    font-size: var(--tamano-texto-secundario);
-}
-
 @media (min-width: 640px) {
     .botonFoto {
         width: 8rem;

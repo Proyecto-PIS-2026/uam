@@ -6,8 +6,8 @@ import type { TipoCatalogo } from "./tipos";
 const mocks = vi.hoisted(() => {
     const modelo = () => ({ select: vi.fn(), where: vi.fn(), all: vi.fn(), first: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() });
     return {
-        autorizar: vi.fn(), revalidatePath: vi.fn(), transaction: vi.fn(), execute: vi.fn(), query: vi.fn(), rawSql: vi.fn(),
-        modelos: { Envase: modelo(), KilosEmpaquetado: modelo(), Calibre: modelo(), Categoria: modelo(), Publicacion: modelo() },
+        autorizar: vi.fn(), revalidatePath: vi.fn(), transaction: vi.fn(), execute: vi.fn(), query: vi.fn(), rawSql: vi.fn(), registrarPublicacion: vi.fn(),
+        modelos: { Envase: modelo(), KilosEmpaquetado: modelo(), Calibre: modelo(), Categoria: modelo(), Publicacion: modelo(), EstadisticaPublicacion: modelo() },
     };
 });
 
@@ -17,6 +17,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirAdministrador: mocks.autorizar }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({ controlarSesionEnAccion: (control: () => Promise<unknown>) => control() }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
+vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({ registrarPublicacion: mocks.registrarPublicacion }));
 
 const casos = [
     { tipo: "empaquetados", modelo: "Envase", fila: { id: 10, nombreEnvase: "Cajón" }, datos: { nombre: "  CAJÓN  " }, escritura: { nombreEnvase: "CAJÓN" }, campo: "envaseId", tabla: "envase" },
@@ -110,13 +111,16 @@ describe.each(casos)("catálogo de $tipo", ({ tipo, modelo, fila, datos, escritu
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 
-    it("edita el mismo registro conservando sus referencias en publicaciones", async () => {
+    it("edita el catálogo sin escribir en publicaciones ni contabilizar modificaciones", async () => {
         mocks.modelos[modelo].all.mockResolvedValue([fila]);
         expect(await guardarElementoCatalogo(tipo, datos, 10)).toEqual({ ok: true });
         expect(mocks.modelos[modelo].where).toHaveBeenCalledExactlyOnceWith({ id: 10 });
         expect(mocks.modelos[modelo].update).toHaveBeenCalledExactlyOnceWith(escritura);
         expect(mocks.modelos[modelo].create).not.toHaveBeenCalled();
         expect(mocks.modelos.Publicacion.update).not.toHaveBeenCalled();
+        expect(mocks.modelos.EstadisticaPublicacion.create).not.toHaveBeenCalled();
+        expect(mocks.modelos.EstadisticaPublicacion.update).not.toHaveBeenCalled();
+        expect(mocks.registrarPublicacion).not.toHaveBeenCalled();
         expect(mocks.query.mock.calls[0][0]).toEqual({ texto: `SELECT id FROM ${tabla} WHERE id = ? FOR UPDATE`, valores: [10] });
     });
 

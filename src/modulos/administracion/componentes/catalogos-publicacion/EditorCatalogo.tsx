@@ -9,12 +9,11 @@ interface Props {
     tipo: TipoCatalogo;
     elemento: ElementoCatalogo | null;
     procesando: boolean;
-    error: string | null;
     alGuardar: (datos: DatosCatalogo) => Promise<void>;
     alCerrar: () => void;
 }
 
-export default function EditorCatalogo({ tipo, elemento, procesando, error, alGuardar, alCerrar }: Props) {
+export default function EditorCatalogo({ tipo, elemento, procesando, alGuardar, alCerrar }: Props) {
     const tituloId = useId();
     const ayudaId = useId();
     const [nombre, setNombre] = useState(elemento?.nombre ?? "");
@@ -47,12 +46,11 @@ export default function EditorCatalogo({ tipo, elemento, procesando, error, alGu
                             required fullWidth autoFocus={!esCalibre} disabled={procesando} size="small"
                             helperText={tipo === "kilos" ? "Podés ingresar un peso o un rango, por ejemplo: 10 o 10-12." : undefined}
                             slotProps={{ htmlInput: { maxLength: 120 } }} />
-                        {error && <p role="alert" className={styles.error}>{error}</p>}
                     </div>
                 </DialogContent>
                 <DialogActions className={styles.accionesDialogo}>
                     <button type="button" className="boton-secundario" onClick={alCerrar} disabled={procesando}>Cancelar</button>
-                    <button type="submit" className="boton-primario" disabled={procesando || !nombre.trim() || (esCalibre && !codigo.trim())}>
+                    <button type="submit" className="boton-primario" disabled={procesando}>
                         {procesando ? "Guardando..." : "Guardar"}
                     </button>
                 </DialogActions>

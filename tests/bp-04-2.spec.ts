@@ -9,7 +9,7 @@ const rutaInicioSesion = "/iniciar-sesion";
 test("BP-04.2: inicio de sesión de Administrador", async ({ page, usuariosAdministrativos }) => {
   const administrador = usuariosAdministrativos.administrador;
 
-  const mensajeError = page.locator("form").getByRole("alert");
+  const mensajeError = page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert");
   const menuUsuario = page.getByRole("button", { name: "Abrir menú de usuario" });
 
   async function comprobarQueNoInicioSesion(mensaje: string) {

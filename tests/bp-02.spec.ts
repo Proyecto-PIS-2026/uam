@@ -198,18 +198,20 @@ test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo P
 
       await page.getByRole("textbox", { name: "Teléfono" }).fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("El teléfono no es válido.");
+      await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toContainText("El teléfono no es válido.");
       await page.getByRole("textbox", { name: "Teléfono" }).fill("99234567");
 
       await page.getByRole("textbox", { name: "Nombre", exact: true }).fill("");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("El nombre es obligatorio.");
+      await expect(page.getByRole("alert").filter({ hasText: "Faltan completar campos obligatorios." })).toBeVisible();
+      await expect(page.getByRole("textbox", { name: "Nombre", exact: true })).toHaveAttribute("aria-invalid", "true");
       await page.getByRole("textbox", { name: "Nombre", exact: true }).fill(nombreModificado);
+      await expect(page.getByRole("textbox", { name: "Nombre", exact: true })).not.toHaveAttribute("aria-invalid", "true");
 
       await page.getByLabel("Nueva contraseña").fill(CLAVE);
       await page.getByLabel("Confirmar contraseña").fill("OtraClave123!");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("Las contraseñas no coinciden.");
+      await expect(page.getByRole("alert").filter({ hasText: "Las contraseñas no coinciden." })).toBeVisible();
       // No cambiar realmente la contraseña: la necesitamos para comprobar la sesión activa.
       await page.getByLabel("Nueva contraseña").fill("");
       await page.getByLabel("Confirmar contraseña").fill("");

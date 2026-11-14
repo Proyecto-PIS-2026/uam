@@ -171,7 +171,7 @@ test.describe("BP-16.2 — matriz de cambio de contraseña", () => {
             });
             await completar(page, ajena.contrasena, "Prueba123");
             await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-            await expect(page.getByRole("form", { name: "Cambio de contraseña" }).getByRole("alert")).toContainText("La contraseña actual no es válida.");
+            await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toContainText("La contraseña actual no es válida.");
             expect(intentoEnviado).toBe(true);
             await page.unroute("**/mi-perfil/cambiar-contrasena");
             expect((await db.query('SELECT "passwordHash" FROM usuario WHERE id = $1', [ajena.id])).rows[0].passwordHash).toBe(original);
@@ -201,7 +201,7 @@ test.describe("BP-16.2 — matriz de cambio de contraseña", () => {
                 await abrirCambio(page, cuenta);
                 await completar(page, caso.actualIncorrecta ? "Incorrecta123" : cuenta.contrasena, caso.nueva, caso.confirmacion);
                 await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-                await expect(page.getByRole("form", { name: "Cambio de contraseña" }).getByRole("alert")).toContainText(caso.error);
+                await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toContainText(caso.error);
                 await salir(page);
                 await ingresar(page, cuenta);
             });
@@ -225,7 +225,7 @@ test.describe("BP-16.2 — matriz de cambio de contraseña", () => {
                 await abrirCambio(page, cuenta);
                 await completar(page, cuenta.contrasena, nueva);
                 await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-                await expect(page.getByRole("form", { name: "Cambio de contraseña" }).getByRole("status")).toContainText("Tu contraseña se actualizó correctamente.");
+                await expect(page.getByRole("region", { name: "Notificaciones" }).getByRole("status")).toContainText("Tu contraseña se actualizó correctamente.");
                 await salir(page);
                 await enviarCredenciales(page, cuenta);
                 await expect(page.getByRole("alert").filter({ hasText: "Las credenciales ingresadas no son correctas." })).toBeVisible();

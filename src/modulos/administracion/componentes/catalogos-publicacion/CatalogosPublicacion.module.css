@@ -176,22 +176,6 @@
     line-height: var(--interlineado-texto);
 }
 
-.mensaje,
-.error {
-    margin: 0;
-    font-size: var(--tamano-texto-secundario);
-    line-height: var(--interlineado-texto);
-    overflow-wrap: anywhere;
-}
-
-.mensaje {
-    color: var(--color-secondary);
-}
-
-.error {
-    color: var(--color-danger);
-}
-
 .dialogo:global(.MuiDialog-paper) {
     border: 1px solid var(--color-border);
 }

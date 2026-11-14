@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@/test-utils";
+import { fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import Formulario from "./FormularioCambioContrasena";
 import { cambiarMiContrasena } from "./cambiarMiContrasena";
 const m = vi.hoisted(() => ({ push: vi.fn() }));
@@ -29,10 +29,13 @@ describe("formulario independiente en mi perfil", () => {
             expect(campo).toHaveAttribute("autocomplete", "new-password");
         }
     });
-    it("valida antes de enviar", () => {
+    it("marca los campos obligatorios antes de enviar", async () => {
         render(<Formulario volver="/mi-perfil/productor" />);
         guardar();
-        expect(screen.getByRole("alert")).toHaveTextContent("Ingresá tu contraseña actual.");
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(screen.getByLabelText("Contraseña actual", { exact: true })).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Nueva contraseña/)).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Confirmar nueva contraseña/)).toHaveAttribute("aria-invalid", "true");
         expect(accion).not.toHaveBeenCalled();
     });
     it("informa confirmación distinta sin guardar", () => {
@@ -43,11 +46,13 @@ describe("formulario independiente en mi perfil", () => {
         expect(screen.getByRole("alert")).toHaveTextContent("no coincide");
         expect(accion).not.toHaveBeenCalled();
     });
-    it("envía únicamente contraseñas y borra los campos al confirmar el éxito", async () => {
-        render(<Formulario volver="/mi-perfil/productor" />);
+    it.each(["/mi-perfil", "/mi-perfil/productor"])("confirma mediante toast y borra los campos al guardar desde %s", async (volver) => {
+        render(<Formulario volver={volver} />);
         completar(); guardar();
         expect(accion).toHaveBeenCalledExactlyOnceWith({ actual: "Anterior123", nueva: "Nueva1234", confirmacion: "Nueva1234" });
         expect(await screen.findByRole("status")).toHaveTextContent("se actualizó correctamente");
+        expect(within(screen.getByRole("region", { name: "Notificaciones" })).getByRole("status")).toHaveTextContent("se actualizó correctamente");
+        expect(within(screen.getByRole("form", { name: "Cambio de contraseña" })).queryByRole("status")).not.toBeInTheDocument();
         expect(screen.getByLabelText("Contraseña actual", { exact: true })).toHaveValue("");
         expect(screen.getByLabelText(/^Nueva contraseña/)).toHaveValue("");
         expect(screen.getByLabelText(/^Confirmar nueva contraseña/)).toHaveValue("");

@@ -16,6 +16,13 @@ let db: BaseDatos;
 let acciones: Acciones;
 let escenario: Escenario | undefined;
 const envasesAdicionales: number[] = [];
+const fechaPublicaciones = Temporal.Instant.from("2020-01-02T15:00:00Z");
+
+async function consultarEstadisticasModificaciones() {
+    return (await db.orm.public.EstadisticaPublicacion.select("id", "fecha", "username", "cantidad").all())
+        .map((fila) => ({ ...fila, fecha: fila.fecha.toString() }))
+        .sort((a, b) => a.id - b.id);
+}
 
 describe.sequential("ABM real de catálogos administrativos", { timeout: 15000 }, () => {
     beforeAll(async () => {
@@ -37,7 +44,7 @@ describe.sequential("ABM real de catálogos administrativos", { timeout: 15000 }
             const publicaciones: number[] = [];
             for (const tipoPublicacion of ["OPERADOR", "PRODUCTOR"] as const) {
                 const publicacion = await tx.orm.public.Publicacion.create({
-                    fecha: Temporal.Now.instant(), especieId: especie.id, tipoPublicacion,
+                    fecha: fechaPublicaciones, version: 7, especieId: especie.id, tipoPublicacion,
                     publicacionActiva: tipoPublicacion === "OPERADOR", publicacionDisponible: tipoPublicacion === "OPERADOR",
                     envaseId: envase.id, kilosId: kilos.id, calibreId: calibre.id, categoriaId: categoria.id,
                 });
@@ -59,8 +66,9 @@ describe.sequential("ABM real de catálogos administrativos", { timeout: 15000 }
         escenario = undefined;
     });
 
-    it("refleja la edición de los cuatro catálogos en todas las publicaciones conservando sus IDs", async () => {
+    it("refleja los cuatro catálogos sin cambiar fechas, versiones ni estadísticas de publicaciones", async () => {
         const datos = escenario!;
+        const estadisticasAntes = await consultarEstadisticasModificaciones();
         const sufijo = randomUUID();
         const valores: Record<TipoCatalogo, DatosCatalogo> = {
             empaquetados: { nombre: `Envase editado ${sufijo}` },
@@ -70,6 +78,12 @@ describe.sequential("ABM real de catálogos administrativos", { timeout: 15000 }
         };
         for (const tipo of TIPOS_CATALOGO) {
             expect(await acciones.guardarElementoCatalogo(tipo, valores[tipo], datos.ids[tipo])).toEqual({ ok: true });
+            expect(await consultarEstadisticasModificaciones()).toEqual(estadisticasAntes);
+            for (const id of datos.publicaciones) {
+                const publicacion = await db.orm.public.Publicacion.where({ id }).select("fecha", "version").first();
+                expect(publicacion?.fecha.toString()).toBe(fechaPublicaciones.toString());
+                expect(publicacion?.version).toBe(7);
+            }
         }
         for (const id of datos.publicaciones) {
             const publicacion = await db.orm.public.Publicacion.where({ id }).include("envase").include("kilos").include("calibre").include("categoria").first();

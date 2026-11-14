@@ -209,7 +209,7 @@ test("BP-03: alta, consulta, modificación, errores y baja", async ({
       await page.getByRole("button", { name: "Guardar cambios" }).click();
 
       await expect(
-        page.locator('[role="alert"]:not(#__next-route-announcer__)')
+        page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")
       ).toContainText(
         "Ya existe un usuario con ese nombre."
       );
@@ -341,7 +341,7 @@ test("BP-03: alta, consulta, modificación, errores y baja", async ({
           exact: true,
         }).click();
         await expect(
-          nuevoAdmin.locator('form [role="alert"]')
+          nuevoAdmin.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")
         ).toContainText("Las credenciales ingresadas no son correctas.");
       });
     } finally {

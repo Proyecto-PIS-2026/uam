@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, TextField } from "@mui/material";
+import { IconButton, MenuItem, TextField } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { ConfirmModal } from "@/compartido/componentes/ConfirmModal";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { eliminarElementoCatalogo, guardarElementoCatalogo, listarCatalogo } from "../../catalogos/acciones";
 import type { DatosCatalogo, ElementoCatalogo, TipoCatalogo } from "../../catalogos/tipos";
 import EditorCatalogo from "./EditorCatalogo";
@@ -24,7 +25,7 @@ const propiedadesMenuSelect = {
     },
 } as const;
 
-type Carga = { tipo: TipoCatalogo; revision: number; elementos: ElementoCatalogo[]; error?: string };
+type Carga = { tipo: TipoCatalogo; revision: number; elementos: ElementoCatalogo[]; fallida?: boolean };
 
 function nombreCompleto(elemento: ElementoCatalogo) {
     return elemento.codigo && elemento.codigo !== elemento.nombre ? `${elemento.codigo} - ${elemento.nombre}` : elemento.nombre;
@@ -32,18 +33,14 @@ function nombreCompleto(elemento: ElementoCatalogo) {
 
 export default function CatalogosPublicacion() {
     const selectId = useId();
-    const avisoTituloId = useId();
-    const avisoDescripcionId = useId();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [tipo, setTipo] = useState<TipoCatalogo>("empaquetados");
     const [revision, setRevision] = useState(0);
     const [carga, setCarga] = useState<Carga | null>(null);
     const [editor, setEditor] = useState<{ elemento: ElementoCatalogo | null } | null>(null);
-    const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
     const [porEliminar, setPorEliminar] = useState<ElementoCatalogo | null>(null);
     const [procesando, setProcesando] = useState(false);
     const operacionEnCurso = useRef(false);
-    const [aviso, setAviso] = useState<string | null>(null);
-    const [mensaje, setMensaje] = useState<string | null>(null);
     const cargando = carga === null || carga.tipo !== tipo || carga.revision !== revision;
     const datos = cargando ? null : carga;
 
@@ -52,23 +49,24 @@ export default function CatalogosPublicacion() {
         listarCatalogo(tipo).then((elementos) => {
             if (vigente) setCarga({ tipo, revision, elementos });
         }).catch(() => {
-            if (vigente) setCarga({ tipo, revision, elementos: [], error: "No se pudo cargar el catálogo. Intentá nuevamente." });
+            if (vigente) {
+                setCarga({ tipo, revision, elementos: [], fallida: true });
+                notificar("No se pudo cargar el catálogo. Intentá nuevamente.", "error");
+            }
         });
         return () => { vigente = false; };
-    }, [tipo, revision]);
+    }, [tipo, revision, notificar]);
 
     function cambiarCatalogo(nuevoTipo: TipoCatalogo) {
         if (procesando) return;
         setTipo(nuevoTipo);
         setEditor(null);
         setPorEliminar(null);
-        setMensaje(null);
-        setErrorEdicion(null);
+        cerrarNotificacion();
     }
 
     function abrirEditor(elemento: ElementoCatalogo | null) {
-        setErrorEdicion(null);
-        setMensaje(null);
+        cerrarNotificacion();
         setEditor({ elemento });
     }
 
@@ -76,18 +74,18 @@ export default function CatalogosPublicacion() {
         if (operacionEnCurso.current || !editor) return;
         operacionEnCurso.current = true;
         setProcesando(true);
-        setErrorEdicion(null);
+        cerrarNotificacion();
         try {
             const resultado = await guardarElementoCatalogo(tipo, datos, editor.elemento?.id);
             if (!resultado.ok) {
-                setErrorEdicion(resultado.mensaje);
+                notificar(resultado.mensaje, "error");
                 return;
             }
             setEditor(null);
-            setMensaje(editor.elemento ? "El valor se modificó correctamente." : "El valor se agregó correctamente.");
+            notificar(editor.elemento ? "El valor se modificó correctamente." : "El valor se agregó correctamente.", "success");
             setRevision((actual) => actual + 1);
         } catch {
-            setErrorEdicion("No se pudo guardar el valor. Intentá nuevamente.");
+            notificar("No se pudo guardar el valor. Intentá nuevamente.", "error");
         } finally {
             operacionEnCurso.current = false;
             setProcesando(false);
@@ -98,19 +96,19 @@ export default function CatalogosPublicacion() {
         if (operacionEnCurso.current || !porEliminar) return;
         operacionEnCurso.current = true;
         setProcesando(true);
-        setMensaje(null);
+        cerrarNotificacion();
         try {
             const resultado = await eliminarElementoCatalogo(tipo, porEliminar.id);
             setPorEliminar(null);
             if (!resultado.ok) {
-                setAviso(resultado.mensaje);
+                notificar(resultado.mensaje, "error");
                 return;
             }
-            setMensaje("El valor se eliminó correctamente.");
+            notificar("El valor se eliminó correctamente.", "success");
             setRevision((actual) => actual + 1);
         } catch {
             setPorEliminar(null);
-            setAviso("No se pudo eliminar el valor. Intentá nuevamente.");
+            notificar("No se pudo eliminar el valor. Intentá nuevamente.", "error");
         } finally {
             operacionEnCurso.current = false;
             setProcesando(false);
@@ -128,17 +126,15 @@ export default function CatalogosPublicacion() {
                     onChange={(evento) => cambiarCatalogo(evento.target.value as TipoCatalogo)}>
                     {catalogos.map(({ tipo, etiqueta }) => <MenuItem key={tipo} value={tipo} className={styles.opcionSelect}>{etiqueta}</MenuItem>)}
                 </TextField>
-                <button type="button" className={`boton-primario ${styles.botonAgregar}`} aria-label="Agregar valor" onClick={() => abrirEditor(null)} disabled={procesando || cargando || Boolean(datos?.error)}>
+                <button type="button" className={`boton-primario ${styles.botonAgregar}`} aria-label="Agregar valor" onClick={() => abrirEditor(null)} disabled={procesando || cargando || datos?.fallida}>
                     <AddIcon fontSize="small" aria-hidden="true" />
                     <span className={styles.textoBotonAgregar}>Agregar valor</span>
                 </button>
             </div>
-            {mensaje && <p role="status" className={styles.mensaje}>{mensaje}</p>}
             <div aria-busy={cargando}>
-                {cargando ? <p role="status">Cargando catálogo...</p> : datos?.error ? (
+                {cargando ? <p role="status">Cargando catálogo...</p> : datos?.fallida ? (
                     <div className={styles.estado}>
-                        <p role="alert" className={styles.error}>{datos.error}</p>
-                        <button type="button" className="boton-secundario" onClick={() => setRevision((actual) => actual + 1)}>Reintentar</button>
+                        <button type="button" className="boton-secundario" onClick={() => { cerrarNotificacion(); setRevision((actual) => actual + 1); }}>Reintentar</button>
                     </div>
                 ) : datos?.elementos.length === 0 ? <p className={styles.estado}>No hay valores en este catálogo.</p> : (
                     <div className={styles.contenedorTabla}>
@@ -172,19 +168,11 @@ export default function CatalogosPublicacion() {
                     </div>
                 )}
             </div>
-            {editor && <EditorCatalogo tipo={tipo} elemento={editor.elemento} procesando={procesando} error={errorEdicion}
+            {editor && <EditorCatalogo tipo={tipo} elemento={editor.elemento} procesando={procesando}
                 alGuardar={guardar} alCerrar={() => { if (!procesando) setEditor(null); }} />}
             <ConfirmModal abierto={porEliminar !== null} titulo="Eliminar valor"
                 descripcion={`¿Querés eliminar «${porEliminar ? nombreCompleto(porEliminar) : ""}»? Solo se puede eliminar si ninguna publicación lo utiliza.`}
                 textoConfirmar="Eliminar" procesando={procesando} alConfirmar={() => { void eliminar(); }} alCancelar={() => setPorEliminar(null)} />
-            <Dialog open={aviso !== null} onClose={() => setAviso(null)} fullWidth maxWidth="sm" role="alertdialog"
-                aria-labelledby={avisoTituloId} aria-describedby={avisoDescripcionId} slotProps={{ paper: { className: styles.dialogo } }}>
-                <DialogTitle id={avisoTituloId}>No se pudo eliminar</DialogTitle>
-                <DialogContent><p id={avisoDescripcionId}>{aviso}</p></DialogContent>
-                <DialogActions className={styles.accionesDialogo}>
-                    <button type="button" className="boton-primario" onClick={() => setAviso(null)}>Entendido</button>
-                </DialogActions>
-            </Dialog>
         </section>
     );
 }

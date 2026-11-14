@@ -197,7 +197,7 @@ describe("CatalogoOperadorAdmin", () => {
         responderFetch({ mensaje: "Publicación modificada correctamente." });
         abrirPublicacion();
 
-        await ultimasPropsDrawer().alGuardar(15, cambios, null);
+        await act(async () => { await ultimasPropsDrawer().alGuardar(15, cambios, null); });
 
         expect(fetch).toHaveBeenCalledExactlyOnceWith(
             "/api/publicaciones/101?operadorId=12",
@@ -207,13 +207,15 @@ describe("CatalogoOperadorAdmin", () => {
         expect(cuerpo.get("cambios")).toBe(JSON.stringify(cambios));
         expect(cuerpo.get("fotografia")).toBeNull();
         expect(mocks.refresh).toHaveBeenCalledOnce();
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación modificada correctamente.");
+        expect(screen.getByRole("status")).toHaveClass("MuiAlert-colorSuccess");
     });
 
     it("devuelve el error de la API al guardar sin refrescar la página", async () => {
-        responderFetch({ errores: ["Los cambios no son válidos."] }, 400);
+        responderFetch({ errores: ["Los cambios no son válidos.", "La cantidad debe ser positiva."] }, 400);
         abrirPublicacion();
 
-        await expect(ultimasPropsDrawer().alGuardar(15, cambios, null)).rejects.toThrow("Los cambios no son válidos.");
+        await expect(ultimasPropsDrawer().alGuardar(15, cambios, null)).rejects.toThrow("Los cambios no son válidos.\nLa cantidad debe ser positiva.");
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
@@ -241,6 +243,8 @@ describe("CatalogoOperadorAdmin", () => {
         await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
         expect(fetch).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/101?operadorId=12", { method: "DELETE" });
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent("Publicación eliminada.");
+        expect(screen.getByRole("status")).toHaveClass("MuiAlert-colorSuccess");
     });
 
     // Cancelar la confirmación no elimina nada

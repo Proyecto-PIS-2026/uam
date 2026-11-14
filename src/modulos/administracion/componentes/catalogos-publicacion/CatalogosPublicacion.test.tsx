@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DatosCatalogo, ElementoCatalogo, ResultadoCatalogo, TipoCatalogo } from "../../catalogos/tipos";
 import CatalogosPublicacion from "./CatalogosPublicacion";
@@ -90,6 +90,7 @@ describe("CatalogosPublicacion", () => {
         render(<CatalogosPublicacion />);
 
         expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo cargar el catálogo");
+        expect(screen.getAllByText("No se pudo cargar el catálogo. Intentá nuevamente.")).toHaveLength(1);
         expect(screen.getByRole("button", { name: "Agregar valor" })).toBeDisabled();
         fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
         expect(await screen.findByText("Cajón")).toBeInTheDocument();
@@ -107,6 +108,22 @@ describe("CatalogosPublicacion", () => {
         expect(mocks.guardar).toHaveBeenCalledExactlyOnceWith("empaquetados", { nombre: "Bolsa" }, undefined);
         expect(mocks.listar).toHaveBeenCalledTimes(2);
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it.each(["", "   "])("marca un nombre faltante %j y muestra un solo aviso sin guardar", async (valor) => {
+        await preparar();
+        fireEvent.click(screen.getByRole("button", { name: "Agregar valor" }));
+        const dialogo = screen.getByRole("dialog", { name: "Agregar valor" });
+        const nombre = within(dialogo).getByRole("textbox", { name: /Nombre/ });
+        fireEvent.change(nombre, { target: { value: valor } });
+        const guardar = within(dialogo).getByRole("button", { name: "Guardar" });
+        expect(guardar).toBeEnabled();
+        fireEvent.click(guardar);
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(nombre).toHaveAttribute("aria-invalid", "true");
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        fireEvent.change(nombre, { target: { value: "Bolsa" } });
+        expect(nombre).not.toHaveAttribute("aria-invalid", "true");
     });
 
     it("modifica el mismo ID y explica el efecto sobre todas sus publicaciones", async () => {
@@ -143,7 +160,8 @@ describe("CatalogosPublicacion", () => {
         fireEvent.change(within(dialogo).getByRole("textbox", { name: /Nombre/ }), { target: { value: "Bolsa" } });
         fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar" }));
 
-        expect(await within(dialogo).findByRole("alert")).toHaveTextContent("Ya existe un valor igual");
+        const notificaciones = await screen.findByRole("region", { name: "Notificaciones" });
+        expect(within(notificaciones).getByRole("alert")).toHaveTextContent("Ya existe un valor igual");
         expect(within(dialogo).getByRole("textbox", { name: /Nombre/ })).toHaveValue("Bolsa");
         expect(mocks.listar).toHaveBeenCalledOnce();
     });
@@ -166,18 +184,19 @@ describe("CatalogosPublicacion", () => {
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     });
 
-    it("muestra un popup y conserva el valor cuando tiene publicaciones asociadas", async () => {
+    it("muestra un toast y conserva el valor cuando tiene publicaciones asociadas", async () => {
         mocks.eliminar.mockResolvedValue({ ok: false, mensaje: "No se puede eliminar porque existen publicaciones asociadas." });
         await preparar();
         fireEvent.click(screen.getByRole("button", { name: "Eliminar Cajón" }));
         const confirmacion = screen.getByRole("alertdialog", { name: "Eliminar valor" });
         fireEvent.click(within(confirmacion).getByRole("button", { name: "Eliminar" }));
 
-        const aviso = await screen.findByRole("alertdialog", { name: "No se pudo eliminar" });
+        const aviso = await screen.findByRole("alert");
         expect(aviso).toHaveTextContent("existen publicaciones asociadas");
         expect(mocks.eliminar).toHaveBeenCalledExactlyOnceWith("empaquetados", 1);
         expect(mocks.listar).toHaveBeenCalledOnce();
-        fireEvent.click(within(aviso).getByRole("button", { name: "Entendido" }));
+        expect(screen.queryByRole("alertdialog", { name: "No se pudo eliminar" })).not.toBeInTheDocument();
+        fireEvent.click(within(aviso).getByRole("button", { name: "Cerrar notificación" }));
         expect(await screen.findByRole("button", { name: "Modificar Cajón" })).toBeInTheDocument();
     });
 

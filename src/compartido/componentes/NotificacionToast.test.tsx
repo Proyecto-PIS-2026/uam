@@ -1,8 +1,10 @@
 import { act, fireEvent, render as renderOriginal, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
-import type { ReactElement } from "react";
+import type { FormEvent, ReactElement } from "react";
 import Drawer from "@mui/material/Drawer";
 import Dialog from "@mui/material/Dialog";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ProveedorNotificacionesToast, useNotificacionToast } from "./NotificacionToast";
 
@@ -30,6 +32,94 @@ function Emisor({ nombre }: { nombre: string }) {
 }
 
 describe("NotificacionToast", () => {
+    it("agrupa errores nativos en un toast y mantiene bloqueado el envío inválido", async () => {
+        const enviar = vi.fn((evento: FormEvent<HTMLFormElement>) => evento.preventDefault());
+        render(<form onSubmit={enviar}>
+            <label>Nombre<input name="nombre" required /></label>
+            <label>Correo<input name="correo" type="email" required /></label>
+            <button type="submit">Enviar</button>
+        </form>);
+        fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+        const aviso = await screen.findByRole("alert");
+        expect(screen.getAllByRole("alert")).toHaveLength(1);
+        expect(aviso).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByRole("textbox", { name: "Correo" })).toHaveAttribute("aria-invalid", "true");
+        expect(enviar).not.toHaveBeenCalled();
+        expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveFocus();
+
+        fireEvent.change(screen.getByRole("textbox", { name: "Nombre" }), { target: { value: "Ana" } });
+        fireEvent.change(screen.getByRole("textbox", { name: "Correo" }), { target: { value: "ana@example.com" } });
+        expect(screen.getByRole("textbox", { name: "Nombre" })).not.toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByRole("textbox", { name: "Correo" })).not.toHaveAttribute("data-error-validacion");
+        fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+        expect(enviar).toHaveBeenCalledOnce();
+    });
+
+    it("valida blancos con noValidate, sin exigir campos opcionales ni deshabilitados", async () => {
+        const enviar = vi.fn((evento: FormEvent<HTMLFormElement>) => evento.preventDefault());
+        render(<form noValidate onSubmit={enviar} aria-label="Datos">
+            <label>Nombre<input required defaultValue="   " /></label>
+            <label>Comentario<input /></label>
+            <label>Automático<input required disabled /></label>
+            <button type="submit">Guardar datos</button>
+        </form>);
+        expect(screen.getByRole("textbox", { name: "Nombre" })).not.toHaveAttribute("aria-invalid");
+        fireEvent.submit(screen.getByRole("form", { name: "Datos" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(enviar).not.toHaveBeenCalled();
+        expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("data-error-validacion", "true");
+        expect(screen.getByRole("textbox", { name: "Comentario" })).not.toHaveAttribute("aria-invalid");
+        expect(screen.getByRole("textbox", { name: "Automático" })).not.toHaveAttribute("aria-invalid");
+        fireEvent.change(screen.getByRole("textbox", { name: "Nombre" }), { target: { value: "Ana" } });
+        fireEvent.submit(screen.getByRole("form", { name: "Datos" }));
+        expect(enviar).toHaveBeenCalledOnce();
+    });
+
+    it("marca y enfoca el select visible de MUI y lo limpia al elegir una opción", async () => {
+        render(<form noValidate aria-label="Publicación">
+            <TextField select required label="Especie" defaultValue="">
+                <MenuItem value="">Seleccionar</MenuItem>
+                <MenuItem value="1">Manzana</MenuItem>
+            </TextField>
+        </form>);
+        const selector = screen.getByRole("combobox", { name: /Especie/ });
+        fireEvent.submit(screen.getByRole("form", { name: "Publicación" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(selector).toHaveAttribute("aria-invalid", "true");
+        expect(selector).toHaveAttribute("data-error-validacion", "true");
+        expect(selector).toHaveFocus();
+        fireEvent.mouseDown(selector);
+        fireEvent.click(screen.getByRole("option", { name: "Manzana" }));
+        await waitFor(() => expect(selector).not.toHaveAttribute("aria-invalid", "true"));
+        expect(selector).not.toHaveAttribute("data-error-validacion");
+    });
+
+    it("respeta formNoValidate para cancelar sin completar los campos", () => {
+        const enviar = vi.fn((evento: FormEvent<HTMLFormElement>) => evento.preventDefault());
+        render(<form aria-label="Verificación" onSubmit={enviar}>
+            <label>Código<input required /></label>
+            <button type="submit" formNoValidate>Cancelar</button>
+        </form>);
+        fireEvent(screen.getByRole("form", { name: "Verificación" }), new SubmitEvent("submit", {
+            bubbles: true, cancelable: true, submitter: screen.getByRole("button", { name: "Cancelar" }),
+        }));
+        expect(enviar).toHaveBeenCalledOnce();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("textbox", { name: "Código" })).not.toHaveAttribute("aria-invalid");
+    });
+
+    it("muestra el error nativo de formato sin el globo del navegador", async () => {
+        render(<form>
+            <label>Correo<input name="correo" type="email" defaultValue="invalido" /></label>
+        </form>);
+        const campo = screen.getByRole("textbox", { name: "Correo" });
+        const invalidacion = new Event("invalid", { cancelable: true });
+        act(() => { campo.dispatchEvent(invalidacion) });
+        expect(invalidacion.defaultPrevented).toBe(true);
+        expect(await screen.findByRole("alert")).toHaveTextContent("Ingresá un correo electrónico válido en «Correo».");
+    });
+
     it("muestra resultados fuera del formulario sin añadir un bloque a su contenido", () => {
         render(<Ejemplo />);
         fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
