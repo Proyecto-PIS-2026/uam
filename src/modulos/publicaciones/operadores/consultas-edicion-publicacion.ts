@@ -32,7 +32,6 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
 
     const especiesActivas = new Set(especies.map((especie) => especie.id));
     const variedadesDisponibles = variedades.filter((variedad) => especiesActivas.has(variedad.especieId));
-    const categoriasDisponibles = categorias.filter((categoria) => categoria.especieId === null || especiesActivas.has(categoria.especieId));
 
     return {
         especies: ordenarOpcionesPorNombre(especies.map((especie) => ({ id: especie.id, nombre: especie.nombreEspecie }))),
@@ -43,7 +42,7 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
         }))),
         envases: envases.map((envase) => ({ id: envase.id, nombre: envase.nombreEnvase })),
         kilos: kilos.map((peso) => ({ id: peso.id, nombre: peso.valor })),
-        categorias: ordenarOpcionesPorNombre(categoriasDisponibles.map((categoria) => ({
+        categorias: ordenarOpcionesPorNombre(categorias.map((categoria) => ({
             id: categoria.id,
             nombre: categoria.nombreCategoria,
             especieId: categoria.especieId,

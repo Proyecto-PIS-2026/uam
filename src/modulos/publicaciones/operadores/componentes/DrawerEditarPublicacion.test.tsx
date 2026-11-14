@@ -631,13 +631,13 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ envaseId: 121, kilosId: null }), null));
     });
 
-    it("limpia variedad y categoría incompatible, conservando el empaquetado al cambiar especie", async () => {
+    it("limpia la variedad y conserva la categoría y el empaquetado al cambiar especie", async () => {
         render(<DrawerEditarPublicacion {...props} variedades={[{ id: 20, nombre: "Beurré d'Anjou", especieId: 2 }, ...props.variedades]} />);
 
         await seleccionar("Especie", "Pera");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Sin especificar");
         expect(screen.getByRole("combobox", { name: "Empaquetado" })).toHaveTextContent("Descartable");
-        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Sin especificar");
+        expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Primera");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: "Variedad" }));
         expect(await screen.findByRole("option", { name: "Beurré d'Anjou" })).toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "Williams" }));
@@ -645,7 +645,7 @@ it("reemplaza la vista previa por la foto guardada y no reenvía el archivo al e
         guardarDesdeBoton();
 
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({
-            especieId: 2, variedadId: 21, envaseId: 111, kilosId: null, categoriaId: null,
+            especieId: 2, variedadId: 21, envaseId: 111, kilosId: null, categoriaId: 3,
         }), null));
     });
 

@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
 import { modificarPerfilPropio } from "./modificarPerfilPropio";
 
 const mocks = vi.hoisted(() => ({
@@ -39,6 +40,9 @@ const datos = {
 describe("modificarPerfilPropio", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.spyOn(Temporal.Now, "plainDateISO").mockImplementation((zona) =>
+            Temporal.Instant.from("2026-11-15T01:30:00Z").toZonedDateTimeISO(zona ?? "UTC").toPlainDate(),
+        );
         mocks.exigirOperador.mockResolvedValue({ usuarioId: 10 });
         mocks.validarCambioFotoPerfil.mockReturnValue({ esValido: true, cambio: { accion: "conservar" } });
         mocks.controlarErrorFotoPerfil.mockImplementation((operacion: () => unknown) => operacion());
@@ -50,6 +54,8 @@ describe("modificarPerfilPropio", () => {
             orm: { public: { Operador: mocks.operador } },
         }));
     });
+
+    afterEach(() => vi.restoreAllMocks());
 
     it("devuelve errores de entrada antes de tocar la persistencia", async () => {
         await expect(modificarPerfilPropio({ ...datos, nombre: "" })).resolves.toEqual({
@@ -99,7 +105,7 @@ describe("modificarPerfilPropio", () => {
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/inicio");
     });
 
-    it.each(["2000-11-02", "2000-11-12", "2999-11-12"])("guarda el perfil con inicio de licencia pasado y fin %s", async (finLicencia) => {
+    it.each(["2026-11-14", "2026-11-15", "2999-11-12"])("guarda el perfil con inicio de licencia pasado y fin hoy o posterior: %s", async (finLicencia) => {
         await expect(modificarPerfilPropio({
             ...datos, enLicencia: true, inicioLicencia: "2000-11-02", finLicencia,
             comentario: "Consultar disponibilidad.",
@@ -109,10 +115,21 @@ describe("modificarPerfilPropio", () => {
             enLicencia: true,
             comentario: `Licencia: 2000-11-02 - ${finLicencia}\n\nConsultar disponibilidad.`,
         }));
+        expect(Temporal.Now.plainDateISO).toHaveBeenCalledWith("America/Montevideo");
+    });
+
+    it("permite desmarcar una licencia vencida", async () => {
+        await expect(modificarPerfilPropio({
+            ...datos, enLicencia: false, inicioLicencia: "2000-11-02", finLicencia: "2000-11-12",
+        })).resolves.toMatchObject({ esValido: true });
+        expect(mocks.operador.update).toHaveBeenCalledWith(expect.objectContaining({
+            enLicencia: false, comentario: null,
+        }));
     });
 
     it.each([
-        { inicioLicencia: "2000-11-12", finLicencia: "2000-11-05", error: "La fecha de inicio no puede ser posterior a la fecha de fin." },
+        { inicioLicencia: "2999-11-12", finLicencia: "2999-11-05", error: "La fecha de inicio no puede ser posterior a la fecha de fin." },
+        { inicioLicencia: "2000-11-02", finLicencia: "2026-11-13", error: "La fecha de fin de la licencia no puede ser anterior a hoy." },
         { inicioLicencia: "2000-02-30", finLicencia: "2000-03-12", error: "Las fechas de licencia no son válidas." },
         { inicioLicencia: "2000-11-02", finLicencia: "", error: "Ingresá las fechas de inicio y fin de la licencia." },
     ])("rechaza una licencia inválida: $error", async ({ inicioLicencia, finLicencia, error }) => {

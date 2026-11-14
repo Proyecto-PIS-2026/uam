@@ -73,7 +73,7 @@ async function crearPublicacionDePrueba(page: Page, productorId: number) {
     if (!variedad) continue;
     const envase = c.envases[0];
     const kilos = c.kilos[0];
-    const categoria = c.categorias.find((a) => a.especieId === especie.id || a.especieId === null);
+    const categoria = c.categorias[0];
     if (!envase || !kilos || !categoria) continue;
     ids = {
       especieId: especie.id, variedadId: variedad.id,

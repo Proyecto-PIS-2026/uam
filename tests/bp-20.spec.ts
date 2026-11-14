@@ -67,7 +67,7 @@ test("BP-20 y BP-20.2 muestra el perfil público y el detalle de sus productos",
     const detalle = page.getByRole("dialog", { name: "Detalle de publicación" });
     await expect(detalle).toBeVisible();
     await expect(detalle.getByText("Empaquetado", { exact: true })).toBeVisible();
-    await expect(detalle.getByText("Kilos", { exact: true })).toBeVisible();
+    await expect(detalle.getByText("Kilos", { exact: true })).toHaveCount(0);
     await expect(detalle.getByText("Calibre")).toBeVisible();
     await expect(detalle.getByText("Categoría")).toBeVisible();
     await expect(detalle.getByText("País")).toBeVisible();

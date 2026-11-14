@@ -485,6 +485,7 @@ async function crearDatosBase(consulta: ConsultaUam) {
 async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, number>, archivos: Set<string>) {
   const presentacionIds = new Map<string, number>();
   const categoriaIds = new Map<string, number>();
+  const categoriasGlobales = new Map<string, number>();
   let cantidadVariedades = 0;
 
   for (const tipo of consulta.types) {
@@ -504,8 +505,15 @@ async function crearCatalogo(consulta: ConsultaUam, conversiones: Map<string, nu
         }
       }
       for (const nombreCategoria of [...codigosCategoria].sort()) {
-        const categoria = await prisma.orm.public.Categoria.create({ nombreCategoria, especieId: especie.id });
-        categoriaIds.set(clave(producto.species_id, nombreCategoria), categoria.id);
+        const nombre = nombreCategoria.trim().replace(/\s+/g, " ");
+        const nombreNormalizado = nombre.toLowerCase();
+        let categoriaId = categoriasGlobales.get(nombreNormalizado);
+        if (categoriaId === undefined) {
+          const categoria = await prisma.orm.public.Categoria.create({ nombreCategoria: nombre, especieId: null });
+          categoriaId = categoria.id;
+          categoriasGlobales.set(nombreNormalizado, categoriaId);
+        }
+        categoriaIds.set(clave(producto.species_id, nombreCategoria), categoriaId);
       }
 
       for (const variedadFuente of producto.varieties) {

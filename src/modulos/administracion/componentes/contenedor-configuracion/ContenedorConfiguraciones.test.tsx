@@ -15,6 +15,7 @@ const paneles = [
     { id: "estadisticas", nombre: "Estadísticas", contenido: "Contenido estadísticas" },
     { id: "usuarios", nombre: "Usuarios", contenido: "Contenido usuarios" },
     { id: "general", nombre: "General", contenido: "Contenido general" },
+    { id: "catalogos", nombre: "Catálogos", contenido: "Contenido catálogos" },
 ] as const;
 
 function preparar() {
@@ -23,6 +24,7 @@ function preparar() {
             estadisticas={<div>Contenido estadísticas</div>}
             usuarios={<div>Contenido usuarios</div>}
             general={<div>Contenido general</div>}
+            catalogos={<div>Contenido catálogos</div>}
         />,
     );
 }
@@ -57,10 +59,10 @@ afterEach(() => {
 });
 
 describe("ContenedorConfiguraciones", () => {
-    it("muestra las pestañas en el orden Estadísticas, Usuarios y General", () => {
+    it("muestra las pestañas en el orden Estadísticas, Usuarios, General y Catálogos", () => {
         preparar();
         const grupo = screen.getByRole("group", { name: "Secciones de configuración" });
-        expect(within(grupo).getAllByRole("button").map((boton) => boton.textContent)).toEqual(["Estadísticas", "Usuarios", "General"]);
+        expect(within(grupo).getAllByRole("button").map((boton) => boton.textContent)).toEqual(["Estadísticas", "Usuarios", "General", "Catálogos"]);
     });
 
     it("muestra Estadísticas inicialmente cuando la URL no tiene hash", () => {
@@ -85,6 +87,7 @@ describe("ContenedorConfiguraciones", () => {
     it.each([
         { id: "usuarios", nombre: "Usuarios" },
         { id: "general", nombre: "General" },
+        { id: "catalogos", nombre: "Catálogos" },
     ] as const)("cambia inmediatamente a $nombre y solicita actualizar la URL", ({ id, nombre }) => {
         preparar();
         fireEvent.click(screen.getByRole("button", { name: nombre }));
@@ -168,7 +171,7 @@ describe("ContenedorConfiguraciones", () => {
         comprobarPestana("Estadísticas");
     });
 
-    it("relaciona los tres botones con el panel de contenido", () => {
+    it("relaciona los botones con el panel de contenido", () => {
         const { container } = preparar();
         expect(screen.getByRole("group", { name: "Secciones de configuración" })).toBeInTheDocument();
         for (const panel of paneles) {
@@ -184,10 +187,12 @@ describe("ContenedorConfiguraciones", () => {
                 estadisticas={<div>Contenido estadísticas</div>}
                 usuarios={<div>Contenido usuarios</div>}
                 general={<div>Contenido general</div>}
+                catalogos={<div>Contenido catálogos</div>}
             />,
         );
         expect(html).toContain("Contenido estadísticas");
         expect(html).not.toContain("Contenido usuarios");
         expect(html).not.toContain("Contenido general");
+        expect(html).not.toContain("Contenido catálogos");
     });
 });

@@ -541,7 +541,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
                             alCambiar={cambiarOrden}
                             className={styles.botonOrdenar}
                             opciones={[
-                                { valor: "predeterminado", etiqueta: "Por defecto" },
+                                { valor: "predeterminado", etiqueta: "Por volumen" },
                                 { valor: "precioAsc", etiqueta: "Menor Precio" },
                                 { valor: "precioDesc", etiqueta: "Mayor Precio" },
                                 { valor: "alfabeticoAsc", etiqueta: "A-Z" },

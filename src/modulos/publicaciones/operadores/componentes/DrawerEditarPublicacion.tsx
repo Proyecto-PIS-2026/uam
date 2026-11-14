@@ -102,7 +102,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const variedadSeleccionada = variedades.find((opcion) => opcion.id === variedadId);
     const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
     const envasesDisponibles = envases;
-    const categoriasDisponibles = categorias.filter((opcion) => opcion.especieId === null || opcion.especieId === especieId);
+    const categoriasDisponibles = categorias;
     const paisesOrdenados = [...paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre));
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     const [fechaVigenciaEditada, setFechaVigencia] = useState(publicacion.fechaVigencia ?? "");
@@ -174,11 +174,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
 
     function cambiarEspecie(nuevaEspecieId: number) {
         if (bloqueado) return;
-        const categoriaActual = categorias.find((opcion) => opcion.id === categoriaId);
-        const categoriaCompatible = categoriaActual?.especieId === null || categoriaActual?.especieId === nuevaEspecieId;
         setEspecieId(nuevaEspecieId);
         setVariedadId(0);
-        if (!categoriaCompatible) setCategoriaId(0);
     }
 
     function cambiarVariedad(nuevaVariedadId: number) {

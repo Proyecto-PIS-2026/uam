@@ -43,6 +43,7 @@ export function validarModificacionOperador(valor: unknown): ResultadoValidacion
             const inicio = Temporal.PlainDate.from(inicioLicencia);
             const fin = Temporal.PlainDate.from(finLicencia);
             if (Temporal.PlainDate.compare(inicio, fin) > 0) errores.push("La fecha de inicio no puede ser posterior a la fecha de fin.");
+            if (Temporal.PlainDate.compare(fin, Temporal.Now.plainDateISO("America/Montevideo")) < 0) errores.push("La fecha de fin de la licencia no puede ser anterior a hoy.");
         } catch {
             errores.push("Las fechas de licencia no son válidas.");
         }

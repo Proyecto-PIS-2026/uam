@@ -197,7 +197,7 @@ test.describe("BP-11.5 - Modificación de mi perfil como Operador", () => {
   test("CP-09 CA-8: activar la licencia requiere aceptar el aviso de solicitud formal", async ({ page, operador, precargaOperadores: { db } }) => {
     await expect(page.getByRole("heading", { name: operador.nombre, exact: true })).toBeVisible();
     await editar(page);
-    const textoAviso = "La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.";
+    const textoAviso = "La gestión de licencias debe tramitarse exclusivamente a través de los mecanismos habituales de la UAM. La información exhibida en este sitio tiene carácter meramente informativo.";
     // El aviso se ve en la propia edición, junto al control de licencia.
     await expect(page.getByRole("main").getByText(textoAviso, { exact: true })).toBeVisible();
     const licencia = page.getByRole("switch", { name: "En licencia", exact: true });

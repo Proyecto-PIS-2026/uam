@@ -630,7 +630,7 @@ describe("FiltrosPublicaciones", () => {
         const selectorOrden = screen.getByRole("button", { name: "Ordenar por" });
 
         fireEvent.click(selectorOrden);
-        expect(screen.getByRole("menuitemradio", { name: "Por defecto" })).toHaveAttribute("aria-checked", "true");
+        expect(screen.getByRole("menuitemradio", { name: "Por volumen" })).toHaveAttribute("aria-checked", "true");
         fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
 
         comprobarOrdenActivo("Menor Precio");
@@ -944,7 +944,7 @@ describe("FiltrosPublicaciones", () => {
         const alFiltrar = vi.fn();
         const alCambiarOrden = vi.fn();
         render(<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesPrueba} especieFiltro="" ordenInicial="alfabeticoAsc" alFiltrar={alFiltrar} alCambiarOrden={alCambiarOrden} />);
-        comprobarOrdenActivo("Por defecto");
+        comprobarOrdenActivo("Por volumen");
         const resultado = alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[];
         expect(resultado.map((publicacion) => publicacion.id)).toEqual([1, 2, 3, 4]);
         expect(alCambiarOrden).not.toHaveBeenCalled();
@@ -958,13 +958,13 @@ describe("FiltrosPublicaciones", () => {
         expect(alCambiarOrden).toHaveBeenLastCalledWith("precioDesc");
         expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([4, 3, 2, 1]);
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-        comprobarOrdenActivo("Por defecto");
+        comprobarOrdenActivo("Por volumen");
         expect(alCambiarOrden).toHaveBeenCalledTimes(2);
         expect(alCambiarOrden).toHaveBeenLastCalledWith("alfabeticoAsc");
         expect((alFiltrar.mock.calls.at(-1)?.[0] as PublicacionListado[]).map((publicacion) => publicacion.id)).toEqual([1, 2, 3, 4]);
     });
 
-    it("aplica la prioridad configurada mediante Por defecto", () => {
+    it("aplica la prioridad configurada mediante Por volumen", () => {
         const alFiltrar = vi.fn();
         const datos = [
             { ...publicaciones[0], id: 1, especie: "Pera", variedad: "Williams" },
@@ -979,7 +979,7 @@ describe("FiltrosPublicaciones", () => {
         expect(ids()).toEqual([3, 6, 2, 4, 5, 1]);
         fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
         expect(screen.queryByRole("menuitemradio", { name: "Sin ordenar" })).not.toBeInTheDocument();
-        expect(screen.getByRole("menuitemradio", { name: "Por defecto" })).toHaveAttribute("aria-checked", "true");
+        expect(screen.getByRole("menuitemradio", { name: "Por volumen" })).toHaveAttribute("aria-checked", "true");
         fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
         fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "manzana" } });
         expect(ids()).toEqual([2, 4]);
@@ -987,7 +987,7 @@ describe("FiltrosPublicaciones", () => {
         expect(ids()).toEqual([3, 6, 2, 4, 5, 1]);
     });
 
-    it("recupera la prioridad al limpiar filtros o elegir Por defecto sin volver a montar", () => {
+    it("recupera la prioridad al limpiar filtros o elegir Por volumen sin volver a montar", () => {
         const alFiltrar = vi.fn();
         const datos = [
             { ...publicaciones[0], id: 1, especie: "Pera" },
@@ -1002,10 +1002,10 @@ describe("FiltrosPublicaciones", () => {
         expect(ids()).toEqual([3, 2, 1]);
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
         expect(ids()).toEqual([2, 3, 1]);
-        comprobarOrdenActivo("Por defecto");
+        comprobarOrdenActivo("Por volumen");
         seleccionarOrden("A-Z");
         expect(ids()).toEqual([3, 2, 1]);
-        seleccionarOrden("Por defecto");
+        seleccionarOrden("Por volumen");
         expect(ids()).toEqual([2, 3, 1]);
     });
 
@@ -1379,11 +1379,11 @@ describe("ordenamiento configurado por el administrador", () => {
         expect(props.alConsultar.mock.calls.at(-1)![0]).toMatchObject({ orden: "precioDesc" });
     });
 
-    it.each(["prioridad", "precioAsc", "alfabeticoDesc"] as const)("Por defecto comunica el orden administrativo %s a la consulta", async (ordenInicial) => {
+    it.each(["prioridad", "precioAsc", "alfabeticoDesc"] as const)("Por volumen comunica el orden administrativo %s a la consulta", async (ordenInicial) => {
         const { props } = prepararOrdenamiento(ordenInicial);
         const iniciales = nombresFiltrados(props.alFiltrar);
         await elegirOrdenConfigurado("Mayor Precio");
-        await elegirOrdenConfigurado("Por defecto");
+        await elegirOrdenConfigurado("Por volumen");
 
         expect(nombresFiltrados(props.alFiltrar)).toEqual(iniciales);
         expect(props.alCambiarOrden).toHaveBeenLastCalledWith(ordenInicial);

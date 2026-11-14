@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import { Temporal } from "temporal-polyfill";
 import { useRouter } from "next/navigation";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import TextField from "@mui/material/TextField";
@@ -50,6 +51,8 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
     const [confirmandoLicencia, setConfirmandoLicencia] = useState(false);
     const [inicioLicencia, setInicioLicencia] = useState(licencia.inicio);
     const [finLicencia, setFinLicencia] = useState(licencia.fin);
+    const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
+    const finLicenciaMinimo = inicioLicencia > hoy ? inicioLicencia : hoy;
     const [comentario, setComentario] = useState(licencia.comentario);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
     const [errores, setErrores] = useState<string[]>([]);
@@ -110,7 +113,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                         </div>
                         <p className={styles.aviso}>
                             <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
-                            <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
+                            <span>La gestión de licencias debe tramitarse exclusivamente a través de los mecanismos habituales de la UAM. La información exhibida en este sitio tiene carácter meramente informativo.</span>
                         </p>
                         <label className={styles.licencia} htmlFor="perfil-propio-licencia" data-activa={enLicencia}>
                             <span className={styles.textoLicencia}>
@@ -145,7 +148,7 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                                         value={finLicencia}
                                         onChange={(event) => setFinLicencia(event.target.value)}
                                         disabled={guardando}
-                                        slotProps={{ htmlInput: { min: inicioLicencia || undefined }, inputLabel: { shrink: true } }}
+                                        slotProps={{ htmlInput: { min: finLicenciaMinimo }, inputLabel: { shrink: true } }}
                                         size="small"
                                     />
                                 </div>

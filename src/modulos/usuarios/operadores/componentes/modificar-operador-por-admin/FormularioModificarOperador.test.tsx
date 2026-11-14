@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 
 import FormularioModificarOperador from "./FormularioModificarOperador";
@@ -64,6 +65,12 @@ function apretarGuardar() {
     fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 }
 
+beforeEach(() => {
+    vi.spyOn(Temporal.Now, "plainDateISO").mockImplementation((zona) =>
+        Temporal.Instant.from("2026-11-15T01:30:00Z").toZonedDateTimeISO(zona ?? "UTC").toPlainDate(),
+    );
+});
+
 afterEach(() => {
     cleanup();
     push.mockReset();
@@ -93,7 +100,7 @@ describe("FormularioModificarOperador", () => {
         fireEvent.click(licencia);
 
         const dialogo = screen.getByRole("alertdialog", { name: "Aviso de licencia" });
-        expect(dialogo).toHaveTextContent("La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.");
+        expect(dialogo).toHaveTextContent("La gestión de licencias debe tramitarse exclusivamente a través de los mecanismos habituales de la UAM. La información exhibida en este sitio tiene carácter meramente informativo.");
         expect(licencia).not.toBeChecked();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
         fireEvent.click(within(dialogo).getByRole("button", { name: "Aceptar" }));
@@ -102,14 +109,16 @@ describe("FormularioModificarOperador", () => {
         expect(licencia).toBeChecked();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
         expect(screen.getByLabelText("Inicio de licencia")).not.toHaveAttribute("min");
-        expect(screen.getByLabelText("Fin de licencia")).not.toHaveAttribute("min");
+        expect(screen.getByLabelText("Fin de licencia")).toHaveAttribute("min", "2026-11-14");
+        fireEvent.change(screen.getByLabelText("Inicio de licencia"), { target: { value: "2999-11-05" } });
+        expect(screen.getByLabelText("Fin de licencia")).toHaveAttribute("min", "2999-11-05");
         fireEvent.change(screen.getByLabelText("Inicio de licencia"), { target: { value: "2000-11-05" } });
-        expect(screen.getByLabelText("Fin de licencia")).toHaveAttribute("min", "2000-11-05");
-        fireEvent.change(screen.getByLabelText("Fin de licencia"), { target: { value: "2000-11-12" } });
+        expect(screen.getByLabelText("Fin de licencia")).toHaveAttribute("min", "2026-11-14");
+        fireEvent.change(screen.getByLabelText("Fin de licencia"), { target: { value: "2026-11-14" } });
         apretarGuardar();
 
         await waitFor(() => expect(modificarOperadorMock).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-            enLicencia: true, inicioLicencia: "2000-11-05", finLicencia: "2000-11-12",
+            enLicencia: true, inicioLicencia: "2000-11-05", finLicencia: "2026-11-14",
         })));
     });
 

@@ -223,7 +223,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
     }
 
     const variedades = catalogos?.variedades.filter((item) => item.especieId === datos.especieId) ?? [];
-    const categorias = catalogos?.categorias.filter((item) => item.especieId === null || item.especieId === datos.especieId) ?? [];
+    const categorias = catalogos?.categorias ?? [];
     const deshabilitado = cargando || guardando || !catalogos;
 
     return (
@@ -240,7 +240,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                 <div className={drawerStyles.cuerpo}>
                     <div className={drawerStyles.datosProducto}>
                         <div className={drawerStyles.campo}>
-                            <CampoSelect nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(especieId) => actualizar({ especieId, variedadId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
+                            <CampoSelect nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(especieId) => actualizar({ especieId, variedadId: 0 })} deshabilitado={deshabilitado} />
                         </div>
                         <div className={drawerStyles.campo}>
                             <CampoSelect nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(variedadId) => actualizar({ variedadId })} deshabilitado={deshabilitado || !datos.especieId} />
@@ -255,7 +255,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                             <CampoSelect nombre="País de origen" valor={datos.paisId} opciones={catalogos?.paises ?? []} cambiar={(paisId) => actualizar({ paisId })} deshabilitado={deshabilitado} />
                         </div>
                         <div className={drawerStyles.campo}>
-                            <CampoSelect nombre="Categoría" valor={datos.categoriaId} opciones={categorias} cambiar={(categoriaId) => actualizar({ categoriaId })} deshabilitado={deshabilitado || !datos.especieId} />
+                            <CampoSelect nombre="Categoría" valor={datos.categoriaId} opciones={categorias} cambiar={(categoriaId) => actualizar({ categoriaId })} deshabilitado={deshabilitado} />
                         </div>
                         <div className={drawerStyles.campo}>
                             <CampoSelect nombre="Calibre" valor={datos.calibreId} opciones={catalogos?.calibres ?? []} cambiar={(calibreId) => actualizar({ calibreId })} deshabilitado={deshabilitado} />

@@ -6,6 +6,7 @@ import ContenedorEstadistica from "@/modulos/administracion/componentes/estadist
 import { obtenerEstadisticas } from "@/modulos/administracion/acciones/consultas-configuracion";
 import consultarDatosModificarUsuarios from "@/modulos/administracion/componentes/configuracion-usuarios/acciones/ConsultaUsuarios";
 import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
+import CatalogosPublicacion from "@/modulos/administracion/componentes/catalogos-publicacion/CatalogosPublicacion";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function PaginaAdministracion() {
                         general={<ContenedorConfiguracionGenerales />}
                         usuarios={<ConfiguracionUsuarios datos={datosUsuarios} />}
                         estadisticas={<ContenedorEstadistica datosIniciales={estadisticas} />}
+                        catalogos={<CatalogosPublicacion />}
                     />
                 </div>
             </main>

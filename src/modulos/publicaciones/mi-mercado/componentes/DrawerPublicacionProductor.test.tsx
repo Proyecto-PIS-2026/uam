@@ -425,7 +425,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(precio).toHaveValue("100");
     });
 
-    it.each(["específica", "global"])("cambia especie y resuelve dependencias conservando una categoría %s compatible", async (tipoCategoria) => {
+    it.each(["específica", "global"])("conserva la categoría antes %s y muestra el catálogo completo al cambiar especie", async (tipoCategoria) => {
         const inicial = tipoCategoria === "global" ? { ...publicacion, categoria: { id: 6, nombreCategoria: "General" } } : publicacion;
         const actualizada = {
             ...inicial,
@@ -442,12 +442,12 @@ describe("DrawerPublicacionProductor: edición", () => {
 
         expect(screen.getByRole("combobox", { name: /^Variedad/ })).toHaveTextContent("Sin especificar");
         expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).toHaveTextContent("Cajon");
-        expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent(tipoCategoria === "global" ? "General" : "Sin especificar");
+        expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent(tipoCategoria === "global" ? "General" : "Primera");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Categoría/ }));
         expect(screen.getByRole("option", { name: "General" })).toBeInTheDocument();
         expect(screen.getByRole("option", { name: "Manzanas especiales" })).toBeInTheDocument();
-        expect(screen.queryByRole("option", { name: "Primera" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("option", { name: "Segunda" })).not.toBeInTheDocument();
+        expect(screen.getByRole("option", { name: "Primera" })).toBeInTheDocument();
+        expect(screen.getByRole("option", { name: "Segunda" })).toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "General" }));
         await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Variedad/ }));

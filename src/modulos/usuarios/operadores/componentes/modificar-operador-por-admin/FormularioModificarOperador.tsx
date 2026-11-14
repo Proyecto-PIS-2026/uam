@@ -6,6 +6,7 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 
 import { useId, useRef, useState, type FormEvent } from "react";
+import { Temporal } from "temporal-polyfill";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Switch from "@mui/material/Switch";
@@ -65,6 +66,8 @@ export default function FormularioModificarOperador({
     const [confirmandoLicencia, setConfirmandoLicencia] = useState(false);
     const [inicioLicencia, setInicioLicencia] = useState(licencia.inicio);
     const [finLicencia, setFinLicencia] = useState(licencia.fin);
+    const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
+    const finLicenciaMinimo = inicioLicencia > hoy ? inicioLicencia : hoy;
     const [comentario, setComentario] = useState(licencia.comentario);
 
     const [contraseña, setContraseña] = useState("");
@@ -399,7 +402,7 @@ export default function FormularioModificarOperador({
                             <>
                                 <div className={styles.fechasLicencia}>
                                     <TextField label="Inicio de licencia" type="date" value={inicioLicencia} onChange={(evento) => setInicioLicencia(evento.target.value)} disabled={guardando} slotProps={{ inputLabel: { shrink: true } }} size="small" />
-                                    <TextField label="Fin de licencia" type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: inicioLicencia || undefined }, inputLabel: { shrink: true } }} size="small" />
+                                    <TextField label="Fin de licencia" type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: finLicenciaMinimo }, inputLabel: { shrink: true } }} size="small" />
                                 </div>
                                 <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(evento) => setComentario(evento.target.value)} disabled={guardando} fullWidth />
                             </>

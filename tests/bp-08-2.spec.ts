@@ -20,10 +20,6 @@ for (const pantalla of [
         const empaquetado = await tarjeta.evaluate((elemento) =>
             elemento.querySelector('span[title^="por "]')?.getAttribute("title")?.slice(4).trim() || "-"
         );
-        const envaseConKilos = empaquetado.match(/^(.*?) \(([^)]+) kg\)$/);
-        const soloKilos = empaquetado.match(/^([\d-]+) kg$/);
-        const envase = envaseConKilos?.[1] ?? (soloKilos ? "-" : empaquetado);
-        const kilos = envaseConKilos?.[2] ?? soloKilos?.[1];
         const textoTarjeta = await tarjeta.textContent() ?? "";
         const consultarPrecio = textoTarjeta.includes("Consultar precio");
         let precio: number | null = null;
@@ -49,7 +45,7 @@ for (const pantalla of [
 
         await expect(detalle.getByText(consultarPrecio ? "Consultar precio" : `$${precio}`, { exact: true })).toBeVisible();
 
-        for (const campo of ["Empaquetado", "Kilos", "Calibre", "Categoría", "País"]) {
+        for (const campo of ["Empaquetado", "Calibre", "Categoría", "País"]) {
             const etiqueta = detalle.getByText(campo, { exact: true });
             await expect(etiqueta).toBeVisible();
 
@@ -58,14 +54,13 @@ for (const pantalla of [
             await expect(valor).toHaveText(/\S/);
 
             if (campo === "Empaquetado") {
-                await expect(valor).toHaveText(envase);
-            } else if (campo === "Kilos") {
-                await expect(valor).toHaveText(kilos ? `${kilos} kg` : "-");
+                await expect(valor).toHaveText(empaquetado);
             } else if (campo === "Calibre" || campo === "Categoría") {
                 expect(textoTarjeta).toContain((await valor.innerText()).trim());
             }
         }
 
+        await expect(detalle.getByText("Kilos", { exact: true })).toHaveCount(0);
         await expect(detalle.getByText("Publicado por", { exact: true })).toBeVisible();
         await expect(detalle.getByRole("link", { name: nombreOperador, exact: true })).toBeVisible();
 
