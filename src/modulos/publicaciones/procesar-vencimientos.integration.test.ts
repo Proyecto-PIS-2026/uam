@@ -13,6 +13,8 @@ type Propietario = { id: number; sesion: DatosSesion };
 
 const AHORA = Temporal.Instant.from("2030-01-15T15:00:00Z");
 const CONFIGURACIONES = [
+    ["aviso_vencimiento_publicaciones_operador_habilitado", "true"],
+    ["anticipacion_aviso_publicaciones_operador", "7"],
     ["aviso_vencimiento_publicaciones_productor_habilitado", "true"],
     ["anticipacion_aviso_publicaciones_productor", "7"],
 ] as const;
@@ -97,6 +99,9 @@ describe.sequential("publicaciones conservan sus avisos enviados al borrar notif
     beforeEach(async () => {
         vi.spyOn(Temporal.Now, "instant").mockReturnValue(AHORA);
         especieId = (await db.orm.public.Especie.create({ nombreEspecie: `Especie avisos ${randomUUID()}` })).id;
+        for (const [nombreConfiguracion, valorConfiguracion] of CONFIGURACIONES) {
+            await db.orm.public.Configuracion.where({ nombreConfiguracion }).update({ valorConfiguracion });
+        }
     });
 
     afterEach(async () => {
@@ -124,6 +129,36 @@ describe.sequential("publicaciones conservan sus avisos enviados al borrar notif
                 await db.orm.public.Configuracion.where({ nombreConfiguracion }).update({ valorConfiguracion });
             }
         }
+    });
+
+    it("aplica anticipaciones diferentes a operadores y productores sin mezclar sus avisos", async () => {
+        await db.orm.public.Configuracion.where({ nombreConfiguracion: "anticipacion_aviso_publicaciones_operador" }).update({ valorConfiguracion: "1" });
+        const fecha = AHORA.add({ hours: 48 });
+        await crearPublicacion("OPERADOR", fecha);
+        await crearPublicacion("PRODUCTOR", fecha);
+
+        const operador = await servicio.consultarNotificaciones(propietario("OPERADOR").sesion);
+        const productor = await servicio.consultarNotificaciones(propietario("PRODUCTOR").sesion);
+
+        expect(operador.notificaciones).toEqual([]);
+        expect(productor.notificaciones).toHaveLength(1);
+        expect(productor.notificaciones[0].texto).toContain("está próxima a vencer");
+    });
+
+    it("apagar avisos del operador no apaga los del productor ni impide vencer la publicación", async () => {
+        await db.orm.public.Configuracion.where({ nombreConfiguracion: "aviso_vencimiento_publicaciones_operador_habilitado" }).update({ valorConfiguracion: "false" });
+        await crearPublicacion("OPERADOR", AHORA.add({ hours: 48 }));
+        await crearPublicacion("PRODUCTOR", AHORA.add({ hours: 48 }));
+        const vencida = await crearPublicacion("OPERADOR", AHORA.subtract({ hours: 48 }));
+
+        const operador = await servicio.consultarNotificaciones(propietario("OPERADOR").sesion);
+        const productor = await servicio.consultarNotificaciones(propietario("PRODUCTOR").sesion);
+
+        expect(operador.notificaciones).toHaveLength(1);
+        expect(operador.notificaciones[0].texto).toContain("ha vencido");
+        expect(productor.notificaciones).toHaveLength(1);
+        expect(productor.notificaciones[0].texto).toContain("está próxima a vencer");
+        expect((await db.orm.public.Publicacion.where({ id: vencida.id }).first())?.publicacionDisponible).toBe(false);
     });
 
     describe.each(["OPERADOR", "PRODUCTOR"] as const)("%s", (rol) => {

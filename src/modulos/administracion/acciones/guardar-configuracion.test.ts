@@ -38,6 +38,13 @@ const gruposVigencia = [
         anticipacion: "anticipacion_aviso_fotos_productor",
     },
     {
+        nombre: "publicaciones de operadores",
+        habilitado: "vigencia_publicaciones_operador_habilitada",
+        vigencia: "vigencia_publicaciones_operador",
+        avisos: "aviso_vencimiento_publicaciones_operador_habilitado",
+        anticipacion: "anticipacion_aviso_publicaciones_operador",
+    },
+    {
         nombre: "publicaciones de productores",
         habilitado: "vigencia_publicaciones_productor_habilitada",
         vigencia: "vigencia_publicaciones_productor",
@@ -387,13 +394,16 @@ describe("independencia de la vigencia de fotos por propietario", () => {
     });
 });
 
-describe("aplicación del límite a publicaciones existentes", () => {
+describe.each([
+    { tipo: "OPERADOR", sufijo: "operador" },
+    { tipo: "PRODUCTOR", sufijo: "productor" },
+] as const)("aplicación del límite a publicaciones existentes de $tipo", ({ tipo, sufijo }) => {
     function configuracionPublicaciones(dias = "3", habilitada = true): Record<string, string> {
         return {
-            vigencia_publicaciones_productor_habilitada: String(habilitada),
-            vigencia_publicaciones_productor: habilitada ? dias : "",
-            aviso_vencimiento_publicaciones_productor_habilitado: "false",
-            anticipacion_aviso_publicaciones_productor: "",
+            [`vigencia_publicaciones_${sufijo}_habilitada`]: String(habilitada),
+            [`vigencia_publicaciones_${sufijo}`]: habilitada ? dias : "",
+            [`aviso_vencimiento_publicaciones_${sufijo}_habilitado`]: "false",
+            [`anticipacion_aviso_publicaciones_${sufijo}`]: "",
         };
     }
 
@@ -418,15 +428,16 @@ describe("aplicación del límite a publicaciones existentes", () => {
         expect(bloqueo.texto).not.toContain("pg_advisory_xact_lock_shared");
         expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.update.mock.invocationCallOrder[0]);
         expect(mocks.update.mock.invocationCallOrder[3]).toBeLessThan(mocks.execute.mock.invocationCallOrder[1]);
-        expect(recorte.valores.map(String)).toEqual(["2026-11-10T02:59:59Z", "2026-11-10T02:59:59Z"]);
+        expect(recorte.valores.map(String)).toEqual(["2026-11-10T02:59:59Z", tipo, "2026-11-10T02:59:59Z"]);
     });
 
-    it("limita únicamente fechas vacías o posteriores de productores, sin cambiar otros campos", async () => {
+    it("limita únicamente fechas vacías o posteriores del rol configurado, sin cambiar otros campos", async () => {
         await guardarConfiguraciones(configuracionPublicaciones());
 
         const recorte = planesEjecutados()[1];
         expect(recorte.texto).toMatch(/^UPDATE publicacion SET "fechaVigencia" = \?::timestamptz WHERE /);
-        expect(recorte.texto).toMatch(/"tipoPublicacion" = 'PRODUCTOR'/);
+        expect(recorte.texto).toMatch(/"tipoPublicacion"::text = \?/);
+        expect(recorte.valores[1]).toBe(tipo);
         expect(recorte.texto).toMatch(/AND \("fechaVigencia" IS NULL OR "fechaVigencia" > \?::timestamptz\)$/);
         expect(recorte.texto).not.toMatch(/publicacionDisponible|publicacionActiva|\bversion\b|"fecha"/);
     });
@@ -436,7 +447,7 @@ describe("aplicación del límite a publicaciones existentes", () => {
         await guardarConfiguraciones(configuracionPublicaciones("10"));
 
         const recorte = planesEjecutados()[3];
-        expect(recorte.valores.map(String)).toEqual(["2026-11-17T02:59:59Z", "2026-11-17T02:59:59Z"]);
+        expect(recorte.valores.map(String)).toEqual(["2026-11-17T02:59:59Z", tipo, "2026-11-17T02:59:59Z"]);
         expect(recorte.texto).toMatch(/"fechaVigencia" IS NULL OR "fechaVigencia" > \?::timestamptz/);
     });
 
@@ -498,6 +509,62 @@ describe("aplicación del límite a publicaciones existentes", () => {
         expect(mocks.transaction).toHaveBeenCalledOnce();
         expect(mocks.update).toHaveBeenCalledTimes(4);
         expect(mocks.execute).toHaveBeenCalledOnce();
+    });
+});
+
+describe("independencia de la vigencia de publicaciones por rol", () => {
+    const operador = {
+        vigencia_publicaciones_operador_habilitada: "true",
+        vigencia_publicaciones_operador: "30",
+        aviso_vencimiento_publicaciones_operador_habilitado: "true",
+        anticipacion_aviso_publicaciones_operador: "7",
+    };
+    const productor = {
+        vigencia_publicaciones_productor_habilitada: "true",
+        vigencia_publicaciones_productor: "10",
+        aviso_vencimiento_publicaciones_productor_habilitado: "true",
+        anticipacion_aviso_publicaciones_productor: "2",
+    };
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-07T02:00:00Z"));
+    });
+
+    it("guarda ambos plazos con un único bloqueo y recorta cada rol con su fecha", async () => {
+        await guardarConfiguraciones({ ...operador, ...productor });
+
+        expect(mocks.transaction).toHaveBeenCalledOnce();
+        expect(mocks.update).toHaveBeenCalledTimes(8);
+        const planes = mocks.execute.mock.calls.map(([plan]) => plan as PlanSql);
+        expect(planes.filter((plan) => plan.texto.includes("pg_advisory_xact_lock("))).toHaveLength(1);
+        const recortes = planes.filter((plan) => plan.texto.startsWith("UPDATE publicacion"));
+        expect(recortes).toHaveLength(2);
+        expect(recortes.find((plan) => plan.valores[1] === "OPERADOR")?.valores.map(String))
+            .toEqual(["2026-12-07T02:59:59Z", "OPERADOR", "2026-12-07T02:59:59Z"]);
+        expect(recortes.find((plan) => plan.valores[1] === "PRODUCTOR")?.valores.map(String))
+            .toEqual(["2026-11-17T02:59:59Z", "PRODUCTOR", "2026-11-17T02:59:59Z"]);
+    });
+
+    it("valida el aviso contra el plazo de su propio rol", async () => {
+        await expect(guardarConfiguraciones({ ...operador, ...productor, anticipacion_aviso_publicaciones_productor: "15" }))
+            .rejects.toThrow("La anticipación debe ser menor que la vigencia.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("rechaza un grupo parcial aunque el otro esté completo", async () => {
+        await expect(guardarConfiguraciones({ ...productor, vigencia_publicaciones_operador: "30" }))
+            .rejects.toThrow("Las cuatro opciones de vigencia deben guardarse juntas.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("desactivar operadores no impide aplicar el plazo de productores", async () => {
+        await guardarConfiguraciones({ ...operador, ...productor, vigencia_publicaciones_operador_habilitada: "false" });
+
+        const recortes = mocks.execute.mock.calls.map(([plan]) => plan as PlanSql)
+            .filter((plan) => plan.texto.startsWith("UPDATE publicacion"));
+        expect(recortes).toHaveLength(1);
+        expect(recortes[0].valores[1]).toBe("PRODUCTOR");
     });
 });
 

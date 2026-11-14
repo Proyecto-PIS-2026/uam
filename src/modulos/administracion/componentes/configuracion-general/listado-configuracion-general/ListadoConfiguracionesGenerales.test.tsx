@@ -61,6 +61,10 @@ function crearConfiguracion(cambios: Record<string, string | null> = {}): Record
         vigencia_fotos_productor: "10",
         aviso_vencimiento_fotos_productor_habilitado: "false",
         anticipacion_aviso_fotos_productor: "2",
+        vigencia_publicaciones_operador_habilitada: "true",
+        vigencia_publicaciones_operador: "20",
+        aviso_vencimiento_publicaciones_operador_habilitado: "true",
+        anticipacion_aviso_publicaciones_operador: "3",
         vigencia_publicaciones_productor_habilitada: "true",
         vigencia_publicaciones_productor: "15",
         aviso_vencimiento_publicaciones_productor_habilitado: "false",
@@ -129,6 +133,7 @@ describe("ListadoConfiguracionesGenerales", () => {
         preparar();
         expect(propsVigencia("Vigencia de fotos de operadores").configuracion).toEqual({ habilitado: true, diasVigencia: "30", avisosHabilitados: true, diasAnticipacion: "7" });
         expect(propsVigencia("Vigencia de fotos de productores").configuracion).toEqual({ habilitado: true, diasVigencia: "10", avisosHabilitados: false, diasAnticipacion: "2" });
+        expect(propsVigencia("Vigencia de publicaciones de operadores").configuracion).toEqual({ habilitado: true, diasVigencia: "20", avisosHabilitados: true, diasAnticipacion: "3" });
         expect(propsVigencia("Vigencia de publicaciones de productores").configuracion).toEqual({ habilitado: true, diasVigencia: "15", avisosHabilitados: false, diasAnticipacion: "" });
     });
 
@@ -146,6 +151,7 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(propsOrdenamiento().configuracion).toEqual({ habilitado: false, ordenLanding: "mas_vendidas", ordenMercadoVirtual: "mas_vendidas", ordenMercadoProduccion: "mas_vendidas" });
         expect(propsVigencia("Vigencia de fotos de operadores").configuracion).toEqual({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" });
         expect(propsVigencia("Vigencia de fotos de productores").configuracion).toEqual({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" });
+        expect(propsVigencia("Vigencia de publicaciones de operadores").configuracion).toEqual({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" });
         expect(propsVigencia("Vigencia de publicaciones de productores").configuracion).toEqual({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" });
         expect(propsRestablecimiento().habilitado).toBe(false);
     });
@@ -244,6 +250,18 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(mocks.refresh).toHaveBeenCalledOnce();
     });
 
+    it("guarda la vigencia de publicaciones de operadores con sus propias claves", async () => {
+        preparar();
+        await act(async () => { await propsVigencia("Vigencia de publicaciones de operadores").onGuardar({ habilitado: true, diasVigencia: "60", avisosHabilitados: true, diasAnticipacion: "10" }) });
+        expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({
+            vigencia_publicaciones_operador_habilitada: "true",
+            vigencia_publicaciones_operador: "60",
+            aviso_vencimiento_publicaciones_operador_habilitado: "true",
+            anticipacion_aviso_publicaciones_operador: "10",
+        });
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
     it("guarda la vigencia de fotos de productores sin modificar la de operadores", async () => {
         preparar();
         await act(async () => { await propsVigencia("Vigencia de fotos de productores").onGuardar({ habilitado: true, diasVigencia: "12", avisosHabilitados: true, diasAnticipacion: "3" }) });
@@ -256,7 +274,7 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(mocks.refresh).toHaveBeenCalledOnce();
     });
 
-    it("guarda la vigencia de publicaciones con sus propias claves", async () => {
+    it("guarda la vigencia de publicaciones de productores con sus propias claves", async () => {
         preparar();
         await act(async () => { await propsVigencia("Vigencia de publicaciones de productores").onGuardar({ habilitado: true, diasVigencia: "20", avisosHabilitados: true, diasAnticipacion: "3" }) });
         expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({

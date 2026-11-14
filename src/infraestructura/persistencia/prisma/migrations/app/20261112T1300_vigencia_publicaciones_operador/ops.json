@@ -1,0 +1,24 @@
+[
+  {
+    "id": "data_migration.vigencia_publicaciones_operador",
+    "label": "Incorporar la vigencia configurable de publicaciones de operadores",
+    "operationClass": "data",
+    "invariantId": "uam:vigencia-publicaciones-operador",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Conservar los avisos actuales sin activar un límite de vigencia ni sobrescribir opciones de operadores",
+        "sql": "INSERT INTO \"public\".\"configuracion\" (\"nombreConfiguracion\", \"valorConfiguracion\")\nSELECT claves.destino,\n       CASE WHEN actual.\"nombreConfiguracion\" IS NULL\n            THEN claves.predeterminado\n            ELSE actual.\"valorConfiguracion\"\n       END\nFROM (VALUES\n  (NULL, 'vigencia_publicaciones_operador_habilitada', 'false'),\n  ('vigencia_publicaciones_productor', 'vigencia_publicaciones_operador', '30'),\n  ('aviso_vencimiento_publicaciones_productor_habilitado', 'aviso_vencimiento_publicaciones_operador_habilitado', 'true'),\n  ('anticipacion_aviso_publicaciones_productor', 'anticipacion_aviso_publicaciones_operador', '7')\n) AS claves(origen, destino, predeterminado)\nLEFT JOIN \"public\".\"configuracion\" actual ON actual.\"nombreConfiguracion\" = claves.origen\nON CONFLICT (\"nombreConfiguracion\") DO NOTHING;"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verificar que existen las cuatro opciones de vigencia de operadores",
+        "sql": "SELECT count(*) = 4 AS result\nFROM \"public\".\"configuracion\"\nWHERE \"nombreConfiguracion\" IN (\n  'vigencia_publicaciones_operador_habilitada',\n  'vigencia_publicaciones_operador',\n  'aviso_vencimiento_publicaciones_operador_habilitado',\n  'anticipacion_aviso_publicaciones_operador'\n);"
+      }
+    ]
+  }
+]

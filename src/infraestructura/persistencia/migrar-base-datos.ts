@@ -34,10 +34,14 @@ export function ejecutarMigraciones(argumentos: string[], raiz: string): number 
         throw new Error("El contrato emitido no contiene un identificador válido. Ejecutá npm run db:contract.");
     }
     const directorioRefs = join(directorioPrisma, "migrations", "app", "refs");
-    const requeridas = leerJson(join(directorioRefs, "aging-fotos-por-rol.json")).invariants;
-    if (!Array.isArray(requeridas) || requeridas.length === 0 || requeridas.some((valor) => typeof valor !== "string" || !valor.trim())) {
-        throw new Error("La referencia de aging de fotos no declara sus migraciones de datos requeridas.");
-    }
+    const referenciasRequeridas = ["aging-fotos-por-rol.json", "vigencia-publicaciones-operador.json"];
+    const requeridas = referenciasRequeridas.flatMap((referencia): string[] => {
+        const invariantes = leerJson(join(directorioRefs, referencia)).invariants;
+        if (!Array.isArray(invariantes) || invariantes.length === 0 || invariantes.some((valor) => typeof valor !== "string" || !valor.trim())) {
+            throw new Error(`La referencia ${referencia} no declara sus migraciones de datos requeridas.`);
+        }
+        return invariantes;
+    });
 
     // Usar el contrato actual permite avanzar también por futuras migraciones de esquema.
     // Prisma registra los invariantes aplicados: no vuelve a ejecutar una migración satisfecha.

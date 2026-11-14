@@ -51,9 +51,14 @@ const mocks = vi.hoisted(() => {
         execute: vi.fn(),
         guardarImagen: vi.fn(),
         eliminarImagen: vi.fn(),
+        fechaMaxima: vi.fn(),
         enviarNotificacion: vi.fn(),
     };
 });
+
+vi.mock("../configuracion-vigencia-publicaciones", () => ({
+    obtenerFechaMaximaVigenciaOperador: mocks.fechaMaxima,
+}));
 
 vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
     db: {
@@ -143,6 +148,7 @@ function prepararTransaccion() {
     mocks.transaction.mockImplementation((callback: (tx: typeof transaccion) => unknown) => callback(transaccion));
     mocks.rawSql.mockReturnValue({ returnsRow: () => ({ build: () => ({}) }) });
     mocks.execute.mockResolvedValue(undefined);
+    mocks.fechaMaxima.mockResolvedValue(null);
     mocks.guardarImagen.mockResolvedValue(FOTO_NUEVA);
     mocks.eliminarImagen.mockResolvedValue(undefined);
     mocks.enviarNotificacion.mockResolvedValue({ enviadas: 1 });
@@ -155,6 +161,79 @@ describe("modificarPublicacionOperador", () => {
     });
 
     afterEach(() => vi.restoreAllMocks());
+
+    describe("vigencia configurada para operadores", () => {
+        beforeEach(() => {
+            vi.spyOn(Temporal.Now, "plainDateISO").mockReturnValue(Temporal.PlainDate.from("2026-11-07"));
+            mocks.fechaMaxima.mockResolvedValue("2026-11-10");
+        });
+
+        it.each([null, ""])("aplica el máximo al enviar la fecha vacía %s", async (fechaVigencia) => {
+            await modificarPublicacionOperador(9, 12, { ...cambios, fechaVigencia });
+
+            const escritura = mocks.publicacion.update.mock.calls[0][0] as { fechaVigencia: Temporal.Instant };
+            expect(escritura.fechaVigencia.toString()).toBe("2026-11-11T02:59:59Z");
+            expect(mocks.publicacion.update).toHaveBeenCalledWith(expect.objectContaining({
+                avisoProximoVencimientoEn: null, avisoVencimientoEn: null,
+            }));
+            expect(mocks.fechaMaxima).toHaveBeenCalledExactlyOnceWith(transaccion);
+            expect(mocks.fechaMaxima.mock.invocationCallOrder[0]).toBeLessThan(mocks.execute.mock.invocationCallOrder[0]);
+        });
+
+        it("conserva una fecha existente posterior al máximo cuando se omite en la edición", async () => {
+            mocks.publicacion.first.mockResolvedValue({
+                version: 1, tipoPublicacion: "OPERADOR", foto: FOTO_ANTERIOR,
+                fechaVigencia: Temporal.Instant.from("2026-11-20T02:59:59Z"),
+            });
+
+            await modificarPublicacionOperador(9, 12, cambios);
+
+            expect(mocks.publicacion.update.mock.calls[0][0]).not.toHaveProperty("fechaVigencia");
+            expect(mocks.publicacion.update.mock.calls[0][0]).not.toHaveProperty("avisoProximoVencimientoEn");
+            expect(mocks.publicacion.update.mock.calls[0][0]).not.toHaveProperty("avisoVencimientoEn");
+        });
+
+        it.each(["2026-11-09", "2026-11-10"])("admite la fecha %s dentro del máximo inclusive", async (fechaVigencia) => {
+            await modificarPublicacionOperador(9, 12, { ...cambios, fechaVigencia });
+
+            const escritura = mocks.publicacion.update.mock.calls[0][0] as { fechaVigencia: Temporal.Instant };
+            expect(escritura.fechaVigencia.toZonedDateTimeISO("America/Montevideo").toPlainDate().toString()).toBe(fechaVigencia);
+        });
+
+        it("rechaza una fecha posterior al máximo y limpia la imagen preparada", async () => {
+            await expect(modificarPublicacionOperador(9, 12, {
+                ...cambios, fechaVigencia: "2026-11-11",
+            }, archivoNuevo())).rejects.toMatchObject({
+                codigo: "DATOS_INVALIDOS",
+                message: "La fecha de vigencia no puede superar el 2026-11-10.",
+            });
+
+            expect(mocks.publicacion.update).not.toHaveBeenCalled();
+            expect(mocks.vinculo.update).not.toHaveBeenCalled();
+            expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
+        });
+
+        it.each([null, "2026-11-20"])("respeta la fecha solicitada %s cuando la vigencia general está desactivada", async (fechaVigencia) => {
+            mocks.fechaMaxima.mockResolvedValue(null);
+
+            await modificarPublicacionOperador(9, 12, { ...cambios, fechaVigencia });
+
+            const escritura = mocks.publicacion.update.mock.calls[0][0] as { fechaVigencia: Temporal.Instant | null };
+            expect(escritura.fechaVigencia?.toString() ?? null).toBe(fechaVigencia === null ? null : "2026-11-21T02:59:59Z");
+        });
+
+        it("no guarda y limpia la imagen si falta la configuración", async () => {
+            const error = new Error("No se pudo consultar la configuración de vigencia de publicaciones.");
+            mocks.fechaMaxima.mockRejectedValue(error);
+
+            await expect(modificarPublicacionOperador(9, 12, cambios, archivoNuevo())).rejects.toBe(error);
+
+            expect(mocks.execute).not.toHaveBeenCalled();
+            expect(mocks.publicacion.update).not.toHaveBeenCalled();
+            expect(mocks.vinculo.update).not.toHaveBeenCalled();
+            expect(mocks.eliminarImagen).toHaveBeenCalledExactlyOnceWith(FOTO_NUEVA, 20);
+        });
+    });
 
     describe("aviso de edición administrativa", () => {
         it("avisa al dueño con el ID base y dentro de la transacción de edición", async () => {
