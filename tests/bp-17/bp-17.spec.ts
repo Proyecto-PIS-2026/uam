@@ -15,7 +15,7 @@ async function seleccionarProducto(page: Page) {
 
 async function esperarHistorico(page: Page) {
   await expect(page.getByRole("button", { name: "Consultar", exact: true })).toBeEnabled({ timeout: 60_000 });
-  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveCount(0);
 }
 
 async function cargarHistorico(page: Page) {
@@ -112,7 +112,7 @@ test.describe("BP-17.1 histórico de precios", () => {
     const anterior = page.url();
     await page.getByRole("textbox", { name: "Desde", exact: true }).fill("2025-02-02");
     await page.getByRole("textbox", { name: "Hasta", exact: true }).fill("2025-02-01");
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText("La fecha de inicio debe ser anterior o igual a la fecha de fin.");
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveText("La fecha de inicio debe ser anterior o igual a la fecha de fin.");
     await expect(page.getByRole("button", { name: "Consultar", exact: true })).toBeDisabled();
     expect(page.url()).toBe(anterior);
   });
@@ -123,13 +123,13 @@ test.describe("BP-17.1 histórico de precios", () => {
     await page.getByRole("textbox", { name: "Hasta", exact: true }).fill("2019-01-02");
     await page.getByRole("button", { name: "Consultar", exact: true }).click();
     await expect(page.getByRole("main").getByRole("status")).toHaveText("No hay registros históricos para los filtros y el período seleccionados.");
-    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveCount(0);
   });
 
   test("@new permite elegir una especie al entrar sin identificador", async ({ page }) => {
     await page.goto("/precios-historicos");
     await expect(page.getByRole("heading", { name: "Histórico de precios", exact: true, level: 1 })).toBeVisible();
-    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveCount(0);
     await expect(page.getByRole("main").getByRole("status")).toHaveText("Seleccioná una especie para consultar su histórico de precios.");
     const consultar = page.getByRole("button", { name: "Consultar", exact: true });
     await expect(consultar).toBeDisabled();
@@ -146,7 +146,7 @@ test.describe("BP-17.1 histórico de precios", () => {
   for (const id of ["abc", "0"]) {
     test(`@new rechaza un producto inválido (${id})`, async ({ page }) => {
       await page.goto(`/precios-historicos?species_id=${id}`);
-      await expect(page.getByRole("main").getByRole("alert").filter({ visible: true })).toHaveText("Seleccioná un producto válido desde precios de referencia para consultar su histórico.");
+      await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveText("Seleccioná un producto válido desde precios de referencia para consultar su histórico.");
     });
   }
 });

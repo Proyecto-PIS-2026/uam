@@ -36,11 +36,12 @@ vi.mock("@/compartido/EncabezadoPagina", () => ({
 }));
 
 vi.mock("@/modulos/administracion/componentes/contenedor-configuracion/ContenedorConfiguraciones", () => ({
-    default: ({ general, usuarios, estadisticas }: { general: ReactNode; usuarios: ReactNode; estadisticas: ReactNode }) => (
+    default: ({ general, usuarios, estadisticas, catalogos }: { general: ReactNode; usuarios: ReactNode; estadisticas: ReactNode; catalogos: ReactNode }) => (
         <div>
             <section aria-label="General">{general}</section>
             <section aria-label="Usuarios">{usuarios}</section>
             <section aria-label="Estadísticas">{estadisticas}</section>
+            <section aria-label="Catálogos">{catalogos}</section>
         </div>
     ),
 }));
@@ -51,6 +52,10 @@ vi.mock("@/modulos/administracion/componentes/configuracion-general/contenedor-c
 
 vi.mock("@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios", () => ({
     default: mocks.usuarios,
+}));
+
+vi.mock("@/modulos/administracion/componentes/catalogos-publicacion/CatalogosPublicacion", () => ({
+    default: () => <div>Catálogos de publicaciones</div>,
 }));
 
 vi.mock("@/modulos/administracion/componentes/estadistica/ContenedorEstadistica", () => ({
@@ -126,11 +131,12 @@ describe("PaginaAdministracion", () => {
         expect(screen.getByTestId("cantidad-encabezado")).toHaveTextContent("null");
     });
 
-    it("incluye las secciones General, Usuarios y Estadísticas", async () => {
+    it("incluye las secciones General, Usuarios, Estadísticas y Catálogos", async () => {
         render(await PaginaAdministracion());
         expect(screen.getByRole("region", { name: "General" })).toBeInTheDocument();
         expect(screen.getByRole("region", { name: "Usuarios" })).toBeInTheDocument();
         expect(screen.getByRole("region", { name: "Estadísticas" })).toBeInTheDocument();
+        expect(screen.getByRole("region", { name: "Catálogos" })).toContainElement(screen.getByText("Catálogos de publicaciones"));
     });
 
     it("incluye la configuración general en su sección", async () => {

@@ -45,7 +45,7 @@ export async function validarCatalogosSeleccion(cliente: Pick<typeof db, "orm">,
         && (datos.variedadId === null || (variedad?.variedadActiva && variedad.especieId === datos.especieId))
         && (datos.envaseId === null || envase)
         && (datos.kilosId === null || kilos)
-        && (datos.categoriaId === null || (categoria && (categoria.especieId === null || categoria.especieId === datos.especieId)))
+        && (datos.categoriaId === null || categoria)
         && (datos.calibreId === null || calibre)
         && (datos.paisId === null || pais));
 }

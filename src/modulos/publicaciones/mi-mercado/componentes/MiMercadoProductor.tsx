@@ -6,6 +6,7 @@ import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { useRouter } from "next/navigation";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import EncabezadoPagina from "../../../../compartido/EncabezadoPagina";
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
@@ -74,7 +75,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                     titulo="Mi Mercado"
                     subtitulo={`${publicaciones.length} ${publicaciones.length === 1 ? "publicación" : "publicaciones"}`}
                 />
-                {avisoPublicacion && <p className={styles.mensajeError} role="status">{avisoPublicacion}</p>}
+                <AvisoErrorToast mensaje={avisoPublicacion} tipo="warning" />
                 {publicaciones.length > 0 && (
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
@@ -107,7 +108,7 @@ export default function MiMercadoProductor({ publicaciones, nombreProductor = ""
                     </div>
                 )}
             </div>
-            <DrawerPublicacionProductor mostrarAvisoFoto publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} alGuardar={guardarPublicacion} alEliminada={(mensaje) => { notificar(mensaje, "success"); router.refresh(); }} />
+            <DrawerPublicacionProductor mostrarAvisoFoto publicacion={publicacionSeleccionada} alCerrar={() => setSeleccionId(null)} alGuardar={guardarPublicacion} alEliminada={(mensaje, tipo) => { notificar(mensaje, tipo); router.refresh(); }} />
             {productorId > 0 && <DrawerAltaPublicacionProductor productorId={productorId} abierto={altaAbierta} alCerrar={() => setAltaAbierta(false)} alCrear={(mensaje) => { setAltaAbierta(false); notificar(mensaje, "success"); router.refresh(); }} />}
         </main>
     );

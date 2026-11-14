@@ -61,6 +61,11 @@
     outline-offset: 1px;
 }
 
+.entrada:has([data-error-validacion="true"]) {
+    border-color: var(--color-danger);
+    outline-color: var(--color-danger);
+}
+
 .entrada input {
     width: 100%;
     min-width: 0;

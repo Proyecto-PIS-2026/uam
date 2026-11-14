@@ -24,7 +24,7 @@ async function abrirSolicitud(page: Page, username: string) {
 async function solicitar(page: Page, cuenta: Cuenta) {
     const dialogo = await abrirSolicitud(page, cuenta.username);
     await dialogo.getByRole("button", { name: "Aceptar", exact: true }).click();
-    await expect(page.getByRole("status").filter({ hasText: exito })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("status").filter({ hasText: exito })).toBeVisible();
 }
 
 async function estado(db: Client, cuenta: Cuenta) {
@@ -131,7 +131,8 @@ test.describe("BP-16: Restablecimiento de contraseña", () => {
         await db.query('UPDATE configuracion SET "valorConfiguracion" = $1 WHERE "nombreConfiguracion" = $2',
             ["false", "restablecimiento_contrasena_habilitado"]);
         await dialogo.getByRole("button", { name: "Aceptar", exact: true }).click();
-        await expect(dialogo.getByRole("alert")).toHaveText("La recuperación de contraseña no está habilitada por el administrador.");
+        await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert"))
+            .toHaveText("La recuperación de contraseña no está habilitada por el administrador.");
         expect((await estado(db, solicitante)).solicitoRestablecimiento).toBe(false);
         expect(await avisosRecibidos(db, administrador, solicitante)).toBe(0);
 
@@ -161,7 +162,7 @@ test.describe("BP-16: Restablecimiento de contraseña", () => {
                 await abrirCambio(page, solicitante);
                 await completar(page, solicitante.contrasena, nueva);
                 await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
-                await expect(page.getByRole("form", { name: "Cambio de contraseña" }).getByRole("status"))
+                await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("status"))
                     .toHaveText("Tu contraseña se actualizó correctamente.");
                 const despues = await estado(db, solicitante);
                 expect(despues.passwordHash).not.toBe(antes.passwordHash);

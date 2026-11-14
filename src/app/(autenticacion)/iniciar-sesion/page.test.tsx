@@ -65,7 +65,9 @@ describe("PaginaInicioSesion", () => {
 
     it.each(["cancelado", "vencido", "bloqueado"])("muestra el motivo de retorno del segundo factor: %s", async (segundoFactor) => {
         render(await PaginaInicioSesion({ searchParams: Promise.resolve({ segundoFactor }) }));
-        expect(screen.getAllByRole("status").some((elemento) => elemento.textContent?.trim())).toBe(true);
+        const aviso = await screen.findByRole(segundoFactor === "cancelado" ? "status" : "alert");
+        expect(aviso.textContent?.trim()).toBeTruthy();
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
     });
 
     it("no muestra mensajes arbitrarios enviados en la URL", async () => {

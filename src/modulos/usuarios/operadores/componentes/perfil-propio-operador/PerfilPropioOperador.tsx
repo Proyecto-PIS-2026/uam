@@ -132,7 +132,7 @@ export default function PerfilPropioOperador({ perfil, cambioContrasenaHabilitad
                             )}
                             <p className={styles.aviso}>
                                 <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
-                                <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
+                                <span>La gestión de licencias debe tramitarse exclusivamente a través de los mecanismos habituales de la UAM. La información exhibida en este sitio tiene carácter meramente informativo.</span>
                             </p>
                         </section>
                     </div>

@@ -57,7 +57,7 @@ async function consultarHistoricos(page: Page) {
     await expect(page.getByRole("form", { name: "Consultar período histórico" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Consultar", exact: true })).toBeEnabled({ timeout: 30_000 });
     await expect(page.getByRole("table").getByRole("cell", { name: "URUGUAY", exact: true }).first()).toBeVisible();
-    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveCount(0);
   });
 }
 

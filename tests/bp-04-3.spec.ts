@@ -102,8 +102,8 @@ async function enviarCodigo(page: Page, valor: string) {
   await page.getByRole("button", { name: /^(Confirmar|Verificar) e ingresar$/ }).click();
 }
 
-// Next.js agrega su propio role="alert" (anunciador de rutas): se filtra por el mensaje.
-const alertaCodigo = (page: Page) => page.getByRole("alert").filter({ hasText: mensajeCodigoInvalido });
+const notificaciones = (page: Page) => page.getByRole("region", { name: "Notificaciones", exact: true });
+const alertaCodigo = (page: Page) => notificaciones(page).getByRole("alert").filter({ hasText: mensajeCodigoInvalido });
 
 async function esperarRechazo(page: Page) {
   await expect(alertaCodigo(page)).toBeVisible();
@@ -186,7 +186,7 @@ test.describe("BP-04.3: Autenticación con 2FA para los Administradores", () => 
 
     await page.getByRole("button", { name: "Cancelar y volver al inicio de sesión" }).click();
     await expect(page).toHaveURL(/\/iniciar-sesion\?segundoFactor=cancelado$/);
-    await expect(page.getByRole("main").getByRole("status")).toHaveText("Cancelaste la verificación en dos pasos. No se inició sesión.");
+    await expect(notificaciones(page).getByRole("status")).toHaveText("Cancelaste la verificación en dos pasos. No se inició sesión.");
     const usuario = await db.orm.public.Usuario.where({ id: admin.usuarioId }).first();
     expect(usuario?.twoFactorEnabled).toBe(false);
     expect(usuario?.twoFactorPendingSecret).toBeNull();
@@ -262,7 +262,7 @@ test.describe("BP-04.3: Autenticación con 2FA para los Administradores", () => 
 
     await enviarCodigo(page, codigo(admin.secreto!));
     await expect(page).toHaveURL(/\/iniciar-sesion\?segundoFactor=vencido$/);
-    await expect(page.getByRole("main").getByRole("status"))
+    await expect(notificaciones(page).getByRole("alert"))
       .toHaveText("Se terminó el tiempo para completar la verificación en dos pasos. Iniciá sesión nuevamente para comenzar.");
     await esperarSinAccesoAdministrativo(page);
   });
@@ -272,7 +272,7 @@ test.describe("BP-04.3: Autenticación con 2FA para los Administradores", () => 
     await ingresarCredenciales(page, admin);
     await page.getByRole("button", { name: "Cancelar y volver al inicio de sesión" }).click();
     await expect(page).toHaveURL(/\/iniciar-sesion\?segundoFactor=cancelado$/);
-    await expect(page.getByRole("main").getByRole("status")).toHaveText("Cancelaste la verificación en dos pasos. No se inició sesión.");
+    await expect(notificaciones(page).getByRole("status")).toHaveText("Cancelaste la verificación en dos pasos. No se inició sesión.");
     const usuario = await db.orm.public.Usuario.where({ id: admin.usuarioId }).first();
     expect(usuario?.twoFactorChallengeHash, "El desafío pendiente se descarta").toBeNull();
     expect(usuario?.twoFactorEnabled, "Cancelar no modifica la configuración").toBe(true);

@@ -425,7 +425,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(precio).toHaveValue("100");
     });
 
-    it.each(["específica", "global"])("cambia especie y resuelve dependencias conservando una categoría %s compatible", async (tipoCategoria) => {
+    it.each(["específica", "global"])("conserva la categoría antes %s y muestra el catálogo completo al cambiar especie", async (tipoCategoria) => {
         const inicial = tipoCategoria === "global" ? { ...publicacion, categoria: { id: 6, nombreCategoria: "General" } } : publicacion;
         const actualizada = {
             ...inicial,
@@ -442,12 +442,12 @@ describe("DrawerPublicacionProductor: edición", () => {
 
         expect(screen.getByRole("combobox", { name: /^Variedad/ })).toHaveTextContent("Sin especificar");
         expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).toHaveTextContent("Cajon");
-        expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent(tipoCategoria === "global" ? "General" : "Sin especificar");
+        expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent(tipoCategoria === "global" ? "General" : "Primera");
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Categoría/ }));
         expect(screen.getByRole("option", { name: "General" })).toBeInTheDocument();
         expect(screen.getByRole("option", { name: "Manzanas especiales" })).toBeInTheDocument();
-        expect(screen.queryByRole("option", { name: "Primera" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("option", { name: "Segunda" })).not.toBeInTheDocument();
+        expect(screen.getByRole("option", { name: "Primera" })).toBeInTheDocument();
+        expect(screen.getByRole("option", { name: "Segunda" })).toBeInTheDocument();
         fireEvent.click(screen.getByRole("option", { name: "General" }));
         await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
         fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Variedad/ }));
@@ -566,7 +566,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(mocks.fetch.mock.calls.some(([, config]) => config?.method === "PATCH")).toBe(false);
     });
 
-    it.each([400, 422])("conserva inline el fallo HTTP %s y permite reintentar sin perder el borrador", async (status) => {
+    it.each([400, 422])("avisa con toast el fallo HTTP %s y permite reintentar sin perder el borrador", async (status) => {
         const actualizada = { ...publicacion, precio: "300" };
         mocks.fetch.mockResolvedValueOnce(respuesta({ opciones }))
             .mockResolvedValueOnce(respuesta({ errores: ["No se pudo guardar la publicación."] }, false, status))
@@ -577,8 +577,9 @@ describe("DrawerPublicacionProductor: edición", () => {
 
         const alerta = await screen.findByRole("alert");
         expect(alerta).toHaveTextContent("No se pudo guardar la publicación.");
-        expect(screen.getByLabelText("Precio en pesos").closest("form")).toContainElement(alerta);
-        expect(screen.queryByRole("button", { name: "Cerrar notificación" })).not.toBeInTheDocument();
+        expect(screen.getByLabelText("Precio en pesos").closest("form")).not.toContainElement(alerta);
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(alerta);
+        expect(screen.getByRole("button", { name: "Cerrar notificación" })).toBeInTheDocument();
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("300");
         expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
         expect(mocks.guardar).not.toHaveBeenCalled();
@@ -800,6 +801,9 @@ describe("DrawerPublicacionProductor: edición", () => {
         if (status === 400) {
             expect(screen.getByRole("alert")).toHaveTextContent("Revisá el empaquetado seleccionado.");
             expect(screen.getByRole("button", { name: "Cerrar edición" })).toBeEnabled();
+            fireEvent.keyDown(papel, { key: "Escape" });
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+            expect(mocks.cerrar).not.toHaveBeenCalled();
             fireEvent.keyDown(papel, { key: "Escape" });
             expect(mocks.cerrar).toHaveBeenCalledOnce();
         }
@@ -1107,7 +1111,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         await act(async () => resolver(respuesta({ mensaje: "Publicación eliminada correctamente." })));
 
         expect(mocks.cerrar).toHaveBeenCalledOnce();
-        expect(mocks.eliminada).toHaveBeenCalledExactlyOnceWith("Publicación eliminada correctamente.");
+        expect(mocks.eliminada).toHaveBeenCalledExactlyOnceWith("Publicación eliminada correctamente.", "success");
         expect(mocks.guardar).not.toHaveBeenCalled();
     });
 

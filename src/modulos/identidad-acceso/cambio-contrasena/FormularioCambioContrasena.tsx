@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Alert } from "@mui/material";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { cambiarMiContrasena } from "./cambiarMiContrasena";
@@ -14,8 +14,7 @@ export default function FormularioCambioContrasena({ volver }: { volver: string 
     const [actual, setActual] = useState("");
     const [nueva, setNueva] = useState("");
     const [confirmacion, setConfirmacion] = useState("");
-    const [errores, setErrores] = useState<readonly string[]>([]);
-    const [mensaje, setMensaje] = useState("");
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const enviando = useRef(false);
     const [visibilidad, setVisibilidad] = useState({ actual: false, nueva: false, confirmacion: false });
@@ -23,20 +22,19 @@ export default function FormularioCambioContrasena({ volver }: { volver: string 
     async function guardar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (enviando.current) return;
-        setMensaje("");
+        cerrarNotificacion();
         const datos = { actual, nueva, confirmacion };
         const validacion = validarCambioContrasena(datos);
-        if (!validacion.esValido) { setErrores(validacion.errores); return; }
+        if (!validacion.esValido) { notificar(validacion.errores.join("\n"), "error"); return; }
         enviando.current = true;
         setGuardando(true);
-        setErrores([]);
         try {
             const resultado = await cambiarMiContrasena(datos);
-            if (!resultado.esValido) { setErrores(resultado.errores); return; }
+            if (!resultado.esValido) { notificar(resultado.errores.join("\n"), "error"); return; }
             setActual(""); setNueva(""); setConfirmacion("");
-            setMensaje(resultado.mensaje);
+            notificar(resultado.mensaje, "success");
         } catch {
-            setErrores(["No se pudo cambiar la contraseña. Intentá nuevamente."]);
+            notificar("No se pudo cambiar la contraseña. Intentá nuevamente.", "error");
         } finally {
             enviando.current = false;
             setGuardando(false);
@@ -58,8 +56,6 @@ export default function FormularioCambioContrasena({ volver }: { volver: string 
     }
 
     return <form className={styles.formulario} onSubmit={guardar} noValidate aria-label="Cambio de contraseña">
-        {errores.length > 0 && <Alert severity="error">{errores.join(" ")}</Alert>}
-        {mensaje && <Alert severity="success" role="status">{mensaje}</Alert>}
         <section className={styles.seccion}>
             {campo("actual", "Contraseña actual", "current-password", actual, setActual)}
             {campo("nueva", "Nueva contraseña", "new-password", nueva, setNueva, "Al menos 8 caracteres.")}

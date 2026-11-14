@@ -44,7 +44,7 @@ export default function PerfilAdministrador({ administrador, esPropiaCuenta }: P
         try {
             const resultado = await restablecerSegundoFactorAdministrador(administrador.id);
             if (!resultado.esValido) {
-                notificar(resultado.errores.join(" "), "error");
+                notificar(resultado.errores.join("\n"), "error");
                 return;
             }
             setConfirmando(false);

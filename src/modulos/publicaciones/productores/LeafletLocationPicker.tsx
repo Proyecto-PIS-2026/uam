@@ -14,6 +14,7 @@ import type { Map as LeafletMap, CircleMarker } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./LeafletLocationPicker.module.css";
 import { normalizarDepartamento } from "@/compartido/departamentos-uruguay";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 
 export type UbicacionSeleccionada = {
     latitud: number;
@@ -68,6 +69,7 @@ export default function LeafletLocationPicker({ abierto, ...props }: Props) {
 }
 
 function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alConfirmar, alCerrar }: Omit<Props, "abierto">) {
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const latitudInicial = coordenadas?.latitud ?? null;
     const longitudInicial = coordenadas?.longitud ?? null;
     const departamentoInicial = coordenadas?.departamento ?? "";
@@ -92,9 +94,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
     const [seleccion, setSeleccion] = useState<UbicacionSeleccionada | null>(inicial?.departamento ? inicial : null);
     const [nombre, setNombre] = useState(nombreLugarInicial);
     const [nombreRevisado, setNombreRevisado] = useState(false);
-    const [errorSeleccion, setErrorSeleccion] = useState("");
-    const [errorBusqueda, setErrorBusqueda] = useState("");
-    const [errorMapa, setErrorMapa] = useState("");
+    const [errorMapa, setErrorMapa] = useState(false);
     const [busqueda, setBusqueda] = useState("");
     const [resultados, setResultados] = useState<ResultadoBusqueda[]>([]);
     const [buscando, setBuscando] = useState(false);
@@ -115,9 +115,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             setNombre(nombreLugarInicial);
             setNombreRevisado(false);
             setSeleccion(inicial?.departamento ? inicial : null);
-            setErrorSeleccion("");
-            setErrorBusqueda("");
-            setErrorMapa("");
+            setErrorMapa(false);
             setBusqueda("");
             setResultados([]);
             setBuscando(false);
@@ -145,6 +143,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             };
 
             const marcar = async (latitud: number, longitud: number) => {
+                cerrarNotificacion();
                 const solicitud = ++solicitudSeleccionRef.current;
                 seleccionAbortRef.current?.abort();
                 const controlador = new AbortController();
@@ -153,14 +152,12 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
                 busquedaAbortRef.current?.abort();
                 setBuscando(false);
                 setResultados([]);
-                setErrorBusqueda("");
                 setSeleccion(null);
-                setErrorSeleccion("");
                 if (!coordenadasValidas(latitud, longitud)) {
                     marcadorRef.current?.remove();
                     marcadorRef.current = null;
                     setIdentificando(false);
-                    setErrorSeleccion("Seleccioná un punto válido dentro de Uruguay.");
+                    notificar("Seleccioná un punto válido dentro de Uruguay.", "error");
                     return;
                 }
                 ponerMarcador(latitud, longitud, true);
@@ -188,8 +185,8 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
                     marcadorRef.current?.remove();
                     marcadorRef.current = null;
                     const mensaje = razon instanceof Error ? razon.message : "";
-                    setErrorSeleccion(mensaje === "La ubicación debe estar dentro de Uruguay." || mensaje === "No pudimos identificar el departamento. Seleccioná nuevamente el punto en el mapa."
-                        ? mensaje : "No pudimos identificar la ubicación. Revisá tu conexión e intentá nuevamente.");
+                    notificar(mensaje === "La ubicación debe estar dentro de Uruguay." || mensaje === "No pudimos identificar el departamento. Seleccioná nuevamente el punto en el mapa."
+                        ? mensaje : "No pudimos identificar la ubicación. Revisá tu conexión e intentá nuevamente.", "error");
                 } finally {
                     if (activo && !controlador.signal.aborted && solicitud === solicitudSeleccionRef.current) setIdentificando(false);
                 }
@@ -204,7 +201,8 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
         }).catch(() => {
             if (!activo) return;
             setMapaListo(false);
-            setErrorMapa("No se pudo cargar el mapa. Cerralo e intentá nuevamente.");
+            setErrorMapa(true);
+            notificar("No se pudo cargar el mapa. Cerralo e intentá nuevamente.", "error");
         });
 
         return () => {
@@ -220,9 +218,10 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             mapaInstanciaRef.current?.remove();
             mapaInstanciaRef.current = null;
         };
-    }, [elementoMapa, inicial, nombreLugarInicial]);
+    }, [elementoMapa, inicial, nombreLugarInicial, notificar, cerrarNotificacion]);
 
     function cerrar() {
+        cerrarNotificacion();
         solicitudBusquedaRef.current += 1;
         solicitudSeleccionRef.current += 1;
         busquedaAbortRef.current?.abort();
@@ -231,12 +230,12 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
     }
 
     function cambiarBusqueda(valor: string) {
+        cerrarNotificacion();
         solicitudBusquedaRef.current += 1;
         busquedaAbortRef.current?.abort();
         setBuscando(false);
         setBusqueda(valor);
         setResultados([]);
-        setErrorBusqueda("");
     }
 
     async function buscarLugar(evento: FormEvent<HTMLFormElement>) {
@@ -244,13 +243,13 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
         evento.stopPropagation();
         const consulta = busqueda.trim();
         if (!consulta || !mapaListo) return;
+        cerrarNotificacion();
         const solicitud = ++solicitudBusquedaRef.current;
         busquedaAbortRef.current?.abort();
         const controlador = new AbortController();
         busquedaAbortRef.current = controlador;
         setBuscando(true);
         setResultados([]);
-        setErrorBusqueda("");
         try {
             const respuesta = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&countrycodes=uy&q=${encodeURIComponent(consulta)}`, {
                 headers: { "Accept-Language": "es" }, signal: controlador.signal,
@@ -261,11 +260,11 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             if (!Array.isArray(datos)) throw new Error();
             const encontrados = datos.filter(resultadoValido).slice(0, 5);
             setResultados(encontrados);
-            if (encontrados.length === 0) setErrorBusqueda("No se encontraron lugares para esa búsqueda. Probá otra dirección o marcá el punto en el mapa.");
+            if (encontrados.length === 0) notificar("No se encontraron lugares para esa búsqueda. Probá otra dirección o marcá el punto en el mapa.", "warning");
         } catch {
             if (controlador.signal.aborted || solicitud !== solicitudBusquedaRef.current) return;
             setResultados([]);
-            setErrorBusqueda("No pudimos buscar el lugar. Revisá tu conexión e intentá nuevamente.");
+            notificar("No pudimos buscar el lugar. Revisá tu conexión e intentá nuevamente.", "error");
         } finally {
             if (!controlador.signal.aborted && solicitud === solicitudBusquedaRef.current) setBuscando(false);
         }
@@ -282,10 +281,17 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
     }
 
     const nombreValido = nombre.trim().length > 0 && nombre.trim().length <= 200;
-    const puedeConfirmar = mapaListo && !identificando && !errorSeleccion && !errorMapa && Boolean(seleccion?.departamento) && nombreValido;
+    const puedeConfirmar = mapaListo && !identificando && !errorMapa && Boolean(seleccion?.departamento);
 
-    function confirmar() {
+    function confirmar(evento: FormEvent<HTMLFormElement>) {
+        evento.preventDefault();
+        evento.stopPropagation();
         if (!puedeConfirmar || !seleccion) return;
+        if (!nombreValido) {
+            setNombreRevisado(true);
+            notificar(nombre.trim() ? "Escribí un nombre de hasta 200 caracteres." : "Faltan completar campos obligatorios.", "error");
+            return;
+        }
         alConfirmar({ ...seleccion, nombreLugar: nombre.trim() });
     }
 
@@ -299,20 +305,19 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             <p className={styles.ayuda} id={`${id}-ayuda`}>Buscá una dirección o tocá el mapa para elegir el lugar de retiro. Podés ajustar el punto antes de confirmar.</p>
             <form className={styles.buscador} onSubmit={buscarLugar} role="search" aria-label="Buscar punto de retiro">
                 <div className={styles.controlesBusqueda}>
-                    <TextField id={`${id}-busqueda`} label="Buscar dirección o lugar" type="search" size="small" fullWidth className={styles.entradaBusqueda}
+                    <TextField id={`${id}-busqueda`} label="Buscar dirección o lugar" type="search" size="small" fullWidth required className={styles.entradaBusqueda}
                         value={busqueda} onChange={(evento) => cambiarBusqueda(evento.target.value)} placeholder="Ej.: Ruta 5, Canelones" disabled={!mapaListo}
                         slotProps={{ htmlInput: { maxLength: 200 } }} />
-                    <Button type="submit" variant="contained" color="secondary" startIcon={<SearchIcon />} disabled={buscando || !busqueda.trim() || !mapaListo}>{buscando ? "Buscando..." : "Buscar"}</Button>
+                    <Button type="submit" variant="contained" color="secondary" startIcon={<SearchIcon />} disabled={buscando || !mapaListo}>{buscando ? "Buscando..." : "Buscar"}</Button>
                 </div>
                 {resultados.length > 0 && <ul className={styles.resultados} aria-label="Resultados de búsqueda">
                     {resultados.map((resultado) => <li key={resultado.place_id}><button type="button" onClick={() => elegirResultado(resultado)}><LocationOnOutlinedIcon aria-hidden="true" /><span>{resultado.display_name}</span></button></li>)}
                 </ul>}
-                {errorBusqueda && <p className={styles.error} role="alert">{errorBusqueda}</p>}
             </form>
             <div className={styles.mapaContenedor} aria-busy={!mapaListo && !errorMapa}>
                 <div className={styles.mapa} ref={setElementoMapa} aria-label="Mapa para elegir el punto de retiro" />
                 {!mapaListo && <div className={styles.estadoMapa}>
-                    {errorMapa ? <p className={styles.error} role="alert">{errorMapa}</p> : <><CircularProgress size={28} color="secondary" /><span>Cargando mapa...</span></>}
+                    {errorMapa ? <Button type="button" variant="outlined" onClick={cerrar}>Cerrar para reintentar</Button> : <><CircularProgress size={28} color="secondary" /><span>Cargando mapa...</span></>}
                 </div>}
             </div>
             <div className={styles.resumen} role="status" aria-live="polite">
@@ -322,15 +327,16 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
                     <span>{seleccion ? "El punto marcado se usará para mostrar la ubicación." : "El departamento se completa al seleccionar un punto dentro de Uruguay."}</span>
                 </div>
             </div>
-            {errorSeleccion && <p className={styles.error} role="alert">{errorSeleccion}</p>}
-            <TextField id={`${id}-nombre`} label="Nombre del punto de retiro" value={nombre} required fullWidth size="small" disabled={!mapaListo}
-                onChange={(evento) => { nombreEditadoRef.current = true; setNombre(evento.target.value); }} onBlur={() => setNombreRevisado(true)}
-                error={nombreRevisado && !nombreValido} helperText={nombreRevisado && !nombreValido ? "Escribí un nombre de hasta 200 caracteres." : undefined}
-                slotProps={{ htmlInput: { maxLength: 200 } }} />
+            <form id={`${id}-confirmacion`} onSubmit={confirmar} aria-label="Confirmar punto de retiro">
+                <TextField id={`${id}-nombre`} label="Nombre del punto de retiro" value={nombre} required fullWidth size="small" disabled={!mapaListo}
+                    onChange={(evento) => { nombreEditadoRef.current = true; setNombre(evento.target.value); }} onBlur={() => setNombreRevisado(true)}
+                    error={nombreRevisado && !nombreValido}
+                    slotProps={{ htmlInput: { maxLength: 200 } }} />
+            </form>
         </div>
         <footer className={styles.pie}>
             <Button type="button" variant="outlined" color="secondary" onClick={cerrar}>Cancelar</Button>
-            <Button type="button" variant="contained" color="secondary" onClick={confirmar} disabled={!puedeConfirmar}>{modo === "editar" ? "Guardar cambios" : "Agregar punto"}</Button>
+            <Button type="submit" form={`${id}-confirmacion`} variant="contained" color="secondary" disabled={!puedeConfirmar}>{modo === "editar" ? "Guardar cambios" : "Agregar punto"}</Button>
         </footer>
     </Dialog>;
 }

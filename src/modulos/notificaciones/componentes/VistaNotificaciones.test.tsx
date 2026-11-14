@@ -275,6 +275,7 @@ describe("VistaNotificaciones", () => {
         vi.mocked(fetch).mockResolvedValueOnce(respuesta({ errores: ["Servicio temporalmente no disponible."] }, 503));
         render(<VistaNotificaciones usuarioId={7} />);
         expect(await screen.findByRole("alert")).toHaveTextContent("Servicio temporalmente no disponible.");
+        expect(screen.getAllByText("Servicio temporalmente no disponible.")).toHaveLength(1);
         expect(screen.queryByText("No tenés notificaciones")).not.toBeInTheDocument();
         expect(notificarCambioNotificaciones).not.toHaveBeenCalled();
         vi.mocked(fetch).mockResolvedValueOnce(respuesta(listado()));

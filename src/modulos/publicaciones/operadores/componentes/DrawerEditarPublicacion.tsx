@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
@@ -58,7 +59,8 @@ function precioParaEdicion(precio: string | null) {
     return Number.isInteger(valor) ? String(valor) : precio;
 }
 
-function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta = "", mostrarAvisoFoto = false, esWeb, guardando, setGuardando, alErrorGuardar }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void; alErrorGuardar: (mensaje: string) => void }) {
+function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, mostrarAvisoFoto = false, esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
     const [baseEdicion, setBaseEdicion] = useState(recibida);
     const [guardada, setGuardada] = useState<{ origen: PublicacionParaEditar; datos: PublicacionParaEditar } | null>(null);
@@ -90,7 +92,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const kilosId = editando ? kilosIdEditado : (publicacion.kilosId ?? 0);
     const paisId = editando ? paisIdEditado : (publicacion.paisId ?? 0);
     const disponible = editando ? disponibleEditado : (publicacion.disponible);
-    const [error, setError] = useState("");
     const inputFotoRef = useRef<HTMLInputElement>(null);
     const inputGaleriaRef = useRef<HTMLInputElement>(null);
     const urlVistaPreviaRef = useRef<string | null>(null);
@@ -102,7 +103,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const variedadSeleccionada = variedades.find((opcion) => opcion.id === variedadId);
     const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
     const envasesDisponibles = envases;
-    const categoriasDisponibles = categorias.filter((opcion) => opcion.especieId === null || opcion.especieId === especieId);
+    const categoriasDisponibles = categorias;
     const paisesOrdenados = [...paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre));
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
     const [fechaVigenciaEditada, setFechaVigencia] = useState(publicacion.fechaVigencia ?? "");
@@ -124,7 +125,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         if (!archivo) return;
 
         if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
-            setError("Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB.");
+            notificar("Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB.", "error");
             evento.target.value = "";
             return;
         }
@@ -134,7 +135,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         urlVistaPreviaRef.current = url;
         setVistaPrevia(url);
         setFotoNueva(archivo);
-        setError("");
+        cerrarNotificacion();
         evento.target.value = "";
     }
 
@@ -174,11 +175,8 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
 
     function cambiarEspecie(nuevaEspecieId: number) {
         if (bloqueado) return;
-        const categoriaActual = categorias.find((opcion) => opcion.id === categoriaId);
-        const categoriaCompatible = categoriaActual?.especieId === null || categoriaActual?.especieId === nuevaEspecieId;
         setEspecieId(nuevaEspecieId);
         setVariedadId(0);
-        if (!categoriaCompatible) setCategoriaId(0);
     }
 
     function cambiarVariedad(nuevaVariedadId: number) {
@@ -206,7 +204,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         setCalibreId(vigente.calibreId ?? 0);
         setPaisId(vigente.paisId ?? 0);
         setDisponible(vigente.disponible);
-        setError("");
+        cerrarNotificacion();
         setFechaVigencia(vigente.fechaVigencia ?? "");
     }
 
@@ -219,15 +217,15 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     function solicitarGuardado(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (bloqueado) return;
-        setError("");
+        cerrarNotificacion();
         if (!precioPublicacionValido(precio)) {
-            setError(PRECIO_PUBLICACION_INVALIDO);
+            notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
         }
 
         const cantidadNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
         if (cantidadNormalizada !== "" && !formatoCantidad.test(cantidadNormalizada)) {
-            setError("La cantidad de unidades debe ser un número entero de hasta 10 dígitos.");
+            notificar("La cantidad de unidades debe ser un número entero de hasta 10 dígitos.", "error");
             return;
         }
 
@@ -238,7 +236,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         const calibreValido = calibreId === 0 || calibres.some((opcion) => opcion.id === calibreId);
         const paisValido = paisId === 0 || paises.some((opcion) => opcion.id === paisId);
         if (!especieSeleccionada || !variedadValida || !envaseValido || !kilosValidos || !categoriaValida || !calibreValido || !paisValido) {
-            setError("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.");
+            notificar("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.", "error");
             return;
         }
 
@@ -317,7 +315,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 alCerrar();
             }
         } catch (error) {
-            alErrorGuardar(error instanceof Error ? error.message : "No se pudieron guardar los cambios. Intentá de nuevo.");
+            notificar(error instanceof Error ? error.message : "No se pudieron guardar los cambios. Intentá de nuevo.", "error");
         } finally {
             setGuardando(false);
         }
@@ -460,7 +458,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             clases={{ campo: styles.campo, etiqueta: styles.etiqueta, entrada: styles.entrada, ayuda: styles.ayuda }}
         />
     );
-    const errorFormulario = (error || errorConsulta) ? <p key="error" className={styles.error} role="alert">{error || errorConsulta}</p> : null;
     return (
         <>
             <div className={styles.encabezado}>
@@ -477,7 +474,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             </div>
             <form className={styles.formulario} onSubmit={solicitarGuardado} aria-busy={ocupado}>
                 <div className={styles.cuerpo}>
-                    {[campoPrecio, campoUnidades, campoFechaVigencia, campoComentario, seccionFoto, accionesPublicacion, datosProducto, errorFormulario]}
+                    {[campoPrecio, campoUnidades, campoFechaVigencia, campoComentario, seccionFoto, accionesPublicacion, datosProducto]}
                 </div>
                 <div className={styles.pie}>
                     {editando ? (
@@ -498,7 +495,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
 }
 
 export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta, mostrarAvisoFoto = false, children }: DrawerEditarPublicacionProps) {
-    const { notificar } = useNotificacionToast();
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
     function cerrar() {
@@ -506,9 +502,10 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
     }
     return (
         <>
+        <AvisoErrorToast mensaje={abierto && publicacion ? errorConsulta : null} />
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} arrastreDeshabilitado={guardando || eliminando || actualizando} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} envases={envases} kilos={kilos} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} mostrarAvisoFoto={mostrarAvisoFoto} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} alErrorGuardar={(mensaje) => notificar(mensaje, "error")} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} envases={envases} kilos={kilos} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} mostrarAvisoFoto={mostrarAvisoFoto} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
             )}
             {publicacion && children}
         </DrawerDeslizable>

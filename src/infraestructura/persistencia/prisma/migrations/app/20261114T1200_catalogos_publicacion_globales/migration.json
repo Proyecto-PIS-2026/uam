@@ -1,0 +1,9 @@
+{
+  "from": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "to": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "providedInvariants": [
+    "uam:catalogos-publicacion-globales"
+  ],
+  "createdAt": "2026-11-14T12:00:00.000Z",
+  "migrationHash": "448993ea0752f20cf458bf1e35b44031b20dcab01e5f0ef492204387bc40e15c"
+}

@@ -113,7 +113,7 @@ describe("MiMercadoProductor", () => {
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} publicacionInicialId={publicacionInicialId} />);
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+        expect(screen.getByRole("alert")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -141,7 +141,7 @@ describe("MiMercadoProductor", () => {
         rerender(<MiMercadoProductor publicaciones={[]} publicacionInicialId={1} />);
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+        expect(screen.getByRole("alert")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
     });
 
     it("muestra las publicaciones propias sin agrupar y el botón de alta junto al listado", () => {
@@ -477,6 +477,7 @@ describe("MiMercadoProductor", () => {
             fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
 
             expect(await screen.findByRole("status")).toHaveTextContent("Publicación eliminada correctamente.");
+            expect(screen.getByRole("status")).toHaveClass("MuiAlert-colorSuccess");
             expect(fetchMock).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/productor/101", { method: "DELETE" });
             expect(mocks.refresh).toHaveBeenCalledOnce();
             expect(screen.queryByRole("dialog", { name: "Consulta de publicación" })).not.toBeInTheDocument();
@@ -529,6 +530,7 @@ describe("MiMercadoProductor", () => {
             fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
 
             expect(await screen.findByRole("status")).toHaveTextContent("La publicación ya había sido eliminada.");
+            expect(screen.getByRole("status")).toHaveClass("MuiAlert-colorInfo");
             expect(mocks.refresh).toHaveBeenCalledOnce();
         });
 

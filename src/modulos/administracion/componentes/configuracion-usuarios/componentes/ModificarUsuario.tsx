@@ -65,7 +65,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
         }
 
         if (!resultado.esValido) {
-            throw new Error(resultado.errores.join(" "));
+            throw new Error(resultado.errores.join("\n"));
         }
 
         setUsuarioSeleccionado(null);
@@ -78,7 +78,7 @@ export default function ModificarUsuario({ datos }: ModificarUsuarioProps) {
             habilitado: usuario.habilitado === false,
         });
         if (!resultado.esValido) {
-            throw new Error(resultado.errores.join(" "));
+            throw new Error(resultado.errores.join("\n"));
         }
         router.refresh();
     }

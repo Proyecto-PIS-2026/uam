@@ -20,14 +20,6 @@
     line-height: var(--interlineado-titulo-pagina);
 }
 
-.mensajeError {
-    margin: 0;
-    padding: var(--padding-panel);
-    border-radius: var(--radio-panel);
-    font-size: var(--tamano-texto-secundario);
-    line-height: var(--interlineado-texto);
-}
-
 .avisoLicencia {
     display: flex;
     margin: var(--espacio-secciones) 0;
@@ -43,9 +35,4 @@
 .avisoLicencia svg {
     flex-shrink: 0;
     color: var(--color-warning);
-}
-
-.mensajeError {
-    color: var(--color-danger);
-    background: var(--color-danger-soft);
 }

@@ -176,7 +176,6 @@ a.texto:focus-visible,
     cursor: default;
 }
 
-.error,
 .carga {
     display: flex;
     align-items: center;
@@ -188,20 +187,11 @@ a.texto:focus-visible,
     font-size: var(--tamano-texto-secundario);
 }
 
-.error {
-    flex-wrap: wrap;
-    border-color: var(--color-danger);
-    color: var(--color-danger);
+.reintento {
+    display: flex;
+    justify-content: flex-start;
 }
 
-.error > p {
-    min-width: 0;
-    flex: 1 1 15rem;
-    margin: 0;
-    overflow-wrap: anywhere;
-}
-
-.error > svg,
 .carga > svg {
     flex-shrink: 0;
 }
@@ -254,7 +244,7 @@ a.texto:focus-visible,
         overflow-wrap: anywhere;
     }
 
-    .error > button {
+    .reintento > button {
         width: 100%;
     }
 }

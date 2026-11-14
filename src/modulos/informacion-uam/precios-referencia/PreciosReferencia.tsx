@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
@@ -362,7 +363,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMaximo)}
                                 slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                             />
-                            {rangoPrecioInvalido && <p className={styles.errorPrecio} role="alert">El precio máximo no puede ser menor al mínimo.</p>}
+                            <AvisoErrorToast mensaje={rangoPrecioInvalido ? "El precio máximo no puede ser menor al mínimo." : null} />
                         </div>
                     </div>
                 </div>

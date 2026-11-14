@@ -34,7 +34,7 @@ export function ejecutarMigraciones(argumentos: string[], raiz: string): number 
         throw new Error("El contrato emitido no contiene un identificador válido. Ejecutá npm run db:contract.");
     }
     const directorioRefs = join(directorioPrisma, "migrations", "app", "refs");
-    const referenciasRequeridas = ["aging-fotos-por-rol.json", "vigencia-publicaciones-operador.json"];
+    const referenciasRequeridas = ["aging-fotos-por-rol.json", "vigencia-publicaciones-operador.json", "catalogos-publicacion-globales.json"];
     const requeridas = referenciasRequeridas.flatMap((referencia): string[] => {
         const invariantes = leerJson(join(directorioRefs, referencia)).invariants;
         if (!Array.isArray(invariantes) || invariantes.length === 0 || invariantes.some((valor) => typeof valor !== "string" || !valor.trim())) {

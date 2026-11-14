@@ -9,6 +9,7 @@ import {
 
 const exito = "Tu contraseña se actualizó correctamente.";
 const formulario = (page: Page) => page.getByRole("form", { name: "Cambio de contraseña" });
+const avisos = (page: Page) => page.getByRole("region", { name: "Notificaciones", exact: true });
 const guardar = (page: Page) => page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
 
 async function hash(db: Client, cuenta: Cuenta) {
@@ -60,7 +61,7 @@ test.describe("BP-16.2: Cambio de contraseña con contraseña actual", () => {
                 await abrirCambio(page, cuenta);
                 await completar(page, cuenta.contrasena, nueva);
                 await guardar(page);
-                await expect(formulario(page).getByRole("status")).toHaveText(exito);
+                await expect(avisos(page).getByRole("status")).toHaveText(exito);
                 expect(await hash(db, cuenta)).not.toBe(original);
             });
 
@@ -92,7 +93,7 @@ test.describe("BP-16.2: Cambio de contraseña con contraseña actual", () => {
         await page.getByRole("button", { name: "General", exact: true }).click();
         await page.getByRole("switch", { name: "Permitir que los usuarios restablezcan su propia contraseña" }).uncheck();
         await page.getByRole("button", { name: "Guardar configuración: Restablecimiento de contraseñas", exact: true }).click();
-        await expect(page.getByText("La configuración de restablecimiento de contraseña se guardó correctamente.", { exact: true })).toBeVisible();
+        await expect(avisos(page).getByRole("status").filter({ hasText: "La configuración de restablecimiento de contraseña se guardó correctamente." })).toBeVisible();
         await expect.poll(async () => (await db.query('SELECT "valorConfiguracion" FROM configuracion WHERE "nombreConfiguracion" = $1',
             ["restablecimiento_contrasena_habilitado"])).rows[0].valorConfiguracion).toBe("false");
         await page.goto(perfil(administrador));
@@ -108,7 +109,7 @@ test.describe("BP-16.2: Cambio de contraseña con contraseña actual", () => {
         await completar(page, cuenta.contrasena, "Prueba123");
         await deshabilitarDesdeBase(db);
         await guardar(page);
-        await expect(formulario(page).getByRole("alert")).toHaveText("El cambio de contraseña no está habilitado por el administrador.");
+        await expect(avisos(page).getByRole("alert")).toHaveText("El cambio de contraseña no está habilitado por el administrador.");
         expect(await hash(db, cuenta)).toBe(original);
     });
 
@@ -137,7 +138,7 @@ test.describe("BP-16.2: Cambio de contraseña con contraseña actual", () => {
         });
         await completar(page, ajena.contrasena, "Prueba123");
         await guardar(page);
-        await expect(formulario(page).getByRole("alert")).toHaveText("La contraseña actual no es válida.");
+        await expect(avisos(page).getByRole("alert")).toHaveText("La contraseña actual no es válida.");
         expect(enviado, "La petición interceptada debe ser el cambio de contraseña").toMatchObject({ actual: ajena.contrasena, nueva: "Prueba123" });
         expect(await hash(db, ajena)).toBe(originalAjena);
         expect(await hash(db, propia)).toBe(originalPropia);
@@ -156,8 +157,8 @@ test.describe("BP-16.2: Cambio de contraseña con contraseña actual", () => {
             await abrirCambio(page, cuenta);
             await completar(page, caso.actual ?? cuenta.contrasena, caso.nueva, caso.confirmacion);
             await guardar(page);
-            await expect(formulario(page).getByRole("alert")).toHaveText(caso.error);
-            await expect(formulario(page).getByRole("status")).toHaveCount(0);
+            await expect(avisos(page).getByRole("alert")).toHaveText(caso.error);
+            await expect(avisos(page).getByRole("status")).toHaveCount(0);
             expect(await hash(db, cuenta)).toBe(original);
         });
     }

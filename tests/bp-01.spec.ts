@@ -275,18 +275,18 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       // CP-08/09/10: entradas inválidas.
       await page.getByRole("textbox", { name: "Teléfono" }).fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("El teléfono no es válido.");
+      await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toContainText("El teléfono no es válido.");
       await page.getByRole("textbox", { name: "Teléfono" }).fill("99234567");
 
       await page.getByLabel("Nueva contraseña").fill("123");
       await page.getByLabel("Confirmar contraseña").fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("La contraseña debe tener al menos 8 caracteres.");
+      await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toContainText("La contraseña debe tener al menos 8 caracteres.");
 
       await page.getByLabel("Nueva contraseña").fill(CLAVE_NUEVA);
       await page.getByLabel("Confirmar contraseña").fill("OtraClave123!");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("Las contraseñas no coinciden.");
+      await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toContainText("Las contraseñas no coinciden.");
 
       // CP-05/06/07/12: modificación válida + nueva contraseña + persistencia.
       await page.getByLabel("Confirmar contraseña").fill(CLAVE_NUEVA);
