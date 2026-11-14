@@ -72,18 +72,28 @@ describe("validarModificacionOperador", () => {
             ]);
         });
 
-        it("rechaza una licencia que empieza antes de hoy o termina antes de empezar", () => {
-            expect(erroresDe({
+        it.each(["2000-11-02", "2000-11-12", "2999-11-12"])("acepta un inicio pasado con fin igual o posterior: %s", (finLicencia) => {
+            expect(datosDe({
                 enLicencia: true,
                 inicioLicencia: "2000-11-02",
-                finLicencia: "2999-11-12",
-            })).toContain("La fecha de inicio no puede ser anterior a hoy.");
+                finLicencia,
+            })).toMatchObject({ inicioLicencia: "2000-11-02", finLicencia });
+        });
 
+        it("rechaza una licencia que termina antes de empezar", () => {
             expect(erroresDe({
                 enLicencia: true,
-                inicioLicencia: "2999-11-12",
-                finLicencia: "2999-11-05",
+                inicioLicencia: "2000-11-12",
+                finLicencia: "2000-11-05",
             })).toContain("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        });
+
+        it("rechaza fechas de licencia inexistentes aunque sean anteriores a hoy", () => {
+            expect(erroresDe({
+                enLicencia: true,
+                inicioLicencia: "2000-02-30",
+                finLicencia: "2000-03-12",
+            })).toContain("Las fechas de licencia no son válidas.");
         });
 
         it("quita los espacios sobrantes del nombre", () => {

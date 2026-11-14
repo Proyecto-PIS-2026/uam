@@ -101,12 +101,15 @@ describe("FormularioModificarOperador", () => {
         await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
         expect(licencia).toBeChecked();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
-        fireEvent.change(screen.getByLabelText("Inicio de licencia"), { target: { value: "2999-11-05" } });
-        fireEvent.change(screen.getByLabelText("Fin de licencia"), { target: { value: "2999-11-12" } });
+        expect(screen.getByLabelText("Inicio de licencia")).not.toHaveAttribute("min");
+        expect(screen.getByLabelText("Fin de licencia")).not.toHaveAttribute("min");
+        fireEvent.change(screen.getByLabelText("Inicio de licencia"), { target: { value: "2000-11-05" } });
+        expect(screen.getByLabelText("Fin de licencia")).toHaveAttribute("min", "2000-11-05");
+        fireEvent.change(screen.getByLabelText("Fin de licencia"), { target: { value: "2000-11-12" } });
         apretarGuardar();
 
         await waitFor(() => expect(modificarOperadorMock).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-            enLicencia: true, inicioLicencia: "2999-11-05", finLicencia: "2999-11-12",
+            enLicencia: true, inicioLicencia: "2000-11-05", finLicencia: "2000-11-12",
         })));
     });
 

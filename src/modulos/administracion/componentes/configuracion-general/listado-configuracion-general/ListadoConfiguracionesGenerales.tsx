@@ -9,6 +9,8 @@ import { Divider } from "@mui/material";
 import type { Especie } from "../tarjetas-configuracion/fotos-especies/TarjetaUploadFotoEspecie";
 import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracion/acciones/foto-especie";
 import { guardarConfiguraciones } from "@/modulos/administracion/acciones/guardar-configuracion";
+import { CLAVES_VIGENCIA_PUBLICACIONES, type TipoPropietarioPublicacion } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
+import { CLAVES_AGING_FOTOS, type TipoPropietarioFoto } from "@/modulos/publicaciones/claves-aging-fotos";
 import TarjetaOrdenamientoPredeterminado, { type ConfiguracionOrdenamiento, type OrdenPublicaciones } from "../tarjetas-configuracion/ordenamiento-predeterminado/TarjetaOrdenamientoPredeterminado";
 import TarjetaVigencia, { type ConfiguracionVigenciaFotos } from "../tarjetas-configuracion/vigencia/TarjetaVigencia";
 import TarjetaRestablecimientoContraseña from "../tarjetas-configuracion/restablecimiento-contraseña/TarjetaRestablecimientoContraseña";
@@ -92,36 +94,44 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
         router.refresh();
     }
 
-    const configuracionVigenciaFotos: ConfiguracionVigenciaFotos = {
-        habilitado: configuracion.aging_fotos_habilitado === "true",
-        diasVigencia: configuracion.vigencia_fotos ?? "",
-        avisosHabilitados: configuracion.aviso_vencimiento_fotos_habilitado === "true",
-        diasAnticipacion: configuracion.anticipacion_aviso_fotos ?? "",
-    };
+    function obtenerVigenciaFotos(tipo: TipoPropietarioFoto): ConfiguracionVigenciaFotos {
+        const [habilitado, vigencia, avisos, anticipacion] = CLAVES_AGING_FOTOS[tipo];
+        return {
+            habilitado: configuracion[habilitado] === "true",
+            diasVigencia: configuracion[vigencia] ?? "",
+            avisosHabilitados: configuracion[avisos] === "true",
+            diasAnticipacion: configuracion[anticipacion] ?? "",
+        };
+    }
 
-    async function guardarVigenciaFotos(valores: ConfiguracionVigenciaFotos): Promise<void> {
+    async function guardarVigenciaFotos(tipo: TipoPropietarioFoto, valores: ConfiguracionVigenciaFotos): Promise<void> {
+        const [habilitado, vigencia, avisos, anticipacion] = CLAVES_AGING_FOTOS[tipo];
         await guardarConfiguraciones({
-            aging_fotos_habilitado: String(valores.habilitado),
-            vigencia_fotos: valores.diasVigencia,
-            aviso_vencimiento_fotos_habilitado: String(valores.avisosHabilitados),
-            anticipacion_aviso_fotos: valores.diasAnticipacion,
+            [habilitado]: String(valores.habilitado),
+            [vigencia]: valores.diasVigencia,
+            [avisos]: String(valores.avisosHabilitados),
+            [anticipacion]: valores.diasAnticipacion,
         });
         router.refresh();
     }
 
-    const configuracionVigenciaPublicaciones: ConfiguracionVigenciaFotos = {
-        habilitado: configuracion.vigencia_publicaciones_productor_habilitada === "true",
-        diasVigencia: configuracion.vigencia_publicaciones_productor ?? "",
-        avisosHabilitados: configuracion.aviso_vencimiento_publicaciones_productor_habilitado === "true",
-        diasAnticipacion: configuracion.anticipacion_aviso_publicaciones_productor ?? "",
-    };
+    function obtenerVigenciaPublicaciones(tipo: TipoPropietarioPublicacion): ConfiguracionVigenciaFotos {
+        const [habilitada, vigencia, avisos, anticipacion] = CLAVES_VIGENCIA_PUBLICACIONES[tipo];
+        return {
+            habilitado: configuracion[habilitada] === "true",
+            diasVigencia: configuracion[vigencia] ?? "",
+            avisosHabilitados: configuracion[avisos] === "true",
+            diasAnticipacion: configuracion[anticipacion] ?? "",
+        };
+    }
 
-    async function guardarVigenciaPublicaciones(valores: ConfiguracionVigenciaFotos): Promise<void> {
+    async function guardarVigenciaPublicaciones(tipo: TipoPropietarioPublicacion, valores: ConfiguracionVigenciaFotos): Promise<void> {
+        const [habilitada, vigencia, avisos, anticipacion] = CLAVES_VIGENCIA_PUBLICACIONES[tipo];
         await guardarConfiguraciones({
-            vigencia_publicaciones_productor_habilitada: String(valores.habilitado),
-            vigencia_publicaciones_productor: valores.diasVigencia,
-            aviso_vencimiento_publicaciones_productor_habilitado: String(valores.avisosHabilitados),
-            anticipacion_aviso_publicaciones_productor: valores.diasAnticipacion,
+            [habilitada]: String(valores.habilitado),
+            [vigencia]: valores.diasVigencia,
+            [avisos]: String(valores.avisosHabilitados),
+            [anticipacion]: valores.diasAnticipacion,
         });
         router.refresh();
     }
@@ -163,14 +173,35 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
             <TarjetaVigencia
-                titulo="Vigencia de las fotos"
-                descripcion="Configurá la vigencia de las fotos de publicaciones de operadores y productores y sus avisos de próximo vencimiento."
+                titulo="Vigencia de fotos de operadores"
+                descripcion="Configurá la vigencia de las fotos de publicaciones de operadores y sus avisos de próximo vencimiento."
                 etiquetaVencimiento="Vencimiento de fotos"
-                ayudaVencimiento="Aplicar un período de vigencia a las fotos."
-                ayudaAvisos="Notificar a operadores y productores."
-                configuracion={configuracionVigenciaFotos}
+                ayudaVencimiento="Aplicar un período de vigencia a las fotos de operadores."
+                ayudaAvisos="Notificar a los operadores."
+                configuracion={obtenerVigenciaFotos("OPERADOR")}
                 maximoDiasVigencia={36500}
-                onGuardar={guardarVigenciaFotos}
+                onGuardar={(valores) => guardarVigenciaFotos("OPERADOR", valores)}
+            />
+            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
+            <TarjetaVigencia
+                titulo="Vigencia de fotos de productores"
+                descripcion="Configurá la vigencia de las fotos de publicaciones de productores y sus avisos de próximo vencimiento."
+                etiquetaVencimiento="Vencimiento de fotos"
+                ayudaVencimiento="Aplicar un período de vigencia a las fotos de productores."
+                ayudaAvisos="Notificar a los productores."
+                configuracion={obtenerVigenciaFotos("PRODUCTOR")}
+                maximoDiasVigencia={36500}
+                onGuardar={(valores) => guardarVigenciaFotos("PRODUCTOR", valores)}
+            />
+            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
+            <TarjetaVigencia
+                titulo="Vigencia de publicaciones de operadores"
+                descripcion="Configurá el plazo predeterminado y máximo de las publicaciones de operadores y sus avisos de próximo vencimiento."
+                etiquetaVencimiento="Vencimiento de publicaciones"
+                ayudaVencimiento="Al guardar, las publicaciones sin fecha reciben el plazo y las fechas posteriores se acortan. Las fechas anteriores se conservan. Desactivar mantiene las fechas existentes."
+                ayudaAvisos="Notificar a los operadores."
+                configuracion={obtenerVigenciaPublicaciones("OPERADOR")}
+                onGuardar={(valores) => guardarVigenciaPublicaciones("OPERADOR", valores)}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
             <TarjetaVigencia
@@ -179,8 +210,8 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
                 etiquetaVencimiento="Vencimiento de publicaciones"
                 ayudaVencimiento="Al guardar, las publicaciones sin fecha reciben el plazo y las fechas posteriores se acortan. Las fechas anteriores se conservan. Desactivar mantiene las fechas existentes."
                 ayudaAvisos="Notificar a los productores."
-                configuracion={configuracionVigenciaPublicaciones}
-                onGuardar={guardarVigenciaPublicaciones}
+                configuracion={obtenerVigenciaPublicaciones("PRODUCTOR")}
+                onGuardar={(valores) => guardarVigenciaPublicaciones("PRODUCTOR", valores)}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
             <TarjetaRestablecimientoContraseña

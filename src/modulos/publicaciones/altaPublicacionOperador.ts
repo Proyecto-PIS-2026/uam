@@ -9,6 +9,7 @@ import { ErrorImagenPublicacion, guardarImagenPublicacion } from "./operadores/i
 import { limpiarImagenPublicacionNoReferenciada } from "./operadores/limpiar-imagen-publicacion";
 import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
 import { convertirFechaVigenciaAInstant } from "./vigencia-publicacion";
+import { obtenerFechaMaximaVigenciaOperador } from "./configuracion-vigencia-publicaciones";
 
 export type ResultadoAltaPublicacion =
     | { esValido: false; errores: string[] }
@@ -62,6 +63,11 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
         }
 
         resultado = await db.transaction(async (tx): Promise<ResultadoAltaPublicacion> => {
+            const fechaMaxima = await obtenerFechaMaximaVigenciaOperador(tx);
+            const fechaVigencia = datos.fechaVigencia ?? fechaMaxima;
+            if (fechaMaxima !== null && fechaVigencia !== null && fechaVigencia > fechaMaxima) {
+                return { esValido: false, errores: [`La fecha de vigencia no puede superar el ${fechaMaxima}.`] };
+            }
             await tx.execute(
                 db.raw.sql`SELECT 1::int AS locked FROM pg_advisory_xact_lock(1719, ${operador.id})`
                     .returnsRow({ locked: "pg/int4@1" }).build(),
@@ -124,7 +130,7 @@ export async function altaPublicacionOperador(valor: unknown): Promise<Resultado
                 kilosId: datos.kilosId,
                 categoriaId: datos.categoriaId,
                 calibreId: datos.calibreId,
-                fechaVigencia: convertirFechaVigenciaAInstant(datos.fechaVigencia),
+                fechaVigencia: convertirFechaVigenciaAInstant(fechaVigencia),
             });
 
             await tx.orm.public.PublicacionOperador.create({

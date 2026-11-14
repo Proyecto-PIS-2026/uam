@@ -11,6 +11,7 @@ import { validarUbicacionesProductor, type UbicacionPublicacionProductor } from 
 import { validarFechaVigencia, convertirFechaVigenciaAInstant } from "../vigencia-publicacion";
 import { obtenerFechaMaximaVigenciaProductor } from "../configuracion-vigencia-publicaciones";
 import { validarComentario } from "../validarComentario";
+import { notificarEdicionAdministrativa } from "../notificar-edicion-administrativa";
 
 type Cliente = Pick<typeof db, "orm">;
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
@@ -173,6 +174,9 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             }
             const actualizada = await consultarPublicacion(relacion.id, tx);
             if (!actualizada) throw new Error("No se pudo leer la publicación guardada.");
+            if (sesion.rol === "ADMINISTRADOR") {
+                await notificarEdicionAdministrativa(tx, relacion.productor.usuarioId, publicacion.id, "PRODUCTOR");
+            }
             return { publicacion: mapearPublicacionMiMercadoProductor(actualizada), productorId: relacion.productor.id,
                 fotoAnterior: publicacion.foto, fotoActual: foto };
         });

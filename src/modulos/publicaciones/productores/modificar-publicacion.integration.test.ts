@@ -149,6 +149,7 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         // Las relaciones y ubicaciones tienen borrado en cascada; sólo se eliminan ids creados aquí.
         while (idsCreados.length > 0) {
             const id = idsCreados[idsCreados.length - 1];
+            await db.orm.public.Notificacion.where({ url: `/mi-mercado/productor?publicacion=${id}` }).deleteAll();
             await db.orm.public.Publicacion.where({ id }).delete();
             idsCreados.pop();
         }
@@ -257,6 +258,13 @@ describe.sequential("edición y baja reales de publicaciones del productor", { t
         expect(despues.ubicaciones).toEqual([]);
         expect(resultado.publicacion.ubicaciones).toEqual([]);
         expect(Temporal.Instant.compare(despues.publicacion.fecha, antes.publicacion.fecha)).toBe(1);
+        const avisos = await db.orm.public.Notificacion.where({ url: `/mi-mercado/productor?publicacion=${elegida.id}` }).all();
+        expect(avisos).toHaveLength(1);
+        expect(avisos[0]).toMatchObject({
+            usuarioId: sesionPropietario.usuarioId,
+            descripcion: "Una de tus publicaciones fue modificada por la administración de la UAM. Comunicate con la administración de la UAM.",
+            vista: false,
+        });
         expect(await leer(otraPropia)).toEqual(otraAntes);
         expect(await leer(ajena)).toEqual(ajenaAntes);
     });

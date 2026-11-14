@@ -75,11 +75,14 @@ describe("FormularioPerfilPropio", () => {
         await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
         expect(interruptor).toBeChecked();
         expect(mocks.modificar).not.toHaveBeenCalled();
-        fireEvent.change(screen.getByLabelText("Inicio de licencia"), { target: { value: "2999-11-05" } });
-        fireEvent.change(screen.getByLabelText("Fin de licencia"), { target: { value: "2999-11-12" } });
+        expect(screen.getByLabelText("Inicio de licencia")).not.toHaveAttribute("min");
+        expect(screen.getByLabelText("Fin de licencia")).not.toHaveAttribute("min");
+        fireEvent.change(screen.getByLabelText("Inicio de licencia"), { target: { value: "2000-11-05" } });
+        expect(screen.getByLabelText("Fin de licencia")).toHaveAttribute("min", "2000-11-05");
+        fireEvent.change(screen.getByLabelText("Fin de licencia"), { target: { value: "2000-11-12" } });
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
         await waitFor(() => expect(mocks.modificar).toHaveBeenCalledWith(expect.objectContaining({
-            enLicencia: true, inicioLicencia: "2999-11-05", finLicencia: "2999-11-12",
+            enLicencia: true, inicioLicencia: "2000-11-05", finLicencia: "2000-11-12",
         })));
     });
 

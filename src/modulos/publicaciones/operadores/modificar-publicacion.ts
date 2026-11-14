@@ -7,6 +7,8 @@ import type { CambiosPublicacionOperador } from "./tipos";
 import { normalizarPrecioPublicacion, precioPublicacionValido, PRECIO_PUBLICACION_INVALIDO } from "../precio-publicacion";
 import { validarFechaVigencia, convertirFechaVigenciaAInstant } from "../vigencia-publicacion";
 import { validarComentario } from "../validarComentario";
+import { obtenerFechaMaximaVigenciaOperador } from "../configuracion-vigencia-publicaciones";
+import { notificarEdicionAdministrativa } from "../notificar-edicion-administrativa";
 
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
 type CantidadUnidadesDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["cantidadUnidades"];
@@ -25,7 +27,8 @@ export async function modificarPublicacionOperador(
     usuarioIdAutenticado: number,
     publicacionOperadorId: number,
     cambios: CambiosPublicacionOperador,
-    fotoNueva?: File | null
+    fotoNueva?: File | null,
+    edicionAdministrativa = false,
 ): Promise<{ publicacionOperadorId: number; publicacionId: number }> {
 
     if (cambios === null || typeof cambios !== "object" || Array.isArray(cambios)) {
@@ -68,13 +71,13 @@ export async function modificarPublicacionOperador(
             cantidadUnidadesParaGuardar = null;
         }
     }
-    let fechaVigenciaParaGuardar: ReturnType<typeof convertirFechaVigenciaAInstant> | undefined;
+    let fechaVigenciaValidada: string | null | undefined;
     if (cambios.fechaVigencia !== undefined) {
         const resVigencia = validarFechaVigencia(cambios.fechaVigencia);
         if (!resVigencia.esValido) {
             throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", resVigencia.error);
         }
-        fechaVigenciaParaGuardar = convertirFechaVigenciaAInstant(resVigencia.fechaVigencia);
+        fechaVigenciaValidada = resVigencia.fechaVigencia;
     }
 
     let comentarioParaGuardar: string | null | undefined = undefined;
@@ -108,6 +111,7 @@ export async function modificarPublicacionOperador(
         }
     }
     const resultado = await db.transaction(async (tx) => {
+            const fechaMaxima = await obtenerFechaMaximaVigenciaOperador(tx);
             const operador = await tx.orm.public.Operador
                 .select("id")
                 .where({ usuarioId: usuarioIdAutenticado })
@@ -148,6 +152,14 @@ export async function modificarPublicacionOperador(
             if (!Number.isSafeInteger(cambios.version) || cambios.version !== publicacion.version) {
                 throw new ErrorEdicionPublicacion("CONFLICTO", "La publicación cambió en otra sesión. Cancelá la edición y revisá los datos actualizados antes de volver a guardar.");
             }
+
+            const fechaVigencia = fechaVigenciaValidada === null ? fechaMaxima : fechaVigenciaValidada;
+            if (fechaMaxima !== null && fechaVigencia !== undefined && fechaVigencia !== null && fechaVigencia > fechaMaxima) {
+                throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", `La fecha de vigencia no puede superar el ${fechaMaxima}.`);
+            }
+            const fechaVigenciaParaGuardar = fechaVigencia === undefined
+                ? undefined
+                : convertirFechaVigenciaAInstant(fechaVigencia);
 
             if (!await validarCatalogosSeleccion(tx, cambios)) {
                 throw new ErrorEdicionPublicacion("DATOS_INVALIDOS", "La selección contiene datos que ya no están disponibles o no corresponden a la especie.");
@@ -206,6 +218,10 @@ export async function modificarPublicacionOperador(
             await tx.orm.public.PublicacionOperador
                 .where({ id: vinculo.id })
                 .update({ paisId: cambios.paisId });
+
+            if (edicionAdministrativa) {
+                await notificarEdicionAdministrativa(tx, usuarioIdAutenticado, vinculo.publicacionId, "OPERADOR");
+            }
 
             await notificarCambioPublicacion(tx, { operadorId: operador.id, publicacionId: vinculo.publicacionId });
 

@@ -365,6 +365,30 @@ describe("precios de Mi Mercado", () => {
         );
     });
 
+    it.each([
+        ["2026-11-13T00:00:00Z", "2026-11-12"],
+        ["2026-11-13T02:59:59Z", "2026-11-12"],
+        ["2026-11-13T03:00:00Z", "2026-11-13"],
+        ["2026-11-13T15:00:00Z", "2026-11-13"],
+    ])("registra la edición y el ajuste de precio a las %s en el día uruguayo %s", async (instante, dia) => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(instante));
+
+        await actualizarPrecioPublicacion(10, 20, 125, 1);
+        await incrementarPrecioPublicacion(10, 20, 10);
+
+        const consultasPorDia = mocks.estadistica.where.mock.calls
+            .map(([filtro]) => filtro)
+            .filter((filtro) => filtro.fecha !== undefined);
+        expect(consultasPorDia).toHaveLength(2);
+        for (const filtro of consultasPorDia) {
+            expect(filtro.fecha.toString()).toBe(`${dia}T00:00:00Z`);
+            expect(filtro.username).toBe("operador1");
+        }
+        expect(mocks.estadistica.create.mock.calls[0][0].fecha.toString()).toBe(`${dia}T00:00:00Z`);
+        expect(mocks.estadistica.update).toHaveBeenCalledWith({ cantidad: 2 });
+    });
+
     it("incrementa la estadística existente al modificar el precio", async () => {
         estadistica = {
             id: 5,
