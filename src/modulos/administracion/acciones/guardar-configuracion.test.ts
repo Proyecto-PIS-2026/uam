@@ -342,6 +342,27 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
             expect(mocks.update).not.toHaveBeenCalled();
         });
     } else {
+        it("guarda avisos independientes sin aplicar vigencia administrativa", async () => {
+            await guardarConfiguraciones(configuracionVigencia({ [grupo.habilitado]: "false", [grupo.vigencia]: "", [grupo.anticipacion]: "10" }));
+
+            expect(mocks.update.mock.calls.map(([cambio]) => cambio.valorConfiguracion)).toEqual(["false", "", "true", "10"]);
+            expect(mocks.execute.mock.calls.some(([plan]) => /^UPDATE /i.test((plan as PlanSql).texto))).toBe(false);
+        });
+
+        it.each(["", "0", "-1", "1.5", "abc", "9007199254740992"])("valida anticipación %j aunque la vigencia administrativa esté apagada", async (valor) => {
+            await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.habilitado]: "false", [grupo.vigencia]: "", [grupo.anticipacion]: valor }))).rejects.toThrow(/La anticipación/);
+            expect(mocks.transaction).not.toHaveBeenCalled();
+        });
+
+        it.each(["36501", "9007199254740991"])("rechaza anticipación %s que excede el máximo sin vigencia administrativa", async (valor) => {
+            await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.habilitado]: "false", [grupo.vigencia]: "", [grupo.anticipacion]: valor }))).rejects.toThrow("La anticipación no puede superar los 36500 días.");
+            expect(mocks.transaction).not.toHaveBeenCalled();
+        });
+
+        it("acepta el máximo de anticipación sin vigencia administrativa", async () => {
+            await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.habilitado]: "false", [grupo.vigencia]: "", [grupo.anticipacion]: "36500" }))).resolves.toBeUndefined();
+        });
+
         it("conserva la validación de publicaciones sin el límite exclusivo de las fotos", async () => {
             await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "36501" }))).resolves.toBeUndefined();
             expect(mocks.update).toHaveBeenCalledWith({ valorConfiguracion: "36501" });
@@ -355,6 +376,28 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
     it.each([grupo.habilitado, grupo.avisos])("rechaza un booleano inválido en %s", async (clave) => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [clave]: "si" }))).rejects.toThrow("El estado de la configuración no es válido.");
         expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+});
+
+describe("anticipación de avisos de vencimiento de locales", () => {
+    it.each(["0", "3", "15", "365"])("guarda %s días sin modificar publicaciones", async (valor) => {
+        await guardarConfiguraciones({ anticipacion_aviso_vencimiento_locales: valor });
+
+        expect(mocks.exigirAdministrador).toHaveBeenCalledOnce();
+        expect(mocks.where).toHaveBeenCalledExactlyOnceWith({ nombreConfiguracion: "anticipacion_aviso_vencimiento_locales" });
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: valor });
+        expect(mocks.execute).not.toHaveBeenCalled();
+    });
+
+    it.each(["", "-1", "366", "1.5", "abc", " 3", "3 ", "9007199254740992"])("rechaza anticipación %j sin escribir", async (valor) => {
+        await expect(guardarConfiguraciones({ anticipacion_aviso_vencimiento_locales: valor })).rejects.toThrow("La anticipación de los avisos de locales debe ser un entero entre 0 y 365 días.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("rechaza cambios de anticipación sin autorización administrativa", async () => {
+        mocks.exigirAdministrador.mockRejectedValue(new Error("No autorizado"));
+        await expect(guardarConfiguraciones({ anticipacion_aviso_vencimiento_locales: "7" })).rejects.toThrow("No autorizado");
+        expect(mocks.update).not.toHaveBeenCalled();
     });
 });
 

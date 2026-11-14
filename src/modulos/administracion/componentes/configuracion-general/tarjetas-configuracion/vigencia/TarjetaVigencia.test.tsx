@@ -27,7 +27,7 @@ function crearConfiguracion(cambios: Partial<ConfiguracionVigenciaFotos> = {}): 
     };
 }
 
-function preparar(configuracion = crearConfiguracion(), onGuardar = vi.fn().mockResolvedValue(undefined), maximoDiasVigencia?: number) {
+function preparar(configuracion = crearConfiguracion(), onGuardar = vi.fn().mockResolvedValue(undefined), maximoDiasVigencia?: number, avisosIndependientes = false) {
     const props = {
         titulo: "Vigencia de las fotos",
         descripcion: "Configurá la vigencia de las fotos.",
@@ -37,6 +37,7 @@ function preparar(configuracion = crearConfiguracion(), onGuardar = vi.fn().mock
         configuracion,
         onGuardar,
         maximoDiasVigencia,
+        avisosIndependientes,
     };
 
     return { ...render(<TarjetaVigencia {...props} />), props, onGuardar };
@@ -125,6 +126,67 @@ describe("TarjetaVigencia", () => {
         expect(onGuardar).not.toHaveBeenCalled();
         fireEvent.click(botonGuardar());
         await waitFor(() => expect(onGuardar).toHaveBeenCalledWith({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" }));
+    });
+
+    it("conserva los avisos independientes y su anticipación al desactivar la vigencia", async () => {
+        const { onGuardar } = preparar(crearConfiguracion(), undefined, undefined, true);
+        fireEvent.click(screen.getByRole("switch", { name: "Vencimiento de fotos" }));
+        expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("");
+        expect(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" })).toBeChecked();
+        expect(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" })).toBeEnabled();
+        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toBeVisible();
+        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toHaveValue("7");
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: false, diasVigencia: "", avisosHabilitados: true, diasAnticipacion: "7" }));
+    });
+
+    it("permite activar y configurar avisos independientes sin habilitar vigencia", async () => {
+        const { onGuardar } = preparar(crearConfiguracion({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" }), undefined, undefined, true);
+        fireEvent.click(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" }));
+        const campo = screen.getByLabelText(/^Días de anticipación del aviso/);
+        await waitFor(() => expect(campo).toBeVisible());
+        expect(campo).toBeEnabled();
+        fireEvent.change(campo, { target: { value: "14" } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: false, diasVigencia: "", avisosHabilitados: true, diasAnticipacion: "14" }));
+    });
+
+    it("exige completar anticipación con avisos independientes aunque la vigencia esté apagada", async () => {
+        const { onGuardar } = preparar(crearConfiguracion({ habilitado: false, diasVigencia: "" }), undefined, undefined, true);
+        const campo = screen.getByLabelText(/^Días de anticipación del aviso/);
+        fireEvent.change(campo, { target: { value: "" } });
+        fireEvent.click(botonGuardar());
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(campo).toHaveAttribute("aria-invalid", "true");
+        expect(onGuardar).not.toHaveBeenCalled();
+    });
+
+    it("rechaza anticipación cero en avisos independientes sin vigencia administrativa", async () => {
+        const { onGuardar } = preparar(crearConfiguracion({ habilitado: false, diasVigencia: "" }), undefined, undefined, true);
+        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: "0" } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith("La anticipación debe ser un número entero mayor que cero.", "error"));
+        expect(onGuardar).not.toHaveBeenCalled();
+    });
+
+    it("valida la anticipación independiente contra la vigencia cuando ambas están activas", async () => {
+        const { onGuardar } = preparar(crearConfiguracion(), undefined, undefined, true);
+        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: "30" } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La anticipación debe ser menor que la vigencia.", "error"));
+        expect(onGuardar).not.toHaveBeenCalled();
+    });
+
+    it("limita la anticipación independiente aunque la vigencia administrativa esté apagada", async () => {
+        const { rerender, props, onGuardar } = preparar(crearConfiguracion({ habilitado: false, diasVigencia: "" }), undefined, undefined, true);
+        rerender(<TarjetaVigencia {...props} maximoDiasAnticipacion={36500} />);
+        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: "36501" } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith("La anticipación no puede superar los 36500 días.", "error"));
+        expect(onGuardar).not.toHaveBeenCalled();
+        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: "36500" } });
+        fireEvent.click(botonGuardar());
+        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: false, diasVigencia: "", avisosHabilitados: true, diasAnticipacion: "36500" }));
     });
 
     it.each(["Días de vigencia", "Días de anticipación del aviso"])("marca %s cuando falta sin guardar", async (etiqueta) => {

@@ -54,6 +54,21 @@ describe("avisos de contratos de locales", () => {
     });
 
     it.each([
+        { diasAnticipacionAviso: 0, hasta: "2026-11-06" },
+        { diasAnticipacionAviso: 7, hasta: "2026-11-13" },
+        { diasAnticipacionAviso: 365, hasta: "2027-11-06" },
+    ])("consulta vencimientos hasta $hasta con $diasAnticipacionAviso días de anticipación", async ({ diasAnticipacionAviso, hasta }) => {
+        mocks.query.mockResolvedValue([]);
+
+        expect(await procesarVencimientosLocales(contexto, { ...configuracion, diasAnticipacionAviso })).toBe(0);
+
+        expect(mocks.query).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+            valores: ["America/Montevideo", hasta],
+        }));
+        expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
+    });
+
+    it.each([
         { vencido: false, verbo: "vence" },
         { vencido: true, verbo: "venció" },
     ])("envía el aviso '$verbo' a administradores con el perfil administrativo del operador", async ({ vencido, verbo }) => {

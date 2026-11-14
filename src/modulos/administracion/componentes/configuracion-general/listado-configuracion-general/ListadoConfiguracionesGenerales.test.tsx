@@ -49,6 +49,7 @@ function crearConfiguracion(cambios: Record<string, string | null> = {}): Record
     return {
         url_lista_inteligente: "https://uam.com.uy/lista.pdf",
         incremento_precio: "25",
+        anticipacion_aviso_vencimiento_locales: "9",
         ordenamiento_habilitado: "true",
         orden_landing_page_default: "nombre_desc",
         orden_mercado_virtual_default: "menor_precio",
@@ -116,6 +117,7 @@ describe("ListadoConfiguracionesGenerales", () => {
         preparar();
         expect(propsInput("Lista Inteligente")).toMatchObject({ tipo: "url", valor: "https://uam.com.uy/lista.pdf" });
         expect(propsInput("Importe de ajuste rápido de precios")).toMatchObject({ tipo: "numero", valor: "25" });
+        expect(propsInput("Avisos de vencimiento de locales")).toMatchObject({ label: "Días de anticipación del aviso de locales", valor: "9" });
     });
 
     it("entrega mensajes de éxito específicos para URL e importe", () => {
@@ -135,6 +137,23 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(propsVigencia("Vigencia de fotos de productores").configuracion).toEqual({ habilitado: true, diasVigencia: "10", avisosHabilitados: false, diasAnticipacion: "2" });
         expect(propsVigencia("Vigencia de publicaciones de operadores").configuracion).toEqual({ habilitado: true, diasVigencia: "20", avisosHabilitados: true, diasAnticipacion: "3" });
         expect(propsVigencia("Vigencia de publicaciones de productores").configuracion).toEqual({ habilitado: true, diasVigencia: "15", avisosHabilitados: false, diasAnticipacion: "" });
+    });
+
+    it("habilita avisos independientes para publicaciones y conserva la dependencia de las fotos", () => {
+        preparar();
+        expect(propsVigencia("Vigencia de publicaciones de operadores").avisosIndependientes).toBe(true);
+        expect(propsVigencia("Vigencia de publicaciones de productores").avisosIndependientes).toBe(true);
+        expect(propsVigencia("Vigencia de fotos de operadores").avisosIndependientes).toBeFalsy();
+        expect(propsVigencia("Vigencia de fotos de productores").avisosIndependientes).toBeFalsy();
+    });
+
+    it.each<{ configuracion: Record<string, string | null>; esperado: string }>([
+        { configuracion: {}, esperado: "3" },
+        { configuracion: { anticipacion_aviso_vencimiento_locales: null }, esperado: "3" },
+        { configuracion: { anticipacion_aviso_vencimiento_locales: "0" }, esperado: "0" },
+    ])("muestra $esperado días de aviso de locales según la configuración", ({ configuracion, esperado }) => {
+        preparar(configuracion);
+        expect(propsInput("Avisos de vencimiento de locales").valor).toBe(esperado);
     });
 
     it("entrega el estado de restablecimiento y las especies disponibles", () => {
@@ -187,9 +206,11 @@ describe("ListadoConfiguracionesGenerales", () => {
         act(() => {
             propsInput("Lista Inteligente").onChangeValor?.("https://uam.com.uy/nueva.pdf");
             propsInput("Importe de ajuste rápido de precios").onChangeValor?.("50");
+            propsInput("Avisos de vencimiento de locales").onChangeValor?.("14");
         });
         expect(propsInput("Lista Inteligente").valor).toBe("https://uam.com.uy/nueva.pdf");
         expect(propsInput("Importe de ajuste rápido de precios").valor).toBe("50");
+        expect(propsInput("Avisos de vencimiento de locales").valor).toBe("14");
         expect(mocks.guardarConfiguraciones).not.toHaveBeenCalled();
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
@@ -208,6 +229,23 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({ incremento_precio: "50" });
         expect(propsInput("Importe de ajuste rápido de precios").valor).toBe("50");
         expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("guarda únicamente la anticipación de los avisos de locales y refresca", async () => {
+        preparar();
+        await act(async () => { await propsInput("Avisos de vencimiento de locales").onGuardarValor?.("14") });
+        expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({ anticipacion_aviso_vencimiento_locales: "14" });
+        expect(propsInput("Avisos de vencimiento de locales").valor).toBe("14");
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("conecta la validación de anticipación de locales, incluidos cero y el máximo", () => {
+        preparar();
+        const validar = propsInput("Avisos de vencimiento de locales").validarNumero;
+        expect(validar).toBeTypeOf("function");
+        expect(() => validar!("0")).not.toThrow();
+        expect(() => validar!("365")).not.toThrow();
+        expect(() => validar!("366")).toThrow("La anticipación de los avisos de locales debe ser un entero entre 0 y 365 días.");
     });
 
     it("guarda las cuatro claves de ordenamiento juntas", async () => {
@@ -286,6 +324,21 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(mocks.refresh).toHaveBeenCalledOnce();
     });
 
+    it.each([
+        { titulo: "Vigencia de publicaciones de operadores", sufijo: "operador" },
+        { titulo: "Vigencia de publicaciones de productores", sufijo: "productor" },
+    ])("conserva avisos al guardar $titulo sin vigencia administrativa", async ({ titulo, sufijo }) => {
+        preparar();
+        await act(async () => { await propsVigencia(titulo).onGuardar({ habilitado: false, diasVigencia: "", avisosHabilitados: true, diasAnticipacion: "7" }) });
+        expect(mocks.guardarConfiguraciones).toHaveBeenCalledExactlyOnceWith({
+            [`vigencia_publicaciones_${sufijo}_habilitada`]: "false",
+            [`vigencia_publicaciones_${sufijo}`]: "",
+            [`aviso_vencimiento_publicaciones_${sufijo}_habilitado`]: "true",
+            [`anticipacion_aviso_publicaciones_${sufijo}`]: "7",
+        });
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+    });
+
     it.each([true, false])("guarda el restablecimiento como texto: %s", async (habilitado) => {
         preparar();
         await act(async () => { await propsRestablecimiento().onGuardar(habilitado) });
@@ -341,6 +394,14 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
+    it("no actualiza la anticipación de locales si falla el guardado", async () => {
+        mocks.guardarConfiguraciones.mockRejectedValue(new Error("Error al guardar"));
+        preparar();
+        await expect(propsInput("Avisos de vencimiento de locales").onGuardarValor?.("14")).rejects.toThrow("Error al guardar");
+        expect(propsInput("Avisos de vencimiento de locales").valor).toBe("9");
+        expect(mocks.refresh).not.toHaveBeenCalled();
+    });
+
     it("propaga los errores de carga de foto sin refrescar", async () => {
         const error = new Error("Error de imagen");
         mocks.guardarFoto.mockRejectedValue(error);
@@ -357,11 +418,12 @@ describe("ListadoConfiguracionesGenerales", () => {
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
-    it("sincroniza URL e importe cuando cambian los valores del servidor", () => {
+    it("sincroniza URL, importe y anticipación de locales cuando cambian los valores del servidor", () => {
         const { rerender } = preparar();
-        rerender(<ListadoConfiguracionesGenerales configuracion={crearConfiguracion({ url_lista_inteligente: "https://uam.com.uy/nueva.pdf", incremento_precio: "100" })} especies={especies} />);
+        rerender(<ListadoConfiguracionesGenerales configuracion={crearConfiguracion({ url_lista_inteligente: "https://uam.com.uy/nueva.pdf", incremento_precio: "100", anticipacion_aviso_vencimiento_locales: "0" })} especies={especies} />);
         expect(propsInput("Lista Inteligente").valor).toBe("https://uam.com.uy/nueva.pdf");
         expect(propsInput("Importe de ajuste rápido de precios").valor).toBe("100");
+        expect(propsInput("Avisos de vencimiento de locales").valor).toBe("0");
         expect(mocks.guardarConfiguraciones).not.toHaveBeenCalled();
     });
 });

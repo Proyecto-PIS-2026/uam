@@ -21,6 +21,7 @@ vi.mock("../listado-configuracion-general/ListadoConfiguracionesGenerales", () =
 const clavesEsperadas = [
     "url_lista_inteligente",
     "incremento_precio",
+    "anticipacion_aviso_vencimiento_locales",
     "ordenamiento_habilitado",
     "orden_landing_page_default",
     "orden_mercado_virtual_default",
@@ -69,6 +70,7 @@ describe("ContenedorConfiguracionGenerales", () => {
         mocks.obtenerConfiguraciones.mockResolvedValue([
             { nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/lista.pdf" },
             { nombreConfiguracion: "incremento_precio", valorConfiguracion: "25" },
+            { nombreConfiguracion: "anticipacion_aviso_vencimiento_locales", valorConfiguracion: "0" },
             { nombreConfiguracion: "restablecimiento_contrasena_habilitado", valorConfiguracion: "true" },
         ]);
 
@@ -77,6 +79,7 @@ describe("ContenedorConfiguracionGenerales", () => {
         expect(resultado.props.configuracion).toEqual({
             url_lista_inteligente: "https://uam.com.uy/lista.pdf",
             incremento_precio: "25",
+            anticipacion_aviso_vencimiento_locales: "0",
             restablecimiento_contrasena_habilitado: "true",
         });
     });

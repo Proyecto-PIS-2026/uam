@@ -998,6 +998,7 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "vigencia_publicaciones_productor", valorConfiguracion: "30" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_publicaciones_productor", valorConfiguracion: "7" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_vencimiento_locales", valorConfiguracion: "3" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "restablecimiento_contrasena_habilitado", valorConfiguracion: "true" });
 
   const cantidadNotificaciones = await crearNotificacionesDemo(

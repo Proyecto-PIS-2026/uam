@@ -20,6 +20,8 @@ interface Props {
     ayudaVencimiento?: string;
     ayudaAvisos?: string;
     maximoDiasVigencia?: number;
+    maximoDiasAnticipacion?: number;
+    avisosIndependientes?: boolean;
     configuracion: ConfiguracionVigenciaFotos;
     onGuardar: (configuracion: ConfiguracionVigenciaFotos) => Promise<void>;
 }
@@ -41,7 +43,7 @@ function validarDias(valor: string, campo: "vigencia" | "anticipación", maximo?
     return null;
 }
 
-export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descripcion = "", etiquetaVencimiento = "", ayudaVencimiento = "", ayudaAvisos = "", maximoDiasVigencia, configuracion, onGuardar }: Props) {
+export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descripcion = "", etiquetaVencimiento = "", ayudaVencimiento = "", ayudaAvisos = "", maximoDiasVigencia, maximoDiasAnticipacion, avisosIndependientes = false, configuracion, onGuardar }: Props) {
     const [valores, setValores] = useState(configuracion);
     const [guardado, setGuardado] = useState(configuracion);
     const [configuracionAnterior, setConfiguracionAnterior] = useState(configuracion);
@@ -56,6 +58,8 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
     }
 
     const huboCambios = !sonIguales(valores, guardado);
+    const avisosDisponibles = avisosIndependientes || valores.habilitado;
+    const avisosActivos = avisosDisponibles && valores.avisosHabilitados;
 
     function cambiarDias(campo: "diasVigencia" | "diasAnticipacion", valor: string) {
         if (!/^[0-9]*$/.test(valor)) {
@@ -74,13 +78,12 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
             return;
         }
 
-        const avisosActivos = valores.habilitado && valores.avisosHabilitados;
-        const errorAnticipacion = avisosActivos ? validarDias(valores.diasAnticipacion, "anticipación") : null;
+        const errorAnticipacion = avisosActivos ? validarDias(valores.diasAnticipacion, "anticipación", maximoDiasAnticipacion) : null;
         if (errorAnticipacion) {
             notificar(errorAnticipacion, "error");
             return;
         }
-        if (avisosActivos && Number(valores.diasAnticipacion) >= Number(valores.diasVigencia)) {
+        if (valores.habilitado && avisosActivos && Number(valores.diasAnticipacion) >= Number(valores.diasVigencia)) {
             notificar("La anticipación debe ser menor que la vigencia.", "error");
             return;
         }
@@ -123,7 +126,7 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
                             )}
                         </span>
                         <Switch checked={valores.habilitado} disabled={guardando} className={styles.switch}
-                            onChange={(_, checked) => {setValores((actual) => ({...actual, habilitado: checked, diasVigencia: checked ? actual.diasVigencia : "", avisosHabilitados: checked ? actual.avisosHabilitados : false, diasAnticipacion: checked ? actual.diasAnticipacion : ""}))}}
+                            onChange={(_, checked) => {setValores((actual) => ({...actual, habilitado: checked, diasVigencia: checked ? actual.diasVigencia : "", avisosHabilitados: checked || avisosIndependientes ? actual.avisosHabilitados : false, diasAnticipacion: checked || avisosIndependientes ? actual.diasAnticipacion : ""}))}}
                             slotProps={{input: {role: "switch", "aria-label": etiquetaVencimiento}}}
                         />
                     </label>               
@@ -134,7 +137,11 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
                                 className={styles.selectMui}
                                 slotProps={{htmlInput: {inputMode: "numeric", pattern: "[0-9]*"}}}
                             />
-                            <label className={styles.filaSwitch} data-habilitado={valores.avisosHabilitados} data-guardando={guardando || !valores.habilitado}>
+                        </div>
+                    </Collapse>
+                    <Collapse in={avisosDisponibles} timeout={300}>
+                        <div className={styles.opcionesDesplegadas}>
+                            <label className={styles.filaSwitch} data-habilitado={valores.avisosHabilitados} data-guardando={guardando || !avisosDisponibles}>
                                 <span className={styles.textoSwitch}>
                                     <span className={styles.etiquetaSwitch}>
                                         Avisos de próximo vencimiento
@@ -143,14 +150,14 @@ export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descrip
                                         {ayudaAvisos}
                                     </span>
                                 </span>
-                                <Switch checked={valores.avisosHabilitados} disabled={guardando || !valores.habilitado} className={styles.switch}
+                                <Switch checked={valores.avisosHabilitados} disabled={guardando || !avisosDisponibles} className={styles.switch}
                                     onChange={(_, checked) => {setValores((actual) => ({...actual, avisosHabilitados: checked, diasAnticipacion: checked ? actual.diasAnticipacion : ""}))}}
                                     slotProps={{input: {role: "switch", "aria-label": "Habilitar avisos de próximo vencimiento"}}}
                                 />
                             </label>
                             <Collapse in={valores.avisosHabilitados} timeout={300}>
                                 <div className={styles.anticipacionDesplegada}>
-                                    <TextField required={valores.habilitado && valores.avisosHabilitados} fullWidth size="small" label="Días de anticipación del aviso" value={valores.diasAnticipacion} disabled={guardando || !valores.habilitado || !valores.avisosHabilitados} onChange={(evento) =>cambiarDias("diasAnticipacion", evento.target.value)} className={styles.selectMui} slotProps={{htmlInput: {inputMode: "numeric", pattern: "[0-9]*"}}}/>
+                                    <TextField required={avisosActivos} fullWidth size="small" label="Días de anticipación del aviso" value={valores.diasAnticipacion} disabled={guardando || !avisosActivos} onChange={(evento) =>cambiarDias("diasAnticipacion", evento.target.value)} className={styles.selectMui} slotProps={{htmlInput: {inputMode: "numeric", pattern: "[0-9]*"}}}/>
                                 </div>
                             </Collapse>
                         </div>

@@ -3,6 +3,7 @@ import obtenerConfiguraciones from "@/modulos/administracion/acciones/consultas-
 import obtenerEspecies from "@/modulos/administracion/acciones/consultas-especies";
 import { CLAVES_VIGENCIA_PUBLICACIONES } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
 import { CLAVES_AGING_FOTOS } from "@/modulos/publicaciones/claves-aging-fotos";
+import { CLAVE_ANTICIPACION_AVISO_LOCALES } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
 
 export default async function PaginaAdministracionGeneral() {
     const [filas, especies] = await Promise.all([
@@ -14,6 +15,7 @@ export default async function PaginaAdministracionGeneral() {
             ...CLAVES_AGING_FOTOS.PRODUCTOR,
             ...CLAVES_VIGENCIA_PUBLICACIONES.OPERADOR,
             ...CLAVES_VIGENCIA_PUBLICACIONES.PRODUCTOR,
+            CLAVE_ANTICIPACION_AVISO_LOCALES,
             "restablecimiento_contrasena_habilitado",
         ]),
         obtenerEspecies(),

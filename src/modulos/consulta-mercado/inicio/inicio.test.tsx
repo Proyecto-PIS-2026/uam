@@ -84,7 +84,7 @@ describe("Inicio", () => {
     it("muestra las especies ordenadas de A-Z por defecto", () => {
         preparar();
         expect(nombresVisibles()).toEqual(["Ají", "Banana", "Papa", "Tomate"]);
-        expect(screen.getByText("4 especies con operadores")).toBeInTheDocument();
+        expect(screen.getByText("4 especies con publicaciones")).toBeInTheDocument();
     });
 
     it("aplica el orden predeterminado Z-A", () => {
