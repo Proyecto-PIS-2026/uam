@@ -516,27 +516,27 @@ describe("PreciosHistoricos", () => {
         expect(within(tabla).getByRole("cell", { name: "Variedad 1" })).toBeInTheDocument();
         expect(within(tabla).getByRole("cell", { name: "Variedad 40" })).toBeInTheDocument();
         expect(within(tabla).queryByRole("cell", { name: "Variedad 41" })).not.toBeInTheDocument();
-        expect(paginacion.getByText("1-40 de 83")).toBeInTheDocument();
-        expect(paginacion.getByText("Página 1 de 3")).toBeInTheDocument();
+        expect(screen.getByText("1-40 de 83")).toBeInTheDocument();
+        expect(screen.getByText("Página 1 de 3")).toBeInTheDocument();
         expect(paginacion.getByRole("button", { name: "Anterior" })).toBeDisabled();
 
         fireEvent.click(paginacion.getByRole("button", { name: "Siguiente" }));
         expect(propsGrafica().registros).toBe(registrosGrafica);
-        expect(paginacion.getByText("41-80 de 83")).toBeInTheDocument();
+        expect(screen.getByText("41-80 de 83")).toBeInTheDocument();
         expect(within(tabla).getByRole("cell", { name: "Variedad 41" })).toBeInTheDocument();
         expect(within(tabla).getAllByRole("row")).toHaveLength(41);
         expect(document.querySelectorAll("article")).toHaveLength(40);
 
         fireEvent.click(paginacion.getByRole("button", { name: "Siguiente" }));
         expect(propsGrafica().registros).toBe(registrosGrafica);
-        expect(paginacion.getByText("81-83 de 83")).toBeInTheDocument();
-        expect(paginacion.getByText("Página 3 de 3")).toBeInTheDocument();
+        expect(screen.getByText("81-83 de 83")).toBeInTheDocument();
+        expect(screen.getByText("Página 3 de 3")).toBeInTheDocument();
         expect(within(tabla).getAllByRole("row")).toHaveLength(4);
         expect(document.querySelectorAll("article")).toHaveLength(3);
         expect(paginacion.getByRole("button", { name: "Siguiente" })).toBeDisabled();
 
         fireEvent.click(paginacion.getByRole("button", { name: "Anterior" }));
-        expect(paginacion.getByText("Página 2 de 3")).toBeInTheDocument();
+        expect(screen.getByText("Página 2 de 3")).toBeInTheDocument();
         expect(navegar).not.toHaveBeenCalled();
     }, 10_000);
 

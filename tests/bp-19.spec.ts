@@ -195,15 +195,15 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await expect(paginacion.getByRole("button", { name: "Anterior" })).toBeDisabled();
     for (let numero = 2; numero <= paginas; numero++) {
       await paginacion.getByRole("button", { name: "Siguiente" }).click();
-      await expect(paginacion.getByText(`Página ${numero} de ${paginas}`, { exact: true })).toBeVisible();
+      await expect(page.getByText(`Página ${numero} de ${paginas}`, { exact: true })).toBeVisible();
     }
     await expect(filas(page)).toHaveCount(registros.length - (paginas - 1) * 40);
     await expect(paginacion.getByRole("button", { name: "Siguiente" })).toBeDisabled();
     await paginacion.getByRole("button", { name: "Anterior" }).click();
-    await expect(paginacion.getByText(`Página ${paginas - 1} de ${paginas}`, { exact: true })).toBeVisible();
+    await expect(page.getByText(`Página ${paginas - 1} de ${paginas}`, { exact: true })).toBeVisible();
     await filtros(page).getByRole("checkbox").check();
     await expect(paginacion.getByRole("button", { name: "Anterior" })).toBeDisabled();
-    await expect(paginacion.getByText(/^Página 1 de /)).toBeVisible();
+    await expect(page.getByText(/^Página 1 de /)).toBeVisible();
   });
 
   test("permite consultar y filtrar precios desde un celular", async ({ page }) => {

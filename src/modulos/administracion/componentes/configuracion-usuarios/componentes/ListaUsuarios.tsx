@@ -2,7 +2,6 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import Pagination from "@mui/material/Pagination";
 import IconButton from "@mui/material/IconButton";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -11,6 +10,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import Paginacion from "@/compartido/componentes/Paginacion";
 
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -89,10 +89,6 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
     const paginaActual = Math.min(pagina, Math.max(1, cantidadPaginas));
     const indiceInicio = (paginaActual - 1) * usuariosPorPagina;
     const usuariosPagina = usuariosVisibles.slice(indiceInicio, indiceInicio + usuariosPorPagina);
-
-    function cambiarPagina(_: React.ChangeEvent<unknown>, nuevaPagina: number) {
-        setPagina(nuevaPagina);
-    }
 
     function manejarSeleccionar(usuario: UsuarioParaModificar) {
         if (onSeleccionar) onSeleccionar(usuario);
@@ -243,9 +239,12 @@ export default function ListaUsuarios({ usuarios, usuarioSeleccionadoId, usuario
             )}
 
             {cantidadPaginas > 1 && (
-                <div className={styles.paginacion}>
-                    <Pagination count={cantidadPaginas} page={paginaActual} onChange={cambiarPagina} color="secondary" shape="rounded" size={esMobile ? "small" : "medium"} />
-                </div>
+                <Paginacion
+                    pagina={paginaActual}
+                    totalPaginas={cantidadPaginas}
+                    alCambiar={setPagina}
+                    etiqueta="Páginas de usuarios"
+                />
             )}
 
             <Dialog open={Boolean(usuarioACambiar)} onClose={() => { if (!cambiandoHabilitacion) setUsuarioACambiar(null); }} maxWidth="xs" aria-labelledby="titulo-habilitacion-usuario" slotProps={{ paper: { className: styles.modal } }}>

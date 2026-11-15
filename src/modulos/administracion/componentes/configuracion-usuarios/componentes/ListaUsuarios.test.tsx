@@ -59,11 +59,12 @@ interface PaginationMockProps {
     page: number;
     size: "small" | "medium";
     onChange: (evento: ChangeEvent<unknown>, pagina: number) => void;
+    "aria-label": string;
 }
 
 vi.mock("@mui/material/Pagination", () => ({
-    default: ({ count, page, size, onChange }: PaginationMockProps) => (
-        <nav data-testid="paginacion" data-size={size}>
+    default: ({ count, page, size, onChange, "aria-label": etiqueta }: PaginationMockProps) => (
+        <nav data-testid="paginacion" data-size={size} aria-label={etiqueta}>
             {Array.from({ length: count }, (_, index) => {
                 const numeroPagina = index + 1;
 
@@ -452,6 +453,8 @@ describe("ListaUsuarios", () => {
 
         renderLista({ usuarios: usuariosPaginados });
 
+        expect(screen.getByRole("navigation", { name: "Páginas de usuarios" })).toBeInTheDocument();
+        expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
         expect(screen.getByTestId("paginacion")).toHaveAttribute("data-size", "medium");
         expect(screen.getByRole("button", { name: "Página 1" })).toHaveAttribute(
             "aria-current",
@@ -462,6 +465,7 @@ describe("ListaUsuarios", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Página 2" }));
 
+        expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
         expect(screen.getByText("operador.8")).toBeInTheDocument();
         expect(screen.queryByText("ana.admin")).not.toBeInTheDocument();
     });

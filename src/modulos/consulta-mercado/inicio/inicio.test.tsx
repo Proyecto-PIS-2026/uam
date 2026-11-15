@@ -224,6 +224,9 @@ describe("Inicio", () => {
         fireEvent.click(screen.getByRole("button", { name: "Anterior" }));
         expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
         expect(nombresVisibles()[0]).toBe("Especie 01");
+        fireEvent.click(screen.getByRole("button", { name: "Página 2" }));
+        expect(screen.getByRole("button", { name: "Página 2" })).toHaveAttribute("aria-current", "page");
+        expect(nombresVisibles()[0]).toBe("Especie 21");
     });
 
     it("vuelve a la primera página al buscar", () => {
