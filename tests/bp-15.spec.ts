@@ -1,5 +1,20 @@
+import { randomInt } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 import type { Credenciales } from "./autenticacion";
+
+async function iniciarSesionProductor(page: Page, credenciales: Credenciales) {
+  await page.goto("/iniciar-sesion");
+  await page.getByLabel("Correo electrónico o nombre de usuario").fill(credenciales.usuario);
+  await page.getByLabel("Contraseña", { exact: true }).fill(credenciales.contrasena);
+  await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
+
+  await expect(page).toHaveURL(/\/mi-mercado\/productor$/, { timeout: 30_000 });
+  await expect(page.getByRole("heading", {
+    name: "Mi Mercado",
+    exact: true,
+    level: 1,
+  })).toBeVisible();
+}
 
 const ruta = "/mi-mercado/productor";
 const api = "/api/publicaciones/productor";
@@ -14,14 +29,20 @@ const tarjeta = (page: Page, precio: string) => page.getByRole("button", { name:
   .filter({ has: page.getByText(`$${precio}`, { exact: true }) });
 const confirmacion = (page: Page) => page.getByRole("alertdialog", { name: "Eliminar publicación", exact: true });
 
-async function iniciarSesionProductor(page: Page, credenciales: Credenciales) {
-  await page.goto("/iniciar-sesion");
-  await page.getByLabel("Correo electrónico o nombre de usuario").fill(credenciales.usuario);
-  await page.getByLabel("Contraseña", { exact: true }).fill(credenciales.contrasena);
-  await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
-  await expect(page).toHaveURL(/\/mi-mercado\/productor$/, { timeout: 30_000 });
-  
-  await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true, level: 1 })).toBeVisible();
+async function abrirDetalle(page: Page, precio: string) {
+  const boton = tarjeta(page, precio);
+  await expect(boton).toBeVisible();
+
+  for (let intento = 0; intento < 3; intento++) {
+    await boton.click();
+
+    try {
+      await expect(detalle(page)).toBeVisible({ timeout: 2000 });
+      return;
+    } catch (error) {
+      if (intento === 2) throw error;
+    }
+  }
 }
 
 async function catalogo(page: Page) {
@@ -78,8 +99,9 @@ test.describe("BP-15: ABM de Productos de un Productor", () => {
       test.setTimeout(240_000);
       await page.setViewportSize(viewport);
       await iniciarSesionProductor(page, { usuario, contrasena: `${usuario}123` });
+      await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true, level: 1 })).toBeVisible();
       const iniciales = await catalogo(page);
-      const precio = String(100000 + Math.floor(Math.random() * 800000));
+      const precio = String(randomInt(100_000, 900_000));
       const nuevoPrecio = String(Number(precio) + 1);
       let precioActual = precio;
       let urlPublicacion = "";
@@ -114,13 +136,15 @@ test.describe("BP-15: ABM de Productos de un Productor", () => {
           const creada = await respuestaOperacion(page, "POST", () => alta(page).getByRole("button", { name: "Confirmar", exact: true }).click());
           expect(creada.status(), await creada.text()).toBe(201);
           requiereLimpieza = true;
+          expect(await creada.json()).toMatchObject({ esValido: true, id: expect.any(Number) });
           await expect(alta(page)).not.toBeVisible();
         });
 
         await test.step("CA-3 y CA-7: consulta los datos del producto persistido", async () => {
           await page.reload();
           await expect(tarjetas(page)).toHaveCount(iniciales.length + 1);
-          await tarjeta(page, precio).click();
+          await expect(tarjeta(page, precio)).toHaveCount(1);
+          await abrirDetalle(page, precio);
           await expect(detalle(page).getByRole("combobox", { name: "Especie", exact: true })).toHaveText("Uchuva");
           await expect(detalle(page).getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(precio);
           await expect(detalle(page).getByRole("textbox", { name: /^Unidades/ })).toHaveValue("12");
@@ -135,7 +159,8 @@ test.describe("BP-15: ABM de Productos de un Productor", () => {
           precioActual = nuevoPrecio;
           await expect(edicion(page)).not.toBeVisible();
           await page.reload();
-          await tarjeta(page, nuevoPrecio).click();
+          await expect(tarjeta(page, nuevoPrecio)).toHaveCount(1);
+          await abrirDetalle(page, nuevoPrecio);
           await expect(detalle(page).getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(nuevoPrecio);
         });
 
@@ -157,7 +182,7 @@ test.describe("BP-15: ABM de Productos de un Productor", () => {
             expect((await ajeno.request.delete(urlPublicacion)).status()).toBe(403);
           } finally { await contexto.close(); }
           await page.reload();
-          await tarjeta(page, nuevoPrecio).click();
+          await abrirDetalle(page, nuevoPrecio);
           await expect(detalle(page).getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(nuevoPrecio);
         });
 
@@ -165,7 +190,7 @@ test.describe("BP-15: ABM de Productos de un Productor", () => {
           await detalle(page).getByRole("button", { name: "Eliminar", exact: true }).click();
           await confirmacion(page).getByRole("button", { name: "Cancelar", exact: true }).click();
           await page.reload();
-          await tarjeta(page, nuevoPrecio).click();
+          await abrirDetalle(page, nuevoPrecio);
           await eliminar(page);
           requiereLimpieza = false;
           await page.reload();
@@ -179,7 +204,7 @@ test.describe("BP-15: ABM de Productos de un Productor", () => {
           await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible();
           for (const valor of new Set([precio, precioActual, nuevoPrecio])) {
             if (await tarjeta(page, valor).count()) {
-              await tarjeta(page, valor).click();
+              await abrirDetalle(page, valor);
               await eliminar(page);
             }
           }
