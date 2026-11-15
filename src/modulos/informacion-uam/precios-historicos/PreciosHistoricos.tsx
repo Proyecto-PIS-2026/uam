@@ -4,6 +4,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useTransi
 import BotonVolver from "@/compartido/BotonVolver";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
+import Paginacion from "@/compartido/componentes/Paginacion";
 import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlined";
 import { MenuItem, TextField } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -428,14 +429,13 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                     </div>
                 )}
                 {!cargandoTabla && filas.length > LIMITE && (
-                    <nav className={styles.paginacion} aria-label="Páginas de precios históricos">
-                        <span>{inicio + 1}-{Math.min(inicio + LIMITE, filas.length)} de {filas.length}</span>
-                        <div>
-                            <button type="button" disabled={paginaActual === 1} onClick={() => setPagina(paginaActual - 1)}>Anterior</button>
-                            <span>Página {paginaActual} de {totalPaginas}</span>
-                            <button type="button" disabled={paginaActual === totalPaginas} onClick={() => setPagina(paginaActual + 1)}>Siguiente</button>
-                        </div>
-                    </nav>
+                    <Paginacion
+                        pagina={paginaActual}
+                        totalPaginas={totalPaginas}
+                        alCambiar={setPagina}
+                        etiqueta="Páginas de precios históricos"
+                        resumen={`${inicio + 1}-${Math.min(inicio + LIMITE, filas.length)} de ${filas.length}`}
+                    />
                 )}
             </section>
             <FuentePrecios />

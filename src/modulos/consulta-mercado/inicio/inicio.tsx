@@ -14,6 +14,7 @@ import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import BotonOrdenar from "@/compartido/componentes/BotonOrdenar";
+import Paginacion from "@/compartido/componentes/Paginacion";
 import HojasDecorativas from "../../../compartido/HojasDecorativas";
 import { compararEspeciesPorPrioridad } from "../../../compartido/prioridad-especies";
 import type { OrdenLanding } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
@@ -118,11 +119,12 @@ export default function Inicio({ especies, urlListaInteligente, ordenamientoHabi
                                 ))}
                             </div>
                             {totalPaginas > 1 && (
-                                <nav className={styles.paginacion} aria-label="Páginas de especies">
-                                    <button className={styles.botonPagina} type="button" onClick={() => setPaginaActual(paginaVisible - 1)} disabled={paginaVisible === 1}>Anterior</button>
-                                    <span className={styles.paginaActual}>Página {paginaVisible} de {totalPaginas}</span>
-                                    <button className={styles.botonPagina} type="button" onClick={() => setPaginaActual(paginaVisible + 1)} disabled={paginaVisible === totalPaginas}>Siguiente</button>
-                                </nav>
+                                <Paginacion
+                                    pagina={paginaVisible}
+                                    totalPaginas={totalPaginas}
+                                    alCambiar={setPaginaActual}
+                                    etiqueta="Páginas de especies"
+                                />
                             )}
                         </>
                     )}

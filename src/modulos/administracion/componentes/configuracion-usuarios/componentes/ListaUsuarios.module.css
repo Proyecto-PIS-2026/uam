@@ -165,29 +165,6 @@
     color: var(--color-danger) !important;
 }
 
-.paginacion {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}
-
-.paginacion :global(.MuiPaginationItem-root) {
-    color: var(--color-foreground);
-}
-
-.paginacion :global(.MuiPaginationItem-root.Mui-selected) {
-    background-color: var(--color-secondary);
-    color: var(--color-surface);
-}
-
-.paginacion :global(.MuiPaginationItem-root.Mui-selected:hover) {
-    background-color: var(--color-secondary-hover);
-}
-
-.paginacion :global(.MuiPaginationItem-root:hover) {
-    background-color: var(--color-secondary-soft);
-}
-
 .modal:global(.MuiDialog-paper) {
     margin: var(--padding-exterior-pagina);
 }
