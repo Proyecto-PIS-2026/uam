@@ -12,7 +12,7 @@ test.beforeEach(async ({ ordenamiento }) => { void ordenamiento; });
 
 for (const [caso, ordenes] of [
     ["01", ["Z-A", "A-Z", "Z-A"]],
-    ["02", ["A-Z", "Z-A", "Z-A"]],
+    ["02", ["A-Z", "Z-A", "A-Z"]],
 ] as const) {
     test(`CP-18.1-${caso}: guarda órdenes independientes y los aplica en Inicio y ambos mercados`, async ({ page, browser, catalogo, precargaOperadores: datos }) => {
         await iniciarSesionAdministrador(page, datos.administrador);
@@ -47,6 +47,7 @@ for (const [caso, ordenes] of [
             }
             await tarjeta(page).getByRole("switch", { name: "Permitir cambiar el orden" }).check();
             await guardar(page).click();
+            await expect(page.getByRole("status").filter({ hasText: "La configuración de ordenamiento se guardó correctamente." })).toBeVisible();
             await expect(tarjeta(page).getByRole("switch", { name: "Permitir cambiar el orden" })).toBeEnabled();
             await expect(guardar(page)).toBeDisabled();
             for (const [pantalla, ruta] of [[publico, "/inicio"], [publico, "/publicaciones"], [operador, "/publicaciones-productor"]] as const) {

@@ -5,12 +5,28 @@ import { iniciarSesionAdministrador, iniciarSesionOperador, iniciarSesionProduct
 
 const tituloImporte = "Importe de ajuste rápido de precios";
 const confirmacionGuardado = "El importe de ajuste rápido de precios se guardó correctamente.";
+const tituloListaInteligente = "Lista Inteligente";
+const confirmacionEnlace = /se guardó correctamente/i;
+
+const interruptorRestablecer = (page: Page) =>page.getByRole("switch", { name: "Permitir que los usuarios restablezcan su propia contraseña", exact: true });
+const guardarRestablecer = (page: Page) =>page.getByRole("button", { name: "Guardar configuración: Restablecimiento de contraseñas", exact: true });
+const tarjetaLista = (page: Page) => page.getByText(tituloListaInteligente, { exact: true }).locator("..");
+const campoEnlace = (page: Page) => tarjetaLista(page).getByRole("textbox");
+const guardarEnlace = (page: Page) => tarjetaLista(page).getByRole("button", { name: "Guardar cambios", exact: true });
+const estadoEnlace = (page: Page) => page.getByRole("status").filter({ hasText: confirmacionEnlace });
+
+async function guardarYConfirmarEnlace(page: Page) {
+    await guardarEnlace(page).click();
+    await expect(estadoEnlace(page)).toBeVisible({ timeout: 30_000 });
+    await expect(guardarEnlace(page)).toBeDisabled();
+}
 
 const secciones = (page: Page) => page.getByRole("group", { name: "Secciones de configuración" });
 const filasUsuarios = (page: Page) => page.getByRole("button").filter({ has: page.getByText(/^(Administrador|Operador|Productor)$/, { exact: true }) });
 const tarjetaImporte = (page: Page) => page.getByText(tituloImporte, { exact: true }).locator("..");
 const campoImporte = (page: Page) => tarjetaImporte(page).getByRole("textbox", { name: tituloImporte, exact: true });
 const guardarImporte = (page: Page) => tarjetaImporte(page).getByRole("button", { name: "Guardar cambios", exact: true });
+
 
 async function seleccionarRol(page: Page, rol: string) {
     await page.getByRole("combobox", { name: "Rol", exact: true }).click();
@@ -37,6 +53,14 @@ async function restaurarImporte(page: Page, original: string) {
     const lectura = await page.request.get(ruta, { timeout: 15_000 });
     expect(lectura.ok()).toBe(true);
     expect(await lectura.json()).toMatchObject({ valor: original });
+}
+
+async function fijarRestablecimiento(page: Page, habilitado: boolean) {
+    if ((await interruptorRestablecer(page).isChecked()) === habilitado) return;
+    await interruptorRestablecer(page).setChecked(habilitado);
+    await expect(guardarRestablecer(page)).toBeEnabled();
+    await guardarRestablecer(page).click();
+    await expect(guardarRestablecer(page)).toBeDisabled({ timeout: 30_000 });
 }
 
 function botonPrecio(tarjeta: Locator) {
@@ -307,3 +331,62 @@ testPrecarga("BP-18.2: guarda el importe y lo aplica al ajuste rápido del opera
         }
     }
 });
+
+test("BP-18.3: guarda un enlace válido de lista inteligente y el publico lo usa", async ({ page, browser, usuariosAdministrativos }) => {
+    test.slow();
+    await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
+    await abrirGeneral(page);
+
+    const original = await campoEnlace(page).inputValue();
+    expect(original, "La seed debe traer un enlace configurado para poder restaurarlo").toMatch(/^https?:\/\//);
+    const nuevo = original.endsWith("-e2e.pdf")? original.replace("-e2e.pdf", ".pdf"): original.replace(/\.pdf$/, "-e2e.pdf");    
+    const visitante = await browser.newPage();
+
+    try {
+        await campoEnlace(page).fill(nuevo);
+        await guardarYConfirmarEnlace(page);
+
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await expect(campoEnlace(page)).toHaveValue(nuevo);
+
+        await visitante.goto("/");
+        await expect(visitante.getByRole("link", { name: /Lista inteligente/ }).first()).toHaveAttribute("href", nuevo);
+    } finally {
+        try {
+            await campoEnlace(page).fill(original);
+            if (await guardarEnlace(page).isEnabled()) await guardarYConfirmarEnlace(page);
+        } finally {
+            await visitante.close();
+        }
+    }
+});
+
+test("BP-18.7: deshabilitar el restablecimiento  y lo oculta en el login", async ({ page, browser, usuariosAdministrativos }) => {
+    test.slow();
+    await iniciarSesionAdministrador(page, usuariosAdministrativos.administrador);
+    await abrirGeneral(page);
+
+    const original = await interruptorRestablecer(page).isChecked();
+    const visitante = await browser.newPage();
+    const enlaceRecuperar = visitante.getByRole("button", { name: "Solicitar recuperación de contraseña", exact: true });
+    try {
+        await fijarRestablecimiento(page, true);
+        await visitante.goto("/iniciar-sesion");
+        await expect(enlaceRecuperar).toBeVisible();
+
+        await fijarRestablecimiento(page, false);
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await expect(interruptorRestablecer(page)).not.toBeChecked();
+
+        await visitante.reload({ waitUntil: "domcontentloaded" });
+        await expect(visitante.getByRole("button", { name: "Iniciar sesión", exact: true })).toBeVisible();
+        await expect(enlaceRecuperar).toHaveCount(0);
+    } finally {
+        try {
+            await fijarRestablecimiento(page, original);
+        } finally {
+            await visitante.close();
+        }
+    }
+});
+
