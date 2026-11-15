@@ -251,3 +251,36 @@ for (const [caso, rol] of [["09", "OPERADOR"], ["10", "PRODUCTOR"]] as const) {
     }
   });
 }
+
+
+test("CP-13.1-11: al vencer la foto del operador no se modifica ningún otro dato de la publicación", async ({ aging, backend }) => {
+  await backend.orm.public.Configuracion.where({ nombreConfiguracion: "vigencia_fotos" }).update({ valorConfiguracion: "10" });
+  const foto = await aging.crearFoto("OPERADOR");
+  const camposDelProceso = ["foto", "fotoEliminadaPorVencimientoEn", "version"];
+  const datosDeNegocio = (fila: object) =>
+    Object.fromEntries(Object.entries(fila).filter(([campo]) => !camposDelProceso.includes(campo)));
+  const antes = await backend.orm.public.Publicacion.where({ id: foto.id }).first();
+  expect(antes).not.toBeNull();
+
+  expect(await aging.procesar("OPERADOR")).toBe(1);
+
+  const despues = await backend.orm.public.Publicacion.where({ id: foto.id }).first();
+  expect(despues?.foto).toBeNull();
+  expect(datosDeNegocio(despues!)).toEqual(datosDeNegocio(antes!));
+});
+
+test("CP-13.1-12: al vencer la foto del productor no se modifica ningún otro dato de la publicación", async ({ aging, backend }) => {
+  await backend.orm.public.Configuracion.where({ nombreConfiguracion: "vigencia_fotos_productor" }).update({ valorConfiguracion: "10" });
+  const foto = await aging.crearFoto("PRODUCTOR");
+  const camposDelProceso = ["foto", "fotoEliminadaPorVencimientoEn", "version"];
+  const datosDeNegocio = (fila: object) =>
+    Object.fromEntries(Object.entries(fila).filter(([campo]) => !camposDelProceso.includes(campo)));
+  const antes = await backend.orm.public.Publicacion.where({ id: foto.id }).first();
+  expect(antes).not.toBeNull();
+
+  expect(await aging.procesar("PRODUCTOR")).toBe(1);
+
+  const despues = await backend.orm.public.Publicacion.where({ id: foto.id }).first();
+  expect(despues?.foto).toBeNull();
+  expect(datosDeNegocio(despues!)).toEqual(datosDeNegocio(antes!));
+});
