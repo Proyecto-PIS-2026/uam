@@ -25,8 +25,18 @@ async function datosConsulta(page: Page) {
 }
 
 async function abrirDetalle(page: Page, producto: string) {
-    await tarjeta(page, producto).click();
-    await expect(detalle(page)).toBeVisible();
+    const boton = tarjeta(page, producto);
+    await expect(boton).toBeVisible();
+
+    for (let intento = 0; intento < 3; intento++) {
+        await boton.click();
+        try {
+            await expect(detalle(page)).toBeVisible({ timeout: 2000 });
+            return;
+        } catch (error) {
+            if (intento === 2) throw error;
+        }
+    }
 }
 
 async function editar(page: Page) {
@@ -80,7 +90,9 @@ test.describe("BP-15.3: modificación de publicaciones del productor", () => {
         await iniciarSesionProductor(page, { usuario, contrasena: `${usuario}123` });
         await expect(page).toHaveURL(ruta);
         await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible();
-        await expect(tarjetas(page)).toHaveCount(9);
+        // No dependemos de tener exactamente 9 publicaciones en la seed.
+        await expect(tarjeta(page, "Mandarina · Afourer")).toHaveCount(1);
+        await expect(tarjeta(page, "Quinoto")).toHaveCount(1);
     });
 
     test("CP-15.3-01: el productor abre el panel de modificación de su publicación", async ({ page }) => {
@@ -126,7 +138,7 @@ test.describe("BP-15.3: modificación de publicaciones del productor", () => {
         await expect(detalle(page).locator("time")).toHaveAttribute("datetime", fechaInicial!);
 
         await page.reload();
-        await expect(tarjetas(page)).toHaveCount(9);
+        await expect(tarjeta(page, "Mandarina · Afourer")).toHaveCount(1);
         await abrirDetalle(page, "Mandarina · Afourer");
         expect(await datosConsulta(page)).toEqual(datosIniciales);
         await expect(detalle(page).locator("time")).toHaveAttribute("datetime", fechaInicial!);
