@@ -47,12 +47,11 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
         return null;
     }
 
-    // await porque la consulta a la base de datos es asincrona pero quiero esperar a la respuesta antes de seguir
     const operador = await db.orm.public.Operador
         .where((operador) => operador.usuario.some((usuario) => usuario.habilitado.eq(true)))
-        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp", "enLicencia", "comentario") // Que columnas quiero recuperar de la tabla de operador
-        .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
-            .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp", "enLicencia", "comentario")
+        .include("locales", (locales) => locales
+            .select("numeroLocal", "finContrato")
             .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
         .first({ nombreFantasia });
 
@@ -60,14 +59,13 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
         return null;
     }
 
-    // Con que un local este vigente estamos bien (o sin fin de contrato, aunque ahora es obligatorio en el esquema)
     const hoy = Temporal.Now.plainDateISO("America/Montevideo");
     const locales: PerfilPublicoOperador["locales"] = [];
 
     for (const local of operador.locales) {
         if (local.finContrato !== null) {
             const fechaFin = local.finContrato.toZonedDateTimeISO("America/Montevideo").toPlainDate();
-            if (Temporal.PlainDate.compare(fechaFin, hoy) >= 0) { // Si la fechaFin es hoy o viene dsp de hoy
+            if (Temporal.PlainDate.compare(fechaFin, hoy) >= 0) {
                 locales.push({ 
                     numeroLocal: local.numeroLocal, 
                     nombreNave: local.nave.nombreNave 
@@ -82,7 +80,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
     }
 
     if (locales.length === 0) {
-        return null; // Si no tengo locales activos, deberia poder ver el perfil?
+        return null;
     }
 
     if (operador.enLicencia) {
@@ -99,7 +97,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
     }
 
     // Obtener las publicaciones
-    const consultaCompleta = db.orm.public.PublicacionOperador // Solo armo la consulta sin ejecutarla
+    const consultaCompleta = db.orm.public.PublicacionOperador
         .where({ operadorId: operador.id })
         .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
         .include("publicacion", (consultaPublicacion) => {
@@ -122,7 +120,7 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
             return completo;
         });
 
-    const completas = await consultaCompleta.all(); // La ejecuto con await por ser asincrona
+    const completas = await consultaCompleta.all();
     const publicaciones: PublicacionPerfil[] = [];
     
     for (const completa of completas) {

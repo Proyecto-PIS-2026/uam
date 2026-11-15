@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PerfilPublicoOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-publico";
 import Page from "./page";
 
-// Creo dos funciones falsas de obtener perfil y el notFound
 const mocks = vi.hoisted(() => ({
     obtenerPerfil: vi.fn(),
     refresh: vi.fn(),
@@ -18,12 +17,10 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     obtenerSesion: mocks.obtenerSesion,
 }));
 
-// Reemplaza el import de la página por mi función falsa
 vi.mock("../../../../modulos/usuarios/operadores/consultas-perfil-publico", () => ({
     obtenerPerfilPublicoOperador: mocks.obtenerPerfil,
 }));
 
-// Reemplaza el import de next/navigation por mi función falsa
 vi.mock("next/navigation", () => ({
     notFound: mocks.notFound,
     redirect: mocks.redirect,

@@ -27,6 +27,9 @@ export async function altaProductor(valor: unknown, foto?: FormData): Promise<Re
 		const existente = await tx.orm.public.Usuario.where({ username: datos.nombreUsuario }).first();
 		if (existente) return "Ya existe un usuario con ese nombre de usuario.";
 
+		const administradorConEseCorreo = await tx.orm.public.Administrador.where({ email: datos.nombreUsuario }).first();
+		if (administradorConEseCorreo) return "El nombre de usuario coincide con el correo de un administrador. Elegí otro nombre de usuario.";
+
 		const nombreRepetido = await tx.orm.public.Productor.where({ nombreFantasia: datos.nombre }).first();
 		if (nombreRepetido) return "Ya existe un productor con ese nombre.";
 

@@ -23,7 +23,6 @@ export default async function PaginaMiPerfil() {
     const sesion = await obtenerSesion();
     if (!sesion) redirect(RUTA_SESION_FINALIZADA);
 
-    // Mantener intactas las funcionalidades de otros roles ya fusionadas en develop.
     if (sesion.rol === "PRODUCTOR") redirect("/mi-perfil/productor");
     const habilitarCambioContrasena = await estaHabilitadoCambioContrasena();
     if (sesion.rol === "OPERADOR") {

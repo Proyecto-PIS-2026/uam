@@ -72,7 +72,6 @@ test.describe("BP-11 - Mi perfil de Administrador", () => {
       ).toBeVisible();
       await expect(perfil).toContainText(cuenta.usuario);
 
-      // contra priv
       await expect(
         page.locator('input[type="password"]')
       ).toHaveCount(0);

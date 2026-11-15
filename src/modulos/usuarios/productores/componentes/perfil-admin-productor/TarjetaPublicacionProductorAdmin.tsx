@@ -14,7 +14,6 @@ export default function TarjetaPublicacionProductorAdmin({ publicacion, alConsul
     const variedad = publicacion.variedad?.trim();
     const empaquetado = formatearEmpaquetado(publicacion.envase, publicacion.kilos);
     const nombreProducto = variedad && variedad !== "-" ? `${publicacion.especie} - ${variedad}` : publicacion.especie;
-    // const ubicacion = publicacion.ubicaciones.map((lugar) => lugar.nombre).join(" · ");
 
     return (
         <article className={styles.tarjeta} aria-label={`Ver detalles de ${nombreProducto}`}>

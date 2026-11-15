@@ -4,7 +4,6 @@ import { expect, type Page, type TestInfo } from "@playwright/test";
 import { test } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador, iniciarSesionProductor } from "./autenticacion";
 
-// e2e del 3 c: 
 
 const CLAVE = "Prueba12345!";
 
@@ -385,6 +384,3 @@ test("BP-03: alta, consulta, modificación, errores y baja", async ({
     }
   }
 });
-
-// Dps 
-

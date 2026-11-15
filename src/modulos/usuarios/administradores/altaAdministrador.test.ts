@@ -3,7 +3,7 @@ import { altaAdministrador } from "./altaAdministrador";
 
 const mocks = vi.hoisted(() => ({
     exigir: vi.fn(), validar: vi.fn(), hash: vi.fn(), revalidar: vi.fn(), guardar: vi.fn(),
-    usuarioExistente: vi.fn(), emailExistente: vi.fn(), crearUsuario: vi.fn(), crearAdministrador: vi.fn(),
+    buscarUsuario: vi.fn(), usuarioExistente: vi.fn(), usuarioConEmail: vi.fn(), emailExistente: vi.fn(), crearUsuario: vi.fn(), crearAdministrador: vi.fn(),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({ controlarSesionEnAccion: (control: () => Promise<unknown>) => control() }));
@@ -14,7 +14,7 @@ vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidar }));
 vi.mock("../guardar-usuario-atomico", () => {
     const tx = {
         orm: { public: {
-            Usuario: { where: () => ({ first: mocks.usuarioExistente }), create: mocks.crearUsuario },
+            Usuario: { where: mocks.buscarUsuario, create: mocks.crearUsuario },
             Administrador: { where: () => ({ first: mocks.emailExistente }), create: mocks.crearAdministrador },
         } },
     };
@@ -31,7 +31,11 @@ beforeEach(() => {
     mocks.validar.mockReturnValue({ esValido: true, datos: DATOS });
     mocks.hash.mockResolvedValue("HASH_FALSO");
     mocks.guardar.mockImplementation((callback) => callback());
+    mocks.buscarUsuario.mockImplementation(({ username }: { username: string }) => ({
+        first: username === DATOS.email ? mocks.usuarioConEmail : mocks.usuarioExistente,
+    }));
     mocks.usuarioExistente.mockResolvedValue(null);
+    mocks.usuarioConEmail.mockResolvedValue(null);
     mocks.emailExistente.mockResolvedValue(null);
     mocks.crearUsuario.mockResolvedValue({ id: 10 });
     mocks.crearAdministrador.mockResolvedValue({ id: 20 });
@@ -115,6 +119,31 @@ describe("altaAdministrador", () => {
         expect(mocks.crearUsuario).not.toHaveBeenCalled();
         expect(mocks.crearAdministrador).not.toHaveBeenCalled();
         expect(mocks.revalidar).not.toHaveBeenCalled();
+    });
+
+    it.each(["PRODUCTOR", "OPERADOR"])("rechaza un email usado para ingresar por un %s sin crear registros", async (rol) => {
+        mocks.usuarioConEmail.mockResolvedValue({ id: 99, username: DATOS.email, rol });
+
+        expect(await altaAdministrador(DATOS)).toEqual({
+            esValido: false,
+            errores: ["El email coincide con el nombre de usuario de un operador o productor. Elegí otro email."],
+        });
+        expect(mocks.buscarUsuario).toHaveBeenCalledWith({ username: DATOS.email });
+        expect(mocks.crearUsuario).not.toHaveBeenCalled();
+        expect(mocks.crearAdministrador).not.toHaveBeenCalled();
+        expect(mocks.revalidar).not.toHaveBeenCalled();
+    });
+
+    it("permite un email igual al username de otro administrador, que ingresa con su propio correo", async () => {
+        mocks.usuarioConEmail.mockResolvedValue({ id: 99, username: DATOS.email, rol: "ADMINISTRADOR" });
+
+        expect(await altaAdministrador(DATOS)).toEqual({
+            esValido: true,
+            id: 20,
+            mensaje: "Administrador creado correctamente.",
+        });
+        expect(mocks.crearUsuario).toHaveBeenCalledOnce();
+        expect(mocks.crearAdministrador).toHaveBeenCalledOnce();
     });
 
     it("revalida la página de administración cuando el alta sale bien", async () => {

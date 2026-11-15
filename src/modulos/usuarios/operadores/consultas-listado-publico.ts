@@ -80,7 +80,7 @@ export async function obtenerOperadoresPublicos(): Promise<OperadorListado[]> {
         });
     }
 
-    operadoresPublicos.sort((primerOperador, segundoOperador) => // es para que siga las reglas del español y base para ignorar mayuscs y tildes
+    operadoresPublicos.sort((primerOperador, segundoOperador) =>
         primerOperador.nombreFantasia.localeCompare( segundoOperador.nombreFantasia, "es", { sensitivity: "base" } )
     );
 

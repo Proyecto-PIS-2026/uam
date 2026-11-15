@@ -1005,7 +1005,6 @@ async function main() {
     usuariosDb.filter((usuario) => usuario.username !== operadorAging.username && usuario.username !== operadorVigencia.username),
   );
 
-  // DATOS DE PRUEBA REALES PARA LAS TABLAS DE ESTADISTICAS
   console.log("Poblando tablas de estadísticas con alta densidad, variedad y cobertura diaria en octubre...");
 
   const usuariosPool = [

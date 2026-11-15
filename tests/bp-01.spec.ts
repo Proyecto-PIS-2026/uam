@@ -98,7 +98,6 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page, 
     nave,
   });
 
-  // 4 5 6 9 10 12 y 13
   for (const selector of ["#nombreUsuario", "#contraseña", "#confirmacionContraseña", "#nombre", "#numero"]) {
     const campo = page.locator(selector);
     const original = await campo.inputValue();
@@ -113,43 +112,36 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page, 
   expect(await primerLocal.evaluate((elemento: HTMLInputElement) => elemento.validity.valueMissing)).toBe(true);
   await primerLocal.fill(numeroOriginal);
 
-  // 8
   await page.locator("#contraseña").fill("1234567");
   expect(await page.locator("#contraseña").evaluate((elemento: HTMLInputElement) => elemento.validity.tooShort)).toBe(true);
   await page.locator("#contraseña").fill(CLAVE_INICIAL);
 
-  // 22
   await page.getByRole("button", { name: "Agregar fin de contrato" }).first().click();
   await expect(page.locator('input[type="date"]')).toHaveCount(1);
   await page.getByRole("button", { name: "Eliminar fecha" }).click();
   await expect(page.locator('input[type="date"]')).toHaveCount(0);
 
-  // 23
   await page.getByRole("button", { name: "Agregar local" }).click();
   await expect(page.getByPlaceholder("Número de local")).toHaveCount(2);
   await page.getByRole("button", { name: "Eliminar local" }).last().click();
   await expect(page.getByPlaceholder("Número de local")).toHaveCount(1);
 
-  // 07
   await page.locator("#confirmacionContraseña").fill("OtraClave123!");
   await page.getByRole("button", { name: "Registrar usuario" }).click();
   await expect(page.getByText("Las contraseñas no coinciden.")).toBeVisible();
   await page.locator("#confirmacionContraseña").fill(CLAVE_INICIAL);
 
-  // CP 11
   await page.locator("#numero").fill("123");
   await page.getByRole("button", { name: "Registrar usuario" }).click();
   await expect(page.getByText("El teléfono no es válido.")).toBeVisible();
   await page.locator("#numero").fill("99123456");
 
-  // CP-19
   const usuarioOriginal = await page.locator("#nombreUsuario").inputValue();
   await page.locator("#nombreUsuario").fill("ab");
   await page.getByRole("button", { name: "Registrar usuario" }).click();
   await expect(page.getByText("El nombre de usuario debe tener al menos 3 caracteres.")).toBeVisible();
   await page.locator("#nombreUsuario").fill(usuarioOriginal);
 
-  // Cp 20
   await page.getByRole("button", { name: "Agregar local" }).click();
   await page.getByPlaceholder("Número de local").last().fill(numeroOriginal);
   await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Nave/ }).last(), nave);
@@ -159,7 +151,6 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page, 
     body: await page.screenshot({ fullPage: true }), contentType: "image/png",
   });
 
-  // CP-18
   await page.getByRole("button", { name: "Limpiar" }).click();
   await expect(page.locator("#nombreUsuario")).toHaveValue("");
   await expect(page.locator("#nombre")).toHaveValue("");

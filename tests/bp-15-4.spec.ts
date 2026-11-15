@@ -32,7 +32,6 @@ type Opcion = { id: number; nombre: string; especieId?: number | null };
 type Catalogos = Record<"especies" | "variedades" | "envases" | "kilos" | "categorias" | "calibres" | "paises", Opcion[]>;
 
 // La API prepara una publicación temporal; las acciones de baja se prueban por la interfaz.
-// Se usa otro productor para no alterar los nueve productos requeridos por BP-15.2/15.3.
 const test = base.extend<{ publicacionPrueba: { precio: string; cantidadInicial: number } }>({
   publicacionPrueba: async ({ page }, ejecutarPrueba) => {
     await iniciarSesionProductor(page, { usuario, contrasena: `${usuario}123` });

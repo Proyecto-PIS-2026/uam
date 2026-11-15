@@ -45,7 +45,7 @@ export async function obtenerProductoresPorOperador(): Promise<ProductorListado[
             departamentos: obtenerDepartamentos(ubicacionesVisibles),
         });
     }
-    productoresPublicos.sort((primerProductor, segundoProductor) => // es para que siga las reglas del español y base para ignorar mayuscs y tildes
+    productoresPublicos.sort((primerProductor, segundoProductor) =>
         primerProductor.nombreFantasia.localeCompare( segundoProductor.nombreFantasia, "es", { sensitivity: "base" } )
     );
     return productoresPublicos;

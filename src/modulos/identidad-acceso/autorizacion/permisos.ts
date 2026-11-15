@@ -42,7 +42,6 @@ const permisos = {
         Number.isSafeInteger(recurso.id) && recurso.id > 0 &&
         sesion.usuarioId === recurso.usuarioId,
 
-    // Permisos sin funcionalidad implementada, falta validar
     "operador.licencias.gestionar": (sesion: DatosSesion | null, recurso: RecursoConPropietario): boolean =>
         sesion?.rol === "OPERADOR" &&
         Number.isSafeInteger(recurso.id) && recurso.id > 0 &&

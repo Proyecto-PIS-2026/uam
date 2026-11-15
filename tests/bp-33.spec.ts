@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 import { test as base, type PrecargaOperadores as Datos } from "./precarga-operadores";
 import { iniciarSesionAdministrador } from "./autenticacion";
 
@@ -197,5 +198,48 @@ test.describe("BP-33 — vista de la licencia de un Operador", () => {
         await expect(publico.getByText(recomendacion, { exact: true })).toHaveCount(0);
         await expect(tarjetas(publico)).toHaveCount(1);
         await publicacionesPublicas(publico, datos, 1);
+    });
+
+    test("CP-10 [CA-6] Inicio cuenta solo operadores fuera de licencia y oculta especies sin publicaciones visibles", async ({ publico, precargaOperadores: datos }) => {
+        const especie = await datos.db.orm.public.Especie.create({
+            nombreEspecie: `BP33 ${randomUUID()}`, especieActiva: true,
+        });
+        const publicaciones: number[] = [];
+        try {
+            for (const operador of [datos.operadorA, datos.operadorB]) {
+                const publicacion = await datos.db.orm.public.Publicacion.create({
+                    especieId: especie.id, tipoPublicacion: "OPERADOR", publicacionActiva: true, publicacionDisponible: true,
+                });
+                publicaciones.push(publicacion.id);
+                await datos.db.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId: operador.id });
+            }
+
+            for (const [licenciaA, licenciaB, cantidad] of [
+                [false, false, 2],
+                [true, false, 1],
+                [true, true, 0],
+                [false, true, 1],
+            ] as const) {
+                await test.step(`Inicio muestra ${cantidad} operadores: licencia A=${licenciaA}, B=${licenciaB}`, async () => {
+                    await datos.db.orm.public.Operador.where({ id: datos.operadorA.id }).update({ enLicencia: licenciaA });
+                    await datos.db.orm.public.Operador.where({ id: datos.operadorB.id }).update({ enLicencia: licenciaB });
+                    await publico.goto("/inicio");
+                    await publico.getByRole("searchbox", { name: "Buscar especies", exact: true }).fill(especie.nombreEspecie);
+                    const tarjeta = publico.getByRole("link").filter({
+                        has: publico.getByRole("heading", { name: especie.nombreEspecie, exact: true }),
+                    });
+                    await expect(tarjeta).toHaveCount(cantidad === 0 ? 0 : 1);
+                    if (cantidad > 0) {
+                        await expect(tarjeta.getByText(String(cantidad), { exact: true })).toBeVisible();
+                        await expect(tarjeta.getByText(cantidad === 1 ? "operador" : "operadores", { exact: true })).toBeVisible();
+                    }
+                });
+            }
+        } finally {
+            await datos.db.transaction(async (tx) => {
+                for (const id of publicaciones) await tx.orm.public.Publicacion.where({ id }).delete();
+                await tx.orm.public.Especie.where({ id: especie.id }).delete();
+            });
+        }
     });
 });

@@ -258,7 +258,6 @@ test("BP-29.7: abrir el menú trae avisos nuevos y leer desde otra pestaña actu
     }
 });
 
-//
 const nuevos = mergeTests(test, operadores).extend<{
     fotoPropia: { id: number; clave: string; url: string; especie: string; contenido: Buffer };
 }>({
