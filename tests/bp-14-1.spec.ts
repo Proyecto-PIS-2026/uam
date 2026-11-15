@@ -26,8 +26,8 @@ async function obtenerSeleccion(request: APIRequestContext) {
   const categoria = catalogos.categorias[0];
   const pais = catalogos.paises.find((opcion) => opcion.nombre === "URUGUAY")!;
   expect(catalogos.calibres.length).toBeGreaterThanOrEqual(3);
-  expect(envase).toBeDefined();
-  expect(kilos).toBeDefined();
+  expect(envase, 'Falta el envase "Cajón" en la base E2E').toBeDefined();
+  expect(kilos, 'Falta el empaquetado de 20 kg en la base E2E').toBeDefined();
   expect(categoria).toBeDefined();
   expect(pais).toBeDefined();
   return { especie: especie!, variedad, envase, kilos, categoria, pais, calibres: catalogos.calibres, catalogos };
@@ -90,7 +90,12 @@ async function abrirAlta(page: Page) {
 
 async function seleccionar(page: Page, formulario: Locator, campo: string, opcion: string) {
   await formulario.getByRole("combobox", { name: campo, exact: true }).click();
-  await page.getByRole("option", { name: opcion, exact: true }).click();
+  const opcionEsperada = page.getByRole("option", { name: opcion, exact: true });
+  await expect(
+    opcionEsperada,
+    `No se encontró "${opcion}" en "${campo}". Revisar los catálogos de la base E2E.`,
+  ).toBeVisible({ timeout: 15000 });
+  await opcionEsperada.click();
 }
 
 async function completarProducto(page: Page, formulario: Locator, seleccion: Seleccion, indice = 0, precio = "1371") {
