@@ -2,310 +2,305 @@ import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import argon2 from "argon2";
 import { config } from "dotenv";
 import postgres from "@prisma/orm-postgres/runtime";
-import { expect, type Page } from "@playwright/test";
+import { test as base, expect as baseExpect, type Page } from "@playwright/test";
 import type { Contract } from "../src/infraestructura/persistencia/prisma/contract";
 import contractJson from "../src/infraestructura/persistencia/prisma/contract.json" with { type: "json" };
-import { test } from "./usuarios-administrativos";
-import { iniciarSesionAdministrador, iniciarSesionOperador, iniciarSesionProductor, type Credenciales } from "./autenticacion";
+import { iniciarSesionAdministrador, iniciarSesionProductor } from "./autenticacion";
+import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
 
-const COOKIE_SESION = "uam_sesion";
-const DURACION_SESION = 8 * 60 * 60;
-const urlSinSesion = /\/(iniciar-sesion|sesion-finalizada)(?:\?|$)/;
+// BP-04 es la historia integradora de autenticación: el detalle de cada parte vive en
+// bp-04-1 (Operador/Productor), bp-04-2 (Administrador), bp-04-3 (2FA), bp-04-4
+// (autorización por rol) y bp-04-5 (cierre de sesión). Aquí se recorre el circuito
+// completo por rol con cuentas propias, sin depender de las cuentas de la seed.
 
-type Rol = "Operador" | "Productor" | "Administrador";
+// Los ingresos hacen argon2 (y TOTP para el Administrador): bajo carga superan los 5 s por defecto.
+const expect = baseExpect.configure({ timeout: 15_000 });
 
-type Escenario = {
-  iniciar: (page: Page) => Promise<void>;
-  /** Pantallas permitidas para navegar con la sesión activa. */
-  permitidas: { ruta: string; titulo: string | RegExp }[];
-  /** Pantalla protegida para recargar y borrar cookies. */
-  protegida: string;
-  /** Identidad que se debe ver en Mi perfil. */
-  identidad: (page: Page) => Promise<void>;
-  /** Acción permitida que se resuelve en el servidor con la sesión. */
-  accion: (page: Page) => Promise<void>;
+type Rol = "OPERADOR" | "PRODUCTOR" | "ADMINISTRADOR";
+type Cuenta = {
+  id: number;
+  rol: Rol;
+  /** Identificador de ingreso: username para Operador/Productor, correo para Administrador. */
+  usuario: string;
+  username: string;
+  contrasena: string;
+  /** Nombre visible en el perfil. */
+  nombre: string;
+};
+type Fixtures = {
+  db: ReturnType<typeof postgres<Contract>>;
+  crearCuenta: (rol: Rol, opciones?: { habilitado?: boolean }) => Promise<Cuenta>;
 };
 
-function credencialesSeed(rol: "OPERADOR" | "PRODUCTOR"): Credenciales {
-  const usuario = process.env[`E2E_${rol}_USU`];
-  const contrasena = process.env[`E2E_${rol}_PASS`];
-  if (!usuario || !contrasena) throw new Error(`Configure E2E_${rol}_USU con la cuenta de la seed.`);
-  return { usuario, contrasena };
-}
+const test = base.extend<Fixtures>({
+  db: async ({}, usar) => {
+    config({ path: [".env.local", ".env"], quiet: true });
+    const url = process.env.DATABASE_URL;
+    if (!url) throw new Error("Configure DATABASE_URL con la base utilizada por el servidor E2E.");
+    const db = postgres<Contract>({ contractJson, url });
+    try {
+      await usar(db);
+    } finally {
+      await db.close();
+    }
+  },
+  crearCuenta: async ({ db }, usar) => {
+    const usuarios: number[] = [];
+    const operadores: number[] = [];
+    try {
+      await usar(async (rol, { habilitado = true } = {}) => {
+        const sufijo = randomUUID().slice(0, 8);
+        const username = `e2e_bp04_${sufijo}`;
+        const contrasena = randomBytes(16).toString("hex");
+        const usuario = await db.orm.public.Usuario.create({
+          username,
+          passwordHash: await argon2.hash(contrasena, { type: argon2.argon2id }),
+          rol,
+          habilitado,
+          twoFactorEnabled: false,
+        });
+        usuarios.push(usuario.id);
+        if (rol === "ADMINISTRADOR") {
+          const email = `${username}@example.com`;
+          await db.orm.public.Administrador.create({ usuarioId: usuario.id, email });
+          return { id: usuario.id, rol, usuario: email, username, contrasena, nombre: username };
+        }
+        const nombre = `${rol === "OPERADOR" ? "Operador" : "Productor"} BP-04 ${sufijo}`;
+        if (rol === "PRODUCTOR") {
+          await db.orm.public.Productor.create({ usuarioId: usuario.id, nombreFantasia: nombre, whatsApp: "+59890000000" });
+        } else {
+          const operador = await db.orm.public.Operador.create({ usuarioId: usuario.id, nombreFantasia: nombre, whatsApp: "+59890000000" });
+          operadores.push(operador.id);
+          // Sin un local con contrato vigente el Operador no puede iniciar sesión.
+          const nave = await db.orm.public.Nave.first();
+          if (!nave) throw new Error("La seed E2E debe incluir al menos una nave.");
+          await db.orm.public.Local.create({ numeroLocal: username, operadorId: operador.id, naveId: nave.id });
+        }
+        return { id: usuario.id, rol, usuario: username, username, contrasena, nombre };
+      });
+    } finally {
+      // Los locales no se eliminan en cascada; el resto cuelga del usuario.
+      for (const operadorId of operadores) await db.orm.public.Local.where({ operadorId }).delete();
+      for (const id of usuarios) await db.orm.public.Usuario.where({ id }).delete();
+    }
+  },
+});
 
-function escenarios(administrador: Credenciales): Record<Rol, Escenario> {
-  const operador = credencialesSeed("OPERADOR");
-  const productor = credencialesSeed("PRODUCTOR");
-  return {
-    Operador: {
-      iniciar: (page) => iniciarSesionOperador(page),
-      permitidas: [
-        { ruta: "/mi-perfil", titulo: /.+/ },
-        { ruta: "/precios-referencia", titulo: "Precios de referencia" },
-      ],
-      protegida: "/mi-perfil",
-      identidad: async (page) => {
-        await expect(page.getByText(operador.usuario, { exact: true })).toBeVisible();
-      },
-      accion: async (page) => {
-        // Con sesión de Operador el servidor devuelve solo su propio catálogo.
-        const respuesta = await page.request.get("/api/publicaciones");
-        expect(respuesta.status()).toBe(200);
-        const { operadores } = await respuesta.json();
-        expect(operadores).toHaveLength(1);
-        await page.goto("/publicaciones/nueva");
-        await expect(page.getByRole("dialog", { name: "Nueva publicación" })).toBeVisible();
-      },
-    },
-    Productor: {
-      iniciar: (page) => iniciarSesionProductor(page, productor),
-      permitidas: [
-        { ruta: "/mi-perfil/productor", titulo: /.+/ },
-        { ruta: "/precios-referencia", titulo: "Precios de referencia" },
-        { ruta: "/mi-mercado/productor", titulo: "Mi Mercado" },
-      ],
-      protegida: "/mi-perfil/productor",
-      identidad: async (page) => {
-        await expect(page.getByText(productor.usuario, { exact: true })).toBeVisible();
-      },
-      accion: async (page) => {
-        await page.goto("/mi-perfil/productor/editar");
-        await expect(page).toHaveURL(/\/mi-perfil\/productor\/editar$/);
-        await expect(page.getByRole("button", { name: /Guardar/ })).toBeVisible();
-      },
-    },
-    Administrador: {
-      iniciar: (page) => iniciarSesionAdministrador(page, administrador),
-      permitidas: [
-        { ruta: "/inicio", titulo: "Mercado de hoy" },
-        { ruta: "/alta-usuario", titulo: "Alta de usuario" },
-        { ruta: "/mi-perfil", titulo: /^e2e_admin_/ },
-      ],
-      protegida: "/administracion",
-      identidad: async (page) => {
-        await expect(page.getByRole("heading", { level: 1, name: /^e2e_admin_/ })).toBeVisible();
-        await expect(page.getByText(administrador.usuario, { exact: true })).toBeVisible();
-      },
-      accion: async (page) => {
-        await page.goto("/alta-usuario");
-        await expect(page.getByRole("heading", { name: "Alta de usuario", exact: true })).toBeVisible();
-      },
-    },
-  };
-}
+const COOKIE_SESION = "uam_sesion";
+/** Igual a `duracionSesionEnSegundos` de sesiones.ts (no se importa: depende de next/headers). */
+const DURACION_SESION = 8 * 60 * 60;
+const urlSinSesion = /\/(iniciar-sesion|sesion-finalizada)(?:\?|$)/;
+const credencialesIncorrectas = "Las credenciales ingresadas no son correctas.";
+const cuentaDeshabilitada = "La cuenta está deshabilitada. Comunicate con un administrador.";
+
+const perfil = (cuenta: Cuenta) => cuenta.rol === "PRODUCTOR" ? "/mi-perfil/productor" : "/mi-perfil";
+
+/** Rutas de otros roles: el servidor debe redirigir sin cerrar la sesión. */
+const rutasAjenas: Record<Rol, string[]> = {
+  OPERADOR: ["/administracion", "/mi-mercado/productor"],
+  PRODUCTOR: ["/administracion", "/mi-mercado"],
+  ADMINISTRADOR: ["/mi-mercado", "/mi-mercado/productor"],
+};
 
 async function cookieSesion(page: Page) {
   return (await page.context().cookies()).find((cookie) => cookie.name === COOKIE_SESION);
 }
 
-async function abrirMiPerfil(page: Page) {
-  await page.getByRole("button", { name: "Abrir menú de usuario" }).click();
-  await page.getByRole("menuitem", { name: "Mi perfil" }).click();
-  await expect(page).toHaveURL(/\/mi-perfil(\/productor)?$/);
+async function estadoSesion(page: Page) {
+  return (await page.request.get("/api/sesion")).status();
 }
 
-const roles: Rol[] = ["Operador", "Productor", "Administrador"];
-
-for (const rol of roles) {
-  test(`BP-04 CA-5 CP-01: la sesión de ${rol} se mantiene al navegar y recargar`, async ({ page, usuariosAdministrativos }) => {
-    test.slow();
-    const escenario = escenarios(usuariosAdministrativos.administrador)[rol];
-
-    await test.step("Iniciar sesión", async () => {
-      await escenario.iniciar(page);
-      const cookie = await cookieSesion(page);
-      expect(cookie, "debe existir la cookie de sesión").toBeDefined();
-      expect(cookie!.httpOnly).toBe(true);
-      // La sesión dura un tiempo determinado (8 horas).
-      const restante = cookie!.expires - Date.now() / 1000;
-      expect(restante).toBeGreaterThan(DURACION_SESION - 5 * 60);
-      expect(restante).toBeLessThanOrEqual(DURACION_SESION + 5);
-    });
-
-    await test.step("Navegar entre pantallas permitidas", async () => {
-      for (const { ruta, titulo } of escenario.permitidas) {
-        await page.goto(ruta);
-        await expect(page).toHaveURL((url) => url.pathname === ruta);
-        await expect(page.getByRole("heading", { level: 1, name: titulo }).first()).toBeVisible();
-      }
-    });
-
-    await test.step("Recargar una pantalla protegida y verificar la identidad", async () => {
-      await page.goto(escenario.protegida);
-      await page.reload();
-      await expect(page).toHaveURL((url) => url.pathname === escenario.protegida);
-      await abrirMiPerfil(page);
-      await page.reload();
-      await escenario.identidad(page);
-      expect((await page.request.get("/api/sesion")).status()).toBe(204);
-    });
-
-    await test.step("Realizar una acción permitida sin volver a autenticarse", async () => {
-      await escenario.accion(page);
-      await expect(page).not.toHaveURL(urlSinSesion);
-    });
-  });
-
-  test(`BP-04 CA-5 CP-02: sin la cookie de sesión de ${rol} no se usan funciones protegidas`, async ({ page, usuariosAdministrativos }) => {
-    test.slow();
-    const escenario = escenarios(usuariosAdministrativos.administrador)[rol];
-    await escenario.iniciar(page);
-    await page.goto(escenario.protegida);
-    await expect(page).toHaveURL((url) => url.pathname === escenario.protegida);
-
-    await test.step("Eliminar la cookie de sesión", async () => {
-      await page.context().clearCookies({ name: COOKIE_SESION });
-      expect(await cookieSesion(page)).toBeUndefined();
-    });
-
-    await test.step("Recargar la pantalla protegida", async () => {
-      await page.reload();
-      await expect(page).toHaveURL(urlSinSesion);
-      await expect(page.getByRole("button", { name: "Abrir menú de usuario" })).toHaveCount(0);
-    });
-
-    await test.step("Acceder directamente a las rutas protegidas", async () => {
-      for (const ruta of [escenario.protegida, ...escenario.permitidas.map((p) => p.ruta)]) {
-        if (["/inicio", "/precios-referencia"].includes(ruta)) continue; // son públicas
-        await page.goto(ruta);
-        await expect(page).toHaveURL(urlSinSesion);
-      }
-      expect((await page.request.get("/api/sesion")).status()).toBe(401);
-    });
-  });
+async function enviarCredenciales(page: Page, usuario: string, contrasena: string) {
+  await page.goto("/iniciar-sesion");
+  await page.getByLabel("Correo electrónico o nombre de usuario").fill(usuario);
+  await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
+  await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 }
 
-test("BP-04 CA-4 CP-03: el Administrador llega a su vista principal y ve su identidad", async ({ page, usuariosAdministrativos }) => {
-  test.slow();
-  const administrador = usuariosAdministrativos.administrador;
+async function esperarIngresoRechazado(page: Page, mensaje: string) {
+  await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveText(mensaje);
+  await expect(page).toHaveURL(/\/iniciar-sesion$/);
+  expect(await cookieSesion(page)).toBeUndefined();
+}
 
-  // iniciarSesionAdministrador completa el segundo factor y verifica la redirección a /inicio.
-  await iniciarSesionAdministrador(page, administrador);
-  await page.goto("/inicio");
+/** CA-1 y CA-4: ingresa con el identificador del rol y llega a su vista principal. */
+async function ingresar(page: Page, cuenta: Cuenta) {
+  if (cuenta.rol === "ADMINISTRADOR") {
+    // Completa el segundo factor y verifica /inicio y el panel administrativo.
+    await iniciarSesionAdministrador(page, { usuario: cuenta.usuario, contrasena: cuenta.contrasena });
+    await page.goto("/inicio");
+    await expect(page.getByRole("navigation", { name: "Navegación principal" })
+      .getByRole("link", { name: "Administración", exact: true })).toBeVisible();
+  } else if (cuenta.rol === "PRODUCTOR") {
+    await iniciarSesionProductor(page, { usuario: cuenta.usuario, contrasena: cuenta.contrasena });
+  } else {
+    await enviarCredenciales(page, cuenta.usuario, cuenta.contrasena);
+    // El mercado del Operador se identifica por su nombre de fantasía.
+    await expect(page).toHaveURL((url) => url.pathname === `/mi-mercado/${encodeURIComponent(cuenta.nombre)}`);
+    await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible();
+  }
+}
+
+/**
+ * Abre una ruta protegida y espera quedar fuera de la sesión. Mi Mercado consulta
+ * /api/sesion y redirige por su cuenta al recibir 401, lo que puede abortar el goto.
+ */
+async function esperarSinSesion(page: Page, ruta: string) {
+  await expect(async () => {
+    if (!urlSinSesion.test(page.url())) await page.goto(ruta);
+    await expect(page).toHaveURL(urlSinSesion, { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
+}
+
+async function cerrarSesion(page: Page) {
+  await page.getByRole("button", { name: "Abrir menú de usuario", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Cerrar sesión", exact: true }).click();
   await expect(page).toHaveURL(/\/inicio$/);
-  await expect(page.getByRole("navigation", { name: "Navegación principal" })
-    .getByRole("link", { name: "Administración", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Abrir menú de usuario" })).toBeVisible();
-
-  await abrirMiPerfil(page);
-  await expect(page.getByRole("heading", { level: 1, name: /^e2e_admin_/ })).toBeVisible();
-  await expect(page.getByText(administrador.usuario, { exact: true })).toBeVisible();
-  await expect(page.getByText("Administrador", { exact: true })).toBeVisible();
-});
-
-// ---------------------------------------------------------------------------
-// Casos propuestos (no están en la matriz): conectan BP-04 con lo que verifica el servidor.
-// ---------------------------------------------------------------------------
-
-function firmar(contenido: string) {
-  const secreto = process.env.SESSION_SECRET;
-  if (!secreto) throw new Error("Configure SESSION_SECRET igual que en el servidor E2E.");
-  return createHmac("sha256", secreto).update(contenido).digest("base64url");
+  await expect.poll(() => estadoSesion(page)).toBe(401);
 }
 
-test("BP-04 CA-5 CP-04 (propuesto): una cookie vencida o alterada no mantiene la sesión", async ({ page }) => {
-  await iniciarSesionOperador(page);
-  const original = (await cookieSesion(page))!;
-  const [contenido] = original.value.split(".");
-  const datos = JSON.parse(Buffer.from(contenido, "base64url").toString("utf8"));
+test.describe("BP-04: Autenticación y autorización", () => {
+  // Cada recorrido hace un ingreso completo y varias navegaciones.
+  test.describe.configure({ timeout: 90_000 });
 
-  async function probar(valor: string) {
-    await page.context().clearCookies({ name: COOKIE_SESION });
-    await page.context().addCookies([{ ...original, value: valor }]);
-    expect((await page.request.get("/api/sesion")).status()).toBe(401);
-    await page.goto("/mi-perfil");
-    await expect(page).toHaveURL(urlSinSesion);
-  }
+  for (const [indice, rol] of (["OPERADOR", "PRODUCTOR", "ADMINISTRADOR"] as const).entries()) {
+    test(`CP-0${indice + 1} [CA-1, CA-4, CA-5, CA-7] recorrido completo de la sesión (${rol})`, async ({ page, crearCuenta }) => {
+      const cuenta = await crearCuenta(rol);
 
-  await test.step("Cookie firmada pero vencida", async () => {
-    const vencida = Buffer.from(JSON.stringify({ ...datos, expiraEn: Math.floor(Date.now() / 1000) - 60 })).toString("base64url");
-    await probar(`${vencida}.${firmar(vencida)}`);
-  });
+      await test.step("CA-1, CA-4: ingresa y llega a su vista principal", async () => {
+        await ingresar(page, cuenta);
+        expect(await estadoSesion(page)).toBe(204);
+      });
 
-  await test.step("Cookie con el vencimiento extendido sin firma válida", async () => {
-    const extendida = Buffer.from(JSON.stringify({ ...datos, expiraEn: datos.expiraEn + 86_400 })).toString("base64url");
-    await probar(`${extendida}.${original.value.split(".")[1]}`);
-  });
-});
+      await test.step("CA-4: el perfil muestra su identidad", async () => {
+        await page.getByRole("button", { name: "Abrir menú de usuario", exact: true }).click();
+        await page.getByRole("menuitem", { name: "Mi perfil", exact: true }).click();
+        await expect(page).toHaveURL((url) => url.pathname === perfil(cuenta));
+        await expect(page.getByRole("heading", { level: 1, name: cuenta.nombre, exact: true })).toBeVisible();
+        await expect(page.getByText(cuenta.usuario, { exact: true })).toBeVisible();
+      });
 
-test.describe("BP-04 CA-3 CP-05 (propuesto): cuentas deshabilitadas", () => {
-  let db: ReturnType<typeof postgres<Contract>>;
-  const creados: number[] = [];
+      await test.step("CA-4: no accede a funciones de otros roles", async () => {
+        for (const ruta of rutasAjenas[rol]) {
+          await page.goto(ruta);
+          await expect(page, `${rol} no debe quedarse en ${ruta}`).not.toHaveURL((url) => url.pathname === ruta);
+        }
+        expect(await estadoSesion(page), "La redirección no cierra la sesión").toBe(204);
+      });
 
-  test.beforeAll(() => {
-    config({ path: [".env.local", ".env"], quiet: true });
-    db = postgres<Contract>({ contractJson, url: process.env.DATABASE_URL! });
-  });
-  test.afterAll(async () => {
-    for (const id of creados) await db.orm.public.Usuario.where({ id }).delete();
-    await db.close();
-  });
+      await test.step("CA-5: la sesión dura 8 horas y se mantiene al navegar y recargar", async () => {
+        const cookie = await cookieSesion(page);
+        expect(cookie, "Debe existir la cookie de sesión").toBeDefined();
+        expect(cookie!.httpOnly).toBe(true);
+        const restante = cookie!.expires - Date.now() / 1000;
+        expect(restante).toBeGreaterThan(DURACION_SESION - 5 * 60);
+        expect(restante).toBeLessThanOrEqual(DURACION_SESION + 5);
+        await page.goto("/precios-referencia");
+        await page.goto(perfil(cuenta));
+        await page.reload();
+        await expect(page).toHaveURL((url) => url.pathname === perfil(cuenta));
+        await expect(page.getByRole("heading", { level: 1, name: cuenta.nombre, exact: true })).toBeVisible();
+      });
 
-  async function crear(rol: "ADMINISTRADOR" | "PRODUCTOR") {
-    const sufijo = randomUUID();
-    const contrasena = randomBytes(16).toString("hex");
-    const usuario = await db.orm.public.Usuario.create({
-      username: `e2e_baja_${sufijo}`,
-      passwordHash: await argon2.hash(contrasena, { type: argon2.argon2id }),
-      rol,
-      twoFactorEnabled: false,
-    });
-    creados.push(usuario.id);
-    if (rol === "ADMINISTRADOR") {
-      const email = `e2e_baja_${sufijo}@example.com`;
-      await db.orm.public.Administrador.create({ usuarioId: usuario.id, email });
-      return { id: usuario.id, usuario: email, contrasena };
-    }
-    await db.orm.public.Productor.create({ usuarioId: usuario.id, nombreFantasia: `Productor baja ${usuario.id}`, whatsApp: "+59890000000" });
-    return { id: usuario.id, usuario: usuario.username, contrasena };
-  }
+      await test.step("CA-7: cierra sesión desde una pantalla secundaria", async () => {
+        const anterior = (await cookieSesion(page))!;
+        await page.goto("/precios-referencia");
+        await cerrarSesion(page);
+        expect(await cookieSesion(page)).toBeUndefined();
 
-  for (const rol of ["ADMINISTRADOR", "PRODUCTOR"] as const) {
-    test(`${rol === "ADMINISTRADOR" ? "Administrador" : "Productor"} dado de baja no inicia sesión`, async ({ page }) => {
-      const cuenta = await crear(rol);
-      await db.orm.public.Usuario.where({ id: cuenta.id }).update({ habilitado: false });
-
-      await page.goto("/iniciar-sesion");
-      await page.getByLabel("Correo electrónico o nombre de usuario").fill(cuenta.usuario);
-      await page.getByLabel("Contraseña", { exact: true }).fill(cuenta.contrasena);
-      await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
-      await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert"))
-        .toHaveText("La cuenta está deshabilitada. Comunicate con un administrador.");
-      await expect(page).toHaveURL(/\/iniciar-sesion$/);
-      expect(await cookieSesion(page)).toBeUndefined();
+        await page.goBack();
+        await esperarSinSesion(page, perfil(cuenta));
+        await page.context().addCookies([anterior]);
+        expect(await estadoSesion(page), "La cookie anterior quedó revocada").toBe(401);
+      });
     });
   }
 
-  test("Productor dado de baja con la sesión abierta pierde el acceso", async ({ page }) => {
-    const cuenta = await crear("PRODUCTOR");
-    await iniciarSesionProductor(page, cuenta);
-    await db.orm.public.Usuario.where({ id: cuenta.id }).update({ habilitado: false });
-    await page.reload();
-    await expect(page).toHaveURL(urlSinSesion);
-    expect((await page.request.get("/api/sesion")).status()).toBe(401);
-  });
-});
-
-for (const rol of ["Productor", "Administrador"] as const) {
-  test(`BP-04 CA-7 CP-06 (propuesto): el ${rol} cierra sesión desde una pantalla secundaria`, async ({ page, usuariosAdministrativos }) => {
-    test.slow();
-    const escenario = escenarios(usuariosAdministrativos.administrador)[rol];
-    await escenario.iniciar(page);
-    const anterior = (await cookieSesion(page))!;
-    await page.goto("/precios-referencia");
-
-    await page.getByRole("button", { name: "Abrir menú de usuario" }).click();
-    await page.getByRole("menuitem", { name: "Cerrar sesión" }).click();
-    await expect(page).toHaveURL(/\/inicio$/);
+  test("CP-04 [CA-2] el Administrador no obtiene sesión sin completar el segundo factor", async ({ page, crearCuenta }) => {
+    const administrador = await crearCuenta("ADMINISTRADOR");
+    await enviarCredenciales(page, administrador.usuario, administrador.contrasena);
+    await expect(page).toHaveURL(/\/iniciar-sesion\/segundo-factor$/);
+    expect(await estadoSesion(page)).toBe(401);
     expect(await cookieSesion(page)).toBeUndefined();
-
-    // Volver atrás o reutilizar la cookie no recupera el acceso; lo público sigue disponible.
-    await page.goBack();
-    await page.goto(escenario.protegida);
+    await page.goto("/administracion");
     await expect(page).toHaveURL(urlSinSesion);
-    await page.context().addCookies([anterior]);
-    expect((await page.request.get("/api/sesion")).status()).toBe(401);
-    const publica = await page.goto("/precios-referencia");
-    expect(publica?.status()).toBe(200);
   });
-}
+
+  test("CP-05 [CA-1, CA-3] credenciales incorrectas no inician sesión", async ({ page, crearCuenta }) => {
+    const operador = await crearCuenta("OPERADOR");
+    const administrador = await crearCuenta("ADMINISTRADOR");
+
+    await test.step("Contraseña incorrecta", async () => {
+      await enviarCredenciales(page, operador.usuario, "Incorrecta_123");
+      await esperarIngresoRechazado(page, credencialesIncorrectas);
+    });
+    await test.step("Usuario inexistente", async () => {
+      await enviarCredenciales(page, `e2e_bp04_inexistente_${randomUUID()}`, "Incorrecta_123");
+      await esperarIngresoRechazado(page, credencialesIncorrectas);
+    });
+    await test.step("CA-1: el Administrador ingresa con correo, no con nombre de usuario", async () => {
+      await enviarCredenciales(page, administrador.username, administrador.contrasena);
+      await esperarIngresoRechazado(page, credencialesIncorrectas);
+    });
+  });
+
+  test("CP-06 [CA-3] cuentas dadas de baja no inician sesión", async ({ page, crearCuenta }) => {
+    for (const rol of ["OPERADOR", "PRODUCTOR", "ADMINISTRADOR"] as const) {
+      await test.step(rol, async () => {
+        const cuenta = await crearCuenta(rol, { habilitado: false });
+        await enviarCredenciales(page, cuenta.usuario, cuenta.contrasena);
+        await esperarIngresoRechazado(page, cuentaDeshabilitada);
+      });
+    }
+  });
+
+  test("CP-07 [CA-3, CA-5] dar de baja una cuenta con la sesión abierta corta el acceso", async ({ page, db, crearCuenta }) => {
+    const operador = await crearCuenta("OPERADOR");
+    await ingresar(page, operador);
+    await db.orm.public.Usuario.where({ id: operador.id }).update({ habilitado: false });
+    expect(await estadoSesion(page)).toBe(401);
+    await esperarSinSesion(page, perfil(operador));
+  });
+
+  test("CP-08 [CA-5] sin una cookie válida no se mantiene la sesión", async ({ page, crearCuenta }) => {
+    const secreto = process.env.SESSION_SECRET;
+    if (!secreto) throw new Error("Configure SESSION_SECRET igual que en el servidor E2E.");
+    const firmar = (contenido: string) => createHmac("sha256", secreto).update(contenido).digest("base64url");
+
+    const operador = await crearCuenta("OPERADOR");
+    await ingresar(page, operador);
+    const original = (await cookieSesion(page))!;
+    const [contenido, firma] = original.value.split(".");
+    const datos = JSON.parse(Buffer.from(contenido, "base64url").toString("utf8"));
+
+    async function probar(valor: string | null) {
+      await page.context().clearCookies({ name: COOKIE_SESION });
+      if (valor) await page.context().addCookies([{ ...original, value: valor }]);
+      expect(await estadoSesion(page)).toBe(401);
+      await esperarSinSesion(page, perfil(operador));
+      await expect(page.getByRole("button", { name: "Abrir menú de usuario" })).toHaveCount(0);
+    }
+
+    await test.step("Cookie eliminada", () => probar(null));
+    await test.step("Cookie firmada pero vencida", async () => {
+      const vencida = Buffer.from(JSON.stringify({ ...datos, expiraEn: Math.floor(Date.now() / 1000) - 60 })).toString("base64url");
+      await probar(`${vencida}.${firmar(vencida)}`);
+    });
+    await test.step("Cookie con el vencimiento extendido y la firma original", async () => {
+      const extendida = Buffer.from(JSON.stringify({ ...datos, expiraEn: datos.expiraEn + 86_400 })).toString("base64url");
+      await probar(`${extendida}.${firma}`);
+    });
+  });
+
+  test("CP-09 [CA-6] desde el inicio de sesión se puede pedir la recuperación de la contraseña", async ({ page }) => {
+    // La opción depende de la configuración global: se fija habilitada con el bloqueo compartido.
+    await conRestablecimientoHabilitado(async () => {
+      await page.goto("/iniciar-sesion");
+      await page.getByRole("button", { name: "Solicitar recuperación de contraseña", exact: true }).click();
+      const dialogo = page.getByRole("dialog", { name: "Solicitar recuperación de contraseña", exact: true });
+      await expect(dialogo.getByRole("textbox", { name: "Nombre de usuario", exact: true })).toBeVisible();
+      await dialogo.getByRole("button", { name: "Cancelar", exact: true }).click();
+      await expect(dialogo).toHaveCount(0);
+    });
+  });
+});
