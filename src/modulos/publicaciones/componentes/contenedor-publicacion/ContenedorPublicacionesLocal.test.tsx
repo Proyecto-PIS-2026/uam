@@ -6,7 +6,7 @@ import type { OrdenConsulta } from "@/modulos/consulta-mercado/acciones/filtros-
 import ContenedorPublicaciones from "./ContenedorPublicaciones";
 
 type Publicacion = PublicacionListado | PublicacionProductorListado;
-type PropsListadoPublicaciones = { publicaciones: Publicacion[] };
+type PropsListadoPublicaciones = { publicaciones: Publicacion[]; claveConsulta?: string };
 
 const { mockListadoPublicaciones } = vi.hoisted(() => ({
     mockListadoPublicaciones: vi.fn<(props: PropsListadoPublicaciones) => null>(() => null),
@@ -59,6 +59,40 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ContenedorPublicaciones local", () => {
+    it.each([
+        { tipo: "OPERADOR", crear: crearPublicacion },
+        { tipo: "PRODUCTOR", crear: crearPublicacionProductor },
+    ])("filtra y ordena todo el catálogo de $tipo antes de paginar y distingue cambios de consulta de actualizaciones", ({ crear }) => {
+        const publicaciones = Array.from({ length: 41 }, (_, indice) => ({
+            ...crear(indice + 1),
+            especie: indice < 21 ? "Papa" : "Banana",
+            precio: indice + 1,
+        }));
+        const vista = render(<ContenedorPublicaciones publicaciones={publicaciones} ordenInicial="precioDesc" />);
+        expect(idsDelListado()).toEqual(Array.from({ length: 41 }, (_, indice) => 41 - indice));
+        const consultaInicial = mockListadoPublicaciones.mock.calls.at(-1)![0].claveConsulta;
+
+        fireEvent.change(screen.getByLabelText("Buscar publicaciones"), { target: { value: "Banana" } });
+        expect(idsDelListado()).toEqual(Array.from({ length: 20 }, (_, indice) => 41 - indice));
+        const consultaFiltrada = mockListadoPublicaciones.mock.calls.at(-1)![0].claveConsulta;
+        expect(consultaFiltrada).not.toBe(consultaInicial);
+
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByRole("menuitemradio", { name: "Menor Precio" }));
+        expect(idsDelListado()).toEqual(Array.from({ length: 20 }, (_, indice) => 22 + indice));
+        const consultaOrdenada = mockListadoPublicaciones.mock.calls.at(-1)![0].claveConsulta;
+        expect(consultaOrdenada).not.toBe(consultaFiltrada);
+
+        const actualizadas = publicaciones.map((publicacion) => ({ ...publicacion, precio: publicacion.precio + 100 }));
+        vista.rerender(<ContenedorPublicaciones publicaciones={actualizadas} ordenInicial="precioDesc" />);
+        expect(mockListadoPublicaciones.mock.calls.at(-1)![0].claveConsulta).toBe(consultaOrdenada);
+        expect(publicacionesDelListado()?.[0].precio).toBe(122);
+
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        expect(idsDelListado()).toEqual(Array.from({ length: 41 }, (_, indice) => 41 - indice));
+        expect(mockListadoPublicaciones.mock.calls.at(-1)![0].claveConsulta).toBe(consultaInicial);
+    });
+
     it("entrega primero las especies prioritarias y luego las demás en orden alfabético", () => {
         const publicaciones = [
             { ...crearPublicacion(1), especie: "Pera" },

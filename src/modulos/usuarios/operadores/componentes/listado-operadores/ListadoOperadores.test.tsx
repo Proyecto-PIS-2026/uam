@@ -15,8 +15,98 @@ const listaOperadores = [
 const listaOperadoresConTilde = [
     {...listaOperadores[0], nombreFantasia: "María",},];
 
+const operadoresPaginados = Array.from({ length: 41 }, (_, indice) => ({
+    id: indice + 1,
+    nombreFantasia: `Operador ${String(indice + 1).padStart(2, "0")}`,
+    fotoPerfil: null,
+    cantidadProductos: 1,
+    locales: [{ nombreNave: indice < 30 ? "A" : "B", numeroLocal: String(indice + 1) }],
+}));
+
 
 describe("ListadoOperadores", () => {
+
+    it("pagina los operadores sin omitir ni repetir tarjetas entre páginas", () => {
+        render(<ListadoOperadores operadores={operadoresPaginados} />);
+        expect(screen.getAllByText(/^Operador \d{2}$/)).toHaveLength(20);
+        expect(screen.getByText("Operador 01")).toBeInTheDocument();
+        expect(screen.queryByText("Operador 21")).not.toBeInTheDocument();
+        expect(screen.getByText("1–20 de 41 operadores")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        expect(screen.getAllByText(/^Operador \d{2}$/)).toHaveLength(20);
+        expect(screen.getByText("Operador 21")).toBeInTheDocument();
+        expect(screen.getByText("Operador 40")).toBeInTheDocument();
+        expect(screen.queryByText("Operador 20")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        expect(screen.getAllByText(/^Operador \d{2}$/)).toHaveLength(1);
+        expect(screen.getByText("Operador 41")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Siguiente" })).toBeDisabled();
+
+        fireEvent.click(screen.getByRole("button", { name: "Anterior" }));
+        expect(screen.getByText("Página 2 de 3")).toBeInTheDocument();
+        expect(screen.getByText("Operador 21")).toBeInTheDocument();
+    });
+
+    it("busca en todas las páginas y reinicia la paginación al cambiar la búsqueda", () => {
+        render(<ListadoOperadores operadores={operadoresPaginados} />);
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        const buscador = screen.getByRole("searchbox", { name: "Buscar operadores" });
+        fireEvent.change(buscador, { target: { value: "Operador 41" } });
+        expect(screen.getByText("Operador 41")).toBeInTheDocument();
+        expect(screen.queryByRole("navigation", { name: "Paginación de operadores" })).not.toBeInTheDocument();
+
+        fireEvent.change(buscador, { target: { value: "" } });
+        expect(screen.getByText("Página 1 de 3")).toBeInTheDocument();
+        expect(screen.getByText("Operador 01")).toBeInTheDocument();
+    });
+
+    it("filtra por nave antes de paginar y vuelve a la primera página", () => {
+        render(<ListadoOperadores operadores={operadoresPaginados} />);
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Nave" }));
+        fireEvent.click(screen.getByRole("option", { name: "Nave A" }));
+        expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+        expect(screen.getByText("1–20 de 30 operadores")).toBeInTheDocument();
+        expect(screen.getByText("Operador 01")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        expect(screen.getAllByText(/^Operador \d{2}$/)).toHaveLength(10);
+        expect(screen.getByText("Operador 30")).toBeInTheDocument();
+        expect(screen.queryByText("Operador 31")).not.toBeInTheDocument();
+    });
+
+    it("ordena el listado completo y reinicia la página al cambiar el orden", () => {
+        render(<ListadoOperadores operadores={operadoresPaginados} />);
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByText("Z-A"));
+        expect(screen.getByText("Página 1 de 3")).toBeInTheDocument();
+        const tarjetas = screen.getAllByText(/^Operador \d{2}$/);
+        expect(tarjetas[0]).toHaveTextContent("Operador 41");
+        expect(tarjetas[19]).toHaveTextContent("Operador 22");
+    });
+
+    it("conserva la página ajustada cuando el listado se reduce y vuelve a crecer", () => {
+        const vista = render(<ListadoOperadores operadores={operadoresPaginados} />);
+        fireEvent.click(screen.getByRole("button", { name: "Página 3" }));
+        vista.rerender(<ListadoOperadores operadores={operadoresPaginados.slice(0, 25)} />);
+        expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
+        expect(screen.getByText("21–25 de 25 operadores")).toBeInTheDocument();
+        expect(screen.getAllByText(/^Operador \d{2}$/)).toHaveLength(5);
+
+        vista.rerender(<ListadoOperadores operadores={operadoresPaginados} />);
+        expect(screen.getByText("Página 2 de 3")).toBeInTheDocument();
+        expect(screen.getByText("21–40 de 41 operadores")).toBeInTheDocument();
+
+        vista.rerender(<ListadoOperadores operadores={[]} />);
+        expect(screen.getByRole("status")).toHaveTextContent("No hay operadores disponibles.");
+        expect(screen.queryByRole("navigation", { name: "Paginación de operadores" })).not.toBeInTheDocument();
+
+        vista.rerender(<ListadoOperadores operadores={operadoresPaginados} />);
+        expect(screen.getByText("Página 1 de 3")).toBeInTheDocument();
+        expect(screen.getByText("Operador 01")).toBeInTheDocument();
+    });
 
     it("informa cuando no hay operadores disponibles", () => {
         render(<ListadoOperadores operadores={[]}/>);

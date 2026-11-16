@@ -227,7 +227,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
       });
       await expect(tarjeta).toHaveCount(1);
       await expect(tarjeta).toContainText(`Categoría ${seleccion.categoria.nombre}`);
-      await expect(tarjeta).toContainText(new Intl.NumberFormat("es-UY").format(Number(precios[indice])));
+      await expect(tarjeta).toContainText(new Intl.NumberFormat("es-UY", { useGrouping: false }).format(Number(precios[indice])));
     }
     for (const otro of [operadorA, operadorB]) {
       expect(await db.orm.public.PublicacionOperador.where({ operadorId: otro.id }).all()).toHaveLength(0);
@@ -346,6 +346,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
           const pagina = await contexto.newPage();
           try {
             await pagina.goto(`/publicaciones?especie=${encodeURIComponent(seleccion.especie.nombre)}`);
+            await pagina.getByRole("searchbox", { name: "Buscar publicaciones", exact: true }).fill(operadorA.nombre);
             const tarjeta = pagina.getByRole("button", { name: /^Ver detalles de/ }).filter({ hasText: operadorA.nombre });
             await expect(tarjeta).toHaveCount(1);
             await tarjeta.click();

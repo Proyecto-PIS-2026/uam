@@ -360,3 +360,114 @@ describe("ListadoPublicaciones con productores", () => {
 		expect(within(grupos[1]).getByRole("button", { name: "Producto 2" })).toBeInTheDocument();
 	});
 });
+
+describe.each([
+    { rol: "operadores", crear: crearPublicacion },
+    { rol: "productores", crear: crearPublicacionProductor },
+])("paginación de publicaciones de $rol", ({ crear }) => {
+    function crearListado(cantidad = 45) {
+        return Array.from({ length: cantidad }, (_, indice) => crear(indice + 1));
+    }
+
+    function idsVisibles() {
+        return screen.getAllByRole("button", { name: /^Producto / })
+            .map((tarjeta) => Number(tarjeta.textContent?.match(/^Producto (\d+)/)?.[1]));
+    }
+
+    function paginacion() {
+        return within(screen.getByRole("navigation", { name: "Paginación de publicaciones" }));
+    }
+
+    beforeEach(() => {
+        vi.mocked(useMediaQuery).mockReturnValue(false);
+    });
+
+    it("muestra 20 resultados por página y permite recorrerlos sin alterar el orden recibido", () => {
+        const publicaciones = crearListado().reverse();
+        render(<ListadoPublicaciones publicaciones={publicaciones} />);
+
+        expect(idsVisibles()).toEqual(publicaciones.slice(0, 20).map(({ id }) => id));
+        expect(paginacion().getByRole("button", { name: "Anterior" })).toBeDisabled();
+        expect(paginacion().getByRole("button", { name: "Página 1" })).toHaveAttribute("aria-current", "page");
+
+        fireEvent.click(paginacion().getByRole("button", { name: "Siguiente" }));
+        expect(idsVisibles()).toEqual(publicaciones.slice(20, 40).map(({ id }) => id));
+        expect(paginacion().getByRole("button", { name: "Página 2" })).toHaveAttribute("aria-current", "page");
+
+        fireEvent.click(paginacion().getByRole("button", { name: "Página 3" }));
+        expect(idsVisibles()).toEqual(publicaciones.slice(40).map(({ id }) => id));
+        expect(paginacion().getByRole("button", { name: "Siguiente" })).toBeDisabled();
+
+        fireEvent.click(paginacion().getByRole("button", { name: "Anterior" }));
+        expect(idsVisibles()).toEqual(publicaciones.slice(20, 40).map(({ id }) => id));
+    });
+
+    it("agrupa sólo los resultados de la página actual y recupera su orden al desagrupar", () => {
+        const publicaciones = Array.from({ length: 45 }, (_, indice) =>
+            crear(indice + 1, indice % 2 === 0 ? 10 : 20, indice % 2 === 0 ? "Huerta Sur" : "Frutas Norte"));
+        render(<ListadoPublicaciones publicaciones={publicaciones} />);
+        fireEvent.click(paginacion().getByRole("button", { name: "Página 2" }));
+        const idsPagina = publicaciones.slice(20, 40).map(({ id }) => id);
+
+        fireEvent.click(screen.getByRole("button", { name: "Agrupar" }));
+        expect(idsVisibles().sort((a, b) => a - b)).toEqual(idsPagina);
+        expect(paginacion().getByRole("button", { name: "Página 2" })).toHaveAttribute("aria-current", "page");
+        for (const nombre of ["Huerta Sur", "Frutas Norte"]) {
+            const grupo = screen.getByText(nombre, { exact: true }).parentElement!.parentElement!;
+            expect(within(grupo).getByText("10", { exact: true }).parentElement).toHaveTextContent("10 productos en esta página");
+        }
+
+        fireEvent.click(screen.getByRole("button", { name: "Desagrupar" }));
+        expect(idsVisibles()).toEqual(idsPagina);
+        expect(paginacion().getByRole("button", { name: "Página 2" })).toHaveAttribute("aria-current", "page");
+    });
+
+    it("vuelve a la primera página cuando cambia la consulta aunque conserve los mismos resultados", () => {
+        const publicaciones = crearListado();
+        const vista = render(<ListadoPublicaciones publicaciones={publicaciones} claveConsulta="consulta-inicial" />);
+        fireEvent.click(paginacion().getByRole("button", { name: "Página 3" }));
+        expect(idsVisibles()).toEqual([41, 42, 43, 44, 45]);
+
+        vista.rerender(<ListadoPublicaciones publicaciones={publicaciones} claveConsulta="consulta-modificada" />);
+
+        expect(paginacion().getByRole("button", { name: "Página 1" })).toHaveAttribute("aria-current", "page");
+        expect(idsVisibles()).toEqual(publicaciones.slice(0, 20).map(({ id }) => id));
+    });
+
+    it("conserva la página y actualiza el detalle abierto aunque la publicación pase a otra página", () => {
+        const publicaciones = crearListado();
+        const vista = render(<ListadoPublicaciones publicaciones={publicaciones} claveConsulta="misma-consulta" />);
+        fireEvent.click(paginacion().getByRole("button", { name: "Página 2" }));
+        fireEvent.click(screen.getByRole("button", { name: /^Producto 21 — / }));
+        expect(within(screen.getByRole("dialog", { name: "Detalle Producto 21" })).getByText("150")).toBeInTheDocument();
+
+        const actualizadas = [
+            { ...publicaciones[20], precio: 240 },
+            ...publicaciones.filter(({ id }) => id !== 21),
+        ];
+        vista.rerender(<ListadoPublicaciones publicaciones={actualizadas} claveConsulta="misma-consulta" />);
+
+        expect(paginacion().getByRole("button", { name: "Página 2" })).toHaveAttribute("aria-current", "page");
+        expect(idsVisibles()).toEqual(actualizadas.slice(20, 40).map(({ id }) => id));
+        expect(screen.queryByRole("button", { name: /^Producto 21 — / })).not.toBeInTheDocument();
+        expect(within(screen.getByRole("dialog", { name: "Detalle Producto 21" })).getByText("240")).toBeInTheDocument();
+    });
+
+    it("ajusta la página al reducirse los resultados y no restaura una página obsoleta al volver a crecer", () => {
+        const publicaciones = crearListado();
+        const vista = render(<ListadoPublicaciones publicaciones={publicaciones} />);
+        fireEvent.click(paginacion().getByRole("button", { name: "Página 3" }));
+
+        vista.rerender(<ListadoPublicaciones publicaciones={publicaciones.slice(0, 25)} />);
+        expect(paginacion().getByRole("button", { name: "Página 2" })).toHaveAttribute("aria-current", "page");
+        expect(idsVisibles()).toEqual([21, 22, 23, 24, 25]);
+
+        vista.rerender(<ListadoPublicaciones publicaciones={publicaciones.slice(0, 20)} />);
+        expect(screen.queryByRole("navigation", { name: "Paginación de publicaciones" })).not.toBeInTheDocument();
+        expect(idsVisibles()).toEqual(publicaciones.slice(0, 20).map(({ id }) => id));
+
+        vista.rerender(<ListadoPublicaciones publicaciones={publicaciones} />);
+        expect(paginacion().getByRole("button", { name: "Página 1" })).toHaveAttribute("aria-current", "page");
+        expect(idsVisibles()).toEqual(publicaciones.slice(0, 20).map(({ id }) => id));
+    });
+});

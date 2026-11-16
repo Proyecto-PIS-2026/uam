@@ -80,6 +80,7 @@ const publicacionesParaFiltros: [] = [];
 
 function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicial = "prioridad", ordenamientoHabilitado = true }: PropiedadesRemotas) {
     const [datos, setDatos] = useState(resultado);
+    const [claveConsulta, setClaveConsulta] = useState("");
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState("");
     const consulta = useRef<FiltrosConsulta>({especie, orden: ordenInicial});
@@ -111,10 +112,12 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
         setCargando(true);
         setError("");
         try {
-            const respuesta = await obtenerPublicaciones({ ...consulta.current });
+            const filtros = { ...consulta.current };
+            const respuesta = await obtenerPublicaciones(filtros);
             if (!respuesta) throw new Error("No se pudieron cargar las publicaciones.");
             if (montado.current && pedido === ultimoPedido.current) {
                 setDatos(respuesta);
+                setClaveConsulta(JSON.stringify(filtros));
                 actualizado = true;
             }
         } catch {
@@ -168,6 +171,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
         consulta.current = { ...nuevaConsulta };
         if (!filtrosInicializados.current) {
             filtrosInicializados.current = true;
+            setClaveConsulta(JSON.stringify(nuevaConsulta));
             return;
         }
         ultimoPedido.current++;
@@ -191,6 +195,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
             {error && <button type="button" className="boton-secundario" onClick={() => void cargar()}>Reintentar</button>}
             <ListadoPublicaciones
                 publicaciones={datos.publicaciones}
+                claveConsulta={claveConsulta}
                 esAdmin={esAdmin}
                 estadoVacio={
                     <EstadoVacio
@@ -205,6 +210,10 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
 }
 
 function ContenidoLocal({publicaciones, especie = "", esAdmin = false, ordenInicial = "prioridad", ordenamientoHabilitado = true }: PropiedadesLocales) {
+    const [claveConsulta, setClaveConsulta] = useState("");
+    const cambiarConsulta = useCallback((consulta: FiltrosConsulta) => {
+        setClaveConsulta(JSON.stringify(consulta));
+    }, []);
 	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => {
         const iniciales = especie
             ? publicaciones.filter(
@@ -224,10 +233,11 @@ function ContenidoLocal({publicaciones, especie = "", esAdmin = false, ordenInic
 
 	return (
 		<div className="secciones-pagina">
-			<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicaciones} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} alFiltrar={setPublicacionesFiltradas} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")}/>
+			<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicaciones} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} alFiltrar={setPublicacionesFiltradas} alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")}/>
 			<ListadoPublicaciones
 				esAdmin={esAdmin}
 				publicaciones={publicacionesFiltradas}
+                claveConsulta={claveConsulta}
 				estadoVacio={
 					<EstadoVacio
 						titulo={publicaciones.length === 0 ? "Todavía no hay publicaciones disponibles" : "No hay publicaciones que coincidan con la búsqueda."}

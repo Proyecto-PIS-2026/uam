@@ -90,23 +90,41 @@ test.describe("BP-24: especies más vendidas primero", () => {
 
     test("CP-24-02: Agrupar por operador conserva las especies más vendidas primero dentro de cada grupo", async ({ page }) => {
         await page.goto("/publicaciones");
+        const busqueda = page.getByRole("searchbox", { name: "Buscar publicaciones", exact: true });
+        const contenedor = page.locator("[aria-busy]").filter({ has: busqueda });
+        await expect(contenedor).toHaveAttribute("aria-busy", "false");
         await page.getByRole("button", { name: "Agrupar", exact: true }).click();
         await expect(page.getByRole("button", { name: "Desagrupar", exact: true })).toBeVisible();
 
         const grupos = page.getByRole("main").locator('[class*="nombreGrupo"]');
         await expect(grupos.first()).toBeVisible();
 
+        const especiesPorOperador = new Map<string, string[]>();
+        const paginacion = page.getByRole("navigation", { name: "Paginación de publicaciones", exact: true });
+        let numeroPagina = 1;
+
+        while (true) {
+            await expect(contenedor).toHaveAttribute("aria-busy", "false");
+            for (let indice = 0; indice < await grupos.count(); indice++) {
+                const encabezado = grupos.nth(indice);
+                const nombreOperador = (await encabezado.innerText()).trim();
+                const productos = encabezado.locator("../..").getByRole("heading", { level: 3 });
+                const especies = (await productos.allTextContents()).map((nombre) => nombre.split(" - ")[0].trim());
+
+                expect(especies.length, `Productos de ${nombreOperador}`).toBeGreaterThan(0);
+                especiesPorOperador.set(nombreOperador, [...(especiesPorOperador.get(nombreOperador) ?? []), ...especies]);
+            }
+            if (!(await paginacion.isVisible())) break;
+            const siguiente = paginacion.getByRole("button", { name: "Siguiente", exact: true });
+            if (await siguiente.isDisabled()) break;
+            await siguiente.click();
+            numeroPagina++;
+            await expect(paginacion.getByRole("button", { name: `Página ${numeroPagina}`, exact: true })).toHaveAttribute("aria-current", "page");
+        }
+
         let gruposConVariasEspecies = 0;
-
-        for (let indice = 0; indice < await grupos.count(); indice++) {
-            const encabezado = grupos.nth(indice);
-            const nombreOperador = (await encabezado.innerText()).trim();
-            const productos = encabezado.locator("../..").getByRole("heading", { level: 3 });
-            const especies = (await productos.allTextContents()).map((nombre) => nombre.split(" - ")[0].trim());
-
-            expect(especies.length, `Productos de ${nombreOperador}`).toBeGreaterThan(0);
+        for (const [nombreOperador, especies] of especiesPorOperador) {
             if (new Set(especies).size > 1) gruposConVariasEspecies++;
-
             expect(especies, `Orden de especies de ${nombreOperador}`).toEqual([...especies].sort(compararEspecies));
         }
 
