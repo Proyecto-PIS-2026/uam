@@ -82,12 +82,14 @@ describe("TarjetaVigencia controlada", () => {
         const vigencia = screen.getByLabelText(/^Días de vigencia/);
         const anticipacion = screen.getByLabelText(/^Días de anticipación del aviso/);
         const avisos = screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" });
+        const filaAvisos = avisos.closest("label");
+        expect(filaAvisos).toBeVisible();
         rerender(<TarjetaVigencia {...props} configuracion={{ ...borrador, habilitado: false }} />);
         expect(screen.getByRole("switch", { name: "Vencimiento de fotos" })).not.toBeChecked();
         expect(vigencia.closest(".MuiCollapse-root")).toHaveStyle({ transitionDuration: "300ms" });
         await waitFor(() => {
             expect(vigencia).not.toBeVisible();
-            expect(avisos).not.toBeVisible();
+            expect(filaAvisos).not.toBeVisible();
             expect(anticipacion).not.toBeVisible();
         });
         for (const entrada of [vigencia, avisos, anticipacion]) expect(entrada).toBeDisabled();
@@ -99,7 +101,7 @@ describe("TarjetaVigencia controlada", () => {
         rerender(<TarjetaVigencia {...props} configuracion={borrador} />);
         await waitFor(() => {
             expect(vigencia).toBeVisible();
-            expect(avisos).toBeVisible();
+            expect(filaAvisos).toBeVisible();
             expect(anticipacion).toBeVisible();
         });
         for (const entrada of [vigencia, avisos, anticipacion]) expect(entrada).toBeEnabled();
@@ -119,10 +121,11 @@ describe("TarjetaVigencia controlada", () => {
         const vigencia = screen.getByLabelText(/^Días de vigencia/);
         const anticipacion = screen.getByLabelText(/^Días de anticipación del aviso/);
         const avisos = screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" });
+        const filaAvisos = avisos.closest("label");
         expect(vigencia).not.toBeVisible();
         expect(vigencia).toBeDisabled();
         expect(vigencia).not.toBeRequired();
-        expect(avisos).toBeVisible();
+        expect(filaAvisos).toBeVisible();
         expect(avisos).toBeEnabled();
         expect(anticipacion).toBeVisible();
         expect(anticipacion).toBeRequired();
@@ -134,7 +137,7 @@ describe("TarjetaVigencia controlada", () => {
         expect(anticipacion).toBeDisabled();
         expect(anticipacion).not.toBeRequired();
         expect(anticipacion).toHaveValue("09");
-        expect(avisos).toBeVisible();
+        expect(filaAvisos).toBeVisible();
         expect(avisos).toBeEnabled();
         rerender(<TarjetaVigencia {...props} />);
         await waitFor(() => expect(anticipacion).toBeVisible());

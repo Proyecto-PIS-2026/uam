@@ -707,7 +707,7 @@ describe("PreciosHistoricos", () => {
         expect(firmasFilasVisibles()).toHaveLength(2);
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
-        expect(screen.getByRole("form", { name: "Consultar período histórico" })).toHaveFormValues({ calibre: "" });
+        expect(Object.fromEntries(new FormData(screen.getByRole("form", { name: "Consultar período histórico" }) as HTMLFormElement))).toMatchObject({ calibre: "" });
         expect(leerOpcionesFiltro("Variedad")).toEqual(["Cavendish"]);
         expect(leerOpcionesFiltro("País")).toEqual(["ECUADOR"]);
         expect(leerOpcionesFiltro("Calibre")).toEqual(["M"]);
@@ -773,7 +773,7 @@ describe("PreciosHistoricos", () => {
         render(<PreciosHistoricos producto={{ ...producto, variedad: "Inexistente", pais: "ARGENTINA", calibre: "XXL", categoria: "Premium" }} historico={historicoConFiltros} {...fechas} />);
         abrirFiltrosAdicionales();
 
-        expect(screen.getByRole("form", { name: "Consultar período histórico" })).toHaveFormValues({ variedad: "", pais: "", calibre: "", categoria: "" });
+        expect(Object.fromEntries(new FormData(screen.getByRole("form", { name: "Consultar período histórico" }) as HTMLFormElement))).toMatchObject({ variedad: "", pais: "", calibre: "", categoria: "" });
         expect(leerOpcionesFiltro("Variedad")).toEqual(["Cavendish", "Orgánica"]);
         expect(leerOpcionesFiltro("País")).toEqual(["URUGUAY", "BRASIL", "ECUADOR"]);
         expect(leerOpcionesFiltro("Calibre")).toEqual(["G", "M", "P"]);
@@ -798,7 +798,7 @@ describe("PreciosHistoricos", () => {
         abrirFiltrosAdicionales();
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("Cavendish");
         expect(screen.getByRole("combobox", { name: "País" })).toHaveTextContent("ECUADOR");
-        expect(screen.getByRole("form", { name: "Consultar período histórico" })).toHaveFormValues({ variedad: "Cavendish", pais: "ECUADOR", calibre: "", categoria: "" });
+        expect(Object.fromEntries(new FormData(screen.getByRole("form", { name: "Consultar período histórico" }) as HTMLFormElement))).toMatchObject({ variedad: "Cavendish", pais: "ECUADOR", calibre: "", categoria: "" });
         expect(leerOpcionesFiltro("Calibre")).toEqual(["M"]);
         expect(leerOpcionesFiltro("Categoría")).toEqual(["I", "II"]);
         expect(firmasFilasVisibles()).toEqual(["Cavendish|ECUADOR|M|I", "Cavendish|ECUADOR|M|II"]);
