@@ -162,7 +162,7 @@ async function configurar(page: Page, valores: { anticipacion?: string; habilita
   const titulo = rol === "OPERADOR" ? "Vigencia de fotos de operadores" : "Vigencia de fotos de productores";
   const tarjeta = page.getByText(titulo, { exact: true }).locator("..");
   const vencimiento = tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true });
-  const anticipacion = tarjeta.getByRole("textbox", { name: "Días de anticipación del aviso", exact: true, includeHidden: true });
+  const anticipacion = tarjeta.getByLabel(/^Días de anticipación del aviso\b/);
   const avisos = tarjeta.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento", exact: true, includeHidden: true });
   async function guardar() {
     const [respuesta] = await Promise.all([

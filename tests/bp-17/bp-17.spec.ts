@@ -142,7 +142,6 @@ test.describe("BP-17.1 histórico de precios", () => {
     await expect(page).toHaveURL((url) => url.searchParams.get("from") === "2019-01-01"
       && url.searchParams.get("to") === "2019-01-02"
       && ["variedad", "pais", "calibre", "categoria"].every((clave) => !url.searchParams.has(clave)));
-    await page.getByRole("button", { name: "Más filtros", exact: true }).click();
     for (const [nombre, todas] of [
       ["Variedad", "Todas las variedades"], ["País", "Todos los países"],
       ["Calibre", "Todos los calibres"], ["Categoría", "Todas las categorías"],

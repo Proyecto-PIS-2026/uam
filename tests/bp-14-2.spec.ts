@@ -273,14 +273,16 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       await expect(page.getByRole("heading", { level: 1, name: productorAlta.nombre, exact: true })).toBeVisible();
       const tarjetas = page.getByRole("article", { name: "Ver detalles de Uchuva", exact: true });
       await expect(tarjetas).toHaveCount(2);
-      for (const producto of [{ calibre: "C", precio: "1371", precioVisible: "$ 1.371" }, { calibre: "G", precio: "2637", precioVisible: "$ 2.637" }]) {
-        const tarjeta = tarjetas.filter({ hasText: `${producto.calibre} · Categoría -` });
+      for (const producto of [{ calibre: "CHICO", precio: "1371", precioVisible: "$ 1.371" }, { calibre: "GRANDE", precio: "2637", precioVisible: "$ 2.637" }]) {
+        const tarjeta = tarjetas.filter({ has: page.getByText(producto.precioVisible, { exact: true }) });
         await expect(tarjeta).toHaveCount(1);
         await expect(tarjeta).toContainText(producto.precioVisible);
+        await expect(tarjeta.getByText(`${producto.calibre} · Categoría -`, { exact: true })).toBeVisible();
         await tarjeta.getByRole("button", { name: "Ver detalles de Uchuva", exact: true }).click();
         const consulta = page.getByRole("dialog").filter({ has: page.getByRole("button", { name: "Cerrar consulta", exact: true }) });
         await expect(consulta).toBeVisible();
         await expect(consulta.getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(producto.precio);
+        await expect(consulta.getByRole("combobox", { name: "Calibre", exact: true })).toHaveText(producto.calibre);
         await expect(consulta.getByRole("combobox", { name: "País de origen", exact: true })).toHaveText("URUGUAY");
         const enlaceMapa = consulta.getByRole("link", { name: "Quinta BP-14.2", exact: true });
         await expect(enlaceMapa).toBeVisible();
