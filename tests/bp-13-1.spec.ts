@@ -143,7 +143,7 @@ async function configurar(page: Page, valores: { dias?: string; habilitado?: boo
   const titulo = rol === "OPERADOR" ? "Vigencia de fotos de operadores" : "Vigencia de fotos de productores";
   const tarjeta = page.getByText(titulo, { exact: true }).locator("..");
   const vencimiento = tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true });
-  const dias = tarjeta.getByRole("textbox", { name: "Días de vigencia", exact: true, includeHidden: true });
+  const dias = tarjeta.getByLabel(/^Días de vigencia\b/);
   async function guardar() {
     const [respuesta] = await Promise.all([
       page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === "/administracion"
