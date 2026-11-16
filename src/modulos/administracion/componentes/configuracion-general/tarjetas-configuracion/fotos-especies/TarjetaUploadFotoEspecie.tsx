@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { Autocomplete, Dialog, IconButton, TextField } from "@mui/material";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
@@ -8,6 +8,7 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import ImagenPublicacion from "@/modulos/publicaciones/componentes/ImagenPublicacion";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useVistaPreviaArchivo } from "./useVistaPreviaArchivo";
 
 import styles from "./TarjetaUploadFotoEspecie.module.css";
 
@@ -31,7 +32,6 @@ interface TarjetaUploadFotoEspecieProps {
 function normalizarTexto(texto: string) {return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "")}
 
 export default function TarjetaUploadFotoEspecie({ titulo, especies, especieSeleccionada, onChangeEspecie, cambios, confirmadas = {}, onChangeFoto, guardando = false }: TarjetaUploadFotoEspecieProps) {
-    const [preview, setPreview] = useState<{ archivo: File; url: string } | null>(null);
     const [fotoAmpliada, setFotoAmpliada] = useState(false);
 
     const inputArchivoRef = useRef<HTMLInputElement>(null);
@@ -45,18 +45,8 @@ export default function TarjetaUploadFotoEspecie({ titulo, especies, especieSele
     const fotoBase = especieActual && Object.hasOwn(confirmadas, especieActual.id) ? confirmadas[especieActual.id] : fotoServidor;
     const fotoEfectiva = especieActual && modificado ? cambios[especieActual.id] : fotoBase;
     const archivoVisible = fotoEfectiva && typeof fotoEfectiva !== "string" ? fotoEfectiva : null;
-    const previewImagen = archivoVisible && preview?.archivo === archivoVisible ? preview.url : null;
+    const previewImagen = useVistaPreviaArchivo(archivoVisible);
     const fotoVisible = typeof fotoEfectiva === "string" ? fotoEfectiva : previewImagen;
-
-    useEffect(() => {
-        if (!archivoVisible) {
-            setPreview(null);
-            return;
-        }
-        const url = URL.createObjectURL(archivoVisible);
-        setPreview({ archivo: archivoVisible, url });
-        return () => URL.revokeObjectURL(url);
-    }, [archivoVisible]);
 
     function manejarCambioEspecie(id: string) {
         if (guardando) {
