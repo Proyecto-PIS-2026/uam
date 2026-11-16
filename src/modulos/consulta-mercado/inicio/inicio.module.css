@@ -280,42 +280,6 @@
     gap: var(--espacio-controles);
 }
 
-.paginacion {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--espacio-controles);
-}
-
-.botonPagina {
-    min-height: var(--alto-control);
-    padding: var(--padding-control);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-control);
-    background: var(--color-surface);
-    color: var(--color-foreground);
-    font-size: var(--tamano-texto-secundario);
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.botonPagina:hover:not(:disabled),
-.botonPagina:focus-visible {
-    border-color: var(--color-secondary);
-    color: var(--color-secondary);
-}
-
-.botonPagina:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
-.paginaActual {
-    color: var(--color-muted);
-    font-size: var(--tamano-texto-secundario);
-    white-space: nowrap;
-}
-
 .controles[data-ordenamiento="false"] {
     grid-template-columns: minmax(0, 1fr);
 }

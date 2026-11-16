@@ -38,7 +38,8 @@ const tomate: PublicacionPerfil = {
     variedad: "Perita",
     envase: "Cajón", kilos: "",
     categoria: "Extra",
-    calibre: "A",
+    calibre: "Grande",
+    codigoCalibre: "G",
     pais: "URUGUAY",
 };
 

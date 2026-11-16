@@ -221,7 +221,7 @@ describe("obtenerPerfilPublicoOperador", () => {
             envase: { nombreEnvase: "Cajón" },
             kilos: null,
             categoria: { nombreCategoria: "Extra" },
-            calibre: { codigoCalibre: "A" },
+            calibre: { codigoCalibre: "A", nombreCalibre: "Grande" },
         };
 
         mockDb.operador.first.mockResolvedValue(operadorConLocal);
@@ -246,7 +246,8 @@ describe("obtenerPerfilPublicoOperador", () => {
                 envase: "Cajón",
                 kilos: "",
                 categoria: "Extra",
-                calibre: "A",
+                calibre: "Grande",
+                codigoCalibre: "A",
                 pais: "URUGUAY",
             },
         ]);
@@ -269,7 +270,7 @@ describe("obtenerPerfilPublicoOperador", () => {
             envase: { nombreEnvase: "Cajón" },
             kilos: null,
             categoria: { nombreCategoria: "Extra" },
-            calibre: { codigoCalibre: "A" },
+            calibre: { codigoCalibre: "A", nombreCalibre: "Grande" },
         };
 
         mockDb.operador.first.mockResolvedValue(operadorConLocal);
@@ -294,7 +295,8 @@ describe("obtenerPerfilPublicoOperador", () => {
                 envase: "Cajón",
                 kilos: "",
                 categoria: "Extra",
-                calibre: "A",
+                calibre: "Grande",
+                codigoCalibre: "A",
                 pais: "URUGUAY",
             },
         ]);
@@ -318,7 +320,7 @@ describe("vigencia de las publicaciones", () => {
         variedad: { nombreVariedad: "Perita" },
         presentacion: { nombrePresentacion: "Cajón" },
         categoria: { nombreCategoria: "Extra" },
-        calibre: { codigoCalibre: "A" },
+        calibre: { codigoCalibre: "A", nombreCalibre: "Grande" },
     };
 
     const conVigencia = (id: number, fechaVigencia: Temporal.Instant | null) => ({

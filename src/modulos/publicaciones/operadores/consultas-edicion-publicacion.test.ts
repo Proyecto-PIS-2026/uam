@@ -80,8 +80,8 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
                 { id: 4, nombre: "Primera", especieId: 909 },
             ],
             calibres: [
-                { id: 501, nombre: "EX - EXTRA" },
-                { id: 502, nombre: "SV - SIN VARIACION" },
+                { id: 501, nombre: "EXTRA" },
+                { id: 502, nombre: "SIN VARIACION" },
             ],
             paises: [{ id: 117, nombre: "Argentina" }, { id: 218, nombre: "Uruguay" }],
         });
@@ -150,7 +150,7 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
         expect(opciones.envases.map((opcion) => opcion.id)).toEqual([424, 321]);
         expect(opciones.kilos.map((opcion) => opcion.nombre)).toEqual(["2", "10-12"]);
         expect(opciones.categorias.map((opcion) => opcion.id)).toEqual([3, 4]);
-        expect(opciones.calibres.map((opcion) => opcion.nombre)).toEqual(["A - BAJO", "Z - ALTO"]);
+        expect(opciones.calibres.map((opcion) => opcion.nombre)).toEqual(["ALTO", "BAJO"]);
         expect(opciones.paises.map((opcion) => opcion.id)).toEqual([117, 218]);
     });
 
@@ -167,8 +167,8 @@ describe("obtenerOpcionesEdicionPublicacion", () => {
                 { id: 4, nombre: "Primera", especieId: 909 },
             ],
             calibres: [
-                { id: 501, nombre: "EX - EXTRA" },
-                { id: 502, nombre: "SV - SIN VARIACION" },
+                { id: 501, nombre: "EXTRA" },
+                { id: 502, nombre: "SIN VARIACION" },
             ],
             paises: [{ id: 117, nombre: "Argentina" }, { id: 218, nombre: "Uruguay" }],
         });

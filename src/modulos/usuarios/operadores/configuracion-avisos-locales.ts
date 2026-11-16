@@ -1,7 +1,7 @@
 import type { TransaccionTarea } from "@/infraestructura/tareas-programadas/tipos";
 
-// Cambiar a false deshabilita los avisos de contratos próximos a vencer y vencidos.
-export const AVISOS_VENCIMIENTO_LOCALES_HABILITADOS = true;
+export const CLAVE_HABILITACION_AVISO_LOCALES = "aviso_vencimiento_locales_habilitado";
+export const AVISOS_VENCIMIENTO_LOCALES_HABILITADOS_POR_DEFECTO = true;
 export const CLAVE_ANTICIPACION_AVISO_LOCALES = "anticipacion_aviso_vencimiento_locales";
 export const DIAS_ANTICIPACION_AVISO_LOCALES = 3;
 export const MAXIMO_DIAS_ANTICIPACION_AVISO_LOCALES = 365;
@@ -18,18 +18,23 @@ export function validarAnticipacionAvisoLocales(valor: string): void {
     }
 }
 
-export async function obtenerConfiguracionAvisosLocales(tx: TransaccionTarea): Promise<ConfiguracionAvisosLocales> {
-    if (!AVISOS_VENCIMIENTO_LOCALES_HABILITADOS) {
-        return { habilitado: false, diasAnticipacionAviso: DIAS_ANTICIPACION_AVISO_LOCALES };
+export async function obtenerConfiguracionAvisosLocales(tx: Pick<TransaccionTarea, "orm">): Promise<ConfiguracionAvisosLocales> {
+    const configuraciones = await tx.orm.public.Configuracion
+        .where((configuracion) => configuracion.nombreConfiguracion.in([
+            CLAVE_HABILITACION_AVISO_LOCALES,
+            CLAVE_ANTICIPACION_AVISO_LOCALES,
+        ]))
+        .select("nombreConfiguracion", "valorConfiguracion")
+        .all();
+    const valores = new Map(configuraciones.map(({ nombreConfiguracion, valorConfiguracion }) => [nombreConfiguracion, valorConfiguracion]));
+    const habilitacion = valores.get(CLAVE_HABILITACION_AVISO_LOCALES);
+    if (habilitacion != null && habilitacion !== "true" && habilitacion !== "false") {
+        throw new Error("La habilitación de los avisos de locales debe ser verdadera o falsa.");
     }
-    const configuracion = await tx.orm.public.Configuracion
-        .where({ nombreConfiguracion: CLAVE_ANTICIPACION_AVISO_LOCALES })
-        .select("valorConfiguracion")
-        .first();
-    const valor = configuracion?.valorConfiguracion;
+    const valor = valores.get(CLAVE_ANTICIPACION_AVISO_LOCALES);
     if (valor != null) validarAnticipacionAvisoLocales(valor);
     return {
-        habilitado: true,
+        habilitado: habilitacion == null ? AVISOS_VENCIMIENTO_LOCALES_HABILITADOS_POR_DEFECTO : habilitacion === "true",
         diasAnticipacionAviso: valor == null ? DIAS_ANTICIPACION_AVISO_LOCALES : Number(valor),
     };
 }

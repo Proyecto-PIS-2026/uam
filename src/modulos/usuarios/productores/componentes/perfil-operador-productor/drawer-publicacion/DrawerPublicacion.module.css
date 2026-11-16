@@ -270,7 +270,6 @@
     gap: var(--espacio-inline);
 }
 
-.botonPerfil,
 .botonWhatsApp {
     display: flex;
     flex: 1;
@@ -281,11 +280,6 @@
     font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
-}
-
-.botonPerfil {
-    background: var(--color-secondary-soft);
-    color: var(--color-secondary);
 }
 
 .botonWhatsApp {
@@ -475,7 +469,6 @@
         border-top: 1px solid var(--color-border);
     }
 
-    .botonPerfil,
     .botonWhatsApp {
         min-height: var(--alto-control);
         padding: var(--padding-control);
@@ -492,7 +485,6 @@
         background-color: var(--color-secondary-hover);
     }
 
-    .botonPerfil:focus-visible,
     .botonWhatsApp:focus-visible {
         outline: 2px solid var(--color-secondary);
         outline-offset: 2px;

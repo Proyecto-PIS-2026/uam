@@ -85,19 +85,9 @@
     outline-offset: 2px;
 }
 
-.botonGuardar {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-    flex-shrink: 0;
-}
-
-.botonGuardar:not(:disabled) {
-    color: var(--color-secondary) !important;
-    background-color: var(--color-secondary-soft) !important;
-}
-
-.botonGuardar:not(:disabled):hover {
-    background-color: var(--color-secondary-soft) !important;
+.filaSwitch[data-modificado="true"] {
+    border-color: var(--color-warning);
+    background-color: var(--color-warning-soft);
 }
 
 .filaSwitch {
@@ -106,4 +96,10 @@
 
 .filaSwitch[data-guardando="true"] {
     cursor: default;
+}
+
+@media (max-width: 767px) {
+    .descripcion {
+        display: none;
+    }
 }

@@ -51,12 +51,11 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
         return null;
     }
 
-    // await porque la consulta a la base de datos es asíncrona pero quiero esperar a la respuesta antes de seguir
     const operador = await db.orm.public.Operador
-        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp", "enLicencia", "comentario") // Que columnas quiero recuperar de la tabla de operador
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp", "enLicencia", "comentario")
         .include("usuario", (usuario) => usuario.select("solicitoRestablecimiento"))
-        .include("locales", (locales) => locales // Inlcuir los locales asociados al operador
-            .select("numeroLocal", "finContrato") // Que columnas quiero recuperar de la tabla de locales
+        .include("locales", (locales) => locales
+            .select("numeroLocal", "finContrato")
             .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
         .first({ id }); // El primer operador que coincida con el id (es único)
 
@@ -89,7 +88,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
     );
 
     // Obtener las publicaciones
-    const consultaCompleta = db.orm.public.PublicacionOperador // Solo armo la consulta sin ejecutarla
+    const consultaCompleta = db.orm.public.PublicacionOperador
         .where({ operadorId: operador.id })
         .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
         .include("publicacion", (consultaPublicacion) => {
@@ -116,7 +115,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
             return completo;
         });
 
-    const completas = await consultaCompleta.all(); // La ejecuto con await por ser asincrona
+    const completas = await consultaCompleta.all();
     const publicaciones: PublicacionPerfilAdmin[] = [];
     
     for (const completa of completas) {
@@ -146,7 +145,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 envase: publicacion.envase?.nombreEnvase ?? "",
                 kilos: publicacion.kilos?.valor ?? "",
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
-                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                calibre: publicacion.calibre?.nombreCalibre ?? "",
                 codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",
                 

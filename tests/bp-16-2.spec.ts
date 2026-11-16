@@ -92,8 +92,8 @@ test.describe("BP-16.2: Cambio de contraseña con contraseña actual", () => {
         await ingresar(page, administrador);
         await page.getByRole("button", { name: "General", exact: true }).click();
         await page.getByRole("switch", { name: "Permitir que los usuarios restablezcan su propia contraseña" }).uncheck();
-        await page.getByRole("button", { name: "Guardar configuración: Restablecimiento de contraseñas", exact: true }).click();
-        await expect(avisos(page).getByRole("status").filter({ hasText: "La configuración de restablecimiento de contraseña se guardó correctamente." })).toBeVisible();
+        await page.getByRole("button", { name: "Guardar", exact: true }).click();
+        await expect(avisos(page).getByRole("status").filter({ hasText: "La configuración se guardó correctamente." })).toBeVisible();
         await expect.poll(async () => (await db.query('SELECT "valorConfiguracion" FROM configuracion WHERE "nombreConfiguracion" = $1',
             ["restablecimiento_contrasena_habilitado"])).rows[0].valorConfiguracion).toBe("false");
         await page.goto(perfil(administrador));

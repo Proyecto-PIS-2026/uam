@@ -283,7 +283,6 @@ async function main() {
     reporte.errores.push({ fase: "ejecucion", error: fallo(error) });
     console.error(fallo(error));
   } finally {
-    // Por defecto se conservan las publicaciones, igual que en el script original.
     // La limpieza optativa se limita a IDs cuya alta confirmó esta ejecución.
     if (process.env.E03_LIMPIAR === "1") {
       await enGrupos(creadas, 3, reg => verificar("limpieza", async () => {

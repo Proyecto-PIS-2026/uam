@@ -4,7 +4,6 @@ import { altaAdministrador } from "@/modulos/usuarios/administradores/altaAdmini
 import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/modificar-mi-perfil";
 import { restablecerSegundoFactorAdministrador } from "@/modulos/usuarios/administradores/restablecerSegundoFactorAdministrador";
 import { modificarPerfilPropio } from "@/modulos/usuarios/operadores/acciones/modificarPerfilPropio";
-import { cambiarContrasena } from "@/modulos/usuarios/operadores/acciones/cambiarContrasena";
 import { guardarConfiguraciones } from "@/modulos/administracion/acciones/guardar-configuracion";
 import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracion/acciones/foto-especie";
 
@@ -19,7 +18,6 @@ const acciones = [
     { nombre: "perfil propio de administrador", rol: "ADMINISTRADOR", ejecutar: () => modificarMiPerfilAdministrador({}) },
     { nombre: "restablecimiento de segundo factor", rol: "ADMINISTRADOR", ejecutar: () => restablecerSegundoFactorAdministrador(2) },
     { nombre: "perfil propio de operador", rol: "OPERADOR", ejecutar: () => modificarPerfilPropio({}) },
-    { nombre: "cambio de contraseña de operador", rol: "OPERADOR", ejecutar: () => cambiarContrasena({}, new FormData()) },
     { nombre: "configuración administrativa", rol: "ADMINISTRADOR", ejecutar: () => guardarConfiguraciones({ incremento_precio: "1" }) },
     { nombre: "guardar foto de especie", rol: "ADMINISTRADOR", ejecutar: () => guardarFotoEspecie(1, new File(["foto"], "foto.png")) },
     { nombre: "quitar foto de especie", rol: "ADMINISTRADOR", ejecutar: () => eliminarFotoEspecie(1) },

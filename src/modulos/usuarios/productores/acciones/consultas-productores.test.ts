@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { obtenerPerfilProductor, obtenerProductoresDisponibles } from "./consultas-productores";
+import { obtenerProductoresDisponibles } from "./consultas-productores";
 import "temporal-polyfill/full/global";
 
 const mocks = vi.hoisted(() => ({
-    obtenerSesion: vi.fn(), select: vi.fn(), include: vi.fn(), all: vi.fn(), first: vi.fn(),
+    obtenerSesion: vi.fn(), select: vi.fn(), include: vi.fn(), all: vi.fn(),
     where: vi.fn(),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => {
-    const consulta = { where: mocks.where, select: mocks.select, include: mocks.include, all: mocks.all, first: mocks.first };
+    const consulta = { where: mocks.where, select: mocks.select, include: mocks.include, all: mocks.all };
     mocks.where.mockReturnValue(consulta);
     mocks.select.mockReturnValue(consulta);
     mocks.include.mockImplementation((_relacion: string, configurar?: (consulta: unknown) => unknown) => {
@@ -30,7 +30,7 @@ function relacion(publicacionActiva = true, publicacionDisponible = true, tipoPu
             variedad: { nombreVariedad: "Valencia" },
             envase: { nombreEnvase: "KG" },
             kilos: null,
-            categoria: { nombreCategoria: "I" }, calibre: { codigoCalibre: "M" },
+            categoria: { nombreCategoria: "I" }, calibre: { codigoCalibre: "M", nombreCalibre: "Mediano" },
         },
     };
 }
@@ -62,18 +62,13 @@ describe("Consultas de productores para operadores", () => {
     it.each([null, "PRODUCTOR"] as const)("rechaza la sesión %s antes de acceder a datos", async (rol) => {
             mocks.obtenerSesion.mockResolvedValue(rol? { usuarioId: 5, rol, expiraEn: 2000000000 } : null);
             await expect(obtenerProductoresDisponibles()).rejects.toMatchObject({status: rol ? 403 : 401, message: rol ? "No tenés permiso para consultar productores." : "Iniciá sesión para continuar."});
-            await expect(obtenerPerfilProductor(productor.nombreFantasia)).rejects.toMatchObject({status: rol ? 403 : 401, message: rol ? "No tenés permiso para consultar el perfil del productor." : "Iniciá sesión para continuar."});
             expect(mocks.select).not.toHaveBeenCalled();
         },
     );
 
-    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite consultar listado y perfil al rol %s",async (rol) => {
+    it.each(["OPERADOR", "ADMINISTRADOR"] as const)("permite consultar el listado al rol %s",async (rol) => {
         mocks.obtenerSesion.mockResolvedValue({usuarioId: 5, rol, expiraEn: 2000000000});
         mocks.all.mockResolvedValue([{ ...productor, publicacionesProductor: [relacion()] }]);
-        mocks.first.mockResolvedValue({
-            ...productor,
-            publicacionesProductor: [relacion()],
-        });
         await expect(obtenerProductoresDisponibles()).resolves.toEqual([
             {
                 id: productor.id,
@@ -84,12 +79,6 @@ describe("Consultas de productores para operadores", () => {
                 departamentos: [],
             },
         ]);
-        await expect(obtenerPerfilProductor(productor.nombreFantasia)).
-            resolves.toMatchObject({
-                id: productor.id,
-                nombreFantasia: productor.nombreFantasia,
-                publicaciones: [expect.objectContaining({id: 10, especie: "Naranja"})],
-        });
     });
 
     it("devuelve un listado vacío cuando no existen productores", async () => {
@@ -100,10 +89,12 @@ describe("Consultas de productores para operadores", () => {
     it("ordena productores con publicaciones públicas y excluye los que no tienen publicaciones públicas ni cuentas con otro rol", async () => {
         mocks.all.mockResolvedValue([
             { ...productor, nombreFantasia: "Zeta", publicacionesProductor: [relacion(), relacion(), relacion(false, true, "PRODUCTOR", "Oculta"), relacion(true, false), relacion(true, true, "OPERADOR")] },
-            { ...productor, id: 2, nombreFantasia: "Álamo" },
+            { ...productor, id: 2, nombreFantasia: "Sin publicaciones" },
             { ...productor, id: 3, usuario: { rol: "OPERADOR" } },
+            { ...productor, id: 4, nombreFantasia: "Álamo", publicacionesProductor: [relacion()] },
         ]);
         expect(await obtenerProductoresDisponibles()).toEqual([
+            { id: 4, nombreFantasia: "Álamo", fotoPerfil: null, cantidadProductos: 1, ubicaciones: ["Salto"], departamentos: [] },
             { id: 1, nombreFantasia: "Zeta", fotoPerfil: null, cantidadProductos: 2, ubicaciones: ["Salto"], departamentos: [] },
         ]);
     });
@@ -118,46 +109,15 @@ describe("Consultas de productores para operadores", () => {
             { ...relacion(true, true, "OPERADOR"), ubicaciones: [{ nombreUbicacion: "Otro tipo", departamento: "Rocha" }] },
         ];
         mocks.all.mockResolvedValue([{ ...productor, publicacionesProductor }]);
-        mocks.first.mockResolvedValue({ ...productor, publicacionesProductor });
         expect(await obtenerProductoresDisponibles()).toEqual([expect.objectContaining({
             cantidadProductos: 3, departamentos: ["Canelones", "Salto"],
         })]);
-        expect(await obtenerPerfilProductor(productor.nombreFantasia)).toMatchObject({ departamentos: ["Canelones", "Salto"] });
     });
 
-    it("consulta el perfil por nombre y devuelve solo publicaciones y puntos de retiro visibles", async () => {
-        mocks.first.mockResolvedValue({ ...productor, publicacionesProductor: [relacion(), relacion(false, true, "PRODUCTOR", "Oculta"), relacion(true, false), relacion(true, true, "OPERADOR")] });
-        const perfil = await obtenerPerfilProductor(productor.nombreFantasia);
-        expect(mocks.first).toHaveBeenCalledWith({ nombreFantasia: productor.nombreFantasia });
-        expect(perfil).toMatchObject({ nombreFantasia: productor.nombreFantasia, ubicaciones: ["Salto"] });
-        expect(perfil?.publicaciones.map((publicacion) => publicacion.id)).toEqual([10]);
-    });
-
-    it("conserva la consulta de perfil aunque no haya publicaciones públicas", async () => {
-        mocks.first.mockResolvedValue({
-            ...productor,
-            publicacionesProductor: [
-                relacion(false, true),
-                relacion(true, false),
-                relacion(true, true, "OPERADOR"),
-            ],
-        });
-
-        await expect(obtenerPerfilProductor(productor.nombreFantasia)).resolves.toMatchObject({
-            nombreFantasia: productor.nombreFantasia,
-            publicaciones: [],
-            ubicaciones: [],
-        });
-    });
-
-    it.each([null, { ...productor, usuario: { rol: "OPERADOR" } }])("oculta perfiles inexistentes o con cuenta no disponible", async (resultado) => {
-        mocks.first.mockResolvedValue(resultado);
-        expect(await obtenerPerfilProductor(productor.nombreFantasia)).toBeNull();
-    });
-
-    it("no consulta un nombre vacío", async () => {
-        expect(await obtenerPerfilProductor(" ")).toBeNull();
-        expect(mocks.first).not.toHaveBeenCalled();
+    it("propaga errores de la consulta", async () => {
+        const error = new Error("Error de base de datos");
+        mocks.all.mockRejectedValueOnce(error);
+        await expect(obtenerProductoresDisponibles()).rejects.toBe(error);
     });
 
     it("excluye publicaciones con fechaVigencia vencida", async () => {

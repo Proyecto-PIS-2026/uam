@@ -999,13 +999,13 @@ async function main() {
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_publicaciones_productor", valorConfiguracion: "7" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "anticipacion_aviso_vencimiento_locales", valorConfiguracion: "3" });
+  await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "aviso_vencimiento_locales_habilitado", valorConfiguracion: "true" });
   await prisma.orm.public.Configuracion.create({ nombreConfiguracion: "restablecimiento_contrasena_habilitado", valorConfiguracion: "true" });
 
   const cantidadNotificaciones = await crearNotificacionesDemo(
     usuariosDb.filter((usuario) => usuario.username !== operadorAging.username && usuario.username !== operadorVigencia.username),
   );
 
-  // DATOS DE PRUEBA REALES PARA LAS TABLAS DE ESTADISTICAS
   console.log("Poblando tablas de estadísticas con alta densidad, variedad y cobertura diaria en octubre...");
 
   const usuariosPool = [

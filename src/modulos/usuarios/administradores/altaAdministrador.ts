@@ -29,6 +29,12 @@ export async function altaAdministrador(valor: unknown): Promise<ResultadoAltaAd
         const emailExistente = await tx.orm.public.Administrador.where({ email: datos.email }).first();
         if (emailExistente) return "Ya existe un administrador con ese email.";
 
+        // El correo administrativo y el username de operadores/productores comparten el campo de inicio de sesión.
+        const usuarioConEseIdentificador = await tx.orm.public.Usuario.where({ username: datos.email }).first();
+        if (usuarioConEseIdentificador && usuarioConEseIdentificador.rol !== "ADMINISTRADOR") {
+            return "El email coincide con el nombre de usuario de un operador o productor. Elegí otro email.";
+        }
+
         const usuario = await tx.orm.public.Usuario.create({
             username: datos.nombreUsuario,
             passwordHash,

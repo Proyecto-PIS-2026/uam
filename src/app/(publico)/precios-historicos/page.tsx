@@ -48,12 +48,7 @@ async function ContenidoPreciosHistoricos({ producto, consulta }: {
     let opcionesFiltros: OpcionesFiltrosHistoricos | undefined;
     let error: string | undefined;
     try {
-        const respuesta = await obtenerHistoricoPreciosConFiltros(consulta, {
-            variedad: producto.variedad || undefined,
-            pais: producto.pais || undefined,
-            calibre: producto.calibre || undefined,
-            categoria: producto.categoria || undefined,
-        });
+        const respuesta = await obtenerHistoricoPreciosConFiltros(consulta);
         historico = respuesta.historico;
         opcionesFiltros = respuesta.opcionesFiltros;
     } catch (causa) {

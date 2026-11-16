@@ -23,14 +23,6 @@
     line-height: var(--interlineado-texto);
 }
 
-.filaEdicion {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--espacio-controles);
-    width: 100%;
-    min-width: 0;
-}
-
 .opciones {
     flex: 1;
     min-width: 0;
@@ -38,6 +30,8 @@
 
 .filaSwitch {
     display: flex;
+    flex: 1;
+    min-width: 0;
     align-items: center;
     justify-content: space-between;
     gap: var(--espacio-controles);
@@ -111,10 +105,6 @@
     padding-top: 1.5rem;
 }
 
-.anticipacionDesplegada {
-    padding-top: 1.5rem;
-}
-
 .selectMui {
     width: 100%;
     min-width: 0;
@@ -141,26 +131,41 @@
     color: var(--color-foreground);
 }
 
-.botonGuardar {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-    flex-shrink: 0;
-    margin-top: 0.75rem !important;
+.filaSwitch[data-modificado="true"]:not([data-error="true"]) {
+    border-color: var(--color-warning);
+    background-color: var(--color-warning-soft);
 }
 
-.botonGuardar:not(:disabled) {
-    color: var(--color-secondary) !important;
-    background-color: var(--color-secondary-soft) !important;
+.filaSwitch[data-error="true"] {
+    border-color: var(--color-danger);
+    background-color: var(--color-danger-soft);
 }
 
-.botonGuardar:not(:disabled):hover {
-    background-color: var(--color-secondary-soft) !important;
+.selectMui[data-modificado="true"] :global(.MuiOutlinedInput-root:not(.Mui-error)) {
+    background-color: var(--color-warning-soft);
 }
 
-.filaSwitch {
-    cursor: pointer;
+.selectMui[data-modificado="true"] :global(.MuiOutlinedInput-root:not(.Mui-error) .MuiOutlinedInput-notchedOutline),
+.selectMui[data-modificado="true"] :global(.MuiOutlinedInput-root:not(.Mui-error):hover .MuiOutlinedInput-notchedOutline),
+.selectMui[data-modificado="true"] :global(.MuiOutlinedInput-root.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-warning);
 }
 
-.filaSwitch[data-guardando="true"] {
-    cursor: default;
+.selectMui[data-modificado="true"] :global(.MuiInputLabel-root:not(.Mui-error)) {
+    color: var(--color-warning);
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-error) {
+    background-color: var(--color-danger-soft);
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-danger);
+}
+
+@media (max-width: 767px) {
+    .descripcion,
+    .ayudaSwitch {
+        display: none;
+    }
 }

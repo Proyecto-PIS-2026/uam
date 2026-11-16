@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import type { UbicacionSeleccionada } from "./LeafletLocationPicker";
 
 const mocks = vi.hoisted(() => ({ esWeb: true }));
@@ -17,7 +18,7 @@ vi.mock("./LeafletLocationPicker", () => ({
     </section> : null,
 }));
 
-import AltaPublicacionProductor, { DrawerAltaPublicacionProductor } from "./AltaPublicacionProductor";
+import { DrawerAltaPublicacionProductor } from "./AltaPublicacionProductor";
 
 const catalogos = {
     especies: [{ id: 2, nombre: "Manzana" }, { id: 8, nombre: "Pera" }],
@@ -34,11 +35,21 @@ function prepararFetch(resultado: Record<string, unknown> = { mensaje: "Publicac
     return fetchMock;
 }
 
+function AltaControlada() {
+    const [abierto, setAbierto] = useState(false);
+    const { notificar } = useNotificacionToast();
+    return <>
+        <button type="button" onClick={() => setAbierto(true)}>Agregar producto</button>
+        <DrawerAltaPublicacionProductor productorId={4} abierto={abierto}
+            alCerrar={() => setAbierto(false)}
+            alCrear={(mensaje) => { setAbierto(false); notificar(mensaje, "success"); }} />
+    </>;
+}
+
 async function abrirAlta() {
-    render(<AltaPublicacionProductor productorId={4} />);
-    const agregar = screen.getByRole("button", { name: "Agregar producto" });
-    await waitFor(() => expect(agregar).toBeEnabled());
-    fireEvent.click(agregar);
+    render(<AltaControlada />);
+    fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
     return screen.getByRole("dialog", { name: "Nueva publicación de Productor" });
 }
 
@@ -84,7 +95,7 @@ function comprobarFormularioVacio() {
     expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
 }
 
-describe("AltaPublicacionProductor", () => {
+describe("DrawerAltaPublicacionProductor", () => {
     beforeEach(() => { vi.clearAllMocks(); mocks.esWeb = true; prepararFetch(); });
     afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
@@ -178,22 +189,6 @@ describe("AltaPublicacionProductor", () => {
         expect(await screen.findByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         const envio = fetchMock.mock.calls.find(([, opciones]) => opciones?.method === "POST")!;
         expect(JSON.parse(envio[1]!.body as string).ubicaciones).toEqual([]);
-    });
-
-    it("mantiene el botón visible y deshabilitado hasta recibir los catálogos", async () => {
-        let resolver!: (respuesta: Response) => void;
-        vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { resolver = resolve; })));
-        render(<AltaPublicacionProductor productorId={4} />);
-        const agregar = screen.getByRole("button", { name: "Agregar producto" });
-        expect(agregar).toBeDisabled();
-        expect(agregar).toHaveAttribute("aria-busy", "true");
-        expect(screen.queryByText(/Cargando/)).not.toBeInTheDocument();
-        fireEvent.click(agregar);
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        await act(async () => resolver(new Response(JSON.stringify(catalogos))));
-        expect(screen.getByRole("button", { name: "Agregar producto" })).toBe(agregar);
-        expect(agregar).toBeEnabled();
-        expect(agregar).toHaveAttribute("aria-busy", "false");
     });
 
     it.each([undefined, false])("conserva el mismo formulario durante la carga con disponibilidad inicial %s", async (disponibilidadInicial) => {
@@ -293,18 +288,17 @@ describe("AltaPublicacionProductor", () => {
             .mockResolvedValueOnce(new Response("respuesta inválida", { status: 200 }))
             .mockResolvedValueOnce(new Response(JSON.stringify(catalogos)));
         vi.stubGlobal("fetch", fetchMock);
-        render(<AltaPublicacionProductor productorId={4} />);
+        render(<DrawerAltaPublicacionProductor productorId={4} abierto alCrear={vi.fn()} alCerrar={vi.fn()} />);
         await screen.findByRole("alert");
-        expect(screen.getByRole("button", { name: "Agregar producto" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
         fireEvent.click(screen.getByRole("button", { name: "Reintentar carga" }));
         await waitFor(() => expect(screen.getByRole("button", { name: "Reintentar carga" })).toBeEnabled());
         expect(fetchMock).toHaveBeenCalledTimes(2);
-        expect(screen.getByRole("button", { name: "Agregar producto" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
         fireEvent.click(screen.getByRole("button", { name: "Reintentar carga" }));
-        await waitFor(() => expect(screen.getByRole("button", { name: "Agregar producto" })).toBeEnabled());
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
         expect(fetchMock).toHaveBeenCalledTimes(3);
         expect(screen.queryByRole("button", { name: "Reintentar carga" })).not.toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
         expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
     });
 
@@ -326,7 +320,7 @@ describe("AltaPublicacionProductor", () => {
 
     it.each([new Response("{}", { status: 500 }), new Error("Sin conexión")])("informa cuando no puede cargar los datos", async (respuesta) => {
         vi.stubGlobal("fetch", vi.fn(() => respuesta instanceof Error ? Promise.reject(respuesta) : Promise.resolve(respuesta)));
-        render(<AltaPublicacionProductor productorId={4} />);
+        render(<DrawerAltaPublicacionProductor productorId={4} abierto alCrear={vi.fn()} alCerrar={vi.fn()} />);
         expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron cargar las opciones de la publicación. Volvé a intentarlo.");
     });
 

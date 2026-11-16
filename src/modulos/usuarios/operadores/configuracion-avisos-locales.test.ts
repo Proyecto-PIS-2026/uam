@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TransaccionTarea } from "@/infraestructura/tareas-programadas/tipos";
 import {
     CLAVE_ANTICIPACION_AVISO_LOCALES,
+    CLAVE_HABILITACION_AVISO_LOCALES,
     obtenerConfiguracionAvisosLocales,
     validarAnticipacionAvisoLocales,
 } from "./configuracion-avisos-locales";
@@ -16,36 +17,69 @@ const tx = {
 beforeEach(() => {
     vi.resetAllMocks();
     filtrar.mockReturnValue({ select: seleccionar });
-    seleccionar.mockReturnValue({ first: consultar });
+    seleccionar.mockReturnValue({ all: consultar });
 });
 
-describe("anticipación administrativa de vencimientos de locales", () => {
+function filasConfiguracion(anticipacion: string | null, habilitacion: string | null = "true") {
+    return [
+        { nombreConfiguracion: CLAVE_HABILITACION_AVISO_LOCALES, valorConfiguracion: habilitacion },
+        { nombreConfiguracion: CLAVE_ANTICIPACION_AVISO_LOCALES, valorConfiguracion: anticipacion },
+    ];
+}
+
+describe("configuración administrativa de avisos de vencimientos de locales", () => {
     it.each(["0", "3", "30", "365"])("lee %s días de la transacción de la tarea", async (valor) => {
-        consultar.mockResolvedValue({ valorConfiguracion: valor });
+        consultar.mockResolvedValue(filasConfiguracion(valor));
 
         await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toEqual({
             habilitado: true, diasAnticipacionAviso: Number(valor),
         });
-        expect(filtrar).toHaveBeenCalledExactlyOnceWith({ nombreConfiguracion: CLAVE_ANTICIPACION_AVISO_LOCALES });
-        expect(seleccionar).toHaveBeenCalledExactlyOnceWith("valorConfiguracion");
+        expect(consultar).toHaveBeenCalledOnce();
     });
 
-    it.each([undefined, null, { valorConfiguracion: null }])("conserva tres días si aún falta el valor: %j", async (fila) => {
-        consultar.mockResolvedValue(fila);
+    it.each([{ filas: [] }, { filas: filasConfiguracion(null, null) }])("conserva los valores predeterminados si aún faltan: %j", async ({ filas }) => {
+        consultar.mockResolvedValue(filas);
 
         await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toEqual({ habilitado: true, diasAnticipacionAviso: 3 });
     });
 
-    it("relee la anticipación en cada ejecución sin conservar el valor anterior", async () => {
-        consultar.mockResolvedValueOnce({ valorConfiguracion: "3" }).mockResolvedValueOnce({ valorConfiguracion: "12" });
+    it("mantiene los avisos habilitados cuando solo existe la anticipación anterior", async () => {
+        consultar.mockResolvedValue([{ nombreConfiguracion: CLAVE_ANTICIPACION_AVISO_LOCALES, valorConfiguracion: "12" }]);
 
-        await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toMatchObject({ diasAnticipacionAviso: 3 });
-        await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toMatchObject({ diasAnticipacionAviso: 12 });
-        expect(consultar).toHaveBeenCalledTimes(2);
+        await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toEqual({ habilitado: true, diasAnticipacionAviso: 12 });
+    });
+
+    it("deshabilita los avisos conservando la anticipación configurada", async () => {
+        consultar.mockResolvedValue(filasConfiguracion("12", "false"));
+
+        await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toEqual({ habilitado: false, diasAnticipacionAviso: 12 });
+    });
+
+    it("conserva la deshabilitación aunque todavía falte la anticipación", async () => {
+        consultar.mockResolvedValue([{ nombreConfiguracion: CLAVE_HABILITACION_AVISO_LOCALES, valorConfiguracion: "false" }]);
+
+        await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toEqual({ habilitado: false, diasAnticipacionAviso: 3 });
+    });
+
+    it("relee ambas opciones al deshabilitar y volver a habilitar los avisos", async () => {
+        consultar.mockResolvedValueOnce(filasConfiguracion("3"))
+            .mockResolvedValueOnce(filasConfiguracion("12", "false"))
+            .mockResolvedValueOnce(filasConfiguracion("12", "true"));
+
+        await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toEqual({ habilitado: true, diasAnticipacionAviso: 3 });
+        await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toEqual({ habilitado: false, diasAnticipacionAviso: 12 });
+        await expect(obtenerConfiguracionAvisosLocales(tx)).resolves.toEqual({ habilitado: true, diasAnticipacionAviso: 12 });
+        expect(consultar).toHaveBeenCalledTimes(3);
+    });
+
+    it.each(["", "TRUE", "1", " false", "abc"])("rechaza una habilitación inválida: %j", async (valor) => {
+        consultar.mockResolvedValue(filasConfiguracion("3", valor));
+
+        await expect(obtenerConfiguracionAvisosLocales(tx)).rejects.toThrow("La habilitación de los avisos de locales debe ser verdadera o falsa.");
     });
 
     it.each(["", "-1", "1.5", "366", "9007199254740992", " 3", "3 ", "1e1", "abc"])("rechaza la anticipación inválida %s", async (valor) => {
-        consultar.mockResolvedValue({ valorConfiguracion: valor });
+        consultar.mockResolvedValue(filasConfiguracion(valor));
 
         expect(() => validarAnticipacionAvisoLocales(valor)).toThrow("La anticipación de los avisos de locales debe ser un entero entre 0 y 365 días.");
         await expect(obtenerConfiguracionAvisosLocales(tx)).rejects.toThrow("La anticipación de los avisos de locales debe ser un entero entre 0 y 365 días.");

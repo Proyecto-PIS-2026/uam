@@ -88,7 +88,7 @@ const opciones: OpcionesEdicionPublicacion = {
     envases: [{ id: 111, nombre: "Cajon" }],
     kilos: [{ id: 301, nombre: "20" }, { id: 302, nombre: "10-12" }],
     categorias: [{ id: 3, nombre: "Extra", especieId: null }],
-    calibres: [{ id: 4, nombre: "G - Grande" }],
+    calibres: [{ id: 4, nombre: "Grande" }],
     paises: [{ id: 44, nombre: "Uruguay" }],
 };
 

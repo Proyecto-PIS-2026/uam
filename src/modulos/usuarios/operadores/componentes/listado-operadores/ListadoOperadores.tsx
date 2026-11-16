@@ -16,7 +16,7 @@ type ListadoOperadoresProps = {
 };
 
 function normalizarTexto(texto: string) {
-    return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, ""); // Busque en internet como ignorar los tildes
+    return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, "");
 }
 
 export default function ListadoOperadores({ operadores, puedeGestionar = false }: ListadoOperadoresProps) {

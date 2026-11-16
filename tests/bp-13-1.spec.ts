@@ -142,20 +142,32 @@ async function configurar(page: Page, valores: { dias?: string; habilitado?: boo
   await page.getByRole("button", { name: "General", exact: true }).click();
   const titulo = rol === "OPERADOR" ? "Vigencia de fotos de operadores" : "Vigencia de fotos de productores";
   const tarjeta = page.getByText(titulo, { exact: true }).locator("..");
-  if (valores.habilitado !== undefined) await tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true }).setChecked(valores.habilitado);
-  if (valores.dias !== undefined) await tarjeta.getByRole("textbox", { name: "Días de vigencia", exact: true }).fill(valores.dias);
-  const [respuesta] = await Promise.all([
-    page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === "/administracion"
-      && respuesta.request().method() === "POST" && respuesta.request().headers()["next-action"] !== undefined),
-    tarjeta.getByRole("button", { name: `Guardar configuración: ${titulo}`, exact: true }).click(),
-  ]);
-  expect(respuesta.ok(), "El guardado de la vigencia debe responder correctamente").toBe(true);
-  await expect(tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true })).toBeEnabled();
-  await expect(page.getByRole("status").filter({ hasText: "La configuración de vigencia se guardó correctamente." })).toBeVisible();
+  const vencimiento = tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true });
+  const dias = tarjeta.getByRole("textbox", { name: "Días de vigencia", exact: true, includeHidden: true });
+  async function guardar() {
+    const [respuesta] = await Promise.all([
+      page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === "/administracion"
+        && respuesta.request().method() === "POST" && respuesta.request().headers()["next-action"] !== undefined),
+      page.getByRole("button", { name: "Guardar", exact: true }).click(),
+    ]);
+    expect(respuesta.ok(), "El guardado de la vigencia debe responder correctamente").toBe(true);
+    await expect(vencimiento).toBeEnabled();
+    await expect(page.getByRole("status").filter({ hasText: "La configuración se guardó correctamente." })).toBeVisible();
+  }
+  const habilitadoAnterior = await vencimiento.isChecked();
+  const habilitadoFinal = valores.habilitado ?? habilitadoAnterior;
+  const cambianDias = valores.dias !== undefined && (await dias.inputValue()) !== valores.dias;
+  if (cambianDias && valores.dias !== undefined) {
+    await vencimiento.check();
+    await dias.fill(valores.dias);
+  }
+  await vencimiento.setChecked(habilitadoFinal);
+  if (cambianDias || habilitadoFinal !== habilitadoAnterior) await guardar();
   await page.reload();
   await page.getByRole("button", { name: "General", exact: true }).click();
-  if (valores.dias !== undefined) await expect(tarjeta.getByRole("textbox", { name: "Días de vigencia", exact: true })).toHaveValue(valores.dias);
-  if (valores.habilitado === false) await expect(tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true })).not.toBeChecked();
+  if (valores.dias !== undefined) await expect(dias).toHaveValue(valores.dias);
+  if (valores.habilitado === true) await expect(vencimiento).toBeChecked();
+  if (valores.habilitado === false) await expect(vencimiento).not.toBeChecked();
 }
 
 async function verFoto(page: Page, foto: Foto, eliminada: boolean) {

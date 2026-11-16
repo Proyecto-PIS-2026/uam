@@ -118,6 +118,14 @@
     line-height: 1.25rem;
 }
 
+.calibreCompleto {
+    display: none;
+}
+
+.codigoCalibre {
+    display: inline;
+}
+
 .contenedorPrecio {
     display: flex;
     align-items: center;
@@ -221,6 +229,14 @@
 }
 
 @media (min-width: 701px) {
+    .calibreCompleto {
+        display: inline;
+    }
+
+    .codigoCalibre {
+        display: none;
+    }
+
     .tarjeta {
         min-height: 0;
         flex-direction: column;

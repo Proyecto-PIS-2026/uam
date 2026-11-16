@@ -5,7 +5,7 @@ import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import AgricultureOutlinedIcon from "@mui/icons-material/AgricultureOutlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import { useState } from "react";
-import type { ProductorListado } from "../../acciones/consultas-listado-por-operador";
+import type { ProductorListado } from "../../acciones/consultas-productores";
 import ControlesListadoProductores from "./controles-listado/ControlesListadoProductores";
 import TarjetaProductor from "./tarjetas-productores/TarjetaProductor";
 import styles from "./ListadoProductores.module.css";

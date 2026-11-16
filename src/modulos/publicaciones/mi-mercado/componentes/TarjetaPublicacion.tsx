@@ -198,7 +198,8 @@ export default function TarjetaPublicacion({
                             </span>
                         </div>
                         <div className={styles.datos}>
-                            {calibre || "-"}
+                            <span className={styles.calibreCompleto}>{calibre?.trim() || "-"}</span>
+                            <span className={styles.codigoCalibre}>{pub.calibre?.codigoCalibre?.trim() || "-"}</span>
                             {" · "}
                             Cat. {categoria || "-"}
                             {" · "}

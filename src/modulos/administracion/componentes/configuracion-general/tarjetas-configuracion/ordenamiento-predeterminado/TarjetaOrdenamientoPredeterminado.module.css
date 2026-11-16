@@ -16,13 +16,6 @@
     font-weight: 700;
 }
 
-.descripcion {
-    margin: 0;
-    color: var(--color-muted);
-    font-size: var(--tamano-texto-secundario);
-    line-height: var(--interlineado-texto);
-}
-
 .filaSwitch {
     display: flex;
     align-items: center;
@@ -30,7 +23,8 @@
     gap: var(--espacio-controles);
     box-sizing: border-box;
     min-height: 3.25rem;
-    margin-right: calc(2.5rem + var(--espacio-controles));
+    flex: 1;
+    min-width: 0;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radio-panel);
@@ -92,39 +86,6 @@
     outline-offset: 2px;
 }
 
-.thumb {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.375rem;
-    height: 1.375rem;
-    border-radius: 50%;
-    background-color: var(--color-surface);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 20%);
-}
-
-.tick.tick {
-    color: var(--color-secondary);
-    font-size: 1rem;
-}
-
-.filaEdicion {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--espacio-controles);
-    width: 100%;
-    min-width: 0;
-    margin-top: 0.75rem;
-}
-
-.selectores {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr); 
-    gap: 1.5rem;
-    flex: 1;
-    min-width: 0;
-}
-
 .selectMui {
     flex: 1;
     min-width: 0;
@@ -138,15 +99,15 @@
     border-color: var(--color-border);
 }
 
-.selectMui :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+.selectMui :global(.MuiOutlinedInput-root:not(.Mui-error):hover .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-secondary);
 }
 
-.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-secondary);
 }
 
-.selectMui :global(.MuiInputLabel-root.Mui-focused) {
+.selectMui :global(.MuiInputLabel-root.Mui-focused:not(.Mui-error)) {
     color: var(--color-secondary);
 }
 
@@ -159,36 +120,40 @@
     background-color: var(--color-secondary-soft) !important;
 }
 
-.botonGuardar {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-    flex-shrink: 0;
+.filaSwitch[data-modificado="true"]:not([data-error="true"]) {
+    border-color: var(--color-warning);
+    background-color: var(--color-warning-soft);
 }
 
-.botonGuardar:not(:disabled) {
-    color: var(--color-secondary) !important;
-    background-color: var(--color-secondary-soft) !important;
+.filaSwitch[data-error="true"] {
+    border-color: var(--color-danger);
+    background-color: var(--color-danger-soft);
 }
 
-.botonGuardar:not(:disabled):hover {
-    background-color: var(--color-secondary-soft) !important;
+.selectMui[data-modificado="true"] :global(.MuiOutlinedInput-root:not(.Mui-error)) {
+    background-color: var(--color-warning-soft);
+}
+
+.selectMui[data-modificado="true"] :global(.MuiOutlinedInput-root:not(.Mui-error) .MuiOutlinedInput-notchedOutline),
+.selectMui[data-modificado="true"] :global(.MuiOutlinedInput-root:not(.Mui-error):hover .MuiOutlinedInput-notchedOutline),
+.selectMui[data-modificado="true"] :global(.MuiOutlinedInput-root.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-warning);
+}
+
+.selectMui[data-modificado="true"] :global(.MuiInputLabel-root:not(.Mui-error)) {
+    color: var(--color-warning);
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-error) {
+    background-color: var(--color-danger-soft);
+}
+
+.selectMui :global(.MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-danger);
 }
 
 @media (max-width: 767px) {
-    .filaEdicion {
-        margin-top: 0.5rem;
+    .estadoSwitch {
+        display: none;
     }
-
-    .selectores {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 1.5rem;
-    }
-}
-
-.filaSwitch {
-    cursor: pointer;
-}
-
-.filaSwitch[data-guardando="true"] {
-    cursor: default;
 }

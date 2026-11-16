@@ -17,6 +17,7 @@ export type PublicacionPerfilProductor = {
     comentario?: string | null;
     categoria: string;
     calibre: string;
+    codigoCalibre: string;
     pais: string;
     ubicaciones: {
         id: number;
@@ -45,10 +46,9 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
         return null;
     }
 
-    // await porque la consulta a la base de datos es asincrona pero quiero esperar a la respuesta antes de seguir
     const productor  = await db.orm.public.Productor
         .where((productor) => productor.usuario.some((usuario) => usuario.habilitado.eq(true)))
-        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp") // Que columnas quiero recuperar de la tabla de productor
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp")
         .first({ nombreFantasia });
 
     if (!productor) {
@@ -56,7 +56,7 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
     }
 
     // Obtener las publicaciones
-    const consultaCompleta = db.orm.public.PublicacionProductor // Solo armo la consulta sin ejecutarla
+    const consultaCompleta = db.orm.public.PublicacionProductor
         .where({ productorId: productor.id })
         .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
         .include("ubicaciones", (ubicaciones) =>ubicaciones.select("id", "nombreUbicacion", "urlMaps", "departamento"))
@@ -79,7 +79,7 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
             return completo;
         });
 
-    const completas = await consultaCompleta.all(); // La ejecuto con await por ser asincrona
+    const completas = await consultaCompleta.all();
     const publicaciones: PublicacionPerfilProductor[] = [];
     
     for (const completa of completas) {
@@ -99,7 +99,8 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
                 comentario: publicacion.comentario,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
-                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                calibre: publicacion.calibre?.nombreCalibre ?? "",
+                codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",
                 ubicaciones: completa.ubicaciones.map((ubicacion) => ({
                     id: ubicacion.id,

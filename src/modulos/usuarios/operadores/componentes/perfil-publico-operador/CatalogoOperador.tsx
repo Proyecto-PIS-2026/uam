@@ -39,7 +39,7 @@ export default function CatalogoOperador({publicaciones, whatsAppOperador = "", 
     const publicacionesParaFiltros = useMemo<PublicacionListado[]>(() => publicaciones.map((publicacion) => ({
         ...publicacion,
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
-        codigoCalibre: publicacion.calibre,
+        codigoCalibre: publicacion.codigoCalibre,
         tipoPublicacion: "OPERADOR",
         operador: {id: idOperador, nombreFantasia: nombreOperador, whatsApp: whatsAppOperador},
     })), [publicaciones, idOperador, nombreOperador, whatsAppOperador]);

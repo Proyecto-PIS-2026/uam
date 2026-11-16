@@ -67,7 +67,7 @@ const publicacionBase = {
             envase: { nombreEnvase: "Cajón" },
             kilos: null,
     categoria: { nombreCategoria: "Extra" },
-    calibre: { codigoCalibre: "A" },
+    calibre: { codigoCalibre: "A", nombreCalibre: "Grande" },
 };
 
 describe("obtenerPerfilAdminOperador", () => {
@@ -210,6 +210,10 @@ describe("obtenerPerfilAdminOperador", () => {
         ]);
         expect(resultado?.publicaciones.map((p) => p.cantidadUnidades)).toEqual([20, 20]);
         expect(resultado?.publicaciones.map((p) => p.version)).toEqual([7, 7]);
+        expect(resultado?.publicaciones.map((p) => ({ calibre: p.calibre, codigoCalibre: p.codigoCalibre }))).toEqual([
+            { calibre: "Grande", codigoCalibre: "A" },
+            { calibre: "Grande", codigoCalibre: "A" },
+        ]);
         expect(mockDb.publicaciones.select.mock.calls.some((campos) => campos.includes("version"))).toBe(true);
     });
 

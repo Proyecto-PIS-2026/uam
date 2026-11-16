@@ -3,8 +3,9 @@ import { obtenerConfiguracionAgingFotos } from "../../modulos/publicaciones/conf
 import type { ConfiguracionAgingFotos } from "../../modulos/publicaciones/vigencia-fotos";
 import type { TipoPropietarioFoto } from "../../modulos/publicaciones/claves-aging-fotos";
 import type { TareaDiaria } from "./tipos";
-import { AVISOS_VENCIMIENTO_LOCALES_HABILITADOS, obtenerConfiguracionAvisosLocales } from "../../modulos/usuarios/operadores/configuracion-avisos-locales";
+import { obtenerConfiguracionAvisosLocales } from "../../modulos/usuarios/operadores/configuracion-avisos-locales";
 import { procesarVencimientosLocales } from "../../modulos/usuarios/operadores/procesar-vencimientos-locales";
+import { db } from "../persistencia/prisma/db";
 
 function crearTareaAgingFotos(tipo: TipoPropietarioFoto): TareaDiaria {
     return {
@@ -28,7 +29,7 @@ function crearTareaAgingFotos(tipo: TipoPropietarioFoto): TareaDiaria {
 export function obtenerTareasDiarias(): readonly TareaDiaria[] {
     return [crearTareaAgingFotos("OPERADOR"), crearTareaAgingFotos("PRODUCTOR"), {
         nombre: "operadores.avisar-vencimientos-locales",
-        habilitada: () => AVISOS_VENCIMIENTO_LOCALES_HABILITADOS,
+        habilitada: async () => (await obtenerConfiguracionAvisosLocales(db)).habilitado,
         ejecutar: async (contexto) => {
             const configuracion = await obtenerConfiguracionAvisosLocales(contexto.tx);
             if (!configuracion.habilitado) return "deshabilitada";

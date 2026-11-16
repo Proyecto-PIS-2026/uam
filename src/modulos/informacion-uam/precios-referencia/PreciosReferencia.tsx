@@ -11,6 +11,7 @@ import EncabezadoPagina from "@/compartido/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
+import Paginacion from "@/compartido/componentes/Paginacion";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
@@ -474,14 +475,13 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                     </>
                 )}
                 {filtradas.length > LIMITE && (
-                    <nav className={styles.paginacion} aria-label="Páginas de precios de referencia">
-                        <span>{desde + 1}-{Math.min(desde + LIMITE, filtradas.length)} de {filtradas.length}</span>
-                        <div>
-                            <button type="button" disabled={paginaActual === 1} onClick={() => setPagina(paginaActual - 1)}>Anterior</button>
-                            <span>Página {paginaActual} de {totalPaginas}</span>
-                            <button type="button" disabled={paginaActual === totalPaginas} onClick={() => setPagina(paginaActual + 1)}>Siguiente</button>
-                        </div>
-                    </nav>
+                    <Paginacion
+                        pagina={paginaActual}
+                        totalPaginas={totalPaginas}
+                        alCambiar={setPagina}
+                        etiqueta="Páginas de precios de referencia"
+                        resumen={`${desde + 1}-${Math.min(desde + LIMITE, filtradas.length)} de ${filtradas.length}`}
+                    />
                 )}
             </section>
             <FuentePrecios />

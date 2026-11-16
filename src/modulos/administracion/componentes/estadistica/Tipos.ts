@@ -8,14 +8,6 @@ export type TipoSeccionEstadistica =
     | "publicaciones"
     | "cantidadPublicaciones";
 
-export interface FiltrosEstadistica {
-    rango: RangoTiempo;
-    fechaDesde: string;
-    fechaHasta: string;
-    filtroEspecifico: string;
-    filtroEspecie?: string;
-}
-
 export interface EstadisticaVisitaItem {
     id: number;
     fecha: Date | string;

@@ -1,340 +1,218 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@/test-utils";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import TarjetaVigencia, { type ConfiguracionVigenciaFotos } from "./TarjetaVigencia";
-
-const mocks = vi.hoisted(() => ({
-    notificar: vi.fn(),
-}));
-
-vi.mock("@/compartido/componentes/NotificacionToast", async (importOriginal) => ({
-    ...await importOriginal<typeof import("@/compartido/componentes/NotificacionToast")>(),
-    useNotificacionToast: () => ({ notificar: mocks.notificar }),
-}));
-
-beforeEach(() => {
-    vi.clearAllMocks();
-});
 
 afterEach(cleanup);
 
-function crearConfiguracion(cambios: Partial<ConfiguracionVigenciaFotos> = {}): ConfiguracionVigenciaFotos {
-    return {
-        habilitado: true,
-        diasVigencia: "30",
-        avisosHabilitados: true,
-        diasAnticipacion: "7",
-        ...cambios,
-    };
-}
+const configuracion: ConfiguracionVigenciaFotos = {
+    habilitado: true, diasVigencia: "30", avisosHabilitados: true, diasAnticipacion: "7",
+};
 
-function preparar(configuracion = crearConfiguracion(), onGuardar = vi.fn().mockResolvedValue(undefined), maximoDiasVigencia?: number, avisosIndependientes = false) {
+function preparar(cambios: Partial<ConfiguracionVigenciaFotos> = {}, avisosIndependientes = false) {
     const props = {
         titulo: "Vigencia de las fotos",
         descripcion: "Configurá la vigencia de las fotos.",
         etiquetaVencimiento: "Vencimiento de fotos",
         ayudaVencimiento: "Aplicar un período de vigencia.",
         ayudaAvisos: "Notificar a operadores y productores.",
-        configuracion,
-        onGuardar,
-        maximoDiasVigencia,
         avisosIndependientes,
+        configuracion: { ...configuracion, ...cambios },
+        onChange: vi.fn(),
     };
-
-    return { ...render(<TarjetaVigencia {...props} />), props, onGuardar };
+    return { ...render(<TarjetaVigencia {...props} />), props };
 }
 
-function botonGuardar() {
-    return screen.getByRole("button", { name: "Guardar configuración: Vigencia de las fotos" });
-}
-
-describe("TarjetaVigencia", () => {
-    it("muestra los textos y la configuración recibida", () => {
-        preparar();
-        expect(screen.getByText("Vigencia de las fotos")).toBeInTheDocument();
-        expect(screen.getByText("Configurá la vigencia de las fotos.")).toBeInTheDocument();
-        expect(screen.getByText("Aplicar un período de vigencia.")).toBeInTheDocument();
-        expect(screen.getByText("Notificar a operadores y productores.")).toBeInTheDocument();
+describe("TarjetaVigencia controlada", () => {
+    it("muestra los textos y valores sin formularios ni guardados individuales", () => {
+        const { container } = preparar();
+        for (const texto of ["Vigencia de las fotos", "Configurá la vigencia de las fotos.", "Aplicar un período de vigencia.", "Notificar a operadores y productores."]) {
+            expect(screen.getByText(texto)).toBeInTheDocument();
+        }
         expect(screen.getByRole("switch", { name: "Vencimiento de fotos" })).toBeChecked();
         expect(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" })).toBeChecked();
         expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("30");
         expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toHaveValue("7");
-        expect(botonGuardar()).toBeDisabled();
+        expect(container.querySelector("form")).toBeNull();
+        expect(screen.queryByRole("button")).not.toBeInTheDocument();
     });
 
     it("permite omitir los textos opcionales", () => {
-        render(<TarjetaVigencia configuracion={crearConfiguracion()} onGuardar={vi.fn()} />);
+        render(<TarjetaVigencia configuracion={configuracion} onChange={vi.fn()} />);
         expect(screen.queryByText("Vigencia de las fotos")).not.toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Guardar configuración:" })).toBeDisabled();
-    });
-
-    it("habilita guardar al editar y lo deshabilita al restaurar el valor", () => {
-        preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "40" } });
-        expect(botonGuardar()).toBeEnabled();
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "30" } });
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("no guarda automáticamente al modificar los campos", () => {
-        const { onGuardar } = preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "40" } });
-        expect(onGuardar).not.toHaveBeenCalled();
-    });
-
-    it.each(["abc", "-1", "1.5", " 2", "1e2"])("ignora la entrada no permitida %j", (valor) => {
-        preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: valor } });
         expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("30");
-        expect(botonGuardar()).toBeDisabled();
     });
 
-    it("permite habilitar vigencia y desplegar sus opciones", async () => {
-        preparar(crearConfiguracion({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" }));
-        expect(screen.getByLabelText(/^Días de vigencia/)).toBeDisabled();
-        expect(screen.getByLabelText(/^Días de vigencia/)).not.toBeVisible();
-        fireEvent.click(screen.getByRole("switch", { name: "Vencimiento de fotos" }));
-        await waitFor(() => expect(screen.getByLabelText(/^Días de vigencia/)).toBeVisible());
-        expect(screen.getByLabelText(/^Días de vigencia/)).toBeEnabled();
-        expect(botonGuardar()).toBeEnabled();
-    });
-
-    it("despliega la anticipación al habilitar los avisos", async () => {
-        preparar(crearConfiguracion({ avisosHabilitados: false, diasAnticipacion: "" }));
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toBeDisabled();
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).not.toBeVisible();
-        fireEvent.click(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" }));
-        await waitFor(() => expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toBeVisible());
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toBeEnabled();
-    });
-
-    it("limpia la anticipación al apagar los avisos", async () => {
-        const { onGuardar } = preparar();
-        fireEvent.click(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" }));
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toHaveValue("");
+    it.each([
+        { nombre: "Vencimiento de fotos", campo: "habilitado" },
+        { nombre: "Habilitar avisos de próximo vencimiento", campo: "avisosHabilitados" },
+    ] as const)("comunica solo $campo sin alterar la configuración recibida", ({ nombre, campo }) => {
+        const { props } = preparar();
+        fireEvent.click(screen.getByRole("switch", { name: nombre }));
+        expect(props.onChange).toHaveBeenCalledExactlyOnceWith({ [campo]: false });
+        expect(props.configuracion).toEqual(configuracion);
         expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("30");
-        expect(onGuardar).not.toHaveBeenCalled();
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledWith({ habilitado: true, diasVigencia: "30", avisosHabilitados: false, diasAnticipacion: "" }));
-    });
-
-    it("limpia ambos campos y apaga los avisos al desactivar vigencia", async () => {
-        const { onGuardar } = preparar();
-        fireEvent.click(screen.getByRole("switch", { name: "Vencimiento de fotos" }));
-        expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("");
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toHaveValue("");
-        expect(screen.getByLabelText("Habilitar avisos de próximo vencimiento")).not.toBeChecked();
-        expect(onGuardar).not.toHaveBeenCalled();
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledWith({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" }));
-    });
-
-    it("conserva los avisos independientes y su anticipación al desactivar la vigencia", async () => {
-        const { onGuardar } = preparar(crearConfiguracion(), undefined, undefined, true);
-        fireEvent.click(screen.getByRole("switch", { name: "Vencimiento de fotos" }));
-        expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("");
-        expect(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" })).toBeChecked();
-        expect(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" })).toBeEnabled();
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toBeVisible();
         expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toHaveValue("7");
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: false, diasVigencia: "", avisosHabilitados: true, diasAnticipacion: "7" }));
     });
 
-    it("permite activar y configurar avisos independientes sin habilitar vigencia", async () => {
-        const { onGuardar } = preparar(crearConfiguracion({ habilitado: false, diasVigencia: "", avisosHabilitados: false, diasAnticipacion: "" }), undefined, undefined, true);
-        fireEvent.click(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" }));
-        const campo = screen.getByLabelText(/^Días de anticipación del aviso/);
-        await waitFor(() => expect(campo).toBeVisible());
-        expect(campo).toBeEnabled();
-        fireEvent.change(campo, { target: { value: "14" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: false, diasVigencia: "", avisosHabilitados: true, diasAnticipacion: "14" }));
+    describe.each([
+        { etiqueta: /^Días de vigencia/, campo: "diasVigencia" },
+        { etiqueta: /^Días de anticipación del aviso/, campo: "diasAnticipacion" },
+    ] as const)("$campo", ({ etiqueta, campo }) => {
+        it.each(["", "0", "040", "36501", "9007199254740992"])("envía el borrador %j sin normalizar ni validar su plazo", (valor) => {
+            const { props } = preparar();
+            const entrada = screen.getByLabelText(etiqueta);
+            expect(entrada).toBeEnabled();
+            fireEvent.change(entrada, { target: { value: valor } });
+            expect(props.onChange).toHaveBeenCalledExactlyOnceWith({ [campo]: valor });
+            expect(entrada).toHaveValue(configuracion[campo]);
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        });
+
+        it.each(["abc", "-1", "1.5", " 2", "1e2"])("ignora caracteres que no sean dígitos: %j", (valor) => {
+            const { props } = preparar();
+            fireEvent.change(screen.getByLabelText(etiqueta), { target: { value: valor } });
+            expect(props.onChange).not.toHaveBeenCalled();
+            expect(screen.getByLabelText(etiqueta)).toHaveValue(configuracion[campo]);
+        });
     });
 
-    it("exige completar anticipación con avisos independientes aunque la vigencia esté apagada", async () => {
-        const { onGuardar } = preparar(crearConfiguracion({ habilitado: false, diasVigencia: "" }), undefined, undefined, true);
-        const campo = screen.getByLabelText(/^Días de anticipación del aviso/);
-        fireEvent.change(campo, { target: { value: "" } });
-        fireEvent.click(botonGuardar());
-        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
-        expect(campo).toHaveAttribute("aria-invalid", "true");
-        expect(onGuardar).not.toHaveBeenCalled();
+    it("oculta y recupera los controles de fotos sin perder los plazos ni los avisos del borrador", async () => {
+        const { props, rerender } = preparar();
+        const borrador = { ...configuracion, diasVigencia: "40", diasAnticipacion: "9" };
+        const vigencia = screen.getByLabelText(/^Días de vigencia/);
+        const anticipacion = screen.getByLabelText(/^Días de anticipación del aviso/);
+        const avisos = screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" });
+        rerender(<TarjetaVigencia {...props} configuracion={{ ...borrador, habilitado: false }} />);
+        expect(screen.getByRole("switch", { name: "Vencimiento de fotos" })).not.toBeChecked();
+        expect(vigencia.closest(".MuiCollapse-root")).toHaveStyle({ transitionDuration: "300ms" });
+        await waitFor(() => {
+            expect(vigencia).not.toBeVisible();
+            expect(avisos).not.toBeVisible();
+            expect(anticipacion).not.toBeVisible();
+        });
+        for (const entrada of [vigencia, avisos, anticipacion]) expect(entrada).toBeDisabled();
+        expect(vigencia).not.toBeRequired();
+        expect(anticipacion).not.toBeRequired();
+        expect(vigencia).toHaveValue("40");
+        expect(anticipacion).toHaveValue("9");
+        expect(avisos).toBeChecked();
+        rerender(<TarjetaVigencia {...props} configuracion={borrador} />);
+        await waitFor(() => {
+            expect(vigencia).toBeVisible();
+            expect(avisos).toBeVisible();
+            expect(anticipacion).toBeVisible();
+        });
+        for (const entrada of [vigencia, avisos, anticipacion]) expect(entrada).toBeEnabled();
+        expect(vigencia).toBeRequired();
+        expect(anticipacion).toBeRequired();
+        expect(vigencia).toHaveValue("40");
+        expect(anticipacion).toHaveValue("9");
+        rerender(<TarjetaVigencia {...props} />);
+        expect(vigencia).toHaveValue("30");
+        expect(anticipacion).toHaveValue("7");
+        expect(screen.getByRole("switch", { name: "Vencimiento de fotos" })).toBeChecked();
+        expect(props.onChange).not.toHaveBeenCalled();
     });
 
-    it("rechaza anticipación cero en avisos independientes sin vigencia administrativa", async () => {
-        const { onGuardar } = preparar(crearConfiguracion({ habilitado: false, diasVigencia: "" }), undefined, undefined, true);
-        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: "0" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith("La anticipación debe ser un número entero mayor que cero.", "error"));
-        expect(onGuardar).not.toHaveBeenCalled();
+    it("permite los avisos independientes con la vigencia apagada y conserva su anticipación al cerrarlos", async () => {
+        const { props, rerender } = preparar({ habilitado: false, diasAnticipacion: "09" }, true);
+        const vigencia = screen.getByLabelText(/^Días de vigencia/);
+        const anticipacion = screen.getByLabelText(/^Días de anticipación del aviso/);
+        const avisos = screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" });
+        expect(vigencia).not.toBeVisible();
+        expect(vigencia).toBeDisabled();
+        expect(vigencia).not.toBeRequired();
+        expect(avisos).toBeVisible();
+        expect(avisos).toBeEnabled();
+        expect(anticipacion).toBeVisible();
+        expect(anticipacion).toBeRequired();
+        fireEvent.click(avisos);
+        expect(props.onChange).toHaveBeenCalledExactlyOnceWith({ avisosHabilitados: false });
+        rerender(<TarjetaVigencia {...props} configuracion={{ ...props.configuracion, avisosHabilitados: false }} />);
+        expect(anticipacion.closest(".MuiCollapse-root")).toHaveStyle({ transitionDuration: "300ms" });
+        await waitFor(() => expect(anticipacion).not.toBeVisible());
+        expect(anticipacion).toBeDisabled();
+        expect(anticipacion).not.toBeRequired();
+        expect(anticipacion).toHaveValue("09");
+        expect(avisos).toBeVisible();
+        expect(avisos).toBeEnabled();
+        rerender(<TarjetaVigencia {...props} />);
+        await waitFor(() => expect(anticipacion).toBeVisible());
+        expect(anticipacion).toBeEnabled();
+        expect(anticipacion).toHaveValue("09");
+        expect(props.onChange).toHaveBeenCalledTimes(1);
     });
 
-    it("valida la anticipación independiente contra la vigencia cuando ambas están activas", async () => {
-        const { onGuardar } = preparar(crearConfiguracion(), undefined, undefined, true);
-        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: "30" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La anticipación debe ser menor que la vigencia.", "error"));
-        expect(onGuardar).not.toHaveBeenCalled();
+    it("marca únicamente los campos pendientes indicados por el panel", () => {
+        const { props, rerender } = preparar();
+        rerender(<TarjetaVigencia {...props} modificados={{ habilitado: true, diasAnticipacion: true }} />);
+        expect(screen.getByRole("switch", { name: "Vencimiento de fotos" }).closest("[data-modificado]")).toHaveAttribute("data-modificado", "true");
+        expect(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" }).closest("[data-modificado]")).toHaveAttribute("data-modificado", "false");
+        expect(screen.getByLabelText(/^Días de vigencia/).closest("[data-modificado]")).toHaveAttribute("data-modificado", "false");
+        expect(screen.getByLabelText(/^Días de anticipación del aviso/).closest("[data-modificado]")).toHaveAttribute("data-modificado", "true");
+        rerender(<TarjetaVigencia {...props} />);
+        expect(screen.getByRole("switch", { name: "Vencimiento de fotos" }).closest("[data-modificado]")).toHaveAttribute("data-modificado", "false");
     });
 
-    it("limita la anticipación independiente aunque la vigencia administrativa esté apagada", async () => {
-        const { rerender, props, onGuardar } = preparar(crearConfiguracion({ habilitado: false, diasVigencia: "" }), undefined, undefined, true);
-        rerender(<TarjetaVigencia {...props} maximoDiasAnticipacion={36500} />);
-        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: "36501" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith("La anticipación no puede superar los 36500 días.", "error"));
-        expect(onGuardar).not.toHaveBeenCalled();
-        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: "36500" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: false, diasVigencia: "", avisosHabilitados: true, diasAnticipacion: "36500" }));
-    });
-
-    it.each(["Días de vigencia", "Días de anticipación del aviso"])("marca %s cuando falta sin guardar", async (etiqueta) => {
-        const { onGuardar } = preparar();
-        const campo = screen.getByLabelText(new RegExp(`^${etiqueta}`));
-        fireEvent.change(campo, { target: { value: "" } });
-        fireEvent.click(botonGuardar());
-        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
-        expect(campo).toHaveAttribute("aria-invalid", "true");
-        expect(onGuardar).not.toHaveBeenCalled();
-        fireEvent.change(campo, { target: { value: etiqueta === "Días de vigencia" ? "40" : "5" } });
-        expect(campo).not.toHaveAttribute("aria-invalid", "true");
-    });
-
-    it.each([
-        { valor: "0", mensaje: "La vigencia debe ser un número entero mayor que cero." },
-        { valor: "9007199254740992", mensaje: "La vigencia ingresada es demasiado grande." },
-    ])("rechaza la vigencia $valor con su mensaje correspondiente", async ({ valor, mensaje }) => {
-        const { onGuardar } = preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: valor } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith(mensaje, "error"));
+    it("mantiene la marca de error en campos pendientes hasta que el panel la retire", () => {
+        const { props, rerender } = preparar();
+        const marcas = { habilitado: true, diasVigencia: true, avisosHabilitados: true, diasAnticipacion: true };
+        rerender(<TarjetaVigencia {...props} modificados={marcas} errores={marcas} />);
+        for (const entrada of [...screen.getAllByRole("switch"), ...screen.getAllByRole("textbox")]) {
+            expect(entrada).toHaveAttribute("aria-invalid", "true");
+            expect(entrada.closest("[data-modificado]")).toHaveAttribute("data-modificado", "true");
+        }
+        expect(screen.getByRole("switch", { name: "Vencimiento de fotos" }).closest("[data-error]")).toHaveAttribute("data-error", "true");
+        expect(screen.getByLabelText(/^Días de vigencia/).closest(".MuiOutlinedInput-root")).toHaveClass("Mui-error");
+        rerender(<TarjetaVigencia {...props} modificados={marcas} />);
         expect(screen.getByLabelText(/^Días de vigencia/)).not.toHaveAttribute("aria-invalid", "true");
-        expect(onGuardar).not.toHaveBeenCalled();
     });
 
-    it.each([
-        { valor: "0", mensaje: "La anticipación debe ser un número entero mayor que cero." },
-        { valor: "9007199254740992", mensaje: "La anticipación ingresada es demasiado grande." },
-    ])("rechaza la anticipación $valor con su mensaje correspondiente", async ({ valor, mensaje }) => {
-        const { onGuardar } = preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: valor } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledExactlyOnceWith(mensaje, "error"));
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).not.toHaveAttribute("aria-invalid", "true");
-        expect(onGuardar).not.toHaveBeenCalled();
+    it("bloquea todos los controles durante el guardado global", () => {
+        const { props, rerender } = preparar();
+        rerender(<TarjetaVigencia {...props} guardando />);
+        for (const entrada of [...screen.getAllByRole("switch"), ...screen.getAllByRole("textbox")]) expect(entrada).toBeDisabled();
+        rerender(<TarjetaVigencia {...props} />);
+        for (const entrada of [...screen.getAllByRole("switch"), ...screen.getAllByRole("textbox")]) expect(entrada).toBeEnabled();
     });
 
-    it.each(["30", "31"])("rechaza anticipación %s con vigencia de 30 días", async (valor) => {
-        const { onGuardar } = preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: valor } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La anticipación debe ser menor que la vigencia.", "error"));
-        expect(onGuardar).not.toHaveBeenCalled();
-    });
-
-    it("permite un día de vigencia con avisos apagados", async () => {
-        const { onGuardar } = preparar(crearConfiguracion({ avisosHabilitados: false, diasAnticipacion: "" }));
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "1" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledWith({ habilitado: true, diasVigencia: "1", avisosHabilitados: false, diasAnticipacion: "" }));
-    });
-
-    it("rechaza una vigencia mayor al máximo configurado sin enviar cambios", async () => {
-        const { onGuardar } = preparar(crearConfiguracion(), undefined, 36500);
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "36501" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La vigencia no puede superar los 36500 días.", "error"));
-        expect(onGuardar).not.toHaveBeenCalled();
-    });
-
-    it("permite guardar el máximo de días configurado", async () => {
-        const { onGuardar } = preparar(crearConfiguracion(), undefined, 36500);
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "36500" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledWith(crearConfiguracion({ diasVigencia: "36500" })));
-    });
-
-    it("mantiene la validación de otras vigencias cuando no se configura un máximo", async () => {
-        const { onGuardar } = preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "36501" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledWith(crearConfiguracion({ diasVigencia: "36501" })));
-    });
-
-    it("normaliza los días y muestra confirmación al guardar", async () => {
-        const { onGuardar } = preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "040" } });
-        fireEvent.change(screen.getByLabelText(/^Días de anticipación del aviso/), { target: { value: "005" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: true, diasVigencia: "40", avisosHabilitados: true, diasAnticipacion: "5" }));
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración de vigencia se guardó correctamente.", "success"));
-        expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("40");
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toHaveValue("5");
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("bloquea los controles mientras guarda y evita envíos repetidos", async () => {
-        let finalizar!: () => void;
-        const onGuardar = vi.fn(() => new Promise<void>((resolve) => { finalizar = resolve }));
-        preparar(crearConfiguracion(), onGuardar);
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "40" } });
-        fireEvent.click(botonGuardar());
-        expect(botonGuardar()).toBeDisabled();
-        expect(screen.getByLabelText(/^Días de vigencia/)).toBeDisabled();
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toBeDisabled();
-        expect(screen.getByRole("switch", { name: "Vencimiento de fotos" })).toBeDisabled();
-        expect(screen.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento" })).toBeDisabled();
-        fireEvent.click(botonGuardar());
-        expect(onGuardar).toHaveBeenCalledOnce();
-        await act(async () => { finalizar(); });
-        expect(screen.getByLabelText(/^Días de vigencia/)).toBeEnabled();
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("conserva los cambios y permite reintentar si falla el guardado", async () => {
-        const onGuardar = vi.fn().mockRejectedValueOnce(new Error("Error de conexión")).mockResolvedValueOnce(undefined);
-        preparar(crearConfiguracion(), onGuardar);
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "40" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("Error de conexión", "error"));
-        expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("40");
-        await waitFor(() => expect(botonGuardar()).toBeEnabled());
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración de vigencia se guardó correctamente.", "success"));
-        expect(onGuardar).toHaveBeenCalledTimes(2);
-    });
-
-    it("muestra un mensaje genérico si el rechazo no es un Error", async () => {
-        preparar(crearConfiguracion(), vi.fn().mockRejectedValue("fallo"));
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "40" } });
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("No se pudo guardar la configuración.", "error"));
-        await waitFor(() => expect(botonGuardar()).toBeEnabled());
-    });
-
-    it("sincroniza los valores cuando cambia la configuración del servidor", () => {
-        const { rerender, props } = preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "40" } });
-        rerender(<TarjetaVigencia {...props} configuracion={crearConfiguracion({ diasVigencia: "60", diasAnticipacion: "10" })} />);
-        expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("60");
-        expect(screen.getByLabelText(/^Días de anticipación del aviso/)).toHaveValue("10");
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("no descarta la edición si recibe otro objeto con los mismos valores", () => {
-        const { rerender, props } = preparar();
-        fireEvent.change(screen.getByLabelText(/^Días de vigencia/), { target: { value: "40" } });
-        rerender(<TarjetaVigencia {...props} configuracion={crearConfiguracion()} />);
-        expect(screen.getByLabelText(/^Días de vigencia/)).toHaveValue("40");
-        expect(botonGuardar()).toBeEnabled();
-    });
-
-    it("permite reutilizar la tarjeta para publicaciones de productores", () => {
-        render(<TarjetaVigencia titulo="Vigencia de publicaciones de productores" descripcion="Configurá las publicaciones." etiquetaVencimiento="Vencimiento de publicaciones" ayudaVencimiento="Aplicar vigencia a publicaciones." ayudaAvisos="Notificar a productores." configuracion={crearConfiguracion()} onGuardar={vi.fn()} />);
-        expect(screen.getByText("Vigencia de publicaciones de productores")).toBeInTheDocument();
-        expect(screen.getByText("Configurá las publicaciones.")).toBeInTheDocument();
-        expect(screen.getByText("Notificar a productores.")).toBeInTheDocument();
-        expect(screen.getByRole("switch", { name: "Vencimiento de publicaciones" })).toBeChecked();
+    it("revela los plazos con errores aunque sus switches estén apagados y permite corregirlos hasta cancelar", async () => {
+        const { props, rerender } = preparar({ habilitado: false, avisosHabilitados: false });
+        const vigencia = screen.getByLabelText(/^Días de vigencia/);
+        const anticipacion = screen.getByLabelText(/^Días de anticipación del aviso/);
+        const modificados = { diasVigencia: true, diasAnticipacion: true };
+        expect(vigencia).not.toBeVisible();
+        expect(anticipacion).not.toBeVisible();
+        rerender(<TarjetaVigencia {...props} configuracion={{ ...props.configuracion, diasVigencia: "0", diasAnticipacion: "366" }} modificados={modificados} errores={modificados} />);
+        await waitFor(() => {
+            for (const entrada of [vigencia, anticipacion]) {
+                expect(entrada).toBeVisible();
+                expect(entrada.closest(".MuiCollapse-root")).toHaveClass("MuiCollapse-entered");
+            }
+        });
+        expect(vigencia).toBeEnabled();
+        expect(anticipacion).toBeEnabled();
+        fireEvent.change(vigencia, { target: { value: "40" } });
+        fireEvent.change(anticipacion, { target: { value: "9" } });
+        expect(props.onChange.mock.calls).toEqual([[{ diasVigencia: "40" }], [{ diasAnticipacion: "9" }]]);
+        rerender(<TarjetaVigencia {...props} configuracion={{ ...props.configuracion, diasVigencia: "40", diasAnticipacion: "9" }} modificados={modificados} />);
+        for (const entrada of [vigencia, anticipacion]) {
+            expect(entrada).toBeVisible();
+            expect(entrada).toBeEnabled();
+            expect(entrada.closest(".MuiCollapse-root")).toHaveClass("MuiCollapse-entered");
+            expect(entrada).not.toHaveAttribute("aria-invalid", "true");
+        }
+        expect(screen.getByRole("switch", { name: "Vencimiento de fotos" })).not.toBeChecked();
+        expect(screen.getByLabelText("Habilitar avisos de próximo vencimiento")).not.toBeChecked();
+        rerender(<TarjetaVigencia {...props} />);
+        await waitFor(() => {
+            expect(vigencia).not.toBeVisible();
+            expect(anticipacion).not.toBeVisible();
+        });
+        expect(vigencia).toBeDisabled();
+        expect(anticipacion).toBeDisabled();
+        expect(vigencia).toHaveValue("30");
+        expect(anticipacion).toHaveValue("7");
+        expect(props.onChange).toHaveBeenCalledTimes(2);
     });
 });

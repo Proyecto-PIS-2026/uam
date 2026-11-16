@@ -250,7 +250,7 @@ describe("MiMercadoProductor", () => {
             envases: [{ id: 1, nombre: "Cajon" }],
             kilos: [],
             categorias: [{ id: 1, nombre: "Primera", especieId: null }],
-            calibres: [{ id: 1, nombre: "G - Grande" }],
+            calibres: [{ id: 1, nombre: "Grande" }],
             paises: [{ id: 1, nombre: "Uruguay" }, { id: 2, nombre: "Argentina" }],
         };
         const fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => opciones })
@@ -493,7 +493,7 @@ describe("MiMercadoProductor", () => {
                 envases: [{ id: 1, nombre: "Cajon" }],
             kilos: [],
                 categorias: [{ id: 1, nombre: "Primera", especieId: null }],
-                calibres: [{ id: 1, nombre: "G - Grande" }],
+                calibres: [{ id: 1, nombre: "Grande" }],
                 paises: [{ id: 1, nombre: "Uruguay" }],
             };
             const fetchMock = vi.fn()

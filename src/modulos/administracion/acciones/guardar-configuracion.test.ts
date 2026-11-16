@@ -6,12 +6,14 @@ const mocks = vi.hoisted(() => ({
     transaction: vi.fn(),
     where: vi.fn(),
     select: vi.fn(),
+    all: vi.fn(),
     update: vi.fn(),
     rawSql: vi.fn(),
     execute: vi.fn(),
 }));
 
 type PlanSql = { texto: string; valores: unknown[] };
+let configuracionesGuardadas: Map<string, string>;
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({ controlarSesionEnAccion: (control: () => Promise<unknown>) => control() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
@@ -66,10 +68,21 @@ function ordenamiento(cambios: Record<string, string> = {}): Record<string, stri
 beforeEach(() => {
     vi.resetAllMocks();
 
-    const consulta = { where: mocks.where, select: mocks.select, update: mocks.update };
+    configuracionesGuardadas = new Map(gruposVigencia.flatMap((grupo) => [
+        [grupo.habilitado, "false"],
+        [grupo.vigencia, "30"],
+        [grupo.avisos, "false"],
+        [grupo.anticipacion, "7"],
+    ] as [string, string][]));
+    const consulta = { where: mocks.where, select: mocks.select, all: mocks.all, update: mocks.update };
     mocks.where.mockReturnValue(consulta);
     mocks.select.mockReturnValue(consulta);
-    mocks.update.mockResolvedValue({ nombreConfiguracion: "configuracion" });
+    mocks.all.mockImplementation(async () => Array.from(configuracionesGuardadas, ([nombreConfiguracion, valorConfiguracion]) => ({ nombreConfiguracion, valorConfiguracion })));
+    mocks.update.mockImplementation(async ({ valorConfiguracion }: { valorConfiguracion: string }) => {
+        const { nombreConfiguracion } = mocks.where.mock.lastCall![0] as { nombreConfiguracion: string };
+        configuracionesGuardadas.set(nombreConfiguracion, valorConfiguracion);
+        return { nombreConfiguracion };
+    });
     mocks.exigirAdministrador.mockResolvedValue(undefined);
 
     mocks.rawSql.mockImplementation((partes: TemplateStringsArray, ...valores: unknown[]) => {
@@ -206,11 +219,13 @@ describe("ordenamiento", () => {
         });
     });
 
-    it.each(["ordenamiento_habilitado", "orden_landing_page_default", "orden_mercado_virtual_default", "orden_mercado_produccion_default"])("rechaza el grupo si falta %s", async (clave) => {
-        const cambios = ordenamiento();
-        delete cambios[clave];
-        await expect(guardarConfiguraciones(cambios)).rejects.toThrow("Las cuatro opciones de ordenamiento deben guardarse juntas.");
-        expect(mocks.transaction).not.toHaveBeenCalled();
+    it.each(["ordenamiento_habilitado", "orden_landing_page_default", "orden_mercado_virtual_default", "orden_mercado_produccion_default"])("guarda únicamente la opción %s", async (clave) => {
+        const valor = ordenamiento()[clave];
+        await guardarConfiguraciones({ [clave]: valor });
+        expect(mocks.where).toHaveBeenCalledExactlyOnceWith({ nombreConfiguracion: clave });
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: valor });
+        expect(mocks.all).not.toHaveBeenCalled();
+        expect(mocks.execute).not.toHaveBeenCalled();
     });
 
     it.each(["nombre_asc", "nombre_desc", "mas_vendidas"])("acepta %s para Inicio", async (orden) => {
@@ -288,18 +303,80 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
         await guardarConfiguraciones(configuracionVigencia());
         expect(mocks.transaction).toHaveBeenCalledOnce();
         expect(mocks.update).toHaveBeenCalledTimes(4);
-        expect(mocks.where.mock.calls.map(([filtro]) => filtro.nombreConfiguracion)).toEqual([
+        expect(mocks.where.mock.calls.filter(([filtro]) => typeof filtro !== "function").map(([filtro]) => filtro.nombreConfiguracion)).toEqual([
             grupo.habilitado, grupo.vigencia, grupo.avisos, grupo.anticipacion,
         ]);
-        if (grupo.nombre.startsWith("fotos")) expect(mocks.execute).not.toHaveBeenCalled();
+        if (grupo.nombre.startsWith("fotos")) expect(mocks.execute).toHaveBeenCalledOnce();
     });
 
-    it("rechaza un grupo incompleto", async () => {
-        await expect(guardarConfiguraciones({ [grupo.habilitado]: "true" })).rejects.toThrow("Las cuatro opciones de vigencia deben guardarse juntas.");
+    it("activa usando los días guardados sin escribir las otras opciones", async () => {
+        await guardarConfiguraciones({ [grupo.habilitado]: "true" });
+
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: "true" });
+        expect(configuracionesGuardadas.get(grupo.vigencia)).toBe("30");
+        expect(configuracionesGuardadas.get(grupo.avisos)).toBe("false");
+        expect(configuracionesGuardadas.get(grupo.anticipacion)).toBe("7");
+        expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.all.mock.invocationCallOrder[0]);
+        expect(mocks.all.mock.invocationCallOrder[0]).toBeLessThan(mocks.update.mock.invocationCallOrder[0]);
+    });
+
+    it("informa que deben guardarse los días antes de activar una vigencia vacía", async () => {
+        configuracionesGuardadas.set(grupo.vigencia, "");
+        await expect(guardarConfiguraciones({ [grupo.habilitado]: "true" })).rejects.toThrow("Ingresá y guardá los días de vigencia antes de activar el vencimiento.");
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it("informa que debe guardarse la anticipación antes de activar avisos sin plazo", async () => {
+        configuracionesGuardadas.set(grupo.habilitado, "true");
+        configuracionesGuardadas.set(grupo.anticipacion, "");
+        await expect(guardarConfiguraciones({ [grupo.avisos]: "true" })).rejects.toThrow("Ingresá y guardá los días de anticipación antes de activar los avisos.");
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it("permite preconfigurar los días con los switches apagados", async () => {
+        await guardarConfiguraciones({ [grupo.vigencia]: "45" });
+        await guardarConfiguraciones({ [grupo.anticipacion]: "9" });
+
+        expect(mocks.update.mock.calls.map(([cambio]) => cambio.valorConfiguracion)).toEqual(["45", "9"]);
+        expect(configuracionesGuardadas.get(grupo.habilitado)).toBe("false");
+        expect(configuracionesGuardadas.get(grupo.avisos)).toBe("false");
+        expect(mocks.execute.mock.calls.some(([plan]) => (plan as PlanSql).texto.startsWith("UPDATE publicacion"))).toBe(false);
+    });
+
+    it.each([grupo.vigencia, grupo.anticipacion])("valida días no vacíos en %s aunque los switches estén apagados", async (clave) => {
+        await expect(guardarConfiguraciones({ [clave]: "-1" })).rejects.toThrow("debe ser un número entero mayor que cero");
         expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
     });
 
-    it.each(["", "0", "-1", "1.5", "abc"])("rechaza vigencia activa con días %j", async (valor) => {
+    it("al apagar la vigencia conserva los días y la configuración de los avisos", async () => {
+        configuracionesGuardadas.set(grupo.habilitado, "true");
+        configuracionesGuardadas.set(grupo.avisos, "true");
+        await guardarConfiguraciones({ [grupo.habilitado]: "false" });
+
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: "false" });
+        expect(configuracionesGuardadas.get(grupo.vigencia)).toBe("30");
+        expect(configuracionesGuardadas.get(grupo.avisos)).toBe("true");
+        expect(configuracionesGuardadas.get(grupo.anticipacion)).toBe("7");
+    });
+
+    it("valida la anticipación parcial contra la última vigencia guardada", async () => {
+        configuracionesGuardadas.set(grupo.habilitado, "true");
+        configuracionesGuardadas.set(grupo.avisos, "true");
+        await guardarConfiguraciones({ [grupo.vigencia]: "10" });
+
+        await expect(guardarConfiguraciones({ [grupo.anticipacion]: "10" })).rejects.toThrow("La anticipación debe ser menor que la vigencia.");
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: "10" });
+        expect(configuracionesGuardadas.get(grupo.anticipacion)).toBe("7");
+    });
+
+    it("no escribe si faltan opciones del grupo en la base de datos", async () => {
+        configuracionesGuardadas.delete(grupo.anticipacion);
+        await expect(guardarConfiguraciones({ [grupo.vigencia]: "45" })).rejects.toThrow(`No existe la configuración ${grupo.anticipacion}.`);
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it.each(["0", "-1", "1.5", "abc"])("rechaza vigencia activa con días %j", async (valor) => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: valor }))).rejects.toThrow("La vigencia debe ser un número entero mayor que cero.");
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
@@ -310,7 +387,17 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
         expect(mocks.update).not.toHaveBeenCalled();
     });
 
-    it.each(["", "0", "-1", "1.5", "abc"])("rechaza avisos activos con anticipación %j", async (valor) => {
+    it("rechaza vaciar los días de una vigencia activa", async () => {
+        await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.vigencia]: "" }))).rejects.toThrow("Ingresá y guardá los días de vigencia antes de activar el vencimiento.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("rechaza vaciar la anticipación de avisos activos", async () => {
+        await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.anticipacion]: "" }))).rejects.toThrow("Ingresá y guardá los días de anticipación antes de activar los avisos.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it.each(["0", "-1", "1.5", "abc"])("rechaza avisos activos con anticipación %j", async (valor) => {
         await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.anticipacion]: valor }))).rejects.toThrow("La anticipación debe ser un número entero mayor que cero.");
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
@@ -350,7 +437,7 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
         });
 
         it.each(["", "0", "-1", "1.5", "abc", "9007199254740992"])("valida anticipación %j aunque la vigencia administrativa esté apagada", async (valor) => {
-            await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.habilitado]: "false", [grupo.vigencia]: "", [grupo.anticipacion]: valor }))).rejects.toThrow(/La anticipación/);
+            await expect(guardarConfiguraciones(configuracionVigencia({ [grupo.habilitado]: "false", [grupo.vigencia]: "", [grupo.anticipacion]: valor }))).rejects.toThrow(/anticipación/);
             expect(mocks.transaction).not.toHaveBeenCalled();
         });
 
@@ -379,7 +466,56 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
     });
 });
 
-describe("anticipación de avisos de vencimiento de locales", () => {
+describe("configuración de avisos de vencimiento de locales", () => {
+    it.each(["true", "false"])("cambia la habilitación a %s sin modificar la anticipación", async (valor) => {
+        await guardarConfiguraciones({ aviso_vencimiento_locales_habilitado: valor });
+
+        expect(mocks.exigirAdministrador).toHaveBeenCalledOnce();
+        expect(mocks.where).toHaveBeenCalledExactlyOnceWith({ nombreConfiguracion: "aviso_vencimiento_locales_habilitado" });
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: valor });
+        expect(mocks.execute).not.toHaveBeenCalled();
+    });
+
+    it("guarda la desactivación y la anticipación juntas sin modificar publicaciones", async () => {
+        await guardarConfiguraciones({
+            aviso_vencimiento_locales_habilitado: "false",
+            anticipacion_aviso_vencimiento_locales: "14",
+        });
+
+        expect(mocks.transaction).toHaveBeenCalledOnce();
+        expect(mocks.where).toHaveBeenNthCalledWith(1, { nombreConfiguracion: "aviso_vencimiento_locales_habilitado" });
+        expect(mocks.update).toHaveBeenNthCalledWith(1, { valorConfiguracion: "false" });
+        expect(mocks.where).toHaveBeenNthCalledWith(2, { nombreConfiguracion: "anticipacion_aviso_vencimiento_locales" });
+        expect(mocks.update).toHaveBeenNthCalledWith(2, { valorConfiguracion: "14" });
+        expect(mocks.update).toHaveBeenCalledTimes(2);
+        expect(mocks.execute).not.toHaveBeenCalled();
+    });
+
+    it.each(["", "TRUE", "1", "false ", "si"])("rechaza la habilitación inválida %j sin guardar ninguna opción", async (valor) => {
+        await expect(guardarConfiguraciones({
+            aviso_vencimiento_locales_habilitado: valor,
+            anticipacion_aviso_vencimiento_locales: "14",
+        })).rejects.toThrow("El estado de la configuración no es válido.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it("impide desactivar avisos sin autorización administrativa", async () => {
+        mocks.exigirAdministrador.mockRejectedValue(new Error("No autorizado"));
+        await expect(guardarConfiguraciones({ aviso_vencimiento_locales_habilitado: "false" })).rejects.toThrow("No autorizado");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it("no guarda un plazo inválido aunque se desactiven los avisos", async () => {
+        await expect(guardarConfiguraciones({
+            aviso_vencimiento_locales_habilitado: "false",
+            anticipacion_aviso_vencimiento_locales: "",
+        })).rejects.toThrow("La anticipación de los avisos de locales debe ser un entero entre 0 y 365 días.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
     it.each(["0", "3", "15", "365"])("guarda %s días sin modificar publicaciones", async (valor) => {
         await guardarConfiguraciones({ anticipacion_aviso_vencimiento_locales: valor });
 
@@ -421,7 +557,8 @@ describe("independencia de la vigencia de fotos por propietario", () => {
         expect(mocks.update.mock.calls.map(([cambio]) => cambio.valorConfiguracion)).toEqual([
             "true", "30", "true", "7", "true", "10", "true", "2",
         ]);
-        expect(mocks.execute).not.toHaveBeenCalled();
+        expect(mocks.execute).toHaveBeenCalledOnce();
+        expect((mocks.execute.mock.calls[0][0] as PlanSql).texto).toContain("pg_advisory_xact_lock(");
     });
 
     it("valida la anticipación del productor contra su propia vigencia", async () => {
@@ -430,10 +567,12 @@ describe("independencia de la vigencia de fotos por propietario", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
-    it("un grupo completo no permite guardar el otro de forma parcial", async () => {
-        await expect(guardarConfiguraciones({ ...fotosOperadores, vigencia_fotos_productor: "10" }))
-            .rejects.toThrow("Las cuatro opciones de vigencia deben guardarse juntas.");
-        expect(mocks.transaction).not.toHaveBeenCalled();
+    it("permite combinar un grupo completo con un cambio individual del otro rol", async () => {
+        await guardarConfiguraciones({ ...fotosOperadores, vigencia_fotos_productor: "10" });
+        expect(mocks.update).toHaveBeenCalledTimes(5);
+        expect(configuracionesGuardadas.get("aging_fotos_productor_habilitado")).toBe("false");
+        expect(configuracionesGuardadas.get("aviso_vencimiento_fotos_productor_habilitado")).toBe("false");
+        expect(configuracionesGuardadas.get("anticipacion_aviso_fotos_productor")).toBe("7");
     });
 });
 
@@ -504,6 +643,50 @@ describe.each([
         expect(planesEjecutados().some((plan) => /^UPDATE /i.test(plan.texto))).toBe(false);
     });
 
+    it("aplica los días guardados al activar únicamente el switch", async () => {
+        configuracionesGuardadas.set(`vigencia_publicaciones_${sufijo}`, "3");
+
+        await guardarConfiguraciones({ [`vigencia_publicaciones_${sufijo}_habilitada`]: "true" });
+
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: "true" });
+        expect(planesEjecutados()).toHaveLength(2);
+        expect(planesEjecutados()[1].valores.map(String)).toEqual(["2026-11-10T02:59:59Z", tipo, "2026-11-10T02:59:59Z"]);
+    });
+
+    it("aplica el nuevo límite al cambiar únicamente los días de una vigencia activa", async () => {
+        configuracionesGuardadas.set(`vigencia_publicaciones_${sufijo}_habilitada`, "true");
+
+        await guardarConfiguraciones({ [`vigencia_publicaciones_${sufijo}`]: "3" });
+
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: "3" });
+        expect(planesEjecutados()).toHaveLength(2);
+        expect(planesEjecutados()[1].valores.map(String)).toEqual(["2026-11-10T02:59:59Z", tipo, "2026-11-10T02:59:59Z"]);
+    });
+
+    it.each([
+        { campo: "habilitación de avisos", clave: `aviso_vencimiento_publicaciones_${sufijo}_habilitado`, valor: "true" },
+        { campo: "anticipación de avisos", clave: `anticipacion_aviso_publicaciones_${sufijo}`, valor: "9" },
+        { campo: "habilitación sin cambios", clave: `vigencia_publicaciones_${sufijo}_habilitada`, valor: "true" },
+        { campo: "días equivalentes", clave: `vigencia_publicaciones_${sufijo}`, valor: "030" },
+    ])("no reaplica fechas al guardar $campo", async ({ clave, valor }) => {
+        configuracionesGuardadas.set(`vigencia_publicaciones_${sufijo}_habilitada`, "true");
+
+        await guardarConfiguraciones({ [clave]: valor });
+
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: valor });
+        expect(planesEjecutados()).toHaveLength(1);
+        expect(planesEjecutados()[0].texto).toContain("pg_advisory_xact_lock(");
+    });
+
+    it("no reaplica fechas al reenviar el mismo grupo completo", async () => {
+        for (const [clave, valor] of Object.entries(configuracionPublicaciones())) configuracionesGuardadas.set(clave, valor);
+
+        await guardarConfiguraciones(configuracionPublicaciones());
+
+        expect(mocks.update).toHaveBeenCalledTimes(4);
+        expect(planesEjecutados()).toHaveLength(1);
+    });
+
     it("no modifica publicaciones al guardar otra configuración", async () => {
         await guardarConfiguraciones({
             aging_fotos_habilitado: "true",
@@ -513,13 +696,15 @@ describe.each([
         });
 
         expect(mocks.update).toHaveBeenCalledTimes(4);
-        expect(mocks.execute).not.toHaveBeenCalled();
+        expect(mocks.execute).toHaveBeenCalledOnce();
+        expect(planesEjecutados()[0].texto).toContain("pg_advisory_xact_lock(");
     });
 
     it("no escribe configuraciones si no puede obtener el bloqueo", async () => {
         mocks.execute.mockRejectedValueOnce(new Error("No se pudo bloquear la configuración"));
 
         await expect(guardarConfiguraciones(configuracionPublicaciones())).rejects.toThrow("No se pudo bloquear la configuración");
+        expect(mocks.all).not.toHaveBeenCalled();
         expect(mocks.update).not.toHaveBeenCalled();
         expect(mocks.execute).toHaveBeenCalledOnce();
     });
@@ -595,10 +780,14 @@ describe("independencia de la vigencia de publicaciones por rol", () => {
         expect(mocks.transaction).not.toHaveBeenCalled();
     });
 
-    it("rechaza un grupo parcial aunque el otro esté completo", async () => {
-        await expect(guardarConfiguraciones({ ...productor, vigencia_publicaciones_operador: "30" }))
-            .rejects.toThrow("Las cuatro opciones de vigencia deben guardarse juntas.");
-        expect(mocks.transaction).not.toHaveBeenCalled();
+    it("guarda un grupo parcial sin reemplazar sus otras opciones aunque el otro esté completo", async () => {
+        await guardarConfiguraciones({ ...productor, vigencia_publicaciones_operador: "30" });
+        expect(mocks.update).toHaveBeenCalledTimes(5);
+        expect(configuracionesGuardadas.get("vigencia_publicaciones_operador_habilitada")).toBe("false");
+        const recortes = mocks.execute.mock.calls.map(([plan]) => plan as PlanSql)
+            .filter((plan) => plan.texto.startsWith("UPDATE publicacion"));
+        expect(recortes).toHaveLength(1);
+        expect(recortes[0].valores[1]).toBe("PRODUCTOR");
     });
 
     it("desactivar operadores no impide aplicar el plazo de productores", async () => {

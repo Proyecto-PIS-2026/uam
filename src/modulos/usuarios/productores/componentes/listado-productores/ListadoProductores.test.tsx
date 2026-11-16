@@ -2,10 +2,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import ListadoProductores from "./ListadoProductores";
 
 const listaProductores = [
-    {id: 1, nombreFantasia: "Juan", fotoPerfil: null, cantidadProductos: 6, departamentos: ["Canelones", "Salto"]},
-    {id: 2, nombreFantasia: "Jose", fotoPerfil: null, cantidadProductos: 3, departamentos: ["Salto"]},
-    {id: 3, nombreFantasia: "Alberto", fotoPerfil: null, cantidadProductos: 4, departamentos: ["Montevideo"]},
-    {id: 5, nombreFantasia: "Juan Mart", fotoPerfil: null, cantidadProductos: 4, departamentos: []},
+    {id: 1, nombreFantasia: "Juan", fotoPerfil: null, cantidadProductos: 6, ubicaciones: [], departamentos: ["Canelones", "Salto"]},
+    {id: 2, nombreFantasia: "Jose", fotoPerfil: null, cantidadProductos: 3, ubicaciones: [], departamentos: ["Salto"]},
+    {id: 3, nombreFantasia: "Alberto", fotoPerfil: null, cantidadProductos: 4, ubicaciones: [], departamentos: ["Montevideo"]},
+    {id: 5, nombreFantasia: "Juan Mart", fotoPerfil: null, cantidadProductos: 4, ubicaciones: [], departamentos: []},
 ];
 
 const listaProductoresConTilde = [

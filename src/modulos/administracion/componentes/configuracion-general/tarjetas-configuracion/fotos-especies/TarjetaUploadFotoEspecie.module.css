@@ -19,26 +19,6 @@
     font-weight: 700;
 }
 
-.descripcion {
-    margin: 0;
-    color: var(--color-muted);
-    font-size: 0.875rem;
-    line-height: 1.5;
-}
-
-.contenedorFiltro {
-    width: 100%;
-    min-width: 0;
-}
-
-.contenedorBusqueda {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    width: 100%;
-    min-width: 0;
-}
-
 .selectMui {
     width: 100%;
     min-width: 0;
@@ -69,54 +49,6 @@
     color: var(--color-foreground);
 }
 
-.opcionSelect:global(.Mui-selected),
-.opcionSelect:global(.Mui-selected):hover {
-    background-color: var(--color-secondary-soft) !important;
-}
-
-.selectMui :global(input[type="search"])::-webkit-search-cancel-button {
-    filter: invert(94.63%) sepia(94%) saturate(1606%) hue-rotate(73.59deg) brightness(50.79%) contrast(173.72%);
-}
-
-.selectMui.selectorEspecie {
-    width: calc(100% - 2.5rem - var(--espacio-controles));
-    max-width: none;
-}
-
-.pie {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-top: 1rem;
-    padding-top: 0.65rem;
-    border-top: 1px solid var(--color-border);
-}
-
-.resultados {
-    color: var(--color-foreground);
-    font-size: 0.8rem;
-}
-
-.limpiar {
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--color-secondary);
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.limpiar:hover {
-    text-decoration: underline;
-}
-
-.limpiar:disabled {
-    opacity: 0.5;
-    cursor: default;
-}
-
 .filaEspecie {
     display: flex;
     align-items: center;
@@ -132,15 +64,18 @@
     max-width: none;
 }
 
-.filaEspecie .botonGuardar {
-    flex-shrink: 0;
-}
-
 .seccionImagen {
     display: flex;
-    align-items: flex-start;
-    gap: 1rem;
+    align-items: center;
+    gap: var(--espacio-controles);
     min-width: 0;
+}
+
+.seccionImagen[data-modificado="true"] {
+    background-color: var(--color-warning-soft);
+    border-radius: var(--radio-panel);
+    outline: 1px solid var(--color-warning);
+    outline-offset: 0.5rem;
 }
 
 .contenedorImagen {
@@ -182,6 +117,7 @@
     flex-direction: column;
     gap: 0.5rem;
     min-width: 0;
+    flex: 1;
     box-sizing: border-box;
     padding-top: 0.25rem;
 }
@@ -216,23 +152,17 @@
 }
 
 .botonAccion,
-.botonEliminar,
-.botonGuardar {
+.botonEliminar {
     width: 2.5rem !important;
     height: 2.5rem !important;
+    flex-shrink: 0;
 }
 
-.botonAccion:not(:disabled),
-.botonGuardar:not(:disabled) {
+.botonAccion:not(:disabled) {
     color: var(--color-secondary) !important;
 }
 
-.botonGuardar:not(:disabled) {
-    background-color: var(--color-secondary-soft) !important;
-}
-
-.botonAccion:not(:disabled):hover,
-.botonGuardar:not(:disabled):hover {
+.botonAccion:not(:disabled):hover {
     background-color: var(--color-secondary-soft) !important;
 }
 
@@ -246,6 +176,7 @@
 
 .ampliarFoto {
     position: absolute;
+    z-index: 2;
     inset: 0;
     border: none;
     border-radius: inherit;
@@ -315,6 +246,17 @@
 .opcionAutocomplete[aria-selected="true"],
 .opcionAutocomplete[aria-selected="true"]:global(.Mui-focused) {
     background-color: var(--color-secondary-soft) !important;
+}
+
+@media (max-width: 767px) {
+    .ayudaFoto {
+        display: none;
+    }
+
+    .contenedorImagen {
+        width: 5rem;
+        height: 5rem;
+    }
 }
 
 @media (min-width: 768px) {

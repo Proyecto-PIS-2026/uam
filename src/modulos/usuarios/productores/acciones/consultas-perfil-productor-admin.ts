@@ -54,7 +54,6 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
         return null;
     }
 
-    // await porque la consulta a la base de datos es asíncrona pero quiero esperar a la respuesta antes de seguir
     const productor = await db.orm.public.Productor
         .select("id", "nombreFantasia", "fotoPerfil", "whatsApp")
         .include("usuario", (usuario) => usuario.select("solicitoRestablecimiento"))
@@ -65,7 +64,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
     }
 
     // Obtener las publicaciones
-    const consultaCompleta = db.orm.public.PublicacionProductor // Solo armo la consulta sin ejecutarla
+    const consultaCompleta = db.orm.public.PublicacionProductor
         .where({ productorId: productor.id })
         .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
         .include("ubicaciones", (consultaUbicaciones) => consultaUbicaciones.select("nombreUbicacion", "urlMaps", "departamento"))
@@ -92,7 +91,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
             return completo;
         });
 
-    const completas = await consultaCompleta.all(); // La ejecuto con await por ser asincrona
+    const completas = await consultaCompleta.all();
     const publicaciones: PublicacionPerfilAdminProductor[] = [];
     
     for (const completa of completas) {
@@ -121,7 +120,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
                 envase: publicacion.envase?.nombreEnvase ?? "",
                 kilos: publicacion.kilos?.valor ?? "",
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
-                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                calibre: publicacion.calibre?.nombreCalibre ?? "",
                 codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",
                 ubicaciones: completa.ubicaciones.map((ubicacion) => ({

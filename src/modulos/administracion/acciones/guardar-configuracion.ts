@@ -7,7 +7,7 @@ import { bloquearCambioVigenciaPublicaciones } from "@/modulos/publicaciones/con
 import { calcularFechaMaximaVigencia, convertirFechaVigenciaAInstant } from "@/modulos/publicaciones/vigencia-publicacion";
 import { CLAVES_VIGENCIA_PUBLICACIONES, MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
 import { CLAVES_AGING_FOTOS } from "@/modulos/publicaciones/claves-aging-fotos";
-import { CLAVE_ANTICIPACION_AVISO_LOCALES, validarAnticipacionAvisoLocales } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
+import { CLAVE_ANTICIPACION_AVISO_LOCALES, CLAVE_HABILITACION_AVISO_LOCALES, validarAnticipacionAvisoLocales } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
 
 
 const clavesOrdenamiento = [
@@ -42,6 +42,7 @@ const clavesPermitidas = new Set<string>([
     "incremento_precio",
     "restablecimiento_contrasena_habilitado",
     CLAVE_ANTICIPACION_AVISO_LOCALES,
+    CLAVE_HABILITACION_AVISO_LOCALES,
     ...clavesOrdenamiento,
     ...CLAVES_AGING_FOTOS.OPERADOR,
     ...CLAVES_AGING_FOTOS.PRODUCTOR,
@@ -51,6 +52,7 @@ const clavesPermitidas = new Set<string>([
 
 const clavesBooleanas = new Set<string>([
     "ordenamiento_habilitado",
+    CLAVE_HABILITACION_AVISO_LOCALES,
     ...gruposVigencia.flatMap(([habilitado, , avisos]) => [habilitado, avisos]),
     "restablecimiento_contrasena_habilitado",
 ]);
@@ -113,6 +115,16 @@ function validarValor(nombre: string, valor: string): void {
         return;
     }
     if (clavesDias.has(nombre)) {
+        if (valor !== "") {
+            const esVigencia = gruposVigencia.some(([, vigencia]) => vigencia === nombre);
+            validarDias(valor, esVigencia ? "vigencia" : "anticipación");
+            if (Object.values(CLAVES_AGING_FOTOS).some(([, vigencia]) => vigencia === nombre) && Number(valor) > 36500) {
+                throw new Error("La vigencia de las fotos no puede superar los 36500 días.");
+            }
+            if (Object.values(CLAVES_VIGENCIA_PUBLICACIONES).some(([, , , anticipacion]) => anticipacion === nombre) && Number(valor) > MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES) {
+                throw new Error(`La anticipación no puede superar los ${MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES} días.`);
+            }
+        }
         return;
     }
     throw new Error("La configuración indicada no es válida.");
@@ -129,24 +141,21 @@ function validarDias(valor: string, campo: "vigencia" | "anticipación"): void {
 
 function validarVigencia(cambios: Record<string, string>, claves: readonly [string, string, string, string]): void {
     const [claveHabilitado, claveVigencia, claveAvisos, claveAnticipacion] = claves;
-    const configuracionCompleta = claves.every((clave) => Object.hasOwn(cambios, clave));
-    if (!configuracionCompleta) {
-        throw new Error("Las cuatro opciones de vigencia deben guardarse juntas.");
-    }
+    for (const clave of claves) validarValor(clave, cambios[clave]);
     const habilitado = cambios[claveHabilitado] === "true";
     const esVigenciaFotos = Object.values(CLAVES_AGING_FOTOS).some((clavesFotos) => clavesFotos[1] === claveVigencia);
     const avisosActivos = (!esVigenciaFotos || habilitado) && cambios[claveAvisos] === "true";
     if (habilitado) {
-        validarDias(cambios[claveVigencia], "vigencia");
-        if (esVigenciaFotos && Number(cambios[claveVigencia]) > 36500) {
-            throw new Error("La vigencia de las fotos no puede superar los 36500 días.");
+        if (cambios[claveVigencia] === "") {
+            throw new Error("Ingresá y guardá los días de vigencia antes de activar el vencimiento.");
         }
+        validarDias(cambios[claveVigencia], "vigencia");
     }
     if (avisosActivos) {
-        validarDias(cambios[claveAnticipacion], "anticipación");
-        if (!esVigenciaFotos && Number(cambios[claveAnticipacion]) > MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES) {
-            throw new Error(`La anticipación no puede superar los ${MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES} días.`);
+        if (cambios[claveAnticipacion] === "") {
+            throw new Error("Ingresá y guardá los días de anticipación antes de activar los avisos.");
         }
+        validarDias(cambios[claveAnticipacion], "anticipación");
     }
     if (habilitado && avisosActivos && Number(cambios[claveAnticipacion]) >= Number(cambios[claveVigencia])) {
         throw new Error("La anticipación debe ser menor que la vigencia.");
@@ -171,13 +180,9 @@ export async function guardarConfiguraciones(cambios: Record<string, string>): P
         }
         validarValor(nombre, valor);
     }
-    const modificaOrdenamiento = clavesOrdenamiento.some((clave) => Object.hasOwn(cambios, clave));
-    if (modificaOrdenamiento && !clavesOrdenamiento.every((clave) => Object.hasOwn(cambios, clave))) {
-        throw new Error("Las cuatro opciones de ordenamiento deben guardarse juntas.");
-    }
-    for (const claves of gruposVigencia) {
-        const modificaGrupo = claves.some((clave) => Object.hasOwn(cambios, clave));
-        if (modificaGrupo) {
+    const gruposModificados = gruposVigencia.filter((claves) => claves.some((clave) => Object.hasOwn(cambios, clave)));
+    for (const claves of gruposModificados) {
+        if (claves.every((clave) => Object.hasOwn(cambios, clave))) {
             validarVigencia(cambios, claves);
         }
     }
@@ -186,8 +191,21 @@ export async function guardarConfiguraciones(cambios: Record<string, string>): P
         .filter(([, claves]) => claves.some((clave) => Object.hasOwn(cambios, clave)));
 
     await db.transaction(async (tx) => {
-        if (politicasModificadas.length > 0) {
+        let anteriores: Record<string, string> = {};
+        let efectivos = cambios;
+        if (gruposModificados.length > 0) {
             await bloquearCambioVigenciaPublicaciones(tx);
+            const claves = gruposModificados.flatMap((grupo) => [...grupo]);
+            const filas = await tx.orm.public.Configuracion
+                .where((configuracion) => configuracion.nombreConfiguracion.in(claves))
+                .select("nombreConfiguracion", "valorConfiguracion")
+                .all();
+            anteriores = Object.fromEntries(filas.map(({ nombreConfiguracion, valorConfiguracion }) => [nombreConfiguracion, valorConfiguracion]));
+            for (const clave of claves) {
+                if (!Object.hasOwn(anteriores, clave)) throw new Error(`No existe la configuración ${clave}.`);
+            }
+            efectivos = { ...anteriores, ...cambios };
+            for (const grupo of gruposModificados) validarVigencia(efectivos, grupo);
         }
         for (const [nombre, valor] of entradas) {
             const actualizada = await tx.orm.public.Configuracion
@@ -200,8 +218,9 @@ export async function guardarConfiguraciones(cambios: Record<string, string>): P
             }
         }
         for (const [tipo, [claveHabilitada, claveDias]] of politicasModificadas) {
-            if (cambios[claveHabilitada] !== "true") continue;
-            const diasVigencia = Number(cambios[claveDias]);
+            if (efectivos[claveHabilitada] !== "true") continue;
+            const diasVigencia = Number(efectivos[claveDias]);
+            if (anteriores[claveHabilitada] === "true" && Number(anteriores[claveDias]) === diasVigencia) continue;
             const fechaMaxima = calcularFechaMaximaVigencia(diasVigencia);
             const limite = convertirFechaVigenciaAInstant(fechaMaxima)!.toString();
             // El cambio de política no renueva la fecha de actualización ni la disponibilidad.
