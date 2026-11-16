@@ -659,11 +659,11 @@ describe("PreciosHistoricos", () => {
     });
 
     it.each([
-        ["Calibre", "G", "Todos los calibres", ["Cavendish|BRASIL|G|I", "Orgánica|ECUADOR|G|II"]],
-        ["País", "BRASIL", "Todos los países", ["Cavendish|BRASIL|G|I"]],
-        ["Categoría", "II", "Todas las categorías", ["Cavendish|ECUADOR|M|II", "Orgánica|ECUADOR|G|II"]],
-        ["Variedad", "Orgánica", "Todas las variedades", ["Orgánica|URUGUAY|P|III", "Orgánica|ECUADOR|G|II"]],
-    ] as const)("aplica y quita el filtro por %s inmediatamente en tabla, móvil, gráfica y URL", (nombre, opcion, todas, esperadas) => {
+        ["Calibre", "G", "Todos los calibres", ["Cavendish|BRASIL|G|I", "Orgánica|ECUADOR|G|II"], [[70, 80], [45, 55]]],
+        ["País", "BRASIL", "Todos los países", ["Cavendish|BRASIL|G|I"], [[70, 80]]],
+        ["Categoría", "II", "Todas las categorías", ["Cavendish|ECUADOR|M|II", "Orgánica|ECUADOR|G|II"], [[30, 40], [45, 55]]],
+        ["Variedad", "Orgánica", "Todas las variedades", ["Orgánica|URUGUAY|P|III", "Orgánica|ECUADOR|G|II"], [[20, 25], [45, 55]]],
+    ] as const)("aplica y quita el filtro por %s inmediatamente en tabla, móvil, gráfica y URL", (nombre, opcion, todas, esperadas, preciosEsperados) => {
         window.history.replaceState(estadoInicial, "", "/precios-historicos?species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&extra=anterior&extra=segundo#tabla");
         render(<PreciosHistoricos producto={productoSinFiltros} historico={historicoConFiltros} {...fechas} />);
         abrirFiltrosAdicionales();
@@ -671,7 +671,7 @@ describe("PreciosHistoricos", () => {
 
         expect(firmasFilasVisibles()).toEqual(esperadas);
         expect(document.querySelectorAll("article")).toHaveLength(esperadas.length);
-        expect(propsGrafica().registros.map(({ presentacion, precio }) => [presentacion.variety, presentacion.country, presentacion.caliber, precio.category].join("|"))).toEqual(esperadas);
+        expect(propsGrafica().registros.map(({ precio }) => [precio.min_kg, precio.max_kg])).toEqual(preciosEsperados);
         expect(screen.getByRole("button", { name: "Más filtros" })).toHaveAttribute("aria-expanded", "true");
         const parametro = { Calibre: "calibre", País: "pais", Categoría: "categoria", Variedad: "variedad" }[nombre];
         const url = new URL(window.location.href);
