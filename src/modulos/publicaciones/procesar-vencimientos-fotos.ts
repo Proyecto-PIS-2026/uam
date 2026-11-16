@@ -2,7 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import { claveDesdeUrlImagen } from "../../infraestructura/imagenes/almacenamiento-imagenes";
 import { db } from "../../infraestructura/persistencia/prisma/db";
 import { ZONA_HORARIA_TAREAS, type ContextoTareaDiaria } from "../../infraestructura/tareas-programadas/tipos";
-import { notificarCambioCatalogoOperador } from "../../infraestructura/tiempo-real/publicaciones";
+import { notificarCambioCatalogoOperador, notificarCambioCatalogoProductor } from "../../infraestructura/tiempo-real/publicaciones";
 import { enviarNotificacion } from "../notificaciones/notificaciones";
 import { obtenerLimiteAntiguedadFotos, validarConfiguracionAgingFotos, type ConfiguracionAgingFotos } from "./vigencia-fotos";
 import type { TipoPropietarioFoto } from "./claves-aging-fotos";
@@ -156,8 +156,9 @@ export async function procesarVencimientosFotos(
             procesadas++;
         }
 
-        if (cambioCatalogo && propietario.espacio === 1719) {
-            await notificarCambioCatalogoOperador(tx, propietario.propietarioId);
+        if (cambioCatalogo) {
+            if (tipo === "OPERADOR") await notificarCambioCatalogoOperador(tx, propietario.propietarioId);
+            else await notificarCambioCatalogoProductor(tx, propietario.propietarioId);
         }
     }
 

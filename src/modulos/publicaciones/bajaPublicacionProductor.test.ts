@@ -15,6 +15,11 @@ const ejecutarTransaccion = vi.hoisted(() => vi.fn());
 const ejecutarSql = vi.hoisted(() => vi.fn());
 const consultaSql = vi.hoisted(() => vi.fn());
 const eliminarImagen = vi.hoisted(() => vi.fn());
+const notificarCambio = vi.hoisted(() => vi.fn());
+
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({
+    notificarCambioPublicacionProductor: notificarCambio,
+}));
 
 vi.mock("./imagenes-productor", () => ({
     eliminarImagenProductor: eliminarImagen,
@@ -180,6 +185,28 @@ describe("bajaPublicacionProductor", () => {
         });
 
         expect(actualizarEstadistica).not.toHaveBeenCalled();
+        expect(notificarCambio).toHaveBeenCalledExactlyOnceWith(tx, { productorId: 3, publicacionId: 15 });
+        expect(crearEstadistica.mock.invocationCallOrder[0]).toBeLessThan(notificarCambio.mock.invocationCallOrder[0]);
+    });
+
+    it("no notifica una baja si falla la actualización de las estadísticas", async () => {
+        buscarRelacion.mockResolvedValue({ publicacionId: 15, productorId: 3 });
+        const error = new Error("No se pudo guardar la estadística.");
+        crearEstadistica.mockRejectedValueOnce(error);
+
+        await expect(bajaPublicacionProductor(15, 3)).rejects.toBe(error);
+        expect(notificarCambio).not.toHaveBeenCalled();
+    });
+
+    it("rechaza la transacción y conserva la foto si no se puede notificar la baja", async () => {
+        buscarRelacion.mockResolvedValue({ publicacionId: 15, productorId: 3 });
+        buscarPublicacion.mockResolvedValue({ id: 15, foto: urlFoto });
+        const error = new Error("No se pudo notificar el cambio.");
+        notificarCambio.mockRejectedValueOnce(error);
+
+        await expect(bajaPublicacionProductor(15, 3)).rejects.toBe(error);
+        await expect(ejecutarTransaccion.mock.results[0].value).rejects.toBe(error);
+        expect(eliminarImagen).not.toHaveBeenCalled();
     });
 
     it("bloquea la relación antes de leer la foto y borrar para serializarse con una edición", async () => {
@@ -336,6 +363,7 @@ describe("bajaPublicacionProductor", () => {
         const resultado = await bajaPublicacionProductor(15, 8);
 
         expect(resultado).toBe(false);
+        expect(notificarCambio).not.toHaveBeenCalled();
 
         expect(eliminarPublicacion).not.toHaveBeenCalled();
         expect(buscarProductor).not.toHaveBeenCalled();
@@ -369,6 +397,7 @@ describe("bajaPublicacionProductor", () => {
         expect(eliminarPublicacion).toHaveBeenCalledOnce();
 
         expect(ejecutarSql).toHaveBeenCalledTimes(4);
+        expect(notificarCambio).toHaveBeenCalledExactlyOnceWith(tx, { productorId: 3, publicacionId: 15 });
 
         expect(buscarProductor).toHaveBeenCalledOnce();
         expect(buscarUsuario).toHaveBeenCalledOnce();

@@ -164,7 +164,7 @@ async function verFoto(page: Page, foto: Foto, eliminada: boolean) {
   const tarjeta = page.getByRole("button", { name: `Ver detalle de ${foto.especie}`, exact: true }).first();
   await expect(tarjeta).toBeVisible();
   if (eliminada) {
-    await expect(tarjeta.getByText("Sin fotografía", { exact: true })).toBeVisible();
+    await expect(tarjeta.getByRole("img", { name: "Sin foto disponible", exact: true })).toBeVisible();
     await expect(tarjeta.getByRole("img", { name: foto.especie, exact: true })).toHaveCount(0);
   } else {
     const imagen = tarjeta.getByRole("img", { name: foto.especie, exact: true });

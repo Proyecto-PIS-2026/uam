@@ -4,6 +4,7 @@ import "temporal-polyfill/types/global";
 
 import { db } from "../../infraestructura/persistencia/prisma/db";
 import { eliminarImagenProductor } from "./imagenes-productor";
+import { notificarCambioPublicacionProductor } from "@/infraestructura/tiempo-real/publicaciones";
 
 export async function bajaPublicacionProductor(
     publicacionId: number,
@@ -83,6 +84,7 @@ export async function bajaPublicacionProductor(
             });
         }
 
+        await notificarCambioPublicacionProductor(tx, { productorId, publicacionId });
         return {
             eliminada: true,
             foto: publicacion?.foto ?? null,

@@ -14,7 +14,7 @@ export default function FormularioCambioContrasena({ volver }: { volver: string 
     const [actual, setActual] = useState("");
     const [nueva, setNueva] = useState("");
     const [confirmacion, setConfirmacion] = useState("");
-    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const enviando = useRef(false);
     const [visibilidad, setVisibilidad] = useState({ actual: false, nueva: false, confirmacion: false });
@@ -22,7 +22,6 @@ export default function FormularioCambioContrasena({ volver }: { volver: string 
     async function guardar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (enviando.current) return;
-        cerrarNotificacion();
         const datos = { actual, nueva, confirmacion };
         const validacion = validarCambioContrasena(datos);
         if (!validacion.esValido) { notificar(validacion.errores.join("\n"), "error"); return; }

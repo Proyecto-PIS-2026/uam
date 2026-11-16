@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PaginaPublicacionesProductor, { dynamic } from "./page";
 import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
@@ -27,6 +27,9 @@ vi.mock("@/modulos/consulta-mercado/acciones/PublicacionesProductor", () => ({
 vi.mock("@/modulos/consulta-mercado/acciones/configuracion-ordenamiento", () => ({
     obtenerConfiguracionOrdenamiento: mocks.obtenerConfiguracion,
 }));
+
+vi.mock("@/modulos/consulta-mercado/acciones/ConsultarPublicacionProductor.action", () => ({ default: vi.fn() }));
+vi.mock("@/modulos/publicaciones/tiempo-real/use-actualizaciones-publicaciones", () => ({ useActualizacionesPublicaciones: vi.fn() }));
 
 vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones", () => ({
     default: mocks.contenedor,

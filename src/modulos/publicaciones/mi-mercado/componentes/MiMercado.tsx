@@ -250,7 +250,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
                     subtitulo={`${publicacionesVigentes.length} ${publicacionesVigentes.length === 1 ? "publicación" : "publicaciones"}`}
                 />
 
-                <AvisoErrorToast mensaje={error} />
+                <AvisoErrorToast mensaje={error} cerrarAlCorregir={false} />
                 <AvisoErrorToast mensaje={avisoPublicacion} tipo="warning" />
                 {publicacionesVigentes.length > 0 && (
                     <div className={styles.filtros}>

@@ -1,3 +1,4 @@
+import { completarFecha } from "./soporte/fechas";
 
 import { randomUUID } from "node:crypto";
 import { expect, type Locator, type Page } from "@playwright/test";
@@ -117,9 +118,9 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page, 
   await page.locator("#contraseña").fill(CLAVE_INICIAL);
 
   await page.getByRole("button", { name: "Agregar fin de contrato" }).first().click();
-  await expect(page.locator('input[type="date"]')).toHaveCount(1);
+  await expect(page.getByRole("group", { name: "Fin de contrato", exact: true })).toHaveCount(1);
   await page.getByRole("button", { name: "Eliminar fecha" }).click();
-  await expect(page.locator('input[type="date"]')).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Fin de contrato", exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Agregar local" }).click();
   await expect(page.getByPlaceholder("Número de local")).toHaveCount(2);
@@ -181,7 +182,7 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
 
       await completarAlta(page, { usuario, nombre, local, nave: opciones[0] });
       await page.getByRole("button", { name: "Agregar fin de contrato" }).click();
-      await page.locator('input[type="date"]').fill("2027-12-31");
+      await completarFecha(page.getByRole("group", { name: "Fin de contrato", exact: true }), "2027-12-31");
       await page.getByRole("button", { name: "Agregar local" }).click();
       await page.getByPlaceholder("Número de local").last().fill(local);
       await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Nave/ }).last(), opciones[1]);
@@ -283,7 +284,7 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       await page.getByLabel("Confirmar contraseña").fill(CLAVE_NUEVA);
       await page.getByRole("textbox", { name: "Nombre", exact: true }).fill(nombreNuevo);
       await page.getByRole("textbox", { name: "Número de local" }).first().fill(localNuevo);
-      await page.locator('input[type="date"]').first().fill("2028-06-30");
+      await completarFecha(page.getByRole("group", { name: "Fin de contrato", exact: true }).first(), "2028-06-30");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
       await expect(page).toHaveURL(new RegExp(`/gestion-operadores/${operadorId}$`), { timeout: 20_000 });
       await page.reload();

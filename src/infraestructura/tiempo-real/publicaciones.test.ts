@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { notificarCambioCatalogoOperador, notificarCambioPublicacion } from "./publicaciones";
+import { notificarCambioCatalogoOperador, notificarCambioCatalogoProductor, notificarCambioPublicacion, notificarCambioPublicacionProductor } from "./publicaciones";
 
 const { sql, ejecutar } = vi.hoisted(() => ({
     sql: vi.fn((partes: TemplateStringsArray, ...valores: unknown[]) => ({
@@ -41,5 +41,25 @@ describe("notificaciones transaccionales de publicaciones", () => {
         ejecutar.mockRejectedValue(error);
 
         await expect(notificarCambioCatalogoOperador(transaccion, 7)).rejects.toBe(error);
+    });
+
+    it("notifica las publicaciones de productores en la misma transacción sin confundir al propietario con un operador", async () => {
+        await notificarCambioPublicacionProductor(transaccion, { productorId: 7, publicacionId: 43 });
+
+        expect(ejecutar).toHaveBeenCalledExactlyOnceWith({
+            texto: "SELECT pg_notify('uam_publicaciones', ?)::text AS notificado",
+            valores: ['{"productorId":7,"publicacionId":43}'],
+        });
+    });
+
+    it("notifica el catálogo del productor completo y propaga errores de la transacción", async () => {
+        await notificarCambioCatalogoProductor(transaccion, 7);
+        expect(ejecutar).toHaveBeenCalledExactlyOnceWith({
+            texto: "SELECT pg_notify('uam_publicaciones', ?)::text AS notificado",
+            valores: ['{"productorId":7}'],
+        });
+        const error = new Error("Falló PostgreSQL");
+        ejecutar.mockRejectedValueOnce(error);
+        await expect(notificarCambioCatalogoProductor(transaccion, 7)).rejects.toBe(error);
     });
 });

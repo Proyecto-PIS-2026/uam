@@ -13,10 +13,15 @@ export class EscuchaPublicaciones {
     private listo = false;
     private epoca = randomUUID();
     private versionGlobal = this.epoca;
+    private versionProductores = this.epoca;
     private versionesOperador = new Map<number, string>();
 
     obtenerVersion(operadorId?: number): string {
         return operadorId === undefined ? this.versionGlobal : this.versionesOperador.get(operadorId) ?? this.epoca;
+    }
+
+    obtenerVersionProductores(): string {
+        return this.versionProductores;
     }
 
     suscribir(oyente: Oyente) {
@@ -44,6 +49,7 @@ export class EscuchaPublicaciones {
         this.listo = false;
         this.versionesOperador.clear();
         this.versionGlobal = this.epoca;
+        this.versionProductores = this.epoca;
         const cliente = this.cliente;
         this.cliente = null;
         void cliente?.end().catch(() => {});
@@ -83,14 +89,20 @@ export class EscuchaPublicaciones {
         cliente.on("notification", ({ channel, payload }) => {
             if (this.cliente !== cliente || !this.listo || channel !== "uam_publicaciones" || !payload) return;
             try {
-                const cambio = JSON.parse(payload) as CambioPublicacion;
-                if (Number.isSafeInteger(cambio.operadorId) && cambio.operadorId > 0 &&
-                    (cambio.publicacionId === undefined || Number.isSafeInteger(cambio.publicacionId) && cambio.publicacionId > 0)) {
-                    const version = randomUUID();
+                const cambio = JSON.parse(payload) as CambioPublicacion | null;
+                if (!cambio || typeof cambio !== "object" || Array.isArray(cambio)) return;
+                const esOperador = Number.isSafeInteger(cambio.operadorId) && cambio.operadorId! > 0 && cambio.productorId === undefined;
+                const esProductor = Number.isSafeInteger(cambio.productorId) && cambio.productorId! > 0 && cambio.operadorId === undefined;
+                if ((!esOperador && !esProductor) ||
+                    (cambio.publicacionId !== undefined && (!Number.isSafeInteger(cambio.publicacionId) || cambio.publicacionId <= 0))) return;
+                const version = randomUUID();
+                if (esOperador) {
                     this.versionGlobal = version;
-                    this.versionesOperador.set(cambio.operadorId, version);
-                    this.emitir(cambio);
+                    this.versionesOperador.set(cambio.operadorId!, version);
+                } else {
+                    this.versionProductores = version;
                 }
+                this.emitir(cambio);
             } catch {}
         });
         try {
@@ -100,6 +112,7 @@ export class EscuchaPublicaciones {
             if (this.cliente !== cliente) return;
             this.epoca = randomUUID();
             this.versionGlobal = this.epoca;
+            this.versionProductores = this.epoca;
             this.versionesOperador.clear();
             this.listo = true;
             this.emitir(null);

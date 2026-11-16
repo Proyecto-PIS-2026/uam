@@ -214,7 +214,7 @@ describe("TarjetaPublicacion", () => {
     pub.foto = "/api/publicaciones/imagenes/1/foto-perdida.jpg";
     render(<TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />);
     fireEvent.error(screen.getByAltText("Manzana · Red Delicious"));
-    expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
+    expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Manzana · Red Delicious" })).not.toBeInTheDocument();
   });
 
@@ -229,7 +229,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
-    expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
+    expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Manzana" })).not.toBeInTheDocument();
   });
 
@@ -244,7 +244,7 @@ describe("TarjetaPublicacion", () => {
     );
 
     expect(
-      screen.getByText("Sin fotografía"),
+      screen.getByText("Sin foto disponible"),
     ).toBeInTheDocument();
   });
 

@@ -167,14 +167,16 @@ describe("ContenedorPublicaciones remoto", () => {
         cargar.mockRejectedValueOnce(new Error("sin red")).mockResolvedValue(resultado(300));
         render(<ContenedorPublicaciones resultado={resultado()} />);
         act(() => { void escuchar.mock.calls.at(-1)![0]() });
-        expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron actualizar");
+        const aviso = await screen.findByRole("alert");
+        expect(aviso).toHaveTextContent("No se pudieron actualizar");
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(screen.getByTestId("listado")).toHaveTextContent("100");
         fireEvent.click(screen.getByText("Reintentar"));
         expect(screen.getByRole("status")).toHaveTextContent("Cargando publicaciones...");
-        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("alert")).toBe(aviso);
         await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("300"));
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(screen.getByRole("alert")).toBe(aviso);
     });
 
     it("cancela la recarga pendiente al desmontarse", async () => {

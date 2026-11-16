@@ -576,6 +576,22 @@ describe("BloqueEstadistica", () => {
     });
 
     describe("períodos y fechas", () => {
+        it.each(["Desde", "Hasta"])("no ofrece limpiar la fecha obligatoria %s", (campo) => {
+            renderizarBloque();
+
+            fireEvent.change(screen.getByLabelText("Período"), {
+                target: { value: "personalizado" },
+            });
+
+            expect(screen.getByLabelText(new RegExp(`^${campo}`), { selector: "input" })).toBeRequired();
+            fireEvent.click(screen.getByRole("button", { name: `Abrir calendario de ${campo}` }));
+
+            const calendario = within(screen.getByRole("dialog"));
+            expect(calendario.queryByRole("button", { name: "Limpiar" })).not.toBeInTheDocument();
+            expect(calendario.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
+            expect(calendario.getByRole("button", { name: "Aceptar" })).toBeInTheDocument();
+        });
+
         it.each([
             { rango: "1s", fecha: "2026-10-13" },
             { rango: "1m", fecha: "2026-09-20" },
@@ -719,11 +735,11 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            fireEvent.change(screen.getByLabelText("Desde"), {
+            fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), {
                 target: { value: "2026-10-18" },
             });
 
-            fireEvent.change(screen.getByLabelText("Hasta"), {
+            fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), {
                 target: { value: "2026-10-20" },
             });
 
@@ -745,13 +761,9 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            const campoDesde = screen.getByLabelText(
-                "Desde",
-            ) as HTMLInputElement;
+            const campoDesde = screen.getByLabelText(/^Desde/, { selector: "input" }) as HTMLInputElement;
 
-            const campoHasta = screen.getByLabelText(
-                "Hasta",
-            ) as HTMLInputElement;
+            const campoHasta = screen.getByLabelText(/^Hasta/, { selector: "input" }) as HTMLInputElement;
 
             fireEvent.change(campoDesde, {
                 target: { value: "2026-10-20" },
@@ -778,9 +790,7 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            const campoDesde = screen.getByLabelText(
-                "Desde",
-            ) as HTMLInputElement;
+            const campoDesde = screen.getByLabelText(/^Desde/, { selector: "input" }) as HTMLInputElement;
 
             fireEvent.change(campoDesde, {
                 target: { value: "2026-10-21" },
@@ -800,9 +810,7 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            const campoHasta = screen.getByLabelText(
-                "Hasta",
-            ) as HTMLInputElement;
+            const campoHasta = screen.getByLabelText(/^Hasta/, { selector: "input" }) as HTMLInputElement;
 
             fireEvent.change(campoHasta, {
                 target: { value: "2026-09-19" },
@@ -822,13 +830,9 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            const campoDesde = screen.getByLabelText(
-                "Desde",
-            ) as HTMLInputElement;
+            const campoDesde = screen.getByLabelText(/^Desde/, { selector: "input" }) as HTMLInputElement;
 
-            const campoHasta = screen.getByLabelText(
-                "Hasta",
-            ) as HTMLInputElement;
+            const campoHasta = screen.getByLabelText(/^Hasta/, { selector: "input" }) as HTMLInputElement;
 
             expect(campoDesde).toHaveAttribute("max", "2026-10-19");
             expect(campoHasta).toHaveAttribute("min", "2026-09-21");
@@ -860,13 +864,9 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            const campoDesde = screen.getByLabelText(
-                "Desde",
-            ) as HTMLInputElement;
+            const campoDesde = screen.getByLabelText(/^Desde/, { selector: "input" }) as HTMLInputElement;
 
-            const campoHasta = screen.getByLabelText(
-                "Hasta",
-            ) as HTMLInputElement;
+            const campoHasta = screen.getByLabelText(/^Hasta/, { selector: "input" }) as HTMLInputElement;
 
             fireEvent.change(campoDesde, {
                 target: { value: "2026-10-10" },
@@ -907,8 +907,8 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            expect(screen.getByLabelText("Desde")).toHaveValue("2026-09-20");
-            expect(screen.getByLabelText("Hasta")).toHaveValue("2026-10-20");
+            expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toHaveValue("2026-09-20");
+            expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toHaveValue("2026-10-20");
         });
 
         it("ajusta el día inicial al último día del mes anterior cuando no existe ese día", () => {
@@ -923,8 +923,8 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            expect(screen.getByLabelText("Desde")).toHaveValue("2026-02-28");
-            expect(screen.getByLabelText("Hasta")).toHaveValue("2026-03-31");
+            expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toHaveValue("2026-02-28");
+            expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toHaveValue("2026-03-31");
         });
 
         it("filtra correctamente los registros utilizando fechas personalizadas", () => {
@@ -937,11 +937,11 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            fireEvent.change(screen.getByLabelText("Desde"), {
+            fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), {
                 target: { value: "2026-09-20" },
             });
 
-            fireEvent.change(screen.getByLabelText("Hasta"), {
+            fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), {
                 target: { value: "2026-10-19" },
             });
 
@@ -973,8 +973,8 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            expect(screen.getByLabelText("Desde")).toBeInTheDocument();
-            expect(screen.getByLabelText("Hasta")).toBeInTheDocument();
+            expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toBeInTheDocument();
+            expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toBeInTheDocument();
 
             fireEvent.change(
                 screen.getByLabelText("Período"),
@@ -983,8 +983,8 @@ describe("BloqueEstadistica", () => {
                 },
             );
 
-            expect(screen.queryByLabelText("Desde")).not.toBeInTheDocument();
-            expect(screen.queryByLabelText("Hasta")).not.toBeInTheDocument();
+            expect(screen.queryByLabelText(/^Desde/, { selector: "input" })).not.toBeInTheDocument();
+            expect(screen.queryByLabelText(/^Hasta/, { selector: "input" })).not.toBeInTheDocument();
 
             expect(obtenerDatosGrafica()).toHaveLength(93);
         });
@@ -1768,11 +1768,11 @@ describe("BloqueEstadistica", () => {
                 target: { value: "personalizado" },
             });
 
-            fireEvent.change(screen.getByLabelText("Desde"), {
+            fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), {
                 target: { value: "2026-10-10" },
             });
 
-            fireEvent.change(screen.getByLabelText("Hasta"), {
+            fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), {
                 target: { value: "2026-10-16" },
             });
 
@@ -1985,11 +1985,11 @@ describe("BloqueEstadistica", () => {
                 target: { value: "personalizado" },
             });
 
-            fireEvent.change(screen.getByLabelText("Desde"), {
+            fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), {
                 target: { value: "2026-10-10" },
             });
 
-            fireEvent.change(screen.getByLabelText("Hasta"), {
+            fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), {
                 target: { value: "2026-10-20" },
             });
 
@@ -2031,11 +2031,11 @@ describe("BloqueEstadistica", () => {
                 target: { value: "personalizado" },
             });
 
-            fireEvent.change(screen.getByLabelText("Desde"), {
+            fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), {
                 target: { value: "2026-10-03" },
             });
 
-            fireEvent.change(screen.getByLabelText("Hasta"), {
+            fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), {
                 target: { value: "2026-10-04" },
             });
 
@@ -2081,11 +2081,11 @@ describe("BloqueEstadistica", () => {
                 target: { value: "personalizado" },
             });
 
-            fireEvent.change(screen.getByLabelText("Desde"), {
+            fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), {
                 target: { value: "2026-10-03" },
             });
 
-            fireEvent.change(screen.getByLabelText("Hasta"), {
+            fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), {
                 target: { value: "2026-10-04" },
             });
 
@@ -2120,11 +2120,11 @@ describe("BloqueEstadistica", () => {
                 target: { value: "personalizado" },
             });
 
-            fireEvent.change(screen.getByLabelText("Desde"), {
+            fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), {
                 target: { value: "2026-10-10" },
             });
 
-            fireEvent.change(screen.getByLabelText("Hasta"), {
+            fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), {
                 target: { value: "2026-10-20" },
             });
 
@@ -2338,8 +2338,8 @@ describe("BloqueEstadistica", () => {
             expect(screen.getByTestId("tooltip-fecha")).toHaveTextContent("20/10/2026");
 
             fireEvent.change(screen.getByLabelText("Período"), { target: { value: "personalizado" } });
-            expect(screen.getByLabelText("Desde")).toHaveValue("2026-10-12");
-            expect(screen.getByLabelText("Hasta")).toHaveValue("2026-11-12");
+            expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toHaveValue("2026-10-12");
+            expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toHaveValue("2026-11-12");
         });
 
         it("cambia de día a medianoche de Uruguay", () => {

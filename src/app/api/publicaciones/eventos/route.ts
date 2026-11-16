@@ -1,6 +1,6 @@
 import { escuchaPublicaciones } from "@/infraestructura/tiempo-real/escuchar-publicaciones";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
-import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
+import { ErrorAutorizacion, exigirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
 import { Temporal } from "temporal-polyfill";
@@ -12,6 +12,11 @@ export async function GET(solicitud: Request) {
     const busqueda = new URL(solicitud.url).searchParams;
     const parametros = busqueda.getAll("operadorId");
     const parametrosPublicos = busqueda.getAll("operadorPublicoId");
+    const tipos = busqueda.getAll("tipo");
+    if (tipos.length > 0 && (tipos.length !== 1 || tipos[0] !== "PRODUCTOR" || parametros.length > 0 || parametrosPublicos.length > 0)) {
+        return Response.json({ error: "Seleccione un único canal de publicaciones válido." }, { status: 400 });
+    }
+    const productores = tipos.length > 0;
     if (parametros.length > 0 && parametrosPublicos.length > 0) {
         return Response.json({ error: "Seleccione un único canal de publicaciones." }, { status: 400 });
     }
@@ -22,7 +27,16 @@ export async function GET(solicitud: Request) {
     const operadorPublicoId = parametrosPublicos.length > 0 ? Number(parametrosPublicos[0]) : undefined;
     let operadorId: number | undefined;
     let duracion = 55000;
-    if (parametros.length > 0) {
+    if (productores) {
+        try {
+            const sesion = await exigirConsultaProductores();
+            duracion = Math.max(0, Math.min(duracion, sesion.expiraEn * 1000 - Date.now()));
+            if (duracion === 0) return Response.json({ error: "La sesión expiró." }, { status: 401 });
+        } catch (error) {
+            if (error instanceof ErrorAutorizacion) return Response.json({ error: error.message }, { status: error.status });
+            return Response.json({ error: "No se pudo abrir la conexión." }, { status: 503 });
+        }
+    } else if (parametros.length > 0) {
         const sesion = await obtenerSesion();
         if (!sesion) return Response.json({ error: "Debe iniciar sesión." }, { status: 401 });
         try {
@@ -70,9 +84,10 @@ export async function GET(solicitud: Request) {
                 return;
             }
             desuscribir = escuchaPublicaciones.suscribir((cambio) => {
+                if (cambio && (cambio.productorId !== undefined) !== productores) return;
                 const operadorFiltrado = operadorId ?? operadorPublicoId;
                 if (cambio && operadorFiltrado !== undefined && cambio.operadorId !== operadorFiltrado) return;
-                const version = escuchaPublicaciones.obtenerVersion(operadorFiltrado);
+                const version = productores ? escuchaPublicaciones.obtenerVersionProductores() : escuchaPublicaciones.obtenerVersion(operadorFiltrado);
                 const fecha = Temporal.Now.plainDateISO("America/Montevideo").toString();
                 const datos = operadorId === undefined || cambio?.publicacionId === undefined ? {} : { publicacionId: cambio.publicacionId };
                 enviar(`${cambio ? "" : "retry: 3000\n"}id: ${version}:${fecha}\nevent: ${cambio ? "cambio" : "conectado"}\ndata: ${JSON.stringify(datos)}\n\n`);

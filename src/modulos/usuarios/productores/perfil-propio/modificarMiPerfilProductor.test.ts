@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => ({
     usuario: { where: vi.fn(), update: vi.fn() },
     transaction: vi.fn(), execute: vi.fn(), revalidatePath: vi.fn(),
     guardarFoto: vi.fn(),
+    notificarCambio: vi.fn(),
 }));
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioCatalogoProductor: mocks.notificarCambio }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (original) => ({
     ...await original<typeof import("@/modulos/identidad-acceso/autorizacion/controles")>(), exigirProductor: mocks.exigirProductor,
 }));
@@ -46,6 +48,17 @@ describe("modificarMiPerfilProductor", () => {
         expect(mocks.productor.update).toHaveBeenCalledExactlyOnceWith({ nombreFantasia: "Granja Norte", whatsApp: "+59899123456" });
         expect(mocks.usuario.update).not.toHaveBeenCalled();
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/", "layout");
+        expect(mocks.notificarCambio).toHaveBeenCalledExactlyOnceWith(tx, 5);
+        expect(mocks.productor.update.mock.invocationCallOrder[0]).toBeLessThan(mocks.notificarCambio.mock.invocationCallOrder[0]);
+    });
+
+    it("rechaza la transacción si falla el aviso del catálogo", async () => {
+        const error = new Error("No se pudo notificar el catálogo.");
+        mocks.notificarCambio.mockRejectedValueOnce(error);
+
+        await expect(modificarMiPerfilProductor(datos)).rejects.toBe(error);
+        await expect(mocks.transaction.mock.results[0].value).rejects.toBe(error);
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 
     it("ignora identificadores y campos administrativos enviados por el cliente", async () => {
@@ -143,6 +156,7 @@ describe("modificarMiPerfilProductor", () => {
         mocks.productor.update.mockRejectedValue(new Error("Sin conexión"));
         await expect(modificarMiPerfilProductor(datos)).rejects.toThrow("Sin conexión");
         expect(mocks.revalidatePath).not.toHaveBeenCalled();
+        expect(mocks.notificarCambio).not.toHaveBeenCalled();
     });
 
     it.each(["ADMINISTRADOR", "OPERADOR"])("impide guardar con el rol %s", async () => {

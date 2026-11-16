@@ -30,7 +30,7 @@ export default function FormularioModificarAdministrador({ administrador, perfil
     const [contraseña, setContraseña] = useState("");
     const [confirmacionContraseña, setConfirmacionContraseña] = useState("");
 
-    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
 
@@ -44,7 +44,6 @@ export default function FormularioModificarAdministrador({ administrador, perfil
         if (guardadoEnCurso.current) return;
         guardadoEnCurso.current = true;
 
-        cerrarNotificacion();
         setGuardando(true);
 
         try {

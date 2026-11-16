@@ -142,8 +142,8 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
                 }).addTo(mapa);
             };
 
-            const marcar = async (latitud: number, longitud: number) => {
-                cerrarNotificacion();
+            const marcar = async (latitud: number, longitud: number, renovarNombre = true) => {
+                if (renovarNombre) nombreEditadoRef.current = false;
                 const solicitud = ++solicitudSeleccionRef.current;
                 seleccionAbortRef.current?.abort();
                 const controlador = new AbortController();
@@ -195,7 +195,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             setMapaListo(true);
             if (inicial) {
                 if (inicial.departamento) ponerMarcador(inicial.latitud, inicial.longitud, false);
-                else void marcar(inicial.latitud, inicial.longitud);
+                else void marcar(inicial.latitud, inicial.longitud, false);
             }
             mapa.on("click", (evento) => { void marcar(evento.latlng.lat, evento.latlng.lng); });
         }).catch(() => {
@@ -218,7 +218,7 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
             mapaInstanciaRef.current?.remove();
             mapaInstanciaRef.current = null;
         };
-    }, [elementoMapa, inicial, nombreLugarInicial, notificar, cerrarNotificacion]);
+    }, [elementoMapa, inicial, nombreLugarInicial, notificar]);
 
     function cerrar() {
         cerrarNotificacion();
@@ -243,7 +243,6 @@ function SelectorPuntoRetiro({ coordenadas, nombreInicial, modo = "agregar", alC
         evento.stopPropagation();
         const consulta = busqueda.trim();
         if (!consulta || !mapaListo) return;
-        cerrarNotificacion();
         const solicitud = ++solicitudBusquedaRef.current;
         busquedaAbortRef.current?.abort();
         const controlador = new AbortController();

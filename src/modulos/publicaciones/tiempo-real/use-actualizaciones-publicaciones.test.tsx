@@ -206,6 +206,37 @@ describe("actualizaciones de publicaciones", () => {
         hook.unmount();
     });
 
+    it("suscribe el mercado de productores sin reconectar al renderizar y conserva la última versión", async () => {
+        const actualizar = vi.fn();
+        const hook = renderHook(() => useActualizacionesPublicaciones(actualizar, { tipo: "PRODUCTOR" }));
+        const fuente = FuenteEventos.instancias[0];
+        expect(fuente.url).toBe("/api/publicaciones/eventos?tipo=PRODUCTOR");
+        await notificar(fuente, "conectado", "productores-a");
+        hook.rerender();
+        expect(FuenteEventos.instancias).toHaveLength(1);
+        await notificar(fuente, "conectado", "productores-a");
+        expect(actualizar).toHaveBeenCalledOnce();
+        await notificar(fuente, "cambio", "productores-b");
+        expect(actualizar).toHaveBeenCalledTimes(2);
+        hook.unmount();
+        expect(fuente.close).toHaveBeenCalledOnce();
+    });
+
+    it("cierra la conexión anterior al pasar del mercado público al de productores", async () => {
+        const actualizar = vi.fn();
+        const hook = renderHook(({ productor }) => useActualizacionesPublicaciones(actualizar, productor ? { tipo: "PRODUCTOR" } : undefined), { initialProps: { productor: false } });
+        const anterior = FuenteEventos.instancias[0];
+        await notificar(anterior, "conectado", "version-compartida");
+        hook.rerender({ productor: true });
+        expect(anterior.close).toHaveBeenCalledOnce();
+        const actual = FuenteEventos.instancias[1];
+        expect(actual.url).toBe("/api/publicaciones/eventos?tipo=PRODUCTOR");
+        await notificar(anterior, "cambio", "evento-obsoleto");
+        await notificar(actual, "conectado", "version-compartida");
+        expect(actualizar).toHaveBeenCalledTimes(2);
+        hook.unmount();
+    });
+
     it("usa la consulta actual al cambiar filtros sin abrir otra conexión", async () => {
         const primera = vi.fn();
         const segunda = vi.fn();
@@ -303,8 +334,8 @@ describe("actualizaciones de publicaciones", () => {
         hook.unmount();
     });
 
-    it("comprueba la sesión privada solamente al fallar SSE, sin sondeos periódicos", async () => {
-        const hook = renderHook(() => useActualizacionesPublicaciones(vi.fn(), 7));
+    it.each([7, { tipo: "PRODUCTOR" }] as const)("comprueba la sesión privada solamente al fallar SSE, sin sondeos periódicos, filtro %s", async (filtro) => {
+        const hook = renderHook(() => useActualizacionesPublicaciones(vi.fn(), filtro));
         const fuente = FuenteEventos.instancias[0];
         await notificar(fuente, "conectado", "a");
         expect(verificarSesion).not.toHaveBeenCalled();

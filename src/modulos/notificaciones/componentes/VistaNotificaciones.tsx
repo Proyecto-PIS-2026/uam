@@ -48,7 +48,7 @@ function leerContador(datos: unknown): number {
 
 export default function VistaNotificaciones({ usuarioId }: Props) {
     const router = useRouter();
-    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [datos, setDatos] = useState<{ usuarioId: number; listado: NotificacionesUsuario } | null>(null);
     const [cargando, setCargando] = useState(true);
     const [cargaFallida, setCargaFallida] = useState(false);
@@ -120,7 +120,6 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
         carga.current = null;
         setCargando(false);
         setGuardando(`${operacion}:${id ?? "todas"}`);
-        cerrarNotificacion();
         const alternativa = operacion === "leer" ? "No se pudieron marcar las notificaciones como leídas. Intentá nuevamente." : "No se pudieron borrar las notificaciones. Intentá nuevamente.";
         try {
             const respuesta = await fetchConSesion(`/api/notificaciones${id === undefined ? "" : `/${id}`}`, {
@@ -191,13 +190,13 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
                         <button type="button" className={`boton-secundario ${styles.leer}`} onClick={() => void modificar("leer")} disabled={!listado || listado.noLeidas === 0 || ocupado} aria-busy={guardando === "leer:todas"}>
                             <DoneAllIcon fontSize="small" aria-hidden="true" />Leer todo
                         </button>
-                        <button type="button" className={`boton-secundario ${styles.borrarTodo}`} onClick={() => { cerrarNotificacion(); setConfirmarBorrado(true); }} disabled={!listado?.notificaciones.length || ocupado}>
+                        <button type="button" className={`boton-secundario ${styles.borrarTodo}`} onClick={() => setConfirmarBorrado(true)} disabled={!listado?.notificaciones.length || ocupado}>
                             <DeleteSweepOutlinedIcon fontSize="small" aria-hidden="true" />Borrar todo
                         </button>
                     </div>
                 </div>
                 {cargaFallida && <div className={styles.reintento}>
-                    <button type="button" className="boton-secundario" onClick={() => { cerrarNotificacion(); setCargando(true); void cargar(); }} disabled={cargando || ocupado}>
+                    <button type="button" className="boton-secundario" onClick={() => { setCargando(true); void cargar(); }} disabled={cargando || ocupado}>
                         <RefreshIcon fontSize="small" aria-hidden="true" />Reintentar
                     </button>
                 </div>}

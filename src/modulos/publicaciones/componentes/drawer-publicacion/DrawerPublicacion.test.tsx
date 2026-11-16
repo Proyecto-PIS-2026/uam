@@ -326,7 +326,7 @@ describe("DrawerPublicacion con operadores", () => {
     it("muestra un reemplazo cuando no hay foto", () => {
         render(<DrawerPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} />);
         expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
         expect(screen.queryByRole("img", { name: "Foto de Tomate" })).not.toBeInTheDocument();
     });
 
@@ -658,7 +658,7 @@ describe("DrawerPublicacion con productores", () => {
         render(<DrawerPublicacion publicacion={{ ...crearPublicacionProductor(), foto: "/foto-inexistente.jpg" }} open onOpenChange={vi.fn()} />);
         fireEvent.error(screen.getByAltText("Foto de Manzana"));
         expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
     });
 
     it("amplía la foto y permite cerrarla sin cerrar el detalle", async () => {

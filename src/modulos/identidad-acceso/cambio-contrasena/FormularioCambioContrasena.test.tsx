@@ -38,12 +38,20 @@ describe("formulario independiente en mi perfil", () => {
         expect(screen.getByLabelText(/^Confirmar nueva contraseña/)).toHaveAttribute("aria-invalid", "true");
         expect(accion).not.toHaveBeenCalled();
     });
-    it("informa confirmación distinta sin guardar", () => {
+    it("acumula hasta tres avisos al repetir una confirmación distinta sin guardar", () => {
         render(<Formulario volver="/mi-perfil/productor" />);
         completar();
         fireEvent.change(screen.getByLabelText(/^Confirmar nueva contraseña/), { target: { value: "Distinta123" } });
-        guardar();
-        expect(screen.getByRole("alert")).toHaveTextContent("no coincide");
+        let anteriores: HTMLElement[] = [];
+        for (let intento = 1; intento <= 4; intento += 1) {
+            guardar();
+            const avisos = screen.getAllByRole("alert");
+            expect(avisos).toHaveLength(Math.min(intento, 3));
+            anteriores.slice(-2).forEach((aviso, indice) => expect(avisos[indice]).toBe(aviso));
+            expect(anteriores).not.toContain(avisos.at(-1));
+            avisos.forEach((aviso) => expect(aviso).toHaveTextContent("no coincide"));
+            anteriores = avisos;
+        }
         expect(accion).not.toHaveBeenCalled();
     });
     it.each(["/mi-perfil", "/mi-perfil/productor"])("confirma mediante toast y borra los campos al guardar desde %s", async (volver) => {

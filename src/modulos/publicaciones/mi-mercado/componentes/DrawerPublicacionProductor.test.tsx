@@ -161,6 +161,44 @@ describe("DrawerPublicacionProductor: edición", () => {
         vi.restoreAllMocks();
     });
 
+    it.each([true, false])("amplía la foto en consulta y conserva el drawer al cerrarla (web: %s)", async (esWeb) => {
+        mocks.mediaQuery.mockReturnValue(esWeb);
+        mostrar({ ...publicacion, foto: "/foto-productor.webp" });
+        fireEvent.load(screen.getByAltText("Foto de Pera"));
+        fireEvent.click(screen.getByRole("button", { name: "Ampliar foto de Pera" }));
+        const ampliada = screen.getByRole("dialog", { name: "Foto ampliada del producto" });
+        expect(within(ampliada).getByAltText("Foto ampliada de Pera")).toHaveAttribute("src", "/foto-productor.webp");
+
+        fireEvent.click(within(ampliada).getByRole("button", { name: "Cerrar foto ampliada" }));
+        expect(screen.queryByRole("dialog", { name: "Foto ampliada del producto" })).not.toBeInTheDocument();
+        expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBeInTheDocument();
+        expect(mocks.cerrar).not.toHaveBeenCalled();
+
+        await editar();
+        expect(screen.queryByRole("button", { name: "Ampliar foto de Pera" })).not.toBeInTheDocument();
+    });
+
+    it("actualiza la ampliación en tiempo real y no la reabre al recuperar una foto eliminada", () => {
+        const { rerender } = mostrar({ ...publicacion, foto: "/foto-productor.webp" });
+        fireEvent.load(screen.getByAltText("Foto de Pera"));
+        fireEvent.click(screen.getByRole("button", { name: "Ampliar foto de Pera" }));
+
+        rerender(<DrawerPublicacionProductor publicacion={{ ...publicacion, foto: "/foto-actualizada.webp" }} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} alEliminada={mocks.eliminada} />);
+        const ampliada = screen.getByRole("dialog", { name: "Foto ampliada del producto" });
+        expect(within(ampliada).getByAltText("Foto ampliada de Pera")).toHaveAttribute("src", "/foto-actualizada.webp");
+
+        rerender(<DrawerPublicacionProductor publicacion={{ ...publicacion, foto: null }} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} alEliminada={mocks.eliminada} />);
+        expect(screen.queryByRole("dialog", { name: "Foto ampliada del producto" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Ampliar foto de Pera" })).not.toBeInTheDocument();
+
+        rerender(<DrawerPublicacionProductor publicacion={{ ...publicacion, foto: "/foto-restaurada.webp" }} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} alEliminada={mocks.eliminada} />);
+        expect(screen.queryByRole("dialog", { name: "Foto ampliada del producto" })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Ampliar foto de Pera" }));
+        expect(screen.getByAltText("Foto ampliada de Pera")).toHaveAttribute("src", "/foto-restaurada.webp");
+        expect(mocks.cerrar).not.toHaveBeenCalled();
+        expect(mocks.fetch).not.toHaveBeenCalled();
+    });
+
     it.each([
         { estadoFoto: "por-vencer", mensaje: "La foto está por vencer." },
         { estadoFoto: "eliminada", mensaje: "La foto venció y fue eliminada." },
@@ -239,6 +277,26 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveAttribute("readonly");
         expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveValue("12");
         expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveAttribute("readonly");
+        for (const etiqueta of ["Precio en pesos", /^Unidades/, "Fecha de vigencia", "Comentario"]) {
+            const campo = within(detalle).getByLabelText(etiqueta, { selector: "input, textarea" });
+            expect(campo).toBeDisabled();
+            if (etiqueta === "Fecha de vigencia") {
+                expect(campo).toHaveAttribute("readonly");
+                const grupo = campo.closest(".MuiPickersInputBase-root") as HTMLElement;
+                expect(grupo).toHaveClass("Mui-disabled", "Mui-readOnly");
+                expect(within(grupo).getByRole("button", { name: "Abrir calendario de Fecha de vigencia" })).toBeDisabled();
+                const secciones = within(grupo).getAllByRole("spinbutton");
+                expect(secciones).toHaveLength(3);
+                for (const seccion of secciones) {
+                    expect(seccion).toHaveAttribute("contenteditable", "false");
+                    expect(seccion).toHaveAttribute("aria-disabled", "true");
+                    expect(seccion).toHaveAttribute("tabindex", "-1");
+                }
+            } else {
+                act(() => campo.focus());
+                expect(campo).not.toHaveFocus();
+            }
+        }
         for (const [campo, valor] of [["Especie", "Pera"], ["Variedad", "Williams"], ["Empaquetado", "Cajon"], ["País de origen", "Uruguay"], ["Categoría", "Primera"], ["Calibre", "Grande"]]) {
             const selector = within(detalle).getByRole("combobox", { name: new RegExp(`^${campo}`) });
             expect(selector).toHaveTextContent(valor);
@@ -259,6 +317,9 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getAllByRole("dialog")).toEqual([edicion]);
         expect(screen.queryByRole("dialog", { name: "Consulta de publicación" })).not.toBeInTheDocument();
         expect(precio).toHaveValue("100");
+        for (const etiqueta of ["Precio en pesos", /^Unidades/, "Fecha de vigencia", "Comentario"]) {
+            expect(within(edicion).getByLabelText(etiqueta, { selector: "input, textarea" })).toBeEnabled();
+        }
         expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).toHaveTextContent("Cajon");
         expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent("Primera");
         expect(screen.getByRole("combobox", { name: /^Calibre/ })).toHaveTextContent(/^Grande$/);
@@ -339,6 +400,9 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("250");
         expect(screen.getByLabelText("Unidades (Bing)")).toHaveValue("25");
         expect(screen.getByLabelText("Unidades (Bing)")).toHaveAttribute("readonly");
+        for (const etiqueta of ["Precio en pesos", /^Unidades/, "Fecha de vigencia", "Comentario"]) {
+            expect(screen.getByLabelText(etiqueta, { selector: "input, textarea" })).toBeDisabled();
+        }
         expect(screen.getByRole("combobox", { name: /^País de origen/ })).toHaveTextContent("Argentina");
         expect(screen.getByText("No disponible", { exact: true })).toBeInTheDocument();
         expect(screen.getByText("21/10/2026")).toHaveAttribute("dateTime", actualizada.fecha);
@@ -381,6 +445,9 @@ describe("DrawerPublicacionProductor: edición", () => {
         screen.getAllByRole("combobox").forEach((selector, indice) => expect(selector).toBe(selectores[indice]));
         expect(screen.getByAltText("Foto de Pera")).toBe(foto);
         expect(screen.getByLabelText("Precio en pesos")).toHaveValue("100");
+        for (const etiqueta of ["Precio en pesos", /^Unidades/, "Fecha de vigencia", "Comentario"]) {
+            expect(screen.getByLabelText(etiqueta, { selector: "input, textarea" })).toBeDisabled();
+        }
         expect(screen.getByRole("link", { name: "Quinta" })).toBeInTheDocument();
         expect(mocks.fetch.mock.calls.some(([, config]) => config?.method === "PATCH")).toBe(false);
         expect(mocks.guardar).not.toHaveBeenCalled();
@@ -777,6 +844,8 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByLabelText("Precio en pesos")).toBeDisabled();
         for (const selector of screen.getAllByRole("combobox")) expect(selector).toHaveAttribute("aria-disabled", "true");
         expect(screen.getByLabelText("Unidades (Cajon)")).toBeDisabled();
+        expect(screen.getByLabelText("Fecha de vigencia", { selector: "input" })).toBeDisabled();
+        expect(screen.getByLabelText("Comentario")).toBeDisabled();
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeDisabled();
         expect(screen.getByLabelText("Fotografía")).toBeDisabled();
         expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
@@ -923,7 +992,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         vista.rerender(<DrawerPublicacionProductor publicacion={{ ...publicacion, foto: null }} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} />);
 
         const papel = screen.getByRole("dialog", { name: "Consulta de publicación" });
-        expect(within(papel).getByText("Sin foto")).toBeInTheDocument();
+        expect(within(papel).getByText("Sin foto disponible")).toBeInTheDocument();
         expect(within(papel).queryByRole("img")).not.toBeInTheDocument();
         expect(within(papel).getByLabelText("Precio en pesos")).toHaveValue("100");
         vista.rerender(<DrawerPublicacionProductor publicacion={{ ...publicacion, foto: "/nueva-pendiente.png" }} alCerrar={mocks.cerrar} alGuardar={mocks.guardar} />);

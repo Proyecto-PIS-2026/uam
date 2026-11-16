@@ -7,7 +7,8 @@ const mocks = vi.hoisted(() => {
     const modelo = () => ({ select: vi.fn(), where: vi.fn(), all: vi.fn(), first: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() });
     return {
         autorizar: vi.fn(), revalidatePath: vi.fn(), transaction: vi.fn(), execute: vi.fn(), query: vi.fn(), rawSql: vi.fn(), registrarPublicacion: vi.fn(),
-        modelos: { Envase: modelo(), KilosEmpaquetado: modelo(), Calibre: modelo(), Categoria: modelo(), Publicacion: modelo(), EstadisticaPublicacion: modelo() },
+        notificarProductor: vi.fn(),
+        modelos: { Envase: modelo(), KilosEmpaquetado: modelo(), Calibre: modelo(), Categoria: modelo(), Publicacion: modelo(), PublicacionProductor: modelo(), EstadisticaPublicacion: modelo() },
     };
 });
 
@@ -17,6 +18,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirAdministrador: mocks.autorizar }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/control-acciones", () => ({ controlarSesionEnAccion: (control: () => Promise<unknown>) => control() }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioCatalogoProductor: mocks.notificarProductor }));
 vi.mock("@/modulos/administracion/estadisticas/registrar-estadisticas", () => ({ registrarPublicacion: mocks.registrarPublicacion }));
 
 const casos = [
@@ -100,6 +102,7 @@ describe.each(casos)("catálogo de $tipo", ({ tipo, modelo, fila, datos, escritu
         expect(mocks.execute.mock.calls[0][0].texto).toContain("pg_advisory_xact_lock");
         expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(mocks.modelos[modelo].all.mock.invocationCallOrder[0]);
         expect(mocks.revalidatePath).toHaveBeenCalledExactlyOnceWith("/", "layout");
+        expect(mocks.notificarProductor).not.toHaveBeenCalled();
     });
 
     it("rechaza duplicados en alta y edición aunque cambien mayúsculas o formato", async () => {
@@ -122,6 +125,23 @@ describe.each(casos)("catálogo de $tipo", ({ tipo, modelo, fila, datos, escritu
         expect(mocks.modelos.EstadisticaPublicacion.update).not.toHaveBeenCalled();
         expect(mocks.registrarPublicacion).not.toHaveBeenCalled();
         expect(mocks.query.mock.calls[0][0]).toEqual({ texto: `SELECT id FROM ${tabla} WHERE id = ? FOR UPDATE`, valores: [10] });
+    });
+
+    it("actualiza el mercado de los productores afectados una sola vez por productor", async () => {
+        mocks.modelos.PublicacionProductor.all.mockResolvedValue([{ productorId: 7 }, { productorId: 7 }, { productorId: 8 }]);
+
+        expect(await guardarElementoCatalogo(tipo, datos, 10)).toEqual({ ok: true });
+
+        const filtrar = mocks.modelos.PublicacionProductor.where.mock.calls[0][0];
+        const comparar = vi.fn();
+        filtrar({ publicacion: { some: (condicion: (publicacion: unknown) => unknown) => condicion({ [campo]: { eq: comparar } }) } });
+        expect(comparar).toHaveBeenCalledWith(10);
+        expect(mocks.notificarProductor).toHaveBeenCalledTimes(2);
+        expect(mocks.notificarProductor).toHaveBeenNthCalledWith(1, expect.objectContaining({ execute: mocks.execute }), 7);
+        expect(mocks.notificarProductor).toHaveBeenNthCalledWith(2, expect.objectContaining({ execute: mocks.execute }), 8);
+        expect(mocks.modelos[modelo].update.mock.invocationCallOrder[0]).toBeLessThan(mocks.notificarProductor.mock.invocationCallOrder[0]);
+        expect(mocks.modelos.Publicacion.update).not.toHaveBeenCalled();
+        expect(mocks.registrarPublicacion).not.toHaveBeenCalled();
     });
 
     it("impide borrar valores asociados incluso a publicaciones inactivas de productores", async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import Alert from "@mui/material/Alert";
 import Fade from "@mui/material/Fade";
@@ -33,37 +33,52 @@ export function useNotificacionToast() {
 }
 
 function useContenedorNotificaciones(activo: boolean) {
-    const [contenedor, setContenedor] = useState<HTMLElement | null>(null);
+    const [contenedores, setContenedores] = useState<{ avisos: HTMLElement | null; acciones: HTMLElement | null }>({ avisos: null, acciones: null });
     useEffect(() => {
         if (!activo) return;
         const actualizar = () => {
             const modales = Array.from(document.querySelectorAll<HTMLElement>(".MuiModal-root"))
-                .filter((modal) => modal.getAttribute("aria-hidden") !== "true" && getComputedStyle(modal).display !== "none");
-            const modal = modales.at(-1);
+                .filter((modal) => getComputedStyle(modal).display !== "none" && getComputedStyle(modal).visibility !== "hidden");
+            const modal = modales.filter((elemento) => elemento.getAttribute("aria-hidden") !== "true").at(-1);
             const destino = modal?.querySelector<HTMLElement>(".MuiDialog-paper, .MuiDrawer-paper, .MuiPopover-paper") ?? document.body;
-            setContenedor((actual) => actual === destino ? actual : destino);
+            // Los menús toman el foco, pero conservan el pie de la pantalla que los abrió.
+            const modalAcciones = destino.matches(".MuiPopover-paper")
+                ? modales.filter((elemento) => elemento.querySelector(".MuiDialog-paper, .MuiDrawer-paper")).at(-1)
+                : modal;
+            const acciones = modalAcciones?.querySelector<HTMLElement>(".MuiDialog-paper, .MuiDrawer-paper") ?? document.body;
+            setContenedores((actual) => actual.avisos === destino && actual.acciones === acciones ? actual : { avisos: destino, acciones });
         };
         actualizar();
         const observador = new MutationObserver(actualizar);
         observador.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-hidden"] });
         return () => observador.disconnect();
     }, [activo]);
-    return contenedor?.isConnected ? contenedor : null;
+    return {
+        avisos: contenedores.avisos?.isConnected ? contenedores.avisos : null,
+        acciones: contenedores.acciones?.isConnected ? contenedores.acciones : null,
+    };
 }
 
-function useEspacioVisible(contenedor: HTMLElement | null) {
+function useEspacioVisible(contenedor: HTMLElement | null, viewportRef: RefObject<HTMLDivElement | null>, destinoAvisos: HTMLElement | null) {
     const [espacio, setEspacio] = useState<CSSProperties>({});
     useLayoutEffect(() => {
+        if (!contenedor) return;
         const viewport = window.visualViewport;
+        const modal = contenedor.closest(".MuiModal-root");
         let acciones: HTMLElement[] = [];
+        let revisionPosicion: number | null = null;
         const actualizar = () => {
             const alto = viewport?.height ?? window.innerHeight;
             const superior = viewport?.offsetTop ?? 0;
             const inferior = superior + alto;
-            const limites = acciones.map((elemento) => elemento.getBoundingClientRect())
-                .filter((rectangulo) => rectangulo.width > 0 && rectangulo.height > 0 && rectangulo.bottom > superior && rectangulo.top < inferior);
-            // El aviso queda sobre el pie del modal, sin tapar Guardar o Cancelar.
-            const espacioAcciones = limites.length > 0 ? Math.min(alto, inferior - Math.min(...limites.map(({ top }) => top))) : 0;
+            const limitesAviso = viewportRef.current?.getBoundingClientRect();
+            const limites = acciones.filter((elemento) => getComputedStyle(elemento).visibility !== "hidden")
+                .map((elemento) => elemento.getBoundingClientRect())
+                .filter((rectangulo) => rectangulo.width > 0 && rectangulo.height > 0 && rectangulo.bottom > superior && rectangulo.top < inferior
+                    && limitesAviso && rectangulo.right > limitesAviso.left && rectangulo.left < limitesAviso.right);
+            // En mobile deja libres las acciones; en escritorio conserva la esquina inferior.
+            const espacioAcciones = window.innerWidth < 768 && limites.length > 0
+                ? Math.min(alto, inferior - Math.min(...limites.map(({ top }) => top))) : 0;
             const siguiente = {
                 "--toast-ancho-visible": `${viewport?.width ?? window.innerWidth}px`,
                 "--toast-alto-visible": `${Math.max(0, alto - espacioAcciones)}px`,
@@ -72,35 +87,47 @@ function useEspacioVisible(contenedor: HTMLElement | null) {
             } as CSSProperties;
             setEspacio((actual) => Object.entries(siguiente).every(([clave, valor]) => actual[clave as keyof CSSProperties] === valor) ? actual : siguiente);
         };
-        const observadorTamano = contenedor && contenedor !== document.body && typeof ResizeObserver === "function" ? new ResizeObserver(actualizar) : null;
+        const actualizarViewport = () => {
+            actualizar();
+            if (revisionPosicion !== null) cancelAnimationFrame(revisionPosicion);
+            revisionPosicion = requestAnimationFrame(() => {
+                revisionPosicion = null;
+                actualizar();
+            });
+        };
+        const observadorTamano = typeof ResizeObserver === "function" ? new ResizeObserver(actualizar) : null;
         const observarAcciones = () => {
-            acciones = contenedor && contenedor !== document.body
-                ? Array.from(contenedor.querySelectorAll<HTMLElement>("[data-acciones-modal], .MuiDialogActions-root, footer")) : [];
+            const selector = contenedor === document.body
+                ? "[data-acciones-flotantes]"
+                : "[data-acciones-modal], .MuiDialogActions-root, footer";
+            acciones = Array.from(contenedor.querySelectorAll<HTMLElement>(selector))
+                .filter((elemento) => elemento.closest(".MuiModal-root") === modal);
             observadorTamano?.disconnect();
-            if (contenedor && contenedor !== document.body) observadorTamano?.observe(contenedor);
+            observadorTamano?.observe(contenedor);
+            if (viewportRef.current) observadorTamano?.observe(viewportRef.current);
             acciones.forEach((elemento) => observadorTamano?.observe(elemento));
             actualizar();
         };
         observarAcciones();
         const observadorContenido = new MutationObserver(observarAcciones);
-        if (contenedor && contenedor !== document.body) {
-            observadorContenido.observe(contenedor, { childList: true, subtree: true });
-            contenedor.addEventListener("scroll", actualizar, true);
-            contenedor.addEventListener("transitionend", actualizar);
-        }
-        window.addEventListener("resize", actualizar);
-        viewport?.addEventListener("resize", actualizar);
-        viewport?.addEventListener("scroll", actualizar);
+        observadorContenido.observe(contenedor, { childList: true, subtree: true });
+        const destinoScroll = contenedor === document.body ? document : contenedor;
+        destinoScroll.addEventListener("scroll", actualizar, true);
+        contenedor.addEventListener("transitionend", actualizar);
+        window.addEventListener("resize", actualizarViewport);
+        viewport?.addEventListener("resize", actualizarViewport);
+        viewport?.addEventListener("scroll", actualizarViewport);
         return () => {
+            if (revisionPosicion !== null) cancelAnimationFrame(revisionPosicion);
             observadorTamano?.disconnect();
             observadorContenido.disconnect();
-            contenedor?.removeEventListener("scroll", actualizar, true);
-            contenedor?.removeEventListener("transitionend", actualizar);
-            window.removeEventListener("resize", actualizar);
-            viewport?.removeEventListener("resize", actualizar);
-            viewport?.removeEventListener("scroll", actualizar);
+            destinoScroll.removeEventListener("scroll", actualizar, true);
+            contenedor.removeEventListener("transitionend", actualizar);
+            window.removeEventListener("resize", actualizarViewport);
+            viewport?.removeEventListener("resize", actualizarViewport);
+            viewport?.removeEventListener("scroll", actualizarViewport);
         };
-    }, [contenedor]);
+    }, [contenedor, viewportRef, destinoAvisos]);
     return espacio;
 }
 
@@ -125,8 +152,8 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
             setRevisionPausas((revision) => revision + 1);
         }
     }, []);
-    const contenedor = useContenedorNotificaciones(notificaciones.length > 0);
-    const espacio = useEspacioVisible(notificaciones.length > 0 ? contenedor : null);
+    const { avisos: contenedor, acciones: contenedorAcciones } = useContenedorNotificaciones(notificaciones.length > 0);
+    const espacio = useEspacioVisible(notificaciones.length > 0 ? contenedorAcciones : null, viewportRef, contenedor);
 
     const cerrar = useCallback((id: number) => {
         setNotificaciones((actuales) => actuales.map((aviso) => aviso.id === id ? { ...aviso, cerrando: true } : aviso));
@@ -147,9 +174,8 @@ export function ProveedorNotificacionesToast({ children }: { children: ReactNode
         setNotificaciones((actuales) => actuales.map((aviso) => aviso.origen === origen ? { ...aviso, cerrando: true } : aviso));
     }, []);
     const notificarValidacionNativa = useCallback((mensaje: string) => {
-        cerrarOrigen("validacion-nativa");
         agregar("validacion-nativa", mensaje, "error");
-    }, [agregar, cerrarOrigen]);
+    }, [agregar]);
     useErroresValidacionNativa(notificarValidacionNativa);
     const servicio = useMemo(() => ({ agregar, cerrarOrigen }), [agregar, cerrarOrigen]);
     const pausar = useCallback((id: number, motivo: "puntero" | "foco", activa: boolean) => {

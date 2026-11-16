@@ -58,7 +58,6 @@ export default function FormularioInicioSesion({ recuperacionHabilitada = true, 
         }
 
         cambiarSolicitudPendiente(true);
-        cerrarNotificacion();
         try {
             const resultado = await solicitarRecuperacion(usuarioRecuperacion);
             if (resultado.error) notificar(resultado.error, "error");
@@ -165,7 +164,7 @@ export default function FormularioInicioSesion({ recuperacionHabilitada = true, 
                         }}
                         className="mb-2 campo-formulario"
                     />
-                    <div className="flex w-full items-center justify-end gap-[var(--espacio-controles)]">
+                    <div className="flex w-full items-center justify-end gap-[var(--espacio-controles)]" data-acciones-modal>
                         <button
                             type="button"
                             onClick={cerrarModalRecuperacion}

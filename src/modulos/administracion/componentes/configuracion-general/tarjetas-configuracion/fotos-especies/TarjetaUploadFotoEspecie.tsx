@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ChangeEvent } from "react";
 import { Autocomplete, Dialog, IconButton, TextField } from "@mui/material";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
@@ -112,9 +112,9 @@ export default function TarjetaUploadFotoEspecie({ titulo, especies, especieSele
                 <div className={styles.contenedorImagen}>
                     <ImagenPublicacion src={fotoEfectiva === null ? null : fotoServidor} alt={especieActual ? `Foto de ${especieActual.nombreEspecie}` : "Foto de especie"} fill sizes="144px" className={styles.imagen}
                         reemplazo={
-                            <div className={styles.sinFoto}>
-                                <ImageOutlinedIcon className={styles.iconoFoto}/>
-                                Sin foto
+                            <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
+                                <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
+                                <span className={styles.textoSinFotoWeb}>Sin foto disponible</span>
                             </div>
                         }
                     />
@@ -149,9 +149,9 @@ export default function TarjetaUploadFotoEspecie({ titulo, especies, especieSele
                 <div className={styles.fotoAmpliada}>
                     <ImagenPublicacion src={fotoVisible} alt={`Foto ampliada de ${especieActual?.nombreEspecie ?? "especie"}`} fill loading="eager" sizes="(min-width: 832px) 50rem, (min-width: 768px) calc(100vw - 2rem), (min-width: 536px) 32rem, calc(100vw - 1.5rem)" className={styles.imagenAmpliada}
                         reemplazo={
-                            <div className={styles.sinFoto}>
-                                <ImageOutlinedIcon className={styles.iconoFoto}/>
-                                Sin foto
+                            <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
+                                <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
+                                <span>Sin foto disponible</span>
                             </div>
                         }
                     />

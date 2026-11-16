@@ -104,6 +104,30 @@ describe("LeafletLocationPicker", () => {
         expect(mocks.alConfirmar).not.toHaveBeenCalled();
     });
 
+    it.each(["agregar", "editar"] as const)("apila hasta tres avisos al repetir %s un punto con el nombre vacío", async (modo) => {
+        await abrirMapa(modo === "editar" ? ubicacion : null);
+        if (modo === "agregar") await marcar();
+        const campo = screen.getByLabelText(/^Nombre del punto de retiro/);
+        fireEvent.change(campo, { target: { value: "" } });
+        const confirmar = screen.getByRole("button", { name: modo === "editar" ? "Guardar cambios" : "Agregar punto" });
+        expect(confirmar).toBeEnabled();
+        let anteriores: HTMLElement[] = [];
+
+        for (let intento = 1; intento <= 4; intento += 1) {
+            fireEvent.click(confirmar);
+            await waitFor(() => {
+                const avisos = screen.getAllByRole("alert");
+                expect(avisos).toHaveLength(Math.min(intento, 3));
+                anteriores.slice(-2).forEach((aviso, indice) => expect(avisos[indice]).toBe(aviso));
+                expect(anteriores).not.toContain(avisos.at(-1));
+            });
+            anteriores = screen.getAllByRole("alert");
+            anteriores.forEach((aviso) => expect(aviso).toHaveTextContent("Faltan completar campos obligatorios."));
+            expect(campo).toHaveAttribute("aria-invalid", "true");
+            expect(mocks.alConfirmar).not.toHaveBeenCalled();
+        }
+    });
+
     it("conserva el nombre personalizado aunque la identificación de otro punto responda después", async () => {
         const pendiente = respuestaPendiente();
         vi.mocked(fetch).mockReturnValueOnce(pendiente.promesa);
@@ -116,14 +140,15 @@ describe("LeafletLocationPicker", () => {
         expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ ...ubicacion, nombreLugar: "Entrada por el portón" });
     });
 
-    it("precarga el nombre de un enlace legado sin inventar coordenadas y lo conserva al elegir el punto", async () => {
+    it("precarga el nombre de un enlace legado y lo actualiza al elegir el punto", async () => {
         render(<LeafletLocationPicker abierto modo="editar" nombreInicial="Quinta conocida" coordenadas={null} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
         await waitFor(() => expect(mocks.mapa.on).toHaveBeenCalledWith("click", expect.any(Function)));
         expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Quinta conocida");
         expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
         await marcar();
+        expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
-        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ ...ubicacion, nombreLugar: "Quinta conocida" });
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
     });
 
     it("conserva la selección provisional al recibir otro objeto con la misma ubicación confirmada", async () => {
@@ -131,11 +156,11 @@ describe("LeafletLocationPicker", () => {
         vi.mocked(fetch).mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }));
         await marcar(-34.8, -56.1);
         vista.rerender(<LeafletLocationPicker abierto modo="editar" coordenadas={{ ...ubicacion }} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
-        expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
+        expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 8");
         expect(mocks.crearMapa).toHaveBeenCalledOnce();
         expect(mocks.mapa.remove).not.toHaveBeenCalled();
         fireEvent.click(screen.getByRole("button", { name: /^(Agregar punto|Guardar cambios)$/ }));
-        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ latitud: -34.8, longitud: -56.1, departamento: "Canelones", nombreLugar: "Ruta 5" });
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ latitud: -34.8, longitud: -56.1, departamento: "Canelones", nombreLugar: "Ruta 8" });
     });
 
     it("restaura una ubicación confirmada distinta y descarta la identificación que estaba pendiente", async () => {
@@ -158,7 +183,7 @@ describe("LeafletLocationPicker", () => {
         const vista = await abrirMapa(ubicacion);
         vi.mocked(fetch).mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }));
         await marcar(-34.8, -56.1);
-        expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
+        expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 8");
         fireEvent.click(screen.getByRole("button", { name: nombre }));
         vista.rerender(<LeafletLocationPicker abierto={false} modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
         vista.rerender(<LeafletLocationPicker abierto modo="editar" coordenadas={ubicacion} alConfirmar={mocks.alConfirmar} alCerrar={mocks.alCerrar} />);
@@ -191,12 +216,12 @@ describe("LeafletLocationPicker", () => {
         await marcar(-34.7, -56);
         await act(async () => reciente.resolver(await respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } })));
         await act(async () => anterior.resolver(await respuesta({ address: { country_code: "uy", state: "Montevideo", road: "Ruta 1" } }, status)));
-        expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
+        expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 8");
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         expect(mocks.crearMarcador).toHaveBeenLastCalledWith([-34.7, -56], expect.any(Object));
         expect(mocks.marcador.setStyle).toHaveBeenCalledOnce();
         fireEvent.click(screen.getByRole("button", { name: /^(Agregar punto|Guardar cambios)$/ }));
-        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ latitud: -34.7, longitud: -56, departamento: "Canelones", nombreLugar: "Ruta 5" });
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ latitud: -34.7, longitud: -56, departamento: "Canelones", nombreLugar: "Ruta 8" });
     });
 
     it.each([200, 500])("descarta una identificación pendiente (%s) después de cerrar y reabrir", async (status) => {
@@ -224,6 +249,43 @@ describe("LeafletLocationPicker", () => {
         expect(mocks.marcador.remove).toHaveBeenCalled();
         fireEvent.click(screen.getByRole("button", { name: /^(Agregar punto|Guardar cambios)$/ }));
         expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({ ...ubicacion, latitud: -34.8, longitud: -56.1 });
+    });
+
+    it("actualiza el nombre automático en cada punto seleccionado antes de confirmar", async () => {
+        vi.mocked(fetch)
+            .mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "Montevideo", road: "Ruta 5" } }))
+            .mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }))
+            .mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "San José", road: "Ruta 1" } }));
+        await abrirMapa();
+        const nombre = screen.getByLabelText(/^Nombre del punto de retiro/);
+
+        await marcar(-34.9, -56.2);
+        expect(nombre).toHaveValue("Ruta 5");
+        await marcar(-34.8, -56.1);
+        expect(nombre).toHaveValue("Ruta 8");
+        await marcar(-34.7, -56.4);
+        expect(nombre).toHaveValue("Ruta 1");
+
+        fireEvent.click(screen.getByRole("button", { name: "Agregar punto" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({
+            latitud: -34.7, longitud: -56.4, departamento: "San José", nombreLugar: "Ruta 1",
+        });
+    });
+
+    it.each(["", "   ", "Entrada por el portón"])("vuelve a autocompletar al elegir otro punto después de cambiar el nombre a %j", async (nombreAnterior) => {
+        await abrirMapa();
+        await marcar();
+        const nombre = screen.getByLabelText(/^Nombre del punto de retiro/);
+        fireEvent.change(nombre, { target: { value: nombreAnterior } });
+        vi.mocked(fetch).mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }));
+
+        await marcar(-34.8, -56.1);
+
+        expect(nombre).toHaveValue("Ruta 8");
+        fireEvent.click(screen.getByRole("button", { name: "Agregar punto" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({
+            latitud: -34.8, longitud: -56.1, departamento: "Canelones", nombreLugar: "Ruta 8",
+        });
     });
 
     it.each([
@@ -262,12 +324,38 @@ describe("LeafletLocationPicker", () => {
         expect(screen.queryByText(/Failed to fetch|internal proxy/)).not.toBeInTheDocument();
     });
 
-    it("identifica el departamento de un punto anterior antes de permitir confirmarlo", async () => {
+    it.each(["selección", "búsqueda"])("conserva hasta tres errores al repetir una %s fallida", async (accion) => {
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Sin conexión")));
+        await abrirMapa();
+        if (accion === "búsqueda") {
+            fireEvent.change(screen.getByLabelText(/^Buscar dirección o lugar/), { target: { value: "Ruta 5" } });
+        }
+        let anteriores: HTMLElement[] = [];
+        for (let intento = 1; intento <= 4; intento += 1) {
+            if (accion === "selección") await marcar();
+            else fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+            await waitFor(() => {
+                const avisos = screen.getAllByRole("alert");
+                expect(avisos).toHaveLength(Math.min(intento, 3));
+                anteriores.slice(-2).forEach((aviso, indice) => expect(avisos[indice]).toBe(aviso));
+                expect(anteriores).not.toContain(avisos.at(-1));
+                expect(screen.getByRole("button", { name: "Buscar" })).toBeEnabled();
+            });
+            anteriores = screen.getAllByRole("alert");
+            anteriores.forEach((aviso) => expect(aviso).toHaveTextContent(accion === "selección"
+                ? "No pudimos identificar la ubicación." : "No pudimos buscar el lugar."));
+        }
+        expect(fetch).toHaveBeenCalledTimes(4);
+        expect(mocks.alConfirmar).not.toHaveBeenCalled();
+    });
+
+    it("identifica automáticamente el departamento de un punto anterior y conserva su nombre", async () => {
         const pendiente = respuestaPendiente();
         vi.mocked(fetch).mockReturnValueOnce(pendiente.promesa);
         await abrirMapa({ ...ubicacion, departamento: "" });
         expect(screen.getByRole("button", { name: /^(Agregar punto|Guardar cambios)$/ })).toBeDisabled();
-        await act(async () => pendiente.resolver(await respuesta({ address: { country_code: "uy", state: "Montevideo", road: "Ruta 5" } })));
+        await act(async () => pendiente.resolver(await respuesta({ address: { country_code: "uy", state: "Montevideo", road: "Ruta 8" } })));
+        expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
         fireEvent.click(screen.getByRole("button", { name: /^(Agregar punto|Guardar cambios)$/ }));
         expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith(ubicacion);
     });
@@ -287,6 +375,23 @@ describe("LeafletLocationPicker", () => {
         expect(screen.queryByRole("list", { name: "Resultados de búsqueda" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: /^(Agregar punto|Guardar cambios)$/ }));
         expect(mocks.alConfirmar).toHaveBeenCalledWith(ubicacion);
+    });
+
+    it("actualiza el nombre de un punto guardado al elegir otra ubicación desde la búsqueda", async () => {
+        await abrirMapa(ubicacion);
+        expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 5");
+        vi.mocked(fetch)
+            .mockImplementationOnce(() => respuesta([{ place_id: 2, display_name: "Ruta 8, Canelones", lat: "-34.8", lon: "-56.1" }]))
+            .mockImplementationOnce(() => respuesta({ address: { country_code: "uy", state: "Canelones", road: "Ruta 8" } }));
+        fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Ruta 8" } });
+        fireEvent.submit(screen.getByRole("searchbox").closest("form")!);
+        fireEvent.click(await screen.findByRole("button", { name: "Ruta 8, Canelones" }));
+
+        await waitFor(() => expect(screen.getByLabelText(/^Nombre del punto de retiro/)).toHaveValue("Ruta 8"));
+        fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+        expect(mocks.alConfirmar).toHaveBeenCalledExactlyOnceWith({
+            latitud: -34.8, longitud: -56.1, departamento: "Canelones", nombreLugar: "Ruta 8",
+        });
     });
 
     it("no consulta por una búsqueda vacía", async () => {

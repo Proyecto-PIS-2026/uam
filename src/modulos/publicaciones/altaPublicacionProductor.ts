@@ -7,6 +7,7 @@ import { validarAltaPublicacionProductor } from "./validarAltaPublicacionProduct
 import { normalizarPrecioPublicacion } from "./precio-publicacion";
 import { convertirFechaVigenciaAInstant } from "./vigencia-publicacion";
 import { obtenerFechaMaximaVigenciaProductor } from "./configuracion-vigencia-publicaciones";
+import { notificarCambioPublicacionProductor } from "@/infraestructura/tiempo-real/publicaciones";
 export type ResultadoAltaPublicacionProductor =
     | { esValido: false; errores: string[] }
     | { esValido: true; id: number; mensaje: string };
@@ -137,6 +138,7 @@ export async function altaPublicacionProductor(valor: unknown): Promise<Resultad
                 });
             }
 
+            await notificarCambioPublicacionProductor(tx, { productorId: productor.id, publicacionId: publicacion.id });
             return { esValido: true, id: publicacion.id, mensaje: "Publicación creada correctamente." };
         });
     } catch (error) {

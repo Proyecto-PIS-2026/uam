@@ -150,8 +150,9 @@ body {
 }
 
 .campo-formulario:focus-visible {
+  border-color: var(--color-secondary);
   outline: 2px solid var(--color-secondary);
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
 
 .campo-formulario-con-icono {

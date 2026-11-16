@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     revalidatePath: vi.fn(),
     eliminarImagen: vi.fn(),
     eliminarPerfil: vi.fn(),
+    notificarCambio: vi.fn(),
 
     productor: {
         where: vi.fn().mockReturnThis(),
@@ -37,6 +38,8 @@ const mocks = vi.hoisted(() => ({
         update: vi.fn(),
     },
 }));
+
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioCatalogoProductor: mocks.notificarCambio }));
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (importOriginal) => ({
     ...(await importOriginal<typeof import("@/modulos/identidad-acceso/autorizacion/controles")>()),
@@ -175,6 +178,30 @@ describe("baja de productor", () => {
     afterEach(() => {
         vi.useRealTimers();
         vi.restoreAllMocks();
+    });
+
+    it("notifica la baja del catálogo dentro de la transacción después de eliminar al productor", async () => {
+        expect((await bajaProductor({ productorId: 14 })).esValido).toBe(true);
+
+        expect(mocks.notificarCambio).toHaveBeenCalledExactlyOnceWith({
+            execute: mocks.execute,
+            orm: { public: { Productor: mocks.productor, Usuario: mocks.usuario, PublicacionProductor: mocks.relacion,
+                Publicacion: mocks.publicacion, EstadisticaCantidadPublicacion: mocks.estadistica } },
+        }, 14);
+        expect(mocks.usuario.delete.mock.invocationCallOrder[0]).toBeLessThan(mocks.notificarCambio.mock.invocationCallOrder[0]);
+    });
+
+    it("revierte la baja y conserva las fotos si falla el aviso del catálogo", async () => {
+        const error = new Error("No se pudo notificar el catálogo.");
+        mocks.notificarCambio.mockRejectedValueOnce(error);
+
+        await expect(bajaProductor({ productorId: 14 })).rejects.toBe(error);
+        expect(productorExiste).toBe(true);
+        expect(usuarioExiste).toBe(true);
+        expect(publicaciones).toEqual([20, 21]);
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+        expect(mocks.eliminarPerfil).not.toHaveBeenCalled();
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 
     it.each([

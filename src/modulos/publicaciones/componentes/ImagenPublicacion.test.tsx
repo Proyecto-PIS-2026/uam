@@ -32,18 +32,18 @@ describe("ImagenPublicacion", () => {
         expect(screen.getByText("Cargando foto")).toBeInTheDocument();
     });
     it("muestra el reemplazo si falta la foto", () => {
-        render(<ImagenPublicacion src={null} alt="Acelga" fill reemplazo={<span>Sin fotografía</span>} />);
-        expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
+        render(<ImagenPublicacion src={null} alt="Acelga" fill reemplazo={<span>Sin foto</span>} />);
+        expect(screen.getByText("Sin foto")).toBeInTheDocument();
         expect(screen.queryByRole("img")).not.toBeInTheDocument();
     });
 
     it("muestra el reemplazo cuando la URL falla y permite mostrar una foto nueva", () => {
-        const { rerender } = render(<ImagenPublicacion src="/anterior.jpg" alt="Acelga" fill reemplazo={<span>Sin fotografía</span>}/>);
+        const { rerender } = render(<ImagenPublicacion src="/anterior.jpg" alt="Acelga" fill reemplazo={<span>Sin foto</span>}/>);
         fireEvent.error(screen.getByAltText("Acelga"));
-        expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
-        rerender(<ImagenPublicacion src="/nueva.jpg" alt="Acelga" fill reemplazo={<span>Sin fotografía</span>}/>,);
+        expect(screen.getByText("Sin foto")).toBeInTheDocument();
+        rerender(<ImagenPublicacion src="/nueva.jpg" alt="Acelga" fill reemplazo={<span>Sin foto</span>}/>,);
         fireEvent.load(screen.getByAltText("Acelga"));
         expect(screen.getByRole("img", { name: "Acelga" })).toBeVisible();
-        expect(screen.queryByText("Sin fotografía")).not.toBeInTheDocument();
+        expect(screen.queryByText("Sin foto")).not.toBeInTheDocument();
     });
 });

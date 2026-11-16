@@ -113,6 +113,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                                             <ImagenPublicacion key={claveFoto} src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} loading="eager" onLoad={() => setFotoPreparada(claveFoto)} fill sizes="(min-width: 768px) 400px, 160px" className={styles.imagen} onError={() => setFotoPreparada(claveFoto)} reemplazo={
                                                 <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
                                                     <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
+                                                    <span>Sin foto disponible</span>
                                                 </div>
                                             } />
                                             {publicacion.foto && (
@@ -161,7 +162,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                             </div>
                             <ComentarioPublicacion comentario={publicacion.comentario} />
                         </div>
-                        <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
+                        <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`} data-acciones-modal>
                             <div className={styles.bloqueBotones}>
                                 <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} onClick={() => registrarContactoWhatsApp(publicacion.tipoPublicacion, usuario.id)} className={`boton-primario ${styles.botonWhatsApp}`} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
@@ -184,6 +185,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                             <ImagenPublicacion loading="eager" key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="(min-width: 832px) 50rem, (min-width: 768px) calc(100vw - 2rem), (min-width: 536px) 32rem, calc(100vw - 1.5rem)" className={styles.imagenAmpliada}  reemplazo={
                                 <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
                                     <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
+                                    <span>Sin foto disponible</span>
                                 </div>
                             } />
                         </div>

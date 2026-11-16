@@ -37,10 +37,26 @@
 }
 
 .sinFoto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-inline);
+  padding-inline: var(--espacio-inline);
   color: var(--color-secondary);
-  font-size: clamp(3rem, 12vw, 4.5rem);
-  font-weight: 700;
-  line-height: 1;
+  font-size: var(--tamano-texto-auxiliar);
+  font-weight: 500;
+  text-align: center;
+}
+
+.iconoFoto {
+  display: block !important;
+  font-size: 2rem !important;
+  flex-shrink: 0;
+}
+
+.textoSinFotoWeb {
+  display: none;
 }
 
 .contenido {
@@ -110,6 +126,9 @@
     aspect-ratio: 8 / 5;
   }
 
+  .textoSinFotoWeb {
+    display: inline;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -11,7 +11,7 @@ import styles from "@/modulos/usuarios/administradores/componentes/modificar-adm
 export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilAdministrador }) {
     const router = useRouter();
     const [nombre, setNombre] = useState(perfil.nombre);
-    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const enviando = useRef(false);
 
@@ -20,7 +20,6 @@ export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilA
         if (enviando.current) return;
         enviando.current = true;
         setGuardando(true);
-        cerrarNotificacion();
         try {
             const resultado = await modificarMiPerfilAdministrador({ nombre });
             if (!resultado.esValido) {

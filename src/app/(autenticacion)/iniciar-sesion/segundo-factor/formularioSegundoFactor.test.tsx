@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@/test-utils";
+import { cleanup, fireEvent, render, screen, waitFor } from "@/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import FormularioSegundoFactor from "./formularioSegundoFactor";
 
@@ -27,16 +27,28 @@ describe("formulario del segundo factor", () => {
         expect(screen.getByRole("button", { name: "Verificar e ingresar" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Cancelar y volver al inicio de sesión" })).toHaveAttribute("formNoValidate");
     });
-    it("copia la clave y confirma la operación", async () => {
+    it("acumula hasta tres confirmaciones al copiar la clave repetidamente", async () => {
         const copiar = vi.fn().mockResolvedValue(undefined);
         Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: copiar } });
         render(<FormularioSegundoFactor {...props} />);
         fireEvent.click(screen.getByText("¿No podés escanearlo?"));
-        fireEvent.click(screen.getByRole("button", { name: "Copiar clave" }));
-        const aviso = await screen.findByRole("status");
-        expect(aviso).toHaveTextContent("Clave copiada.");
-        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
+        let anteriores: HTMLElement[] = [];
+        for (let intento = 1; intento <= 4; intento += 1) {
+            fireEvent.click(screen.getByRole("button", { name: "Copiar clave" }));
+            await waitFor(() => {
+                const avisos = screen.getAllByRole("status");
+                expect(avisos).toHaveLength(Math.min(intento, 3));
+                anteriores.slice(-2).forEach((aviso, indice) => expect(avisos[indice]).toBe(aviso));
+                expect(anteriores).not.toContain(avisos.at(-1));
+            });
+            anteriores = screen.getAllByRole("status");
+            anteriores.forEach((aviso) => {
+                expect(aviso).toHaveTextContent("Clave copiada.");
+                expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
+            });
+        }
         expect(screen.getByText(props.secreto)).toBeVisible();
+        expect(copiar).toHaveBeenCalledTimes(4);
         expect(copiar).toHaveBeenCalledWith(props.secreto);
     });
 });

@@ -67,8 +67,8 @@
     cursor: pointer;
 }
 
-.cerrar:hover,
-.cancelar:hover {
+.cerrar:hover:not(:disabled),
+.cancelar:hover:not(:disabled) {
     background: var(--color-secondary-soft);
 }
 
@@ -141,6 +141,7 @@
     color: var(--color-secondary);
     font-size: var(--tamano-texto-secundario);
     font-weight: 600;
+    text-align: center;
 }
 
 .sinFoto svg {
@@ -169,7 +170,7 @@
     cursor: pointer;
 }
 
-.botonFoto:hover {
+.botonFoto:hover:not(:disabled) {
     background: var(--color-secondary-soft);
 }
 
@@ -197,8 +198,8 @@
     color: var(--color-danger);
 }
 
-.borrarFoto:hover {
-    background: var(--color-danger-soft);
+.borrarFoto:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
 }
 
 .accionesPublicacion {
@@ -388,6 +389,11 @@
     width: 100%;
 }
 
+.entrada :global(.MuiInputBase-input.Mui-disabled[readonly]) {
+    color: var(--color-foreground);
+    -webkit-text-fill-color: var(--color-foreground);
+}
+
 .selectMui {
     width: 100%;
 }
@@ -497,8 +503,8 @@
     color: var(--color-danger);
 }
 
-.eliminar:hover {
-    background: var(--color-danger-soft);
+.eliminar:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
 }
 
 .eliminar:focus-visible {

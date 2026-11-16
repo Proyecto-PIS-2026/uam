@@ -200,7 +200,7 @@ describe("MiMercadoProductor", () => {
         mocks.mediaQuery.mockReturnValue(esWeb);
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
         const tarjeta = screen.getByRole("button", { name: "Ver detalle de Pera" });
-        const zonas = [tarjeta, ...["$100", "Disponible", "Pera", "Sin fotografía"].map((texto) => within(tarjeta).getByText(texto)), within(tarjeta).getByTestId("ChevronRightIcon")];
+        const zonas = [tarjeta, ...["$100", "Disponible", "Pera", "Sin foto disponible"].map((texto) => within(tarjeta).getByText(texto)), within(tarjeta).getByTestId("ChevronRightIcon")];
 
         for (const zona of zonas) {
             fireEvent.click(zona);
@@ -386,7 +386,7 @@ describe("MiMercadoProductor", () => {
         const detalle = screen.getByRole("dialog", { name: "Consulta de publicación" });
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("0");
         expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveValue("0");
-        expect(within(detalle).getByText("Sin foto")).toBeInTheDocument();
+        expect(within(detalle).getByText("Sin foto disponible")).toBeInTheDocument();
         expect(within(detalle).getByText("No hay puntos de retiro informados.")).toBeInTheDocument();
         expect(within(detalle).queryByRole("button", { name: /Ampliar foto/ })).not.toBeInTheDocument();
         expect(within(detalle).queryByRole("link", { name: /WhatsApp|Ver Perfil/ })).not.toBeInTheDocument();
@@ -424,7 +424,7 @@ describe("MiMercadoProductor", () => {
         fireEvent.error(screen.getByAltText("Foto de Pera"));
 
         const detalle = screen.getByRole("dialog", { name: "Consulta de publicación" });
-        expect(within(detalle).getByText("Sin foto")).toBeInTheDocument();
+        expect(within(detalle).getByText("Sin foto disponible")).toBeInTheDocument();
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("100");
         expect(within(detalle).queryByRole("img")).not.toBeInTheDocument();
         fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));

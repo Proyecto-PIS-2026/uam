@@ -161,8 +161,12 @@
     opacity: 0.4;
 }
 
-.botonEliminar {
+.botonEliminar:not(:disabled) {
     color: var(--color-danger) !important;
+}
+
+.botonEliminar:hover:not(:disabled) {
+    background-color: var(--color-danger-soft);
 }
 
 .modal:global(.MuiDialog-paper) {

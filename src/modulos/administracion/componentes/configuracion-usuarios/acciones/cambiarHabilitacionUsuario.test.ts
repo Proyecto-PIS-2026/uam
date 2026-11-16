@@ -5,7 +5,8 @@ const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(), cerrarSesion: vi.fn(), redirect: vi.fn(),
     transaction: vi.fn(), usuarioWhere: vi.fn(), select: vi.fn(), update: vi.fn(),
     operadorWhere: vi.fn(), operadorSelect: vi.fn(), first: vi.fn(),
-    revalidatePath: vi.fn(), notificar: vi.fn(),
+    productorWhere: vi.fn(), productorSelect: vi.fn(), productorFirst: vi.fn(),
+    revalidatePath: vi.fn(), notificar: vi.fn(), notificarProductor: vi.fn(),
     execute: vi.fn(), usuarioFirst: vi.fn(), usuarioAll: vi.fn(),
 }));
 
@@ -14,7 +15,10 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
 }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
-vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioCatalogoOperador: mocks.notificar }));
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({
+    notificarCambioCatalogoOperador: mocks.notificar,
+    notificarCambioCatalogoProductor: mocks.notificarProductor,
+}));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: {
     transaction: mocks.transaction,
     raw: { sql: (partes: TemplateStringsArray) => ({ returnsRow: () => ({ build: () => partes.join("") }) }) },
@@ -22,7 +26,8 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: {
 
 const usuario = { where: mocks.usuarioWhere, select: mocks.select, update: mocks.update, first: mocks.usuarioFirst, all: mocks.usuarioAll };
 const operador = { select: mocks.operadorSelect, where: mocks.operadorWhere, first: mocks.first };
-const tx = { execute: mocks.execute, orm: { public: { Usuario: usuario, Operador: operador } } };
+const productor = { select: mocks.productorSelect, where: mocks.productorWhere, first: mocks.productorFirst };
+const tx = { execute: mocks.execute, orm: { public: { Usuario: usuario, Operador: operador, Productor: productor } } };
 
 describe("cambiarHabilitacionUsuario — BP-18.12", () => {
     beforeEach(() => {
@@ -38,6 +43,9 @@ describe("cambiarHabilitacionUsuario — BP-18.12", () => {
         mocks.operadorSelect.mockReturnValue(operador);
         mocks.operadorWhere.mockReturnValue(operador);
         mocks.first.mockResolvedValue({ id: 20 });
+        mocks.productorSelect.mockReturnValue(productor);
+        mocks.productorWhere.mockReturnValue(productor);
+        mocks.productorFirst.mockResolvedValue({ id: 30 });
     });
 
     it.each(["OPERADOR", "PRODUCTOR"])("rechaza el cambio solicitado por un %s", async (rol) => {
@@ -97,12 +105,36 @@ describe("cambiarHabilitacionUsuario — BP-18.12", () => {
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/publicaciones");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/operadores");
         expect(mocks.revalidatePath).toHaveBeenCalledWith("/productores");
+        expect(mocks.revalidatePath).toHaveBeenCalledWith("/publicaciones-productor");
         if (rol === "OPERADOR") {
             expect(mocks.operadorWhere).toHaveBeenCalledWith({ usuarioId: 2 });
             expect(mocks.notificar).toHaveBeenCalledWith(tx, 20);
         } else {
             expect(mocks.notificar).not.toHaveBeenCalled();
         }
+        if (rol === "PRODUCTOR") {
+            expect(mocks.productorWhere).toHaveBeenCalledWith({ usuarioId: 2 });
+            expect(mocks.notificarProductor).toHaveBeenCalledTimes(2);
+            expect(mocks.notificarProductor).toHaveBeenCalledWith(tx, 30);
+        } else {
+            expect(mocks.notificarProductor).not.toHaveBeenCalled();
+        }
+    });
+
+    it("no emite cambios de productor si no existe su perfil", async () => {
+        mocks.update.mockResolvedValue({ id: 2, rol: "PRODUCTOR" });
+        mocks.productorFirst.mockResolvedValue(null);
+
+        await expect(cambiarHabilitacionUsuario({ usuarioId: 2, habilitado: false })).resolves.toMatchObject({ esValido: true });
+        expect(mocks.notificarProductor).not.toHaveBeenCalled();
+    });
+
+    it("no anuncia éxito si falla la notificación transaccional del productor", async () => {
+        mocks.update.mockResolvedValue({ id: 2, rol: "PRODUCTOR" });
+        mocks.notificarProductor.mockRejectedValue(new Error("No se pudo notificar"));
+
+        await expect(cambiarHabilitacionUsuario({ usuarioId: 2, habilitado: false })).rejects.toThrow("No se pudo notificar");
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
 
     it("informa si el usuario fue eliminado antes de confirmar", async () => {

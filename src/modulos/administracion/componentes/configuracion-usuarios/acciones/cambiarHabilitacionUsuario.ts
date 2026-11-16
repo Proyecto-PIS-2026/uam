@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { notificarCambioCatalogoOperador } from "@/infraestructura/tiempo-real/publicaciones";
+import { notificarCambioCatalogoOperador, notificarCambioCatalogoProductor } from "@/infraestructura/tiempo-real/publicaciones";
 import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { bloquearYValidarAdministrador, esUltimoAdministradorHabilitado } from "@/modulos/usuarios/administradores/proteccion-administradores";
@@ -39,6 +39,9 @@ export async function cambiarHabilitacionUsuario(valor: unknown): Promise<Result
         if (usuario.rol === "OPERADOR") {
             const operador = await tx.orm.public.Operador.select("id").where({ usuarioId }).first();
             if (operador) await notificarCambioCatalogoOperador(tx, operador.id);
+        } else if (usuario.rol === "PRODUCTOR") {
+            const productor = await tx.orm.public.Productor.select("id").where({ usuarioId }).first();
+            if (productor) await notificarCambioCatalogoProductor(tx, productor.id);
         }
         return null;
     });
@@ -50,6 +53,7 @@ export async function cambiarHabilitacionUsuario(valor: unknown): Promise<Result
     revalidatePath("/administracion");
     revalidatePath("/inicio");
     revalidatePath("/publicaciones");
+    revalidatePath("/publicaciones-productor");
     revalidatePath("/operadores");
     revalidatePath("/operadores/[nombre]", "page");
     revalidatePath("/productores");

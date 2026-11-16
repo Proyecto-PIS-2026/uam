@@ -91,7 +91,6 @@ function comprobarFormularioVacio() {
     expect(screen.getByLabelText("Fotografía")).toHaveValue("");
     const galeria = screen.queryByLabelText("Fotografía desde galería");
     if (galeria) expect(galeria).toHaveValue("");
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
 }
 
@@ -176,6 +175,7 @@ describe("DrawerAltaPublicacionProductor", () => {
         ]);
         fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
         comprobarFormularioVacio();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
     it("cancelar la selección no agrega puntos incompletos ni impide publicar sin ubicaciones", async () => {
@@ -282,17 +282,20 @@ describe("DrawerAltaPublicacionProductor", () => {
         expect(screen.getByRole("combobox", { name: /^Especie/ })).toHaveTextContent("Manzana");
     });
 
-    it("permite otro reintento si vuelve a fallar sin repetir solicitudes automáticamente", async () => {
+    it("acumula los fallos de carga al reintentar y los conserva al recuperar los catálogos", async () => {
         const fetchMock = vi.fn()
             .mockResolvedValueOnce(new Response("{}", { status: 503 }))
             .mockResolvedValueOnce(new Response("respuesta inválida", { status: 200 }))
             .mockResolvedValueOnce(new Response(JSON.stringify(catalogos)));
         vi.stubGlobal("fetch", fetchMock);
         render(<DrawerAltaPublicacionProductor productorId={4} abierto alCrear={vi.fn()} alCerrar={vi.fn()} />);
-        await screen.findByRole("alert");
+        const avisoInicial = await screen.findByRole("alert");
         expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
         fireEvent.click(screen.getByRole("button", { name: "Reintentar carga" }));
         await waitFor(() => expect(screen.getByRole("button", { name: "Reintentar carga" })).toBeEnabled());
+        await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+        expect(screen.getAllByRole("alert")[0]).toBe(avisoInicial);
+        const avisos = screen.getAllByRole("alert");
         expect(fetchMock).toHaveBeenCalledTimes(2);
         expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
         fireEvent.click(screen.getByRole("button", { name: "Reintentar carga" }));
@@ -300,6 +303,8 @@ describe("DrawerAltaPublicacionProductor", () => {
         expect(fetchMock).toHaveBeenCalledTimes(3);
         expect(screen.queryByRole("button", { name: "Reintentar carga" })).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled();
+        expect(screen.getAllByRole("alert")).toHaveLength(avisos.length);
+        avisos.forEach((aviso, indice) => expect(screen.getAllByRole("alert")[indice]).toBe(aviso));
     });
 
     it("prioriza las especies UAM presentes y ordena el resto sin modificar el catálogo recibido", async () => {
@@ -419,6 +424,7 @@ describe("DrawerAltaPublicacionProductor", () => {
         expect(screen.queryByRole("dialog", { name: "Nueva publicación de Productor" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Agregar producto" }));
         comprobarFormularioVacio();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     }, 500_000);
 
     it("conserva el formulario rechazado y lo limpia al completar un reintento exitoso", async () => {
@@ -435,7 +441,8 @@ describe("DrawerAltaPublicacionProductor", () => {
         await screen.findByAltText("Vista previa de la fotografía");
         enviarFormulario();
 
-        expect(await screen.findByRole("alert")).toHaveTextContent("Revisá los datos de la publicación.");
+        const aviso = await screen.findByRole("alert");
+        expect(aviso).toHaveTextContent("Revisá los datos de la publicación.");
         expect(alCrear).not.toHaveBeenCalled();
         expect(alCerrar).not.toHaveBeenCalled();
         for (const [campo, opcion] of [["Especie", "Manzana"], ["Variedad", "Royal"], ["Empaquetado", "Cajita"], ["Categoría", "Primera"], ["Calibre", "Grande"], ["País de origen", "Uruguay"]]) {
@@ -452,6 +459,7 @@ describe("DrawerAltaPublicacionProductor", () => {
         await waitFor(() => expect(alCrear).toHaveBeenCalledExactlyOnceWith("Publicación creada correctamente."));
         expect(alCerrar).not.toHaveBeenCalled();
         comprobarFormularioVacio();
+        expect(screen.getByRole("alert")).toBe(aviso);
     }, 500_000);
 
     it("cancelar limpia los datos sin crear una publicación", async () => {

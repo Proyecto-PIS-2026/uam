@@ -89,12 +89,12 @@ describe("TarjetaUploadFotoEspecie", () => {
         expect(screen.getByRole("button", { name: "Cambiar foto" })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Quitar foto" })).toBeDisabled();
         expect(entradaArchivo(container)).toBeDisabled();
-        expect(screen.getByText("Sin foto")).toBeInTheDocument();
+        expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
     });
 
     it("permite cargar una foto para una especie que no tiene imagen", () => {
         preparar("2");
-        expect(screen.getByText("Sin foto")).toBeInTheDocument();
+        expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Cambiar foto" })).toBeEnabled();
         expect(screen.getByRole("button", { name: "Quitar foto" })).toBeDisabled();
     });
@@ -255,7 +255,7 @@ describe("TarjetaUploadFotoEspecie", () => {
         expect(screen.getByAltText("Foto de Acelga")).toBeInTheDocument();
         rerender(<TarjetaUploadFotoEspecie {...props} cambios={{ 1: null }} />);
         expect(screen.queryByAltText("Foto de Acelga")).not.toBeInTheDocument();
-        expect(screen.getByText("Sin foto")).toBeInTheDocument();
+        expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
         expect(seccionImagen(container)).toHaveAttribute("data-modificado", "true");
     });
 
@@ -263,7 +263,7 @@ describe("TarjetaUploadFotoEspecie", () => {
         const { container, props, rerender } = preparar();
         rerender(<TarjetaUploadFotoEspecie {...props} confirmadas={{ 1: null }} />);
         expect(screen.queryByAltText("Foto de Acelga")).not.toBeInTheDocument();
-        expect(screen.getByText("Sin foto")).toBeInTheDocument();
+        expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
         expect(seccionImagen(container)).toHaveAttribute("data-modificado", "false");
         expect(screen.getByRole("button", { name: "Cambiar foto" })).toBeEnabled();
     });

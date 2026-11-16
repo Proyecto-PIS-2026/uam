@@ -543,7 +543,7 @@ describe("DrawerPublicacion", () => {
         );
 
         expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
         expect(screen.queryByRole("img", { name: "Foto de Tomate" })).not.toBeInTheDocument();
     });
 
@@ -562,7 +562,7 @@ describe("DrawerPublicacion", () => {
         fireEvent.error(screen.getByAltText("Foto de Tomate"));
 
         expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
 
         expect(screen.getByRole("dialog", {
             name: "Detalle de publicación",
@@ -1217,7 +1217,7 @@ describe("DrawerPublicacion con productores", () => {
             name: "Detalle de publicación",
         })).toBeInTheDocument();
 
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
     });
 
     it("amplía la foto y permite cerrarla sin cerrar el detalle", async () => {

@@ -43,7 +43,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
     const [confirmacionContraseña, setConfirmacionContraseña] =
         useState("");
 
-    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
@@ -60,7 +60,6 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
         if (guardadoEnCurso.current) return;
         guardadoEnCurso.current = true;
 
-        cerrarNotificacion();
         setGuardando(true);
 
         try {

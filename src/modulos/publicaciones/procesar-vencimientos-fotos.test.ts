@@ -4,6 +4,7 @@ import { procesarVencimientosFotos } from "./procesar-vencimientos-fotos";
 
 const mocks = vi.hoisted(() => ({
     query: vi.fn(), execute: vi.fn(), enviarNotificacion: vi.fn(), notificarCambioCatalogoOperador: vi.fn(),
+    notificarCambioCatalogoProductor: vi.fn(),
 }));
 
 vi.mock("../../infraestructura/persistencia/prisma/db", () => ({
@@ -17,7 +18,10 @@ vi.mock("../../infraestructura/persistencia/prisma/db", () => ({
     },
 }));
 vi.mock("../notificaciones/notificaciones", () => ({ enviarNotificacion: mocks.enviarNotificacion }));
-vi.mock("../../infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioCatalogoOperador: mocks.notificarCambioCatalogoOperador }));
+vi.mock("../../infraestructura/tiempo-real/publicaciones", () => ({
+    notificarCambioCatalogoOperador: mocks.notificarCambioCatalogoOperador,
+    notificarCambioCatalogoProductor: mocks.notificarCambioCatalogoProductor,
+}));
 
 const tx = { query: mocks.query, execute: mocks.execute } as unknown as ContextoTareaDiaria["tx"];
 const contexto: ContextoTareaDiaria = { tx, fecha: "2026-11-04", limite: "2026-11-04T15:00:00Z" };
@@ -78,8 +82,10 @@ describe("procesamiento de fotos con avisos configurables", () => {
         }, tx);
         if (espacio === 1719) {
             expect(mocks.notificarCambioCatalogoOperador).toHaveBeenCalledExactlyOnceWith(tx, 12);
+            expect(mocks.notificarCambioCatalogoProductor).not.toHaveBeenCalled();
         } else {
             expect(mocks.notificarCambioCatalogoOperador).not.toHaveBeenCalled();
+            expect(mocks.notificarCambioCatalogoProductor).toHaveBeenCalledExactlyOnceWith(tx, 12);
         }
     });
 
@@ -89,5 +95,12 @@ describe("procesamiento de fotos con avisos configurables", () => {
 
         await expect(procesarVencimientosFotos(contexto, sinAvisos, "OPERADOR")).rejects.toThrow("No se pudo guardar el aviso");
         expect(mocks.notificarCambioCatalogoOperador).not.toHaveBeenCalled();
+    });
+
+    it("revierte la eliminación de la foto de productor si falla su aviso de tiempo real", async () => {
+        prepararVencida(1720);
+        mocks.notificarCambioCatalogoProductor.mockRejectedValue(new Error("Falló tiempo real"));
+
+        await expect(procesarVencimientosFotos(contexto, sinAvisos, "PRODUCTOR")).rejects.toThrow("Falló tiempo real");
     });
 });

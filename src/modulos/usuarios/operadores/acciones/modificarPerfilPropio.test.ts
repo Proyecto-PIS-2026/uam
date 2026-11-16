@@ -118,9 +118,34 @@ describe("modificarPerfilPropio", () => {
         expect(Temporal.Now.plainDateISO).toHaveBeenCalledWith("America/Montevideo");
     });
 
-    it("permite desmarcar una licencia vencida", async () => {
+    it.each([
+        { caso: "sin espacios sobrantes", comentario: "a".repeat(500) },
+        { caso: "con espacios extremos", comentario: `  ${"a".repeat(500)}  ` },
+    ])("acepta 500 caracteres de comentario $caso sin contar el encabezado de fechas", async ({ comentario }) => {
+        await expect(modificarPerfilPropio({
+            ...datos, enLicencia: true, inicioLicencia: "2026-11-14", finLicencia: "2026-11-15", comentario,
+        })).resolves.toMatchObject({ esValido: true });
+        expect(mocks.operador.update).toHaveBeenCalledWith(expect.objectContaining({
+            enLicencia: true,
+            comentario: `Licencia: 2026-11-14 - 2026-11-15\n\n${"a".repeat(500)}`,
+        }));
+    });
+
+    it("rechaza 501 caracteres de comentario de licencia antes de guardar", async () => {
+        await expect(modificarPerfilPropio({
+            ...datos, enLicencia: true, inicioLicencia: "2026-11-14", finLicencia: "2026-11-15",
+            comentario: "a".repeat(501),
+        })).resolves.toEqual({
+            esValido: false,
+            errores: ["El comentario de la licencia no puede superar los 500 caracteres."],
+        });
+        expect(mocks.guardarOperadorAtomico).not.toHaveBeenCalled();
+    });
+
+    it("permite desmarcar una licencia vencida y elimina el comentario aunque supere 500 caracteres", async () => {
         await expect(modificarPerfilPropio({
             ...datos, enLicencia: false, inicioLicencia: "2000-11-02", finLicencia: "2000-11-12",
+            comentario: "a".repeat(501),
         })).resolves.toMatchObject({ esValido: true });
         expect(mocks.operador.update).toHaveBeenCalledWith(expect.objectContaining({
             enLicencia: false, comentario: null,

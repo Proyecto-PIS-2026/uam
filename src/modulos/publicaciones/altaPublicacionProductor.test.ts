@@ -30,6 +30,11 @@ const mocks = vi.hoisted(() => ({
     crearEstadistica: vi.fn(),
     actualizarEstadistica: vi.fn(),
     consultarConfig: vi.fn(),
+    notificarCambio: vi.fn(),
+}));
+
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({
+    notificarCambioPublicacionProductor: mocks.notificarCambio,
 }));
 
 vi.mock("../../infraestructura/persistencia/prisma/db", () => ({
@@ -338,6 +343,30 @@ describe("altaPublicacionProductor", () => {
 
     afterEach(() => vi.restoreAllMocks());
 
+    it("notifica el alta con el ID base después de guardar sus datos dentro de la transacción", async () => {
+        expect(await altaPublicacionProductor(datos)).toMatchObject({ esValido: true });
+
+        expect(mocks.notificarCambio).toHaveBeenCalledExactlyOnceWith(tx, { productorId: 1, publicacionId: 42 });
+        expect(mocks.crearUbicacion.mock.invocationCallOrder[0]).toBeLessThan(mocks.notificarCambio.mock.invocationCallOrder[0]);
+        expect(mocks.crearEstadistica.mock.invocationCallOrder[0]).toBeLessThan(mocks.notificarCambio.mock.invocationCallOrder[0]);
+    });
+
+    it("no notifica el alta si falla el guardado de una ubicación", async () => {
+        const error = new Error("No se pudo guardar la ubicación.");
+        mocks.crearUbicacion.mockRejectedValueOnce(error);
+
+        await expect(altaPublicacionProductor(datos)).rejects.toBe(error);
+        expect(mocks.notificarCambio).not.toHaveBeenCalled();
+    });
+
+    it("rechaza la transacción si no se puede notificar el alta", async () => {
+        const error = new Error("No se pudo notificar el cambio.");
+        mocks.notificarCambio.mockRejectedValueOnce(error);
+
+        await expect(altaPublicacionProductor(datos)).rejects.toBe(error);
+        await expect(mocks.transaccion.mock.results[0].value).rejects.toBe(error);
+    });
+
     it("rechaza datos inválidos antes de consultar la base", async () => {
         expect(
             await altaPublicacionProductor(null),
@@ -348,6 +377,7 @@ describe("altaPublicacionProductor", () => {
         expect(mocks.consultarConfig).not.toHaveBeenCalled();
         expect(mocks.productor).not.toHaveBeenCalled();
         expect(mocks.transaccion).not.toHaveBeenCalled();
+        expect(mocks.notificarCambio).not.toHaveBeenCalled();
     });
 
     it.each([

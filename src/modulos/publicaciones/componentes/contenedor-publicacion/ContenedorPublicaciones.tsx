@@ -60,12 +60,12 @@ type PropiedadesLocales = {
     esAdmin?: boolean;
     ordenInicial?: OrdenConsulta;
     ordenamientoHabilitado?: boolean;
+    conservarFiltrosAlActualizar?: boolean;
 };
 
 export default function ContenedorPublicaciones(props: PropiedadesRemotas | PropiedadesLocales) {
     if ("resultado" in props) return <ContenidoRemoto {...props} />;
-    const especie = props.especie && props.publicaciones.some((publicacion) => publicacion.especie === props.especie) ? props.especie : "";
-    return <ContenidoLocal key={especie} {...props} especie={especie} />;
+    return <ContenidoLocal key={props.especie ?? ""} {...props} />;
 }
 
 type PropiedadesRemotas = {
@@ -191,7 +191,7 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
         <div className="secciones-pagina" aria-busy={cargando}>
             <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} navesDisponibles={datos.naves} totalRemoto={datos.total} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
             {cargando && <IndicadorCargaPublicaciones />}
-            <AvisoErrorToast mensaje={error} />
+            <AvisoErrorToast mensaje={error} cerrarAlCorregir={false} />
             {error && <button type="button" className="boton-secundario" onClick={() => void cargar()}>Reintentar</button>}
             <ListadoPublicaciones
                 publicaciones={datos.publicaciones}
@@ -209,7 +209,8 @@ function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicia
     );
 }
 
-function ContenidoLocal({publicaciones, especie = "", esAdmin = false, ordenInicial = "prioridad", ordenamientoHabilitado = true }: PropiedadesLocales) {
+function ContenidoLocal({publicaciones, especie: especieInicial = "", esAdmin = false, ordenInicial = "prioridad", ordenamientoHabilitado = true, conservarFiltrosAlActualizar = false }: PropiedadesLocales) {
+    const [especie] = useState(() => conservarFiltrosAlActualizar || publicaciones.some((publicacion) => publicacion.especie === especieInicial) ? especieInicial : "");
     const [claveConsulta, setClaveConsulta] = useState("");
     const cambiarConsulta = useCallback((consulta: FiltrosConsulta) => {
         setClaveConsulta(JSON.stringify(consulta));
@@ -233,7 +234,7 @@ function ContenidoLocal({publicaciones, especie = "", esAdmin = false, ordenInic
 
 	return (
 		<div className="secciones-pagina">
-			<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicaciones} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} alFiltrar={setPublicacionesFiltradas} alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")}/>
+			<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicaciones} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} conservarSeleccionAlActualizar={conservarFiltrosAlActualizar} alFiltrar={setPublicacionesFiltradas} alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")}/>
 			<ListadoPublicaciones
 				esAdmin={esAdmin}
 				publicaciones={publicacionesFiltradas}

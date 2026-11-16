@@ -5,6 +5,7 @@ import { Temporal } from "temporal-polyfill";
 import { exigirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { guardarOperadorAtomico } from "../guardar-operador-atomico";
+import { validarLargoComentarioLicencia } from "../comentario-licencia";
 import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "../../fotos-perfil";
 
 type DatosPerfil = {
@@ -70,6 +71,10 @@ function validarDatos(valor: unknown): { datos: { nombre: string; telefono: stri
     const comentario = typeof entrada.comentario === "string" ? entrada.comentario.trim() : "";
     if (entrada.comentario !== undefined && typeof entrada.comentario !== "string") {
         errores.push("El mensaje de recomendación no es válido.");
+    }
+    if (enLicencia) {
+        const errorComentario = validarLargoComentarioLicencia(comentario);
+        if (errorComentario) errores.push(errorComentario);
     }
     return {
         datos: {

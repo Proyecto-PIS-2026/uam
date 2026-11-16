@@ -8,6 +8,7 @@ import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/con
 import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { guardarUsuarioAtomico } from "@/modulos/usuarios/guardar-usuario-atomico";
 import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "@/modulos/usuarios/fotos-perfil";
+import { notificarCambioCatalogoProductor } from "@/infraestructura/tiempo-real/publicaciones";
 
 export type ResultadoModificacionProductor =
     | { esValido: false; errores: string[] }
@@ -80,6 +81,7 @@ export async function modificarProductor(
                 });
         }
 
+        await notificarCambioCatalogoProductor(tx, datos.productorId);
         return datos.productorId;
     }, "productor"));
 

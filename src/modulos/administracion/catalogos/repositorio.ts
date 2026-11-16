@@ -1,4 +1,5 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
+import { notificarCambioCatalogoProductor } from "@/infraestructura/tiempo-real/publicaciones";
 import type { DatosCatalogo, ElementoCatalogo, TipoCatalogo } from "./tipos";
 
 export type TransaccionCatalogo = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -64,6 +65,15 @@ export async function guardarValor(tx: TransaccionCatalogo, tipo: TipoCatalogo, 
             if (id === undefined) await tx.orm.public.Categoria.create({ nombreCategoria: datos.nombre, especieId: null });
             else await tx.orm.public.Categoria.where({ id }).update({ nombreCategoria: datos.nombre, especieId: null });
             break;
+    }
+    if (id !== undefined) {
+        const campo = tipo === "empaquetados" ? "envaseId" : tipo === "kilos" ? "kilosId" : tipo === "calibres" ? "calibreId" : "categoriaId";
+        const relaciones = await tx.orm.public.PublicacionProductor
+            .where((relacion) => relacion.publicacion.some((publicacion) => publicacion[campo].eq(id)))
+            .select("productorId").all();
+        for (const productorId of new Set(relaciones.map((relacion) => relacion.productorId))) {
+            await notificarCambioCatalogoProductor(tx, productorId);
+        }
     }
 }
 

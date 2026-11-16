@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -16,6 +17,8 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
+import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import Image from "next/image";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
@@ -176,7 +179,6 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
     async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (deshabilitado || leyendoFoto) return;
-        cerrarNotificacion();
         if (!precioPublicacionValido(datos.precio)) {
             notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
@@ -307,14 +309,12 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                         <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-fechaVigencia">
                             Fecha de vigencia
                         </label>
-                        <OutlinedInput
-                            color="secondary"
+                        <SelectorFecha
                             className={drawerStyles.entrada}
-                            size="small"
                             id="nueva-publicacion-fechaVigencia"
-                            type="date"
+                            labelAccesible="Fecha de vigencia"
                             value={datos.fechaVigencia}
-                            onChange={(evento) => actualizar({ fechaVigencia: evento.target.value })}
+                            onChange={(fechaVigencia) => actualizar({ fechaVigencia })}
                             disabled={deshabilitado}
                         />
                     </div>
@@ -330,10 +330,10 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
 
                     <div className={drawerStyles.seccionFoto}>
                         <div className={drawerStyles.marcoFoto}>
-                            {datos.fotografia ? <Image className={drawerStyles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill sizes="(min-width: 768px) 480px, 100vw" unoptimized /> : <div className={drawerStyles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>}
+                            {datos.fotografia ? <Image className={drawerStyles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill sizes="(min-width: 768px) 480px, 100vw" unoptimized /> : <div className={drawerStyles.sinFoto}><HideImageOutlinedIcon aria-hidden="true" /><span>Sin foto disponible</span></div>}
                             {datos.fotografia && <button className={`${drawerStyles.botonFoto} ${drawerStyles.borrarFoto}`} type="button" onClick={borrarFotografia} disabled={deshabilitado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
                             <button className={drawerStyles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={deshabilitado}><PhotoCameraOutlinedIcon fontSize="small" /> {esWeb ? "Editar foto" : "Cámara"}</button>
-                            {!esWeb && <button className={`${drawerStyles.botonFoto} ${drawerStyles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={deshabilitado}>Galería</button>}
+                            {!esWeb && <button className={`${drawerStyles.botonFoto} ${drawerStyles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={deshabilitado}><PhotoLibraryOutlinedIcon fontSize="small" aria-hidden="true" /> Galería</button>}
                             <input ref={inputFotoRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFotografia} disabled={deshabilitado} aria-label="Fotografía" />
                             {!esWeb && <input ref={inputGaleriaRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFotografia} disabled={deshabilitado} aria-label="Fotografía desde galería" />}
                         </div>

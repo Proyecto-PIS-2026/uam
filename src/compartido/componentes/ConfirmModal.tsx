@@ -69,7 +69,7 @@ export function ConfirmModal({
 					<h2 id={tituloId} className={`titulo-seccion ${estilos.titulo}`}>{titulo}</h2>
 				</div>
 				<p id={descripcionId} className={estilos.descripcion}>{descripcion}</p>
-				<div className={estilos.acciones}>
+				<div className={estilos.acciones} data-acciones-modal>
 					<button ref={cancelarRef} type="button" onClick={alCancelar} disabled={procesando} className="boton-secundario">{textoCancelar}</button>
 					<button type="button" onClick={alConfirmar} disabled={procesando} className="boton-peligro">{procesando ? "Eliminando..." : textoConfirmar}</button>
 				</div>

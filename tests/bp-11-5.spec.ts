@@ -1,3 +1,4 @@
+import { completarFecha, esperarFecha } from "./soporte/fechas";
 import { expect as baseExpect, type Page } from "@playwright/test";
 import sharp from "sharp";
 import { test as base, type OperadorPrecarga } from "./precarga-operadores";
@@ -75,8 +76,8 @@ async function completarLicencia(page: Page, inicio: string, fin: string, mensaj
   await aviso.getByRole("button", { name: "Aceptar", exact: true }).click();
   await expect(aviso).not.toBeVisible();
   await expect(page.getByRole("switch", { name: "En licencia", exact: true })).toBeChecked();
-  await page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/).fill(inicio);
-  await page.getByLabel(/^Fin de licencia(?:\s*\*)?$/).fill(fin);
+  await completarFecha(page.getByRole("group", { name: /^Inicio de licencia(?:\s*\*)?$/ }), inicio);
+  await completarFecha(page.getByRole("group", { name: /^Fin de licencia(?:\s*\*)?$/ }), fin);
   await page.getByLabel("Mensaje de recomendación", { exact: true }).fill(mensaje);
 }
 
@@ -102,8 +103,8 @@ test.describe("BP-11.5: Modificación de mi perfil como Operador", () => {
     await expect(page.getByRole("img", { name: "Vista previa de la foto de perfil" })).toHaveAttribute("src", /\/Logo\.PNG$/);
     await expect(page.getByRole("switch", { name: "En licencia", exact: true })).toBeChecked();
     await expect(page.getByRole("alertdialog", { name: "Aviso de licencia", exact: true })).toHaveCount(0);
-    await expect(page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/)).toHaveValue(inicio);
-    await expect(page.getByLabel(/^Fin de licencia(?:\s*\*)?$/)).toHaveValue(fin);
+    await esperarFecha(page.getByRole("group", { name: /^Inicio de licencia(?:\s*\*)?$/ }), inicio);
+    await esperarFecha(page.getByRole("group", { name: /^Fin de licencia(?:\s*\*)?$/ }), fin);
     await expect(page.getByLabel("Mensaje de recomendación")).toHaveValue("Compren en el puesto de al lado.");
   });
 
@@ -213,14 +214,14 @@ test.describe("BP-11.5: Modificación de mi perfil como Operador", () => {
     await aviso.getByRole("button", { name: "Cancelar", exact: true }).click();
     await expect(aviso).not.toBeVisible();
     await expect(licencia).not.toBeChecked();
-    await expect(page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/)).toHaveCount(0);
+    await expect(page.getByRole("group", { name: /^Inicio de licencia(?:\s*\*)?$/ })).toHaveCount(0);
     expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.enLicencia).toBe(false);
 
     await licencia.click();
     await aviso.getByRole("button", { name: "Aceptar", exact: true }).click();
     await expect(aviso).not.toBeVisible();
     await expect(licencia).toBeChecked();
-    await expect(page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/)).toBeVisible();
+    await expect(page.getByRole("group", { name: /^Inicio de licencia(?:\s*\*)?$/ })).toBeVisible();
     // Aceptar sólo prepara la licencia: se persiste al guardar el formulario.
     expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.enLicencia).toBe(false);
   });
@@ -231,7 +232,7 @@ test.describe("BP-11.5: Modificación de mi perfil como Operador", () => {
       await completarLicencia(page, faltante === "inicio" ? "" : inicio, faltante === "fin" ? "" : fin);
       await enviar(page);
       await esperarRechazo(page, "Faltan completar campos obligatorios.",
-        page.getByLabel(faltante === "inicio" ? /^Inicio de licencia/ : /^Fin de licencia/));
+        page.getByRole("group", { name: faltante === "inicio" ? /^Inicio de licencia/ : /^Fin de licencia/ }));
       expect((await db.orm.public.Operador.where({ id: operador.id }).first())?.enLicencia).toBe(false);
       await esperarSinLicencia(page);
     });
@@ -271,8 +272,8 @@ test.describe("BP-11.5: Modificación de mi perfil como Operador", () => {
       else await expect(page.getByRole("heading", { name: "Mensaje de recomendación", exact: true })).toHaveCount(0);
       await editar(page);
       await expect(page.getByRole("switch", { name: "En licencia", exact: true })).toBeChecked();
-      await expect(page.getByLabel(/^Inicio de licencia(?:\s*\*)?$/)).toHaveValue(inicio);
-      await expect(page.getByLabel(/^Fin de licencia(?:\s*\*)?$/)).toHaveValue(fin);
+      await esperarFecha(page.getByRole("group", { name: /^Inicio de licencia(?:\s*\*)?$/ }), inicio);
+      await esperarFecha(page.getByRole("group", { name: /^Fin de licencia(?:\s*\*)?$/ }), fin);
       await expect(page.getByLabel("Mensaje de recomendación")).toHaveValue(caso.mensaje);
     });
   }
