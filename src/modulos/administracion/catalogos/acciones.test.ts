@@ -87,6 +87,16 @@ describe("autorización y validaciones del ABM", () => {
 });
 
 describe.each(casos)("catálogo de $tipo", ({ tipo, modelo, fila, datos, escritura, campo, tabla }) => {
+    it.each([undefined, 10])("rechaza 101 caracteres sin persistir el valor, con id %s", async (id) => {
+        const resultado = await guardarElementoCatalogo(tipo, { nombre: "1".repeat(101), codigo: "G" }, id);
+
+        expect(resultado).toEqual({ ok: false, mensaje: "El valor no puede superar los 100 caracteres." });
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.modelos[modelo].create).not.toHaveBeenCalled();
+        expect(mocks.modelos[modelo].update).not.toHaveBeenCalled();
+        expect(mocks.revalidatePath).not.toHaveBeenCalled();
+    });
+
     it("lista los valores existentes del catálogo elegido", async () => {
         mocks.modelos[modelo].all.mockResolvedValue([fila]);
         expect(await listarCatalogo(tipo)).toEqual([tipo === "calibres"

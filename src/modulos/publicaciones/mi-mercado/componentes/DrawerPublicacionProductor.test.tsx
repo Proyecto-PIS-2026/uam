@@ -245,7 +245,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
         expect(solicitudGuardado().cambios).not.toHaveProperty("foto");
-        expect(screen.getByRole("status")).toHaveTextContent("La foto venció y fue eliminada.");
+        expect(screen.getByText("La foto venció y fue eliminada. Podés cargar una nueva foto.")).toBeVisible();
     });
 
     it("conserva la prioridad UAM en el selector interno sin cambiar el catálogo ni la selección", async () => {
@@ -653,6 +653,60 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(mocks.cerrar).not.toHaveBeenCalled();
         fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
         await waitFor(() => expect(mocks.guardar).toHaveBeenCalledWith(actualizada));
+    });
+
+    it.each([true, false])("confirmar sin cambios vuelve a consulta sin modificar la publicación (web: %s)", async (esWeb) => {
+        mocks.mediaQuery.mockReturnValue(esWeb);
+        mostrar();
+        await editar();
+
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+
+        expect(mocks.fetch.mock.calls.some(([, config]) => config?.method === "PATCH")).toBe(false);
+        expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBeInTheDocument();
+        expect(screen.getByLabelText("Precio en pesos")).toHaveValue("100");
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        expect(mocks.cerrar).not.toHaveBeenCalled();
+        expect(screen.queryByText("Cambios guardados.")).not.toBeInTheDocument();
+    });
+
+    it("no guarda si se revierten los cambios o sólo cambia el formato de los valores", async () => {
+        mostrar();
+        const precio = await editar();
+        fireEvent.change(precio, { target: { value: "250" } });
+        fireEvent.change(precio, { target: { value: "00100" } });
+        fireEvent.change(screen.getByLabelText("Comentario"), { target: { value: "   " } });
+        fireEvent.change(screen.getByLabelText("Fecha de vigencia", { selector: "input" }), { target: { value: "2026-10-23" } });
+        fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
+        fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+
+        expect(mocks.fetch.mock.calls.some(([, config]) => config?.method === "PATCH")).toBe(false);
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBeInTheDocument();
+    });
+
+    it("no guarda una publicación sin valores opcionales cuando no hay cambios", async () => {
+        mostrar({ ...publicacion, precio: null, cantidadUnidades: null, comentario: null, fechaVigencia: null,
+            variedad: null, envase: null, kilos: null, categoria: null, calibre: null, paisId: null, ubicaciones: [], publicacionDisponible: false });
+        await editar();
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+
+        expect(mocks.fetch.mock.calls.some(([, config]) => config?.method === "PATCH")).toBe(false);
+        expect(mocks.guardar).not.toHaveBeenCalled();
+        expect(screen.getByRole("dialog", { name: "Consulta de publicación" })).toBeInTheDocument();
+    });
+
+    it("guarda cuando sólo cambia la fecha de vigencia", async () => {
+        const actualizada = { ...publicacion, fechaVigencia: "2026-10-24" };
+        mocks.fetch.mockResolvedValueOnce(respuesta({ opciones })).mockResolvedValueOnce(respuesta({ publicacion: actualizada }));
+        mostrar();
+        await editar();
+        fireEvent.change(screen.getByLabelText("Fecha de vigencia", { selector: "input" }), { target: { value: "2026-10-24" } });
+        fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+
+        await waitFor(() => expect(mocks.guardar).toHaveBeenCalledExactlyOnceWith(actualizada));
+        expect(solicitudGuardado().cambios.fechaVigencia).toBe("2026-10-24");
     });
 
     it("guarda null al borrar el precio y las unidades y conserva disponibilidad falsa", async () => {

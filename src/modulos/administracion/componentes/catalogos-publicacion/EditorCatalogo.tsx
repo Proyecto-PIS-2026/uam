@@ -45,7 +45,7 @@ export default function EditorCatalogo({ tipo, elemento, procesando, alGuardar, 
                         <TextField label={etiqueta} value={nombre} onChange={(evento) => setNombre(evento.target.value)}
                             required fullWidth autoFocus={!esCalibre} disabled={procesando} size="small"
                             helperText={tipo === "kilos" ? "Podés ingresar un peso o un rango, por ejemplo: 10 o 10-12." : undefined}
-                            slotProps={{ htmlInput: { maxLength: 120 } }} />
+                            slotProps={{ htmlInput: { maxLength: 100 } }} />
                     </div>
                 </DialogContent>
                 <DialogActions className={styles.accionesDialogo}>

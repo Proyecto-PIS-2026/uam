@@ -100,6 +100,7 @@ describe("CatalogosPublicacion", () => {
         await preparar();
         fireEvent.click(screen.getByRole("button", { name: "Agregar valor" }));
         const dialogo = screen.getByRole("dialog", { name: "Agregar valor" });
+        expect(within(dialogo).getByRole("textbox", { name: /Nombre/ })).toHaveAttribute("maxlength", "100");
         fireEvent.change(within(dialogo).getByRole("textbox", { name: /Nombre/ }), { target: { value: "Bolsa" } });
         mocks.listar.mockResolvedValueOnce([...elementos.empaquetados, { id: 5, nombre: "Bolsa" }]);
         fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar" }));
@@ -132,6 +133,7 @@ describe("CatalogosPublicacion", () => {
         const dialogo = screen.getByRole("dialog", { name: "Modificar valor" });
         expect(within(dialogo).getByText("El cambio se reflejará en todas las publicaciones que usan este valor.")).toBeInTheDocument();
         expect(within(dialogo).getByRole("textbox", { name: /Nombre/ })).toHaveValue("Cajón");
+        expect(within(dialogo).getByRole("textbox", { name: /Nombre/ })).toHaveAttribute("maxlength", "100");
         fireEvent.change(within(dialogo).getByRole("textbox", { name: /Nombre/ }), { target: { value: "Cajón grande" } });
         fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar" }));
 
@@ -145,6 +147,8 @@ describe("CatalogosPublicacion", () => {
         fireEvent.click(await screen.findByRole("button", { name: "Modificar G - Grande" }));
         const dialogo = screen.getByRole("dialog", { name: "Modificar valor" });
         expect(within(dialogo).getByRole("textbox", { name: /Código/ })).toHaveValue("G");
+        expect(within(dialogo).getByRole("textbox", { name: /Código/ })).toHaveAttribute("maxlength", "60");
+        expect(within(dialogo).getByRole("textbox", { name: /Descripción/ })).toHaveAttribute("maxlength", "100");
         fireEvent.change(within(dialogo).getByRole("textbox", { name: /Descripción/ }), { target: { value: "Grande especial" } });
         fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar" }));
 

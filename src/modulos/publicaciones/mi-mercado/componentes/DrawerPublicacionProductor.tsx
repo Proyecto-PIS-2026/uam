@@ -358,7 +358,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             notificar(validacionUbicaciones.error, "error");
             return;
         }
-        const formulario = new FormData();
         const cambios: CambiosPublicacionProductor = {
             precio: normalizarPrecioPublicacion(borrador.precio),
             cantidadUnidades: borrador.cantidadUnidades === "" ? null : Number(borrador.cantidadUnidades),
@@ -370,6 +369,35 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             ubicaciones: validacionUbicaciones.ubicaciones,
             fechaVigencia: borrador.fechaVigencia || null,
         };
+        const original = crearBorrador(edicion.base);
+        const ubicacionesSinCambios = cambios.ubicaciones.length === original.ubicaciones.length
+            && cambios.ubicaciones.every((ubicacion, indice) => {
+                const anterior = original.ubicaciones[indice];
+                return ubicacion.nombreUbicacion === anterior.nombreUbicacion.trim()
+                    && ubicacion.urlMaps === anterior.urlMaps.trim()
+                    && (ubicacion.departamento ?? null) === (anterior.departamento ?? null);
+            });
+        const sinCambios =
+            cambios.precio === (original.precio || null)
+            && cambios.cantidadUnidades === (edicion.base.cantidadUnidades ?? null)
+            && cambios.comentario === (original.comentario.trim() || null)
+            && (cambios.fechaVigencia?.slice(0, 10) ?? "") === original.fechaVigencia.slice(0, 10)
+            && borrador.especieId === original.especieId
+            && borrador.variedadId === original.variedadId
+            && borrador.envaseId === original.envaseId
+            && borrador.kilosId === original.kilosId
+            && borrador.categoriaId === original.categoriaId
+            && borrador.calibreId === original.calibreId
+            && borrador.paisId === original.paisId
+            && borrador.disponible === original.disponible
+            && borrador.foto === original.foto
+            && borrador.archivo === null
+            && ubicacionesSinCambios;
+        if (sinCambios) {
+            setEstado((actual) => ({ ...actual, edicion: null }));
+            return;
+        }
+        const formulario = new FormData();
         formulario.set("cambios", JSON.stringify(cambios));
         if (borrador.archivo) formulario.set("foto", borrador.archivo);
         const sesion = estado.sesion;
