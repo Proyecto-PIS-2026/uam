@@ -5,6 +5,7 @@ import ViewListIcon from "@mui/icons-material/ViewList";
 import ViewModuleIcon from "@mui/icons-material/ViewModule";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import Paginacion from "@/compartido/componentes/Paginacion";
 
 import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
 import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
@@ -28,9 +29,12 @@ type Publicacion = TiposPublicacion[keyof TiposPublicacion];
 
 type Props = {
     publicaciones: Publicacion[];
+    claveConsulta?: string;
     esAdmin?: boolean;
     estadoVacio?: ReactNode;
 };
+
+const publicacionesPorPagina = 20;
 
 type GrupoPublicaciones = {
     clave: string;
@@ -38,8 +42,19 @@ type GrupoPublicaciones = {
     publicaciones: Publicacion[];
 };
 
-export default function ListadoPublicaciones({ publicaciones, esAdmin = false, estadoVacio }: Props) {
+export default function ListadoPublicaciones({ publicaciones, claveConsulta = "", esAdmin = false, estadoVacio }: Props) {
     const [agrupar, setAgrupar] = useState(false);
+    const [paginacion, setPaginacion] = useState({ claveConsulta, pagina: 1 });
+    const totalPaginas = Math.ceil(publicaciones.length / publicacionesPorPagina);
+    const paginaVisible = Math.min(paginacion.claveConsulta === claveConsulta ? paginacion.pagina : 1, Math.max(1, totalPaginas));
+    if (paginacion.claveConsulta !== claveConsulta || paginacion.pagina !== paginaVisible) {
+        setPaginacion({ claveConsulta, pagina: paginaVisible });
+    }
+    const indiceInicial = (paginaVisible - 1) * publicacionesPorPagina;
+    const publicacionesPagina = useMemo(
+        () => publicaciones.slice(indiceInicial, indiceInicial + publicacionesPorPagina),
+        [publicaciones, indiceInicial],
+    );
     const [publicacionSeleccionada, setPublicacionSeleccionada] = useState<Publicacion>();
     const [drawerAbierto, setDrawerAbierto] = useState(false);
     const seleccionActual = publicacionSeleccionada ? publicaciones.find((publicacion) => publicacion.id === publicacionSeleccionada.id && publicacion.tipoPublicacion === publicacionSeleccionada.tipoPublicacion) : undefined;
@@ -49,7 +64,7 @@ export default function ListadoPublicaciones({ publicaciones, esAdmin = false, e
     const publicacionesAgrupadas = useMemo(() => {
         const grupos = new Map<string, GrupoPublicaciones>();
 
-        for (const publicacion of publicaciones) {
+        for (const publicacion of publicacionesPagina) {
             const usuario = "productor" in publicacion ? publicacion.productor : publicacion.operador;
             const clave = `${publicacion.tipoPublicacion}-${usuario.id}`;
             const grupo = grupos.get(clave);
@@ -60,7 +75,7 @@ export default function ListadoPublicaciones({ publicaciones, esAdmin = false, e
             }
         }
         return Array.from(grupos.values());
-    }, [publicaciones]);
+    }, [publicacionesPagina]);
 
     function abrirPublicacion(publicacion: Publicacion) {
         setPublicacionSeleccionada(publicacion);
@@ -158,6 +173,7 @@ export default function ListadoPublicaciones({ publicaciones, esAdmin = false, e
                                         <span>
                                             {grupo.publicaciones.length === 1 ? "producto" : "productos"}
                                         </span>
+                                        {totalPaginas > 1 && " en esta página"}
                                     </div>
                                     <div className={styles.lineaGrupo} />
                                 </div>
@@ -174,13 +190,20 @@ export default function ListadoPublicaciones({ publicaciones, esAdmin = false, e
                 </div>
             ) : (
                 <div className={styles.lista}>
-                    {publicaciones.map((publicacion) => (
+                    {publicacionesPagina.map((publicacion) => (
                         <div key={publicacion.id} className={styles.elementoLista}>
                             {renderizarTarjeta(publicacion, true)}
                         </div>
                     ))}
                 </div>
             )}
+            <Paginacion
+                pagina={paginaVisible}
+                totalPaginas={totalPaginas}
+                alCambiar={(pagina) => setPaginacion({ claveConsulta, pagina })}
+                etiqueta="Paginación de publicaciones"
+                resumen={`${indiceInicial + 1}–${indiceInicial + publicacionesPagina.length} de ${publicaciones.length} publicaciones`}
+            />
             {seleccionActual && (
                 <DrawerPublicacion
                     publicacion={seleccionActual}

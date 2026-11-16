@@ -39,8 +39,10 @@ for (const pantalla of [
         const precioMinimo = page.getByRole("textbox", { name: "Precio Mínimo" });
         const precioMaximo = page.getByRole("textbox", { name: "Precio Máximo" });
         const sinResultados = page.getByRole("status").filter({ hasText: "No hay publicaciones que coincidan con la búsqueda." });
+        const contenedor = page.locator("[aria-busy]").filter({ has: busqueda });
+        const paginacion = page.getByRole("navigation", { name: "Paginación de publicaciones", exact: true });
 
-        async function leerPublicaciones(): Promise<Publicacion[]> {
+        async function leerPaginaPublicaciones(): Promise<Publicacion[]> {
             return tarjetas.evaluateAll((elementos) => elementos.map((tarjeta) => {
                 const nombre = tarjeta.querySelector("h3")?.textContent?.trim();
                 const operador = tarjeta.querySelector("p[title]")?.getAttribute("title");
@@ -77,8 +79,35 @@ for (const pantalla of [
             }));
         }
 
+        async function leerPublicaciones(): Promise<Publicacion[]> {
+            await expect(contenedor).toHaveAttribute("aria-busy", "false");
+            if (await paginacion.isVisible()) {
+                await paginacion.getByRole("button", { name: "Página 1", exact: true }).click();
+                await expect(paginacion.getByRole("button", { name: "Página 1", exact: true })).toHaveAttribute("aria-current", "page");
+            }
+
+            const publicaciones: Publicacion[] = [];
+            let numeroPagina = 1;
+            while (true) {
+                await expect(contenedor).toHaveAttribute("aria-busy", "false");
+                publicaciones.push(...await leerPaginaPublicaciones());
+                if (!(await paginacion.isVisible())) break;
+                const siguiente = paginacion.getByRole("button", { name: "Siguiente", exact: true });
+                if (await siguiente.isDisabled()) break;
+                await siguiente.click();
+                numeroPagina++;
+                await expect(paginacion.getByRole("button", { name: `Página ${numeroPagina}`, exact: true })).toHaveAttribute("aria-current", "page");
+            }
+
+            if (await paginacion.isVisible()) {
+                await paginacion.getByRole("button", { name: "Página 1", exact: true }).click();
+                await expect(paginacion.getByRole("button", { name: "Página 1", exact: true })).toHaveAttribute("aria-current", "page");
+            }
+            return publicaciones;
+        }
+
         async function comprobarResultados(esperadas: Publicacion[]) {
-            await expect(tarjetas).toHaveCount(esperadas.length);
+            await expect(tarjetas).toHaveCount(Math.min(20, esperadas.length));
             await expect.poll(leerPublicaciones).toEqual(esperadas);
 
             if (esperadas.length === 0) {
@@ -113,7 +142,7 @@ for (const pantalla of [
         const especiesEsperadas = ordenarPorEspecie(publicacionesIniciales).map(obtenerEspecie);
 
         await ordenar("A-Z");
-        await expect(tarjetas).toHaveCount(publicacionesIniciales.length);
+        await expect(tarjetas).toHaveCount(Math.min(20, publicacionesIniciales.length));
         await expect.poll(async () => (await leerPublicaciones()).map(obtenerEspecie)).toEqual(especiesEsperadas);
 
         const publicaciones = await leerPublicaciones();
@@ -280,7 +309,7 @@ for (const pantalla of [
 
             for (const opcion of ["Menor Precio", "Mayor Precio"]) {
                 await ordenar(opcion);
-                await expect(tarjetas).toHaveCount(publicaciones.length);
+                await expect(tarjetas).toHaveCount(Math.min(20, publicaciones.length));
                 const esperados = [...precios].sort((a, b) => opcion === "Menor Precio" ? a - b : b - a);
                 await expect.poll(async () => (await leerPublicaciones()).map((publicacion) => publicacion.precio)).toEqual([...esperados, ...Array<null>(sinPrecio).fill(null)]);
             }

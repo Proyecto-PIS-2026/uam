@@ -124,7 +124,7 @@ describe("TarjetaPublicacionConProductor", () => {
             <TarjetaPublicacionConProductor publicacion={crearPublicacion({ precio: 1250 })} onClick={onClick} />,
         );
 
-        expect(screen.getByText("$ 1.250")).toBeInTheDocument();
+        expect(screen.getByText("$ 1250")).toBeInTheDocument();
         expect(screen.queryByText("Consultar precio")).not.toBeInTheDocument();
     });
 

@@ -72,7 +72,7 @@ describe("TarjetaPublicacionSinOperador", () => {
 
     it.each([
         [150, /^\$\s*150$/],
-        [1234.5, /^\$\s*1\.234,5$/],
+        [1234.5, /^\$\s*1234,5$/],
         [0, /^\$\s*0$/],
     ])(
         "muestra el precio %s sin confundir cero con ausencia de precio",

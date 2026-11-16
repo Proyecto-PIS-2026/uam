@@ -19,8 +19,8 @@ vi.mock("../../tiempo-real/use-actualizaciones-publicaciones", () => ({
 }));
 
 vi.mock("../listado-publicaciones/ListadoPublicaciones", () => ({
-    default: ({ publicaciones }: Pick<ResultadoPublicaciones, "publicaciones">) => (
-        <div data-testid="listado">
+    default: ({ publicaciones, claveConsulta }: Pick<ResultadoPublicaciones, "publicaciones"> & { claveConsulta?: string }) => (
+        <div data-testid="listado" data-consulta={claveConsulta}>
             {publicaciones.map((publicacion) => <span key={publicacion.id} data-id={publicacion.id}>{publicacion.especie} {publicacion.precio}</span>)}
         </div>
     ),
@@ -84,12 +84,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ContenedorPublicaciones remoto", () => {
-    it("muestra todas las publicaciones sin paginación ni una consulta adicional al montar", () => {
+    it("entrega los resultados completos al listado para paginar sin otra consulta al montar", () => {
         render(<ContenedorPublicaciones resultado={resultado(100, 35)} />);
         expect(screen.getByTestId("listado").children).toHaveLength(35);
-        expect(screen.queryByRole("navigation", { name: "Páginas de publicaciones" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Anterior" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Siguiente" })).not.toBeInTheDocument();
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(cargar).not.toHaveBeenCalled();
     });
@@ -98,7 +95,9 @@ describe("ContenedorPublicaciones remoto", () => {
         let resolver!: (dato: ResultadoPublicaciones) => void;
         cargar.mockImplementationOnce(() => new Promise<ResultadoPublicaciones>((resolve) => { resolver = resolve }));
         render(<ContenedorPublicaciones resultado={resultado(100, 40)} />);
+        const consultaInicial = screen.getByTestId("listado").getAttribute("data-consulta");
         fireEvent.click(screen.getByText("Filtrar limón"));
+        expect(screen.getByTestId("listado")).toHaveAttribute("data-consulta", consultaInicial);
         expect(screen.getByRole("status")).toHaveTextContent("Cargando publicaciones...");
         expect(screen.getByTestId("listado").children).toHaveLength(40);
         await waitFor(() => expect(cargar).toHaveBeenCalledWith({ especie: "Limón", orden: "precioAsc" }));
@@ -106,12 +105,14 @@ describe("ContenedorPublicaciones remoto", () => {
         await act(async () => { resolver(resultado(200, 36)) });
         await waitFor(() => expect(screen.getByTestId("listado").children).toHaveLength(36));
         expect(screen.getByTestId("listado")).toHaveTextContent("200");
+        expect(screen.getByTestId("listado")).toHaveAttribute("data-consulta", JSON.stringify({ especie: "Limón", orden: "precioAsc" }));
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
     it("agrupa las notificaciones de tiempo real en una sola recarga", async () => {
         cargar.mockResolvedValue(resultado(250, 35));
         render(<ContenedorPublicaciones resultado={resultado()} />);
+        const consultaInicial = screen.getByTestId("listado").getAttribute("data-consulta");
         act(() => {
             void escuchar.mock.calls.at(-1)![0]();
             void escuchar.mock.calls.at(-1)![0]();
@@ -120,6 +121,7 @@ describe("ContenedorPublicaciones remoto", () => {
         await waitFor(() => expect(screen.getByTestId("listado")).toHaveTextContent("250"));
         expect(screen.getByTestId("listado").children).toHaveLength(35);
         expect(cargar).toHaveBeenCalledOnce();
+        expect(screen.getByTestId("listado")).toHaveAttribute("data-consulta", consultaInicial);
     });
 
     it("mantiene la nave y los demás filtros al actualizar por tiempo real después de un resultado vacío", async () => {
